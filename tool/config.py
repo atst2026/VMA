@@ -43,10 +43,13 @@ SEND_AT = "08:55"                         # Europe/London
 SEND_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"]  # Monday sweeps Sat+Sun too
 
 # --- API keys (set via env, never commit secrets) ---
-COMPANIES_HOUSE_KEY = os.environ.get("COMPANIES_HOUSE_KEY", "")
-BRIGHT_DATA_KEY = os.environ.get("BRIGHT_DATA_KEY", "")
-RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
-RESEND_FROM = os.environ.get("RESEND_FROM", "onboarding@resend.dev")
+COMPANIES_HOUSE_KEY = os.environ.get("COMPANIES_HOUSE_KEY") or ""
+BRIGHT_DATA_KEY = os.environ.get("BRIGHT_DATA_KEY") or ""
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY") or ""
+# `or` (not `get(..., default)`) so that an env var set to empty string (which
+# is what GitHub Actions does when a secret isn't configured) falls through
+# to the default rather than overriding it.
+RESEND_FROM = os.environ.get("RESEND_FROM") or "onboarding@resend.dev"
 
 # --- Source URLs (public, free) ---
 SOURCES = {

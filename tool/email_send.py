@@ -51,6 +51,7 @@ def send(to: str, subject: str, html: str, text: str | None = None) -> dict:
 
 
 def _send_resend(to: str, subject: str, html: str, text: str | None) -> dict:
+    log.info("Resend: from=%r to=%r subject=%r", RESEND_FROM, to, subject)
     payload = {
         "from": RESEND_FROM,
         "to": [to],
