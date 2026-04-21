@@ -1,0 +1,15 @@
+# Sara's morning brief — install on her laptop or a small VPS.
+#
+# Install:
+#   crontab -e
+#   (paste the line below — adjust the repo path)
+#
+# Verify:
+#   crontab -l
+#
+# 08:55 Mon–Fri (Europe/London). Monday's run naturally includes Sat+Sun
+# because dedup state + source freshness windows go back 3 days.
+#
+# Set env vars in the wrapper rather than here (keeps secrets out of crontab).
+
+55 8 * * 1-5  cd /ABSOLUTE/PATH/TO/VMA && ./run_brief.sh >> /tmp/vma-brief.log 2>&1

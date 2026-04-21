@@ -1,0 +1,39 @@
+Sara's Morning Brief — Tuesday 21 April 2026 · 20:16
+Coverage: Mon 20 Apr → Tue 21 Apr (sample data — real run uses live sources). Ranked by fee-value × signal strength. UK primary.
+
+Call these 5 first
+————————————————————————————————————————
+1. Unilever appoints new Chief Communications Officer
+   Unilever · GDELT · UK
+   Angle: Leadership change in the comms stack — call the new decision-maker inside 72 hours.
+   https://www.reuters.com/business/unilever-new-cco-2026-04-21
+
+2. NatWest Group plc — Directorate Change
+   NatWest Group · LSE RNS (Investegate) · UK
+   Angle: Regulatory announcement — comms restructure often follows within 4–8 weeks.
+   https://www.investegate.co.uk/announcement/rns/natwest-group--nwg/directorate-change/9123456
+
+3. Internal Communications Director
+   monzo · Greenhouse (monzo) · UK
+   Angle: Live role at monzo — pitch retained before the internal search runs out of runway.
+   https://boards.greenhouse.io/monzo/jobs/123456
+
+4. Communications Director, EMEA — Palo Alto Networks
+   Palo Alto Networks · LinkedIn Jobs (public) · UK
+   Angle: Live role at Palo Alto Networks — pitch retained before the internal search runs out of runway.
+   https://www.linkedin.com/jobs/view/3987654321
+
+5. Head of Corporate Communications — AstraZeneca
+   AstraZeneca · Adzuna (Indeed + aggregators) · UK
+   Angle: Live role at AstraZeneca — pitch retained before the internal search runs out of runway.
+   https://www.adzuna.co.uk/jobs/details/4200001
+
+Full signal set (9 items):
+  · Centrica restructures Corporate Affairs function ahead of Q2 — CorpComms Magazine [UK]
+    https://www.corpcommsmagazine.co.uk/centrica-2026-04
+  · 8-K — Haleon plc — Departure of Chief Corporate Affairs Officer — SEC EDGAR [UK]
+    https://www.sec.gov/Archives/edgar/data/haleon/000088420126
+  · Diageo's Global PR Director to step down by June — Campaign [UK]
+    https://www.campaignlive.co.uk/diageo-pr-2026
+  · Rolls-Royce hires ex-BAE head of corporate affairs — PRWeek UK [UK]
+    https://www.prweek.com/rolls-royce-2026
