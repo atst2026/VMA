@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 import re
 from datetime import datetime, timezone
+from functools import lru_cache
 from typing import Iterable
 
 from dateutil import parser as dateparse
@@ -18,6 +19,22 @@ from dateutil import parser as dateparse
 from tool.config import (
     EXCLUDE_TITLE_TERMS, GEO_PRIMARY, GEO_SECONDARY_WEIGHT, ROLE_KEYWORDS,
 )
+
+
+# Word-boundary regex patterns for every keyword. Using boundaries avoids
+# substring false-positives like "cco" matching inside "account".
+@lru_cache(maxsize=None)
+def _compile_patterns(keywords: tuple[str, ...]) -> tuple[re.Pattern, ...]:
+    return tuple(re.compile(r"\b" + re.escape(k) + r"\b", re.IGNORECASE) for k in keywords)
+
+
+_ROLE_PATTERNS = _compile_patterns(tuple(ROLE_KEYWORDS))
+_EXCLUDE_PATTERNS = _compile_patterns(tuple(EXCLUDE_TITLE_TERMS))
+_STRONG_PATTERNS = _compile_patterns(tuple([
+    "chief communications officer", "head of corporate communications",
+    "head of internal communications", "corporate affairs director",
+    "communications director", "pr director", "head of communications",
+]))
 
 log = logging.getLogger("brief.rank")
 
@@ -33,20 +50,51 @@ KIND_MULTIPLIER = {
     "": 1.0,
 }
 
+# Verbs / phrases that mark a trade-press item as actual news rather than
+# editorial / thought leadership / trends pieces. If a trade_press signal
+# does NOT contain one of these, it's dropped — Sara wants BD signals, not
+# reading.
+NEWS_VERBS = frozenset([
+    "appoint", "appointed", "appoints", "appointment",
+    "hire", "hired", "hires", "hiring",
+    "join", "joined", "joins", "joining",
+    "depart", "departed", "departs", "departure", "departing",
+    "leave", "leaves", "leaving",
+    "step down", "steps down", "stepping down",
+    "quit", "quits",
+    "resign", "resigned", "resigns",
+    "promote", "promoted", "promotes", "promotion",
+    "replace", "replaced", "replaces", "replacement",
+    "restructure", "restructured", "restructures", "restructuring",
+    "layoff", "layoffs", "laid off",
+    "exit", "exits", "exited", "exiting",
+    "retire", "retires", "retired",
+    "named", "names new", "taps",
+    "announce", "announces", "announced",
+    "to lead", "moves to", "moves from",
+    # explicit role-addition phrases
+    "new head of", "new director of", "new chief",
+    "new cco", "new cmo", "new cpo", "new chro", "new ceo",
+])
+
+
+def _looks_like_news(title: str) -> bool:
+    t = (title or "").lower()
+    return any(v in t for v in NEWS_VERBS)
+
 
 def _role_strength(text: str) -> float:
-    """How strongly a piece of text matches the role taxonomy. 0 = no match."""
-    t = (text or "").lower()
+    """How strongly a piece of text matches the role taxonomy. 0 = no match.
+    Word-boundary-aware so 'cco' matches 'CCO' but not 'account'.
+    """
+    if not text:
+        return 0.0
     score = 0.0
-    # Stronger phrases trigger bigger boosts
-    strong = ["chief communications officer", "head of corporate communications",
-              "head of internal communications", "corporate affairs director",
-              "communications director", "pr director", "head of communications"]
-    for s in strong:
-        if s in t:
+    for p in _STRONG_PATTERNS:
+        if p.search(text):
             score += 1.2
-    for rk in ROLE_KEYWORDS:
-        if rk in t:
+    for p in _ROLE_PATTERNS:
+        if p.search(text):
             score += 0.4
     return score
 
@@ -84,14 +132,18 @@ def _freshness(published: str) -> float:
 
 
 def score(signal: dict) -> float:
-    title_lower = (signal.get("title") or "").lower()
+    title = signal.get("title") or ""
     # Hard exclusion: agency/sales client-service roles are out regardless of
-    # what else matches. Applied on title only, not summary/company, to avoid
-    # false exclusions (e.g. a legitimate in-house brief whose body happens to
-    # mention the phrase "account director").
-    for term in EXCLUDE_TITLE_TERMS:
-        if term in title_lower:
+    # what else matches. Word-boundary matched to avoid clobbering legit
+    # in-house titles that happen to share a word.
+    for p in _EXCLUDE_PATTERNS:
+        if p.search(title):
             return 0.0
+
+    # Trade press: only let actual news through (appointments, departures,
+    # restructures). Editorial / thought leadership / trend pieces all drop.
+    if signal.get("kind") == "trade_press" and not _looks_like_news(title):
+        return 0.0
 
     text = " ".join(filter(None, [
         signal.get("title", ""), signal.get("summary", ""), signal.get("company", ""),

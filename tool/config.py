@@ -10,7 +10,7 @@ ROLE_KEYWORDS = [
     "corporate communications", "corporate comms", "corporate affairs",
     "external communications", "external comms", "communications director",
     "head of communications", "head of comms", "director of communications",
-    "chief communications officer",
+    "chief communications officer", "cco",
     # PR / media
     "pr director", "public relations", "media relations", "head of media",
     "press office", "head of pr",

@@ -6,6 +6,8 @@ import re
 import time
 from urllib.parse import quote_plus
 
+from bs4 import BeautifulSoup
+
 from tool.config import (
     ATS_SEEDS, DAY_RATE_CEILING_GBP, DAY_RATE_FLOOR_GBP, EXCLUDE_TITLE_TERMS,
     ROLE_KEYWORDS, SALARY_FLOOR_PERM_GBP, SOURCES,
@@ -33,15 +35,24 @@ def _is_uk(location: str) -> bool:
     return any(tok in low for tok in UK_LOCATION_TOKENS)
 
 
+_ROLE_RE = re.compile(
+    r"\b(?:" + "|".join(re.escape(k) for k in ROLE_KEYWORDS) + r")\b",
+    re.IGNORECASE,
+)
+_EXCLUDE_RE = re.compile(
+    r"\b(?:" + "|".join(re.escape(k) for k in EXCLUDE_TITLE_TERMS) + r")\b",
+    re.IGNORECASE,
+)
+
+
 def _has_role_match(text: str) -> bool:
     if not text:
         return False
-    t = text.lower()
-    # Hard exclude first — keeps agency/sales roles out of the pipeline
-    # entirely so they don't use up per-source caps.
-    if any(term in t for term in EXCLUDE_TITLE_TERMS):
+    # Hard exclude first (word-boundary): keeps agency/sales roles out of
+    # the pipeline entirely so they don't use up per-source caps.
+    if _EXCLUDE_RE.search(text):
         return False
-    return any(rk in t for rk in ROLE_KEYWORDS)
+    return bool(_ROLE_RE.search(text))
 
 
 def _salary_ok(minimum: float | None, maximum: float | None) -> bool:
@@ -216,29 +227,67 @@ def fetch_linkedin_jobs_public() -> list[dict]:
         r = get(url, timeout=15, tries=1)
         if not r or r.status_code != 200 or not r.content:
             continue
-        # Parse lightly via regex — pages are HTML cards
-        html = r.text
-        for m in re.finditer(
-            r'<a[^>]+class="base-card__full-link[^>]+href="([^"]+)"[^>]*>\s*<span[^>]*>\s*([^<]+)</span>',
-            html,
-        ):
-            link, title = m.group(1), m.group(2).strip()
-            if not _has_role_match(title):
-                continue
-            out.append({
-                "id": signal_id("linkedin_jobs", link),
-                "source": "LinkedIn Jobs (public)",
-                "kind": "job",
-                "title": title,
-                "url": link,
-                # LinkedIn's TPR=r86400 filter already constrains to last 24h,
-                # so marking as "today" avoids the unknown-date freshness penalty.
-                "published": now_iso,
-                "company": "",
-                "geo": "UK",
-                "summary": "",
-                "weight": 1.1,
-            })
+        hits_before = len(out)
+        try:
+            soup = BeautifulSoup(r.text, "lxml")
+            cards = soup.select("li div.base-card") or soup.select("li") or []
+            for card in cards:
+                title_el = (
+                    card.select_one("h3.base-search-card__title")
+                    or card.select_one(".base-search-card__title")
+                    or card.select_one("h3")
+                )
+                company_el = (
+                    card.select_one("h4.base-search-card__subtitle a")
+                    or card.select_one("h4.base-search-card__subtitle")
+                    or card.select_one(".base-search-card__subtitle")
+                )
+                link_el = card.select_one("a.base-card__full-link") or card.select_one("a[href*='/jobs/view/']")
+                location_el = card.select_one(".job-search-card__location")
+                if not (title_el and link_el):
+                    continue
+                title = title_el.get_text(" ", strip=True)
+                if not _has_role_match(title):
+                    continue
+                company = company_el.get_text(" ", strip=True) if company_el else ""
+                location = location_el.get_text(" ", strip=True) if location_el else ""
+                link = (link_el.get("href") or "").split("?")[0]
+                out.append({
+                    "id": signal_id("linkedin_jobs", link or title),
+                    "source": "LinkedIn Jobs (public)",
+                    "kind": "job",
+                    "title": title,
+                    "url": link,
+                    "published": now_iso,
+                    "company": company,
+                    "geo": "UK",
+                    "summary": location,
+                    "weight": 1.1,
+                })
+        except Exception as e:
+            log.info("LinkedIn BS4 parse failed (%s); falling back to regex", e)
+        # Fallback: if BS4 found nothing (selectors changed, or error), try the
+        # original regex — we lose the company name but keep titles + URLs.
+        if len(out) == hits_before:
+            for m in re.finditer(
+                r'<a[^>]+class="base-card__full-link[^>]+href="([^"]+)"[^>]*>\s*<span[^>]*>\s*([^<]+)</span>',
+                r.text,
+            ):
+                link, title = m.group(1), m.group(2).strip()
+                if not _has_role_match(title):
+                    continue
+                out.append({
+                    "id": signal_id("linkedin_jobs", link),
+                    "source": "LinkedIn Jobs (public)",
+                    "kind": "job",
+                    "title": title,
+                    "url": link,
+                    "published": now_iso,
+                    "company": "",
+                    "geo": "UK",
+                    "summary": "",
+                    "weight": 1.1,
+                })
         time.sleep(1.5)   # courteous spacing
     return out
 
