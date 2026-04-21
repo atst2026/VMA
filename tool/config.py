@@ -10,13 +10,29 @@ ROLE_KEYWORDS = [
     "corporate communications", "corporate comms", "corporate affairs",
     "external communications", "external comms", "communications director",
     "head of communications", "head of comms", "director of communications",
-    "chief communications officer", "cco",
+    "chief communications officer",
     # PR / media
     "pr director", "public relations", "media relations", "head of media",
     "press office", "head of pr",
     # Generic / marketing-and-brand
     "marketing and brand", "brand director", "head of brand",
     "head of marketing and communications", "head of marketing and comms",
+]
+
+# Hard-exclude. These titles are agency/sales client-service roles that Sara
+# does not work (she places into in-house comms functions only). A match here
+# scores 0 regardless of how well the title hits the role keywords.
+EXCLUDE_TITLE_TERMS = [
+    # Agency client-service
+    "account director", "senior account director", "group account director",
+    "board account director", "account supervisor",
+    "client services", "client director", "client partner", "client lead",
+    # Sales
+    "account executive", "account manager", "technical account",
+    "account representative", "partner account", "named account",
+    "renewal account", "renewals account", "enterprise account", "sales account",
+    # Ambiguous but historically low-hit for in-house comms
+    "sales director", "business development", "bd director",
 ]
 
 # Role titles we surface even at lower seniority (kept tight to avoid noise)

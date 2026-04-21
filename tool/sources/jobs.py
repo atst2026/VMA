@@ -7,8 +7,8 @@ import time
 from urllib.parse import quote_plus
 
 from tool.config import (
-    ATS_SEEDS, DAY_RATE_CEILING_GBP, DAY_RATE_FLOOR_GBP, ROLE_KEYWORDS,
-    SALARY_FLOOR_PERM_GBP, SOURCES,
+    ATS_SEEDS, DAY_RATE_CEILING_GBP, DAY_RATE_FLOOR_GBP, EXCLUDE_TITLE_TERMS,
+    ROLE_KEYWORDS, SALARY_FLOOR_PERM_GBP, SOURCES,
 )
 from tool.sources._http import get, signal_id
 
@@ -17,11 +17,30 @@ log = logging.getLogger("brief.jobs")
 ADZUNA_APP_ID = os.environ.get("ADZUNA_APP_ID", "")
 ADZUNA_APP_KEY = os.environ.get("ADZUNA_APP_KEY", "")
 
+UK_LOCATION_TOKENS = (
+    "london", "manchester", "birmingham", "leeds", "bristol", "edinburgh",
+    "glasgow", "cardiff", "belfast", "liverpool", "sheffield", "newcastle",
+    "reading", "oxford", "cambridge", "brighton", "milton keynes", "leicester",
+    "nottingham", "southampton", "portsmouth", "united kingdom", " uk",
+    "england", "scotland", "wales", "northern ireland",
+)
+
+
+def _is_uk(location: str) -> bool:
+    if not location:
+        return False
+    low = location.lower()
+    return any(tok in low for tok in UK_LOCATION_TOKENS)
+
 
 def _has_role_match(text: str) -> bool:
     if not text:
         return False
     t = text.lower()
+    # Hard exclude first — keeps agency/sales roles out of the pipeline
+    # entirely so they don't use up per-source caps.
+    if any(term in t for term in EXCLUDE_TITLE_TERMS):
+        return False
     return any(rk in t for rk in ROLE_KEYWORDS)
 
 
@@ -97,6 +116,7 @@ def fetch_greenhouse() -> list[dict]:
             title = j.get("title", "")
             if not _has_role_match(title):
                 continue
+            loc = (j.get("location") or {}).get("name", "")
             out.append({
                 "id": signal_id("greenhouse", str(j.get("id"))),
                 "source": f"Greenhouse ({slug})",
@@ -105,8 +125,8 @@ def fetch_greenhouse() -> list[dict]:
                 "url": j.get("absolute_url", ""),
                 "published": j.get("updated_at", ""),
                 "company": slug,
-                "geo": "UK" if "london" in (j.get("location") or {}).get("name", "").lower() else "INT",
-                "summary": (j.get("location") or {}).get("name", ""),
+                "geo": "UK" if _is_uk(loc) else "INT",
+                "summary": loc,
                 "weight": 1.0,
             })
     return out
@@ -127,7 +147,7 @@ def fetch_lever() -> list[dict]:
             title = j.get("text", "")
             if not _has_role_match(title):
                 continue
-            loc = ((j.get("categories") or {}).get("location") or "").lower()
+            loc = (j.get("categories") or {}).get("location") or ""
             out.append({
                 "id": signal_id("lever", j.get("id", "")),
                 "source": f"Lever ({slug})",
@@ -136,8 +156,8 @@ def fetch_lever() -> list[dict]:
                 "url": j.get("hostedUrl", ""),
                 "published": "",
                 "company": slug,
-                "geo": "UK" if "london" in loc or "united kingdom" in loc else "INT",
-                "summary": (j.get("categories") or {}).get("location", ""),
+                "geo": "UK" if _is_uk(loc) else "INT",
+                "summary": loc,
                 "weight": 1.0,
             })
     return out
@@ -158,6 +178,7 @@ def fetch_ashby() -> list[dict]:
             title = j.get("title", "")
             if not _has_role_match(title):
                 continue
+            loc = j.get("locationName", "") or ""
             out.append({
                 "id": signal_id("ashby", j.get("id", "")),
                 "source": f"Ashby ({slug})",
@@ -166,8 +187,8 @@ def fetch_ashby() -> list[dict]:
                 "url": j.get("jobUrl", ""),
                 "published": j.get("publishedAt", ""),
                 "company": slug,
-                "geo": "UK" if "london" in (j.get("locationName", "") or "").lower() else "INT",
-                "summary": j.get("locationName", ""),
+                "geo": "UK" if _is_uk(loc) else "INT",
+                "summary": loc,
                 "weight": 1.0,
             })
     return out
@@ -178,6 +199,8 @@ def fetch_linkedin_jobs_public() -> list[dict]:
     LinkedIn rate-limits aggressively; one query per morning is the sustainable rhythm.
     For comprehensive LinkedIn post/activity coverage, Bright Data handles it.
     """
+    from datetime import datetime, timezone
+    now_iso = datetime.now(timezone.utc).isoformat()
     out: list[dict] = []
     queries = [
         ("head of internal communications", "gb"),
@@ -208,7 +231,9 @@ def fetch_linkedin_jobs_public() -> list[dict]:
                 "kind": "job",
                 "title": title,
                 "url": link,
-                "published": "",
+                # LinkedIn's TPR=r86400 filter already constrains to last 24h,
+                # so marking as "today" avoids the unknown-date freshness penalty.
+                "published": now_iso,
                 "company": "",
                 "geo": "UK",
                 "summary": "",

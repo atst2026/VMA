@@ -16,7 +16,7 @@ from typing import Iterable
 from dateutil import parser as dateparse
 
 from tool.config import (
-    GEO_PRIMARY, GEO_SECONDARY_WEIGHT, ROLE_KEYWORDS,
+    EXCLUDE_TITLE_TERMS, GEO_PRIMARY, GEO_SECONDARY_WEIGHT, ROLE_KEYWORDS,
 )
 
 log = logging.getLogger("brief.rank")
@@ -84,6 +84,15 @@ def _freshness(published: str) -> float:
 
 
 def score(signal: dict) -> float:
+    title_lower = (signal.get("title") or "").lower()
+    # Hard exclusion: agency/sales client-service roles are out regardless of
+    # what else matches. Applied on title only, not summary/company, to avoid
+    # false exclusions (e.g. a legitimate in-house brief whose body happens to
+    # mention the phrase "account director").
+    for term in EXCLUDE_TITLE_TERMS:
+        if term in title_lower:
+            return 0.0
+
     text = " ".join(filter(None, [
         signal.get("title", ""), signal.get("summary", ""), signal.get("company", ""),
     ]))
@@ -97,14 +106,35 @@ def score(signal: dict) -> float:
     return round(base * kind * geo * fresh * (1.0 + 0.25 * rs), 3)
 
 
+def _norm_title(t: str) -> str:
+    """Collapse whitespace, lowercase, strip 'maternity cover' / 'contract' /
+    trailing punctuation so two near-identical listings dedup cleanly."""
+    t = (t or "").lower()
+    for junk in ("(12 month contract)", "(maternity cover)", "(mat cover)",
+                 "- mat cover", "- maternity cover", "- 12 month contract",
+                 "12 month mat cover", "12-month mat cover"):
+        t = t.replace(junk, "")
+    t = " ".join(t.split())
+    return t.strip(" -,·")
+
+
 def dedup(signals: list[dict]) -> list[dict]:
-    seen = set()
+    """Dedup by signal ID (same source+guid) AND by normalised title+company
+    (catches LinkedIn returning the same job across multiple queries)."""
+    seen_ids = set()
+    seen_title_company = set()
     out = []
     for s in signals:
-        key = s.get("id") or (s.get("source", "") + "|" + s.get("title", ""))
-        if key in seen:
+        sid = s.get("id") or (s.get("source", "") + "|" + s.get("title", ""))
+        key2 = (_norm_title(s.get("title", "")),
+                (s.get("company") or "").strip().lower())
+        if sid in seen_ids:
             continue
-        seen.add(key)
+        if key2[0] and key2 in seen_title_company:
+            continue
+        seen_ids.add(sid)
+        if key2[0]:
+            seen_title_company.add(key2)
         out.append(s)
     return out
 
