@@ -11,9 +11,15 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "send | test | preview"
+        description: "send (live → Sara) | test (real scouring → amirt12) | sample (synthetic data → amirt12)"
         default: "test"
         required: true
+        type: choice
+        options:
+          - test
+          - sample
+          - send
+          - preview
 
 permissions:
   contents: read
@@ -52,9 +58,17 @@ jobs:
           RESEND_FROM: ${{ secrets.RESEND_FROM }}
           ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
           ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+          PYTHONUNBUFFERED: "1"
+          PYTHONPATH: "."
         run: |
+          set -x
           MODE="${{ github.event.inputs.mode || 'send' }}"
-          python tool/morning_brief.py "$MODE"
+          echo "Running brief in mode: $MODE"
+          if [ "$MODE" = "sample" ]; then
+              python -m tool.sample_brief test
+          else
+              python -m tool.morning_brief "$MODE"
+          fi
 
       - name: Upload brief artefacts
         if: always()

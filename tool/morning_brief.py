@@ -13,6 +13,13 @@ import sys
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
+# Make the repo root importable no matter how this script was invoked.
+# (Direct `python tool/morning_brief.py` puts tool/ on sys.path, not the repo
+# root, so `from tool import config` would fail without this.)
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
 from tool import config
 from tool.email_send import send as email_send
 from tool.ranking import rank
