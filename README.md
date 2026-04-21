@@ -16,32 +16,36 @@ Three commands on Claude Max, zero external cost beyond the Claude Max seat:
 - **`/analyse [paste]`** — cross-references pasted Recruiter output against the
   morning brief and ranks "call these 5 first".
 
+**See the sample brief format**: [sample_brief_preview.md](sample_brief_preview.md)
+(renders inline on GitHub) or [rendered HTML preview](https://htmlpreview.github.io/?https://github.com/atst2026/VMA/blob/claude/review-and-plan-tool-jdyFu/sample_brief_preview.html).
+
 Sara's LinkedIn account is never touched. Bright Data's licensed logged-off
 dataset sits separately; Sara uses her Recruiter seat manually for the 1–2
 leads/day worth a deep dive.
 
-## Install
+## Fire the practice-run email (pick one — all take ~2 min)
 
+**Option 1 — one shell command** (fastest):
 ```bash
-# 1. Clone the repo (already on branch claude/review-and-plan-tool-jdyFu)
-cd /path/to/VMA
+# After cloning this branch on any machine with internet:
+RESEND_API_KEY=re_xxxxxx ./fire_test.sh
+```
+That sends `sample_brief_preview.html` to `amirt12@hotmail.com` via Resend.
+Get a free Resend key at https://resend.com (no card, no domain setup — uses
+`onboarding@resend.dev` as sender).
 
-# 2. Python deps (Python 3.11+)
+**Option 2 — GitHub Actions (no laptop needed)**:
+1. Push this branch to GitHub (already done) → Settings → Secrets & variables → Actions
+2. Add secret `RESEND_API_KEY` (value: your Resend key)
+3. Actions tab → "Sara's Morning Brief" workflow → Run workflow → mode = `test`
+
+**Option 3 — full install** (needed for scheduled live runs):
+```bash
 pip3 install requests beautifulsoup4 lxml python-dateutil
-
-# 3. Keys
-cp .env.example .env
-# Open .env, fill in RESEND_API_KEY after signing up at resend.com (2 min).
-# COMPANIES_HOUSE_KEY and BRIGHT_DATA_KEY are already in .env.example.
-
-# 4. Dry-run (preview only, no email)
-./run_brief.sh preview
-
-# 5. Practice run (emails amirt12@hotmail.com for review)
-./run_brief.sh test
-
-# 6. Live (emails stehrani@vmagroup.com)
-./run_brief.sh send
+cp .env.example .env           # paste RESEND_API_KEY into .env
+./run_brief.sh preview         # dry-run, no email
+./run_brief.sh test            # real scouring + email to amirt12@hotmail.com
+./run_brief.sh send            # real scouring + email to stehrani@vmagroup.com
 ```
 
 ## Scheduling (Mon–Fri 08:55 London)
