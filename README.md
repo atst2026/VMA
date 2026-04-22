@@ -1,89 +1,56 @@
-# Sara's Commission Engine
+# Sara's Morning Brief
 
-A daily intelligence tool for Sara Tehrani, Account Director at VMA Group.
-Surfaces commission opportunities she'd otherwise miss. She does all the human
-work (calls, meetings, pitches, closing). Claude finds and prepares.
+A daily BD intelligence email for Sara Tehrani, Account Director at VMA Group.
+Scours every free public source + Bright Data licensed LinkedIn surface, filters
+to Sara's role taxonomy and salary floor, ranks UK-primary, and delivers a
+ranked top-5 call list to `stehrani@vmagroup.com` at 08:55 Europe/London,
+Monday–Friday. Monday's brief covers Sat + Sun.
 
-## The tool
+Zero touch for Sara. Email arrives, she reads it, she dials.
 
-Three commands on Claude Max, zero external cost beyond the Claude Max seat:
+**Sample of the format**: [sample_brief_preview.md](sample_brief_preview.md)
+(renders inline on GitHub) or [rendered HTML](https://htmlpreview.github.io/?https://github.com/atst2026/VMA/blob/main/sample_brief_preview.html).
 
-- **`/morning-brief`** — runs every weekday at 08:55 Europe/London (Mon includes
-  Sat + Sun). Scours every free public source + Bright Data free tier, filters
-  on Sara's role taxonomy + £40k+ / £350–800/day floor, ranks UK-primary, emails
-  `stehrani@vmagroup.com`.
-- **`/deep-dive [company or person]`** — on-demand deep research on a lead.
-- **`/analyse [paste]`** — cross-references pasted Recruiter output against the
-  morning brief and ranks "call these 5 first".
+## How it runs
 
-**See the sample brief format**: [sample_brief_preview.md](sample_brief_preview.md)
-(renders inline on GitHub) or [rendered HTML preview](https://htmlpreview.github.io/?https://github.com/atst2026/VMA/blob/claude/review-and-plan-tool-jdyFu/sample_brief_preview.html).
+GitHub Actions (`.github/workflows/morning-brief.yml`) fires Mon–Fri on a UTC
+cron that covers both BST and GMT. A gate step checks Europe/London time is
+between 08:30 and 10:30 before letting the rest of the job run — so if
+GitHub's scheduler is delayed past 10:30 (which happens on the free tier),
+the brief is skipped for that day rather than arriving at lunch dressed up as
+a morning brief.
 
-Sara's LinkedIn account is never touched. Bright Data's licensed logged-off
-dataset sits separately; Sara uses her Recruiter seat manually for the 1–2
-leads/day worth a deep dive.
+Cost: £0/month. 22 runs × ~2 minutes ≈ 45 min/month — well inside GitHub's
+2,000-minute free tier.
 
-## Fire the practice-run email (pick one — all take ~2 min)
+## Secrets
 
-**Option 1 — one shell command** (fastest):
-```bash
-# After cloning this branch on any machine with internet:
-RESEND_API_KEY=re_xxxxxx ./fire_test.sh
-```
-That sends `sample_brief_preview.html` to `amirt12@hotmail.com` via Resend.
-Get a free Resend key at https://resend.com (no card, no domain setup — uses
-`onboarding@resend.dev` as sender).
+Set in GitHub repo → Settings → Secrets and variables → Actions:
 
-**Option 2 — GitHub Actions (no laptop needed)**:
-1. Push this branch to GitHub (already done) → Settings → Secrets & variables → Actions
-2. Add secret `RESEND_API_KEY` (value: your Resend key)
-3. Actions tab → "Sara's Morning Brief" workflow → Run workflow → mode = `test`
+| Secret | Purpose |
+|---|---|
+| `GMAIL_USER` | Sender Gmail address (e.g. `franc.laude1994@gmail.com`) |
+| `GMAIL_APP_PASSWORD` | 16-char Gmail app password (not the login password) |
+| `COMPANIES_HOUSE_KEY` | Companies House developer key (free) |
+| `BRIGHT_DATA_KEY` | Bright Data key for licensed LinkedIn public surface (free 5k/month) |
+| `GMAIL_FROM_NAME` | *Optional*. Default: `Sara's Morning Brief` |
+| `ADZUNA_APP_ID` + `ADZUNA_APP_KEY` | *Optional*. Adds Indeed + 10 more job boards via Adzuna API (free) |
 
-**Option 3 — full install** (needed for scheduled live runs):
-```bash
-pip3 install requests beautifulsoup4 lxml python-dateutil
-cp .env.example .env           # paste RESEND_API_KEY into .env
-./run_brief.sh preview         # dry-run, no email
-./run_brief.sh test            # real scouring + email to amirt12@hotmail.com
-./run_brief.sh send            # real scouring + email to stehrani@vmagroup.com
-```
+Resend (previously used) is no longer wired in — Gmail SMTP handles delivery
+to any inbox with no domain verification.
 
-## Scheduling (Mon–Fri 08:55 London)
+## Manual dispatch
 
-Two options; pick whichever suits Sara's setup.
+Actions → "Sara's Morning Brief" → Run workflow → pick a mode:
 
-### Option A — local cron (simplest)
+| Mode | Behaviour |
+|---|---|
+| `test` | Real scouring → emails `amirt12@hotmail.com` (practice inbox) |
+| `sample` | Synthetic signals, for verifying email delivery works without hitting sources |
+| `send` | Real scouring → emails `stehrani@vmagroup.com` (live) |
+| `preview` | Real scouring, no email (output uploaded as artefact only) |
 
-```bash
-crontab -e
-# paste (edit the path):
-55 8 * * 1-5  cd /ABSOLUTE/PATH/TO/VMA && ./run_brief.sh >> /tmp/vma-brief.log 2>&1
-```
-
-Laptop must be awake at 08:55, or use a small always-on host (Raspberry Pi,
-small VPS). See `crontab.example`.
-
-### Option B — GitHub Actions (no hardware needed)
-
-1. Push this repo to GitHub (private).
-2. Add the keys under Settings → Secrets and variables → Actions:
-   - `COMPANIES_HOUSE_KEY`
-   - `BRIGHT_DATA_KEY`
-   - `RESEND_API_KEY`
-   - optional: `RESEND_FROM`, `ADZUNA_APP_ID`, `ADZUNA_APP_KEY`
-3. The workflow in `.github/workflows/morning-brief.yml` fires at 08:55 London
-   Mon–Fri automatically.
-
-GitHub's free tier covers 2,000 Actions minutes/month — this job uses ~2
-min/day × 22 days ≈ 44 min/month. Free.
-
-## Slash commands (Claude Code)
-
-Files in `.claude/commands/`:
-
-- `morning-brief.md` — invoke to run the brief interactively and (optionally) email.
-- `deep-dive.md` — on-demand deep research on a named company or person.
-- `analyse.md` — paste Recruiter output → ranked "call these 5" synthesis.
+Manual dispatch bypasses the 08:30–10:30 window check.
 
 ## Sources scoured (all free)
 
@@ -103,39 +70,54 @@ Files in `.claude/commands/`:
 ## Scope
 
 - **Role titles**: Internal & Change Comms · External & Corporate Comms · PR & Media Relations · Communications · Head of Corporate Comms · PR Director · Marketing & Brand
-- **Geography**: UK primary; international secondary (weighted × 0.6)
+- **Geography**: UK primary (×1.0); international secondary (×0.6)
 - **Salary**: £40k+ perm, £350–800/day interim
 - **Industries**: all
 
+## Ranking rules (summary)
+
+- Title must match role taxonomy on a word boundary (so `cco` matches `CCO`, not `aCCOunt`)
+- Agency / sales / client-service titles hard-excluded (Account Director, Account Executive, Technical Account, etc.)
+- Trade press kept only if the title contains a news verb (appoints, departs, restructures, etc.) — editorial/thought-leadership drops
+- Dedup on `(normalised-title, company)` to catch LinkedIn returning the same listing across queries
+- Score = base × kind-multiplier × geo-weight × freshness × (1 + 0.25 × role-strength)
+- Top 5 by score form the ranked call list; the rest appear below as a full signal set
+
 ## What the tool deliberately does not do
 
-- Touch Sara's LinkedIn / Sales Nav / Recruiter
+- Touch Sara's LinkedIn / Sales Nav / Recruiter seat
 - Read or write to JobAdder
 - Send outreach on her behalf
-- Store personal profiles beyond dedup state
+- Store personal profiles beyond a 14-day dedup cache
 - Automate CRM
 
 ## Files
 
 ```
-.claude/commands/          slash commands (morning-brief, deep-dive, analyse)
-.github/workflows/         GitHub Actions scheduler
+.github/workflows/morning-brief.yml   GitHub Actions scheduler + gate + run
+.claude/commands/morning-brief.md     Dev slash command (not used by Sara)
 tool/
-  config.py                roles, salary, geo, API keys from env
-  morning_brief.py         orchestrator
-  ranking.py               filter + rank signals
-  render.py                HTML + plaintext email
-  email_send.py            Resend integration
-  state_store.py           dedup state (14-day TTL)
-  sources/
-    _http.py               shared HTTP + RSS helpers
+  config.py                           roles, salary, geo, API keys from env
+  morning_brief.py                    orchestrator
+  ranking.py                          filter + rank + exclude + dedup
+  render.py                           HTML + plaintext email
+  email_send.py                       Gmail SMTP (+ legacy Resend fallback)
+  state_store.py                      14-day dedup cache
+  sources/                            per-source fetchers
     companies_house.py
-    rss_feeds.py           RNS + regulators + trade press + procurement
-    jobs.py                Adzuna + Greenhouse + Lever + Ashby + LinkedIn public
-    gdelt.py               global news graph
-    sec_edgar.py           8-K filings
-    bright_data.py         licensed LinkedIn via Bright Data free tier
-crontab.example            local scheduler
-run_brief.sh               wrapper (cron + Actions use this)
-.env.example               keys template
+    rss_feeds.py                      RNS + regulators + trade press + procurement
+    jobs.py                           Greenhouse/Lever/Ashby/Adzuna/LinkedIn public
+    gdelt.py
+    sec_edgar.py
+    bright_data.py
+```
+
+## Local testing
+
+```bash
+pip3 install requests beautifulsoup4 lxml python-dateutil
+cp .env.example .env          # fill in keys
+./run_brief.sh preview        # dry-run, no email, prints brief to stdout
+./run_brief.sh test           # real run, emails amirt12@hotmail.com
+./run_brief.sh send           # real run, emails stehrani@vmagroup.com
 ```

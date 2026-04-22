@@ -32,7 +32,8 @@ def company_officers(company_number: str) -> list[dict]:
 
 
 def company_events(name: str) -> dict:
-    """For deep-dive: snapshot + officer list + filing history for one company."""
+    """Snapshot + officer list + filing history for one company. Reserved for
+    future enrichment paths; not called by the scheduled morning brief."""
     hits = search_company(name)
     if not hits:
         return {"company": name, "found": False}

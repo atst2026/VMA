@@ -3,9 +3,9 @@
 Credential-free with respect to LinkedIn. The Bright Data key is for *their*
 API, not LinkedIn. Zero risk to Sara's Recruiter seat.
 
-Free tier: 5,000 requests/month. We budget:
-- up to 150 requests/morning on weekdays (~3,000/mo)
-- reserve ~2,000/mo for /deep-dive and /analyse enrichment
+Free tier: 5,000 requests/month. We budget up to ~150 requests/morning on
+weekdays (~3,000/mo) — the rest is headroom for the ranking layer if we ever
+wire enrichment on the top-5 hits.
 """
 from __future__ import annotations
 import logging
@@ -64,9 +64,8 @@ def fetch_all() -> list[dict]:
             log.info("Bright Data call for %r → %s", q, r.status_code if r else "no-resp")
             continue
         # Parsing shape depends on the zone/dataset configuration. For the
-        # generic unlocker the response body is HTML; we degrade to a single
-        # meta-signal ("fired successfully") rather than trying to parse
-        # LinkedIn HTML server-side. Sara can use /deep-dive to go deeper.
+        # generic unlocker the response body is HTML; we surface the query
+        # as a meta-signal and leave deeper parsing to a manual follow-up.
         out.append({
             "id": signal_id("bright_data_linkedin", q),
             "source": "Bright Data (LinkedIn public)",
@@ -76,7 +75,7 @@ def fetch_all() -> list[dict]:
             "published": "",
             "company": "",
             "geo": "UK",
-            "summary": "Licensed LinkedIn logged-off surface sweep. Deep-dive on any specific hit.",
+            "summary": "Licensed LinkedIn logged-off surface sweep.",
             "weight": 0.9,
         })
         time.sleep(1.0)
