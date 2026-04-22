@@ -1,39 +1,69 @@
-Sara's Morning Brief — Tuesday 21 April 2026 · 20:16
-Coverage: Mon 20 Apr → Tue 21 Apr (sample data — real run uses live sources). Ranked by fee-value × signal strength. UK primary.
+Sara's Morning Brief — Wednesday 22 April 2026 · 17:14
+Coverage: Tue 21 Apr → Wed 22 Apr (SAMPLE — synthetic data for layout preview). Ranked by fee-value × signal strength. UK primary.
 
 Call these 5 first
 ————————————————————————————————————————
-1. Unilever appoints new Chief Communications Officer
-   Unilever · GDELT · UK
-   Angle: Leadership change in the comms stack — call the new decision-maker inside 72 hours.
-   https://www.reuters.com/business/unilever-new-cco-2026-04-21
-
-2. NatWest Group plc — Directorate Change
-   NatWest Group · LSE RNS (Investegate) · UK
-   Angle: Regulatory announcement — comms restructure often follows within 4–8 weeks.
-   https://www.investegate.co.uk/announcement/rns/natwest-group--nwg/directorate-change/9123456
-
-3. Internal Communications Director
+1. Internal Communications Director
    monzo · Greenhouse (monzo) · UK
    Angle: Live role at monzo — pitch retained before the internal search runs out of runway.
    https://boards.greenhouse.io/monzo/jobs/123456
 
-4. Communications Director, EMEA — Palo Alto Networks
+2. Unilever appoints new Chief Communications Officer
+   Unilever · GDELT · UK
+   Angle: Leadership change in the comms stack — call the new decision-maker inside 72 hours.
+   https://www.reuters.com/business/unilever-cco
+
+3. Communications Director, EMEA
    Palo Alto Networks · LinkedIn Jobs (public) · UK
    Angle: Live role at Palo Alto Networks — pitch retained before the internal search runs out of runway.
    https://www.linkedin.com/jobs/view/3987654321
 
-5. Head of Corporate Communications — AstraZeneca
+4. Head of Corporate Communications — AstraZeneca
    AstraZeneca · Adzuna (Indeed + aggregators) · UK
    Angle: Live role at AstraZeneca — pitch retained before the internal search runs out of runway.
-   https://www.adzuna.co.uk/jobs/details/4200001
+   https://www.adzuna.co.uk/jobs/4200001
 
-Full signal set (9 items):
-  · Centrica restructures Corporate Affairs function ahead of Q2 — CorpComms Magazine [UK]
-    https://www.corpcommsmagazine.co.uk/centrica-2026-04
-  · 8-K — Haleon plc — Departure of Chief Corporate Affairs Officer — SEC EDGAR [UK]
-    https://www.sec.gov/Archives/edgar/data/haleon/000088420126
-  · Diageo's Global PR Director to step down by June — Campaign [UK]
-    https://www.campaignlive.co.uk/diageo-pr-2026
+5. NatWest Group plc — Directorate Change
+   NatWest Group · LSE RNS (Investegate) · UK
+   Angle: Regulatory announcement — comms restructure often follows within 4–8 weeks.
+   https://www.investegate.co.uk/natwest/directorate-change
+
+
+Pre-advert signals — comms hire likely within 3–9 months
+————————————————————————————————————————————————————————
+1. Barclays plc · stacked (CEO change + Restructure / transformation announced)
+   External CEO/MD change at Barclays plc. Incoming CEO typically reviews C-suite within 6 months; Corporate Affairs / Head of Comms replacement likely in 6–12 weeks.
+     • CEO change: Barclays announces the appointment of a new Chief Executive Officer effective Q3.
+     • Restructure / transformation announced: Barclays has announced a strategic review of Corporate Affairs ahead of Q3.
+   Window: 6–12 weeks   Call: CPO / CHRO
+     LSE RNS (Investegate) 22 Apr 2026  https://www.investegate.co.uk/barclays/ceo-change
+     Campaign 22 Apr 2026  https://www.campaignlive.co.uk/barclays-restructure
+
+2. Severn Trent · single (Job-ad cluster (2+ mid-level comms, no senior yet))
+   Job-ad cluster pattern at Severn Trent — ~60% base rate for a senior hire within 90 days.
+     • Job-ad cluster (2+ mid-level comms, no senior yet): 3 mid-level comms/PR roles posted at Severn Trent in the last 30 days; no senior Head-of-Comms role currently posted. Titles: Communications Manager; Senior Internal Comms; PR Manager
+   Window: 4–12 weeks   Call: HR Director
+     LinkedIn Jobs (public) 22 Apr 2026  https://www.linkedin.com/jobs/severn-trent
+
+3. Haleon plc · single (M&amp;A announcement)
+   Major M&A at Haleon plc. Post-close comms integration or rebrand hire typical within 3–12 months.
+     • M&A announcement: Haleon plc announces recommended cash offer for a UK-listed peer.
+   Window: 12–36 weeks   Call: CCO of acquirer; Corp Affairs Director at both sides
+     LSE RNS (Investegate) 22 Apr 2026  https://www.investegate.co.uk/haleon/offer
+
+4. Thames Water · single (Material regulator action)
+   Material regulator action against Thames Water. Reputation exposure often triggers interim crisis comms hire within 2–8 weeks and a permanent Head of Comms review shortly after.
+     • Material regulator action: Ofwat fines Thames Water £45m for repeated operational failings.
+   Window: 2–12 weeks   Call: HR Director — pitch crisis comms interim + permanent
+     Ofwat News 22 Apr 2026  https://www.ofwat.gov.uk/thames-water-2026
+
+5. BT · single (CHRO / HR leadership change)
+   New CHRO / People Director at BT. Internal Comms reports to HR at ~40% of UK mid-caps — expect a comms direct-report refresh within 8–16 weeks.
+     • CHRO / HR leadership change: BT has announced the appointment of a new Chief People Officer.
+   Window: 8–16 weeks   Call: The new CHRO directly
+     HR Magazine 22 Apr 2026  https://www.hrmagazine.co.uk/bt-cpo
+
+
+Full signal set (6 items):
   · Rolls-Royce hires ex-BAE head of corporate affairs — PRWeek UK [UK]
-    https://www.prweek.com/rolls-royce-2026
+    https://www.prweek.com/rolls-royce
