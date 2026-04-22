@@ -87,9 +87,10 @@ jobs:
           PYTHONPATH: "."
         run: |
           set -x
-          # Default for scheduled runs is `test` (delivers to amirt12@hotmail.com)
-          # until Amir flips this to `send` for live delivery to Sara.
-          MODE="${{ github.event.inputs.mode || 'test' }}"
+          # Scheduled runs deliver live to stehrani@vmagroup.com.
+          # Manual dispatches can still pick `test` / `sample` / `preview`
+          # from the workflow_dispatch input to avoid Sara's inbox.
+          MODE="${{ github.event.inputs.mode || 'send' }}"
           echo "Running brief in mode: $MODE"
           if [ "$MODE" = "sample" ]; then
               python -m tool.sample_brief test
