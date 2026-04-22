@@ -4,35 +4,53 @@ argument-hint: "[company name or person name]"
 allowed-tools: Bash, Read, Write, WebSearch, WebFetch
 ---
 
-Sara has asked for a deep dive on: **$ARGUMENTS**
+Sara wants a deep dive on: **$ARGUMENTS**
 
-## What to do
+## Step 1 — Assemble the raw intelligence
 
-Build a single-page briefing on this target, pulling from:
+Run this from the repo root (Sara's cwd when she starts Claude Code):
 
-1. **Companies House** (if UK company) — filings, officer changes, PSC history, last 24 months. Use:
-   ```bash
-   cd /home/user/VMA && python3 -c "from tool.sources.companies_house import search_company, company_events; import json, sys; print(json.dumps(company_events(sys.argv[1]), indent=2, default=str))" "$ARGUMENTS"
-   ```
-2. **LSE RNS via Investegate** — any regulatory announcements.
-3. **UK regulators** (FCA, Ofwat, Ofgem, Ofcom, ICO, CMA) — enforcement history.
-4. **SEC EDGAR** — if there's a US parent.
-5. **Trade press** — GDELT, PRWeek, Campaign, CorpComms for last 12 months of coverage.
-6. **Public LinkedIn surface** via Bright Data free tier.
-7. **WebSearch / WebFetch** — for anything ad-hoc.
+```bash
+python3 -m tool.deep_dive "$ARGUMENTS"
+```
 
-## Brief format
+That returns a JSON blob with:
+- `target` — the name Sara gave
+- `as_person` — whether we auto-detected a person vs a company (override if wrong)
+- `sources.companies_house` — UK filings, officers, PSC history (companies only)
+- `sources.sec_edgar` — any matching 8-Ks (US parent filings)
+- `sources.rss` — today's regulator, trade press, and procurement hits mentioning the target
+- `sources.gdelt` — global news coverage over last 12 months, date-sorted
+- `sources.linkedin_urls` — People / Company / Jobs search URLs Sara can open manually in her Recruiter
+- `counts` — summary of signal volume by source
 
-Produce a single-page HTML or markdown brief with these sections:
+## Step 2 — Enrich with ad-hoc research
 
-- **Snapshot** — one-paragraph who they are
-- **Why they're on the radar** — the specific trigger(s) Sara flagged
-- **Recent changes (last 12 months)** — leadership, structure, regulatory, filings
-- **Current comms team** (if identifiable) — named people, tenure, recent hires
-- **Signal stack** — every relevant signal found, with source + date
-- **Recommended angle** — one line on how Sara should open the call
-- **Open questions** — what to verify on the call
+Using the JSON as a spine, fill gaps with WebSearch + WebFetch:
+- If Companies House turned up a current CEO/CFO/CHRO, who's the current Head of Corporate Affairs / Director of Communications? (WebSearch `"Head of Communications" "<company>"` and `"Corporate Affairs Director" "<company>"`)
+- If the target is a person: where did they work before? Are they a past placement? (WebFetch any obvious LinkedIn URL — public profile only; if blocked, note and move on)
+- If GDELT found 0 or 1 results, do a targeted WebSearch of `"<target>" news 2026` for coverage the graph missed
 
-Keep it tight. Sara will read it in 3 minutes before she dials.
+## Step 3 — Write the brief
 
-Save output to `tool/state/deep_dive_$(date +%Y%m%d_%H%M%S).html` and print the full brief to the conversation.
+Produce the brief in this exact shape. Be concrete. Cite sources inline. Don't pad.
+
+**Snapshot** — one tight paragraph: who they are, sector, scale (revenue / headcount / listed-ness).
+
+**Why they're on Sara's radar** — the specific trigger that likely put them in the brief or the stated reason Sara asked.
+
+**Recent changes (last 12 months)** — leadership moves (with dates), structural changes, regulatory hits, major filings. Bullet list. Each bullet ends with `(source: Companies House | RNS | GDELT | FCA | …)` and a date.
+
+**Current comms team** — named people where findable. Lists: Head/Director of Comms, Head of Corporate Affairs/PR, CCO, CMO if relevant. Note tenure where known. Note any vacancies implied by recent departures.
+
+**Signal stack** — every relevant hit found, grouped by source. If Companies House showed a new officer appointment two weeks ago, list it. If RSS surfaced a regulator letter, list it. Dates + one-line summary + URL each.
+
+**Recommended angle** — one paragraph. How Sara should open the call: the hook, the reference point, the question that gets them talking.
+
+**Open questions** — 3–5 things Sara should verify or dig into on the call that we couldn't nail down from public data.
+
+## Step 4 — Save + print
+
+Save to `tool/state/deep_dive_<slug>_<YYYY-MM-DD_HHMM>.md` (slugify the target). Also print the full brief to the conversation so Sara can copy it straight out.
+
+Keep the whole brief to one page of prose — she'll read it in 3 minutes before dialling.
