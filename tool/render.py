@@ -12,7 +12,7 @@ def _esc(s: str | None) -> str:
 
 
 def render_html(ranked: list[dict], source_report: dict, now_str: str,
-                covered_days: str) -> str:
+                covered_days: str, predictive_html: str = "") -> str:
     top5 = ranked[:5]
     rest = ranked[5:40]
 
@@ -63,6 +63,8 @@ def render_html(ranked: list[dict], source_report: dict, now_str: str,
 <h3 style="margin:16px 0 4px 0;">Call these 5 first</h3>
 {top_blocks or '<div style="color:#555;">No ranked calls today — the full signal list is below.</div>'}
 
+{predictive_html}
+
 <h3 style="margin:24px 0 6px 0;">Full signal set ({len(ranked)} items)</h3>
 <ul style="padding-left:20px;font-size:13px;color:#333;">
 {rest_rows}
@@ -78,7 +80,8 @@ def render_html(ranked: list[dict], source_report: dict, now_str: str,
 """
 
 
-def render_plaintext(ranked: list[dict], now_str: str, covered_days: str) -> str:
+def render_plaintext(ranked: list[dict], now_str: str, covered_days: str,
+                     predictive_text: str = "") -> str:
     lines = [
         f"Sara's Morning Brief — {now_str}",
         f"Coverage: {covered_days}. Ranked by fee-value × signal strength. UK primary.",
@@ -91,6 +94,10 @@ def render_plaintext(ranked: list[dict], now_str: str, covered_days: str) -> str
         lines.append(f"   {s.get('company','—')} · {s.get('source','')} · {s.get('geo','')}")
         lines.append(f"   Angle: {suggest_angle(s)}")
         lines.append(f"   {s.get('url','')}")
+        lines.append("")
+    if predictive_text:
+        lines.append("")
+        lines.append(predictive_text)
         lines.append("")
     lines.append(f"Full signal set ({len(ranked)} items):")
     for s in ranked[5:40]:

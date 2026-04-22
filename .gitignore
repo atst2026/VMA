@@ -5,6 +5,8 @@ tool/state/seen.json
 tool/state/latest_brief.html
 tool/state/latest_brief.txt
 tool/state/latest_signals.json
+tool/state/latest_predictive.json
+tool/state/predictive_jobs.json
 tool/state/deep_dive_*.html
 tool/state/analyse_*.md
 .DS_Store

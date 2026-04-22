@@ -22,12 +22,14 @@ if str(_REPO_ROOT) not in sys.path:
 
 from tool import config
 from tool.email_send import send as email_send
+from tool.predictive import cluster as pcluster, detector as pdet, ranker as pr, render as prender
 from tool.ranking import rank
 from tool.render import render_html, render_plaintext
 from tool.sources import (
     bright_data, companies_house, gdelt, jobs, rss_feeds, sec_edgar,
 )
 from tool.state_store import filter_unseen
+from tool.predictive.stacker import stack as stack_events
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 log = logging.getLogger("brief")
@@ -105,15 +107,53 @@ def main() -> int:
     ranked = rank(fresh)
     log.info("Ranked %d matching signals above the role-match threshold.", len(ranked))
 
+    # Predictive pipeline: feed the raw (pre-filter) signals into trigger
+    # detection, run the job-ad cluster detector off the rolling 30-day
+    # state, stack by company, rank. This is a *parallel* track to the
+    # live-roles ranking above — neither affects the other.
+    log.info("Running predictive pipeline on %d raw signals…", len(signals))
+    pcluster.ingest_jobs(signals)
+    trigger_events = pdet.detect_events(signals)
+    cluster_events = pcluster.detect_clusters()
+    all_events = trigger_events + cluster_events
+    stacks = stack_events(all_events)
+    ranked_stacks = pr.rank(stacks)
+    log.info(
+        "Predictive: %d trigger events + %d cluster events → %d stacks → %d ranked.",
+        len(trigger_events), len(cluster_events), len(stacks), len(ranked_stacks),
+    )
+
     # Persist
     now = datetime.now()
     now_str = now.strftime("%A %d %B %Y · %H:%M")
     covered = covered_window()
-    html = render_html(ranked, report, now_str, covered)
-    text = render_plaintext(ranked, now_str, covered)
+    predictive_html = prender.render_html(ranked_stacks)
+    predictive_text = prender.render_text(ranked_stacks)
+    html = render_html(ranked, report, now_str, covered, predictive_html=predictive_html)
+    text = render_plaintext(ranked, now_str, covered, predictive_text=predictive_text)
     (STATE_DIR / "latest_brief.html").write_text(html)
     (STATE_DIR / "latest_brief.txt").write_text(text)
     (STATE_DIR / "latest_signals.json").write_text(json.dumps(ranked, indent=2, default=str))
+    (STATE_DIR / "latest_predictive.json").write_text(json.dumps([
+        {
+            "company": stk.company,
+            "score": sc,
+            "depth": stk.depth,
+            "events": [
+                {
+                    "trigger_key": e.trigger_key,
+                    "trigger_label": e.trigger_label,
+                    "evidence": e.evidence,
+                    "url": e.url,
+                    "source": e.source_label,
+                    "published": e.published.isoformat(),
+                    "tier": e.tier_hint,
+                }
+                for e in stk.events
+            ],
+        }
+        for stk, sc in ranked_stacks
+    ], indent=2, default=str))
 
     # Deliver
     if mode in ("send", "test"):
