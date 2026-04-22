@@ -27,6 +27,36 @@ UK_LOCATION_TOKENS = (
     "england", "scotland", "wales", "northern ireland",
 )
 
+# Job aggregators that post on LinkedIn under their own brand. If the
+# card's company field is one of these, the real employer is usually in
+# the title after the last comma.
+JOB_AGGREGATORS = (
+    "guardian jobs", "totaljobs", "reed", "reed.co.uk", "cv-library",
+    "indeed", "jobsite", "monster", "talent.com", "adzuna", "glassdoor",
+    "jora", "bubble jobs", "hired.com", "the chronicle", "third sector",
+    "charityjob", "civil service jobs", "efinancialcareers",
+)
+
+
+def _resolve_company(raw_company: str, title: str) -> str:
+    """If LinkedIn's company field is an aggregator, try to extract the real
+    employer from the end of the title (after the last comma or dash).
+    Return the aggregator-name only as a last resort so it's clear in the
+    brief that the employer wasn't identifiable."""
+    c = (raw_company or "").strip()
+    if c and c.lower() not in JOB_AGGREGATORS:
+        return c
+    # Fallback: suffix after last comma in title
+    t = (title or "").strip()
+    for sep in (", ", " - ", " — ", " – ", " | "):
+        if sep in t:
+            tail = t.rsplit(sep, 1)[-1].strip()
+            # Keep only if it looks like a proper-noun organisation
+            if tail and 2 <= len(tail.split()) <= 8 and any(ch.isupper() for ch in tail):
+                return tail
+    # No extraction possible — mark explicitly rather than show the aggregator
+    return ""
+
 
 def _is_uk(location: str) -> bool:
     if not location:
@@ -249,7 +279,8 @@ def fetch_linkedin_jobs_public() -> list[dict]:
                 title = title_el.get_text(" ", strip=True)
                 if not _has_role_match(title):
                     continue
-                company = company_el.get_text(" ", strip=True) if company_el else ""
+                raw_company = company_el.get_text(" ", strip=True) if company_el else ""
+                company = _resolve_company(raw_company, title)
                 location = location_el.get_text(" ", strip=True) if location_el else ""
                 link = (link_el.get("href") or "").split("?")[0]
                 out.append({

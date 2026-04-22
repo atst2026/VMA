@@ -10,7 +10,7 @@ ROLE_KEYWORDS = [
     "corporate communications", "corporate comms", "corporate affairs",
     "external communications", "external comms", "communications director",
     "head of communications", "head of comms", "director of communications",
-    "chief communications officer", "cco",
+    "chief communications officer",
     # PR / media
     "pr director", "public relations", "media relations", "head of media",
     "press office", "head of pr",
@@ -33,6 +33,14 @@ EXCLUDE_TITLE_TERMS = [
     "renewal account", "renewals account", "enterprise account", "sales account",
     # Ambiguous but historically low-hit for in-house comms
     "sales director", "business development", "bd director",
+    # CCO / CXO disambiguations — "CCO" alone is dropped from ROLE_KEYWORDS
+    # because it also means Chief Compliance / Commercial / Customer / Cost.
+    # These exclusions belt-and-braces against false positives like
+    # "US CCO & BSA Officer" landing in the brief.
+    "chief compliance officer", "chief commercial officer",
+    "chief customer officer", "chief cost officer",
+    "compliance officer", "bsa officer", "anti-money laundering",
+    "bsa/aml", "aml officer",
 ]
 
 # Role titles we surface even at lower seniority (kept tight to avoid noise)

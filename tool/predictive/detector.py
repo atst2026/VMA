@@ -92,8 +92,18 @@ def detect_events(signals: Iterable[dict]) -> list[TriggerEvent]:
     """Scan raw fetched signals for trigger patterns. Each signal can emit
     multiple events (e.g. an article mentioning both CEO change AND
     restructure produces two events on the same company).
+
+    Emits debug logs for rejected items so we can see WHY nothing fired
+    when a morning brief's predictive section is empty.
     """
+    import logging
+    log = logging.getLogger("brief.predictive.detect")
+
     events: list[TriggerEvent] = []
+    rejected_no_company = 0
+    rejected_subthreshold_regulator = 0
+    pattern_hits = 0
+
     for s in signals:
         title = s.get("title") or ""
         summary = s.get("summary") or ""
@@ -101,17 +111,21 @@ def detect_events(signals: Iterable[dict]) -> list[TriggerEvent]:
         hits = P.match_triggers(body)
         if not hits:
             continue
+        pattern_hits += 1
         company = (s.get("company") or "").strip() or extract_company(title, summary)
         if not company:
+            rejected_no_company += 1
+            log.info("drop (no company): %r [%s]", title[:100], s.get("source", ""))
             continue
         for trigger in hits:
-            # Extra filter for regulator actions — must be material (>= £5m)
             if trigger.key == "regulator_action":
                 amt = P.extract_gbp_amount_millions(body)
                 if amt is None or amt < 5:
+                    rejected_subthreshold_regulator += 1
+                    log.info("drop (regulator <£5m): %s — %r", company, title[:100])
                     continue
-            # Evidence: the matching sentence, trimmed
             ev = _evidence_sentence(body, trigger.patterns)
+            log.info("trigger %s: %s — %r", trigger.key, company, ev[:80])
             events.append(TriggerEvent(
                 trigger_key=trigger.key,
                 trigger_label=trigger.label,
@@ -123,6 +137,12 @@ def detect_events(signals: Iterable[dict]) -> list[TriggerEvent]:
                 raw_signal_id=s.get("id", ""),
                 tier_hint=_tier_from_source_label(s.get("source", "")),
             ))
+
+    log.info(
+        "detect_events summary: %d items matched patterns, %d events emitted, "
+        "%d dropped no-company, %d dropped regulator-subthreshold",
+        pattern_hits, len(events), rejected_no_company, rejected_subthreshold_regulator,
+    )
     return events
 
 
