@@ -1,13 +1,15 @@
-name: Sara's Morning Brief (08:55 London, Mon–Fri)
+name: Sara's Morning Brief (Mon–Fri)
 
 on:
   schedule:
-    # GitHub Actions crons are UTC. 08:55 Europe/London ==
-    #   - BST (Mar–Oct): 07:55 UTC
-    #   - GMT (Oct–Mar): 08:55 UTC
-    # We schedule both and the job skips itself if it's not the right local hour.
-    - cron: "55 7 * * 1-5"   # BST
-    - cron: "55 8 * * 1-5"   # GMT
+    # GitHub Actions cron is best-effort on the free tier and frequently
+    # fires hours late. We schedule both BST (07:55 UTC -> 08:55 London)
+    # and GMT (08:55 UTC -> 08:55 London) so whichever one fires first
+    # delivers the brief. The dedup state in tool/state/seen.json means
+    # the second run of the day produces no new signals -> empty brief
+    # -> morning_brief.py sees nothing new and skips the send.
+    - cron: "55 7 * * 1-5"   # BST: 08:55 London
+    - cron: "55 8 * * 1-5"   # GMT: 08:55 London
   workflow_dispatch:
     inputs:
       mode:
@@ -34,45 +36,25 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Decide whether to send
-        id: gate
+      - name: Log local time (informational only)
         run: |
-          # GitHub Actions cron is best-effort and can fire hours late.
-          # Plus we schedule both BST (07:55 UTC) and GMT (08:55 UTC) crons.
-          # Only proceed if it's currently 08:30-10:30 London time on a
-          # weekday. Anything outside that window is either: the wrong
-          # cron firing in DST, a delayed cron run too late to be a
-          # "morning brief", or a non-UK-business-hours dispatch.
-          # workflow_dispatch always proceeds (manual override).
+          # Previously this step gated the rest of the job to 08:30-10:30
+          # London. We dropped the gate because GitHub free-tier cron is
+          # so unreliable that the gate skipped almost every run. Now we
+          # send whenever the cron fires, and morning_brief.py drops the
+          # email entirely if dedup leaves zero new signals (so the
+          # second cron of the day doesn't spam Sara).
           LOCAL_HOUR=$(TZ="Europe/London" date +%H)
           LOCAL_MIN=$(TZ="Europe/London" date +%M)
-          LOCAL_HHMM="${LOCAL_HOUR}${LOCAL_MIN}"
           echo "Europe/London time is ${LOCAL_HOUR}:${LOCAL_MIN}"
           echo "Event: ${{ github.event_name }}"
 
-          if [ "${{ github.event_name }}" != "schedule" ]; then
-              echo "Manual dispatch — proceeding regardless of clock."
-              echo "proceed=true" >> "$GITHUB_OUTPUT"
-              exit 0
-          fi
-
-          # Schedule path: only fire 08:30-10:30 London
-          if [ "$LOCAL_HHMM" -ge "0830" ] && [ "$LOCAL_HHMM" -le "1030" ]; then
-              echo "Within morning window — proceeding."
-              echo "proceed=true" >> "$GITHUB_OUTPUT"
-          else
-              echo "Outside 08:30-10:30 London window — skipping send."
-              echo "proceed=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Install Python deps
-        if: steps.gate.outputs.proceed == 'true'
         run: |
           python -m pip install --upgrade pip
           pip install requests beautifulsoup4 lxml python-dateutil
 
       - name: Run the brief
-        if: steps.gate.outputs.proceed == 'true'
         env:
           COMPANIES_HOUSE_KEY: ${{ secrets.COMPANIES_HOUSE_KEY }}
           BRIGHT_DATA_KEY: ${{ secrets.BRIGHT_DATA_KEY }}
@@ -99,7 +81,7 @@ jobs:
           fi
 
       - name: Upload brief artefacts
-        if: steps.gate.outputs.proceed == 'true'
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: morning-brief

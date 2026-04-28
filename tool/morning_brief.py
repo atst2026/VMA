@@ -157,8 +157,26 @@ def main() -> int:
 
     # Deliver
     if mode in ("send", "test"):
+        # Skip the send if there's literally nothing new to show. This is
+        # what prevents the second cron of the day (the BST/GMT companion)
+        # from blasting Sara with an empty 0-signal brief — dedup state
+        # has already removed everything the first run sent.
+        if not ranked and not ranked_stacks:
+            log.info(
+                "No new live signals and no predictive stacks. "
+                "Skipping send to %s — Sara already received today's brief "
+                "(or there's genuinely nothing today).",
+                config.TEST_RECIPIENT if mode == "test" else config.RECIPIENT,
+            )
+            print("✓ No new content; skipping send.")
+            return 0
+
         to = config.TEST_RECIPIENT if mode == "test" else config.RECIPIENT
-        subject = f"Sara's Morning Brief — {now.strftime('%a %d %b')} ({len(ranked)} signals)"
+        n_pred = len(ranked_stacks)
+        subject = (
+            f"Sara's Morning Brief — {now.strftime('%a %d %b')} "
+            f"({len(ranked)} live · {n_pred} pre-advert)"
+        )
         if mode == "test":
             subject = "[TEST] " + subject
         log.info("Sending to %s …", to)
