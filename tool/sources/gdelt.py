@@ -21,7 +21,12 @@ QUERY_TERMS = [
 ]
 
 
-def fetch_all(hours_back: int = 48) -> list[dict]:
+def fetch_all(hours_back: int | None = None) -> list[dict]:
+    """Default look-back is 48h. Sweep mode (VMA_SWEEP_DAYS=14) widens it
+    to cover the full 14-day window."""
+    from tool.config import sweep_days
+    if hours_back is None:
+        hours_back = max(48, 24 * sweep_days())
     out: list[dict] = []
     for term in QUERY_TERMS:
         r = get(SOURCES["gdelt_doc"], params={
@@ -29,7 +34,7 @@ def fetch_all(hours_back: int = 48) -> list[dict]:
             "mode": "ArtList",
             "format": "json",
             "timespan": f"{hours_back}h",
-            "maxrecords": 25,
+            "maxrecords": 50,
             "sort": "datedesc",
         })
         if not r or r.status_code != 200:

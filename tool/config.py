@@ -135,3 +135,19 @@ ATS_SEEDS = {
 
 USER_AGENT = "Mozilla/5.0 (compatible; VMAMorningBrief/0.1; +https://www.vmagroup.com/)"
 REQUEST_TIMEOUT = 20
+
+
+# --- Window mode ---
+# Daily run: 1 day. Manual fortnightly sweep: 14 days. Driven by an env var
+# so individual source modules and the predictive ranker can widen their
+# look-back window without touching their signature.
+def sweep_days() -> int:
+    val = os.environ.get("VMA_SWEEP_DAYS")
+    if val and val.isdigit():
+        n = int(val)
+        return max(1, min(n, 60))   # cap at 60 days to keep API budgets sane
+    return 1
+
+
+def is_sweep() -> bool:
+    return sweep_days() > 1

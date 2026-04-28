@@ -12,11 +12,13 @@ EDGAR_LATEST = "https://www.sec.gov/cgi-bin/browse-edgar"
 
 
 def fetch_all() -> list[dict]:
+    """Default 40 latest 8-Ks (~24h). Sweep mode pulls more so we span 14 days."""
+    from tool.config import sweep_days
     out: list[dict] = []
-    # Pull last 40 8-Ks (Item 5.02 covers officer changes; we pick those up in title)
+    count = max(40, sweep_days() * 30)   # ~30 8-Ks/day on EDGAR's latest feed
     r = get(EDGAR_LATEST, params={
         "action": "getcurrent", "type": "8-K", "company": "",
-        "dateb": "", "owner": "include", "count": "40", "output": "atom",
+        "dateb": "", "owner": "include", "count": str(count), "output": "atom",
     }, headers={"User-Agent": "VMAMorningBrief stehrani@vmagroup.com"})
     if not r or r.status_code != 200 or not r.content:
         return out

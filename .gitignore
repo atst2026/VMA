@@ -7,6 +7,9 @@ tool/state/latest_brief.txt
 tool/state/latest_signals.json
 tool/state/latest_predictive.json
 tool/state/predictive_jobs.json
+tool/state/latest_sweep.html
+tool/state/latest_sweep.txt
+tool/state/latest_sweep_signals.json
 tool/state/deep_dive_*.html
 tool/state/analyse_*.md
 .DS_Store

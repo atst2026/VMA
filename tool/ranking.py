@@ -108,7 +108,10 @@ def _geo_weight(geo: str) -> float:
 
 
 def _freshness(published: str) -> float:
-    """Newer = higher. Anything older than ~7 days is heavily discounted."""
+    """Newer = higher. Daily mode: heavily discount >7 days. Sweep mode
+    (VMA_SWEEP_DAYS>1): flatter curve so older items aren't crushed."""
+    from tool.config import sweep_days
+    sweep = sweep_days() > 1
     if not published:
         return 0.85   # unknown pub date: neutral-minus
     try:
@@ -120,6 +123,16 @@ def _freshness(published: str) -> float:
     hours = (datetime.now(timezone.utc) - dt).total_seconds() / 3600
     if hours < 0:
         return 1.0
+    if sweep:
+        # Sweep: gentle decay across 14 days
+        if hours < 48:
+            return 1.1
+        if hours < 24 * 7:
+            return 1.0
+        if hours < 24 * 14:
+            return 0.9
+        return 0.6
+    # Daily mode (original)
     if hours < 24:
         return 1.2
     if hours < 48:

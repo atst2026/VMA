@@ -105,6 +105,8 @@ def fetch_adzuna() -> list[dict]:
         # sources (Greenhouse/Lever/Ashby public feeds, LinkedIn Jobs logged-off)
         # still give us job-side coverage.
         return []
+    from tool.config import sweep_days
+    days = max(3, sweep_days())
     out: list[dict] = []
     queries = [
         "internal communications", "corporate communications",
@@ -116,9 +118,9 @@ def fetch_adzuna() -> list[dict]:
             "app_id": ADZUNA_APP_ID,
             "app_key": ADZUNA_APP_KEY,
             "what": q,
-            "results_per_page": 25,
+            "results_per_page": 50 if days > 7 else 25,
             "sort_by": "date",
-            "max_days_old": 3,
+            "max_days_old": days,
         })
         if not r or r.status_code != 200:
             continue
@@ -241,7 +243,10 @@ def fetch_linkedin_jobs_public() -> list[dict]:
     For comprehensive LinkedIn post/activity coverage, Bright Data handles it.
     """
     from datetime import datetime, timezone
+    from tool.config import sweep_days
     now_iso = datetime.now(timezone.utc).isoformat()
+    days = sweep_days()
+    tpr_seconds = 86400 * days   # f_TPR=r{seconds} — LinkedIn time-posted-range
     out: list[dict] = []
     queries = [
         ("head of internal communications", "gb"),
@@ -252,7 +257,7 @@ def fetch_linkedin_jobs_public() -> list[dict]:
     for q, geo in queries:
         url = (
             "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
-            f"?keywords={quote_plus(q)}&location=United%20Kingdom&f_TPR=r86400&start=0"
+            f"?keywords={quote_plus(q)}&location=United%20Kingdom&f_TPR=r{tpr_seconds}&start=0"
         )
         r = get(url, timeout=15, tries=1)
         if not r or r.status_code != 200 or not r.content:

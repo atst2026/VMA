@@ -29,10 +29,19 @@ def _tier_multiplier(events: list[TriggerEvent]) -> float:
 
 
 def _freshness(latest: datetime) -> float:
-    """1.0 if most recent event <=7d ago; 0.8 if 7-21d; 0 if >21d."""
+    """Daily mode: 1.0 if <=7d; 0.8 if 7-21d; 0 if >21d.
+    Sweep mode (VMA_SWEEP_DAYS=14): 1.0 across the whole window so older
+    events in the look-back aren't penalised away.
+    """
+    from tool.config import sweep_days
+    days = sweep_days()
     hours = (datetime.now(timezone.utc) - latest).total_seconds() / 3600
     if hours < 0:
         return 1.0
+    if days > 1:
+        # Sweep: full credit anywhere in the window, 0 outside
+        return 1.0 if hours <= 24 * (days + 7) else 0.0
+    # Daily mode (original curve)
     if hours <= 24 * 7:
         return 1.0
     if hours <= 24 * 21:
