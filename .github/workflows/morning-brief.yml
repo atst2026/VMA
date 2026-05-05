@@ -2,14 +2,11 @@ name: Sara's Morning Brief (Mon–Fri)
 
 on:
   schedule:
-    # GitHub Actions cron is best-effort on the free tier and frequently
-    # fires hours late. We schedule both BST (07:55 UTC -> 08:55 London)
-    # and GMT (08:55 UTC -> 08:55 London) so whichever one fires first
-    # delivers the brief. The dedup state in tool/state/seen.json means
-    # the second run of the day produces no new signals -> empty brief
-    # -> morning_brief.py sees nothing new and skips the send.
-    - cron: "55 7 * * 1-5"   # BST: 08:55 London
-    - cron: "55 8 * * 1-5"   # GMT: 08:55 London
+    # Single weekday cron at 07:55 UTC.
+    # In BST (Mar-Oct) that's 08:55 London. In GMT (Oct-Mar) that's 07:55
+    # London — slightly early in winter, fine in summer. Single cron means
+    # one brief per day; no risk of duplicate firings on the same morning.
+    - cron: "55 7 * * 1-5"
   workflow_dispatch:
     inputs:
       mode:
@@ -35,6 +32,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
+      # Persist tool/state/ across runs so dedup (seen.json) and the
+      # 30-day predictive_jobs log work across days. Without this each
+      # run starts with empty state and Sara sees the same listings
+      # repeated every morning.
+      - name: Restore state cache
+        uses: actions/cache@v4
+        with:
+          path: tool/state
+          key: vma-state-${{ github.run_id }}
+          restore-keys: |
+            vma-state-
 
       - name: Log local time (informational only)
         run: |
