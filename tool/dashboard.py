@@ -165,50 +165,83 @@ def draft_outreach_for_predictor(_predictor: dict) -> str:
     return _DEFAULT_OUTREACH
 
 
+_JOB_TITLE_TOKENS = (
+    "head of", "director of", "chief", "vp ", "vice president",
+    "communications", "comms", "corporate affairs", "internal comms",
+    "external comms", "pr ", "media relations", "marketing and brand",
+)
+
+
 def linkedin_search_for_lead(signal: dict) -> dict:
     """Build a TARGETED LinkedIn people-search URL + a short label so Sara
     knows who she's about to find. Drops her on the right role-at-company
-    search result, not a generic company-name flood."""
+    search result, not a generic company-name flood.
+
+    Works whether or not the signal has a `kind` field set — falls back to
+    title-keyword inference so real-data signals from production still get
+    targeted searches.
+    """
     company = (signal.get("company") or "").strip()
     title = (signal.get("title") or "").strip()
-    kind = signal.get("kind", "")
+    kind = (signal.get("kind") or "").strip().lower()
+    tlow = title.lower()
 
     if not company and not title:
         return {"label": "Search LinkedIn",
                 "url": "https://www.linkedin.com/search/results/people/"}
 
-    # Job postings → hiring manager (CHRO/HRD typically)
-    if kind == "job" and company:
-        kw = f"CHRO HR Director {company}"
+    # --- Detect signal flavour even when `kind` is missing ---
+    looks_like_job = (
+        kind == "job"
+        or any(t in tlow for t in _JOB_TITLE_TOKENS)
+        and any(t in tlow for t in ("communications", "comms", "pr ",
+                                      "corporate affairs", "media relations"))
+    )
+
+    # 1. Job postings → hiring manager (CHRO / HRD typically)
+    if looks_like_job and company:
+        kw = f'"CHRO" OR "HR Director" OR "Chief People Officer" "{company}"'
         return {"label": f"Find hiring manager at {company}",
                 "url": _ln(kw)}
 
-    # Leadership-change news → target the named individual (best-effort
-    # from title) at the company
-    if kind == "leadership_change":
+    # 2. Leadership-change news → target the named individual
+    if kind == "leadership_change" or any(
+        v in tlow for v in (" appoints ", " names ", " hired as ",
+                              " new ceo", " new chief", " new chair")
+    ):
         kw = f"{title} {company}".strip()
-        return {"label": "Find on LinkedIn", "url": _ln(kw[:80])}
+        return {"label": "Find named individual",
+                "url": _ln(kw[:120])}
 
-    # RNS / SEC filing / regulator → Head of Communications at the company
+    # 3. RNS / SEC filing / regulator → Head of Comms at the company
     if kind in ("rns", "filing", "regulator") and company:
-        kw = f"Head of Communications Corporate Affairs {company}"
+        kw = f'"Head of Communications" OR "Corporate Affairs" "{company}"'
         return {"label": f"Find Head of Comms at {company}",
                 "url": _ln(kw)}
 
-    # Trade press / GDELT → try the title (often names the appointee)
-    if kind in ("trade_press", "leadership_change"):
-        kw = title[:80] if title else company
+    # 4. Procurement → comms lead at the buying body
+    if kind == "procurement" and company:
+        kw = f'"Head of Communications" "{company}"'
+        return {"label": f"Find Head of Comms at {company}",
+                "url": _ln(kw)}
+
+    # 5. Trade press → try the headline (often names the appointee)
+    if kind == "trade_press":
+        kw = title[:120] if title else company
         return {"label": "Find on LinkedIn", "url": _ln(kw)}
 
-    # Procurement → comms lead at the buying body
-    if kind == "procurement" and company:
-        kw = f"Head of Communications {company}"
-        return {"label": f"Find Head of Comms at {company}",
+    # 6. Final fallback: company AND any obvious comms role keyword in title
+    if company and any(t in tlow for t in ("communications", "comms",
+                                              "corporate affairs", "pr",
+                                              "media relations")):
+        kw = f'"CHRO" OR "Head of Communications" "{company}"'
+        return {"label": f"Find decision-maker at {company}",
                 "url": _ln(kw)}
 
-    # Generic fallback
     if company:
-        return {"label": f"LinkedIn — {company}", "url": _ln(company)}
+        return {"label": f"Find decision-maker at {company}",
+                "url": _ln(f'"CHRO" OR "HR Director" "{company}"')}
+
     return {"label": "Search LinkedIn", "url": _ln(title or "")}
 
 
@@ -263,12 +296,14 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
+    from datetime import datetime, timezone
     return render_template_string(
         TEMPLATE,
         leads=load_latest_signals(),
         predictors=load_latest_predictive(),
         last_updated=last_updated(),
         has_token=bool(GITHUB_TOKEN),
+        build_stamp=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
     )
 
 
@@ -1053,6 +1088,7 @@ TEMPLATE = r"""
   <div class="footer">
     Sara's Desk · Local dashboard · Data refreshed from GitHub Actions artifacts.
     All sources are free public surfaces. No automation of LinkedIn account.
+    <span style="opacity:0.5; margin-left:8px;">· build {{ build_stamp }}</span>
   </div>
 
 </div>
