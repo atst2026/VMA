@@ -1,0 +1,65 @@
+name: Reverse-match (manual only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_name:
+        description: "Candidate name (e.g. 'Rebecca Torres')"
+        required: true
+      current_company:
+        description: "Their current employer (e.g. 'Vodafone')"
+        required: true
+      current_title:
+        description: "Their current title (e.g. 'Head of Internal Communications')"
+        required: true
+      mode:
+        description: "send (→ Sara) | test (→ amirt12) | preview (Actions log only)"
+        default: "test"
+        required: true
+        type: choice
+        options:
+          - test
+          - send
+          - preview
+
+permissions:
+  contents: read
+
+jobs:
+  match:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 lxml python-dateutil
+
+      - name: Generate reverse-match
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM: ${{ secrets.RESEND_FROM }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          GMAIL_FROM_NAME: ${{ secrets.GMAIL_FROM_NAME }}
+          PYTHONUNBUFFERED: "1"
+          PYTHONPATH: "."
+        run: |
+          set -x
+          python -m tool.reverse_match \
+            "${{ github.event.inputs.candidate_name }}" \
+            "${{ github.event.inputs.current_company }}" \
+            "${{ github.event.inputs.current_title }}" \
+            "${{ github.event.inputs.mode }}"
+
+      - name: Upload artefacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reverse-match
+          path: tool/state/reverse_match_*.{html,txt}
+          if-no-files-found: warn

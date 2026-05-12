@@ -1,0 +1,330 @@
+#!/usr/bin/env python3
+"""Retained pitch-pack generator. Manual / on-demand only.
+
+Sara fires this when she has a contingent brief she wants to flip to retained.
+Tool assembles a one-pager she can paste into a pitch email or walk into a
+meeting with.
+
+Usage:
+    python3 -m tool.pitch_pack "Unilever"
+    python3 -m tool.pitch_pack "Unilever" send       # email Sara
+    python3 -m tool.pitch_pack "Unilever" test       # email amirt12
+
+Output sections:
+  1. Account snapshot (Companies House)
+  2. Why this role matters now (recent RNS/news/regulator hits)
+  3. Cost of vacancy (template calc — Sara overrides salary if needed)
+  4. Comparable employers (peer market map)
+  5. Sector salary benchmark
+  6. Candidate landscape (best-effort — where the candidates are)
+  7. 6-week methodology with milestone-linked fees
+"""
+from __future__ import annotations
+import html
+import logging
+import os
+import sys
+from datetime import datetime
+from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from tool import config
+from tool.email_send import send as email_send
+from tool.peers import peers_for, detect_sector
+from tool.sources import companies_house, gdelt
+from tool.sources._http import get
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
+log = logging.getLogger("pitch_pack")
+
+STATE_DIR = _REPO_ROOT / "tool" / "state"
+STATE_DIR.mkdir(parents=True, exist_ok=True)
+
+
+# ---- Salary benchmarks by role tier (UK, April 2026 market) -----------
+# These are sensible defaults from Sara's plan + market knowledge. Sara
+# can override any of these in the pitch pack before sending.
+SALARY_BANDS_GBP = {
+    "head of internal communications":   (85_000, 130_000),
+    "head of corporate communications":  (100_000, 150_000),
+    "head of communications":            (90_000, 140_000),
+    "communications director":           (130_000, 180_000),
+    "corporate affairs director":        (140_000, 200_000),
+    "chief communications officer":      (180_000, 300_000),
+    "head of pr":                        (80_000, 120_000),
+    "pr director":                       (110_000, 160_000),
+    "head of media relations":           (90_000, 130_000),
+    "marketing and brand director":      (130_000, 180_000),
+    "head of corporate affairs":         (110_000, 160_000),
+    "head of external communications":   (95_000, 145_000),
+}
+
+
+def _salary_band(role: str) -> tuple[int, int, str]:
+    """Find the closest matching salary band. Returns (low, high, matched_role).
+    Defaults to Head of IC if nothing matches."""
+    r = (role or "").lower().strip()
+    if not r:
+        return *SALARY_BANDS_GBP["head of internal communications"], "head of internal communications"
+    # Exact substring match
+    for key, band in SALARY_BANDS_GBP.items():
+        if key in r or r in key:
+            return *band, key
+    return *SALARY_BANDS_GBP["head of internal communications"], "head of internal communications (default)"
+
+
+# ---- Cost of vacancy: simple defensible template ---------------------
+def cost_of_vacancy(role: str, salary_midpoint: int) -> dict:
+    """Industry-standard estimates for the £ value of a vacant senior comms seat:
+    - Productivity loss while seat is unfilled
+    - Interim cover cost (assume £600/day for ~12 weeks)
+    - Risk premium for a bad hire (~30% of first-year salary)
+    Returns a dict of {label: amount}.
+    """
+    productivity = int(salary_midpoint * 1.5 * (12 / 52))   # 12wk * 1.5x productivity multiplier
+    interim_cover = 600 * 5 * 12                              # £600/day * 5 working days * 12 weeks
+    bad_hire_risk = int(salary_midpoint * 0.30)
+    return {
+        "Lost productivity (12 wks vacant)": productivity,
+        "Interim cover (£600/day × 12 wks)": interim_cover,
+        "Bad-hire downside risk (30% salary)": bad_hire_risk,
+        "Total cost of getting it wrong": productivity + interim_cover + bad_hire_risk,
+    }
+
+
+# ---- Recent news lookups ---------------------------------------------
+def recent_news_for(target: str, hours_back: int = 24 * 90) -> list[dict]:
+    """Last 90 days of news mentioning the target. Best-effort via GDELT
+    (no auth needed). Returns list of article dicts."""
+    from tool.config import SOURCES
+    r = get(SOURCES["gdelt_doc"], params={
+        "query": f'"{target}"',
+        "mode": "ArtList",
+        "format": "json",
+        "timespan": f"{hours_back}h",
+        "maxrecords": 10,
+        "sort": "datedesc",
+    })
+    if not r or r.status_code != 200:
+        return []
+    try:
+        return (r.json().get("articles") or [])[:10]
+    except Exception:
+        return []
+
+
+# ---- HTML email rendering --------------------------------------------
+def _esc(s) -> str:
+    return html.escape(str(s) if s is not None else "", quote=True)
+
+
+def _fmt_gbp(n: int) -> str:
+    return f"£{n:,.0f}"
+
+
+def render_html(target: str, role: str, ch_snapshot: dict,
+                news: list[dict], peers: list[str], sector: str | None,
+                salary_band: tuple[int, int, str],
+                cov: dict, mode: str) -> str:
+    low, high, matched = salary_band
+    mid = (low + high) // 2
+
+    # CH snapshot
+    if ch_snapshot.get("found"):
+        resolved = ch_snapshot.get("resolved") or {}
+        co_num = _esc(resolved.get("company_number", ""))
+        co_addr = _esc(resolved.get("address_snippet", ""))
+        co_status = _esc(resolved.get("company_status", ""))
+        ch_html = f"""
+        <div><strong>Companies House:</strong> {co_num} · {co_status}</div>
+        <div style='color:#555;font-size:13px;'>{co_addr}</div>
+        """
+    else:
+        ch_html = "<div style='color:#888;'>Companies House: not resolved (likely non-UK-registered or trading-name only).</div>"
+
+    # Recent news bullets
+    if news:
+        news_html = "<ul style='padding-left:18px;font-size:13px;'>"
+        for a in news[:5]:
+            news_html += f"<li><a href='{_esc(a.get('url',''))}'>{_esc(a.get('title',''))}</a> <span style='color:#888;'>· {_esc(a.get('seendate','')[:8])}</span></li>"
+        news_html += "</ul>"
+    else:
+        news_html = "<div style='color:#888;'>No major press coverage in the last 90 days surfaced by GDELT — check trade press manually.</div>"
+
+    # Peer market map
+    sector_label = sector.replace("_", " ").title() if sector else "Detected sector unclear — generic FTSE list"
+    peer_html = "<ol style='padding-left:18px;font-size:13px;'>"
+    for p in peers:
+        peer_html += f"<li>{_esc(p)}</li>"
+    peer_html += "</ol>"
+
+    # COV breakdown
+    cov_html = "<table style='border-collapse:collapse;font-size:13px;'>"
+    for k, v in cov.items():
+        bold = "font-weight:600;" if "Total" in k else ""
+        cov_html += f"<tr><td style='padding:4px 12px 4px 0;{bold}'>{_esc(k)}</td><td style='text-align:right;{bold}'>{_fmt_gbp(v)}</td></tr>"
+    cov_html += "</table>"
+
+    # Methodology
+    methodology_html = """
+    <table style='border-collapse:collapse;font-size:13px;'>
+      <tr><th style='text-align:left;padding:4px 12px 4px 0;'>Week</th><th style='text-align:left;padding:4px;'>Deliverable</th><th style='text-align:right;padding:4px;'>Fee milestone</th></tr>
+      <tr><td>1</td><td>Briefing call · success criteria signed off · market intelligence pack delivered</td><td style='text-align:right;'>1/3 on engagement</td></tr>
+      <tr><td>2–3</td><td>Universe mapped · longlist of 30–50 named candidates · approach drafted</td><td></td></tr>
+      <tr><td>3–4</td><td>Outreach + qualification · shortlist of 5–7 confirmed for interview</td><td style='text-align:right;'>1/3 on shortlist</td></tr>
+      <tr><td>4–5</td><td>Client interviews · feedback management · final 2–3</td><td></td></tr>
+      <tr><td>6</td><td>Offer · references · onboarding handover</td><td style='text-align:right;'>1/3 on accepted offer</td></tr>
+    </table>
+    """
+
+    note_banner = ""
+    if mode == "test":
+        note_banner = "<div style='background:#fff3cd;border:1px solid #ffeaa7;padding:8px;margin-bottom:16px;font-size:13px;'>⚠️ TEST PACK — generated for Amir's review. Do not send to client.</div>"
+
+    return f"""<!doctype html>
+<html><body style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px;color:#111;">
+{note_banner}
+<h2 style="margin:0 0 4px 0;">Retained Pitch Pack — {_esc(target)}</h2>
+<div style="color:#666;font-size:13px;margin-bottom:18px;">
+  Role: {_esc(role)} · Generated {_esc(datetime.now().strftime('%a %d %b %Y · %H:%M'))} · For Sara Tehrani, VMA Group
+</div>
+
+<h3 style="margin:18px 0 6px 0;">1. Account snapshot</h3>
+{ch_html}
+
+<h3 style="margin:18px 0 6px 0;">2. Why this matters now</h3>
+{news_html}
+
+<h3 style="margin:18px 0 6px 0;">3. Cost of vacancy</h3>
+<div style='font-size:13px;color:#444;margin-bottom:6px;'>
+  Mid-range salary assumed: <strong>{_fmt_gbp(mid)}</strong>. Override if the brief is at a different level.
+</div>
+{cov_html}
+
+<h3 style="margin:18px 0 6px 0;">4. Comparable employers ({_esc(sector_label)})</h3>
+<div style='font-size:13px;color:#555;margin-bottom:6px;'>
+  Where the candidates are. A Recruiter saved-search across these 15 employers, filtered to {_esc(matched)}-level seniority, will surface the named longlist.
+</div>
+{peer_html}
+
+<h3 style="margin:18px 0 6px 0;">5. Salary benchmark</h3>
+<div style='font-size:13px;'>
+  UK April 2026 range for <strong>{_esc(matched)}</strong>: <strong>{_fmt_gbp(low)}–{_fmt_gbp(high)}</strong> base, plus 10–25% bonus / LTIP at FTSE-listed level.
+</div>
+
+<h3 style="margin:18px 0 6px 0;">6. 6-week retained methodology</h3>
+{methodology_html}
+<div style='font-size:12px;color:#888;margin-top:6px;'>
+  Retained fee: 28–33% of first-year total comp, in thirds at engagement / shortlist / accepted offer.
+  Versus contingent at 22–25% of base only.
+</div>
+
+<h3 style="margin:18px 0 6px 0;">7. Why retained over contingent</h3>
+<ul style='padding-left:18px;font-size:13px;color:#333;'>
+  <li>Exclusivity unlocks deeper passive-candidate outreach (~3× larger universe vs contingent)</li>
+  <li>Milestone fees align our priority with yours — we're not racing 6 other firms on the same role</li>
+  <li>Replacement guarantee + extended fee terms in writing</li>
+  <li>Pre-agreed methodology removes 8–10 hours of back-and-forth at submission stage</li>
+</ul>
+
+<hr style="margin:24px 0;border:none;border-top:1px solid #ddd;">
+<div style="color:#888;font-size:12px;">
+  Sources: Companies House · LSE RNS · GDELT global news · Sara's market knowledge.
+  No personal data on candidates included until brief is engaged.
+</div>
+</body></html>
+"""
+
+
+def render_text(target: str, role: str, ch_snapshot: dict,
+                news: list[dict], peers: list[str], sector: str | None,
+                salary_band: tuple[int, int, str], cov: dict) -> str:
+    low, high, matched = salary_band
+    mid = (low + high) // 2
+    lines = [
+        f"Retained Pitch Pack — {target}",
+        f"Role: {role}  ·  Generated {datetime.now().strftime('%a %d %b %Y · %H:%M')}",
+        "=" * 60, "",
+        "1. ACCOUNT SNAPSHOT",
+    ]
+    if ch_snapshot.get("found"):
+        resolved = ch_snapshot.get("resolved") or {}
+        lines.append(f"   Companies House: {resolved.get('company_number','?')} · {resolved.get('company_status','?')}")
+        lines.append(f"   {resolved.get('address_snippet','')}")
+    else:
+        lines.append("   Companies House: not resolved.")
+    lines += ["", "2. WHY THIS MATTERS NOW (last 90 days)"]
+    if news:
+        for a in news[:5]:
+            lines.append(f"   - {a.get('title','')} ({a.get('seendate','')[:8]})")
+            lines.append(f"     {a.get('url','')}")
+    else:
+        lines.append("   No major press coverage surfaced.")
+    lines += ["", "3. COST OF VACANCY", f"   Mid-salary assumed: £{mid:,}"]
+    for k, v in cov.items():
+        lines.append(f"   {k:<42}  £{v:>10,}")
+    sector_label = sector.replace("_", " ").title() if sector else "Generic FTSE"
+    lines += ["", f"4. COMPARABLE EMPLOYERS ({sector_label})"]
+    for i, p in enumerate(peers, 1):
+        lines.append(f"   {i:>2}. {p}")
+    lines += ["", "5. SALARY BENCHMARK",
+              f"   UK April 2026 range for {matched}: £{low:,}–£{high:,} base + 10–25% bonus/LTIP",
+              "", "6. 6-WEEK METHODOLOGY",
+              "   Wk 1   Briefing + market pack                       (1/3 on engagement)",
+              "   Wk 2–3 Universe mapped + longlist of 30–50",
+              "   Wk 3–4 Outreach + shortlist of 5–7                  (1/3 on shortlist)",
+              "   Wk 4–5 Client interviews + finals",
+              "   Wk 6   Offer + onboarding handover                  (1/3 on accepted offer)",
+              "", "Retained fee: 28–33% of first-year total comp (vs 22–25% contingent on base only)."]
+    return "\n".join(lines)
+
+
+def main() -> int:
+    if len(sys.argv) < 2:
+        print('Usage: python -m tool.pitch_pack "<account name>" [role="Head of Internal Communications"] [mode=preview|send|test]', file=sys.stderr)
+        return 2
+
+    target = sys.argv[1].strip()
+    role = os.environ.get("PITCH_ROLE", "Head of Internal Communications")
+    mode = (sys.argv[2] if len(sys.argv) > 2 else "preview").lower()
+    log.info("Building pitch pack for %r · role %r · mode %r", target, role, mode)
+
+    ch = companies_house.company_events(target)
+    news = recent_news_for(target)
+    peers, sector = peers_for(target, k=15)
+    sal = _salary_band(role)
+    mid = (sal[0] + sal[1]) // 2
+    cov = cost_of_vacancy(role, mid)
+
+    html_out = render_html(target, role, ch, news, peers, sector, sal, cov, mode)
+    text_out = render_text(target, role, ch, news, peers, sector, sal, cov)
+
+    safe = "".join(c if c.isalnum() else "_" for c in target.lower())[:40]
+    stamp = datetime.now().strftime("%Y%m%d_%H%M")
+    (STATE_DIR / f"pitch_pack_{safe}_{stamp}.html").write_text(html_out)
+    (STATE_DIR / f"pitch_pack_{safe}_{stamp}.txt").write_text(text_out)
+
+    if mode in ("send", "test"):
+        to = config.TEST_RECIPIENT if mode == "test" else config.RECIPIENT
+        subject = f"[Pitch Pack] {target} — {role}"
+        if mode == "test":
+            subject = "[TEST] " + subject
+        result = email_send(to, subject, html_out, text_out)
+        log.info("Send: %s", result)
+        if not result.get("ok"):
+            print("\n--- EMAIL SEND FAILED ---")
+            print(result)
+            return 2
+        print(f"✓ Sent to {to}.")
+        return 0
+
+    print(text_out)
+    print(f"\n[saved to tool/state/pitch_pack_{safe}_{stamp}.{{html,txt}}]")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
