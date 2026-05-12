@@ -25,6 +25,7 @@ import zipfile
 import io
 from pathlib import Path
 
+import re
 import requests
 from flask import Flask, jsonify, render_template_string, request
 from urllib.parse import quote_plus
@@ -171,16 +172,31 @@ _JOB_TITLE_TOKENS = (
     "external comms", "pr ", "media relations", "marketing and brand",
 )
 
+# Patterns that often surround an appointee's name in a news headline
+_APPOINTEE_PATTERNS = [
+    re.compile(r"(?:appoints?|names?|hires?|promotes?)\s+([A-Z][a-z]+(?:\s[A-Z][a-z]+)+)"),
+    re.compile(r"([A-Z][a-z]+(?:\s[A-Z][a-z]+)+)\s+(?:joins|appointed|promoted|named|to lead|to head)"),
+    re.compile(r"new\s+(?:CCO|CEO|CHRO|chief|head of[^.]+)\s+is\s+([A-Z][a-z]+(?:\s[A-Z][a-z]+)+)"),
+]
+
+
+def _extract_appointee_name(title: str) -> str | None:
+    for pat in _APPOINTEE_PATTERNS:
+        m = pat.search(title or "")
+        if m:
+            return m.group(1).strip()
+    return None
+
 
 def linkedin_search_for_lead(signal: dict) -> dict:
-    """Build a TARGETED LinkedIn people-search URL + a short label so Sara
-    knows who she's about to find. Drops her on the right role-at-company
-    search result, not a generic company-name flood.
-
-    Works whether or not the signal has a `kind` field set — falls back to
-    title-keyword inference so real-data signals from production still get
-    targeted searches.
+    """Build a TARGETED LinkedIn URL that drops Sara on the right person at
+    the right company. Uses LinkedIn's company-employees page pattern
+    (linkedin.com/company/{slug}/people/?keywords=ROLE) rather than the
+    global people-search, so we filter inside the actual company
+    instead of relying on global ranking.
     """
+    from tool.peers import linkedin_company_employees_url
+
     company = (signal.get("company") or "").strip()
     title = (signal.get("title") or "").strip()
     kind = (signal.get("kind") or "").strip().lower()
@@ -190,95 +206,118 @@ def linkedin_search_for_lead(signal: dict) -> dict:
         return {"label": "Search LinkedIn",
                 "url": "https://www.linkedin.com/search/results/people/"}
 
-    # --- Detect signal flavour even when `kind` is missing ---
+    # Job-flavour inference even when `kind` is missing
     looks_like_job = (
         kind == "job"
-        or any(t in tlow for t in _JOB_TITLE_TOKENS)
-        and any(t in tlow for t in ("communications", "comms", "pr ",
-                                      "corporate affairs", "media relations"))
+        or (
+            any(t in tlow for t in _JOB_TITLE_TOKENS)
+            and any(t in tlow for t in ("communications", "comms", "pr ",
+                                          "corporate affairs", "media relations"))
+        )
     )
 
-    # 1. Job postings → hiring manager (CHRO / HRD typically)
-    if looks_like_job and company:
-        kw = f'"CHRO" OR "HR Director" OR "Chief People Officer" "{company}"'
-        return {"label": f"Find hiring manager at {company}",
-                "url": _ln(kw)}
-
-    # 2. Leadership-change news → target the named individual
+    # 1. Leadership-change news — extract the appointee's name and find
+    #    THEM specifically inside the company's employees list
     if kind == "leadership_change" or any(
         v in tlow for v in (" appoints ", " names ", " hired as ",
                               " new ceo", " new chief", " new chair")
     ):
-        kw = f"{title} {company}".strip()
-        return {"label": "Find named individual",
-                "url": _ln(kw[:120])}
+        name = _extract_appointee_name(title)
+        if name and company:
+            return {
+                "label": f"Open {name} at {company}",
+                "url": linkedin_company_employees_url(company, name),
+            }
+        if company:
+            return {
+                "label": f"Find new appointee at {company}",
+                "url": linkedin_company_employees_url(company, "Communications Corporate Affairs"),
+            }
+        return {"label": "Find on LinkedIn",
+                "url": f"https://www.linkedin.com/search/results/people/?keywords={quote_plus(title[:120])}"}
 
-    # 3. RNS / SEC filing / regulator → Head of Comms at the company
+    # 2. Job postings → hiring manager (CHRO/HRD) at THAT company
+    if looks_like_job and company:
+        return {
+            "label": f"Find hiring manager at {company}",
+            "url": linkedin_company_employees_url(company, "CHRO HR Director Chief People Officer"),
+        }
+
+    # 3. RNS / SEC filing / regulator → Head of Comms at that company
     if kind in ("rns", "filing", "regulator") and company:
-        kw = f'"Head of Communications" OR "Corporate Affairs" "{company}"'
-        return {"label": f"Find Head of Comms at {company}",
-                "url": _ln(kw)}
+        return {
+            "label": f"Find Head of Comms at {company}",
+            "url": linkedin_company_employees_url(company, "Head of Communications Corporate Affairs"),
+        }
 
     # 4. Procurement → comms lead at the buying body
     if kind == "procurement" and company:
-        kw = f'"Head of Communications" "{company}"'
-        return {"label": f"Find Head of Comms at {company}",
-                "url": _ln(kw)}
+        return {
+            "label": f"Find Head of Comms at {company}",
+            "url": linkedin_company_employees_url(company, "Head of Communications"),
+        }
 
-    # 5. Trade press → try the headline (often names the appointee)
+    # 5. Trade press → use any appointee name we can extract; otherwise
+    #    open the company's people page with no role filter
     if kind == "trade_press":
-        kw = title[:120] if title else company
-        return {"label": "Find on LinkedIn", "url": _ln(kw)}
+        name = _extract_appointee_name(title)
+        if name and company:
+            return {
+                "label": f"Open {name} at {company}",
+                "url": linkedin_company_employees_url(company, name),
+            }
+        if company:
+            return {
+                "label": f"Find on LinkedIn at {company}",
+                "url": linkedin_company_employees_url(company, "Communications"),
+            }
+        return {"label": "Find on LinkedIn",
+                "url": f"https://www.linkedin.com/search/results/people/?keywords={quote_plus(title[:120])}"}
 
-    # 6. Final fallback: company AND any obvious comms role keyword in title
-    if company and any(t in tlow for t in ("communications", "comms",
-                                              "corporate affairs", "pr",
-                                              "media relations")):
-        kw = f'"CHRO" OR "Head of Communications" "{company}"'
-        return {"label": f"Find decision-maker at {company}",
-                "url": _ln(kw)}
-
+    # 6. Generic — company is known, intent unclear
     if company:
-        return {"label": f"Find decision-maker at {company}",
-                "url": _ln(f'"CHRO" OR "HR Director" "{company}"')}
+        return {
+            "label": f"Find decision-maker at {company}",
+            "url": linkedin_company_employees_url(company, "CHRO Head of Communications"),
+        }
 
-    return {"label": "Search LinkedIn", "url": _ln(title or "")}
+    return {"label": "Search LinkedIn",
+            "url": f"https://www.linkedin.com/search/results/people/?keywords={quote_plus(title or '')}"}
 
 
 def linkedin_search_for_predictor(p: dict) -> dict:
-    """For predictors, target the contact suggested by the trigger type."""
+    """Predictors: target the contact suggested by the trigger type, inside
+    the named company's employees page."""
+    from tool.peers import linkedin_company_employees_url
+
     company = (p.get("company") or "").strip() or "your target"
     events = p.get("events") or []
     keys = {e.get("trigger_key") for e in events}
 
     if "ceo_change" in keys:
-        kw = f"Chief Executive CEO {company}"
-        return {"label": f"Find new CEO at {company}", "url": _ln(kw)}
+        return {"label": f"Find new CEO at {company}",
+                "url": linkedin_company_employees_url(company, "Chief Executive Officer CEO")}
     if "chro_change" in keys:
-        kw = f"CHRO Chief People Officer {company}"
-        return {"label": f"Find new CHRO at {company}", "url": _ln(kw)}
+        return {"label": f"Find new CHRO at {company}",
+                "url": linkedin_company_employees_url(company, "CHRO Chief People Officer HR Director")}
     if "chair_change" in keys:
-        kw = f"Chair Chairman {company}"
-        return {"label": f"Find Chair at {company}", "url": _ln(kw)}
+        return {"label": f"Find Chair at {company}",
+                "url": linkedin_company_employees_url(company, "Chair Chairman")}
     if "regulator_action" in keys:
-        kw = f"CHRO Head of Communications {company}"
-        return {"label": f"Find CHRO at {company}", "url": _ln(kw)}
+        return {"label": f"Find CHRO at {company}",
+                "url": linkedin_company_employees_url(company, "CHRO Head of Communications")}
     if "mna" in keys:
-        kw = f"Head of Communications Corporate Affairs {company}"
-        return {"label": f"Find Head of Comms at {company}", "url": _ln(kw)}
+        return {"label": f"Find Head of Comms at {company}",
+                "url": linkedin_company_employees_url(company, "Head of Communications Corporate Affairs")}
     if "restructure" in keys:
-        kw = f"CHRO Head of Communications {company}"
-        return {"label": f"Find CHRO at {company}", "url": _ln(kw)}
+        return {"label": f"Find CHRO at {company}",
+                "url": linkedin_company_employees_url(company, "CHRO Head of Communications")}
     if "job_ad_cluster" in keys:
-        kw = f"Head of HR Talent {company}"
-        return {"label": f"Find Head of HR at {company}", "url": _ln(kw)}
+        return {"label": f"Find Head of HR at {company}",
+                "url": linkedin_company_employees_url(company, "Head of HR Talent People")}
 
-    return {"label": f"LinkedIn — {company}", "url": _ln(company)}
-
-
-def _ln(keywords: str) -> str:
-    keywords = (keywords or "").strip()
-    return f"https://www.linkedin.com/search/results/people/?keywords={quote_plus(keywords)}"
+    return {"label": f"Open {company} on LinkedIn",
+            "url": linkedin_company_employees_url(company)}
 
 
 def last_updated() -> str:

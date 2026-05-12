@@ -128,3 +128,218 @@ def peers_for(name: str, k: int = 15) -> tuple[list[str], str | None]:
         peers = [c for c in SECTOR_PEERS[sector] if _normalise(c) != _normalise(name)]
         return peers[:k], sector
     return GENERIC_FALLBACK[:k], None
+
+
+# ---- LinkedIn company-slug mapping -------------------------------------
+# LinkedIn's company-employees URL pattern:
+#     linkedin.com/company/{slug}/people/?keywords=...
+# This page shows ONLY that company's employees filtered by keyword on
+# titles. Materially more reliable than global people-search because the
+# company filter is implicit in the URL. Top result is the actual person
+# at the actual company, not 'someone called CHRO somewhere in India'.
+#
+# Hand-curated for the UK FTSE-350-ish set we know. Unknown companies
+# fall back to a guessed slug (lowercase, hyphenated). LinkedIn often
+# redirects to the right URL even on guesses.
+LINKEDIN_COMPANY_SLUGS: dict[str, str] = {
+    # Financial services
+    "barclays": "barclays-bank",
+    "hsbc": "hsbc",
+    "natwest group": "natwestgroup",
+    "lloyds banking group": "lloyds-banking-group",
+    "standard chartered": "standard-chartered-bank",
+    "santander uk": "santander-uk",
+    "nationwide building society": "nationwide-building-society",
+    "aviva": "aviva-plc",
+    "prudential": "prudential-uk",
+    "legal & general": "legal-&-general",
+    "phoenix group": "phoenix-group-holdings",
+    "m&g": "m-and-g-plc",
+    "schroders": "schroders",
+    "abrdn": "abrdn",
+    "quilter": "quilter-plc",
+    "st james's place": "st-james's-place-wealth-management",
+    "hargreaves lansdown": "hargreaves-lansdown",
+    "admiral group": "admiral-group-plc",
+    "direct line group": "directlinegroup",
+    # Pharma / healthcare
+    "astrazeneca": "astrazeneca",
+    "gsk": "glaxosmithkline",
+    "haleon": "haleon-com",
+    "hikma pharmaceuticals": "hikma-pharmaceuticals-plc",
+    "indivior": "indivior",
+    "convatec": "convatec",
+    "smith & nephew": "smith-&-nephew",
+    "genus": "genus-plc",
+    "bupa uk": "bupa",
+    "axa health": "axa-uk",
+    "spire healthcare": "spire-healthcare",
+    "nhs england": "nhsengland",
+    "nhs confederation": "nhsconfed",
+    # Energy / utilities
+    "bp": "bp",
+    "shell": "shell",
+    "centrica": "centrica",
+    "sse": "sse-plc",
+    "national grid": "national-grid",
+    "severn trent": "severn-trent-plc",
+    "united utilities": "united-utilities",
+    "pennon group": "pennon-group-plc",
+    "octopus energy": "octopus-energy",
+    "edf energy uk": "edf-energy",
+    "e.on uk": "eon-uk",
+    "drax": "drax-group",
+    "cadent gas": "cadent",
+    "northumbrian water": "northumbrian-water-group",
+    "anglian water": "anglian-water-services-ltd",
+    "thames water": "thameswateruk",
+    # Technology
+    "sage group": "sage-software",
+    "aveva": "aveva",
+    "auto trader group": "auto-trader-group-plc",
+    "rightmove": "rightmove",
+    "trustpilot": "trustpilot",
+    "monzo": "monzo-bank",
+    "wise": "wise-com",
+    "revolut": "revolut",
+    "deliveroo": "deliveroo",
+    "just eat takeaway": "just-eat-takeaway-com",
+    "ocado group": "ocado-group",
+    "cloudflare uk": "cloudflare",
+    "stripe uk": "stripe",
+    "cisco uk": "cisco",
+    "palo alto networks": "palo-alto-networks",
+    # Retail / consumer
+    "unilever": "unilever",
+    "reckitt": "reckitt",
+    "diageo": "diageo",
+    "tesco": "tesco",
+    "sainsbury's": "j-sainsbury-plc",
+    "marks & spencer": "marks-and-spencer",
+    "next": "nextplc",
+    "burberry": "burberry",
+    "jd sports": "jd-sports-fashion-plc",
+    "associated british foods": "associated-british-foods-plc",
+    "whitbread": "whitbread",
+    "mitchells & butlers": "mitchells-&-butlers",
+    "wh smith": "wh-smith-plc",
+    "greggs": "greggs-plc",
+    "b&q": "b&q",
+    "boots": "boots-uk",
+    "currys": "currys-plc",
+    # Industrial
+    "rolls-royce": "rolls-royce",
+    "bae systems": "bae-systems",
+    "babcock international": "babcock-international-group",
+    "melrose industries": "melrose-industries-plc",
+    "imi": "imi-plc",
+    "rs group": "rs-group",
+    "smiths group": "smiths-group-plc",
+    "spirax group": "spirax-sarco-engineering-plc",
+    "bunzl": "bunzl-plc",
+    # Media / telecoms
+    "bt group": "bt",
+    "vodafone": "vodafone",
+    "itv": "itv",
+    "informa": "informa-plc",
+    "pearson": "pearson",
+    "sky uk": "skyuk",
+    "three uk": "three-uk",
+    "virgin media o2": "virgin-media-o2",
+    "talktalk": "talktalk-business",
+    "channel 4": "channel-4-television",
+    "bbc": "bbc",
+    "reach plc": "reach-plc",
+    "future plc": "future-plc",
+    # Professional services
+    "hays": "hays",
+    "pagegroup": "pagegroup",
+    "robert walters": "robert-walters-plc",
+    "capita": "capita",
+    "serco": "serco-group",
+    "mitie": "mitie",
+    "ey uk": "ernstandyoung",
+    "pwc uk": "pwc",
+    "kpmg uk": "kpmg-uk",
+    "deloitte uk": "deloitte",
+    "accenture uk": "accenture",
+    # Transport / logistics
+    "royal mail": "royal-mail-group",
+    "dhl uk": "dhl",
+    "fedex uk": "fedex",
+    "easyjet": "easyjet",
+    "british airways": "british-airways",
+    "wizz air uk": "wizz-air",
+    "network rail": "network-rail",
+    "transport for london": "transport-for-london",
+    "stagecoach group": "stagecoach-group",
+    "firstgroup": "firstgroup-plc",
+    "national express": "nationalexpressgroup",
+    # Real estate
+    "british land": "british-land-company",
+    "land securities": "landsec",
+    "segro": "segro",
+    "grainger": "grainger-plc",
+    "berkeley group": "berkeley-group-plc",
+    "persimmon": "persimmon-plc",
+    "taylor wimpey": "taylor-wimpey-plc",
+    "barratt developments": "barratt-developments-plc",
+    "vistry group": "vistry-group",
+    # Public sector / charities
+    "cabinet office": "cabinet-office",
+    "hm revenue & customs": "hm-revenue-&-customs",
+    "department for work and pensions": "dwpdigital",
+    "department for business and trade": "department-for-business-and-trade",
+    "department of health and social care": "department-of-health-and-social-care",
+    "british red cross": "british-red-cross",
+    "oxfam gb": "oxfam-international",
+    "cancer research uk": "cancer-research-uk",
+    "macmillan cancer support": "macmillan-cancer-support",
+    "rnli": "rnli",
+    "wwf uk": "wwf-uk",
+    "save the children uk": "save-the-children",
+    "age uk": "age-uk",
+    "shelter": "shelter",
+    # Additional commonly-targeted comms employers
+    "youth hostel association": "youth-hostel-association-yha-",
+    "centrica plc": "centrica",
+}
+
+
+def linkedin_company_slug(name: str) -> str | None:
+    """Resolve a company name to its LinkedIn slug. None if not in the map."""
+    n = _normalise(name)
+    if not n:
+        return None
+    if n in LINKEDIN_COMPANY_SLUGS:
+        return LINKEDIN_COMPANY_SLUGS[n]
+    for k, slug in LINKEDIN_COMPANY_SLUGS.items():
+        if k == n or k in n or n in k:
+            return slug
+    return None
+
+
+def _slugify(name: str) -> str:
+    """Best-guess slug for an unknown company. LinkedIn frequently redirects
+    from a guessed slug to the real one, so this often works even if our
+    map doesn't have the company."""
+    s = (name or "").lower().strip()
+    s = _SUFFIX_RX.sub("", s)
+    s = re.sub(r"[^a-z0-9 ]", "", s)
+    s = re.sub(r"\s+", "-", s)
+    return s.strip("-")
+
+
+def linkedin_company_employees_url(name: str, role_keyword: str = "") -> str:
+    """Build URL to LinkedIn's company-people page, optionally filtered by
+    a role keyword. This is the targeted URL pattern that surfaces actual
+    employees at the actual company — not a global search."""
+    from urllib.parse import quote_plus
+    slug = linkedin_company_slug(name) or _slugify(name)
+    if not slug:
+        kw = (role_keyword + " " + name).strip() if role_keyword else (name or "")
+        return f"https://www.linkedin.com/search/results/people/?keywords={quote_plus(kw)}"
+    base = f"https://www.linkedin.com/company/{slug}/people/"
+    if role_keyword:
+        return f"{base}?keywords={quote_plus(role_keyword)}"
+    return base
