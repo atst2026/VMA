@@ -167,6 +167,82 @@
       padding: 22px 28px 16px 28px;
     }
 
+    /* DAILY REFRESH BAR — sits above the panels, primary focal CTA */
+    .refresh-bar {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 14px 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+    .refresh-bar::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      width: 4px;
+      background: linear-gradient(180deg, var(--teal-bright) 0%, var(--teal-dark) 100%);
+    }
+    .big-refresh {
+      background: linear-gradient(135deg, var(--teal-bright) 0%, var(--teal) 55%, var(--teal-dark) 100%);
+      color: white;
+      border: 1px solid var(--teal-bright);
+      padding: 11px 22px;
+      border-radius: 7px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow:
+        0 3px 12px var(--teal-glow),
+        0 0 0 1px rgba(91, 166, 173, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      text-shadow: 0 1px 1px rgba(0, 0, 0, 0.12);
+      white-space: nowrap;
+      margin-left: 6px;   /* clears the left accent stripe */
+    }
+    .big-refresh:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        0 8px 24px var(--teal-glow),
+        0 0 0 1px var(--teal-bright),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      filter: brightness(1.05);
+    }
+    .big-refresh:active {
+      transform: translateY(0);
+      filter: brightness(0.96);
+    }
+    .big-refresh:disabled {
+      background: #B8C2CC;
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+      filter: none;
+    }
+    .refresh-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .refresh-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--navy);
+      letter-spacing: -0.005em;
+    }
+    .refresh-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
     .row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -555,7 +631,6 @@
   </div>
   <div class="meta">
     <div class="last">Last brief: Tue 12 May 2026 · 21:41 UTC</div>
-    <button onclick="refreshBrief()" id="refresh-btn">↻ Daily Refresh</button>
   </div>
 </div>
 
@@ -567,6 +642,17 @@
 
 
 <div class="container">
+
+  <!-- DAILY REFRESH BAR — primary CTA, sits above the leads/predictors -->
+  <div class="refresh-bar">
+    <button onclick="refreshBrief()" id="refresh-btn" class="big-refresh">
+      ↻ Daily Refresh
+    </button>
+    <div class="refresh-meta">
+      <span class="refresh-label">Pull today's freshly-generated brief</span>
+      <span class="refresh-sub">Last refreshed: Tue 12 May 2026 · 21:41 UTC</span>
+    </div>
+  </div>
 
   <!-- LEADS + PREDICTORS -->
   <div class="row">
@@ -601,7 +687,7 @@ Best,
 Sara</pre>
               <div class="item-actions">
                 <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                <a class="btn-mini" href="https://www.linkedin.com/search/results/people/?keywords=%22Chief+People+Officer%22+OR+%22CHRO%22+%22monzo%22" target="_blank" title="Search hiring manager at monzo">↗ Search hiring manager at monzo</a>
+                <a class="btn-mini" href="https://www.linkedin.com/talent/search?keywords=%22Chief+People+Officer%22+OR+%22CHRO%22+%22monzo%22" target="_blank" title="Search hiring manager at monzo">↗ Search hiring manager at monzo</a>
               </div>
             </div>
           
@@ -626,7 +712,7 @@ Best,
 Sara</pre>
               <div class="item-actions">
                 <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                <a class="btn-mini" href="https://www.linkedin.com/search/results/people/?keywords=%22Head+of+Communications%22+%22Unilever%22" target="_blank" title="Search comms appointee at Unilever">↗ Search comms appointee at Unilever</a>
+                <a class="btn-mini" href="https://www.linkedin.com/talent/search?keywords=%22Head+of+Communications%22+%22Unilever%22" target="_blank" title="Search comms appointee at Unilever">↗ Search comms appointee at Unilever</a>
               </div>
             </div>
           
@@ -651,7 +737,7 @@ Best,
 Sara</pre>
               <div class="item-actions">
                 <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                <a class="btn-mini" href="https://www.linkedin.com/search/results/people/?keywords=%22Chief+People+Officer%22+OR+%22CHRO%22+%22Palo+Alto+Networks%22" target="_blank" title="Search hiring manager at Palo Alto Networks">↗ Search hiring manager at Palo Alto Networks</a>
+                <a class="btn-mini" href="https://www.linkedin.com/talent/search?keywords=%22Chief+People+Officer%22+OR+%22CHRO%22+%22Palo+Alto+Networks%22" target="_blank" title="Search hiring manager at Palo Alto Networks">↗ Search hiring manager at Palo Alto Networks</a>
               </div>
             </div>
           
@@ -676,7 +762,7 @@ Best,
 Sara</pre>
               <div class="item-actions">
                 <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                <a class="btn-mini" href="https://www.linkedin.com/search/results/people/?keywords=%22Chief+People+Officer%22+OR+%22CHRO%22+%22AstraZeneca%22" target="_blank" title="Search hiring manager at AstraZeneca">↗ Search hiring manager at AstraZeneca</a>
+                <a class="btn-mini" href="https://www.linkedin.com/talent/search?keywords=%22Chief+People+Officer%22+OR+%22CHRO%22+%22AstraZeneca%22" target="_blank" title="Search hiring manager at AstraZeneca">↗ Search hiring manager at AstraZeneca</a>
               </div>
             </div>
           
@@ -701,7 +787,7 @@ Best,
 Sara</pre>
               <div class="item-actions">
                 <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                <a class="btn-mini" href="https://www.linkedin.com/search/results/people/?keywords=%22Head+of+Communications%22+OR+%22Corporate+Affairs%22+%22NatWest+Group%22" target="_blank" title="Search Head of Comms at NatWest Group">↗ Search Head of Comms at NatWest Group</a>
+                <a class="btn-mini" href="https://www.linkedin.com/talent/search?keywords=%22Head+of+Communications%22+OR+%22Corporate+Affairs%22+%22NatWest+Group%22" target="_blank" title="Search Head of Comms at NatWest Group">↗ Search Head of Comms at NatWest Group</a>
               </div>
             </div>
           
@@ -730,7 +816,7 @@ Best,
 Sara</pre>
                 <div class="item-actions">
                   <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                  <a class="btn-mini" href="https://www.linkedin.com/search/results/people/?keywords=%22Chief+People+Officer%22+OR+%22CHRO%22+%22Rolls-Royce%22" target="_blank" title="Search hiring manager at Rolls-Royce">↗ Search hiring manager at Rolls-Royce</a>
+                  <a class="btn-mini" href="https://www.linkedin.com/talent/search?keywords=%22Chief+People+Officer%22+OR+%22CHRO%22+%22Rolls-Royce%22" target="_blank" title="Search hiring manager at Rolls-Royce">↗ Search hiring manager at Rolls-Royce</a>
                 </div>
               </div>
             
@@ -778,7 +864,7 @@ Best,
 Sara</pre>
               <div class="item-actions">
                 <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                <a class="btn-mini" href="https://www.linkedin.com/search/results/people/?keywords=%22Chief+Executive%22+OR+%22CEO%22+%22Barclays+plc%22" target="_blank" title="Search new CEO at Barclays plc">↗ Search new CEO at Barclays plc</a>
+                <a class="btn-mini" href="https://www.linkedin.com/talent/search?keywords=%22Chief+Executive%22+OR+%22CEO%22+%22Barclays+plc%22" target="_blank" title="Search new CEO at Barclays plc">↗ Search new CEO at Barclays plc</a>
               </div>
             </div>
           
@@ -806,7 +892,7 @@ Best,
 Sara</pre>
               <div class="item-actions">
                 <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                <a class="btn-mini" href="https://www.linkedin.com/search/results/people/?keywords=%22Head+of+HR%22+OR+%22Head+of+Talent%22+%22Severn+Trent%22" target="_blank" title="Search Head of HR at Severn Trent">↗ Search Head of HR at Severn Trent</a>
+                <a class="btn-mini" href="https://www.linkedin.com/talent/search?keywords=%22Head+of+HR%22+OR+%22Head+of+Talent%22+%22Severn+Trent%22" target="_blank" title="Search Head of HR at Severn Trent">↗ Search Head of HR at Severn Trent</a>
               </div>
             </div>
           
@@ -834,7 +920,7 @@ Best,
 Sara</pre>
               <div class="item-actions">
                 <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                <a class="btn-mini" href="https://www.linkedin.com/search/results/people/?keywords=%22Head+of+Communications%22+OR+%22Corporate+Affairs%22+%22Haleon+plc%22" target="_blank" title="Search Head of Comms at Haleon plc">↗ Search Head of Comms at Haleon plc</a>
+                <a class="btn-mini" href="https://www.linkedin.com/talent/search?keywords=%22Head+of+Communications%22+OR+%22Corporate+Affairs%22+%22Haleon+plc%22" target="_blank" title="Search Head of Comms at Haleon plc">↗ Search Head of Comms at Haleon plc</a>
               </div>
             </div>
           
@@ -862,7 +948,7 @@ Best,
 Sara</pre>
               <div class="item-actions">
                 <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                <a class="btn-mini" href="https://www.linkedin.com/search/results/people/?keywords=%22CHRO%22+OR+%22Head+of+Communications%22+%22Thames+Water%22" target="_blank" title="Search CHRO at Thames Water">↗ Search CHRO at Thames Water</a>
+                <a class="btn-mini" href="https://www.linkedin.com/talent/search?keywords=%22CHRO%22+OR+%22Head+of+Communications%22+%22Thames+Water%22" target="_blank" title="Search CHRO at Thames Water">↗ Search CHRO at Thames Water</a>
               </div>
             </div>
           
@@ -890,7 +976,7 @@ Best,
 Sara</pre>
               <div class="item-actions">
                 <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                <a class="btn-mini" href="https://www.linkedin.com/search/results/people/?keywords=%22Chief+People+Officer%22+OR+%22CHRO%22+%22BT%22" target="_blank" title="Search new CHRO at BT">↗ Search new CHRO at BT</a>
+                <a class="btn-mini" href="https://www.linkedin.com/talent/search?keywords=%22Chief+People+Officer%22+OR+%22CHRO%22+%22BT%22" target="_blank" title="Search new CHRO at BT">↗ Search new CHRO at BT</a>
               </div>
             </div>
           
@@ -955,7 +1041,7 @@ Sara</pre>
   <div class="footer">
     Sara's Desk · Local dashboard · Data refreshed from GitHub Actions artifacts.
     All sources are free public surfaces. No automation of LinkedIn account.
-    <span style="opacity:0.5; margin-left:8px;">· build 2026-05-12 21:41 UTC</span>
+    <span style="opacity:0.5; margin-left:8px;">· build 2026-05-12 21:46 UTC</span>
   </div>
 
 </div>

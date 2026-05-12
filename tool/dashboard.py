@@ -189,10 +189,14 @@ def _extract_appointee_name(title: str) -> str | None:
 
 
 def _people_search(keywords: str) -> str:
-    """LinkedIn global people search URL. Always loads (no 404s, no slug
-    dependencies). Use for any fallback path when we don't have a
-    Bright-Data-resolved direct profile URL."""
-    return f"https://www.linkedin.com/search/results/people/?keywords={quote_plus(keywords.strip())}"
+    """LinkedIn Recruiter Talent-search URL with the keyword (role + company)
+    pre-filled. Sara has Recruiter, so this drops her into the proper
+    Recruiter search interface where she can refine filters (current
+    company, geography, tenure, Open-to-Work, etc.) rather than the
+    public global people search.
+    Always loads — no slug dependencies, no 404s.
+    """
+    return f"https://www.linkedin.com/talent/search?keywords={quote_plus(keywords.strip())}"
 
 
 def linkedin_search_for_lead(signal: dict) -> dict:
@@ -557,6 +561,82 @@ TEMPLATE = r"""
       max-width: 1280px;
       margin: 0 auto;
       padding: 22px 28px 16px 28px;
+    }
+
+    /* DAILY REFRESH BAR — sits above the panels, primary focal CTA */
+    .refresh-bar {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 14px 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+    .refresh-bar::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      width: 4px;
+      background: linear-gradient(180deg, var(--teal-bright) 0%, var(--teal-dark) 100%);
+    }
+    .big-refresh {
+      background: linear-gradient(135deg, var(--teal-bright) 0%, var(--teal) 55%, var(--teal-dark) 100%);
+      color: white;
+      border: 1px solid var(--teal-bright);
+      padding: 11px 22px;
+      border-radius: 7px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow:
+        0 3px 12px var(--teal-glow),
+        0 0 0 1px rgba(91, 166, 173, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      text-shadow: 0 1px 1px rgba(0, 0, 0, 0.12);
+      white-space: nowrap;
+      margin-left: 6px;   /* clears the left accent stripe */
+    }
+    .big-refresh:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        0 8px 24px var(--teal-glow),
+        0 0 0 1px var(--teal-bright),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      filter: brightness(1.05);
+    }
+    .big-refresh:active {
+      transform: translateY(0);
+      filter: brightness(0.96);
+    }
+    .big-refresh:disabled {
+      background: #B8C2CC;
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+      filter: none;
+    }
+    .refresh-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .refresh-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--navy);
+      letter-spacing: -0.005em;
+    }
+    .refresh-sub {
+      font-size: 11px;
+      color: var(--text-muted);
     }
 
     .row {
@@ -947,7 +1027,6 @@ TEMPLATE = r"""
   </div>
   <div class="meta">
     <div class="last">Last brief: {{ last_updated }}</div>
-    <button onclick="refreshBrief()" id="refresh-btn">↻ Daily Refresh</button>
   </div>
 </div>
 
@@ -959,6 +1038,17 @@ TEMPLATE = r"""
 {% endif %}
 
 <div class="container">
+
+  <!-- DAILY REFRESH BAR — primary CTA, sits above the leads/predictors -->
+  <div class="refresh-bar">
+    <button onclick="refreshBrief()" id="refresh-btn" class="big-refresh">
+      ↻ Daily Refresh
+    </button>
+    <div class="refresh-meta">
+      <span class="refresh-label">Pull today's freshly-generated brief</span>
+      <span class="refresh-sub">Last refreshed: {{ last_updated }}</span>
+    </div>
+  </div>
 
   <!-- LEADS + PREDICTORS -->
   <div class="row">
