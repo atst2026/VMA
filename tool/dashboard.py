@@ -17,6 +17,7 @@ Required env (set in .env):
     DASHBOARD_PORT        — defaults to 8765
 """
 from __future__ import annotations
+import functools
 import json
 import logging
 import os
@@ -27,7 +28,7 @@ from pathlib import Path
 
 import re
 import requests
-from flask import Flask, jsonify, render_template_string, request
+from flask import Flask, jsonify, render_template_string, request, Response
 from urllib.parse import quote_plus
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -53,7 +54,29 @@ STATE_DIR.mkdir(parents=True, exist_ok=True)
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 GITHUB_OWNER = os.environ.get("GITHUB_OWNER", "atst2026")
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "VMA")
-PORT = int(os.environ.get("DASHBOARD_PORT", "8765"))
+# Render sets PORT; locally we keep 8765 unless DASHBOARD_PORT overrides.
+PORT = int(os.environ.get("PORT") or os.environ.get("DASHBOARD_PORT") or 8765)
+# When DASHBOARD_PASSWORD is set (on Render), every route is HTTP-Basic-Auth
+# gated. When not set (local Mac), the dashboard is wide open — which is fine
+# because it's only reachable on localhost.
+DASHBOARD_PASSWORD = os.environ.get("DASHBOARD_PASSWORD", "")
+DASHBOARD_USER = os.environ.get("DASHBOARD_USER", "sara")
+
+
+def _auth_required(f):
+    """Decorator: HTTP Basic Auth gate. No-op when DASHBOARD_PASSWORD unset."""
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        if not DASHBOARD_PASSWORD:
+            return f(*args, **kwargs)
+        auth = request.authorization
+        if not auth or auth.password != DASHBOARD_PASSWORD:
+            return Response(
+                "Auth required", 401,
+                {"WWW-Authenticate": 'Basic realm="VMA Dashboard"'},
+            )
+        return f(*args, **kwargs)
+    return wrapper
 
 
 # ---- GitHub API helpers ------------------------------------------------
@@ -338,6 +361,7 @@ app = Flask(__name__)
 
 
 @app.route("/")
+@_auth_required
 def index():
     from datetime import datetime, timezone
     return render_template_string(
@@ -351,11 +375,13 @@ def index():
 
 
 @app.route("/api/refresh", methods=["POST"])
+@_auth_required
 def api_refresh():
     return jsonify(refresh_latest_brief_from_github())
 
 
 @app.route("/api/dispatch/pitch-pack", methods=["POST"])
+@_auth_required
 def api_pitch_pack():
     data = request.get_json(force=True) or {}
     inputs = {
@@ -369,6 +395,7 @@ def api_pitch_pack():
 
 
 @app.route("/api/dispatch/reverse-match", methods=["POST"])
+@_auth_required
 def api_reverse_match():
     data = request.get_json(force=True) or {}
     inputs = {
@@ -385,6 +412,7 @@ def api_reverse_match():
 
 
 @app.route("/api/dispatch/sweep", methods=["POST"])
+@_auth_required
 def api_sweep():
     data = request.get_json(force=True) or {}
     inputs = {
@@ -1337,12 +1365,16 @@ async function refreshBrief() {
 
 
 def main() -> int:
-    print(f"\n  Sara's Desk dashboard")
+    print(f"\n  Account Director Dashboard")
     print(f"  Open: http://localhost:{PORT}")
     print(f"  GitHub token: {'configured' if GITHUB_TOKEN else 'NOT SET — buttons will fail'}")
+    print(f"  Auth gate:    {'ON (DASHBOARD_PASSWORD set)' if DASHBOARD_PASSWORD else 'OFF (open locally)'}")
     print(f"  Repo: {GITHUB_OWNER}/{GITHUB_REPO}")
     print(f"  Press Ctrl-C to stop.\n")
-    app.run(host="127.0.0.1", port=PORT, debug=False)
+    # 0.0.0.0 so the dev server is reachable on Render too. Locally only
+    # the loopback interface listens unless Sara explicitly LAN-shares,
+    # so binding 0.0.0.0 doesn't change the local security posture.
+    app.run(host="0.0.0.0", port=PORT, debug=False)
     return 0
 
 
