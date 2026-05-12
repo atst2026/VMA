@@ -188,26 +188,30 @@ def _extract_appointee_name(title: str) -> str | None:
     return None
 
 
+def _people_search(keywords: str) -> str:
+    """LinkedIn global people search URL. Always loads (no 404s, no slug
+    dependencies). Use for any fallback path when we don't have a
+    Bright-Data-resolved direct profile URL."""
+    return f"https://www.linkedin.com/search/results/people/?keywords={quote_plus(keywords.strip())}"
+
+
 def linkedin_search_for_lead(signal: dict) -> dict:
-    """Build a TARGETED LinkedIn URL that drops Sara on the right person at
-    the right company.
-
-    Priority order:
-      1. If the morning brief resolved a specific profile URL via Bright
-         Data, use that — Sara lands directly on the named person's page.
-      2. Otherwise, use LinkedIn's company-employees page pattern with a
-         role keyword filter so she sees the right company's employees
-         narrowed to the relevant role.
+    """Two-tier URL builder.
+       Tier 1 — Bright Data resolved a direct linkedin.com/in/ URL during
+                the morning brief → one click, lands on the named person.
+       Tier 2 — Fall back to LinkedIn global people search with a tight
+                quoted-phrase query. Always loads. Top result is usually
+                the right person.
     """
-    from tool.peers import linkedin_company_employees_url
-
-    # 0. If we already resolved a direct profile URL for this lead, use it.
     if signal.get("linkedin_profile_url"):
         role = (signal.get("linkedin_profile_role") or "").strip()
         company = (signal.get("company") or "").strip()
-        label = f"Open profile at {company}" if company else "Open profile"
-        if role:
-            label = f"Open {role} at {company}" if company else f"Open {role}"
+        if role and company:
+            label = f"Open {role} at {company}"
+        elif company:
+            label = f"Open profile at {company}"
+        else:
+            label = "Open profile"
         return {"label": label, "url": signal["linkedin_profile_url"]}
 
     company = (signal.get("company") or "").strip()
@@ -219,7 +223,6 @@ def linkedin_search_for_lead(signal: dict) -> dict:
         return {"label": "Search LinkedIn",
                 "url": "https://www.linkedin.com/search/results/people/"}
 
-    # Job-flavour inference even when `kind` is missing
     looks_like_job = (
         kind == "job"
         or (
@@ -229,83 +232,58 @@ def linkedin_search_for_lead(signal: dict) -> dict:
         )
     )
 
-    # 1. Leadership-change news — extract the appointee's name and find
-    #    THEM specifically inside the company's employees list
+    # Leadership-change news — search the named appointee
     if kind == "leadership_change" or any(
         v in tlow for v in (" appoints ", " names ", " hired as ",
                               " new ceo", " new chief", " new chair")
     ):
         name = _extract_appointee_name(title)
         if name and company:
-            return {
-                "label": f"Open {name} at {company}",
-                "url": linkedin_company_employees_url(company, name),
-            }
+            return {"label": f"Search {name} at {company}",
+                    "url": _people_search(f'"{name}" "{company}"')}
         if company:
-            return {
-                "label": f"Find new appointee at {company}",
-                "url": linkedin_company_employees_url(company, "Communications Corporate Affairs"),
-            }
-        return {"label": "Find on LinkedIn",
-                "url": f"https://www.linkedin.com/search/results/people/?keywords={quote_plus(title[:120])}"}
+            return {"label": f"Search comms appointee at {company}",
+                    "url": _people_search(f'"Head of Communications" "{company}"')}
+        return {"label": "Search LinkedIn",
+                "url": _people_search(title[:120])}
 
-    # 2. Job postings → hiring manager (CHRO/HRD) at THAT company
+    # Job posting — hiring manager (CHRO / HRD) at that company
     if looks_like_job and company:
-        return {
-            "label": f"Find hiring manager at {company}",
-            "url": linkedin_company_employees_url(company, "CHRO HR Director Chief People Officer"),
-        }
+        return {"label": f"Search hiring manager at {company}",
+                "url": _people_search(f'"Chief People Officer" OR "CHRO" "{company}"')}
 
-    # 3. RNS / SEC filing / regulator → Head of Comms at that company
+    # RNS / SEC filing / regulator — Head of Comms at that company
     if kind in ("rns", "filing", "regulator") and company:
-        return {
-            "label": f"Find Head of Comms at {company}",
-            "url": linkedin_company_employees_url(company, "Head of Communications Corporate Affairs"),
-        }
+        return {"label": f"Search Head of Comms at {company}",
+                "url": _people_search(f'"Head of Communications" OR "Corporate Affairs" "{company}"')}
 
-    # 4. Procurement → comms lead at the buying body
+    # Procurement — comms lead at the buying body
     if kind == "procurement" and company:
-        return {
-            "label": f"Find Head of Comms at {company}",
-            "url": linkedin_company_employees_url(company, "Head of Communications"),
-        }
+        return {"label": f"Search Head of Comms at {company}",
+                "url": _people_search(f'"Head of Communications" "{company}"')}
 
-    # 5. Trade press → use any appointee name we can extract; otherwise
-    #    open the company's people page with no role filter
+    # Trade press — pull the appointee name from the headline if we can
     if kind == "trade_press":
         name = _extract_appointee_name(title)
         if name and company:
-            return {
-                "label": f"Open {name} at {company}",
-                "url": linkedin_company_employees_url(company, name),
-            }
+            return {"label": f"Search {name} at {company}",
+                    "url": _people_search(f'"{name}" "{company}"')}
         if company:
-            return {
-                "label": f"Find on LinkedIn at {company}",
-                "url": linkedin_company_employees_url(company, "Communications"),
-            }
-        return {"label": "Find on LinkedIn",
-                "url": f"https://www.linkedin.com/search/results/people/?keywords={quote_plus(title[:120])}"}
+            return {"label": f"Search comms at {company}",
+                    "url": _people_search(f'"Head of Communications" "{company}"')}
+        return {"label": "Search LinkedIn",
+                "url": _people_search(title[:120])}
 
-    # 6. Generic — company is known, intent unclear
+    # Generic — company known, intent unclear
     if company:
-        return {
-            "label": f"Find decision-maker at {company}",
-            "url": linkedin_company_employees_url(company, "CHRO Head of Communications"),
-        }
+        return {"label": f"Search decision-maker at {company}",
+                "url": _people_search(f'"CHRO" OR "Head of Communications" "{company}"')}
 
-    return {"label": "Search LinkedIn",
-            "url": f"https://www.linkedin.com/search/results/people/?keywords={quote_plus(title or '')}"}
+    return {"label": "Search LinkedIn", "url": _people_search(title or "")}
 
 
 def linkedin_search_for_predictor(p: dict) -> dict:
-    """Predictors: target the contact suggested by the trigger type.
-
-    Same priority as leads — if the morning brief pre-resolved a profile
-    URL for this company+trigger, use it. Otherwise build a
-    company-employees URL with a role keyword."""
-    from tool.peers import linkedin_company_employees_url
-
+    """Same two-tier behaviour as leads."""
     if p.get("linkedin_profile_url"):
         role = (p.get("linkedin_profile_role") or "").strip()
         company = (p.get("company") or "").strip()
@@ -317,29 +295,29 @@ def linkedin_search_for_predictor(p: dict) -> dict:
     keys = {e.get("trigger_key") for e in events}
 
     if "ceo_change" in keys:
-        return {"label": f"Find new CEO at {company}",
-                "url": linkedin_company_employees_url(company, "Chief Executive Officer CEO")}
+        return {"label": f"Search new CEO at {company}",
+                "url": _people_search(f'"Chief Executive" OR "CEO" "{company}"')}
     if "chro_change" in keys:
-        return {"label": f"Find new CHRO at {company}",
-                "url": linkedin_company_employees_url(company, "CHRO Chief People Officer HR Director")}
+        return {"label": f"Search new CHRO at {company}",
+                "url": _people_search(f'"Chief People Officer" OR "CHRO" "{company}"')}
     if "chair_change" in keys:
-        return {"label": f"Find Chair at {company}",
-                "url": linkedin_company_employees_url(company, "Chair Chairman")}
+        return {"label": f"Search Chair at {company}",
+                "url": _people_search(f'"Chair" OR "Chairman" "{company}"')}
     if "regulator_action" in keys:
-        return {"label": f"Find CHRO at {company}",
-                "url": linkedin_company_employees_url(company, "CHRO Head of Communications")}
+        return {"label": f"Search CHRO at {company}",
+                "url": _people_search(f'"CHRO" OR "Head of Communications" "{company}"')}
     if "mna" in keys:
-        return {"label": f"Find Head of Comms at {company}",
-                "url": linkedin_company_employees_url(company, "Head of Communications Corporate Affairs")}
+        return {"label": f"Search Head of Comms at {company}",
+                "url": _people_search(f'"Head of Communications" OR "Corporate Affairs" "{company}"')}
     if "restructure" in keys:
-        return {"label": f"Find CHRO at {company}",
-                "url": linkedin_company_employees_url(company, "CHRO Head of Communications")}
+        return {"label": f"Search CHRO at {company}",
+                "url": _people_search(f'"CHRO" OR "Head of Communications" "{company}"')}
     if "job_ad_cluster" in keys:
-        return {"label": f"Find Head of HR at {company}",
-                "url": linkedin_company_employees_url(company, "Head of HR Talent People")}
+        return {"label": f"Search Head of HR at {company}",
+                "url": _people_search(f'"Head of HR" OR "Head of Talent" "{company}"')}
 
-    return {"label": f"Open {company} on LinkedIn",
-            "url": linkedin_company_employees_url(company)}
+    return {"label": f"Search {company} on LinkedIn",
+            "url": _people_search(f'"{company}"')}
 
 
 def last_updated() -> str:
@@ -545,23 +523,34 @@ TEMPLATE = r"""
       100% { box-shadow: 0 0 0 0 rgba(91, 166, 173, 0), 0 0 8px var(--teal-glow); }
     }
     .header .meta button {
-      background: rgba(255, 255, 255, 0.04);
+      background: linear-gradient(135deg, var(--teal-bright) 0%, var(--teal) 60%, var(--teal-dark) 100%);
       color: white;
-      border: 1px solid rgba(91, 166, 173, 0.4);
-      padding: 6px 13px;
+      border: 1px solid var(--teal-bright);
+      padding: 9px 18px;
       border-radius: 6px;
-      font-size: 11px;
+      font-size: 12px;
       font-family: inherit;
-      font-weight: 500;
-      letter-spacing: 0.01em;
+      font-weight: 600;
+      letter-spacing: 0.03em;
       cursor: pointer;
-      transition: all 0.18s ease;
-      backdrop-filter: blur(8px);
+      transition: all 0.2s ease;
+      box-shadow:
+        0 2px 8px var(--teal-glow),
+        0 0 0 1px rgba(91, 166, 173, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      text-shadow: 0 1px 1px rgba(0, 0, 0, 0.12);
     }
     .header .meta button:hover {
-      background: rgba(91, 166, 173, 0.18);
-      border-color: var(--teal);
-      box-shadow: 0 0 12px var(--teal-glow);
+      transform: translateY(-1px);
+      box-shadow:
+        0 6px 20px var(--teal-glow),
+        0 0 0 1px var(--teal-bright),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      filter: brightness(1.06);
+    }
+    .header .meta button:active {
+      transform: translateY(0);
+      filter: brightness(0.96);
     }
 
     .container {
