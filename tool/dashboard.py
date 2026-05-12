@@ -1056,9 +1056,7 @@ TEMPLATE = r"""
 
 <div class="header">
   <div class="title-left">
-    <h1>Account Director Dashboard
-      <span class="sub">Lead detection · pre-advert predictors · commercial tools</span>
-    </h1>
+    <h1>Account Director Dashboard</h1>
   </div>
   <div class="wordmark"><span class="vma">VMA</span><span class="group">GROUP</span></div>
   <div class="meta">
@@ -1250,10 +1248,6 @@ TEMPLATE = r"""
       <form id="sweep-form" onsubmit="dispatch(event, 'sweep-form', '/api/dispatch/sweep')">
         <label for="sw-days">Window (days)</label>
         <input id="sw-days" name="window_days" type="number" min="1" max="60" value="14" required>
-        <label for="sw-mode" style="margin-top: 12px;">&nbsp;</label>
-        <div style="font-size:12px;color:var(--muted);margin-top:-8px;">
-          Fires the full 14-day catch-up. Both leads and predictors over the window.
-        </div>
         <button type="submit">Run and send via email</button>
         <div class="status" id="sweep-status"></div>
       </form>
