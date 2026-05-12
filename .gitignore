@@ -10,6 +10,10 @@ tool/state/predictive_jobs.json
 tool/state/latest_sweep.html
 tool/state/latest_sweep.txt
 tool/state/latest_sweep_signals.json
+tool/state/pitch_pack_*.html
+tool/state/pitch_pack_*.txt
+tool/state/reverse_match_*.html
+tool/state/reverse_match_*.txt
 tool/state/deep_dive_*.html
 tool/state/analyse_*.md
 .DS_Store
