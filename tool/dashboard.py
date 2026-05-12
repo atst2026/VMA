@@ -119,10 +119,11 @@ def load_latest_signals() -> list[dict]:
         data = json.loads(p.read_text())
     except Exception:
         return []
-    # Enrich each lead with a personalised outreach draft + LinkedIn search URL
+    # Enrich each lead with a personalised outreach draft + a targeted
+    # LinkedIn search (role-at-company, not just company-wide flood)
     for s in data:
         s["outreach"] = draft_outreach_for_lead(s)
-        s["linkedin_url"] = linkedin_search_url(s.get("company", ""))
+        s["linkedin"] = linkedin_search_for_lead(s)
     return data
 
 
@@ -136,7 +137,7 @@ def load_latest_predictive() -> list[dict]:
         return []
     for p_item in data:
         p_item["outreach"] = draft_outreach_for_predictor(p_item)
-        p_item["linkedin_url"] = linkedin_search_url(p_item.get("company", ""))
+        p_item["linkedin"] = linkedin_search_for_predictor(p_item)
     return data
 
 
@@ -164,12 +165,87 @@ def draft_outreach_for_predictor(_predictor: dict) -> str:
     return _DEFAULT_OUTREACH
 
 
-def linkedin_search_url(company: str) -> str:
-    """Open LinkedIn people search for the company. Sara filters internally."""
-    c = (company or "").strip()
-    if not c:
-        return "https://www.linkedin.com/search/results/people/"
-    return f"https://www.linkedin.com/search/results/people/?keywords={quote_plus(c)}"
+def linkedin_search_for_lead(signal: dict) -> dict:
+    """Build a TARGETED LinkedIn people-search URL + a short label so Sara
+    knows who she's about to find. Drops her on the right role-at-company
+    search result, not a generic company-name flood."""
+    company = (signal.get("company") or "").strip()
+    title = (signal.get("title") or "").strip()
+    kind = signal.get("kind", "")
+
+    if not company and not title:
+        return {"label": "Search LinkedIn",
+                "url": "https://www.linkedin.com/search/results/people/"}
+
+    # Job postings → hiring manager (CHRO/HRD typically)
+    if kind == "job" and company:
+        kw = f"CHRO HR Director {company}"
+        return {"label": f"Find hiring manager at {company}",
+                "url": _ln(kw)}
+
+    # Leadership-change news → target the named individual (best-effort
+    # from title) at the company
+    if kind == "leadership_change":
+        kw = f"{title} {company}".strip()
+        return {"label": "Find on LinkedIn", "url": _ln(kw[:80])}
+
+    # RNS / SEC filing / regulator → Head of Communications at the company
+    if kind in ("rns", "filing", "regulator") and company:
+        kw = f"Head of Communications Corporate Affairs {company}"
+        return {"label": f"Find Head of Comms at {company}",
+                "url": _ln(kw)}
+
+    # Trade press / GDELT → try the title (often names the appointee)
+    if kind in ("trade_press", "leadership_change"):
+        kw = title[:80] if title else company
+        return {"label": "Find on LinkedIn", "url": _ln(kw)}
+
+    # Procurement → comms lead at the buying body
+    if kind == "procurement" and company:
+        kw = f"Head of Communications {company}"
+        return {"label": f"Find Head of Comms at {company}",
+                "url": _ln(kw)}
+
+    # Generic fallback
+    if company:
+        return {"label": f"LinkedIn — {company}", "url": _ln(company)}
+    return {"label": "Search LinkedIn", "url": _ln(title or "")}
+
+
+def linkedin_search_for_predictor(p: dict) -> dict:
+    """For predictors, target the contact suggested by the trigger type."""
+    company = (p.get("company") or "").strip() or "your target"
+    events = p.get("events") or []
+    keys = {e.get("trigger_key") for e in events}
+
+    if "ceo_change" in keys:
+        kw = f"Chief Executive CEO {company}"
+        return {"label": f"Find new CEO at {company}", "url": _ln(kw)}
+    if "chro_change" in keys:
+        kw = f"CHRO Chief People Officer {company}"
+        return {"label": f"Find new CHRO at {company}", "url": _ln(kw)}
+    if "chair_change" in keys:
+        kw = f"Chair Chairman {company}"
+        return {"label": f"Find Chair at {company}", "url": _ln(kw)}
+    if "regulator_action" in keys:
+        kw = f"CHRO Head of Communications {company}"
+        return {"label": f"Find CHRO at {company}", "url": _ln(kw)}
+    if "mna" in keys:
+        kw = f"Head of Communications Corporate Affairs {company}"
+        return {"label": f"Find Head of Comms at {company}", "url": _ln(kw)}
+    if "restructure" in keys:
+        kw = f"CHRO Head of Communications {company}"
+        return {"label": f"Find CHRO at {company}", "url": _ln(kw)}
+    if "job_ad_cluster" in keys:
+        kw = f"Head of HR Talent {company}"
+        return {"label": f"Find Head of HR at {company}", "url": _ln(kw)}
+
+    return {"label": f"LinkedIn — {company}", "url": _ln(company)}
+
+
+def _ln(keywords: str) -> str:
+    keywords = (keywords or "").strip()
+    return f"https://www.linkedin.com/search/results/people/?keywords={quote_plus(keywords)}"
 
 
 def last_updated() -> str:
@@ -825,7 +901,7 @@ TEMPLATE = r"""
               <pre class="outreach-text">{{ s.outreach }}</pre>
               <div class="item-actions">
                 <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                <a class="btn-mini" href="{{ s.linkedin_url }}" target="_blank">↗ LinkedIn</a>
+                <a class="btn-mini" href="{{ s.linkedin.url }}" target="_blank" title="{{ s.linkedin.label }}">↗ {{ s.linkedin.label }}</a>
               </div>
             </div>
           {% endfor %}
@@ -847,7 +923,7 @@ TEMPLATE = r"""
                 <pre class="outreach-text">{{ s.outreach }}</pre>
                 <div class="item-actions">
                   <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                  <a class="btn-mini" href="{{ s.linkedin_url }}" target="_blank">↗ LinkedIn</a>
+                  <a class="btn-mini" href="{{ s.linkedin.url }}" target="_blank" title="{{ s.linkedin.label }}">↗ {{ s.linkedin.label }}</a>
                 </div>
               </div>
             {% endfor %}
@@ -885,7 +961,7 @@ TEMPLATE = r"""
               <pre class="outreach-text">{{ p.outreach }}</pre>
               <div class="item-actions">
                 <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                <a class="btn-mini" href="{{ p.linkedin_url }}" target="_blank">↗ LinkedIn</a>
+                <a class="btn-mini" href="{{ p.linkedin.url }}" target="_blank" title="{{ p.linkedin.label }}">↗ {{ p.linkedin.label }}</a>
               </div>
             </div>
           {% endfor %}
@@ -909,7 +985,7 @@ TEMPLATE = r"""
                 <pre class="outreach-text">{{ p.outreach }}</pre>
                 <div class="item-actions">
                   <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                  <a class="btn-mini" href="{{ p.linkedin_url }}" target="_blank">↗ LinkedIn</a>
+                  <a class="btn-mini" href="{{ p.linkedin.url }}" target="_blank" title="{{ p.linkedin.label }}">↗ {{ p.linkedin.label }}</a>
                 </div>
               </div>
             {% endfor %}
@@ -934,7 +1010,7 @@ TEMPLATE = r"""
         <label for="pp-account">Account name</label>
         <input id="pp-account" name="account_name" placeholder="e.g. Unilever" required>
         <label for="pp-role">Role</label>
-        <input id="pp-role" name="role" value="Head of Internal Communications" required>
+        <input id="pp-role" name="role" placeholder="e.g. Head of Internal Communications" required>
         <button type="submit">Run and send via email</button>
         <div class="status" id="pitch-status"></div>
       </form>
