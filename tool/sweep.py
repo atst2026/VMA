@@ -37,6 +37,7 @@ from tool.render import render_html, render_plaintext
 from tool.sources import (
     bright_data, companies_house, gdelt, jobs, rss_feeds, sec_edgar,
 )
+from tool import linkedin_resolver as lnr
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 log = logging.getLogger("sweep")
@@ -97,6 +98,17 @@ def main() -> int:
     ranked_live = rank(signals)
     log.info("Live-roles ranked: %d items.", len(ranked_live))
 
+    log.info("Resolving direct LinkedIn URLs for top sweep leads…")
+    for sig in ranked_live[:10]:
+        role = lnr.role_for_lead(sig)
+        company = (sig.get("company") or "").strip()
+        if not company:
+            continue
+        resolved = lnr.resolve_profile(company, role)
+        if resolved and resolved.get("url"):
+            sig["linkedin_profile_url"] = resolved["url"]
+            sig["linkedin_profile_role"] = resolved["role"]
+
     # Predictive pipeline
     pcluster.ingest_jobs(signals)
     trigger_events = pdet.detect_events(signals)
@@ -108,6 +120,19 @@ def main() -> int:
         "Predictive: %d trigger events + %d cluster events → %d stacks → %d ranked.",
         len(trigger_events), len(cluster_events), len(stacks), len(ranked_stacks),
     )
+
+    log.info("Resolving direct LinkedIn URLs for top sweep predictors…")
+    for stk, _sc in ranked_stacks[:10]:
+        company = (stk.company or "").strip()
+        if not company:
+            continue
+        role = lnr.role_for_predictor({"events": [
+            {"trigger_key": e.trigger_key} for e in stk.events
+        ]})
+        resolved = lnr.resolve_profile(company, role)
+        if resolved and resolved.get("url"):
+            stk._resolved_profile_url = resolved["url"]   # type: ignore[attr-defined]
+            stk._resolved_profile_role = resolved["role"]  # type: ignore[attr-defined]
 
     now = datetime.now()
     now_str = now.strftime("%A %d %B %Y · %H:%M")

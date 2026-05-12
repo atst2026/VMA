@@ -1,0 +1,29 @@
+# Render Blueprint — auto-configures the dashboard when this repo is connected.
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: vma-dashboard
+    runtime: python
+    plan: free
+    region: frankfurt        # closest EU region; Sara's in the UK
+    branch: main
+    rootDir: .
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn -w 1 -t 60 -b 0.0.0.0:$PORT tool.dashboard:app"
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: PYTHONPATH
+        value: "."
+      - key: GITHUB_OWNER
+        value: atst2026
+      - key: GITHUB_REPO
+        value: VMA
+      # The two below are set in the Render dashboard (NOT in this file)
+      # so secrets don't end up in git. Render shows them as 'sync: false'.
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: DASHBOARD_PASSWORD
+        sync: false

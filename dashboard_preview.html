@@ -1,0 +1,1148 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Account Director Dashboard · VMA Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #0E2845;
+      --navy-deep: #061528;
+      --navy-soft: rgba(14, 40, 69, 0.08);
+      --navy-hairline: rgba(14, 40, 69, 0.12);
+      --teal: #5BA6AD;
+      --teal-bright: #6FB8BF;
+      --teal-dark: #458C92;
+      --teal-glow: rgba(91, 166, 173, 0.35);
+      --teal-soft: rgba(91, 166, 173, 0.10);
+      --bg: #F6F8FB;
+      --surface: #FFFFFF;
+      --surface-elevated: #FFFFFF;
+      --border: rgba(14, 40, 69, 0.08);
+      --border-hover: rgba(14, 40, 69, 0.16);
+      --text: #0E2845;
+      --text-muted: #6B7888;
+      --shadow-sm: 0 1px 2px rgba(14, 40, 69, 0.04);
+      --shadow-md: 0 4px 12px rgba(14, 40, 69, 0.06), 0 1px 3px rgba(14, 40, 69, 0.04);
+      --shadow-lg: 0 10px 32px rgba(14, 40, 69, 0.10);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(circle at 1px 1px, rgba(14, 40, 69, 0.04) 1px, transparent 0);
+      background-size: 20px 20px;
+      color: var(--text);
+      line-height: 1.5;
+      font-weight: 400;
+      font-size: 13px;
+      font-feature-settings: "ss01", "cv11";
+      -webkit-font-smoothing: antialiased;
+      letter-spacing: -0.005em;
+    }
+
+    /* HEADER — navy backlit gradient, 3-col grid (title | wordmark | meta) */
+    .header {
+      background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 60%, #143352 100%);
+      color: white;
+      padding: 18px 32px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 32px;
+      border-bottom: 1px solid rgba(91, 166, 173, 0.18);
+      position: relative;
+      overflow: hidden;
+    }
+    .header::before {
+      content: "";
+      position: absolute;
+      top: -50%; left: 50%;
+      transform: translateX(-50%);
+      width: 700px; height: 220%;
+      background: radial-gradient(ellipse, rgba(91, 166, 173, 0.16) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .header .title-left {
+      position: relative; z-index: 1;
+      justify-self: start;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: white;
+      line-height: 1.2;
+    }
+    .header h1 .sub {
+      display: block;
+      font-size: 11px;
+      font-weight: 400;
+      opacity: 0.6;
+      margin-top: 4px;
+      letter-spacing: 0;
+    }
+    .header .wordmark {
+      position: relative; z-index: 1;
+      justify-self: center;
+      font-size: 32px;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      color: white;
+      text-align: center;
+    }
+    .header .wordmark .vma { font-weight: 700; letter-spacing: 0.015em; }
+    .header .wordmark .group {
+      font-weight: 300;
+      margin-left: 10px;
+      opacity: 0.88;
+      letter-spacing: 0.32em;
+      font-size: 28px;
+    }
+    .header .meta {
+      font-size: 11px;
+      opacity: 0.92;
+      text-align: right;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: relative;
+      z-index: 1;
+      justify-self: end;
+    }
+    .header .meta .last {
+      font-weight: 400;
+      letter-spacing: 0;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: rgba(255,255,255,0.78);
+    }
+    .header .meta .last::before {
+      content: "";
+      width: 6px; height: 6px;
+      background: var(--teal-bright);
+      border-radius: 50%;
+      box-shadow: 0 0 0 0 rgba(91, 166, 173, 0.7), 0 0 8px var(--teal-glow);
+      animation: pulse 2.4s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(91, 166, 173, 0.6), 0 0 8px var(--teal-glow); }
+      70% { box-shadow: 0 0 0 8px rgba(91, 166, 173, 0), 0 0 8px var(--teal-glow); }
+      100% { box-shadow: 0 0 0 0 rgba(91, 166, 173, 0), 0 0 8px var(--teal-glow); }
+    }
+    .header .meta button {
+      background: linear-gradient(135deg, var(--teal-bright) 0%, var(--teal) 60%, var(--teal-dark) 100%);
+      color: white;
+      border: 1px solid var(--teal-bright);
+      padding: 9px 18px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: inherit;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow:
+        0 2px 8px var(--teal-glow),
+        0 0 0 1px rgba(91, 166, 173, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      text-shadow: 0 1px 1px rgba(0, 0, 0, 0.12);
+    }
+    .header .meta button:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        0 6px 20px var(--teal-glow),
+        0 0 0 1px var(--teal-bright),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      filter: brightness(1.06);
+    }
+    .header .meta button:active {
+      transform: translateY(0);
+      filter: brightness(0.96);
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 22px 28px 16px 28px;
+    }
+
+    /* DAILY REFRESH BAR — sits above the panels, primary focal CTA */
+    .refresh-bar {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 14px 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+    .refresh-bar::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      width: 4px;
+      background: linear-gradient(180deg, var(--teal-bright) 0%, var(--teal-dark) 100%);
+    }
+    .big-refresh {
+      background: linear-gradient(135deg, var(--teal-bright) 0%, var(--teal) 55%, var(--teal-dark) 100%);
+      color: white;
+      border: 1px solid var(--teal-bright);
+      padding: 11px 22px;
+      border-radius: 7px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow:
+        0 3px 12px var(--teal-glow),
+        0 0 0 1px rgba(91, 166, 173, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      text-shadow: 0 1px 1px rgba(0, 0, 0, 0.12);
+      white-space: nowrap;
+      margin-left: 6px;   /* clears the left accent stripe */
+    }
+    .big-refresh:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        0 8px 24px var(--teal-glow),
+        0 0 0 1px var(--teal-bright),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      filter: brightness(1.05);
+    }
+    .big-refresh:active {
+      transform: translateY(0);
+      filter: brightness(0.96);
+    }
+    .big-refresh:disabled {
+      background: #B8C2CC;
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+      filter: none;
+    }
+    .refresh-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .refresh-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--navy);
+      letter-spacing: -0.005em;
+    }
+    .refresh-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    @media (max-width: 900px) {
+      .row { grid-template-columns: 1fr; }
+    }
+
+    /* PANEL — soft card, no thick borders */
+    .panel {
+      background: var(--surface);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      transition: box-shadow 0.18s ease, transform 0.18s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .panel:hover {
+      box-shadow: var(--shadow-lg);
+    }
+    .panel-header {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(180deg, rgba(91, 166, 173, 0.03) 0%, rgba(255, 255, 255, 0) 100%);
+      flex-shrink: 0;
+    }
+    .panel-header h2 {
+      margin: 0;
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--navy);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .panel-header h2::before {
+      content: "";
+      display: inline-block;
+      width: 5px; height: 5px;
+      background: var(--teal);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--teal-glow);
+    }
+    .panel-header .count {
+      background: var(--teal-soft);
+      color: var(--teal-dark);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+      letter-spacing: 0.02em;
+      border: 1px solid var(--teal-soft);
+    }
+    .panel-body {
+      flex: 1;
+      max-height: 460px;
+      overflow-y: auto;
+    }
+    /* Hide ugly default scrollbars, show on hover */
+    .panel-body::-webkit-scrollbar { width: 6px; }
+    .panel-body::-webkit-scrollbar-thumb {
+      background: var(--navy-hairline);
+      border-radius: 3px;
+    }
+    .panel-body::-webkit-scrollbar-thumb:hover { background: var(--navy-soft); }
+
+    /* ITEMS */
+    .item {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s ease;
+    }
+    .item:hover { background: rgba(91, 166, 173, 0.025); }
+    .item:last-child { border-bottom: 0; }
+    .item .rank {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px; height: 18px;
+      background: var(--teal-soft);
+      color: var(--teal-dark);
+      border: 1px solid rgba(91, 166, 173, 0.25);
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    .item .title {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--navy);
+      letter-spacing: -0.005em;
+    }
+    .item .title a {
+      color: var(--navy);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.15s;
+    }
+    .item .title a:hover { border-bottom-color: var(--teal); }
+    .item .meta {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      margin-top: 5px;
+      margin-left: 26px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .item .meta .badge {
+      background: var(--bg);
+      padding: 2px 7px;
+      border-radius: 3px;
+      font-weight: 500;
+      color: var(--navy);
+      font-size: 10px;
+      border: 1px solid var(--border);
+    }
+    .item .meta a {
+      color: var(--teal-dark);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .item .meta a:hover { text-decoration: underline; }
+
+    /* Per-item mini action buttons */
+    .item .item-actions {
+      margin-top: 7px;
+      margin-left: 26px;
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+    .btn-mini {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      padding: 4px 9px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      text-decoration: none;
+      line-height: 1.2;
+      background: white;
+      color: var(--teal-dark);
+      border: 1px solid rgba(91, 166, 173, 0.3);
+    }
+    .btn-mini:hover {
+      background: var(--teal);
+      color: white;
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px var(--teal-soft);
+      transform: translateY(-1px);
+    }
+    .btn-mini.copied {
+      background: var(--teal-dark);
+      color: white;
+      border-color: var(--teal-dark);
+    }
+    .outreach-text { display: none; }
+
+    /* PREDICTORS */
+    .predictor .stack-label {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 3px;
+      margin-left: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      vertical-align: middle;
+    }
+    .stack-label.stacked {
+      background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
+      color: white;
+      box-shadow: 0 0 0 1px rgba(91, 166, 173, 0.2);
+    }
+    .stack-label.single {
+      background: var(--bg);
+      color: var(--teal-dark);
+      border: 1px solid var(--teal-soft);
+    }
+    .predictor .evidence {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 5px;
+      margin-left: 26px;
+      line-height: 1.45;
+    }
+    .predictor .evidence strong { color: var(--navy); font-weight: 600; }
+
+    .show-more {
+      width: 100%;
+      padding: 9px;
+      background: var(--bg);
+      border: none;
+      border-top: 1px solid var(--border);
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--navy);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .show-more:hover { background: rgba(91, 166, 173, 0.06); }
+
+    .empty {
+      padding: 28px 16px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 11.5px;
+      font-weight: 400;
+    }
+
+    /* ACTION CARDS — refined, modern */
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 1000px) { .actions { grid-template-columns: 1fr; } }
+
+    .action-card {
+      padding: 16px 18px 18px 18px;
+      background: var(--surface);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-md);
+      transition: box-shadow 0.18s ease;
+    }
+    .action-card:hover { box-shadow: var(--shadow-lg); }
+    .action-card h3 {
+      margin: 0 0 4px 0;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--navy);
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .action-card h3::before {
+      content: "";
+      display: inline-block;
+      width: 5px; height: 5px;
+      background: var(--teal);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--teal-glow);
+    }
+    .action-card .subhead {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin: 4px 0 14px 13px;
+      font-weight: 400;
+      line-height: 1.5;
+    }
+    .action-card label {
+      display: block;
+      font-size: 9.5px;
+      font-weight: 600;
+      color: var(--navy);
+      margin: 9px 0 4px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .action-card input, .action-card select {
+      width: 100%;
+      padding: 8px 11px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: inherit;
+      background: white;
+      color: var(--navy);
+      font-weight: 400;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .action-card input::placeholder { color: #A6AFBE; font-weight: 400; }
+    .action-card input:focus, .action-card select:focus {
+      outline: none;
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px var(--teal-soft);
+    }
+    .action-card button {
+      width: 100%;
+      margin-top: 14px;
+      padding: 9px 14px;
+      background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      letter-spacing: 0.04em;
+      box-shadow: 0 1px 2px rgba(91, 166, 173, 0.15);
+    }
+    .action-card button:hover {
+      box-shadow: 0 4px 16px var(--teal-glow), 0 0 0 1px var(--teal);
+      transform: translateY(-1px);
+    }
+    .action-card button:disabled {
+      background: #B8C2CC;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+    .action-card .status {
+      margin-top: 10px;
+      padding: 8px 11px;
+      border-radius: 5px;
+      font-size: 11px;
+      display: none;
+      line-height: 1.4;
+    }
+    .action-card .status.ok {
+      background: var(--teal-soft);
+      color: var(--teal-dark);
+      border-left: 2px solid var(--teal);
+      display: block;
+    }
+    .action-card .status.err {
+      background: rgba(201, 59, 43, 0.08);
+      color: #8B2C20;
+      border-left: 2px solid #C93B2B;
+      display: block;
+    }
+
+    .footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 10.5px;
+      padding: 18px;
+      margin-top: 8px;
+      letter-spacing: 0;
+      font-weight: 400;
+    }
+
+    .warn-banner {
+      background: rgba(212, 162, 26, 0.08);
+      color: #6B5012;
+      padding: 10px 16px;
+      border-left: 2px solid #D4A21A;
+      margin: 0 28px 14px 28px;
+      border-radius: 5px;
+      font-size: 11.5px;
+      line-height: 1.45;
+    }
+    .warn-banner strong { font-weight: 600; }
+    .warn-banner code {
+      background: rgba(0,0,0,0.06);
+      padding: 1px 5px;
+      border-radius: 2px;
+      font-size: 11px;
+      font-family: "SF Mono", Monaco, Consolas, monospace;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title-left">
+    <h1>Account Director Dashboard
+      <span class="sub">Lead detection · pre-advert predictors · commercial tools</span>
+    </h1>
+  </div>
+  <div class="wordmark"><span class="vma">VMA</span><span class="group">GROUP</span></div>
+  <div class="meta">
+    <div class="last">Last brief: Tue 12 May 2026 · 21:41 UTC</div>
+  </div>
+</div>
+
+
+<div class="warn-banner">
+  <strong>GITHUB_TOKEN not set</strong> in your .env — the "Run and Send" buttons won't work until you add one.
+  See <code>DASHBOARD_SETUP.md</code> for instructions (it's a 5-minute one-time setup).
+</div>
+
+
+<div class="container">
+
+  <!-- DAILY REFRESH BAR — primary CTA, sits above the leads/predictors -->
+  <div class="refresh-bar">
+    <button onclick="refreshBrief()" id="refresh-btn" class="big-refresh">
+      ↻ Daily Refresh
+    </button>
+    <div class="refresh-meta">
+      <span class="refresh-label">Pull today's freshly-generated brief</span>
+      <span class="refresh-sub">Last refreshed: Tue 12 May 2026 · 21:41 UTC</span>
+    </div>
+  </div>
+
+  <!-- LEADS + PREDICTORS -->
+  <div class="row">
+
+    <!-- TODAY'S LEADS -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Today's Leads</h2>
+        <span class="count">6</span>
+      </div>
+      <div class="panel-body">
+        
+          
+            <div class="item">
+              <span class="rank">1</span>
+              <span class="title">
+                <a href="https://boards.greenhouse.io/monzo/jobs/123456" target="_blank">Internal Communications Director</a>
+                
+              </span>
+              <div class="meta">
+                <span class="badge">monzo</span>
+                <span class="badge">Greenhouse (monzo)</span>
+                <span class="badge">UK</span>
+              </div>
+              <pre class="outreach-text">Hi (Name), I&#39;m Sara from VMA Group.
+
+We specialise in executive search and recruitment across corporate communications, internal comms and marketing. I&#39;d love to grab a coffee in the next couple of weeks to introduce VMA Group and share what we&#39;re seeing in the market. I&#39;ve attached our brochure in case it&#39;s useful.
+
+Would be great to connect.
+
+Best,
+Sara</pre>
+              <div class="item-actions">
+                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                <a class="btn-mini" href="https://www.linkedin.com/talent/search?keywords=%22Chief+People+Officer%22+OR+%22CHRO%22+%22monzo%22" target="_blank" title="Search hiring manager at monzo">↗ Search hiring manager at monzo</a>
+              </div>
+            </div>
+          
+            <div class="item">
+              <span class="rank">2</span>
+              <span class="title">
+                <a href="https://www.reuters.com/business/unilever-cco" target="_blank">Unilever appoints new Chief Communications Officer</a>
+                
+              </span>
+              <div class="meta">
+                <span class="badge">Unilever</span>
+                <span class="badge">GDELT</span>
+                <span class="badge">UK</span>
+              </div>
+              <pre class="outreach-text">Hi (Name), I&#39;m Sara from VMA Group.
+
+We specialise in executive search and recruitment across corporate communications, internal comms and marketing. I&#39;d love to grab a coffee in the next couple of weeks to introduce VMA Group and share what we&#39;re seeing in the market. I&#39;ve attached our brochure in case it&#39;s useful.
+
+Would be great to connect.
+
+Best,
+Sara</pre>
+              <div class="item-actions">
+                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                <a class="btn-mini" href="https://www.linkedin.com/talent/search?keywords=%22Head+of+Communications%22+%22Unilever%22" target="_blank" title="Search comms appointee at Unilever">↗ Search comms appointee at Unilever</a>
+              </div>
+            </div>
+          
+            <div class="item">
+              <span class="rank">3</span>
+              <span class="title">
+                <a href="https://www.linkedin.com/jobs/view/3987654321" target="_blank">Communications Director, EMEA</a>
+                
+              </span>
+              <div class="meta">
+                <span class="badge">Palo Alto Networks</span>
+                <span class="badge">LinkedIn Jobs (public)</span>
+                <span class="badge">UK</span>
+              </div>
+              <pre class="outreach-text">Hi (Name), I&#39;m Sara from VMA Group.
+
+We specialise in executive search and recruitment across corporate communications, internal comms and marketing. I&#39;d love to grab a coffee in the next couple of weeks to introduce VMA Group and share what we&#39;re seeing in the market. I&#39;ve attached our brochure in case it&#39;s useful.
+
+Would be great to connect.
+
+Best,
+Sara</pre>
+              <div class="item-actions">
+                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                <a class="btn-mini" href="https://www.linkedin.com/talent/search?keywords=%22Chief+People+Officer%22+OR+%22CHRO%22+%22Palo+Alto+Networks%22" target="_blank" title="Search hiring manager at Palo Alto Networks">↗ Search hiring manager at Palo Alto Networks</a>
+              </div>
+            </div>
+          
+            <div class="item">
+              <span class="rank">4</span>
+              <span class="title">
+                <a href="https://www.adzuna.co.uk/jobs/4200001" target="_blank">Head of Corporate Communications — AstraZeneca</a>
+                
+              </span>
+              <div class="meta">
+                <span class="badge">AstraZeneca</span>
+                <span class="badge">Adzuna (Indeed + aggregators)</span>
+                <span class="badge">UK</span>
+              </div>
+              <pre class="outreach-text">Hi (Name), I&#39;m Sara from VMA Group.
+
+We specialise in executive search and recruitment across corporate communications, internal comms and marketing. I&#39;d love to grab a coffee in the next couple of weeks to introduce VMA Group and share what we&#39;re seeing in the market. I&#39;ve attached our brochure in case it&#39;s useful.
+
+Would be great to connect.
+
+Best,
+Sara</pre>
+              <div class="item-actions">
+                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                <a class="btn-mini" href="https://www.linkedin.com/talent/search?keywords=%22Chief+People+Officer%22+OR+%22CHRO%22+%22AstraZeneca%22" target="_blank" title="Search hiring manager at AstraZeneca">↗ Search hiring manager at AstraZeneca</a>
+              </div>
+            </div>
+          
+            <div class="item">
+              <span class="rank">5</span>
+              <span class="title">
+                <a href="https://www.investegate.co.uk/natwest/directorate-change" target="_blank">NatWest Group plc — Directorate Change</a>
+                
+              </span>
+              <div class="meta">
+                <span class="badge">NatWest Group</span>
+                <span class="badge">LSE RNS (Investegate)</span>
+                <span class="badge">UK</span>
+              </div>
+              <pre class="outreach-text">Hi (Name), I&#39;m Sara from VMA Group.
+
+We specialise in executive search and recruitment across corporate communications, internal comms and marketing. I&#39;d love to grab a coffee in the next couple of weeks to introduce VMA Group and share what we&#39;re seeing in the market. I&#39;ve attached our brochure in case it&#39;s useful.
+
+Would be great to connect.
+
+Best,
+Sara</pre>
+              <div class="item-actions">
+                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                <a class="btn-mini" href="https://www.linkedin.com/talent/search?keywords=%22Head+of+Communications%22+OR+%22Corporate+Affairs%22+%22NatWest+Group%22" target="_blank" title="Search Head of Comms at NatWest Group">↗ Search Head of Comms at NatWest Group</a>
+              </div>
+            </div>
+          
+          
+          <details>
+            <summary class="show-more">Show all 6 ▾</summary>
+            
+              <div class="item">
+                <span class="rank">6</span>
+                <span class="title">
+                  <a href="https://www.prweek.com/rolls-royce" target="_blank">Rolls-Royce hires ex-BAE head of corporate affairs</a>
+                  
+                </span>
+                <div class="meta">
+                  <span class="badge">Rolls-Royce</span>
+                  <span class="badge">PRWeek UK</span>
+                  <span class="badge">UK</span>
+                </div>
+                <pre class="outreach-text">Hi (Name), I&#39;m Sara from VMA Group.
+
+We specialise in executive search and recruitment across corporate communications, internal comms and marketing. I&#39;d love to grab a coffee in the next couple of weeks to introduce VMA Group and share what we&#39;re seeing in the market. I&#39;ve attached our brochure in case it&#39;s useful.
+
+Would be great to connect.
+
+Best,
+Sara</pre>
+                <div class="item-actions">
+                  <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                  <a class="btn-mini" href="https://www.linkedin.com/talent/search?keywords=%22Chief+People+Officer%22+OR+%22CHRO%22+%22Rolls-Royce%22" target="_blank" title="Search hiring manager at Rolls-Royce">↗ Search hiring manager at Rolls-Royce</a>
+                </div>
+              </div>
+            
+          </details>
+          
+        
+      </div>
+    </div>
+
+    <!-- TODAY'S PREDICTORS -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Today's Predictors</h2>
+        <span class="count">5</span>
+      </div>
+      <div class="panel-body">
+        
+          
+            <div class="item predictor">
+              <span class="rank">1</span>
+              <span class="title">Barclays plc</span>
+              <span class="stack-label stacked">
+                stacked × 2
+              </span>
+              <div class="meta">
+                
+                  <div class="evidence">
+                    <strong>CEO change:</strong> Barclays announces the appointment of a new Chief Executive Officer effective Q3.
+                     · <a href="https://www.investegate.co.uk/barclays/ceo-change" target="_blank">source</a>
+                  </div>
+                
+                  <div class="evidence">
+                    <strong>Restructure / transformation announced:</strong> Barclays has announced a strategic review of Corporate Affairs ahead of Q3.
+                     · <a href="https://www.campaignlive.co.uk/barclays-restructure" target="_blank">source</a>
+                  </div>
+                
+              </div>
+              <pre class="outreach-text">Hi (Name), I&#39;m Sara from VMA Group.
+
+We specialise in executive search and recruitment across corporate communications, internal comms and marketing. I&#39;d love to grab a coffee in the next couple of weeks to introduce VMA Group and share what we&#39;re seeing in the market. I&#39;ve attached our brochure in case it&#39;s useful.
+
+Would be great to connect.
+
+Best,
+Sara</pre>
+              <div class="item-actions">
+                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                <a class="btn-mini" href="https://www.linkedin.com/talent/search?keywords=%22Chief+Executive%22+OR+%22CEO%22+%22Barclays+plc%22" target="_blank" title="Search new CEO at Barclays plc">↗ Search new CEO at Barclays plc</a>
+              </div>
+            </div>
+          
+            <div class="item predictor">
+              <span class="rank">2</span>
+              <span class="title">Severn Trent</span>
+              <span class="stack-label single">
+                single
+              </span>
+              <div class="meta">
+                
+                  <div class="evidence">
+                    <strong>Job-ad cluster (2+ mid-level comms, no senior yet):</strong> 3 mid-level comms/PR roles posted at Severn Trent in the last 30 days; no senior Head-of-Comms role currently posted. Titles: Communications Manager; Senior Internal Comms; PR Manager
+                     · <a href="https://www.linkedin.com/jobs/severn-trent" target="_blank">source</a>
+                  </div>
+                
+              </div>
+              <pre class="outreach-text">Hi (Name), I&#39;m Sara from VMA Group.
+
+We specialise in executive search and recruitment across corporate communications, internal comms and marketing. I&#39;d love to grab a coffee in the next couple of weeks to introduce VMA Group and share what we&#39;re seeing in the market. I&#39;ve attached our brochure in case it&#39;s useful.
+
+Would be great to connect.
+
+Best,
+Sara</pre>
+              <div class="item-actions">
+                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                <a class="btn-mini" href="https://www.linkedin.com/talent/search?keywords=%22Head+of+HR%22+OR+%22Head+of+Talent%22+%22Severn+Trent%22" target="_blank" title="Search Head of HR at Severn Trent">↗ Search Head of HR at Severn Trent</a>
+              </div>
+            </div>
+          
+            <div class="item predictor">
+              <span class="rank">3</span>
+              <span class="title">Haleon plc</span>
+              <span class="stack-label single">
+                single
+              </span>
+              <div class="meta">
+                
+                  <div class="evidence">
+                    <strong>M&amp;A announcement:</strong> Haleon plc announces recommended cash offer for a UK-listed peer.
+                     · <a href="https://www.investegate.co.uk/haleon/offer" target="_blank">source</a>
+                  </div>
+                
+              </div>
+              <pre class="outreach-text">Hi (Name), I&#39;m Sara from VMA Group.
+
+We specialise in executive search and recruitment across corporate communications, internal comms and marketing. I&#39;d love to grab a coffee in the next couple of weeks to introduce VMA Group and share what we&#39;re seeing in the market. I&#39;ve attached our brochure in case it&#39;s useful.
+
+Would be great to connect.
+
+Best,
+Sara</pre>
+              <div class="item-actions">
+                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                <a class="btn-mini" href="https://www.linkedin.com/talent/search?keywords=%22Head+of+Communications%22+OR+%22Corporate+Affairs%22+%22Haleon+plc%22" target="_blank" title="Search Head of Comms at Haleon plc">↗ Search Head of Comms at Haleon plc</a>
+              </div>
+            </div>
+          
+            <div class="item predictor">
+              <span class="rank">4</span>
+              <span class="title">Thames Water</span>
+              <span class="stack-label single">
+                single
+              </span>
+              <div class="meta">
+                
+                  <div class="evidence">
+                    <strong>Material regulator action:</strong> Ofwat fines Thames Water £45m for repeated operational failings.
+                     · <a href="https://www.ofwat.gov.uk/thames-water-2026" target="_blank">source</a>
+                  </div>
+                
+              </div>
+              <pre class="outreach-text">Hi (Name), I&#39;m Sara from VMA Group.
+
+We specialise in executive search and recruitment across corporate communications, internal comms and marketing. I&#39;d love to grab a coffee in the next couple of weeks to introduce VMA Group and share what we&#39;re seeing in the market. I&#39;ve attached our brochure in case it&#39;s useful.
+
+Would be great to connect.
+
+Best,
+Sara</pre>
+              <div class="item-actions">
+                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                <a class="btn-mini" href="https://www.linkedin.com/talent/search?keywords=%22CHRO%22+OR+%22Head+of+Communications%22+%22Thames+Water%22" target="_blank" title="Search CHRO at Thames Water">↗ Search CHRO at Thames Water</a>
+              </div>
+            </div>
+          
+            <div class="item predictor">
+              <span class="rank">5</span>
+              <span class="title">BT</span>
+              <span class="stack-label single">
+                single
+              </span>
+              <div class="meta">
+                
+                  <div class="evidence">
+                    <strong>CHRO / HR leadership change:</strong> BT has announced the appointment of a new Chief People Officer.
+                     · <a href="https://www.hrmagazine.co.uk/bt-cpo" target="_blank">source</a>
+                  </div>
+                
+              </div>
+              <pre class="outreach-text">Hi (Name), I&#39;m Sara from VMA Group.
+
+We specialise in executive search and recruitment across corporate communications, internal comms and marketing. I&#39;d love to grab a coffee in the next couple of weeks to introduce VMA Group and share what we&#39;re seeing in the market. I&#39;ve attached our brochure in case it&#39;s useful.
+
+Would be great to connect.
+
+Best,
+Sara</pre>
+              <div class="item-actions">
+                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                <a class="btn-mini" href="https://www.linkedin.com/talent/search?keywords=%22Chief+People+Officer%22+OR+%22CHRO%22+%22BT%22" target="_blank" title="Search new CHRO at BT">↗ Search new CHRO at BT</a>
+              </div>
+            </div>
+          
+          
+        
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ACTION BOXES -->
+  <div class="actions">
+
+    <!-- PITCH PACK -->
+    <div class="panel action-card">
+      <h3>Pitch Pack</h3>
+      <div class="subhead">Bespoke proposal to flip a contingent brief to retained.</div>
+      <form id="pitch-form" onsubmit="dispatch(event, 'pitch-form', '/api/dispatch/pitch-pack')">
+        <label for="pp-account">Account name</label>
+        <input id="pp-account" name="account_name" placeholder="e.g. Unilever" required>
+        <label for="pp-role">Role</label>
+        <input id="pp-role" name="role" placeholder="e.g. Head of Internal Communications" required>
+        <button type="submit">Run and send via email</button>
+        <div class="status" id="pitch-status"></div>
+      </form>
+    </div>
+
+    <!-- REVERSE MATCH -->
+    <div class="panel action-card">
+      <h3>Reverse Match</h3>
+      <div class="subhead">Turn one strong candidate into 10–15 named BD targets.</div>
+      <form id="rm-form" onsubmit="dispatch(event, 'rm-form', '/api/dispatch/reverse-match')">
+        <label for="rm-name">Candidate name</label>
+        <input id="rm-name" name="candidate_name" placeholder="e.g. Rebecca Torres" required>
+        <label for="rm-company">Current company</label>
+        <input id="rm-company" name="current_company" placeholder="e.g. Vodafone" required>
+        <label for="rm-title">Current title</label>
+        <input id="rm-title" name="current_title" placeholder="e.g. Head of Internal Communications" required>
+        <button type="submit">Run and send via email</button>
+        <div class="status" id="rm-status"></div>
+      </form>
+    </div>
+
+    <!-- 14-DAY CATCH-UP -->
+    <div class="panel action-card">
+      <h3>14-Day Catch-up</h3>
+      <div class="subhead">Sweep the last fortnight for any missed leads or predictors.</div>
+      <form id="sweep-form" onsubmit="dispatch(event, 'sweep-form', '/api/dispatch/sweep')">
+        <label for="sw-days">Window (days)</label>
+        <input id="sw-days" name="window_days" type="number" min="1" max="60" value="14" required>
+        <label for="sw-mode" style="margin-top: 12px;">&nbsp;</label>
+        <div style="font-size:12px;color:var(--muted);margin-top:-8px;">
+          Fires the full 14-day catch-up. Both leads and predictors over the window.
+        </div>
+        <button type="submit">Run and send via email</button>
+        <div class="status" id="sweep-status"></div>
+      </form>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    Account Director Dashboard · Local · Data refreshed from GitHub Actions artifacts.
+    All sources are free public surfaces. No automation of LinkedIn account.
+    <span style="opacity:0.5; margin-left:8px;">· build 2026-05-12 21:54 UTC</span>
+  </div>
+
+</div>
+
+<script>
+async function dispatch(event, formId, url) {
+  event.preventDefault();
+  const form = document.getElementById(formId);
+  const btn = form.querySelector('button[type=submit]');
+  const status = form.querySelector('.status');
+  const data = {};
+  new FormData(form).forEach((v, k) => { data[k] = v; });
+  data.mode = 'send';   // dashboard always fires live to Sara
+
+  btn.disabled = true;
+  btn.textContent = 'Dispatching…';
+  status.className = 'status';
+  status.style.display = 'none';
+
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const j = await r.json();
+    status.textContent = j.detail || (j.ok ? 'Dispatched.' : 'Failed.');
+    status.className = 'status ' + (j.ok ? 'ok' : 'err');
+  } catch (e) {
+    status.textContent = 'Network error: ' + e.message;
+    status.className = 'status err';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Run and send via email';
+}
+
+// Copy outreach text -> clipboard; brief "Copied" feedback on the button.
+document.addEventListener('click', async (event) => {
+  const btn = event.target.closest('.copy-outreach');
+  if (!btn) return;
+  const item = btn.closest('.item');
+  const pre = item ? item.querySelector('.outreach-text') : null;
+  if (!pre) return;
+  const text = pre.textContent.trim();
+  try {
+    await navigator.clipboard.writeText(text);
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.classList.remove('copied');
+    }, 1600);
+  } catch (e) {
+    // Fallback: select the text so user can manually copy
+    const range = document.createRange();
+    range.selectNodeContents(pre);
+    pre.style.display = 'block';
+    pre.style.whiteSpace = 'pre-wrap';
+    pre.style.background = '#FAFCFD';
+    pre.style.padding = '8px';
+    pre.style.border = '1px solid var(--border)';
+    pre.style.borderRadius = '3px';
+    pre.style.marginTop = '6px';
+    pre.style.fontSize = '12px';
+    pre.style.fontFamily = 'inherit';
+    const sel = window.getSelection();
+    sel.removeAllRanges(); sel.addRange(range);
+    btn.textContent = '⚠ Select & ⌘C';
+  }
+});
+
+async function refreshBrief() {
+  const btn = document.getElementById('refresh-btn');
+  btn.disabled = true;
+  btn.textContent = 'Refreshing…';
+  try {
+    const r = await fetch('/api/refresh', { method: 'POST' });
+    const j = await r.json();
+    if (j.ok) {
+      window.location.reload();
+    } else {
+      alert(j.detail || 'Refresh failed');
+      btn.disabled = false;
+      btn.textContent = '↻ Refresh from GitHub';
+    }
+  } catch (e) {
+    alert('Refresh failed: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = '↻ Refresh from GitHub';
+  }
+}
+</script>
+
+</body>
+</html>
