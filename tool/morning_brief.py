@@ -30,6 +30,7 @@ from tool.sources import (
 )
 from tool.state_store import filter_unseen
 from tool.predictive.stacker import stack as stack_events
+from tool import linkedin_resolver as lnr
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 log = logging.getLogger("brief")
@@ -107,6 +108,21 @@ def main() -> int:
     ranked = rank(fresh)
     log.info("Ranked %d matching signals above the role-match threshold.", len(ranked))
 
+    # Resolve direct LinkedIn profile URLs for the top-N items via Bright
+    # Data. ~10 BD requests/day, well inside the 5k/mo free tier. Cache
+    # in tool/state/linkedin_profile_cache.json so same (company,role)
+    # never re-queries. Silent no-op if BRIGHT_DATA_KEY isn't configured.
+    log.info("Resolving direct LinkedIn URLs for top leads…")
+    for sig in ranked[:5]:
+        role = lnr.role_for_lead(sig)
+        company = (sig.get("company") or "").strip()
+        if not company:
+            continue
+        resolved = lnr.resolve_profile(company, role)
+        if resolved and resolved.get("url"):
+            sig["linkedin_profile_url"] = resolved["url"]
+            sig["linkedin_profile_role"] = resolved["role"]
+
     # Predictive pipeline: feed the raw (pre-filter) signals into trigger
     # detection, run the job-ad cluster detector off the rolling 30-day
     # state, stack by company, rank. This is a *parallel* track to the
@@ -122,6 +138,22 @@ def main() -> int:
         "Predictive: %d trigger events + %d cluster events → %d stacks → %d ranked.",
         len(trigger_events), len(cluster_events), len(stacks), len(ranked_stacks),
     )
+
+    # Same LinkedIn resolution for top predictors
+    log.info("Resolving direct LinkedIn URLs for top predictors…")
+    for stk, _sc in ranked_stacks[:5]:
+        company = (stk.company or "").strip()
+        if not company:
+            continue
+        role = lnr.role_for_predictor({"events": [
+            {"trigger_key": e.trigger_key} for e in stk.events
+        ]})
+        resolved = lnr.resolve_profile(company, role)
+        if resolved and resolved.get("url"):
+            # Attach to the stack via a side dict — we'll merge into the
+            # serialised predictive JSON below
+            stk._resolved_profile_url = resolved["url"]   # type: ignore[attr-defined]
+            stk._resolved_profile_role = resolved["role"]  # type: ignore[attr-defined]
 
     # Persist
     now = datetime.now()
@@ -139,6 +171,8 @@ def main() -> int:
             "company": stk.company,
             "score": sc,
             "depth": stk.depth,
+            "linkedin_profile_url": getattr(stk, "_resolved_profile_url", None),
+            "linkedin_profile_role": getattr(stk, "_resolved_profile_role", None),
             "events": [
                 {
                     "trigger_key": e.trigger_key,

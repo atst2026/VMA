@@ -190,12 +190,25 @@ def _extract_appointee_name(title: str) -> str | None:
 
 def linkedin_search_for_lead(signal: dict) -> dict:
     """Build a TARGETED LinkedIn URL that drops Sara on the right person at
-    the right company. Uses LinkedIn's company-employees page pattern
-    (linkedin.com/company/{slug}/people/?keywords=ROLE) rather than the
-    global people-search, so we filter inside the actual company
-    instead of relying on global ranking.
+    the right company.
+
+    Priority order:
+      1. If the morning brief resolved a specific profile URL via Bright
+         Data, use that — Sara lands directly on the named person's page.
+      2. Otherwise, use LinkedIn's company-employees page pattern with a
+         role keyword filter so she sees the right company's employees
+         narrowed to the relevant role.
     """
     from tool.peers import linkedin_company_employees_url
+
+    # 0. If we already resolved a direct profile URL for this lead, use it.
+    if signal.get("linkedin_profile_url"):
+        role = (signal.get("linkedin_profile_role") or "").strip()
+        company = (signal.get("company") or "").strip()
+        label = f"Open profile at {company}" if company else "Open profile"
+        if role:
+            label = f"Open {role} at {company}" if company else f"Open {role}"
+        return {"label": label, "url": signal["linkedin_profile_url"]}
 
     company = (signal.get("company") or "").strip()
     title = (signal.get("title") or "").strip()
@@ -286,9 +299,18 @@ def linkedin_search_for_lead(signal: dict) -> dict:
 
 
 def linkedin_search_for_predictor(p: dict) -> dict:
-    """Predictors: target the contact suggested by the trigger type, inside
-    the named company's employees page."""
+    """Predictors: target the contact suggested by the trigger type.
+
+    Same priority as leads — if the morning brief pre-resolved a profile
+    URL for this company+trigger, use it. Otherwise build a
+    company-employees URL with a role keyword."""
     from tool.peers import linkedin_company_employees_url
+
+    if p.get("linkedin_profile_url"):
+        role = (p.get("linkedin_profile_role") or "").strip()
+        company = (p.get("company") or "").strip()
+        label = f"Open {role} at {company}" if role and company else "Open profile"
+        return {"label": label, "url": p["linkedin_profile_url"]}
 
     company = (p.get("company") or "").strip() or "your target"
     events = p.get("events") or []
