@@ -27,6 +27,7 @@ from pathlib import Path
 
 import requests
 from flask import Flask, jsonify, render_template_string, request
+from urllib.parse import quote_plus
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(_REPO_ROOT) not in sys.path:
@@ -115,9 +116,14 @@ def load_latest_signals() -> list[dict]:
     if not p.exists():
         return []
     try:
-        return json.loads(p.read_text())
+        data = json.loads(p.read_text())
     except Exception:
         return []
+    # Enrich each lead with a personalised outreach draft + LinkedIn search URL
+    for s in data:
+        s["outreach"] = draft_outreach_for_lead(s)
+        s["linkedin_url"] = linkedin_search_url(s.get("company", ""))
+    return data
 
 
 def load_latest_predictive() -> list[dict]:
@@ -125,9 +131,205 @@ def load_latest_predictive() -> list[dict]:
     if not p.exists():
         return []
     try:
-        return json.loads(p.read_text())
+        data = json.loads(p.read_text())
     except Exception:
         return []
+    for p_item in data:
+        p_item["outreach"] = draft_outreach_for_predictor(p_item)
+        p_item["linkedin_url"] = linkedin_search_url(p_item.get("company", ""))
+    return data
+
+
+# ---- Outreach message drafting -----------------------------------------
+_SIG = (
+    "\n\n— Sara Tehrani\n"
+    "Account Director · Internal & Corporate Communications\n"
+    "VMA Group"
+)
+
+
+def draft_outreach_for_lead(s: dict) -> str:
+    """Generate a personalised LinkedIn outreach draft for a single lead.
+    Sara copies, opens the right LinkedIn profile, edits the [first name]
+    placeholder, sends."""
+    kind = s.get("kind", "")
+    company = s.get("company") or "your organisation"
+    title = (s.get("title") or "").strip()
+
+    if kind == "job":
+        return (
+            f"Hi [first name],\n\n"
+            f"Saw {company}'s {title} role go live. I head VMA Group's "
+            f"Internal & Corporate Communications practice — we place senior "
+            f"comms leaders into roles like this across the UK every month.\n\n"
+            f"Happy to share the candidate landscape, typical search timelines "
+            f"and salary benchmarks at this level. Worth a quick 15-min call "
+            f"this week?" + _SIG
+        )
+    if kind == "leadership_change":
+        return (
+            f"Hi [first name],\n\n"
+            f"Congratulations on the move to {company}. Senior comms refreshes "
+            f"typically follow within the first 6 months in role.\n\n"
+            f"I lead VMA Group's Internal & Corporate Communications desk — "
+            f"if it's useful to compare notes on the senior candidate landscape "
+            f"or what's worked at peer organisations, happy to set up a quick "
+            f"call." + _SIG
+        )
+    if kind == "rns":
+        return (
+            f"Hi [first name],\n\n"
+            f"Noticed {company}'s board change announcement. Comms team "
+            f"refreshes typically follow within 6–12 weeks as new leadership "
+            f"reviews the function.\n\n"
+            f"I head VMA Group's Internal & Corporate Communications practice. "
+            f"Happy to share the candidate landscape ahead of any search — "
+            f"worth a quick 15-min call?" + _SIG
+        )
+    if kind == "trade_press":
+        return (
+            f"Hi [first name],\n\n"
+            f"Saw the {company} news. I head VMA Group's Internal & Corporate "
+            f"Communications desk and place senior leaders across this space.\n\n"
+            f"If you're building or refreshing the comms function, happy to "
+            f"share the candidate landscape and typical search shape. Open to "
+            f"a quick call?" + _SIG
+        )
+    if kind == "regulator":
+        return (
+            f"Hi [first name],\n\n"
+            f"Noticed the regulator action affecting {company}. Reputational "
+            f"moments typically surface a need for interim crisis comms cover "
+            f"or a permanent Head of Comms refresh.\n\n"
+            f"I lead VMA Group's Internal & Corporate Communications desk — "
+            f"happy to share who's movable at what day rate, and on what "
+            f"timeline. Quick call?" + _SIG
+        )
+    if kind == "filing":
+        return (
+            f"Hi [first name],\n\n"
+            f"Saw {company}'s recent filing. Filings of this kind often signal "
+            f"a comms function refresh in the months ahead.\n\n"
+            f"I head VMA Group's Internal & Corporate Communications practice. "
+            f"Happy to share the candidate landscape if useful — worth a "
+            f"quick call?" + _SIG
+        )
+    if kind == "procurement":
+        return (
+            f"Hi [first name],\n\n"
+            f"Saw {company}'s procurement notice. VMA Group's Internal & "
+            f"Corporate Communications practice has placed senior leaders "
+            f"against frameworks like this across the UK public sector.\n\n"
+            f"Happy to share who's open at the right level — quick call?" + _SIG
+        )
+    return (
+        f"Hi [first name],\n\n"
+        f"Noticed something at {company} I thought was worth reaching out on. "
+        f"I head VMA Group's Internal & Corporate Communications practice — "
+        f"happy to compare notes on the candidate landscape or your current "
+        f"senior hiring approach.\n\n"
+        f"Open to a 15-min call this week?" + _SIG
+    )
+
+
+def draft_outreach_for_predictor(p: dict) -> str:
+    """For a predictor (stacked or single trigger), produce an outreach draft
+    pitched at the relevant contact at the named company."""
+    company = p.get("company", "your organisation")
+    events = p.get("events", []) or []
+    depth = p.get("depth", 1) or 1
+    keys = {e.get("trigger_key") for e in events}
+
+    if "ceo_change" in keys:
+        return (
+            f"Hi [first name],\n\n"
+            f"I see {company} has just announced new CEO leadership. Most "
+            f"incoming CEOs review the comms function within their first 6 "
+            f"months — a Corporate Affairs / Head of Comms refresh inside "
+            f"12 weeks is the typical pattern.\n\n"
+            f"I head VMA Group's Internal & Corporate Communications desk. "
+            f"Happy to share the senior candidate landscape and typical "
+            f"search timelines ahead of that conversation — quick 15-min "
+            f"call?" + _SIG
+        )
+    if "chro_change" in keys:
+        return (
+            f"Hi [first name],\n\n"
+            f"Congratulations on the move to {company}. Internal Comms "
+            f"reports to HR at ~40% of UK mid-caps — a comms direct-report "
+            f"refresh in your first 8–16 weeks is the typical pattern.\n\n"
+            f"I head VMA Group's Internal & Corporate Communications practice. "
+            f"Happy to share the candidate landscape ahead of any search — "
+            f"worth a quick call?" + _SIG
+        )
+    if "chair_change" in keys:
+        return (
+            f"Hi [first name],\n\n"
+            f"Noticed {company}'s new Chair announcement. Board changes "
+            f"typically trigger a comms function review within 8–16 weeks.\n\n"
+            f"I head VMA Group's Internal & Corporate Communications desk. "
+            f"Happy to share the senior candidate landscape ahead of any "
+            f"search — quick call?" + _SIG
+        )
+    if "regulator_action" in keys:
+        return (
+            f"Hi [first name],\n\n"
+            f"I saw the regulator action against {company}. Reputational "
+            f"moments like this typically need interim crisis comms cover "
+            f"within 2–8 weeks and a permanent Head of Comms review shortly "
+            f"after.\n\n"
+            f"I lead VMA Group's Internal & Corporate Communications desk — "
+            f"happy to share who's available at what day rate, and on what "
+            f"timeline. Quick call?" + _SIG
+        )
+    if "mna" in keys:
+        return (
+            f"Hi [first name],\n\n"
+            f"Saw {company}'s deal announcement. Post-close comms integration "
+            f"and rebrand work typically drives senior comms hiring within "
+            f"3–12 months.\n\n"
+            f"I head VMA Group's Internal & Corporate Communications practice. "
+            f"Happy to share the senior candidate landscape ahead of integration "
+            f"planning — quick call?" + _SIG
+        )
+    if "restructure" in keys:
+        return (
+            f"Hi [first name],\n\n"
+            f"Noticed the restructure / strategic review at {company}. Comms "
+            f"functions are commonly reorganised within 2–6 months of these "
+            f"announcements.\n\n"
+            f"I head VMA Group's Internal & Corporate Communications desk. "
+            f"Happy to share the candidate landscape ahead of any search — "
+            f"quick call?" + _SIG
+        )
+    if "job_ad_cluster" in keys:
+        return (
+            f"Hi [first name],\n\n"
+            f"I noticed {company} has several mid-level comms roles live but "
+            f"no senior Head-of-Comms post yet — typically signals a senior "
+            f"hire within 90 days.\n\n"
+            f"I head VMA Group's Internal & Corporate Communications practice. "
+            f"Happy to share the senior candidate landscape ahead of that "
+            f"search — quick call?" + _SIG
+        )
+    # Stacked-but-no-named-trigger fallback
+    stack_phrase = "Multiple signals" if depth > 1 else "A signal"
+    return (
+        f"Hi [first name],\n\n"
+        f"{stack_phrase} at {company} suggests a senior comms refresh is "
+        f"likely in the next few months.\n\n"
+        f"I head VMA Group's Internal & Corporate Communications desk. "
+        f"Happy to share the candidate landscape ahead of any search — "
+        f"quick call?" + _SIG
+    )
+
+
+def linkedin_search_url(company: str) -> str:
+    """Open LinkedIn people search for the company. Sara filters internally."""
+    c = (company or "").strip()
+    if not c:
+        return "https://www.linkedin.com/search/results/people/"
+    return f"https://www.linkedin.com/search/results/people/?keywords={quote_plus(c)}"
 
 
 def last_updated() -> str:
@@ -432,6 +634,44 @@ TEMPLATE = r"""
     }
     .item .meta a:hover { text-decoration: underline; }
 
+    /* Per-item mini action buttons (Copy outreach + LinkedIn) */
+    .item .item-actions {
+      margin-top: 8px;
+      margin-left: 26px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .btn-mini {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: inherit;
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 4px 9px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-decoration: none;
+      line-height: 1;
+      background: white;
+      color: var(--teal-dark);
+      border: 1px solid var(--teal);
+    }
+    .btn-mini:hover {
+      background: var(--teal);
+      color: white;
+    }
+    .btn-mini.copied {
+      background: var(--teal);
+      color: white;
+      border-color: var(--teal-dark);
+    }
+    .outreach-text { display: none; }
+
     /* PREDICTORS */
     .predictor .stack-label {
       display: inline-block;
@@ -659,6 +899,11 @@ TEMPLATE = r"""
                 <span class="badge">{{ s.source }}</span>
                 <span class="badge">{{ s.geo }}</span>
               </div>
+              <pre class="outreach-text">{{ s.outreach }}</pre>
+              <div class="item-actions">
+                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                <a class="btn-mini" href="{{ s.linkedin_url }}" target="_blank">↗ LinkedIn</a>
+              </div>
             </div>
           {% endfor %}
           {% if leads|length > 5 %}
@@ -675,6 +920,11 @@ TEMPLATE = r"""
                   <span class="badge">{{ s.company or '—' }}</span>
                   <span class="badge">{{ s.source }}</span>
                   <span class="badge">{{ s.geo }}</span>
+                </div>
+                <pre class="outreach-text">{{ s.outreach }}</pre>
+                <div class="item-actions">
+                  <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                  <a class="btn-mini" href="{{ s.linkedin_url }}" target="_blank">↗ LinkedIn</a>
                 </div>
               </div>
             {% endfor %}
@@ -709,6 +959,11 @@ TEMPLATE = r"""
                   </div>
                 {% endfor %}
               </div>
+              <pre class="outreach-text">{{ p.outreach }}</pre>
+              <div class="item-actions">
+                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                <a class="btn-mini" href="{{ p.linkedin_url }}" target="_blank">↗ LinkedIn</a>
+              </div>
             </div>
           {% endfor %}
           {% if predictors|length > 5 %}
@@ -727,6 +982,11 @@ TEMPLATE = r"""
                       <strong>{{ e.trigger_label }}:</strong> {{ e.evidence[:140] }}
                     </div>
                   {% endfor %}
+                </div>
+                <pre class="outreach-text">{{ p.outreach }}</pre>
+                <div class="item-actions">
+                  <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                  <a class="btn-mini" href="{{ p.linkedin_url }}" target="_blank">↗ LinkedIn</a>
                 </div>
               </div>
             {% endfor %}
@@ -829,6 +1089,42 @@ async function dispatch(event, formId, url) {
   btn.disabled = false;
   btn.textContent = 'Run and send via email';
 }
+
+// Copy outreach text -> clipboard; brief "Copied" feedback on the button.
+document.addEventListener('click', async (event) => {
+  const btn = event.target.closest('.copy-outreach');
+  if (!btn) return;
+  const item = btn.closest('.item');
+  const pre = item ? item.querySelector('.outreach-text') : null;
+  if (!pre) return;
+  const text = pre.textContent.trim();
+  try {
+    await navigator.clipboard.writeText(text);
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.classList.remove('copied');
+    }, 1600);
+  } catch (e) {
+    // Fallback: select the text so user can manually copy
+    const range = document.createRange();
+    range.selectNodeContents(pre);
+    pre.style.display = 'block';
+    pre.style.whiteSpace = 'pre-wrap';
+    pre.style.background = '#FAFCFD';
+    pre.style.padding = '8px';
+    pre.style.border = '1px solid var(--border)';
+    pre.style.borderRadius = '3px';
+    pre.style.marginTop = '6px';
+    pre.style.fontSize = '12px';
+    pre.style.fontFamily = 'inherit';
+    const sel = window.getSelection();
+    sel.removeAllRanges(); sel.addRange(range);
+    btn.textContent = '⚠ Select & ⌘C';
+  }
+});
 
 async function refreshBrief() {
   const btn = document.getElementById('refresh-btn');

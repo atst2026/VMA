@@ -232,6 +232,44 @@
     }
     .item .meta a:hover { text-decoration: underline; }
 
+    /* Per-item mini action buttons (Copy outreach + LinkedIn) */
+    .item .item-actions {
+      margin-top: 8px;
+      margin-left: 26px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .btn-mini {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: inherit;
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 4px 9px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-decoration: none;
+      line-height: 1;
+      background: white;
+      color: var(--teal-dark);
+      border: 1px solid var(--teal);
+    }
+    .btn-mini:hover {
+      background: var(--teal);
+      color: white;
+    }
+    .btn-mini.copied {
+      background: var(--teal);
+      color: white;
+      border-color: var(--teal-dark);
+    }
+    .outreach-text { display: none; }
+
     /* PREDICTORS */
     .predictor .stack-label {
       display: inline-block;
@@ -459,6 +497,19 @@
                 <span class="badge">Greenhouse (monzo)</span>
                 <span class="badge">UK</span>
               </div>
+              <pre class="outreach-text">Hi [first name],
+
+Saw monzo&#39;s Internal Communications Director role go live. I head VMA Group&#39;s Internal &amp; Corporate Communications practice — we place senior comms leaders into roles like this across the UK every month.
+
+Happy to share the candidate landscape, typical search timelines and salary benchmarks at this level. Worth a quick 15-min call this week?
+
+— Sara Tehrani
+Account Director · Internal &amp; Corporate Communications
+VMA Group</pre>
+              <div class="item-actions">
+                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                <a class="btn-mini" href="https://www.linkedin.com/search/results/people/?keywords=monzo" target="_blank">↗ LinkedIn</a>
+              </div>
             </div>
           
             <div class="item">
@@ -471,6 +522,19 @@
                 <span class="badge">Unilever</span>
                 <span class="badge">GDELT</span>
                 <span class="badge">UK</span>
+              </div>
+              <pre class="outreach-text">Hi [first name],
+
+Congratulations on the move to Unilever. Senior comms refreshes typically follow within the first 6 months in role.
+
+I lead VMA Group&#39;s Internal &amp; Corporate Communications desk — if it&#39;s useful to compare notes on the senior candidate landscape or what&#39;s worked at peer organisations, happy to set up a quick call.
+
+— Sara Tehrani
+Account Director · Internal &amp; Corporate Communications
+VMA Group</pre>
+              <div class="item-actions">
+                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                <a class="btn-mini" href="https://www.linkedin.com/search/results/people/?keywords=Unilever" target="_blank">↗ LinkedIn</a>
               </div>
             </div>
           
@@ -485,6 +549,19 @@
                 <span class="badge">LinkedIn Jobs (public)</span>
                 <span class="badge">UK</span>
               </div>
+              <pre class="outreach-text">Hi [first name],
+
+Saw Palo Alto Networks&#39;s Communications Director, EMEA role go live. I head VMA Group&#39;s Internal &amp; Corporate Communications practice — we place senior comms leaders into roles like this across the UK every month.
+
+Happy to share the candidate landscape, typical search timelines and salary benchmarks at this level. Worth a quick 15-min call this week?
+
+— Sara Tehrani
+Account Director · Internal &amp; Corporate Communications
+VMA Group</pre>
+              <div class="item-actions">
+                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                <a class="btn-mini" href="https://www.linkedin.com/search/results/people/?keywords=Palo+Alto+Networks" target="_blank">↗ LinkedIn</a>
+              </div>
             </div>
           
             <div class="item">
@@ -498,6 +575,19 @@
                 <span class="badge">Adzuna (Indeed + aggregators)</span>
                 <span class="badge">UK</span>
               </div>
+              <pre class="outreach-text">Hi [first name],
+
+Saw AstraZeneca&#39;s Head of Corporate Communications — AstraZeneca role go live. I head VMA Group&#39;s Internal &amp; Corporate Communications practice — we place senior comms leaders into roles like this across the UK every month.
+
+Happy to share the candidate landscape, typical search timelines and salary benchmarks at this level. Worth a quick 15-min call this week?
+
+— Sara Tehrani
+Account Director · Internal &amp; Corporate Communications
+VMA Group</pre>
+              <div class="item-actions">
+                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                <a class="btn-mini" href="https://www.linkedin.com/search/results/people/?keywords=AstraZeneca" target="_blank">↗ LinkedIn</a>
+              </div>
             </div>
           
             <div class="item">
@@ -510,6 +600,19 @@
                 <span class="badge">NatWest Group</span>
                 <span class="badge">LSE RNS (Investegate)</span>
                 <span class="badge">UK</span>
+              </div>
+              <pre class="outreach-text">Hi [first name],
+
+Noticed NatWest Group&#39;s board change announcement. Comms team refreshes typically follow within 6–12 weeks as new leadership reviews the function.
+
+I head VMA Group&#39;s Internal &amp; Corporate Communications practice. Happy to share the candidate landscape ahead of any search — worth a quick 15-min call?
+
+— Sara Tehrani
+Account Director · Internal &amp; Corporate Communications
+VMA Group</pre>
+              <div class="item-actions">
+                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                <a class="btn-mini" href="https://www.linkedin.com/search/results/people/?keywords=NatWest+Group" target="_blank">↗ LinkedIn</a>
               </div>
             </div>
           
@@ -527,6 +630,19 @@
                   <span class="badge">Rolls-Royce</span>
                   <span class="badge">PRWeek UK</span>
                   <span class="badge">UK</span>
+                </div>
+                <pre class="outreach-text">Hi [first name],
+
+Saw the Rolls-Royce news. I head VMA Group&#39;s Internal &amp; Corporate Communications desk and place senior leaders across this space.
+
+If you&#39;re building or refreshing the comms function, happy to share the candidate landscape and typical search shape. Open to a quick call?
+
+— Sara Tehrani
+Account Director · Internal &amp; Corporate Communications
+VMA Group</pre>
+                <div class="item-actions">
+                  <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                  <a class="btn-mini" href="https://www.linkedin.com/search/results/people/?keywords=Rolls-Royce" target="_blank">↗ LinkedIn</a>
                 </div>
               </div>
             
@@ -564,6 +680,19 @@
                   </div>
                 
               </div>
+              <pre class="outreach-text">Hi [first name],
+
+I see Barclays plc has just announced new CEO leadership. Most incoming CEOs review the comms function within their first 6 months — a Corporate Affairs / Head of Comms refresh inside 12 weeks is the typical pattern.
+
+I head VMA Group&#39;s Internal &amp; Corporate Communications desk. Happy to share the senior candidate landscape and typical search timelines ahead of that conversation — quick 15-min call?
+
+— Sara Tehrani
+Account Director · Internal &amp; Corporate Communications
+VMA Group</pre>
+              <div class="item-actions">
+                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                <a class="btn-mini" href="https://www.linkedin.com/search/results/people/?keywords=Barclays+plc" target="_blank">↗ LinkedIn</a>
+              </div>
             </div>
           
             <div class="item predictor">
@@ -579,6 +708,19 @@
                      · <a href="https://www.linkedin.com/jobs/severn-trent" target="_blank">source</a>
                   </div>
                 
+              </div>
+              <pre class="outreach-text">Hi [first name],
+
+I noticed Severn Trent has several mid-level comms roles live but no senior Head-of-Comms post yet — typically signals a senior hire within 90 days.
+
+I head VMA Group&#39;s Internal &amp; Corporate Communications practice. Happy to share the senior candidate landscape ahead of that search — quick call?
+
+— Sara Tehrani
+Account Director · Internal &amp; Corporate Communications
+VMA Group</pre>
+              <div class="item-actions">
+                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                <a class="btn-mini" href="https://www.linkedin.com/search/results/people/?keywords=Severn+Trent" target="_blank">↗ LinkedIn</a>
               </div>
             </div>
           
@@ -596,6 +738,19 @@
                   </div>
                 
               </div>
+              <pre class="outreach-text">Hi [first name],
+
+Saw Haleon plc&#39;s deal announcement. Post-close comms integration and rebrand work typically drives senior comms hiring within 3–12 months.
+
+I head VMA Group&#39;s Internal &amp; Corporate Communications practice. Happy to share the senior candidate landscape ahead of integration planning — quick call?
+
+— Sara Tehrani
+Account Director · Internal &amp; Corporate Communications
+VMA Group</pre>
+              <div class="item-actions">
+                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                <a class="btn-mini" href="https://www.linkedin.com/search/results/people/?keywords=Haleon+plc" target="_blank">↗ LinkedIn</a>
+              </div>
             </div>
           
             <div class="item predictor">
@@ -612,6 +767,19 @@
                   </div>
                 
               </div>
+              <pre class="outreach-text">Hi [first name],
+
+I saw the regulator action against Thames Water. Reputational moments like this typically need interim crisis comms cover within 2–8 weeks and a permanent Head of Comms review shortly after.
+
+I lead VMA Group&#39;s Internal &amp; Corporate Communications desk — happy to share who&#39;s available at what day rate, and on what timeline. Quick call?
+
+— Sara Tehrani
+Account Director · Internal &amp; Corporate Communications
+VMA Group</pre>
+              <div class="item-actions">
+                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                <a class="btn-mini" href="https://www.linkedin.com/search/results/people/?keywords=Thames+Water" target="_blank">↗ LinkedIn</a>
+              </div>
             </div>
           
             <div class="item predictor">
@@ -627,6 +795,19 @@
                      · <a href="https://www.hrmagazine.co.uk/bt-cpo" target="_blank">source</a>
                   </div>
                 
+              </div>
+              <pre class="outreach-text">Hi [first name],
+
+Congratulations on the move to BT. Internal Comms reports to HR at ~40% of UK mid-caps — a comms direct-report refresh in your first 8–16 weeks is the typical pattern.
+
+I head VMA Group&#39;s Internal &amp; Corporate Communications practice. Happy to share the candidate landscape ahead of any search — worth a quick call?
+
+— Sara Tehrani
+Account Director · Internal &amp; Corporate Communications
+VMA Group</pre>
+              <div class="item-actions">
+                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                <a class="btn-mini" href="https://www.linkedin.com/search/results/people/?keywords=BT" target="_blank">↗ LinkedIn</a>
               </div>
             </div>
           
@@ -726,6 +907,42 @@ async function dispatch(event, formId, url) {
   btn.disabled = false;
   btn.textContent = 'Run and send via email';
 }
+
+// Copy outreach text -> clipboard; brief "Copied" feedback on the button.
+document.addEventListener('click', async (event) => {
+  const btn = event.target.closest('.copy-outreach');
+  if (!btn) return;
+  const item = btn.closest('.item');
+  const pre = item ? item.querySelector('.outreach-text') : null;
+  if (!pre) return;
+  const text = pre.textContent.trim();
+  try {
+    await navigator.clipboard.writeText(text);
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.classList.remove('copied');
+    }, 1600);
+  } catch (e) {
+    // Fallback: select the text so user can manually copy
+    const range = document.createRange();
+    range.selectNodeContents(pre);
+    pre.style.display = 'block';
+    pre.style.whiteSpace = 'pre-wrap';
+    pre.style.background = '#FAFCFD';
+    pre.style.padding = '8px';
+    pre.style.border = '1px solid var(--border)';
+    pre.style.borderRadius = '3px';
+    pre.style.marginTop = '6px';
+    pre.style.fontSize = '12px';
+    pre.style.fontFamily = 'inherit';
+    const sel = window.getSelection();
+    sel.removeAllRanges(); sel.addRange(range);
+    btn.textContent = '⚠ Select & ⌘C';
+  }
+});
 
 async function refreshBrief() {
   const btn = document.getElementById('refresh-btn');
