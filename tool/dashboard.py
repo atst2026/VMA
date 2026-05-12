@@ -141,187 +141,27 @@ def load_latest_predictive() -> list[dict]:
 
 
 # ---- Outreach message drafting -----------------------------------------
-_SIG = (
-    "\n\n— Sara Tehrani\n"
-    "Account Director · Internal & Corporate Communications\n"
-    "VMA Group"
+# Default copy Sara approved. Same message for every lead and every
+# predictor — she just edits the (Name) placeholder per recipient.
+_DEFAULT_OUTREACH = (
+    "Hi (Name), I'm Sara from VMA Group.\n\n"
+    "We specialise in executive search and recruitment across corporate "
+    "communications, internal comms and marketing. I'd love to grab a "
+    "coffee in the next couple of weeks to introduce VMA Group and share "
+    "what we're seeing in the market. I've attached our brochure in case "
+    "it's useful.\n\n"
+    "Would be great to connect.\n\n"
+    "Best,\n"
+    "Sara"
 )
 
 
-def draft_outreach_for_lead(s: dict) -> str:
-    """Generate a personalised LinkedIn outreach draft for a single lead.
-    Sara copies, opens the right LinkedIn profile, edits the [first name]
-    placeholder, sends."""
-    kind = s.get("kind", "")
-    company = s.get("company") or "your organisation"
-    title = (s.get("title") or "").strip()
-
-    if kind == "job":
-        return (
-            f"Hi [first name],\n\n"
-            f"Saw {company}'s {title} role go live. I head VMA Group's "
-            f"Internal & Corporate Communications practice — we place senior "
-            f"comms leaders into roles like this across the UK every month.\n\n"
-            f"Happy to share the candidate landscape, typical search timelines "
-            f"and salary benchmarks at this level. Worth a quick 15-min call "
-            f"this week?" + _SIG
-        )
-    if kind == "leadership_change":
-        return (
-            f"Hi [first name],\n\n"
-            f"Congratulations on the move to {company}. Senior comms refreshes "
-            f"typically follow within the first 6 months in role.\n\n"
-            f"I lead VMA Group's Internal & Corporate Communications desk — "
-            f"if it's useful to compare notes on the senior candidate landscape "
-            f"or what's worked at peer organisations, happy to set up a quick "
-            f"call." + _SIG
-        )
-    if kind == "rns":
-        return (
-            f"Hi [first name],\n\n"
-            f"Noticed {company}'s board change announcement. Comms team "
-            f"refreshes typically follow within 6–12 weeks as new leadership "
-            f"reviews the function.\n\n"
-            f"I head VMA Group's Internal & Corporate Communications practice. "
-            f"Happy to share the candidate landscape ahead of any search — "
-            f"worth a quick 15-min call?" + _SIG
-        )
-    if kind == "trade_press":
-        return (
-            f"Hi [first name],\n\n"
-            f"Saw the {company} news. I head VMA Group's Internal & Corporate "
-            f"Communications desk and place senior leaders across this space.\n\n"
-            f"If you're building or refreshing the comms function, happy to "
-            f"share the candidate landscape and typical search shape. Open to "
-            f"a quick call?" + _SIG
-        )
-    if kind == "regulator":
-        return (
-            f"Hi [first name],\n\n"
-            f"Noticed the regulator action affecting {company}. Reputational "
-            f"moments typically surface a need for interim crisis comms cover "
-            f"or a permanent Head of Comms refresh.\n\n"
-            f"I lead VMA Group's Internal & Corporate Communications desk — "
-            f"happy to share who's movable at what day rate, and on what "
-            f"timeline. Quick call?" + _SIG
-        )
-    if kind == "filing":
-        return (
-            f"Hi [first name],\n\n"
-            f"Saw {company}'s recent filing. Filings of this kind often signal "
-            f"a comms function refresh in the months ahead.\n\n"
-            f"I head VMA Group's Internal & Corporate Communications practice. "
-            f"Happy to share the candidate landscape if useful — worth a "
-            f"quick call?" + _SIG
-        )
-    if kind == "procurement":
-        return (
-            f"Hi [first name],\n\n"
-            f"Saw {company}'s procurement notice. VMA Group's Internal & "
-            f"Corporate Communications practice has placed senior leaders "
-            f"against frameworks like this across the UK public sector.\n\n"
-            f"Happy to share who's open at the right level — quick call?" + _SIG
-        )
-    return (
-        f"Hi [first name],\n\n"
-        f"Noticed something at {company} I thought was worth reaching out on. "
-        f"I head VMA Group's Internal & Corporate Communications practice — "
-        f"happy to compare notes on the candidate landscape or your current "
-        f"senior hiring approach.\n\n"
-        f"Open to a 15-min call this week?" + _SIG
-    )
+def draft_outreach_for_lead(_signal: dict) -> str:
+    return _DEFAULT_OUTREACH
 
 
-def draft_outreach_for_predictor(p: dict) -> str:
-    """For a predictor (stacked or single trigger), produce an outreach draft
-    pitched at the relevant contact at the named company."""
-    company = p.get("company", "your organisation")
-    events = p.get("events", []) or []
-    depth = p.get("depth", 1) or 1
-    keys = {e.get("trigger_key") for e in events}
-
-    if "ceo_change" in keys:
-        return (
-            f"Hi [first name],\n\n"
-            f"I see {company} has just announced new CEO leadership. Most "
-            f"incoming CEOs review the comms function within their first 6 "
-            f"months — a Corporate Affairs / Head of Comms refresh inside "
-            f"12 weeks is the typical pattern.\n\n"
-            f"I head VMA Group's Internal & Corporate Communications desk. "
-            f"Happy to share the senior candidate landscape and typical "
-            f"search timelines ahead of that conversation — quick 15-min "
-            f"call?" + _SIG
-        )
-    if "chro_change" in keys:
-        return (
-            f"Hi [first name],\n\n"
-            f"Congratulations on the move to {company}. Internal Comms "
-            f"reports to HR at ~40% of UK mid-caps — a comms direct-report "
-            f"refresh in your first 8–16 weeks is the typical pattern.\n\n"
-            f"I head VMA Group's Internal & Corporate Communications practice. "
-            f"Happy to share the candidate landscape ahead of any search — "
-            f"worth a quick call?" + _SIG
-        )
-    if "chair_change" in keys:
-        return (
-            f"Hi [first name],\n\n"
-            f"Noticed {company}'s new Chair announcement. Board changes "
-            f"typically trigger a comms function review within 8–16 weeks.\n\n"
-            f"I head VMA Group's Internal & Corporate Communications desk. "
-            f"Happy to share the senior candidate landscape ahead of any "
-            f"search — quick call?" + _SIG
-        )
-    if "regulator_action" in keys:
-        return (
-            f"Hi [first name],\n\n"
-            f"I saw the regulator action against {company}. Reputational "
-            f"moments like this typically need interim crisis comms cover "
-            f"within 2–8 weeks and a permanent Head of Comms review shortly "
-            f"after.\n\n"
-            f"I lead VMA Group's Internal & Corporate Communications desk — "
-            f"happy to share who's available at what day rate, and on what "
-            f"timeline. Quick call?" + _SIG
-        )
-    if "mna" in keys:
-        return (
-            f"Hi [first name],\n\n"
-            f"Saw {company}'s deal announcement. Post-close comms integration "
-            f"and rebrand work typically drives senior comms hiring within "
-            f"3–12 months.\n\n"
-            f"I head VMA Group's Internal & Corporate Communications practice. "
-            f"Happy to share the senior candidate landscape ahead of integration "
-            f"planning — quick call?" + _SIG
-        )
-    if "restructure" in keys:
-        return (
-            f"Hi [first name],\n\n"
-            f"Noticed the restructure / strategic review at {company}. Comms "
-            f"functions are commonly reorganised within 2–6 months of these "
-            f"announcements.\n\n"
-            f"I head VMA Group's Internal & Corporate Communications desk. "
-            f"Happy to share the candidate landscape ahead of any search — "
-            f"quick call?" + _SIG
-        )
-    if "job_ad_cluster" in keys:
-        return (
-            f"Hi [first name],\n\n"
-            f"I noticed {company} has several mid-level comms roles live but "
-            f"no senior Head-of-Comms post yet — typically signals a senior "
-            f"hire within 90 days.\n\n"
-            f"I head VMA Group's Internal & Corporate Communications practice. "
-            f"Happy to share the senior candidate landscape ahead of that "
-            f"search — quick call?" + _SIG
-        )
-    # Stacked-but-no-named-trigger fallback
-    stack_phrase = "Multiple signals" if depth > 1 else "A signal"
-    return (
-        f"Hi [first name],\n\n"
-        f"{stack_phrase} at {company} suggests a senior comms refresh is "
-        f"likely in the next few months.\n\n"
-        f"I head VMA Group's Internal & Corporate Communications desk. "
-        f"Happy to share the candidate landscape ahead of any search — "
-        f"quick call?" + _SIG
-    )
+def draft_outreach_for_predictor(_predictor: dict) -> str:
+    return _DEFAULT_OUTREACH
 
 
 def linkedin_search_url(company: str) -> str:
