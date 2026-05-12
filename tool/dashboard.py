@@ -400,7 +400,7 @@ TEMPLATE = r"""
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sara's Desk · VMA Group</title>
+  <title>Account Director Dashboard · VMA Group</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -443,14 +443,15 @@ TEMPLATE = r"""
       letter-spacing: -0.005em;
     }
 
-    /* HEADER — navy with backlit gradient */
+    /* HEADER — navy backlit gradient, 3-col grid (title | wordmark | meta) */
     .header {
       background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 60%, #143352 100%);
       color: white;
-      padding: 14px 28px;
-      display: flex;
+      padding: 18px 32px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
       align-items: center;
-      justify-content: space-between;
+      gap: 32px;
       border-bottom: 1px solid rgba(91, 166, 173, 0.18);
       position: relative;
       overflow: hidden;
@@ -458,42 +459,48 @@ TEMPLATE = r"""
     .header::before {
       content: "";
       position: absolute;
-      top: -50%; right: -10%;
-      width: 400px; height: 200%;
-      background: radial-gradient(circle, rgba(91, 166, 173, 0.12) 0%, transparent 70%);
+      top: -50%; left: 50%;
+      transform: translateX(-50%);
+      width: 700px; height: 220%;
+      background: radial-gradient(ellipse, rgba(91, 166, 173, 0.16) 0%, transparent 65%);
       pointer-events: none;
     }
-    .header .brand { display: flex; align-items: center; gap: 22px; position: relative; z-index: 1; }
-    .wordmark {
-      font-size: 15px;
-      letter-spacing: 0.02em;
-      line-height: 1;
-      color: white;
-    }
-    .wordmark .vma { font-weight: 700; letter-spacing: 0.005em; }
-    .wordmark .group {
-      font-weight: 300;
-      margin-left: 5px;
-      opacity: 0.85;
-      letter-spacing: 0.22em;
-      font-size: 14px;
+    .header .title-left {
+      position: relative; z-index: 1;
+      justify-self: start;
     }
     .header h1 {
       margin: 0;
-      font-size: 13px;
-      font-weight: 500;
-      letter-spacing: -0.005em;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
       color: white;
-      padding-left: 22px;
-      border-left: 1px solid rgba(255,255,255,0.16);
+      line-height: 1.2;
     }
     .header h1 .sub {
       display: block;
       font-size: 11px;
       font-weight: 400;
       opacity: 0.6;
-      margin-top: 3px;
+      margin-top: 4px;
       letter-spacing: 0;
+    }
+    .header .wordmark {
+      position: relative; z-index: 1;
+      justify-self: center;
+      font-size: 32px;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      color: white;
+      text-align: center;
+    }
+    .header .wordmark .vma { font-weight: 700; letter-spacing: 0.015em; }
+    .header .wordmark .group {
+      font-weight: 300;
+      margin-left: 10px;
+      opacity: 0.88;
+      letter-spacing: 0.32em;
+      font-size: 28px;
     }
     .header .meta {
       font-size: 11px;
@@ -504,6 +511,7 @@ TEMPLATE = r"""
       gap: 14px;
       position: relative;
       z-index: 1;
+      justify-self: end;
     }
     .header .meta .last {
       font-weight: 400;
@@ -1019,12 +1027,12 @@ TEMPLATE = r"""
 <body>
 
 <div class="header">
-  <div class="brand">
-    <div class="wordmark"><span class="vma">VMA</span><span class="group">GROUP</span></div>
-    <h1>Sara's Desk
+  <div class="title-left">
+    <h1>Account Director Dashboard
       <span class="sub">Lead detection · pre-advert predictors · commercial tools</span>
     </h1>
   </div>
+  <div class="wordmark"><span class="vma">VMA</span><span class="group">GROUP</span></div>
   <div class="meta">
     <div class="last">Last brief: {{ last_updated }}</div>
   </div>
@@ -1226,7 +1234,7 @@ TEMPLATE = r"""
   </div>
 
   <div class="footer">
-    Sara's Desk · Local dashboard · Data refreshed from GitHub Actions artifacts.
+    Account Director Dashboard · Local · Data refreshed from GitHub Actions artifacts.
     All sources are free public surfaces. No automation of LinkedIn account.
     <span style="opacity:0.5; margin-left:8px;">· build {{ build_stamp }}</span>
   </div>
