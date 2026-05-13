@@ -46,21 +46,40 @@ _CO_SUFFIX_RX = re.compile(
 
 
 def extract_company(title: str, summary: str = "") -> str:
-    """Best-effort company name extraction from an RSS item title."""
+    """Best-effort company name extraction.
+
+    1) RNS-style: separator split + company-suffix check at the END of
+       the first part (catches 'NatWest Group plc — Directorate Change').
+    2) Peer-name scan against peers.SECTOR_PEERS for GDELT news
+       headlines ('Barclays announces new chief executive').
+    3) Fallback to a short Title-Cased prefix.
+    """
     if not title:
         return ""
     t = title.strip()
-    # Strip a leading LSE ticker like "NWG.L "
-    t = _LSE_TICKER.sub("", t).strip()
-    # Split on common title separators
-    parts = _RNS_SEPARATORS.split(t, maxsplit=1)
+    t_nopfx = _LSE_TICKER.sub("", t).strip()
+    parts = _RNS_SEPARATORS.split(t_nopfx, maxsplit=1)
     candidate = parts[0].strip()
-    # If the candidate ends in a company suffix, keep it
-    if _CO_SUFFIX_RX.search(candidate):
-        return candidate
-    # If it's short (<= 6 words) and Title-Cased, it's likely a company name
-    if candidate and len(candidate.split()) <= 6:
-        # Drop trailing punctuation
+
+    # 1) RNS-style: short candidate ending in a company suffix
+    words = candidate.split()
+    last3 = " ".join(words[-3:]) if len(words) >= 1 else ""
+    if 1 <= len(words) <= 6 and _CO_SUFFIX_RX.search(last3):
+        return candidate.rstrip(",.;:")
+
+    # 2) Peer-name scan
+    haystack = f"{title} {summary}".lower()
+    try:
+        from tool.peers import SECTOR_PEERS
+        all_peers = [p for names in SECTOR_PEERS.values() for p in names]
+        for peer in sorted(all_peers, key=len, reverse=True):
+            if peer.lower() in haystack:
+                return peer
+    except Exception:
+        pass
+
+    # 3) Short Title-Cased prefix fallback
+    if candidate and len(words) <= 6:
         return candidate.rstrip(",.;:")
     return ""
 
