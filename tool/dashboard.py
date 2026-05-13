@@ -627,6 +627,37 @@ TEMPLATE = r"""
     @media (max-width: 720px) {
       .top-bar { padding: 16px 18px 10px; }
       .top-bar .logo { height: 32px; }
+
+      /* Mobile: predictor row summary stacks vertically so the long
+         role chip ('Corporate Affairs Director', 'Head of Communications')
+         doesn't render on top of the company name. Title takes full
+         remaining width on row 1; chips wrap to row 2+. */
+      .item.predictor .row-summary {
+        flex-wrap: wrap;
+        align-items: center;
+        row-gap: 6px;
+      }
+      .item.predictor .row-summary .title {
+        flex: 1 1 calc(100% - 38px);
+        min-width: 0;
+        white-space: normal;
+        overflow: visible;
+        line-height: 1.25;
+      }
+      .item.predictor .row-summary .role-chip,
+      .item.predictor .row-summary .prob-chip,
+      .item.predictor .row-summary .window-badge,
+      .item.predictor .row-summary .stack-label,
+      .item.predictor .row-summary .status-badge,
+      .item.predictor .row-summary .new-badge {
+        flex-shrink: 0;
+      }
+      .item.predictor .row-summary .expand-toggle {
+        margin-left: auto;
+      }
+      .item.predictor .row-preview {
+        margin-left: 0;
+      }
     }
 
     .container {
