@@ -492,7 +492,7 @@ TEMPLATE = r"""
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Account Director Dashboard · VMA Group</title>
+  <title>VMA Group</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
@@ -545,80 +545,24 @@ TEMPLATE = r"""
     }
     .serif { font-family: "Crimson Pro", Georgia, serif; }
 
-    /* TOP BAR — 3-column header on the cream background.
-       Left: Account Director Dashboard meta. Centre: VMA Group logo
-       wordmark (symmetrically centred via the auto column). Right:
-       Last brief timestamp with pulsing coral dot. */
+    /* TOP BAR — centred VMA logo on the cream background. */
     .top-bar {
       max-width: 1280px;
       margin: 0 auto;
-      padding: 22px 28px 12px;
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
+      padding: 22px 28px 14px;
+      display: flex;
       align-items: center;
-      gap: 24px;
+      justify-content: center;
       border-bottom: 1px solid var(--border);
-    }
-    .top-bar .col-left { justify-self: start; }
-    .top-bar .col-centre { justify-self: center; }
-    .top-bar .col-right { justify-self: end; }
-    .top-bar h1 {
-      margin: 0;
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-      color: var(--text);
-      line-height: 1.2;
-    }
-    .top-bar h1 .sub {
-      display: block;
-      font-family: "Crimson Pro", Georgia, serif;
-      font-style: italic;
-      font-size: 13px;
-      font-weight: 400;
-      color: var(--text-muted);
-      margin-top: 2px;
-      letter-spacing: 0;
     }
     .top-bar .logo {
       display: block;
-      height: 38px;
+      height: 40px;
       width: auto;
     }
-    .top-bar .last {
-      font-size: 10.5px;
-      font-weight: 500;
-      letter-spacing: 0.10em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      gap: 9px;
-    }
-    .top-bar .last strong {
-      display: inline-block;
-      font-weight: 600;
-      letter-spacing: 0;
-      text-transform: none;
-      color: var(--text);
-      font-size: 13px;
-    }
-    .top-bar .last::before {
-      content: "";
-      width: 7px; height: 7px;
-      background: var(--teal);
-      border-radius: 50%;
-      box-shadow: 0 0 0 4px rgba(201, 100, 66, 0.14);
-      animation: pulse 2.4s infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.55; }
-    }
     @media (max-width: 720px) {
-      .top-bar { grid-template-columns: 1fr; padding: 16px 18px 12px; gap: 12px; }
-      .top-bar .col-left, .top-bar .col-centre, .top-bar .col-right { justify-self: center; }
-      .top-bar .logo { height: 34px; }
+      .top-bar { padding: 16px 18px 10px; }
+      .top-bar .logo { height: 32px; }
     }
 
     .container {
@@ -1288,15 +1232,7 @@ TEMPLATE = r"""
 <body>
 
 <header class="top-bar">
-  <div class="col-left">
-    <h1>Account Director Dashboard<span class="sub">Sara's workspace</span></h1>
-  </div>
-  <div class="col-centre">
-    <img src="/static/vma_logo.svg" alt="VMA Group" class="logo">
-  </div>
-  <div class="col-right">
-    <div class="last">Last brief <strong>{{ last_updated }}</strong></div>
-  </div>
+  <img src="/static/vma_logo.svg" alt="VMA Group" class="logo">
 </header>
 
 {% if not has_token %}
@@ -1374,7 +1310,7 @@ TEMPLATE = r"""
           </details>
           {% endif %}
         {% else %}
-          <div class="empty">No leads loaded yet. Click "Refresh from GitHub" or wait for the morning brief to land.</div>
+          <div class="empty">No leads loaded yet. Click Daily Refresh.</div>
         {% endif %}
       </div>
     </div>
@@ -1455,13 +1391,6 @@ TEMPLATE = r"""
         <input id="pp-account" name="account_name" placeholder="e.g. Unilever" required>
         <label for="pp-role">Role</label>
         <input id="pp-role" name="role" placeholder="e.g. Head of Internal Communications" required>
-        <label class="salary-row-label">Salary range override (optional)</label>
-        <div class="salary-row">
-          <input id="pp-salary-min" name="salary_min" type="number" min="0" step="1000" placeholder="Min £">
-          <span class="dash">–</span>
-          <input id="pp-salary-max" name="salary_max" type="number" min="0" step="1000" placeholder="Max £">
-        </div>
-        <div class="hint">Leave blank to use the auto-detected band for the role.</div>
         <button type="submit">Run and send via email</button>
         <div class="status" id="pitch-status"></div>
       </form>
@@ -1498,7 +1427,7 @@ TEMPLATE = r"""
   </div>
 
   <div class="footer">
-    Account Director Dashboard · Local · Data refreshed from GitHub Actions artifacts.
+    Data refreshed from GitHub Actions artifacts.
     All sources are free public surfaces. No automation of LinkedIn account.
     <span style="opacity:0.5; margin-left:8px;">· build {{ build_stamp }}</span>
   </div>
