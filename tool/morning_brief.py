@@ -78,6 +78,16 @@ def run() -> dict:
     except Exception as e:
         log.exception("gdelt: %s", e)
 
+    # Predictive trigger feed — 90-day sweep of CEO/CFO/Chair changes,
+    # M&A, IPO, regulator action, contract loss, comms-leader
+    # departures. Feeds the predictive detector; doesn't reach the
+    # live-leads ranker (kind='news', no salary/title to score).
+    try:
+        _tally("GDELT predictive (90-day trigger events)",
+               gdelt.fetch_predictive_signals())
+    except Exception as e:
+        log.exception("gdelt predictive: %s", e)
+
     try:
         _tally("SEC EDGAR (8-K filings)", sec_edgar.fetch_all())
     except Exception as e:
