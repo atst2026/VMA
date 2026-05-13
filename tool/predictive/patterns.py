@@ -435,10 +435,31 @@ CONTRACT_LOSS = TriggerType(
 )
 
 
+# ---- Press release velocity spike ------------------------------------
+# Not regex-matched — emitted by tool/predictive/velocity.py when a
+# company's press output triples vs its 90-day rolling baseline.
+# Registered here so render.py + linkedin_resolver + dashboard wiring
+# treat it as a known trigger key.
+PRESS_VELOCITY_SPIKE = TriggerType(
+    key="press_velocity_spike",
+    label="Press release velocity spike",
+    weight=0.7,
+    lead_time_weeks=(8, 24),
+    who_to_call="Head of Communications / CCO — velocity spike often precedes Corp Affairs hire",
+    implication=(
+        "Press release output at {company} has tripled vs the 90-day "
+        "baseline. Sustained velocity spikes empirically precede senior "
+        "Corp Comms / IR hires within 8–24 weeks (the team has more to "
+        "say than capacity to say it)."
+    ),
+    patterns=[],   # emitted by velocity.detect_velocity_spikes, not regex
+)
+
+
 TRIGGERS = [CEO_CHANGE, CHAIR_CHANGE, CHRO_CHANGE, CFO_CHANGE,
             IR_DIRECTOR_CHANGE, COMMS_LEADER_DEPARTURE,
             MNA, REGULATOR_ACTION, RESTRUCTURE, IC_PLATFORM_RFP,
-            IPO_LISTING, CONTRACT_LOSS]
+            IPO_LISTING, CONTRACT_LOSS, PRESS_VELOCITY_SPIKE]
 BY_KEY = {t.key: t for t in TRIGGERS}
 
 

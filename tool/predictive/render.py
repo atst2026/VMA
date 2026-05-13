@@ -56,7 +56,8 @@ def _who_to_call(stk: Stack) -> str:
     order = ["comms_leader_departure", "ic_platform_rfp", "ipo_listing",
              "ceo_change", "mna", "regulator_action", "contract_loss",
              "chair_change", "cfo_change", "ir_director_change",
-             "chro_change", "restructure", "job_ad_cluster"]
+             "chro_change", "restructure", "press_velocity_spike",
+             "job_ad_cluster"]
     for key in order:
         for e in stk.events:
             if e.trigger_key == key:
@@ -73,7 +74,8 @@ def _implication(stk: Stack) -> str:
     order = ["comms_leader_departure", "ic_platform_rfp", "ipo_listing",
              "ceo_change", "mna", "regulator_action", "contract_loss",
              "chair_change", "cfo_change", "ir_director_change",
-             "chro_change", "restructure", "job_ad_cluster"]
+             "chro_change", "restructure", "press_velocity_spike",
+             "job_ad_cluster"]
     for key in order:
         for e in stk.events:
             if e.trigger_key == key:

@@ -31,32 +31,39 @@ QUERY_TERMS = [
 # is what produces non-zero predictors on day 1 of operation.
 PREDICTIVE_TRIGGER_QUERIES = [
     # Leadership changes — most reliable cascade trigger
-    '"chief executive" (appointed OR "stepping down" OR resigns OR departs OR "to leave")',
+    '"chief executive" (appointed OR "stepping down" OR resigns OR departs OR "to leave" OR succession)',
     '"managing director" (appointed OR "stepping down" OR resigns OR departs)',
-    '"new CEO" OR "incoming chief executive"',
+    '"new CEO" OR "incoming chief executive" OR "appointed CEO"',
     '"chief financial officer" (appointed OR "stepping down" OR resigns OR departs)',
-    '"new CFO" OR "incoming CFO"',
-    'chairman (appointed OR "stepping down" OR resigns OR "to step down")',
+    '"new CFO" OR "incoming CFO" OR "appointed CFO"',
+    'chairman (appointed OR "stepping down" OR resigns OR "to step down" OR "succession")',
     '"head of investor relations" (appointed OR resigns OR departs OR new)',
     '"chief people officer" (appointed OR "stepping down" OR resigns OR new)',
     '"chief human resources officer" (appointed OR new OR resigns)',
+    # Promotion / succession patterns
+    '"promoted to chief executive" OR "elevated to chief executive"',
+    '"to succeed" CEO OR "to succeed" chief',
 
     # M&A and corporate events
     '"recommended cash offer" OR "firm intention to make an offer"',
-    '"agreed acquisition" OR "agreed to acquire"',
-    '"merger" "shareholders"',
+    '"agreed acquisition" OR "agreed to acquire" OR "agrees to acquire"',
+    '"all-share merger" OR "all-cash takeover"',
 
     # IPO / listing activity
     '"intention to float" OR "intention to seek admission"',
     '"initial public offering" OR "admission to AIM" OR "admission to the Main Market"',
+    '"prospectus published" OR "direct listing"',
 
     # Regulator material action (UK)
     '"FCA fines" OR "Ofwat fines" OR "Ofcom fines" OR "Ofgem fines" OR "ICO fines"',
-    '"enforcement action" million',
+    '"enforcement action" million pound',
+    '"FCA enforcement" OR "Ofwat enforcement"',
 
     # Restructure / strategic review
     '"strategic review" announced',
     'restructure announced',
+    '"operating model review" OR "business simplification"',
+    '"redundancies" announced consultation',
 
     # Material contract loss
     '"loss of major customer" OR "loss of major contract"',
@@ -67,6 +74,8 @@ PREDICTIVE_TRIGGER_QUERIES = [
     '"head of communications" (departs OR "stepping down" OR resigns)',
     '"corporate affairs director" (departs OR "stepping down" OR resigns)',
     '"chief communications officer" (departs OR resigns OR "stepping down")',
+    '"head of internal communications" (departs OR resigns OR "stepping down")',
+    '"PR director" (departs OR "stepping down" OR resigns)',
 ]
 
 
@@ -78,23 +87,37 @@ def fetch_predictive_signals(hours_back: int | None = None) -> list[dict]:
     Default look-back follows VMA_SWEEP_DAYS so a 90-day sweep covers
     90 days of historical news. Returns 'news' kind signals; the
     detector's regex patterns handle the actual trigger matching.
+
+    Paces requests (0.6s between queries) + retries once on no-response
+    to recover from GDELT rate-limit blips. Today's run lost 12 of 24
+    queries to 'no-resp'; pacing should recover most.
     """
+    import time
     from tool.config import sweep_days
     if hours_back is None:
         hours_back = max(48, 24 * sweep_days())
     out: list[dict] = []
     seen_urls: set[str] = set()
-    for query in PREDICTIVE_TRIGGER_QUERIES:
-        r = get(SOURCES["gdelt_doc"], params={
+    failed = 0
+    for i, query in enumerate(PREDICTIVE_TRIGGER_QUERIES):
+        if i > 0:
+            time.sleep(0.6)
+        params = {
             "query": f"sourcelang:eng {query}",
             "mode": "ArtList",
             "format": "json",
             "timespan": f"{hours_back}h",
             "maxrecords": 75,
             "sort": "datedesc",
-        })
+        }
+        r = get(SOURCES["gdelt_doc"], params=params, timeout=20)
         if not r or r.status_code != 200:
-            log.info("GDELT predictive query failed (%s): %s",
+            # Retry once after a short pause
+            time.sleep(1.5)
+            r = get(SOURCES["gdelt_doc"], params=params, timeout=20)
+        if not r or r.status_code != 200:
+            failed += 1
+            log.info("GDELT predictive query failed after retry (%s): %s",
                      r.status_code if r else "no-resp", query[:60])
             continue
         try:
@@ -118,8 +141,8 @@ def fetch_predictive_signals(hours_back: int | None = None) -> list[dict]:
                 "geo": _map_country(a.get("sourcecountry", "")),
                 "weight": 1.0,
             })
-    log.info("GDELT predictive: %d unique articles across %d queries",
-             len(out), len(PREDICTIVE_TRIGGER_QUERIES))
+    log.info("GDELT predictive: %d unique articles across %d queries (%d failed)",
+             len(out), len(PREDICTIVE_TRIGGER_QUERIES), failed)
     return out
 
 

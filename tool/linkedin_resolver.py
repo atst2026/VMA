@@ -163,6 +163,7 @@ ROLE_FOR_PREDICTOR_TRIGGER = {
     "regulator_action":       "Head of Communications",
     "mna":                    "Head of Communications",
     "restructure":            "Chief People Officer",
+    "press_velocity_spike":   "Head of Communications",
     "job_ad_cluster":         "Head of HR",
 }
 
@@ -178,7 +179,8 @@ def role_for_predictor(predictor: dict) -> str:
     for k in ("comms_leader_departure", "ic_platform_rfp", "ipo_listing",
               "ceo_change", "mna", "regulator_action", "contract_loss",
               "chair_change", "cfo_change", "ir_director_change",
-              "chro_change", "restructure", "job_ad_cluster"):
+              "chro_change", "restructure", "press_velocity_spike",
+              "job_ad_cluster"):
         if k in keys:
             return ROLE_FOR_PREDICTOR_TRIGGER[k]
     return "Head of Communications"
