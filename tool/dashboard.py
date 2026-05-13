@@ -962,12 +962,6 @@ TEMPLATE = r"""
       background: rgba(201, 55, 55, 0.05);
       box-shadow: 0 0 0 3px rgba(201, 55, 55, 0.08);
     }
-    .btn-mini.backfill-btn {
-      margin-left: auto;
-      align-self: center;
-      font-size: 10px;
-    }
-
     /* Compact predictor rows — single-line summary, expand for full detail */
     .panel-body.compact .item.predictor {
       padding: 9px 14px;
@@ -1315,12 +1309,11 @@ TEMPLATE = r"""
       </div>
     </div>
 
-    <!-- PREDICTOR PIPELINE (rolling 30-day) -->
+    <!-- PREDICTOR PIPELINE (rolling 30-day, auto-populated each morning) -->
     <div class="panel">
       <div class="panel-header">
         <h2>Predictor Pipeline</h2>
         <span class="count">{{ active_count }}</span>
-        <button class="btn-mini backfill-btn" type="button" onclick="backfill30()" title="Run a 30-day catch-up sweep to populate the pipeline">↻ Backfill 30 days</button>
       </div>
       <div class="filter-bar">
         <button class="filter-pill active" data-filter="active">Active <span class="pill-count">{{ active_count }}</span></button>
@@ -1372,7 +1365,7 @@ TEMPLATE = r"""
             </div>
           {% endfor %}
         {% else %}
-          <div class="empty compact">Pipeline empty. <button class="btn-mini" onclick="backfill30()" type="button">↻ Backfill 30 days</button> or wait for tomorrow's brief.</div>
+          <div class="empty compact">Pipeline empty. Click Daily Refresh to pull the latest 30-day window, or wait for tomorrow's morning brief.</div>
         {% endif %}
       </div>
     </div>
@@ -1499,90 +1492,6 @@ document.addEventListener('click', (event) => {
   if (!item) return;
   item.classList.toggle('expanded');
 });
-
-// 30-day backfill: trigger the existing sweep workflow with window_days=30.
-// It runs the same engine as the daily brief over a wider 30-day window
-// and upserts into the predictor pipeline.
-//
-// Timing: the workflow runs for ~4 min on GitHub Actions. When it
-// completes it uploads predictor_pipeline.json as an artifact. The
-// dashboard then needs to PULL that artifact via Daily Refresh to see
-// the new data. We start polling for the new artifact automatically
-// 3 minutes after dispatch so the user doesn't have to wait + click.
-async function backfill30() {
-  if (!confirm('Run a 30-day backfill sweep?\n\nIt runs in the background on GitHub Actions for ~4 minutes, then the dashboard auto-pulls the new pipeline data. Total wait ~4-5 minutes.')) return;
-  const buttons = document.querySelectorAll('.backfill-btn, .empty .btn-mini');
-  buttons.forEach(b => { b.disabled = true; b.textContent = 'Dispatching…'; });
-  try {
-    const r = await fetch('/api/dispatch/sweep', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ window_days: '30', mode: 'preview' }),
-    });
-    const j = await r.json();
-    if (!j.ok) {
-      alert(j.detail || 'Backfill dispatch failed');
-      buttons.forEach(b => { b.disabled = false; b.textContent = '↻ Backfill 30 days'; });
-      return;
-    }
-    // Persist a marker so the countdown survives a page reload
-    const dispatchedAt = Date.now();
-    localStorage.setItem('backfillDispatchedAt', String(dispatchedAt));
-    runBackfillCountdown(dispatchedAt, buttons);
-  } catch (e) {
-    alert('Backfill dispatch failed: ' + e.message);
-    buttons.forEach(b => { b.disabled = false; b.textContent = '↻ Backfill 30 days'; });
-  }
-}
-
-function runBackfillCountdown(startedAt, buttons) {
-  const totalSecs = 4 * 60;   // 4-min headline; we'll start trying refresh at 3 min
-  const updateLabel = () => {
-    const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-    const remaining = Math.max(0, totalSecs - elapsed);
-    const m = Math.floor(remaining / 60);
-    const s = remaining % 60;
-    buttons.forEach(b => { b.textContent = `⏱ Sweep running · ${m}:${String(s).padStart(2,'0')}`; });
-    if (remaining > 0) {
-      setTimeout(updateLabel, 1000);
-    } else {
-      // Try to pull the new artifact
-      buttons.forEach(b => { b.textContent = '↻ Pulling new pipeline…'; });
-      fetch('/api/refresh', { method: 'POST' })
-        .then(r => r.json())
-        .then(j => {
-          localStorage.removeItem('backfillDispatchedAt');
-          if (j.ok) {
-            buttons.forEach(b => { b.textContent = '✓ Loaded — reloading…'; });
-            setTimeout(() => window.location.reload(), 900);
-          } else {
-            buttons.forEach(b => { b.disabled = false; b.textContent = '↻ Backfill 30 days'; });
-            alert('Sweep finished but refresh failed: ' + (j.detail || 'unknown')
-                  + '\n\nClick "Daily Refresh" manually in 30 seconds.');
-          }
-        })
-        .catch(() => {
-          buttons.forEach(b => { b.disabled = false; b.textContent = '↻ Backfill 30 days'; });
-        });
-    }
-  };
-  updateLabel();
-}
-
-// Resume any in-flight backfill countdown after a page reload
-(function resumeBackfillIfNeeded() {
-  const startedAt = parseInt(localStorage.getItem('backfillDispatchedAt') || '0', 10);
-  if (!startedAt) return;
-  // If more than 8 min have passed, the sweep has likely finished and the
-  // artifact's already on GitHub — just clear and let user refresh manually.
-  if (Date.now() - startedAt > 8 * 60 * 1000) {
-    localStorage.removeItem('backfillDispatchedAt');
-    return;
-  }
-  const buttons = document.querySelectorAll('.backfill-btn, .empty .btn-mini');
-  buttons.forEach(b => { b.disabled = true; });
-  runBackfillCountdown(startedAt, buttons);
-})();
 
 // Predictor status actions: mark followed up / dismiss / restore.
 // Updates the item in place — no page reload. On Render free tier the

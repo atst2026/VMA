@@ -76,6 +76,11 @@ jobs:
           ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
           PYTHONUNBUFFERED: "1"
           PYTHONPATH: "."
+          # Always fetch a 30-day window so the predictor pipeline is
+          # populated automatically each morning (no manual backfill
+          # required). Live-leads dedup still strips items Sara has
+          # already seen, so the email/Today's Leads remain fresh-only.
+          VMA_SWEEP_DAYS: "30"
         run: |
           set -x
           # Scheduled runs deliver live to stehrani@vmagroup.com.
