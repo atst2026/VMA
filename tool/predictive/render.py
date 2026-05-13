@@ -53,10 +53,10 @@ def _window(stk: Stack) -> str:
 
 def _who_to_call(stk: Stack) -> str:
     """Prefer the most senior contact mentioned across triggers."""
-    order = ["comms_leader_departure", "ic_platform_rfp", "ceo_change",
-             "mna", "regulator_action", "chair_change", "cfo_change",
-             "ir_director_change", "chro_change", "restructure",
-             "job_ad_cluster"]
+    order = ["comms_leader_departure", "ic_platform_rfp", "ipo_listing",
+             "ceo_change", "mna", "regulator_action", "contract_loss",
+             "chair_change", "cfo_change", "ir_director_change",
+             "chro_change", "restructure", "job_ad_cluster"]
     for key in order:
         for e in stk.events:
             if e.trigger_key == key:
@@ -70,10 +70,10 @@ def _who_to_call(stk: Stack) -> str:
 
 def _implication(stk: Stack) -> str:
     """Use the strongest trigger's implication template."""
-    order = ["comms_leader_departure", "ic_platform_rfp", "ceo_change",
-             "mna", "regulator_action", "chair_change", "cfo_change",
-             "ir_director_change", "chro_change", "restructure",
-             "job_ad_cluster"]
+    order = ["comms_leader_departure", "ic_platform_rfp", "ipo_listing",
+             "ceo_change", "mna", "regulator_action", "contract_loss",
+             "chair_change", "cfo_change", "ir_director_change",
+             "chro_change", "restructure", "job_ad_cluster"]
     for key in order:
         for e in stk.events:
             if e.trigger_key == key:

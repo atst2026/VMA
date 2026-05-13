@@ -368,9 +368,77 @@ IC_PLATFORM_RFP = TriggerType(
 )
 
 
+# ---- IPO / listing activity ------------------------------------------
+# Companies preparing to list (or re-list, or move markets) build out
+# Corporate Affairs + IR aggressively in the 3–4 month run-up to
+# admission. High-yield, narrow window, very specific RNS language.
+IPO_LISTING = TriggerType(
+    key="ipo_listing",
+    label="IPO / listing activity",
+    weight=1.0,
+    lead_time_weeks=(4, 16),
+    who_to_call="CFO office — IR + Corporate Affairs hires both go in pre-admission",
+    implication=(
+        "Pre-IPO / listing activity at {company}. Listing companies "
+        "typically build out Corporate Affairs + IR teams in the 4–16 "
+        "weeks pre-admission; a senior comms hire is almost certain."
+    ),
+    patterns=_rx(
+        r"intention to float",
+        r"intention to seek admission",
+        r"admission to (?:aim|the main market|the london stock exchange|the lse|aquis)",
+        r"to be admitted to (?:aim|the main market|the london stock exchange|the lse|aquis)",
+        r"publication of (?:the )?prospectus",
+        r"prospectus published",
+        r"prospectus approved",
+        r"direct listing",
+        r"announces (?:the )?initial public offering",
+        r"initial public offering of",
+        r"placing and admission",
+        r"\bipo\b",
+        r"first day of (?:dealing|conditional dealing)",
+    ),
+)
+
+
+# ---- Material contract loss / termination ---------------------------
+# Loss of marquee revenue triggers a defensive comms hire (reposition
+# the equity story, calm customers/staff). Lower base-rate than M&A
+# but a clean signal when material. Detector gates this to RNS sources
+# or £5m+ amounts to avoid sports/HR false positives.
+CONTRACT_LOSS = TriggerType(
+    key="contract_loss",
+    label="Material contract loss",
+    weight=0.7,
+    lead_time_weeks=(4, 16),
+    who_to_call="Head of Communications / CCO — reposition + reputation defence",
+    implication=(
+        "Material contract / customer loss disclosed at {company}. "
+        "Loss of marquee revenue typically pulls through a defensive "
+        "Corporate Affairs hire (reposition the equity story) within 4–16 weeks."
+    ),
+    patterns=_rx(
+        # Explicit material-qualifier wording (high-confidence on its own)
+        r"loss of (?:a |the |its )?(?:major|material|key|marquee|flagship|significant) (?:customer|client|contract|account)",
+        r"(?:lost|loses) (?:its |a |the )?(?:major|material|key|marquee|flagship|significant) (?:customer|client|contract|account)",
+        # Explicit £-amount wording (materiality embedded in the phrase)
+        r"loss of (?:a |the )?£\s?\d+(?:[.,]\d+)?\s?(?:m|mn|million|bn|billion)?\s?(?:contract|customer|client|account)",
+        r"(?:lost|loses) (?:a |the )?contract worth (?:£|\$|€)",
+        r"loss of contract worth (?:£|\$|€)",
+        # Termination / non-renewal phrasing — gated by detector tier or £ amount
+        r"termination of (?:the )?(?:contract|agreement) with",
+        r"contract (?:has been |was |is being )?terminated",
+        r"contract.{0,20}not (?:been )?renewed",
+        r"non-renewal of (?:the )?contract",
+        r"cancellation of (?:the )?(?:contract|framework)",
+    ),
+)
+
+
 TRIGGERS = [CEO_CHANGE, CHAIR_CHANGE, CHRO_CHANGE, CFO_CHANGE,
             IR_DIRECTOR_CHANGE, COMMS_LEADER_DEPARTURE,
-            MNA, REGULATOR_ACTION, RESTRUCTURE, IC_PLATFORM_RFP]
+            MNA, REGULATOR_ACTION, RESTRUCTURE, IC_PLATFORM_RFP,
+            IPO_LISTING, CONTRACT_LOSS]
 BY_KEY = {t.key: t for t in TRIGGERS}
 
 

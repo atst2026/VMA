@@ -327,6 +327,12 @@ def linkedin_search_for_predictor(p: dict) -> dict:
     if "ic_platform_rfp" in keys:
         return {"label": f"Search CHRO at {company}",
                 "url": _people_search(f'"Chief People Officer" OR "CHRO" "{company}"')}
+    if "ipo_listing" in keys:
+        return {"label": f"Search CFO at {company}",
+                "url": _people_search(f'"Chief Financial Officer" OR "CFO" "{company}"')}
+    if "contract_loss" in keys:
+        return {"label": f"Search Head of Comms at {company}",
+                "url": _people_search(f'"Head of Communications" OR "Director of Communications" "{company}"')}
     if "cfo_change" in keys:
         return {"label": f"Search Head of IR at {company}",
                 "url": _people_search(f'"Head of Investor Relations" OR "IR Director" "{company}"')}
