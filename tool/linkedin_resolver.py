@@ -151,13 +151,17 @@ ROLE_FOR_LEAD_KIND = {
 }
 
 ROLE_FOR_PREDICTOR_TRIGGER = {
-    "ceo_change":       "Chief Executive Officer",
-    "chro_change":      "Chief People Officer",
-    "chair_change":     "Chair",
-    "regulator_action": "Head of Communications",
-    "mna":              "Head of Communications",
-    "restructure":      "Chief People Officer",
-    "job_ad_cluster":   "Head of HR",
+    "ceo_change":             "Chief Executive Officer",
+    "chro_change":            "Chief People Officer",
+    "chair_change":           "Chair",
+    "cfo_change":             "Chief Financial Officer",
+    "ir_director_change":     "Head of Investor Relations",
+    "comms_leader_departure": "Chief People Officer",
+    "ic_platform_rfp":        "Chief People Officer",
+    "regulator_action":       "Head of Communications",
+    "mna":                    "Head of Communications",
+    "restructure":            "Chief People Officer",
+    "job_ad_cluster":         "Head of HR",
 }
 
 
@@ -169,8 +173,10 @@ def role_for_predictor(predictor: dict) -> str:
     events = predictor.get("events") or []
     keys = [e.get("trigger_key") for e in events]
     # Pick the highest-priority trigger
-    for k in ("ceo_change", "chro_change", "chair_change",
-              "regulator_action", "mna", "restructure", "job_ad_cluster"):
+    for k in ("comms_leader_departure", "ic_platform_rfp", "ceo_change",
+              "chro_change", "chair_change", "cfo_change",
+              "ir_director_change", "regulator_action", "mna",
+              "restructure", "job_ad_cluster"):
         if k in keys:
             return ROLE_FOR_PREDICTOR_TRIGGER[k]
     return "Head of Communications"
