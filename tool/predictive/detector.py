@@ -124,6 +124,14 @@ def detect_events(signals: Iterable[dict]) -> list[TriggerEvent]:
                     rejected_subthreshold_regulator += 1
                     log.info("drop (regulator <£5m): %s — %r", company, title[:100])
                     continue
+            if trigger.key == "ic_platform_rfp":
+                # Gate to large UK employers — IC platform purchases at small
+                # cos don't predict senior comms hires. Use the curated peers
+                # list as the size proxy (~140 FTSE-350-ish employers).
+                from tool.peers import detect_sector
+                if detect_sector(company) is None:
+                    log.info("drop (ic_platform_rfp at small employer): %s", company)
+                    continue
             ev = _evidence_sentence(body, trigger.patterns)
             log.info("trigger %s: %s — %r", trigger.key, company, ev[:80])
             events.append(TriggerEvent(

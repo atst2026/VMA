@@ -190,7 +190,61 @@ RESTRUCTURE = TriggerType(
 )
 
 
-TRIGGERS = [CEO_CHANGE, CHAIR_CHANGE, CHRO_CHANGE, MNA, REGULATOR_ACTION, RESTRUCTURE]
+# ---- IC platform RFP / case-study leak / adjacent-job-ad mention -----
+# Internal Communications + employee-engagement platforms whose
+# purchase or RFP almost always coincides with a senior comms hire
+# decision. Adjacent job ads that require experience with one of these
+# platforms are a strong "this employer has just bought / is buying"
+# signal — the senior hire follows in 8–12 weeks.
+IC_PLATFORM_VENDORS = [
+    # Internal comms / intranet platforms
+    "Staffbase", "Poppulo", "Workvivo", "Simpplr", "Firstup",
+    "SocialChorus", "LumApps", "Unily", "Smarp", "Beekeeper",
+    "Sociabble", "Haiilo", "Interact Intranet", "Happeo",
+    # Employee engagement / survey platforms
+    "Culture Amp", "Peakon", "Glint", "Officevibe", "Lattice", "15Five",
+    # Microsoft / large vendor employee experience
+    "Viva Engage", "Yammer",
+]
+_IC_VENDOR_ALT = "|".join(re.escape(v) for v in IC_PLATFORM_VENDORS)
+
+IC_PLATFORM_RFP = TriggerType(
+    key="ic_platform_rfp",
+    label="IC platform RFP / leak",
+    weight=1.0,
+    lead_time_weeks=(6, 12),
+    who_to_call="CHRO / Head of HR — senior IC hire likely in 6–12 weeks",
+    implication=(
+        "Internal-communications platform activity detected at {company}. "
+        "Procurement / case-study / adjacent-job-ad signals correlate with "
+        "a senior comms hire within 6–12 weeks (vendor purchase + senior hire "
+        "are two sides of the same decision)."
+    ),
+    patterns=[
+        # Procurement / RFP wording
+        re.compile(r"\b(?:RFP|invitation to tender|ITT|request for proposal|"
+                   r"tender notice|framework agreement|contract award|"
+                   r"supplier selection)\b.{0,200}(?:" + _IC_VENDOR_ALT +
+                   r"|internal communications platform|employee engagement platform|"
+                   r"employee experience platform|intranet platform)", re.IGNORECASE),
+        # Trade-press / vendor case-study leak: "Acme selected Staffbase"
+        re.compile(r"(?:selected|chose|chosen|deployed|rolled out|partners with|"
+                   r"now uses|switching to|adopts?)\s+(?:" + _IC_VENDOR_ALT + r")",
+                   re.IGNORECASE),
+        re.compile(r"(?:" + _IC_VENDOR_ALT + r")\s+(?:customer|case study|"
+                   r"deployment|win|client|partnership)", re.IGNORECASE),
+        # Adjacent job ad — mid-level comms role requiring named platform
+        # (caught in either title or description by the detector pipeline)
+        re.compile(r"experience\s+(?:with|of|using)\s+(?:" + _IC_VENDOR_ALT + r")",
+                   re.IGNORECASE),
+        re.compile(r"(?:" + _IC_VENDOR_ALT + r")\s+(?:experience|knowledge|"
+                   r"proficiency|expertise|administrator)", re.IGNORECASE),
+    ],
+)
+
+
+TRIGGERS = [CEO_CHANGE, CHAIR_CHANGE, CHRO_CHANGE, MNA, REGULATOR_ACTION,
+            RESTRUCTURE, IC_PLATFORM_RFP]
 BY_KEY = {t.key: t for t in TRIGGERS}
 
 

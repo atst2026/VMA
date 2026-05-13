@@ -27,9 +27,9 @@ def _stack_descriptor(stk: Stack) -> str:
     return f"stacked ({joined})" if stk.depth >= 2 else f"single ({labels[0]})"
 
 
-def _window(stk: Stack) -> str:
-    """Pick the narrowest window across the stack's triggers. Stacked
-    signals usually imply a narrower, earlier window."""
+def window_for_stack(stk: Stack) -> tuple[int, int] | None:
+    """Pick the narrowest predicted-hire window across the stack's triggers.
+    Stacked signals usually imply a narrower, earlier window."""
     mins, maxs = [], []
     for e in stk.events:
         t = P.BY_KEY.get(e.trigger_key)
@@ -39,11 +39,16 @@ def _window(stk: Stack) -> str:
         elif e.trigger_key == "job_ad_cluster":
             mins.append(4); maxs.append(12)
     if not mins:
-        return "—"
+        return None
     lo, hi = min(mins), min(maxs) if stk.depth >= 2 else max(maxs)
     if hi < lo:
         hi = lo + 4
-    return f"{lo}–{hi} weeks"
+    return lo, hi
+
+
+def _window(stk: Stack) -> str:
+    w = window_for_stack(stk)
+    return f"{w[0]}–{w[1]} weeks" if w else "—"
 
 
 def _who_to_call(stk: Stack) -> str:
