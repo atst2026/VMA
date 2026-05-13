@@ -165,8 +165,10 @@ def _save_watchlist(d: dict) -> None:
     WATCHLIST_FILE.write_text(json.dumps(d, indent=0))
 
 
-def search_company(name: str) -> list[dict]:
-    """Search Companies House for a company by name. Returns top 5 candidates."""
+def search_company(name: str) -> list[dict] | None:
+    """Search Companies House for a company by name. Returns top 5 candidates,
+    OR None on network/timeout (distinct from 'API responded with 0 hits',
+    so the caller knows not to cache the failure)."""
     if not COMPANIES_HOUSE_KEY:
         log.warning("search_company(%r): COMPANIES_HOUSE_KEY env var is empty — "
                     "secret not propagated to this workflow?", name)
@@ -175,12 +177,12 @@ def search_company(name: str) -> list[dict]:
     r = get(url, params={"q": name, "items_per_page": 5},
             auth=(COMPANIES_HOUSE_KEY, ""))
     if not r:
-        log.warning("search_company(%r): no HTTP response (network/timeout?)", name)
-        return []
+        log.warning("search_company(%r): no HTTP response (network/timeout)", name)
+        return None   # sentinel: don't cache; retry next run
     if r.status_code != 200:
         log.warning("search_company(%r): HTTP %s body=%s",
                     name, r.status_code, (r.text or "")[:200])
-        return []
+        return None   # sentinel for non-200 — could be rate-limit; retry next run
     items = r.json().get("items", []) or []
     log.info("search_company(%r): %d hits", name, len(items))
     return items
@@ -216,16 +218,21 @@ def company_events(name: str) -> dict:
 
 
 def resolve_company_number(name: str) -> str | None:
-    """One-time-per-name. Caches result in WATCHLIST_FILE (incl. failed
-    resolutions, so we don't retry on every run)."""
+    """One-time-per-name. Caches result in WATCHLIST_FILE.
+    Only caches 'permanent' results — actual API responses (incl. zero hits).
+    Network failures / rate-limit timeouts are NOT cached, so they retry
+    on subsequent runs until they succeed."""
     cache = _load_watchlist()
     entry = cache.get(name)
     if entry is not None:
         return entry.get("number")
     items = search_company(name)
+    if items is None:
+        # Network failure / rate limit. Do NOT cache — retry next run.
+        return None
+    # API actually responded — cache the result (incl. zero-hits result)
     number = None
     if items:
-        # Prefer active over dissolved
         active = [it for it in items if it.get("company_status") == "active"]
         picked = active[0] if active else items[0]
         number = picked.get("company_number")
@@ -234,7 +241,10 @@ def resolve_company_number(name: str) -> str | None:
         "resolved_at": datetime.now(timezone.utc).isoformat(),
     }
     _save_watchlist(cache)
-    time.sleep(0.2)
+    # Slow down: CH rate-limit is 600/5min = 2/sec. 0.5s sleep keeps us
+    # comfortably under that with bursty fetches across hundreds of new
+    # watchlist names.
+    time.sleep(0.5)
     return number
 
 
