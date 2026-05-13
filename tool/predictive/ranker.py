@@ -61,6 +61,19 @@ def _trigger_weight_for_stack(events: list[TriggerEvent]) -> float:
     return max(ws) if ws else 0.0
 
 
+def _geo_multiplier(company: str) -> float:
+    """UK companies score full weight; international peers score 60% so
+    they appear in the pipeline but rank below UK at equal trigger weight."""
+    try:
+        from tool.peers import SECTOR_PEERS
+        intl = set(p.lower() for p in SECTOR_PEERS.get("international", []))
+        if company.lower() in intl:
+            return 0.6
+    except Exception:
+        pass
+    return 1.0
+
+
 def score_stack(stk: Stack) -> float:
     if not stk.events:
         return 0.0
@@ -71,6 +84,7 @@ def score_stack(stk: Stack) -> float:
         _trigger_weight_for_stack(stk.events)
         * _stack_multiplier(stk.depth)
         * _tier_multiplier(stk.events)
+        * _geo_multiplier(stk.company)
         * fresh,
         3,
     )
