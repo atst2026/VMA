@@ -1047,6 +1047,73 @@ TEMPLATE = r"""
       background: rgba(201, 55, 55, 0.05);
       box-shadow: 0 0 0 3px rgba(201, 55, 55, 0.08);
     }
+    .btn-mini.backfill-btn {
+      margin-left: auto;
+      align-self: center;
+      font-size: 10px;
+    }
+
+    /* Compact predictor rows — single-line summary, expand for full detail */
+    .panel-body.compact .item.predictor {
+      padding: 9px 14px;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .panel-body.compact .item.predictor:hover {
+      background: rgba(91, 166, 173, 0.04);
+    }
+    .item.predictor .row-summary {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .item.predictor .row-summary .title {
+      flex: 1;
+      min-width: 0;
+    }
+    .item.predictor .expand-toggle {
+      color: var(--text-muted);
+      font-size: 14px;
+      transition: transform 0.2s ease;
+      user-select: none;
+    }
+    .item.predictor.expanded .expand-toggle {
+      transform: rotate(180deg);
+    }
+    .item.predictor .row-preview {
+      display: block;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      margin-left: 26px;
+      line-height: 1.45;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .item.predictor .row-preview .more-count {
+      color: var(--teal-dark);
+      font-weight: 600;
+    }
+    .item.predictor .row-details {
+      display: none;
+      margin-top: 8px;
+    }
+    .item.predictor.expanded .row-preview {
+      display: none;
+    }
+    .item.predictor.expanded .row-details {
+      display: block;
+    }
+    .empty.compact {
+      padding: 14px 16px;
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
     .show-more {
       width: 100%;
@@ -1344,6 +1411,7 @@ TEMPLATE = r"""
       <div class="panel-header">
         <h2>Predictor Pipeline</h2>
         <span class="count">{{ active_count }}</span>
+        <button class="btn-mini backfill-btn" type="button" onclick="backfill30()" title="Run a 30-day catch-up sweep to populate the pipeline">↻ Backfill 30 days</button>
       </div>
       <div class="filter-bar">
         <button class="filter-pill active" data-filter="active">Active <span class="pill-count">{{ active_count }}</span></button>
@@ -1352,42 +1420,50 @@ TEMPLATE = r"""
         <button class="filter-pill" data-filter="dismissed">Dismissed <span class="pill-count">{{ dismissed_count }}</span></button>
         <button class="filter-pill" data-filter="all">All</button>
       </div>
-      <div class="panel-body" id="predictor-list">
+      <div class="panel-body compact" id="predictor-list">
         {% if predictors %}
           {% for p in predictors %}
             <div class="item predictor" data-pid="{{ p.pid }}" data-status="{{ p.status }}" data-new="{{ '1' if p.is_new else '0' }}">
-              <span class="rank">{{ loop.index }}</span>
-              <span class="title">{{ p.company }}</span>
-              {% if p.is_new %}<span class="new-badge">NEW</span>{% endif %}
-              <span class="stack-label {{ 'stacked' if p.depth > 1 else 'single' }}">
-                {{ 'stacked × ' ~ p.depth if p.depth > 1 else 'single' }}
-              </span>
-              {% if p.window_label %}<span class="window-badge">{{ p.window_label }}</span>{% endif %}
-              {% if p.status == 'followed_up' %}<span class="status-badge followed-up">✓ followed up</span>{% endif %}
-              {% if p.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
-              <div class="meta">
-                {% for e in p.events[:3] %}
-                  <div class="evidence">
-                    <strong>{{ e.trigger_label }}:</strong> {{ e.evidence[:200] }}
-                    {% if e.url %} · <a href="{{ e.url }}" target="_blank">source</a>{% endif %}
-                  </div>
-                {% endfor %}
+              <div class="row-summary">
+                <span class="rank">{{ loop.index }}</span>
+                <span class="title">{{ p.company }}</span>
+                {% if p.is_new %}<span class="new-badge">NEW</span>{% endif %}
+                {% if p.window_label %}<span class="window-badge">{{ p.window_label }}</span>{% endif %}
+                <span class="stack-label {{ 'stacked' if p.depth > 1 else 'single' }}">
+                  {{ 'stacked × ' ~ p.depth if p.depth > 1 else 'single' }}
+                </span>
+                {% if p.status == 'followed_up' %}<span class="status-badge followed-up">✓ followed up</span>{% endif %}
+                {% if p.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
+                <span class="expand-toggle">▾</span>
               </div>
-              <pre class="outreach-text">{{ p.outreach }}</pre>
-              <div class="item-actions">
-                <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                <a class="btn-mini" href="{{ p.linkedin.url }}" target="_blank" title="{{ p.linkedin.label }}">↗ {{ p.linkedin.label }}</a>
-                {% if p.status == 'active' %}
-                  <button class="btn-mini status-action" data-status="followed_up" type="button">✓ Mark followed up</button>
-                  <button class="btn-mini status-action ghost" data-status="dismissed" type="button">✕ Dismiss</button>
-                {% else %}
-                  <button class="btn-mini status-action" data-status="active" type="button">↺ Restore</button>
-                {% endif %}
+              <div class="row-preview">
+                {% if p.events %}{{ p.events[0].trigger_label }}: {{ p.events[0].evidence[:140] }}{% if p.events|length > 1 %} <span class="more-count">+{{ p.events|length - 1 }} more</span>{% endif %}{% endif %}
+              </div>
+              <div class="row-details">
+                <div class="meta">
+                  {% for e in p.events[:3] %}
+                    <div class="evidence">
+                      <strong>{{ e.trigger_label }}:</strong> {{ e.evidence[:200] }}
+                      {% if e.url %} · <a href="{{ e.url }}" target="_blank">source</a>{% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
+                <pre class="outreach-text">{{ p.outreach }}</pre>
+                <div class="item-actions">
+                  <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
+                  <a class="btn-mini" href="{{ p.linkedin.url }}" target="_blank" title="{{ p.linkedin.label }}">↗ {{ p.linkedin.label }}</a>
+                  {% if p.status == 'active' %}
+                    <button class="btn-mini status-action" data-status="followed_up" type="button">✓ Mark followed up</button>
+                    <button class="btn-mini status-action ghost" data-status="dismissed" type="button">✕ Dismiss</button>
+                  {% else %}
+                    <button class="btn-mini status-action" data-status="active" type="button">↺ Restore</button>
+                  {% endif %}
+                </div>
               </div>
             </div>
           {% endfor %}
         {% else %}
-          <div class="empty">No predictors in the pipeline yet. The morning brief populates this — once a predictor fires it stays here for 30 days unless you dismiss it.</div>
+          <div class="empty compact">Pipeline empty. <button class="btn-mini" onclick="backfill30()" type="button">↻ Backfill 30 days</button> or wait for tomorrow's brief.</div>
         {% endif %}
       </div>
     </div>
@@ -1509,6 +1585,45 @@ document.addEventListener('click', (event) => {
   if (!pill) return;
   applyFilter(pill.dataset.filter);
 });
+
+// Expand / collapse predictor rows on summary click. Buttons and links
+// inside the row stop propagation so they don't trigger the toggle.
+document.addEventListener('click', (event) => {
+  const summary = event.target.closest('.row-summary');
+  if (!summary) return;
+  // Don't toggle if the user clicked a button or link inside the summary
+  if (event.target.closest('button, a')) return;
+  const item = summary.closest('.item.predictor');
+  if (!item) return;
+  item.classList.toggle('expanded');
+});
+
+// 30-day backfill: trigger the existing sweep workflow with window_days=30.
+// It runs the same engine as the daily brief over a wider window and
+// upserts into the predictor pipeline. Takes ~3-4 minutes to land.
+async function backfill30() {
+  if (!confirm('Run a 30-day backfill sweep? This takes ~3-4 minutes and will populate the predictor pipeline with the wider window.')) return;
+  const buttons = document.querySelectorAll('.backfill-btn, .empty .btn-mini');
+  buttons.forEach(b => { b.disabled = true; b.textContent = 'Dispatching…'; });
+  try {
+    const r = await fetch('/api/dispatch/sweep', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ window_days: '30', mode: 'preview' }),
+    });
+    const j = await r.json();
+    if (j.ok) {
+      buttons.forEach(b => { b.textContent = '✓ Dispatched — check GitHub Actions'; });
+      setTimeout(() => { window.location.reload(); }, 3500);
+    } else {
+      alert(j.detail || 'Backfill dispatch failed');
+      buttons.forEach(b => { b.disabled = false; b.textContent = '↻ Backfill 30 days'; });
+    }
+  } catch (e) {
+    alert('Backfill dispatch failed: ' + e.message);
+    buttons.forEach(b => { b.disabled = false; b.textContent = '↻ Backfill 30 days'; });
+  }
+}
 
 // Predictor status actions: mark followed up / dismiss / restore.
 // Updates the item in place — no page reload. On Render free tier the

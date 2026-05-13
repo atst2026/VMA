@@ -38,6 +38,7 @@ from tool.sources import (
     bright_data, companies_house, gdelt, jobs, rss_feeds, sec_edgar,
 )
 from tool import linkedin_resolver as lnr
+from tool import predictor_pipeline
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 log = logging.getLogger("sweep")
@@ -133,6 +134,15 @@ def main() -> int:
         if resolved and resolved.get("url"):
             stk._resolved_profile_url = resolved["url"]   # type: ignore[attr-defined]
             stk._resolved_profile_role = resolved["role"]  # type: ignore[attr-defined]
+
+    # Backfill into the persistent pipeline so the dashboard picks up
+    # the wider window. This is the whole point of running a sweep —
+    # without it, sweep results would only land in the email and never
+    # populate the rolling 30-day view.
+    pipeline_result = predictor_pipeline.upsert(ranked_stacks)
+    log.info("Pipeline backfill: %d new, %d updated, %d active total",
+             len(pipeline_result["new"]), len(pipeline_result["updated"]),
+             pipeline_result["total_active"])
 
     now = datetime.now()
     now_str = now.strftime("%A %d %B %Y · %H:%M")
