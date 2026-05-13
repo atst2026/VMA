@@ -177,6 +177,35 @@ def search_company(name: str) -> list[dict]:
     return r.json().get("items", [])
 
 
+def company_events(name: str) -> dict:
+    """Snapshot + officer list + filing history for one company.
+    Used by pitch_pack (Section 1 account snapshot + Section 2 annual
+    report quote source). Returns {company, found, resolved, officers,
+    filings} — keep this shape stable, downstream renders depend on it."""
+    hits = search_company(name)
+    if not hits:
+        return {"company": name, "found": False}
+    # Prefer active over dissolved companies in the search results
+    active = [it for it in hits if it.get("company_status") == "active"]
+    top = active[0] if active else hits[0]
+    num = top.get("company_number", "")
+    officers = company_officers(num) if num else []
+    filings: list[dict] = []
+    if num and COMPANIES_HOUSE_KEY:
+        url = f"{SOURCES['companies_house_api']}/company/{num}/filing-history"
+        r = get(url, params={"items_per_page": 20},
+                auth=(COMPANIES_HOUSE_KEY, ""))
+        if r and r.status_code == 200:
+            filings = r.json().get("items", []) or []
+    return {
+        "company": name,
+        "found": True,
+        "resolved": top,
+        "officers": officers,
+        "filings": filings,
+    }
+
+
 def resolve_company_number(name: str) -> str | None:
     """One-time-per-name. Caches result in WATCHLIST_FILE (incl. failed
     resolutions, so we don't retry on every run)."""
