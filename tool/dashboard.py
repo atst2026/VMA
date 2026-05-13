@@ -108,9 +108,9 @@ def trigger_workflow(workflow_filename: str, inputs: dict) -> dict:
 
 def refresh_latest_brief_from_github() -> dict:
     """Download the most recent artifact (morning-brief OR fortnightly-sweep)
-    and unpack into state. The sweep artifact is what backfill produces, so
-    accepting either lets a single Refresh button pull the freshest data
-    regardless of which workflow last ran."""
+    and unpack into state. Returns ok/detail PLUS counts of what landed so
+    the UI can surface the truth: are we showing 0 leads because the
+    workflow produced 0, or because the artifact didn't contain the file?"""
     if not GITHUB_TOKEN:
         return {"ok": False, "detail": "GITHUB_TOKEN not set in .env"}
     list_url = (f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}"
@@ -120,24 +120,50 @@ def refresh_latest_brief_from_github() -> dict:
         if r.status_code != 200:
             return {"ok": False, "detail": f"Artifact list: HTTP {r.status_code}"}
         artifacts = r.json().get("artifacts", [])
-        # Accept both names; use the most recently-created of either.
         wanted = [a for a in artifacts
                   if a.get("name") in ("morning-brief", "fortnightly-sweep")
                   and not a.get("expired")]
         if not wanted:
-            return {"ok": False, "detail": "No recent brief/sweep artifact found."}
-        # GitHub returns artifacts newest-first by default
+            return {"ok": False, "detail": "No recent brief/sweep artifact found on GitHub Actions. "
+                                            "Trigger a brief manually: Actions tab → 'Sara's Morning Brief' → Run workflow."}
         latest = wanted[0]
         zip_url = latest["archive_download_url"]
         r2 = requests.get(zip_url, headers=_github_headers(), timeout=30)
         if r2.status_code != 200:
             return {"ok": False, "detail": f"Download: HTTP {r2.status_code}"}
+        extracted = []
         with zipfile.ZipFile(io.BytesIO(r2.content)) as zf:
             for member in zf.namelist():
                 if member.endswith((".html", ".txt", ".json")):
                     zf.extract(member, STATE_DIR)
-        return {"ok": True, "detail": f"Refreshed from {latest.get('name', '?')} artifact "
-                                       f"({latest.get('created_at', '?')[:10]})."}
+                    extracted.append(member)
+
+        # Count what we got so the user can SEE whether the artifact has data
+        leads_n, predictors_n = 0, 0
+        try:
+            sigs = json.loads((STATE_DIR / "latest_signals.json").read_text())
+            leads_n = len(sigs) if isinstance(sigs, list) else 0
+        except Exception:
+            pass
+        try:
+            preds = json.loads((STATE_DIR / "latest_predictive.json").read_text())
+            predictors_n = len(preds) if isinstance(preds, list) else 0
+        except Exception:
+            pass
+
+        has_signals_file = "tool/state/latest_signals.json" in extracted
+        ts = (latest.get("created_at", "?") or "")[:16].replace("T", " ")
+        detail = (f"Pulled {latest.get('name', '?')} artifact from {ts}. "
+                  f"Loaded {leads_n} leads, {predictors_n} predictors.")
+        if leads_n == 0 and not has_signals_file:
+            detail += (" ⚠ Artifact didn't contain leads file (latest_signals.json). "
+                       "The workflow that produced this artifact ran BEFORE the artifact-fix landed. "
+                       "Trigger one fresh brief: Actions → 'Sara's Morning Brief' → Run workflow.")
+        elif leads_n == 0:
+            detail += (" ⚠ Today's brief found 0 leads (dedup may have filtered everything, "
+                       "or no new jobs matched Sara's criteria).")
+        return {"ok": True, "detail": detail, "leads": leads_n, "predictors": predictors_n,
+                "artifact_name": latest.get("name"), "artifact_created_at": latest.get("created_at")}
     except Exception as e:
         return {"ok": False, "detail": f"Refresh failed: {e}"}
 
@@ -1630,87 +1656,53 @@ document.addEventListener('click', async (event) => {
   }
 });
 
-// Daily Refresh: dispatches a fresh morning brief workflow on GitHub
-// Actions (preview mode — no email), waits ~6 minutes for it to
-// generate the latest leads + predictors, then pulls the artifact and
-// reloads the page. One button, predictable behaviour, guaranteed
-// fresh data every click. Countdown state persists in localStorage so
-// reloading mid-run resumes the timer instead of resetting.
+// Daily Refresh: pulls the latest GitHub Actions artifact and unpacks
+// it. Simple, fast (~5s). Surfaces the exact result in a banner so the
+// user can see WHY the dashboard is empty if it is — too-old artifact,
+// missing file, or genuinely zero results from today's brief.
 async function refreshBrief() {
   const btn = document.getElementById('refresh-btn');
   const originalLabel = btn.textContent;
   btn.disabled = true;
-  btn.textContent = 'Dispatching…';
+  btn.textContent = 'Refreshing…';
   try {
-    const r = await fetch('/api/dispatch/brief', { method: 'POST' });
+    const r = await fetch('/api/refresh', { method: 'POST' });
     const j = await r.json();
-    if (!j.ok) {
-      alert(j.detail || 'Refresh dispatch failed');
+    showRefreshBanner(j);
+    if (j.ok && (j.leads > 0 || j.predictors > 0)) {
+      setTimeout(() => window.location.reload(), 1200);
+    } else {
       btn.disabled = false;
       btn.textContent = originalLabel;
-      return;
     }
-    const startedAt = Date.now();
-    localStorage.setItem('refreshDispatchedAt', String(startedAt));
-    runRefreshCountdown(startedAt, btn, originalLabel);
   } catch (e) {
-    alert('Refresh dispatch failed: ' + e.message);
+    showRefreshBanner({ok: false, detail: 'Refresh failed: ' + e.message});
     btn.disabled = false;
     btn.textContent = originalLabel;
   }
 }
 
-function runRefreshCountdown(startedAt, btn, originalLabel) {
-  const totalSecs = 6 * 60;   // brief runs 5-10 min in 90-day sweep
-  const tick = () => {
-    const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-    const remaining = Math.max(0, totalSecs - elapsed);
-    const m = Math.floor(remaining / 60);
-    const s = remaining % 60;
-    btn.textContent = `⏱ Refreshing · ${m}:${String(s).padStart(2,'0')}`;
-    if (remaining > 0) {
-      setTimeout(tick, 1000);
-    } else {
-      btn.textContent = '↻ Pulling fresh data…';
-      fetch('/api/refresh', { method: 'POST' })
-        .then(r => r.json())
-        .then(j => {
-          localStorage.removeItem('refreshDispatchedAt');
-          if (j.ok) {
-            window.location.reload();
-          } else {
-            alert('Brief generated but the artifact pull failed: '
-                  + (j.detail || 'unknown')
-                  + '\\n\\nWait 30 seconds and click Daily Refresh again.');
-            btn.disabled = false;
-            btn.textContent = originalLabel;
-          }
-        })
-        .catch(() => {
-          btn.disabled = false;
-          btn.textContent = originalLabel;
-        });
-    }
-  };
-  tick();
-}
-
-// Resume any in-flight refresh countdown after a page reload
-(function resumeRefreshIfNeeded() {
-  const startedAt = parseInt(localStorage.getItem('refreshDispatchedAt') || '0', 10);
-  if (!startedAt) return;
-  // Stale guard: if >12 minutes have passed, the dispatched workflow
-  // is long done. Clear and let the user click again to fetch fresh.
-  if (Date.now() - startedAt > 12 * 60 * 1000) {
-    localStorage.removeItem('refreshDispatchedAt');
-    return;
+function showRefreshBanner(result) {
+  let banner = document.getElementById('refresh-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'refresh-banner';
+    banner.style.cssText = 'max-width:1280px;margin:0 auto 14px;padding:12px 16px;'
+      + 'border-radius:8px;font-size:13px;line-height:1.5;border:1px solid;';
+    const wrap = document.querySelector('.refresh-bar')?.parentNode;
+    if (wrap) wrap.insertBefore(banner, document.querySelector('.refresh-bar').nextSibling);
   }
-  const btn = document.getElementById('refresh-btn');
-  if (!btn) return;
-  const originalLabel = btn.textContent;
-  btn.disabled = true;
-  runRefreshCountdown(startedAt, btn, originalLabel);
-})();
+  if (result.ok) {
+    banner.style.background = 'rgba(107, 140, 59, 0.08)';
+    banner.style.borderColor = 'rgba(107, 140, 59, 0.32)';
+    banner.style.color = '#3F5727';
+  } else {
+    banner.style.background = 'rgba(201, 100, 66, 0.08)';
+    banner.style.borderColor = 'rgba(201, 100, 66, 0.32)';
+    banner.style.color = '#7A3A22';
+  }
+  banner.textContent = result.detail || (result.ok ? 'Refreshed.' : 'Refresh failed.');
+}
 </script>
 
 </body>
