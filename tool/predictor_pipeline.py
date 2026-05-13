@@ -81,6 +81,7 @@ def _predicted_role_for(stk: Stack) -> str:
         ("ir_director_change",     "Head of Investor Relations"),
         ("chro_change",            "Head of Internal Communications"),
         ("restructure",            "Head of Internal Communications"),
+        ("press_velocity_spike",   "Head of Communications"),
         ("job_ad_cluster",         "Head of Internal Communications"),
     ]
     for key, role in role_map:

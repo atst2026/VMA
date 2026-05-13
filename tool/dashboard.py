@@ -429,6 +429,9 @@ def linkedin_search_for_predictor(p: dict) -> dict:
     if "restructure" in keys:
         return {"label": f"Search CHRO at {company}",
                 "url": _people_search(f'"CHRO" OR "Head of Communications" "{company}"')}
+    if "press_velocity_spike" in keys:
+        return {"label": f"Search Head of Comms at {company}",
+                "url": _people_search(f'"Head of Communications" OR "Corporate Affairs" "{company}"')}
     if "job_ad_cluster" in keys:
         return {"label": f"Search Head of HR at {company}",
                 "url": _people_search(f'"Head of HR" OR "Head of Talent" "{company}"')}

@@ -22,7 +22,7 @@ if str(_REPO_ROOT) not in sys.path:
 
 from tool import config
 from tool.email_send import send as email_send
-from tool.predictive import cluster as pcluster, detector as pdet, ranker as pr, render as prender
+from tool.predictive import cluster as pcluster, detector as pdet, ranker as pr, render as prender, velocity as pvelocity
 from tool.ranking import rank
 from tool.render import render_html, render_plaintext
 from tool.sources import (
@@ -151,6 +151,14 @@ def main() -> int:
     # live-roles ranking above — neither affects the other.
     log.info("Running predictive pipeline on %d raw signals…", len(signals))
     pcluster.ingest_jobs(signals)
+    # Velocity tracker: ingest today's RNS counts into per-company state,
+    # then check for 3x baseline spikes across the 90-day window.
+    try:
+        pvelocity.ingest_signals(signals)
+        velocity_events = pvelocity.detect_velocity_spikes()
+    except Exception as e:
+        log.exception("velocity: %s", e)
+        velocity_events = []
     trigger_events = pdet.detect_events(signals)
     cluster_events = pcluster.detect_clusters()
     # Companies House officer-change events: daily snapshot diff across
@@ -161,7 +169,7 @@ def main() -> int:
     except Exception as e:
         log.exception("CH officer-change scan: %s", e)
         ch_events = []
-    all_events = trigger_events + cluster_events + ch_events
+    all_events = trigger_events + cluster_events + ch_events + velocity_events
     stacks = stack_events(all_events)
     ranked_stacks = pr.rank(stacks)
     log.info(

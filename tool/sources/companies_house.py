@@ -309,9 +309,50 @@ def detect_officer_changes(max_companies: int | None = None) -> list[TriggerEven
             continue
         time.sleep(0.15)
 
+        # PASS A: historical resigned-officer backfill.
+        # Process officers whose resigned_on falls in the last 90 days.
+        # The CH /officers endpoint returns BOTH active and resigned, so
+        # this adds zero API cost — we just look at the data differently.
+        from datetime import timedelta
+        cutoff = datetime.now(timezone.utc) - timedelta(days=90)
+        for o in officers:
+            resigned_str = o.get("resigned_on")
+            if not resigned_str:
+                continue
+            try:
+                resigned_dt = datetime.fromisoformat(resigned_str).replace(tzinfo=timezone.utc)
+            except Exception:
+                continue
+            if resigned_dt < cutoff:
+                continue
+            occ = o.get("occupation") or ""
+            role = o.get("officer_role") or ""
+            trigger_key = classify_title(occ, role)
+            if not trigger_key:
+                continue
+            officer_name = o.get("name") or "Unknown officer"
+            trigger = P.BY_KEY.get(trigger_key)
+            if trigger is None:
+                continue
+            title_display = occ or role or trigger.label
+            events.append(TriggerEvent(
+                trigger_key=trigger_key,
+                trigger_label=trigger.label,
+                company=name,
+                evidence=(f"Companies House (historical): {officer_name} "
+                          f"resigned as {title_display} at {name} on {resigned_str}."),
+                url=(f"https://find-and-update.company-information.service.gov.uk"
+                     f"/company/{number}/officers"),
+                source_label="Companies House (historical termination)",
+                published=resigned_dt,
+                raw_signal_id=signal_id("ch_hist", f"{number}|{officer_name}|{resigned_str}"),
+                tier_hint="covered",
+            ))
+
+        # PASS B: daily-diff (existing logic).
         today_ids: dict[str, dict] = {}
         for o in officers:
-            # Skip already-resigned officers (CH returns them historically)
+            # Skip already-resigned officers — PASS A handled those above
             if o.get("resigned_on"):
                 continue
             oid = _officer_id(o)
