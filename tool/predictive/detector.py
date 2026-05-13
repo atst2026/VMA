@@ -37,7 +37,10 @@ class TriggerEvent:
 #   "XYZ Limited: Board Changes"
 # GDELT and trade-press titles are less structured.
 
-_RNS_SEPARATORS = re.compile(r"\s*[-—–:|]\s*", re.UNICODE)
+# Splits on whitespace-flanked separators. Whitespace-flanked is critical:
+# without it, "same-store sales" splits at the hyphen, corrupting company
+# extraction from titles like "Domino's Pizza Group reports same-store sales".
+_RNS_SEPARATORS = re.compile(r"(?:\s+[-—–:|]\s*)|(?:\s*[—–:|]\s+)", re.UNICODE)
 _LSE_TICKER = re.compile(r"^[A-Z0-9]{2,6}\.[A-Z]\s+", re.IGNORECASE)
 _CO_SUFFIX_RX = re.compile(
     r"\b(plc|p\.l\.c\.|plc\.|limited|ltd|ltd\.|group|holdings|inc|incorporated)\b",
@@ -50,45 +53,59 @@ def extract_company(title: str, summary: str = "") -> str:
 
     Strict-UK-only: returns a name ONLY if it's a known UK peer
     (from peers.SECTOR_PEERS) or has an explicit UK company suffix
-    (plc / limited / ltd / group / etc). Drops everything else so
-    non-UK companies and 'Capital' / 'Brown' / etc. extractions
-    don't leak into Sara's brief.
+    in an RNS-style title (which has a separator).
 
     Order:
-      1) RNS-style: separator split + suffix-at-end check
-      2) Peer-name scan with word boundaries (so 'Capital' doesn't
-         match peer 'Capita', and 'Brown - Forman' doesn't match
-         peer 'Brown' from a UK list that doesn't contain it anyway)
-      3) Return empty (event drops with 'no company')
+      1) RNS-style: separator-split + suffix-at-end check. Requires
+         either a separator (—, :, -, |) OR a very short candidate
+         (≤3 words). Without these, 'Apollo Funds acquires Prosol
+         Group' would pass because 'Group' is in the title — we now
+         require either a clean RNS-style prefix or a peer match.
+      2) Peer-name scan with word boundaries. Tries the full peer
+         name first, then the stem (peer minus trailing 'Group/plc/
+         Limited/etc.') so 'Intertek' matches peer 'Intertek Group'.
+      3) Return empty (event drops with 'no company').
     """
     if not title:
         return ""
     t = title.strip()
     t_nopfx = _LSE_TICKER.sub("", t).strip()
     parts = _RNS_SEPARATORS.split(t_nopfx, maxsplit=1)
+    had_separator = len(parts) > 1
     candidate = parts[0].strip()
 
-    # 1) RNS-style: short candidate ending in a UK company suffix
+    # 1) RNS-style: short candidate ending in UK company suffix.
+    # Without a separator we require ≤3 words to avoid matching headlines
+    # like 'Apollo Funds acquires Prosol Group' as a whole company name.
     words = candidate.split()
     last3 = " ".join(words[-3:]) if len(words) >= 1 else ""
     if 1 <= len(words) <= 6 and _CO_SUFFIX_RX.search(last3):
-        return candidate.rstrip(",.;:")
+        if had_separator or len(words) <= 3:
+            return candidate.rstrip(",.;:")
 
-    # 2) Peer-name scan WITH WORD BOUNDARIES
+    # 2) Peer-name scan with word boundaries; try full name + stem.
     haystack = f" {title} {summary} ".lower()
     try:
         from tool.peers import SECTOR_PEERS
         all_peers = [p for names in SECTOR_PEERS.values() for p in names]
+        _PEER_SUFFIX_RX = re.compile(
+            r"\s+(group|plc|limited|ltd|holdings|llp|uk)$", re.IGNORECASE,
+        )
         for peer in sorted(all_peers, key=len, reverse=True):
-            pat = r"\b" + re.escape(peer.lower()) + r"\b"
-            if re.search(pat, haystack):
+            peer_lc = peer.lower()
+            # Try full name first
+            if re.search(r"\b" + re.escape(peer_lc) + r"\b", haystack):
                 return peer
+            # Then try the stem (peer minus trailing suffix word)
+            stem = _PEER_SUFFIX_RX.sub("", peer_lc).strip()
+            if stem and stem != peer_lc and len(stem) >= 4:
+                # Only check stem if it's distinctive enough (>=4 chars)
+                # to avoid matching common words.
+                if re.search(r"\b" + re.escape(stem) + r"\b", haystack):
+                    return peer   # return canonical peer name
     except Exception:
         pass
 
-    # 3) No match — drop the event rather than guess.
-    # (Previously fell back to title-cased prefix which leaked non-UK
-    # companies like 'Brown-Forman', 'Apollo Funds', 'Akash Ambani'.)
     return ""
 
 
