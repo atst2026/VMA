@@ -77,19 +77,26 @@ def _salary_band(role: str) -> tuple[int, int, str]:
 
 
 # ---- Cost of vacancy: simple defensible template ---------------------
+# Senior comms searches typically run 14–18 weeks brief-to-placement
+# (retained, named-longlist). We use 16 weeks as the COV assumption —
+# more defensible than the previous 12-week figure and produces a
+# stronger retained argument.
+COV_WEEKS = 16
+
+
 def cost_of_vacancy(role: str, salary_midpoint: int) -> dict:
     """Industry-standard estimates for the £ value of a vacant senior comms seat:
-    - Productivity loss while seat is unfilled
-    - Interim cover cost (assume £600/day for ~12 weeks)
+    - Productivity loss while seat is unfilled (16 weeks)
+    - Interim cover cost (assume £600/day for ~16 weeks)
     - Risk premium for a bad hire (~30% of first-year salary)
     Returns a dict of {label: amount}.
     """
-    productivity = int(salary_midpoint * 1.5 * (12 / 52))   # 12wk * 1.5x productivity multiplier
-    interim_cover = 600 * 5 * 12                              # £600/day * 5 working days * 12 weeks
+    productivity = int(salary_midpoint * 1.5 * (COV_WEEKS / 52))
+    interim_cover = 600 * 5 * COV_WEEKS
     bad_hire_risk = int(salary_midpoint * 0.30)
     return {
-        "Lost productivity (12 wks vacant)": productivity,
-        "Interim cover (£600/day × 12 wks)": interim_cover,
+        f"Lost productivity ({COV_WEEKS} wks vacant)": productivity,
+        f"Interim cover (£600/day × {COV_WEEKS} wks)": interim_cover,
         "Bad-hire downside risk (30% salary)": bad_hire_risk,
         "Total cost of getting it wrong": productivity + interim_cover + bad_hire_risk,
     }
@@ -173,7 +180,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
     <table style='border-collapse:collapse;font-size:13px;'>
       <tr><th style='text-align:left;padding:4px 12px 4px 0;'>Week</th><th style='text-align:left;padding:4px;'>Deliverable</th><th style='text-align:right;padding:4px;'>Fee milestone</th></tr>
       <tr><td>1</td><td>Briefing call · success criteria signed off · market intelligence pack delivered</td><td style='text-align:right;'>1/3 on engagement</td></tr>
-      <tr><td>2–3</td><td>Universe mapped · longlist of 30–50 named candidates · approach drafted</td><td></td></tr>
+      <tr><td>2–3</td><td>Universe mapped · longlist of named candidates calibrated to the brief's complexity</td><td></td></tr>
       <tr><td>3–4</td><td>Outreach + qualification · shortlist of 5–7 confirmed for interview</td><td style='text-align:right;'>1/3 on shortlist</td></tr>
       <tr><td>4–5</td><td>Client interviews · feedback management · final 2–3</td><td></td></tr>
       <tr><td>6</td><td>Offer · references · onboarding handover</td><td style='text-align:right;'>1/3 on accepted offer</td></tr>
@@ -204,9 +211,9 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 </div>
 {cov_html}
 
-<h3 style="margin:18px 0 6px 0;">4. Comparable employers ({_esc(sector_label)})</h3>
+<h3 style="margin:18px 0 6px 0;">4. Talent universe ({_esc(sector_label)})</h3>
 <div style='font-size:13px;color:#555;margin-bottom:6px;'>
-  Where the candidates are. A Recruiter saved-search across these 15 employers, filtered to {_esc(matched)}-level seniority, will surface the named longlist.
+  Where the candidate pool sits. These 15 named employers represent the realistic move-from set for a {_esc(matched)}-level hire in this sector.
 </div>
 {peer_html}
 
@@ -226,9 +233,14 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 <ul style='padding-left:18px;font-size:13px;color:#333;'>
   <li>Exclusivity unlocks deeper passive-candidate outreach (~3× larger universe vs contingent)</li>
   <li>Milestone fees align our priority with yours — we're not racing 6 other firms on the same role</li>
-  <li>Replacement guarantee + extended fee terms in writing</li>
   <li>Pre-agreed methodology removes 8–10 hours of back-and-forth at submission stage</li>
+  <li>Senior comms placements typically open 2–4 downstream hires (IC Business Partners, Change Comms Leads, Digital Comms Managers) over the following 12–18 months — a retained engagement positions VMA Group for the full pipeline, not just the headline role</li>
 </ul>
+
+<h3 style="margin:18px 0 6px 0;">8. Risk-mitigation terms</h3>
+<div style='font-size:13px;color:#333;'>
+  Standard rebate schedule, off-limits clause, exclusivity period, and replacement guarantee per VMA Group's terms of engagement — provided separately as part of the contract pack.
+</div>
 
 <hr style="margin:24px 0;border:none;border-top:1px solid #ddd;">
 <div style="color:#888;font-size:12px;">
@@ -267,18 +279,30 @@ def render_text(target: str, role: str, ch_snapshot: dict,
     for k, v in cov.items():
         lines.append(f"   {k:<42}  £{v:>10,}")
     sector_label = sector.replace("_", " ").title() if sector else "Generic FTSE"
-    lines += ["", f"4. COMPARABLE EMPLOYERS ({sector_label})"]
+    lines += ["", f"4. TALENT UNIVERSE ({sector_label})"]
     for i, p in enumerate(peers, 1):
         lines.append(f"   {i:>2}. {p}")
     lines += ["", "5. SALARY BENCHMARK",
               f"   UK April 2026 range for {matched}: £{low:,}–£{high:,} base + 10–25% bonus/LTIP",
               "", "6. 6-WEEK METHODOLOGY",
               "   Wk 1   Briefing + market pack                       (1/3 on engagement)",
-              "   Wk 2–3 Universe mapped + longlist of 30–50",
+              "   Wk 2–3 Universe mapped + longlist of named candidates",
               "   Wk 3–4 Outreach + shortlist of 5–7                  (1/3 on shortlist)",
               "   Wk 4–5 Client interviews + finals",
               "   Wk 6   Offer + onboarding handover                  (1/3 on accepted offer)",
-              "", "Retained fee: 28–33% of first-year total comp (vs 22–25% contingent on base only)."]
+              "", "Retained fee: 28–33% of first-year total comp (vs 22–25% contingent on base only).",
+              "",
+              "7. WHY RETAINED",
+              "   - Exclusivity unlocks ~3x larger passive universe",
+              "   - Milestone fees align priority",
+              "   - Pre-agreed methodology removes 8-10 hrs of back-and-forth",
+              "   - Senior comms placements typically open 2-4 downstream hires over",
+              "     12-18 months — retained positions VMA Group for the full pipeline",
+              "",
+              "8. RISK-MITIGATION TERMS",
+              "   Standard rebate schedule, off-limits clause, exclusivity period, and",
+              "   replacement guarantee per VMA Group's terms of engagement — provided",
+              "   separately as part of the contract pack."]
     return "\n".join(lines)
 
 
@@ -295,7 +319,24 @@ def main() -> int:
     ch = companies_house.company_events(target)
     news = recent_news_for(target)
     peers, sector = peers_for(target, k=15)
+
+    # Salary band: auto-detect from role, with optional override via env
+    # (set by the dashboard form). Both bounds are optional — if just one
+    # is provided we keep the auto-detected partner for the other.
     sal = _salary_band(role)
+    override_min = (os.environ.get("PITCH_SALARY_MIN") or "").strip()
+    override_max = (os.environ.get("PITCH_SALARY_MAX") or "").strip()
+    if override_min or override_max:
+        try:
+            low = int(override_min) if override_min else sal[0]
+            high = int(override_max) if override_max else sal[1]
+            if low > high:
+                low, high = high, low
+            sal = (low, high, f"{sal[2]} (Sara override)")
+            log.info("Salary override applied: £%d–£%d", low, high)
+        except ValueError:
+            log.warning("Bad salary override (min=%r max=%r); using auto-detected band",
+                        override_min, override_max)
     mid = (sal[0] + sal[1]) // 2
     cov = cost_of_vacancy(role, mid)
 

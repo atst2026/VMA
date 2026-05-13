@@ -435,9 +435,19 @@ def api_pitch_pack():
         "account_name": (data.get("account_name") or "").strip(),
         "role": (data.get("role") or "Head of Internal Communications").strip(),
         "mode": data.get("mode", "send"),
+        "salary_min": (data.get("salary_min") or "").strip(),
+        "salary_max": (data.get("salary_max") or "").strip(),
     }
     if not inputs["account_name"]:
         return jsonify({"ok": False, "detail": "Account name required"}), 400
+    # Validate salary overrides if provided
+    for k in ("salary_min", "salary_max"):
+        if inputs[k]:
+            try:
+                int(inputs[k])
+            except ValueError:
+                return jsonify({"ok": False,
+                                "detail": f"{k} must be a whole number (e.g. 95000)"}), 400
     return jsonify(trigger_workflow("pitch-pack.yml", inputs))
 
 
@@ -1127,6 +1137,34 @@ TEMPLATE = r"""
       transition: border-color 0.15s, box-shadow 0.15s;
     }
     .action-card input::placeholder { color: #A6AFBE; font-weight: 400; }
+    .action-card .salary-row-label {
+      display: block;
+      margin-top: 4px;
+      margin-bottom: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .action-card .salary-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .action-card .salary-row input {
+      margin-bottom: 4px;
+    }
+    .action-card .salary-row .dash {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .action-card .hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      font-style: italic;
+    }
     .action-card input:focus, .action-card select:focus {
       outline: none;
       border-color: var(--teal);
@@ -1368,6 +1406,13 @@ TEMPLATE = r"""
         <input id="pp-account" name="account_name" placeholder="e.g. Unilever" required>
         <label for="pp-role">Role</label>
         <input id="pp-role" name="role" placeholder="e.g. Head of Internal Communications" required>
+        <label class="salary-row-label">Salary range override (optional)</label>
+        <div class="salary-row">
+          <input id="pp-salary-min" name="salary_min" type="number" min="0" step="1000" placeholder="Min £">
+          <span class="dash">–</span>
+          <input id="pp-salary-max" name="salary_max" type="number" min="0" step="1000" placeholder="Max £">
+        </div>
+        <div class="hint">Leave blank to use the auto-detected band for the role.</div>
         <button type="submit">Run and send via email</button>
         <div class="status" id="pitch-status"></div>
       </form>
