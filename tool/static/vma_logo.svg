@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 220" preserveAspectRatio="xMidYMid meet" role="img" aria-label="VMA Group · Recruitment · Executive Search · Advisory Services">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0B2240"/>
+      <stop offset="50%" stop-color="#0E2845"/>
+      <stop offset="100%" stop-color="#10304F"/>
+    </linearGradient>
+    <linearGradient id="tealWave" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#5BA6AD" stop-opacity="0.0"/>
+      <stop offset="40%" stop-color="#6FD3DC" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#6FD3DC" stop-opacity="0.0"/>
+    </linearGradient>
+    <linearGradient id="pinkWave" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#E86A8F" stop-opacity="0.0"/>
+      <stop offset="50%" stop-color="#E86A8F" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#C2548A" stop-opacity="0.0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="220" fill="url(#bg)"/>
+
+  <!-- Left teal waves -->
+  <g fill="none" stroke="url(#tealWave)" stroke-width="0.9" opacity="0.9">
+    <path d="M -20 30 Q 90 -20 200 30 T 420 30"/>
+    <path d="M -20 50 Q 90 0 200 50 T 420 50"/>
+    <path d="M -20 70 Q 90 20 200 70 T 420 70"/>
+    <path d="M -20 90 Q 90 40 200 90 T 420 90"/>
+    <path d="M -20 110 Q 90 60 200 110 T 420 110"/>
+    <path d="M -20 130 Q 90 80 200 130 T 420 130"/>
+    <path d="M -20 150 Q 90 100 200 150 T 420 150"/>
+    <path d="M -20 170 Q 90 120 200 170 T 420 170"/>
+    <path d="M -20 190 Q 90 140 200 190 T 420 190"/>
+  </g>
+
+  <!-- Right pink waves -->
+  <g fill="none" stroke="url(#pinkWave)" stroke-width="0.9" opacity="0.85">
+    <path d="M 780 30 Q 900 -10 1010 30 T 1220 30"/>
+    <path d="M 780 50 Q 900 10 1010 50 T 1220 50"/>
+    <path d="M 780 70 Q 900 30 1010 70 T 1220 70"/>
+    <path d="M 780 90 Q 900 50 1010 90 T 1220 90"/>
+    <path d="M 780 110 Q 900 70 1010 110 T 1220 110"/>
+    <path d="M 780 130 Q 900 90 1010 130 T 1220 130"/>
+    <path d="M 780 150 Q 900 110 1010 150 T 1220 150"/>
+    <path d="M 780 170 Q 900 130 1010 170 T 1220 170"/>
+    <path d="M 780 190 Q 900 150 1010 190 T 1220 190"/>
+  </g>
+
+  <!-- Wordmark -->
+  <g font-family="Inter, 'Helvetica Neue', Arial, sans-serif" fill="#FFFFFF">
+    <text x="430" y="125" font-weight="800" font-size="74" letter-spacing="-3">VMA</text>
+    <text x="615" y="125" font-weight="300" font-size="74" letter-spacing="4">GROUP</text>
+    <text x="432" y="165" font-weight="500" font-size="14" letter-spacing="6.5" opacity="0.92">RECRUITMENT  ·  EXECUTIVE SEARCH  ·  ADVISORY SERVICES</text>
+  </g>
+</svg>
