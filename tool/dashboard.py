@@ -434,6 +434,14 @@ def api_refresh():
     return jsonify(refresh_latest_brief_from_github())
 
 
+@app.route("/api/dispatch/brief", methods=["POST"])
+@_auth_required
+def api_dispatch_brief():
+    """Trigger a fresh morning-brief workflow run in preview mode.
+    Preview = no email sent; just generates the artifact for refresh."""
+    return jsonify(trigger_workflow("morning-brief.yml", {"mode": "preview"}))
+
+
 @app.route("/api/dispatch/pitch-pack", methods=["POST"])
 @_auth_required
 def api_pitch_pack():
@@ -1622,26 +1630,87 @@ document.addEventListener('click', async (event) => {
   }
 });
 
+// Daily Refresh: dispatches a fresh morning brief workflow on GitHub
+// Actions (preview mode — no email), waits ~6 minutes for it to
+// generate the latest leads + predictors, then pulls the artifact and
+// reloads the page. One button, predictable behaviour, guaranteed
+// fresh data every click. Countdown state persists in localStorage so
+// reloading mid-run resumes the timer instead of resetting.
 async function refreshBrief() {
   const btn = document.getElementById('refresh-btn');
+  const originalLabel = btn.textContent;
   btn.disabled = true;
-  btn.textContent = 'Refreshing…';
+  btn.textContent = 'Dispatching…';
   try {
-    const r = await fetch('/api/refresh', { method: 'POST' });
+    const r = await fetch('/api/dispatch/brief', { method: 'POST' });
     const j = await r.json();
-    if (j.ok) {
-      window.location.reload();
-    } else {
-      alert(j.detail || 'Refresh failed');
+    if (!j.ok) {
+      alert(j.detail || 'Refresh dispatch failed');
       btn.disabled = false;
-      btn.textContent = '↻ Refresh from GitHub';
+      btn.textContent = originalLabel;
+      return;
     }
+    const startedAt = Date.now();
+    localStorage.setItem('refreshDispatchedAt', String(startedAt));
+    runRefreshCountdown(startedAt, btn, originalLabel);
   } catch (e) {
-    alert('Refresh failed: ' + e.message);
+    alert('Refresh dispatch failed: ' + e.message);
     btn.disabled = false;
-    btn.textContent = '↻ Refresh from GitHub';
+    btn.textContent = originalLabel;
   }
 }
+
+function runRefreshCountdown(startedAt, btn, originalLabel) {
+  const totalSecs = 6 * 60;   // brief runs 5-10 min in 90-day sweep
+  const tick = () => {
+    const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+    const remaining = Math.max(0, totalSecs - elapsed);
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    btn.textContent = `⏱ Refreshing · ${m}:${String(s).padStart(2,'0')}`;
+    if (remaining > 0) {
+      setTimeout(tick, 1000);
+    } else {
+      btn.textContent = '↻ Pulling fresh data…';
+      fetch('/api/refresh', { method: 'POST' })
+        .then(r => r.json())
+        .then(j => {
+          localStorage.removeItem('refreshDispatchedAt');
+          if (j.ok) {
+            window.location.reload();
+          } else {
+            alert('Brief generated but the artifact pull failed: '
+                  + (j.detail || 'unknown')
+                  + '\\n\\nWait 30 seconds and click Daily Refresh again.');
+            btn.disabled = false;
+            btn.textContent = originalLabel;
+          }
+        })
+        .catch(() => {
+          btn.disabled = false;
+          btn.textContent = originalLabel;
+        });
+    }
+  };
+  tick();
+}
+
+// Resume any in-flight refresh countdown after a page reload
+(function resumeRefreshIfNeeded() {
+  const startedAt = parseInt(localStorage.getItem('refreshDispatchedAt') || '0', 10);
+  if (!startedAt) return;
+  // Stale guard: if >12 minutes have passed, the dispatched workflow
+  // is long done. Clear and let the user click again to fetch fresh.
+  if (Date.now() - startedAt > 12 * 60 * 1000) {
+    localStorage.removeItem('refreshDispatchedAt');
+    return;
+  }
+  const btn = document.getElementById('refresh-btn');
+  if (!btn) return;
+  const originalLabel = btn.textContent;
+  btn.disabled = true;
+  runRefreshCountdown(startedAt, btn, originalLabel);
+})();
 </script>
 
 </body>
