@@ -19,6 +19,14 @@ on:
           - test
           - send
           - preview
+      salary_min:
+        description: "Optional salary floor override (e.g. 95000). Leave blank to use auto-detected band."
+        required: false
+        default: ""
+      salary_max:
+        description: "Optional salary ceiling override (e.g. 140000). Leave blank to use auto-detected band."
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -35,7 +43,7 @@ jobs:
       - name: Install Python deps
         run: |
           python -m pip install --upgrade pip
-          pip install requests beautifulsoup4 lxml python-dateutil
+          pip install requests beautifulsoup4 lxml python-dateutil pypdf
 
       - name: Generate pitch pack
         env:
@@ -49,6 +57,8 @@ jobs:
           PYTHONUNBUFFERED: "1"
           PYTHONPATH: "."
           PITCH_ROLE: ${{ github.event.inputs.role }}
+          PITCH_SALARY_MIN: ${{ github.event.inputs.salary_min }}
+          PITCH_SALARY_MAX: ${{ github.event.inputs.salary_max }}
         run: |
           set -x
           python -m tool.pitch_pack "${{ github.event.inputs.account_name }}" "${{ github.event.inputs.mode }}"

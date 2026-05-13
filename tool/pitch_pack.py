@@ -32,6 +32,7 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from tool import config
+from tool import annual_report as ar
 from tool.email_send import send as email_send
 from tool.peers import peers_for, detect_sector
 from tool.sources import companies_house, gdelt
@@ -77,19 +78,26 @@ def _salary_band(role: str) -> tuple[int, int, str]:
 
 
 # ---- Cost of vacancy: simple defensible template ---------------------
+# Senior comms searches typically run 14–18 weeks brief-to-placement
+# (retained, named-longlist). We use 16 weeks as the COV assumption —
+# more defensible than the previous 12-week figure and produces a
+# stronger retained argument.
+COV_WEEKS = 16
+
+
 def cost_of_vacancy(role: str, salary_midpoint: int) -> dict:
     """Industry-standard estimates for the £ value of a vacant senior comms seat:
-    - Productivity loss while seat is unfilled
-    - Interim cover cost (assume £600/day for ~12 weeks)
+    - Productivity loss while seat is unfilled (16 weeks)
+    - Interim cover cost (assume £600/day for ~16 weeks)
     - Risk premium for a bad hire (~30% of first-year salary)
     Returns a dict of {label: amount}.
     """
-    productivity = int(salary_midpoint * 1.5 * (12 / 52))   # 12wk * 1.5x productivity multiplier
-    interim_cover = 600 * 5 * 12                              # £600/day * 5 working days * 12 weeks
+    productivity = int(salary_midpoint * 1.5 * (COV_WEEKS / 52))
+    interim_cover = 600 * 5 * COV_WEEKS
     bad_hire_risk = int(salary_midpoint * 0.30)
     return {
-        "Lost productivity (12 wks vacant)": productivity,
-        "Interim cover (£600/day × 12 wks)": interim_cover,
+        f"Lost productivity ({COV_WEEKS} wks vacant)": productivity,
+        f"Interim cover (£600/day × {COV_WEEKS} wks)": interim_cover,
         "Bad-hire downside risk (30% salary)": bad_hire_risk,
         "Total cost of getting it wrong": productivity + interim_cover + bad_hire_risk,
     }
@@ -128,7 +136,8 @@ def _fmt_gbp(n: int) -> str:
 def render_html(target: str, role: str, ch_snapshot: dict,
                 news: list[dict], peers: list[str], sector: str | None,
                 salary_band: tuple[int, int, str],
-                cov: dict, mode: str) -> str:
+                cov: dict, mode: str,
+                annual_report=None) -> str:
     low, high, matched = salary_band
     mid = (low + high) // 2
 
@@ -145,14 +154,48 @@ def render_html(target: str, role: str, ch_snapshot: dict,
     else:
         ch_html = "<div style='color:#888;'>Companies House: not resolved (likely non-UK-registered or trading-name only).</div>"
 
-    # Recent news bullets
-    if news:
-        news_html = "<ul style='padding-left:18px;font-size:13px;'>"
+    # Section 2 dual mode:
+    #   (a) Bespoke — quotes from the target's most recent annual report
+    #   (b) Fallback — GDELT headlines, labelled "Recent market context"
+    # The labelling difference tells Sara whether to trust this section
+    # as the bespoke edge of the pack or as defensible filler.
+    if annual_report and annual_report.quotes:
+        section2_heading = "2. Why this matters now"
+        section2_subline = (
+            f"Strategic context from {_esc(target)}'s annual report filed "
+            f"{_esc(annual_report.filing_date)}. Pick the quote that best "
+            f"matches the brief context; delete the rest before sending."
+        )
+        quote_items = []
+        for q in annual_report.quotes:
+            quote_items.append(
+                f"<li style='margin-bottom:10px;'>"
+                f"<span style='font-style:italic;color:#222;'>“{_esc(q.text)}”</span>"
+                f"<div style='font-size:11px;color:#888;margin-top:2px;'>— {_esc(q.heading)}, p.{q.page}</div>"
+                f"</li>"
+            )
+        news_html = (
+            f"<div style='font-size:13px;color:#555;margin-bottom:8px;'>"
+            f"{section2_subline}</div>"
+            f"<ul style='padding-left:18px;font-size:13px;'>"
+            + "".join(quote_items)
+            + "</ul>"
+        )
+    elif news:
+        section2_heading = "2. Recent market context"
+        news_html = (
+            "<div style='font-size:13px;color:#555;margin-bottom:8px;'>"
+            "Generic news context (annual report quote extraction unavailable for this company — "
+            "consider adding a bespoke strategic line in your cover note):"
+            "</div>"
+            "<ul style='padding-left:18px;font-size:13px;'>"
+        )
         for a in news[:5]:
             news_html += f"<li><a href='{_esc(a.get('url',''))}'>{_esc(a.get('title',''))}</a> <span style='color:#888;'>· {_esc(a.get('seendate','')[:8])}</span></li>"
         news_html += "</ul>"
     else:
-        news_html = "<div style='color:#888;'>No major press coverage in the last 90 days surfaced by GDELT — check trade press manually.</div>"
+        section2_heading = "2. Recent market context"
+        news_html = "<div style='color:#888;'>No strategic-report quotes available and no GDELT coverage — check trade press manually.</div>"
 
     # Peer market map
     sector_label = sector.replace("_", " ").title() if sector else "Detected sector unclear — generic FTSE list"
@@ -173,7 +216,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
     <table style='border-collapse:collapse;font-size:13px;'>
       <tr><th style='text-align:left;padding:4px 12px 4px 0;'>Week</th><th style='text-align:left;padding:4px;'>Deliverable</th><th style='text-align:right;padding:4px;'>Fee milestone</th></tr>
       <tr><td>1</td><td>Briefing call · success criteria signed off · market intelligence pack delivered</td><td style='text-align:right;'>1/3 on engagement</td></tr>
-      <tr><td>2–3</td><td>Universe mapped · longlist of 30–50 named candidates · approach drafted</td><td></td></tr>
+      <tr><td>2–3</td><td>Universe mapped · longlist of named candidates calibrated to the brief's complexity</td><td></td></tr>
       <tr><td>3–4</td><td>Outreach + qualification · shortlist of 5–7 confirmed for interview</td><td style='text-align:right;'>1/3 on shortlist</td></tr>
       <tr><td>4–5</td><td>Client interviews · feedback management · final 2–3</td><td></td></tr>
       <tr><td>6</td><td>Offer · references · onboarding handover</td><td style='text-align:right;'>1/3 on accepted offer</td></tr>
@@ -195,7 +238,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 <h3 style="margin:18px 0 6px 0;">1. Account snapshot</h3>
 {ch_html}
 
-<h3 style="margin:18px 0 6px 0;">2. Why this matters now</h3>
+<h3 style="margin:18px 0 6px 0;">{section2_heading}</h3>
 {news_html}
 
 <h3 style="margin:18px 0 6px 0;">3. Cost of vacancy</h3>
@@ -204,9 +247,9 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 </div>
 {cov_html}
 
-<h3 style="margin:18px 0 6px 0;">4. Comparable employers ({_esc(sector_label)})</h3>
+<h3 style="margin:18px 0 6px 0;">4. Talent universe ({_esc(sector_label)})</h3>
 <div style='font-size:13px;color:#555;margin-bottom:6px;'>
-  Where the candidates are. A Recruiter saved-search across these 15 employers, filtered to {_esc(matched)}-level seniority, will surface the named longlist.
+  Where the candidate pool sits. These 15 named employers represent the realistic move-from set for a {_esc(matched)}-level hire in this sector.
 </div>
 {peer_html}
 
@@ -226,9 +269,14 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 <ul style='padding-left:18px;font-size:13px;color:#333;'>
   <li>Exclusivity unlocks deeper passive-candidate outreach (~3× larger universe vs contingent)</li>
   <li>Milestone fees align our priority with yours — we're not racing 6 other firms on the same role</li>
-  <li>Replacement guarantee + extended fee terms in writing</li>
   <li>Pre-agreed methodology removes 8–10 hours of back-and-forth at submission stage</li>
+  <li>Senior comms placements typically open 2–4 downstream hires (IC Business Partners, Change Comms Leads, Digital Comms Managers) over the following 12–18 months — a retained engagement positions VMA Group for the full pipeline, not just the headline role</li>
 </ul>
+
+<h3 style="margin:18px 0 6px 0;">8. Risk-mitigation terms</h3>
+<div style='font-size:13px;color:#333;'>
+  Standard rebate schedule, off-limits clause, exclusivity period, and replacement guarantee per VMA Group's terms of engagement — provided separately as part of the contract pack.
+</div>
 
 <hr style="margin:24px 0;border:none;border-top:1px solid #ddd;">
 <div style="color:#888;font-size:12px;">
@@ -241,7 +289,8 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 
 def render_text(target: str, role: str, ch_snapshot: dict,
                 news: list[dict], peers: list[str], sector: str | None,
-                salary_band: tuple[int, int, str], cov: dict) -> str:
+                salary_band: tuple[int, int, str], cov: dict,
+                annual_report=None) -> str:
     low, high, matched = salary_band
     mid = (low + high) // 2
     lines = [
@@ -256,29 +305,49 @@ def render_text(target: str, role: str, ch_snapshot: dict,
         lines.append(f"   {resolved.get('address_snippet','')}")
     else:
         lines.append("   Companies House: not resolved.")
-    lines += ["", "2. WHY THIS MATTERS NOW (last 90 days)"]
-    if news:
+
+    if annual_report and annual_report.quotes:
+        lines += ["", f"2. WHY THIS MATTERS NOW (annual report filed {annual_report.filing_date})"]
+        lines.append("   Pick the quote that best matches the brief context.")
+        for q in annual_report.quotes:
+            lines.append(f"   - \"{q.text}\"")
+            lines.append(f"     [{q.heading}, p.{q.page}]")
+    elif news:
+        lines += ["", "2. RECENT MARKET CONTEXT (generic — no annual report quotes available)"]
         for a in news[:5]:
             lines.append(f"   - {a.get('title','')} ({a.get('seendate','')[:8]})")
             lines.append(f"     {a.get('url','')}")
     else:
-        lines.append("   No major press coverage surfaced.")
+        lines += ["", "2. RECENT MARKET CONTEXT"]
+        lines.append("   No annual report quotes or press coverage surfaced.")
     lines += ["", "3. COST OF VACANCY", f"   Mid-salary assumed: £{mid:,}"]
     for k, v in cov.items():
         lines.append(f"   {k:<42}  £{v:>10,}")
     sector_label = sector.replace("_", " ").title() if sector else "Generic FTSE"
-    lines += ["", f"4. COMPARABLE EMPLOYERS ({sector_label})"]
+    lines += ["", f"4. TALENT UNIVERSE ({sector_label})"]
     for i, p in enumerate(peers, 1):
         lines.append(f"   {i:>2}. {p}")
     lines += ["", "5. SALARY BENCHMARK",
               f"   UK April 2026 range for {matched}: £{low:,}–£{high:,} base + 10–25% bonus/LTIP",
               "", "6. 6-WEEK METHODOLOGY",
               "   Wk 1   Briefing + market pack                       (1/3 on engagement)",
-              "   Wk 2–3 Universe mapped + longlist of 30–50",
+              "   Wk 2–3 Universe mapped + longlist of named candidates",
               "   Wk 3–4 Outreach + shortlist of 5–7                  (1/3 on shortlist)",
               "   Wk 4–5 Client interviews + finals",
               "   Wk 6   Offer + onboarding handover                  (1/3 on accepted offer)",
-              "", "Retained fee: 28–33% of first-year total comp (vs 22–25% contingent on base only)."]
+              "", "Retained fee: 28–33% of first-year total comp (vs 22–25% contingent on base only).",
+              "",
+              "7. WHY RETAINED",
+              "   - Exclusivity unlocks ~3x larger passive universe",
+              "   - Milestone fees align priority",
+              "   - Pre-agreed methodology removes 8-10 hrs of back-and-forth",
+              "   - Senior comms placements typically open 2-4 downstream hires over",
+              "     12-18 months — retained positions VMA Group for the full pipeline",
+              "",
+              "8. RISK-MITIGATION TERMS",
+              "   Standard rebate schedule, off-limits clause, exclusivity period, and",
+              "   replacement guarantee per VMA Group's terms of engagement — provided",
+              "   separately as part of the contract pack."]
     return "\n".join(lines)
 
 
@@ -295,12 +364,44 @@ def main() -> int:
     ch = companies_house.company_events(target)
     news = recent_news_for(target)
     peers, sector = peers_for(target, k=15)
+
+    # Annual report quote extraction (best-effort; falls back to GDELT if it
+    # can't reach the PDF or scores no quotes). Adds ~10–30sec to pack
+    # generation when it lands a FTSE annual report; near-zero overhead
+    # if the company isn't CH-resolved.
+    annual_rep = None
+    if ch.get("found"):
+        co_num = (ch.get("resolved") or {}).get("company_number", "")
+        if co_num:
+            try:
+                annual_rep = ar.fetch_strategic_quotes(co_num)
+            except Exception as e:
+                log.exception("annual_report extraction failed: %s", e)
+
+    # Salary band: auto-detect from role, with optional override via env
+    # (set by the dashboard form). Both bounds are optional — if just one
+    # is provided we keep the auto-detected partner for the other.
     sal = _salary_band(role)
+    override_min = (os.environ.get("PITCH_SALARY_MIN") or "").strip()
+    override_max = (os.environ.get("PITCH_SALARY_MAX") or "").strip()
+    if override_min or override_max:
+        try:
+            low = int(override_min) if override_min else sal[0]
+            high = int(override_max) if override_max else sal[1]
+            if low > high:
+                low, high = high, low
+            sal = (low, high, f"{sal[2]} (Sara override)")
+            log.info("Salary override applied: £%d–£%d", low, high)
+        except ValueError:
+            log.warning("Bad salary override (min=%r max=%r); using auto-detected band",
+                        override_min, override_max)
     mid = (sal[0] + sal[1]) // 2
     cov = cost_of_vacancy(role, mid)
 
-    html_out = render_html(target, role, ch, news, peers, sector, sal, cov, mode)
-    text_out = render_text(target, role, ch, news, peers, sector, sal, cov)
+    html_out = render_html(target, role, ch, news, peers, sector, sal, cov, mode,
+                            annual_report=annual_rep)
+    text_out = render_text(target, role, ch, news, peers, sector, sal, cov,
+                            annual_report=annual_rep)
 
     safe = "".join(c if c.isalnum() else "_" for c in target.lower())[:40]
     stamp = datetime.now().strftime("%Y%m%d_%H%M")
