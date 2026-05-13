@@ -55,6 +55,17 @@ SALARY_FLOOR_PERM_GBP = 40_000
 DAY_RATE_FLOOR_GBP = 350
 DAY_RATE_CEILING_GBP = 800
 
+# Companies whose jobs should NEVER appear in Sara's leads list.
+# VMA Group is her own employer; the others are direct competitor
+# search firms (Sara doesn't pitch at her competitors).
+COMPANY_EXCLUDE = [
+    "VMA Group", "VMAGROUP", "VMA Recruitment",
+    # Competitor IC/Corp Comms recruiters
+    "Hanson Search", "Sapience Communications", "Sapience",
+    "Ellwood Atfield", "Reuben Sinclair", "CommsSearch",
+    "PRfect Search", "Madigan Search", "Quill Recruitment",
+    "Major Players",
+]
 # --- Geography ---
 # UK primary; international secondary. Primary markets are boosted in ranking.
 GEO_PRIMARY = {"UK", "United Kingdom", "Britain", "England", "Scotland", "Wales", "Northern Ireland", "GB"}
