@@ -867,6 +867,40 @@ TEMPLATE = r"""
     }
     .predictor .evidence strong { color: var(--navy); font-weight: 600; }
 
+    /* Predicted role + probability chips on the row summary */
+    .role-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 9px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: -0.005em;
+      color: var(--teal-dark);
+      background: rgba(201, 100, 66, 0.08);
+      border: 1px solid rgba(201, 100, 66, 0.22);
+      border-radius: 8px;
+    }
+    .prob-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 9px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--text);
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-variant-numeric: tabular-nums;
+    }
+    .panel-header h2 .window-sub {
+      font-weight: 400;
+      color: var(--text-muted);
+      font-size: 12px;
+      letter-spacing: 0;
+      margin-left: 4px;
+    }
+
     /* PIPELINE — NEW badge, status badges, filter pills */
     .new-badge {
       display: inline-block;
@@ -1309,10 +1343,10 @@ TEMPLATE = r"""
       </div>
     </div>
 
-    <!-- PREDICTOR PIPELINE (rolling 30-day, auto-populated each morning) -->
+    <!-- PREDICTOR PIPELINE (rolling 90-day forward window, auto-populated) -->
     <div class="panel">
       <div class="panel-header">
-        <h2>Predictor Pipeline</h2>
+        <h2>Predicted Briefs <span class="window-sub">· next 90 days</span></h2>
         <span class="count">{{ active_count }}</span>
       </div>
       <div class="filter-bar">
@@ -1329,11 +1363,11 @@ TEMPLATE = r"""
               <div class="row-summary">
                 <span class="rank">{{ loop.index }}</span>
                 <span class="title">{{ p.company }}</span>
+                {% if p.predicted_role %}<span class="role-chip">{{ p.predicted_role }}</span>{% endif %}
+                {% if p.probability %}<span class="prob-chip">{{ p.probability }}%</span>{% endif %}
                 {% if p.is_new %}<span class="new-badge">NEW</span>{% endif %}
                 {% if p.window_label %}<span class="window-badge">{{ p.window_label }}</span>{% endif %}
-                <span class="stack-label {{ 'stacked' if p.depth > 1 else 'single' }}">
-                  {{ 'stacked × ' ~ p.depth if p.depth > 1 else 'single' }}
-                </span>
+                {% if p.depth > 1 %}<span class="stack-label stacked">stacked × {{ p.depth }}</span>{% endif %}
                 {% if p.status == 'followed_up' %}<span class="status-badge followed-up">✓ followed up</span>{% endif %}
                 {% if p.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
                 <span class="expand-toggle">▾</span>
@@ -1365,7 +1399,7 @@ TEMPLATE = r"""
             </div>
           {% endfor %}
         {% else %}
-          <div class="empty compact">Pipeline empty. Click Daily Refresh to pull the latest 30-day window, or wait for tomorrow's morning brief.</div>
+          <div class="empty compact">Pipeline empty. Click Daily Refresh, or wait for tomorrow's morning brief — the 90-day window populates automatically.</div>
         {% endif %}
       </div>
     </div>
