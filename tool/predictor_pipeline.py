@@ -33,7 +33,11 @@ STATE_DIR = Path(__file__).resolve().parent / "state"
 STATE_DIR.mkdir(parents=True, exist_ok=True)
 PIPELINE_FILE = STATE_DIR / "predictor_pipeline.json"
 
-ROLLING_WINDOW_DAYS = 30
+# 90-day forward-prediction horizon (matches "PREDICTED BRIEFS (next
+# 90 days)" in the spec). Predictors stay live for 90 days from
+# first_seen — long enough for a 6-12wk CEO-cascade hire to land or
+# a 3-month M&A integration hire to fire.
+ROLLING_WINDOW_DAYS = 90
 
 
 def _pid(company: str) -> str:
@@ -58,12 +62,57 @@ def save_pipeline(pipeline: dict) -> None:
     PIPELINE_FILE.write_text(json.dumps(pipeline, indent=2, default=str))
 
 
+def _predicted_role_for(stk: Stack) -> str:
+    """Map the stack's strongest trigger to the senior role most likely
+    being hired. Mirrors linkedin_resolver.role_for_predictor but kept
+    here to avoid a circular import."""
+    keys = {e.trigger_key for e in stk.events}
+    # Order = priority; first match wins
+    role_map = [
+        ("comms_leader_departure", "Head of Communications"),
+        ("ic_platform_rfp",        "Head of Internal Communications"),
+        ("ipo_listing",            "Corporate Affairs Director"),
+        ("ceo_change",             "Head of Communications"),
+        ("mna",                    "Corporate Affairs Director"),
+        ("regulator_action",       "Crisis / Head of Comms"),
+        ("contract_loss",          "Head of Communications"),
+        ("chair_change",           "Head of Communications"),
+        ("cfo_change",             "Head of Investor Relations"),
+        ("ir_director_change",     "Head of Investor Relations"),
+        ("chro_change",            "Head of Internal Communications"),
+        ("restructure",            "Head of Internal Communications"),
+        ("job_ad_cluster",         "Head of Internal Communications"),
+    ]
+    for key, role in role_map:
+        if key in keys:
+            return role
+    return "Senior Comms hire"
+
+
+def _probability_for(score: float, depth: int) -> int:
+    """Convert raw stack score into a calibrated probability % for the
+    'PREDICTED BRIEFS — next 90 days' display. Loose calibration based
+    on observed stacker output ranges:
+      depth=1 single trigger  ~score 0.6-1.5 → 45-65%
+      depth=2 stacked         ~score 1.5-3.0 → 65-82%
+      depth=3+ heavy stack    ~score 3.0+    → 82-92%
+    Capped 35-92% so we never overclaim or underclaim."""
+    base = 40 + score * 10
+    if depth >= 2:
+        base += 8
+    if depth >= 3:
+        base += 6
+    return int(max(35, min(92, base)))
+
+
 def _serialise_stack(stk: Stack, score: float, now_iso: str) -> dict:
     w = window_for_stack(stk)
     return {
         "company": stk.company,
         "score": score,
         "depth": stk.depth,
+        "probability": _probability_for(score, stk.depth),
+        "predicted_role": _predicted_role_for(stk),
         "window_weeks_min": w[0] if w else None,
         "window_weeks_max": w[1] if w else None,
         "window_label": f"{w[0]}–{w[1]} weeks" if w else None,
@@ -137,9 +186,15 @@ def upsert(ranked_stacks: list[tuple[Stack, float]]) -> dict:
 
 
 def age_out(pipeline: dict, max_days: int = ROLLING_WINDOW_DAYS) -> int:
-    """Remove predictors with last_seen older than max_days, UNLESS
+    """Remove predictors whose FIRST_SEEN is older than max_days, UNLESS
     they're status=followed_up (kept indefinitely as Sara's record).
-    Returns the count of removed entries."""
+
+    Using first_seen (not last_seen) means a predictor stays live for
+    the full 90-day forward-prediction window from when it first fired
+    — even if the underlying signal stops generating fresh evidence.
+    A CEO change reported 60 days ago is still active because the
+    cascade hire is typically 6-12 weeks out.
+    """
     cutoff = datetime.now(timezone.utc) - timedelta(days=max_days)
     removed = 0
     predictors = pipeline.get("predictors") or {}
@@ -147,14 +202,14 @@ def age_out(pipeline: dict, max_days: int = ROLLING_WINDOW_DAYS) -> int:
         if entry.get("status") == "followed_up":
             continue
         try:
-            last_seen = datetime.fromisoformat(
-                entry.get("last_seen")
-                or entry.get("first_seen")
+            first_seen = datetime.fromisoformat(
+                entry.get("first_seen")
+                or entry.get("last_seen")
                 or "1970-01-01T00:00:00+00:00"
             )
         except Exception:
             continue
-        if last_seen < cutoff:
+        if first_seen < cutoff:
             del predictors[pid]
             removed += 1
     return removed
