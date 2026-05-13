@@ -102,6 +102,7 @@ def detect_events(signals: Iterable[dict]) -> list[TriggerEvent]:
     events: list[TriggerEvent] = []
     rejected_no_company = 0
     rejected_subthreshold_regulator = 0
+    rejected_contract_loss_immaterial = 0
     pattern_hits = 0
 
     for s in signals:
@@ -132,6 +133,18 @@ def detect_events(signals: Iterable[dict]) -> list[TriggerEvent]:
                 if detect_sector(company) is None:
                     log.info("drop (ic_platform_rfp at small employer): %s", company)
                     continue
+            if trigger.key == "contract_loss":
+                # Filter false positives: a contract loss only counts if it's
+                # (a) reported via RNS (legally material by definition) or
+                # (b) explicitly tagged with a £5m+ amount. Otherwise sports/
+                # HR/SaaS "contract not renewed" noise floods the brief.
+                tier = _tier_from_source_label(s.get("source", ""))
+                amt = P.extract_gbp_amount_millions(body)
+                material = tier == "listed" or (amt is not None and amt >= 5)
+                if not material:
+                    rejected_contract_loss_immaterial += 1
+                    log.info("drop (contract_loss immaterial): %s — %r", company, title[:100])
+                    continue
             ev = _evidence_sentence(body, trigger.patterns)
             log.info("trigger %s: %s — %r", trigger.key, company, ev[:80])
             events.append(TriggerEvent(
@@ -148,8 +161,10 @@ def detect_events(signals: Iterable[dict]) -> list[TriggerEvent]:
 
     log.info(
         "detect_events summary: %d items matched patterns, %d events emitted, "
-        "%d dropped no-company, %d dropped regulator-subthreshold",
-        pattern_hits, len(events), rejected_no_company, rejected_subthreshold_regulator,
+        "%d dropped no-company, %d dropped regulator-subthreshold, "
+        "%d dropped contract-loss-immaterial",
+        pattern_hits, len(events), rejected_no_company,
+        rejected_subthreshold_regulator, rejected_contract_loss_immaterial,
     )
     return events
 
