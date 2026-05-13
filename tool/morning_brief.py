@@ -105,12 +105,20 @@ def main() -> int:
     signals = result["signals"]
     report = result["report"]
 
-    # Dedup across runs (honest state)
-    fresh = filter_unseen(signals)
-    log.info("Scoured %d raw signals; %d new since last run.", len(signals), len(fresh))
+    # Rank EVERYTHING first — this is what goes to the dashboard so Sara
+    # sees all current leads, not just ones-new-since-yesterday. Dedup
+    # is only used to filter the EMAIL (which still goes fresh-only so
+    # Sara isn't spammed daily with the same items).
+    ranked_all = rank(signals)
+    log.info("Ranked %d total matching signals (all-time view for dashboard).",
+             len(ranked_all))
 
+    # Dedup for the email body only
+    fresh = filter_unseen(signals)
+    log.info("Scoured %d raw signals; %d new since last run (email-fresh).",
+             len(signals), len(fresh))
     ranked = rank(fresh)
-    log.info("Ranked %d matching signals above the role-match threshold.", len(ranked))
+    log.info("Ranked %d fresh signals for the email body.", len(ranked))
 
     # Resolve direct LinkedIn profile URLs for the top-N items via Bright
     # Data. ~10 BD requests/day, well inside the 5k/mo free tier. Cache
@@ -196,7 +204,12 @@ def main() -> int:
     text = render_plaintext(ranked, now_str, covered, predictive_text=predictive_text)
     (STATE_DIR / "latest_brief.html").write_text(html)
     (STATE_DIR / "latest_brief.txt").write_text(text)
-    (STATE_DIR / "latest_signals.json").write_text(json.dumps(ranked, indent=2, default=str))
+    # Dashboard reads latest_signals.json — write the FULL ranked set
+    # (not the email-fresh-only subset) so Sara sees every current
+    # lead matching her criteria, regardless of when it first appeared.
+    (STATE_DIR / "latest_signals.json").write_text(
+        json.dumps(ranked_all, indent=2, default=str)
+    )
 
     # Back-compat: dashboard's load_latest_predictive() reads this file.
     # We populate it from the full active pipeline so the dashboard shows
