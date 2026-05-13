@@ -190,6 +190,131 @@ RESTRUCTURE = TriggerType(
 )
 
 
+# ---- CFO change -- often drives investor-narrative refresh -----------
+CFO_CHANGE = TriggerType(
+    key="cfo_change",
+    label="CFO change",
+    weight=0.5,
+    lead_time_weeks=(12, 24),
+    who_to_call="Head of IR / CCO — investor-narrative refresh usually triggers a comms hire",
+    implication=(
+        "New / departing CFO at {company}. CFO changes often drive an "
+        "investor-narrative refresh that pulls through a Corporate Affairs / "
+        "Comms hire within 12–24 weeks."
+    ),
+    patterns=_rx(
+        r"new chief financial officer",
+        r"\bnew cfo\b",
+        r"incoming chief financial officer",
+        r"appointment of.{0,40}chief financial officer",
+        r"appointment of.{0,20}cfo\b",
+        r"appointed as chief financial officer",
+        r"appointed as cfo",
+        r"to step down as chief financial officer",
+        r"stepping down as chief financial officer",
+        r"steps down as chief financial officer",
+        r"resignation of.{0,40}chief financial officer",
+        r"departs as cfo",
+        r"departs as chief financial officer",
+    ),
+)
+
+
+# ---- IR Director / Head of Investor Relations change ----------------
+IR_DIRECTOR_CHANGE = TriggerType(
+    key="ir_director_change",
+    label="IR Director change",
+    weight=0.5,
+    lead_time_weeks=(6, 16),
+    who_to_call="The new IR Director directly — IR + Corp Affairs hires often paired",
+    implication=(
+        "New Head of Investor Relations / IR Director at {company}. "
+        "Capital-markets repositioning typically triggers a paired Corporate "
+        "Affairs hire within 6–16 weeks."
+    ),
+    patterns=_rx(
+        r"new head of investor relations",
+        r"new director of investor relations",
+        r"new ir director",
+        r"appointment of.{0,40}head of investor relations",
+        r"appointment of.{0,40}director of investor relations",
+        r"appointment of.{0,30}ir director",
+        r"appointed.{0,20}head of investor relations",
+        r"appointed.{0,30}ir director",
+        r"to step down as head of investor relations",
+        r"stepping down as head of investor relations",
+        r"new chief investor officer",
+    ),
+)
+
+
+# ---- Comms-leader departure (the closest thing to mind-reading) ------
+# When a named senior comms person leaves a known company in trade press,
+# that company has an OPEN senior comms vacancy right now — often weeks
+# before the role is advertised. Highest-yield Phase-2 trigger.
+COMMS_LEADER_DEPARTURE = TriggerType(
+    key="comms_leader_departure",
+    label="Senior comms leader departure",
+    weight=1.2,
+    lead_time_weeks=(0, 12),
+    who_to_call="CHRO / Chief People Officer — vacancy is open NOW",
+    implication=(
+        "Named senior comms leader has left / is leaving {company} per trade "
+        "press. The role is OPEN now — they'll need to replace within 12 "
+        "weeks. This is pre-advert signal: most external recruiters won't "
+        "spot the vacancy until the role hits a job board, ~4–8 weeks behind."
+    ),
+    patterns=[
+        # Departure verbs anchored on senior comms titles. Comms-role
+        # keyword + leaving verb in the same ~120-char window so we
+        # don't false-fire on a CEO article that mentions "communications"
+        # elsewhere. Covers both "Head of X" and "X Director" word order.
+        re.compile(
+            r"(?:head of (?:internal|corporate|external)?\s*comm(?:s|unications)|"
+            r"director of (?:internal|corporate|external)?\s*comm(?:s|unications)|"
+            r"(?:internal|external|corporate)?\s*communications director|"
+            r"(?:internal|external)?\s*comms director|"
+            r"(?:chief|corporate) communications officer|"
+            r"corporate affairs director|"
+            r"(?:head|director) of corporate affairs|"
+            r"(?:head|director) of (?:media relations|pr|public relations)|"
+            r"(?:media relations|pr|public relations) director|"
+            r"pr director)"
+            r".{0,120}?"
+            r"(?:has left|is leaving|departs|departed|departing|"
+            r"steps down|stepping down|stepped down|resigns|resigned|"
+            r"to leave|to depart|exit(?:s|ing|ed)|"
+            r"on gardening leave|to step down|moves to|joining|moving to)",
+            re.IGNORECASE,
+        ),
+        # Inverted phrasing: "X departs/leaves as [comms title]"
+        re.compile(
+            r"(?:departs|leaves|exits|resigns|stepping down)"
+            r".{0,40}"
+            r"(?:as|from)\s+"
+            r"(?:head of (?:internal|corporate|external)?\s*comm(?:s|unications)|"
+            r"director of (?:internal|corporate|external)?\s*comm(?:s|unications)|"
+            r"(?:communications|comms) director|"
+            r"(?:chief|corporate) communications officer|"
+            r"corporate affairs director|"
+            r"(?:head|director) of (?:corporate affairs|media relations|pr)|"
+            r"pr director)",
+            re.IGNORECASE,
+        ),
+        # "Company loses its CCO" / "X loses Head of Communications"
+        re.compile(
+            r"loses\s+(?:its\s+)?(?:head of (?:internal|corporate|external)?\s*comm(?:s|unications)|"
+            r"director of comm(?:s|unications)|"
+            r"(?:communications|comms) director|"
+            r"(?:chief|corporate) communications officer|"
+            r"corporate affairs director|"
+            r"pr director)",
+            re.IGNORECASE,
+        ),
+    ],
+)
+
+
 # ---- IC platform RFP / case-study leak / adjacent-job-ad mention -----
 # Internal Communications + employee-engagement platforms whose
 # purchase or RFP almost always coincides with a senior comms hire
@@ -243,8 +368,9 @@ IC_PLATFORM_RFP = TriggerType(
 )
 
 
-TRIGGERS = [CEO_CHANGE, CHAIR_CHANGE, CHRO_CHANGE, MNA, REGULATOR_ACTION,
-            RESTRUCTURE, IC_PLATFORM_RFP]
+TRIGGERS = [CEO_CHANGE, CHAIR_CHANGE, CHRO_CHANGE, CFO_CHANGE,
+            IR_DIRECTOR_CHANGE, COMMS_LEADER_DEPARTURE,
+            MNA, REGULATOR_ACTION, RESTRUCTURE, IC_PLATFORM_RFP]
 BY_KEY = {t.key: t for t in TRIGGERS}
 
 

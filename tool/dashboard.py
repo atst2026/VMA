@@ -321,6 +321,18 @@ def linkedin_search_for_predictor(p: dict) -> dict:
     events = p.get("events") or []
     keys = {e.get("trigger_key") for e in events}
 
+    if "comms_leader_departure" in keys:
+        return {"label": f"Search CHRO at {company}",
+                "url": _people_search(f'"Chief People Officer" OR "CHRO" "{company}"')}
+    if "ic_platform_rfp" in keys:
+        return {"label": f"Search CHRO at {company}",
+                "url": _people_search(f'"Chief People Officer" OR "CHRO" "{company}"')}
+    if "cfo_change" in keys:
+        return {"label": f"Search Head of IR at {company}",
+                "url": _people_search(f'"Head of Investor Relations" OR "IR Director" "{company}"')}
+    if "ir_director_change" in keys:
+        return {"label": f"Search IR Director at {company}",
+                "url": _people_search(f'"Head of Investor Relations" OR "IR Director" "{company}"')}
     if "ceo_change" in keys:
         return {"label": f"Search new CEO at {company}",
                 "url": _people_search(f'"Chief Executive" OR "CEO" "{company}"')}
