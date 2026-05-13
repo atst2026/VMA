@@ -98,9 +98,40 @@ def _sources_line(stk: Stack) -> str:
     return " · ".join(rows)
 
 
-def render_html(ranked: list[tuple[Stack, float]], limit: int = 5) -> str:
+DASHBOARD_URL = "https://vma-dashboard.onrender.com/"
+
+
+def render_html(ranked: list[tuple[Stack, float]], limit: int = 5,
+                new_count: int | None = None,
+                total_active: int | None = None) -> str:
+    """Render the pre-advert signals section.
+
+    `ranked` is the daily DELTA (new predictors first-seen today). The
+    full active pipeline lives on the dashboard; we just show the new
+    items here plus a one-line link to the pipeline.
+    """
+    # No new items today, but pipeline has active items → tiny stub with link
+    if not ranked and total_active:
+        return f"""
+<h3 style="margin:24px 0 4px 0;">Pre-advert signals</h3>
+<div style="color:#666;font-size:13px;margin-bottom:8px;">
+  No new predictors today.
+  <a href="{DASHBOARD_URL}">{total_active} active in your pipeline →</a>
+</div>
+"""
     if not ranked:
         return ""
+
+    meta_line = ""
+    if total_active is not None and new_count is not None:
+        meta_line = (
+            f"<div style='color:#888;font-size:12px;margin:4px 0 8px 0;'>"
+            f"{new_count} new today · "
+            f"<a href='{DASHBOARD_URL}' style='color:#888;'>"
+            f"{total_active} active in your pipeline →</a>"
+            f"</div>"
+        )
+
     top = ranked[:limit]
     blocks = []
     for i, (stk, sc) in enumerate(top, 1):
@@ -134,22 +165,35 @@ def render_html(ranked: list[tuple[Stack, float]], limit: int = 5) -> str:
         </div>
         """)
     return f"""
-<h3 style="margin:24px 0 4px 0;">Pre-advert signals — comms hire likely within 3–9 months</h3>
+<h3 style="margin:24px 0 4px 0;">Pre-advert signals — new today</h3>
 <div style="color:#666;font-size:12px;margin-bottom:8px;">
   Upstream triggers that empirically precede senior comms hires. Every item has a named public source.
   Probabilities are trigger-class base rates, not calibrated per-company predictions.
 </div>
+{meta_line}
 {''.join(blocks)}
 """
 
 
-def render_text(ranked: list[tuple[Stack, float]], limit: int = 5) -> str:
+def render_text(ranked: list[tuple[Stack, float]], limit: int = 5,
+                new_count: int | None = None,
+                total_active: int | None = None) -> str:
+    if not ranked and total_active:
+        return (
+            "Pre-advert signals\n"
+            "—" * 56 + "\n"
+            f"No new predictors today. {total_active} active in your pipeline:\n"
+            f"  {DASHBOARD_URL}\n"
+        )
     if not ranked:
         return ""
     lines = [
-        "Pre-advert signals — comms hire likely within 3–9 months",
+        "Pre-advert signals — new today",
         "—" * 56,
     ]
+    if total_active is not None and new_count is not None:
+        lines.append(f"  {new_count} new today · {total_active} active in pipeline: {DASHBOARD_URL}")
+        lines.append("")
     for i, (stk, sc) in enumerate(ranked[:limit], 1):
         lines.append(f"{i}. {stk.company} · {_stack_descriptor(stk)}")
         lines.append(f"   {_implication(stk)}")

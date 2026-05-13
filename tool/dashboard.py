@@ -24,6 +24,7 @@ import os
 import sys
 import zipfile
 import io
+from datetime import datetime, timezone
 from pathlib import Path
 
 import re
@@ -152,14 +153,25 @@ def load_latest_signals() -> list[dict]:
 
 
 def load_latest_predictive() -> list[dict]:
-    p = STATE_DIR / "latest_predictive.json"
-    if not p.exists():
-        return []
-    try:
-        data = json.loads(p.read_text())
-    except Exception:
-        return []
+    """Read the persistent rolling-window pipeline. Falls back to the
+    legacy latest_predictive.json if the pipeline doesn't exist yet
+    (first deploy before any morning brief has populated it)."""
+    from tool import predictor_pipeline
+    data = predictor_pipeline.all_predictors()
+    if not data:
+        p = STATE_DIR / "latest_predictive.json"
+        if p.exists():
+            try:
+                data = json.loads(p.read_text())
+            except Exception:
+                data = []
+
+    today = datetime.now(timezone.utc).date().isoformat()
     for p_item in data:
+        first_seen = p_item.get("first_seen") or ""
+        p_item["is_new"] = first_seen.startswith(today)
+        p_item.setdefault("status", "active")
+        p_item.setdefault("pid", predictor_pipeline._pid(p_item.get("company", "")))
         p_item["outreach"] = draft_outreach_for_predictor(p_item)
         p_item["linkedin"] = linkedin_search_for_predictor(p_item)
     return data
@@ -369,7 +381,6 @@ def last_updated() -> str:
     p = STATE_DIR / "latest_signals.json"
     if not p.exists():
         return "never"
-    from datetime import datetime, timezone
     ts = datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc)
     return ts.strftime("%a %d %b %Y · %H:%M UTC")
 
@@ -381,15 +392,33 @@ app = Flask(__name__)
 @app.route("/")
 @_auth_required
 def index():
-    from datetime import datetime, timezone
+    predictors = load_latest_predictive()
     return render_template_string(
         TEMPLATE,
         leads=load_latest_signals(),
-        predictors=load_latest_predictive(),
+        predictors=predictors,
+        active_count=sum(1 for p in predictors if p.get("status") == "active"),
+        new_count=sum(1 for p in predictors if p.get("is_new")),
+        followed_up_count=sum(1 for p in predictors if p.get("status") == "followed_up"),
+        dismissed_count=sum(1 for p in predictors if p.get("status") == "dismissed"),
         last_updated=last_updated(),
         has_token=bool(GITHUB_TOKEN),
         build_stamp=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
     )
+
+
+@app.route("/api/predictor/<pid>/status", methods=["POST"])
+@_auth_required
+def api_predictor_status(pid: str):
+    from tool import predictor_pipeline
+    data = request.get_json(force=True) or {}
+    status = (data.get("status") or "").strip()
+    if status not in ("active", "followed_up", "dismissed"):
+        return jsonify({"ok": False, "detail": "invalid status"}), 400
+    ok = predictor_pipeline.set_status(pid, status)
+    if not ok:
+        return jsonify({"ok": False, "detail": "predictor not found"}), 404
+    return jsonify({"ok": True, "pid": pid, "status": status})
 
 
 @app.route("/api/refresh", methods=["POST"])
@@ -913,6 +942,102 @@ TEMPLATE = r"""
     }
     .predictor .evidence strong { color: var(--navy); font-weight: 600; }
 
+    /* PIPELINE — NEW badge, status badges, filter pills */
+    .new-badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 3px;
+      margin-left: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      vertical-align: middle;
+      background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+      color: white;
+      box-shadow: 0 0 0 1px rgba(255, 107, 53, 0.2);
+    }
+    .status-badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 3px;
+      margin-left: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      vertical-align: middle;
+    }
+    .status-badge.followed-up {
+      background: rgba(34, 139, 87, 0.1);
+      color: #228b57;
+      border: 1px solid rgba(34, 139, 87, 0.3);
+    }
+    .status-badge.dismissed {
+      background: rgba(120, 120, 120, 0.08);
+      color: #888;
+      border: 1px solid rgba(120, 120, 120, 0.25);
+    }
+    .item.predictor[data-status="dismissed"] { opacity: 0.55; }
+    .item.predictor[data-status="followed_up"] { opacity: 0.8; }
+
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .filter-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 11px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--navy);
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .filter-pill:hover {
+      border-color: var(--teal);
+      color: var(--teal-dark);
+    }
+    .filter-pill.active {
+      background: var(--navy);
+      color: white;
+      border-color: var(--navy);
+    }
+    .filter-pill .pill-count {
+      display: inline-block;
+      font-size: 10px;
+      padding: 1px 6px;
+      background: rgba(255,255,255,0.18);
+      border-radius: 10px;
+      font-weight: 700;
+    }
+    .filter-pill:not(.active) .pill-count {
+      background: rgba(14, 40, 69, 0.08);
+      color: var(--navy);
+    }
+    .btn-mini.ghost {
+      background: transparent;
+      color: var(--text-muted);
+      border-color: var(--border);
+    }
+    .btn-mini.ghost:hover {
+      color: #c93737;
+      border-color: #c93737;
+      background: rgba(201, 55, 55, 0.05);
+      box-shadow: 0 0 0 3px rgba(201, 55, 55, 0.08);
+    }
+
     .show-more {
       width: 100%;
       padding: 9px;
@@ -1176,22 +1301,32 @@ TEMPLATE = r"""
       </div>
     </div>
 
-    <!-- TODAY'S PREDICTORS -->
+    <!-- PREDICTOR PIPELINE (rolling 30-day) -->
     <div class="panel">
       <div class="panel-header">
-        <h2>Today's Predictors</h2>
-        <span class="count">{{ predictors|length }}</span>
+        <h2>Predictor Pipeline</h2>
+        <span class="count">{{ active_count }}</span>
       </div>
-      <div class="panel-body">
+      <div class="filter-bar">
+        <button class="filter-pill active" data-filter="active">Active <span class="pill-count">{{ active_count }}</span></button>
+        <button class="filter-pill" data-filter="new">New today <span class="pill-count">{{ new_count }}</span></button>
+        <button class="filter-pill" data-filter="followed_up">Followed up <span class="pill-count">{{ followed_up_count }}</span></button>
+        <button class="filter-pill" data-filter="dismissed">Dismissed <span class="pill-count">{{ dismissed_count }}</span></button>
+        <button class="filter-pill" data-filter="all">All</button>
+      </div>
+      <div class="panel-body" id="predictor-list">
         {% if predictors %}
-          {% for p in predictors[:5] %}
-            <div class="item predictor">
+          {% for p in predictors %}
+            <div class="item predictor" data-pid="{{ p.pid }}" data-status="{{ p.status }}" data-new="{{ '1' if p.is_new else '0' }}">
               <span class="rank">{{ loop.index }}</span>
               <span class="title">{{ p.company }}</span>
+              {% if p.is_new %}<span class="new-badge">NEW</span>{% endif %}
               <span class="stack-label {{ 'stacked' if p.depth > 1 else 'single' }}">
                 {{ 'stacked × ' ~ p.depth if p.depth > 1 else 'single' }}
               </span>
               {% if p.window_label %}<span class="window-badge">{{ p.window_label }}</span>{% endif %}
+              {% if p.status == 'followed_up' %}<span class="status-badge followed-up">✓ followed up</span>{% endif %}
+              {% if p.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
               <div class="meta">
                 {% for e in p.events[:3] %}
                   <div class="evidence">
@@ -1204,37 +1339,17 @@ TEMPLATE = r"""
               <div class="item-actions">
                 <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
                 <a class="btn-mini" href="{{ p.linkedin.url }}" target="_blank" title="{{ p.linkedin.label }}">↗ {{ p.linkedin.label }}</a>
+                {% if p.status == 'active' %}
+                  <button class="btn-mini status-action" data-status="followed_up" type="button">✓ Mark followed up</button>
+                  <button class="btn-mini status-action ghost" data-status="dismissed" type="button">✕ Dismiss</button>
+                {% else %}
+                  <button class="btn-mini status-action" data-status="active" type="button">↺ Restore</button>
+                {% endif %}
               </div>
             </div>
           {% endfor %}
-          {% if predictors|length > 5 %}
-          <details>
-            <summary class="show-more">Show all {{ predictors|length }} ▾</summary>
-            {% for p in predictors[5:] %}
-              <div class="item predictor">
-                <span class="rank">{{ loop.index + 5 }}</span>
-                <span class="title">{{ p.company }}</span>
-                <span class="stack-label {{ 'stacked' if p.depth > 1 else 'single' }}">
-                  {{ 'stacked × ' ~ p.depth if p.depth > 1 else 'single' }}
-                </span>
-                <div class="meta">
-                  {% for e in p.events[:2] %}
-                    <div class="evidence">
-                      <strong>{{ e.trigger_label }}:</strong> {{ e.evidence[:140] }}
-                    </div>
-                  {% endfor %}
-                </div>
-                <pre class="outreach-text">{{ p.outreach }}</pre>
-                <div class="item-actions">
-                  <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                  <a class="btn-mini" href="{{ p.linkedin.url }}" target="_blank" title="{{ p.linkedin.label }}">↗ {{ p.linkedin.label }}</a>
-                </div>
-              </div>
-            {% endfor %}
-          </details>
-          {% endif %}
         {% else %}
-          <div class="empty">No predictors today. The pipeline only fires when actual triggers land in public sources.</div>
+          <div class="empty">No predictors in the pipeline yet. The morning brief populates this — once a predictor fires it stays here for 30 days unless you dismiss it.</div>
         {% endif %}
       </div>
     </div>
@@ -1327,6 +1442,87 @@ async function dispatch(event, formId, url) {
   btn.disabled = false;
   btn.textContent = 'Run and send via email';
 }
+
+// Pipeline filter pills: show only items matching the chosen filter.
+function applyFilter(name) {
+  document.querySelectorAll('.filter-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.filter === name);
+  });
+  document.querySelectorAll('#predictor-list .item.predictor').forEach(item => {
+    const status = item.dataset.status || 'active';
+    const isNew = item.dataset.new === '1';
+    let show = false;
+    if (name === 'all') show = true;
+    else if (name === 'new') show = isNew && status === 'active';
+    else if (name === 'active') show = status === 'active';
+    else show = status === name;
+    item.style.display = show ? '' : 'none';
+  });
+}
+document.addEventListener('click', (event) => {
+  const pill = event.target.closest('.filter-pill');
+  if (!pill) return;
+  applyFilter(pill.dataset.filter);
+});
+
+// Predictor status actions: mark followed up / dismiss / restore.
+// Updates the item in place — no page reload. On Render free tier the
+// container's filesystem is ephemeral, so status changes reset on cold
+// start (~15 min idle). The next morning brief rebuilds the pipeline.
+document.addEventListener('click', async (event) => {
+  const btn = event.target.closest('.status-action');
+  if (!btn) return;
+  const item = btn.closest('.item.predictor');
+  if (!item) return;
+  const pid = item.dataset.pid;
+  const newStatus = btn.dataset.status;
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '…';
+  try {
+    const r = await fetch(`/api/predictor/${encodeURIComponent(pid)}/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    const j = await r.json();
+    if (!j.ok) { alert(j.detail || 'Update failed'); btn.disabled = false; btn.textContent = orig; return; }
+    item.dataset.status = newStatus;
+    // Re-render the action row so buttons match the new status
+    const actions = item.querySelector('.item-actions');
+    if (actions) {
+      const copy = actions.querySelector('.copy-outreach');
+      const linkedin = actions.querySelector('a.btn-mini');
+      actions.innerHTML = '';
+      if (copy) actions.appendChild(copy);
+      if (linkedin) actions.appendChild(linkedin);
+      if (newStatus === 'active') {
+        actions.insertAdjacentHTML('beforeend',
+          '<button class="btn-mini status-action" data-status="followed_up" type="button">✓ Mark followed up</button>' +
+          '<button class="btn-mini status-action ghost" data-status="dismissed" type="button">✕ Dismiss</button>');
+      } else {
+        actions.insertAdjacentHTML('beforeend',
+          '<button class="btn-mini status-action" data-status="active" type="button">↺ Restore</button>');
+      }
+    }
+    // Add/remove the status badge inline
+    item.querySelectorAll('.status-badge').forEach(b => b.remove());
+    if (newStatus === 'followed_up') {
+      item.querySelector('.title').insertAdjacentHTML('afterend',
+        '<span class="status-badge followed-up">✓ followed up</span>');
+    } else if (newStatus === 'dismissed') {
+      item.querySelector('.title').insertAdjacentHTML('afterend',
+        '<span class="status-badge dismissed">dismissed</span>');
+    }
+    // Re-apply current filter to hide/show row appropriately
+    const activePill = document.querySelector('.filter-pill.active');
+    if (activePill) applyFilter(activePill.dataset.filter);
+  } catch (e) {
+    alert('Update failed: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+});
 
 // Copy outreach text -> clipboard; brief "Copied" feedback on the button.
 document.addEventListener('click', async (event) => {
