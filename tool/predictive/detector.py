@@ -46,13 +46,20 @@ _CO_SUFFIX_RX = re.compile(
 
 
 def extract_company(title: str, summary: str = "") -> str:
-    """Best-effort company name extraction.
+    """Best-effort UK company name extraction.
 
-    1) RNS-style: separator split + company-suffix check at the END of
-       the first part (catches 'NatWest Group plc — Directorate Change').
-    2) Peer-name scan against peers.SECTOR_PEERS for GDELT news
-       headlines ('Barclays announces new chief executive').
-    3) Fallback to a short Title-Cased prefix.
+    Strict-UK-only: returns a name ONLY if it's a known UK peer
+    (from peers.SECTOR_PEERS) or has an explicit UK company suffix
+    (plc / limited / ltd / group / etc). Drops everything else so
+    non-UK companies and 'Capital' / 'Brown' / etc. extractions
+    don't leak into Sara's brief.
+
+    Order:
+      1) RNS-style: separator split + suffix-at-end check
+      2) Peer-name scan with word boundaries (so 'Capital' doesn't
+         match peer 'Capita', and 'Brown - Forman' doesn't match
+         peer 'Brown' from a UK list that doesn't contain it anyway)
+      3) Return empty (event drops with 'no company')
     """
     if not title:
         return ""
@@ -61,26 +68,27 @@ def extract_company(title: str, summary: str = "") -> str:
     parts = _RNS_SEPARATORS.split(t_nopfx, maxsplit=1)
     candidate = parts[0].strip()
 
-    # 1) RNS-style: short candidate ending in a company suffix
+    # 1) RNS-style: short candidate ending in a UK company suffix
     words = candidate.split()
     last3 = " ".join(words[-3:]) if len(words) >= 1 else ""
     if 1 <= len(words) <= 6 and _CO_SUFFIX_RX.search(last3):
         return candidate.rstrip(",.;:")
 
-    # 2) Peer-name scan
-    haystack = f"{title} {summary}".lower()
+    # 2) Peer-name scan WITH WORD BOUNDARIES
+    haystack = f" {title} {summary} ".lower()
     try:
         from tool.peers import SECTOR_PEERS
         all_peers = [p for names in SECTOR_PEERS.values() for p in names]
         for peer in sorted(all_peers, key=len, reverse=True):
-            if peer.lower() in haystack:
+            pat = r"\b" + re.escape(peer.lower()) + r"\b"
+            if re.search(pat, haystack):
                 return peer
     except Exception:
         pass
 
-    # 3) Short Title-Cased prefix fallback
-    if candidate and len(words) <= 6:
-        return candidate.rstrip(",.;:")
+    # 3) No match — drop the event rather than guess.
+    # (Previously fell back to title-cased prefix which leaked non-UK
+    # companies like 'Brown-Forman', 'Apollo Funds', 'Akash Ambani'.)
     return ""
 
 
