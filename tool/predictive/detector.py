@@ -43,7 +43,13 @@ class TriggerEvent:
 _RNS_SEPARATORS = re.compile(r"(?:\s+[-—–:|]\s*)|(?:\s*[—–:|]\s+)", re.UNICODE)
 _LSE_TICKER = re.compile(r"^[A-Z0-9]{2,6}\.[A-Z]\s+", re.IGNORECASE)
 _CO_SUFFIX_RX = re.compile(
-    r"\b(plc|p\.l\.c\.|plc\.|limited|ltd|ltd\.|group|holdings|inc|incorporated)\b",
+    # UK + international corporate suffixes. Captures plc/limited/ltd/group/
+    # holdings/inc/incorporated for UK + Inc/Corp/LLC for US + AG/SA/NV/
+    # GmbH/BV/SpA/OY for EU. With the wider list we accept legitimate
+    # international news headlines like 'Apollo Funds Inc' or 'Roche AG'.
+    r"\b(plc|p\.l\.c\.|plc\.|limited|ltd|ltd\.|group|holdings|llp|"
+    r"inc|inc\.|incorporated|corp|corp\.|corporation|llc|"
+    r"ag|s\.a\.|sa|n\.v\.|nv|gmbh|b\.v\.|bv|spa|oy|oyj)\b",
     re.IGNORECASE,
 )
 

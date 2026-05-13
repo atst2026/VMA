@@ -160,6 +160,40 @@ SECTOR_PEERS: dict[str, list[str]] = {
         "British Council", "Arts Council England", "UK Sport",
         "Sport England", "Charity Commission",
     ],
+    # International — Sara's secondary market. Major global firms with UK
+    # offices / dual-listings / LSE+NYSE etc. Ranked lower than UK by the
+    # geo-aware ranker but kept in the pipeline as legitimate predictors.
+    "international": [
+        # US — tech / financial / consumer
+        "Apple", "Microsoft", "Alphabet", "Google", "Meta Platforms", "Amazon",
+        "Tesla", "NVIDIA", "Oracle", "IBM", "Salesforce", "Adobe",
+        "JPMorgan Chase", "Goldman Sachs", "Morgan Stanley", "Bank of America",
+        "Citigroup", "BlackRock", "Berkshire Hathaway", "Wells Fargo",
+        "Visa", "Mastercard", "American Express", "PayPal",
+        "Apollo Global Management", "Carlyle Group", "KKR", "Blackstone",
+        "TPG", "Bain Capital", "Brookfield",
+        "Procter & Gamble", "PepsiCo", "Coca-Cola", "Walmart", "Costco",
+        "Johnson & Johnson", "Pfizer", "Merck", "Eli Lilly", "AbbVie",
+        "ExxonMobil", "Chevron", "ConocoPhillips",
+        "Brown-Forman", "Estée Lauder", "Nike", "Starbucks", "McDonald's",
+        "General Electric", "Boeing", "Lockheed Martin", "Raytheon",
+        "Caterpillar", "3M", "Honeywell",
+        # EU
+        "Nestlé", "Roche", "Novartis", "Sanofi", "Bayer", "Merck KGaA",
+        "Siemens", "Volkswagen", "BMW", "Mercedes-Benz", "Stellantis",
+        "LVMH", "Kering", "Hermès", "L'Oréal", "Pernod Ricard",
+        "BNP Paribas", "Société Générale", "Credit Suisse", "UBS",
+        "Deutsche Bank", "Allianz", "AXA", "ING Group", "Santander",
+        "Telefónica", "Orange", "Deutsche Telekom",
+        "TotalEnergies", "Eni", "Equinor",
+        "ASML", "SAP", "Spotify", "Adyen",
+        "Heineken", "Carlsberg", "Anheuser-Busch InBev",
+        "Maersk", "Lufthansa", "Air France-KLM", "Ryanair",
+        # Asia-Pacific
+        "Samsung Electronics", "Sony", "Toyota", "Honda", "Nintendo",
+        "Tencent", "Alibaba", "Baidu", "ByteDance",
+        "Macquarie Group", "Westpac", "ANZ",
+    ],
 }
 
 # Lookup: company name -> sector key. Built once at import.
