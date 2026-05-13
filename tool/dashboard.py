@@ -538,23 +538,27 @@ TEMPLATE = r"""
     }
     .serif { font-family: "Crimson Pro", Georgia, serif; }
 
-    /* LOGO BANNER — full-width brand band at the very top.
-       The SVG carries its own navy background + wave decoration so we
-       just need the surrounding chrome (slight bottom shadow). */
+    /* LOGO BANNER — fixed-height brand band at the top.
+       The SVG fills the band; height is locked so it doesn't scale
+       with viewport width. */
     .logo-banner {
       width: 100%;
-      line-height: 0;
+      height: 76px;
       background: #0E2845;
-      box-shadow: 0 4px 18px rgba(14, 40, 69, 0.18);
+      box-shadow: 0 4px 14px rgba(14, 40, 69, 0.15);
       position: relative;
       z-index: 2;
+      overflow: hidden;
     }
     .logo-banner img {
       display: block;
       width: 100%;
-      height: auto;
-      max-height: 132px;
+      height: 100%;
       object-fit: cover;
+      object-position: center;
+    }
+    @media (max-width: 720px) {
+      .logo-banner { height: 60px; }
     }
     /* SUB-HEADER — sits below the banner; carries "Account Director
        Dashboard" + "Last brief" meta. Cream-themed to match the body. */
