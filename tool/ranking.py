@@ -17,7 +17,7 @@ from typing import Iterable
 from dateutil import parser as dateparse
 
 from tool.config import (
-    EXCLUDE_TITLE_TERMS, GEO_PRIMARY, GEO_SECONDARY_WEIGHT, ROLE_KEYWORDS,
+    COMPANY_EXCLUDE, EXCLUDE_TITLE_TERMS, GEO_PRIMARY, GEO_SECONDARY_WEIGHT, ROLE_KEYWORDS,
 )
 
 
@@ -144,8 +144,18 @@ def _freshness(published: str) -> float:
     return 0.4
 
 
+_COMPANY_EXCLUDE_LC = tuple(c.lower() for c in COMPANY_EXCLUDE)
+
+
 def score(signal: dict) -> float:
     title = signal.get("title") or ""
+    company = (signal.get("company") or "").lower().strip()
+    # Hard exclusion: never show jobs at Sara's own employer (VMA Group)
+    # or at direct competitor search firms. Substring match (case-insensitive)
+    # against the company name in the signal.
+    for excluded in _COMPANY_EXCLUDE_LC:
+        if excluded and excluded in company:
+            return 0.0
     # Hard exclusion: agency/sales client-service roles are out regardless of
     # what else matches. Word-boundary matched to avoid clobbering legit
     # in-house titles that happen to share a word.
