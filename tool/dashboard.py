@@ -152,18 +152,35 @@ def refresh_latest_brief_from_github() -> dict:
             pass
 
         has_signals_file = "tool/state/latest_signals.json" in extracted
+        has_brief_html = any(f.endswith("latest_brief.html") for f in extracted)
+        has_pipeline = "tool/state/predictor_pipeline.json" in extracted
         ts = (latest.get("created_at", "?") or "")[:16].replace("T", " ")
+
+        # Build a compact file-presence line so the user (and I) can
+        # see exactly what landed in the artifact
+        files_line = " · ".join([
+            f"{'✓' if has_brief_html else '✗'} brief.html",
+            f"{'✓' if has_signals_file else '✗'} signals.json",
+            f"{'✓' if has_pipeline else '✗'} pipeline.json",
+        ])
         detail = (f"Pulled {latest.get('name', '?')} artifact from {ts}. "
-                  f"Loaded {leads_n} leads, {predictors_n} predictors.")
-        if leads_n == 0 and not has_signals_file:
-            detail += (" ⚠ Artifact didn't contain leads file (latest_signals.json). "
-                       "The workflow that produced this artifact ran BEFORE the artifact-fix landed. "
-                       "Trigger one fresh brief: Actions → 'Sara's Morning Brief' → Run workflow.")
+                  f"Loaded {leads_n} leads, {predictors_n} predictors. "
+                  f"[Files: {files_line}]")
+        if not has_brief_html:
+            detail += (" ⚠ Brief script likely crashed before writing any state — "
+                       "check the GitHub Actions run logs for that workflow.")
+        elif leads_n == 0 and not has_signals_file:
+            detail += (" ⚠ Artifact has the rendered brief but no signals.json. "
+                       "Either the workflow YAML was old at dispatch time, OR the brief "
+                       "script crashed between rendering and saving the signals JSON. "
+                       "Trigger one more brief on the latest main: "
+                       "Actions → 'Sara's Morning Brief' → Run workflow → branch: main.")
         elif leads_n == 0:
-            detail += (" ⚠ Today's brief found 0 leads (dedup may have filtered everything, "
+            detail += (" ⚠ Today's brief found 0 leads (dedup filtered everything, "
                        "or no new jobs matched Sara's criteria).")
         return {"ok": True, "detail": detail, "leads": leads_n, "predictors": predictors_n,
-                "artifact_name": latest.get("name"), "artifact_created_at": latest.get("created_at")}
+                "artifact_name": latest.get("name"), "artifact_created_at": latest.get("created_at"),
+                "files_present": files_line}
     except Exception as e:
         return {"ok": False, "detail": f"Refresh failed: {e}"}
 

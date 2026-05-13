@@ -107,5 +107,4 @@ jobs:
             tool/state/latest_predictive.json
             tool/state/predictor_pipeline.json
             tool/state/predictive_jobs.json
-            tool/state/latest_signals.json
           if-no-files-found: warn
