@@ -31,6 +31,7 @@ from tool.sources import (
 from tool.state_store import filter_unseen
 from tool.predictive.stacker import stack as stack_events
 from tool import linkedin_resolver as lnr
+from tool import predictor_pipeline
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 log = logging.getLogger("brief")
@@ -167,46 +168,48 @@ def main() -> int:
             stk._resolved_profile_url = resolved["url"]   # type: ignore[attr-defined]
             stk._resolved_profile_role = resolved["role"]  # type: ignore[attr-defined]
 
-    # Persist
+    # Persist into the rolling-window pipeline (state survives across days;
+    # ages out after 30d). Returns the new-since-yesterday delta we'll
+    # render into the email; the full active pipeline is shown on the
+    # dashboard.
+    pipeline_result = predictor_pipeline.upsert(ranked_stacks)
+    new_pids = pipeline_result["new_pids"]
+    delta_stacks = [
+        (stk, sc) for stk, sc in ranked_stacks
+        if predictor_pipeline._pid(stk.company) in new_pids
+    ]
+    total_active = pipeline_result["total_active"]
+    log.info("Pipeline delta: %d new predictors today; %d active in pipeline",
+             len(delta_stacks), total_active)
+
     now = datetime.now()
     now_str = now.strftime("%A %d %B %Y · %H:%M")
     covered = covered_window()
-    predictive_html = prender.render_html(ranked_stacks)
-    predictive_text = prender.render_text(ranked_stacks)
+    # Email renders DELTA only (new predictors today); dashboard renders full pipeline
+    predictive_html = prender.render_html(
+        delta_stacks, new_count=len(delta_stacks), total_active=total_active,
+    )
+    predictive_text = prender.render_text(
+        delta_stacks, new_count=len(delta_stacks), total_active=total_active,
+    )
     html = render_html(ranked, report, now_str, covered, predictive_html=predictive_html)
     text = render_plaintext(ranked, now_str, covered, predictive_text=predictive_text)
     (STATE_DIR / "latest_brief.html").write_text(html)
     (STATE_DIR / "latest_brief.txt").write_text(text)
     (STATE_DIR / "latest_signals.json").write_text(json.dumps(ranked, indent=2, default=str))
-    from tool.predictive.render import window_for_stack
-    def _serialise_stack(stk, sc):
-        w = window_for_stack(stk)
-        return {
-            "company": stk.company,
-            "score": sc,
-            "depth": stk.depth,
-            "window_weeks_min": w[0] if w else None,
-            "window_weeks_max": w[1] if w else None,
-            "window_label": f"{w[0]}–{w[1]} weeks" if w else None,
-            "linkedin_profile_url": getattr(stk, "_resolved_profile_url", None),
-            "linkedin_profile_role": getattr(stk, "_resolved_profile_role", None),
-            "events": [
-                {
-                    "trigger_key": e.trigger_key,
-                    "trigger_label": e.trigger_label,
-                    "evidence": e.evidence,
-                    "url": e.url,
-                    "source": e.source_label,
-                    "published": e.published.isoformat(),
-                    "tier": e.tier_hint,
-                }
-                for e in stk.events
-            ],
-        }
-    (STATE_DIR / "latest_predictive.json").write_text(json.dumps(
-        [_serialise_stack(stk, sc) for stk, sc in ranked_stacks],
-        indent=2, default=str,
-    ))
+
+    # Back-compat: dashboard's load_latest_predictive() reads this file.
+    # We populate it from the full active pipeline so the dashboard shows
+    # the rolling-window view, not just today's snapshot.
+    pipeline = predictor_pipeline.load_pipeline()
+    pipeline_view = [
+        p for p in (pipeline.get("predictors") or {}).values()
+        if p.get("status") != "dismissed"
+    ]
+    pipeline_view.sort(key=lambda p: -float(p.get("score") or 0))
+    (STATE_DIR / "latest_predictive.json").write_text(
+        json.dumps(pipeline_view, indent=2, default=str)
+    )
 
     # Deliver
     if mode in ("send", "test"):
