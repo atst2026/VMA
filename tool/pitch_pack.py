@@ -32,6 +32,7 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from tool import config
+from tool import annual_report as ar
 from tool.email_send import send as email_send
 from tool.peers import peers_for, detect_sector
 from tool.sources import companies_house, gdelt
@@ -135,7 +136,8 @@ def _fmt_gbp(n: int) -> str:
 def render_html(target: str, role: str, ch_snapshot: dict,
                 news: list[dict], peers: list[str], sector: str | None,
                 salary_band: tuple[int, int, str],
-                cov: dict, mode: str) -> str:
+                cov: dict, mode: str,
+                annual_report=None) -> str:
     low, high, matched = salary_band
     mid = (low + high) // 2
 
@@ -152,14 +154,48 @@ def render_html(target: str, role: str, ch_snapshot: dict,
     else:
         ch_html = "<div style='color:#888;'>Companies House: not resolved (likely non-UK-registered or trading-name only).</div>"
 
-    # Recent news bullets
-    if news:
-        news_html = "<ul style='padding-left:18px;font-size:13px;'>"
+    # Section 2 dual mode:
+    #   (a) Bespoke — quotes from the target's most recent annual report
+    #   (b) Fallback — GDELT headlines, labelled "Recent market context"
+    # The labelling difference tells Sara whether to trust this section
+    # as the bespoke edge of the pack or as defensible filler.
+    if annual_report and annual_report.quotes:
+        section2_heading = "2. Why this matters now"
+        section2_subline = (
+            f"Strategic context from {_esc(target)}'s annual report filed "
+            f"{_esc(annual_report.filing_date)}. Pick the quote that best "
+            f"matches the brief context; delete the rest before sending."
+        )
+        quote_items = []
+        for q in annual_report.quotes:
+            quote_items.append(
+                f"<li style='margin-bottom:10px;'>"
+                f"<span style='font-style:italic;color:#222;'>“{_esc(q.text)}”</span>"
+                f"<div style='font-size:11px;color:#888;margin-top:2px;'>— {_esc(q.heading)}, p.{q.page}</div>"
+                f"</li>"
+            )
+        news_html = (
+            f"<div style='font-size:13px;color:#555;margin-bottom:8px;'>"
+            f"{section2_subline}</div>"
+            f"<ul style='padding-left:18px;font-size:13px;'>"
+            + "".join(quote_items)
+            + "</ul>"
+        )
+    elif news:
+        section2_heading = "2. Recent market context"
+        news_html = (
+            "<div style='font-size:13px;color:#555;margin-bottom:8px;'>"
+            "Generic news context (annual report quote extraction unavailable for this company — "
+            "consider adding a bespoke strategic line in your cover note):"
+            "</div>"
+            "<ul style='padding-left:18px;font-size:13px;'>"
+        )
         for a in news[:5]:
             news_html += f"<li><a href='{_esc(a.get('url',''))}'>{_esc(a.get('title',''))}</a> <span style='color:#888;'>· {_esc(a.get('seendate','')[:8])}</span></li>"
         news_html += "</ul>"
     else:
-        news_html = "<div style='color:#888;'>No major press coverage in the last 90 days surfaced by GDELT — check trade press manually.</div>"
+        section2_heading = "2. Recent market context"
+        news_html = "<div style='color:#888;'>No strategic-report quotes available and no GDELT coverage — check trade press manually.</div>"
 
     # Peer market map
     sector_label = sector.replace("_", " ").title() if sector else "Detected sector unclear — generic FTSE list"
@@ -202,7 +238,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 <h3 style="margin:18px 0 6px 0;">1. Account snapshot</h3>
 {ch_html}
 
-<h3 style="margin:18px 0 6px 0;">2. Why this matters now</h3>
+<h3 style="margin:18px 0 6px 0;">{section2_heading}</h3>
 {news_html}
 
 <h3 style="margin:18px 0 6px 0;">3. Cost of vacancy</h3>
@@ -253,7 +289,8 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 
 def render_text(target: str, role: str, ch_snapshot: dict,
                 news: list[dict], peers: list[str], sector: str | None,
-                salary_band: tuple[int, int, str], cov: dict) -> str:
+                salary_band: tuple[int, int, str], cov: dict,
+                annual_report=None) -> str:
     low, high, matched = salary_band
     mid = (low + high) // 2
     lines = [
@@ -268,13 +305,21 @@ def render_text(target: str, role: str, ch_snapshot: dict,
         lines.append(f"   {resolved.get('address_snippet','')}")
     else:
         lines.append("   Companies House: not resolved.")
-    lines += ["", "2. WHY THIS MATTERS NOW (last 90 days)"]
-    if news:
+
+    if annual_report and annual_report.quotes:
+        lines += ["", f"2. WHY THIS MATTERS NOW (annual report filed {annual_report.filing_date})"]
+        lines.append("   Pick the quote that best matches the brief context.")
+        for q in annual_report.quotes:
+            lines.append(f"   - \"{q.text}\"")
+            lines.append(f"     [{q.heading}, p.{q.page}]")
+    elif news:
+        lines += ["", "2. RECENT MARKET CONTEXT (generic — no annual report quotes available)"]
         for a in news[:5]:
             lines.append(f"   - {a.get('title','')} ({a.get('seendate','')[:8]})")
             lines.append(f"     {a.get('url','')}")
     else:
-        lines.append("   No major press coverage surfaced.")
+        lines += ["", "2. RECENT MARKET CONTEXT"]
+        lines.append("   No annual report quotes or press coverage surfaced.")
     lines += ["", "3. COST OF VACANCY", f"   Mid-salary assumed: £{mid:,}"]
     for k, v in cov.items():
         lines.append(f"   {k:<42}  £{v:>10,}")
@@ -320,6 +365,19 @@ def main() -> int:
     news = recent_news_for(target)
     peers, sector = peers_for(target, k=15)
 
+    # Annual report quote extraction (best-effort; falls back to GDELT if it
+    # can't reach the PDF or scores no quotes). Adds ~10–30sec to pack
+    # generation when it lands a FTSE annual report; near-zero overhead
+    # if the company isn't CH-resolved.
+    annual_rep = None
+    if ch.get("found"):
+        co_num = (ch.get("resolved") or {}).get("company_number", "")
+        if co_num:
+            try:
+                annual_rep = ar.fetch_strategic_quotes(co_num)
+            except Exception as e:
+                log.exception("annual_report extraction failed: %s", e)
+
     # Salary band: auto-detect from role, with optional override via env
     # (set by the dashboard form). Both bounds are optional — if just one
     # is provided we keep the auto-detected partner for the other.
@@ -340,8 +398,10 @@ def main() -> int:
     mid = (sal[0] + sal[1]) // 2
     cov = cost_of_vacancy(role, mid)
 
-    html_out = render_html(target, role, ch, news, peers, sector, sal, cov, mode)
-    text_out = render_text(target, role, ch, news, peers, sector, sal, cov)
+    html_out = render_html(target, role, ch, news, peers, sector, sal, cov, mode,
+                            annual_report=annual_rep)
+    text_out = render_text(target, role, ch, news, peers, sector, sal, cov,
+                            annual_report=annual_rep)
 
     safe = "".join(c if c.isalnum() else "_" for c in target.lower())[:40]
     stamp = datetime.now().strftime("%Y%m%d_%H%M")
