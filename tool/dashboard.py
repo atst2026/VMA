@@ -628,36 +628,45 @@ TEMPLATE = r"""
       .top-bar { padding: 16px 18px 10px; }
       .top-bar .logo { height: 32px; }
 
-      /* Mobile: predictor row summary stacks vertically so the long
-         role chip ('Corporate Affairs Director', 'Head of Communications')
-         doesn't render on top of the company name. Title takes full
-         remaining width on row 1; chips wrap to row 2+. */
+      /* Mobile predictor row: grid puts chips on their own dedicated
+         row beneath the company name so 'Corporate Affairs Director'
+         can't render on top of 'Intertek Group'. */
       .item.predictor .row-summary {
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        grid-template-areas:
+          "rank title toggle"
+          "chips chips chips";
         align-items: center;
+        column-gap: 8px;
         row-gap: 6px;
       }
+      .item.predictor .row-summary .rank { grid-area: rank; }
       .item.predictor .row-summary .title {
-        flex: 1 1 calc(100% - 38px);
+        grid-area: title;
         min-width: 0;
-        white-space: normal;
-        overflow: visible;
-        line-height: 1.25;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
-      .item.predictor .row-summary .role-chip,
-      .item.predictor .row-summary .prob-chip,
-      .item.predictor .row-summary .window-badge,
-      .item.predictor .row-summary .stack-label,
-      .item.predictor .row-summary .status-badge,
-      .item.predictor .row-summary .new-badge {
-        flex-shrink: 0;
+      .item.predictor .row-summary .expand-toggle { grid-area: toggle; }
+      .item.predictor .row-summary .chips {
+        grid-area: chips;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
       }
-      .item.predictor .row-summary .expand-toggle {
-        margin-left: auto;
-      }
-      .item.predictor .row-preview {
-        margin-left: 0;
-      }
+      .item.predictor .row-preview { margin-left: 0; }
+    }
+
+    /* Desktop chips container — inline-flex so it stays on the same
+       row as title; only the mobile grid breaks them onto their own
+       line. */
+    .item.predictor .row-summary .chips {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
     }
 
     .container {
@@ -1458,13 +1467,15 @@ TEMPLATE = r"""
               <div class="row-summary">
                 <span class="rank">{{ loop.index }}</span>
                 <span class="title">{{ p.company }}</span>
-                {% if p.predicted_role %}<span class="role-chip">{{ p.predicted_role }}</span>{% endif %}
-                {% if p.probability %}<span class="prob-chip">{{ p.probability }}%</span>{% endif %}
-                {% if p.is_new %}<span class="new-badge">NEW</span>{% endif %}
-                {% if p.window_label %}<span class="window-badge">{{ p.window_label }}</span>{% endif %}
-                {% if p.depth > 1 %}<span class="stack-label stacked">stacked × {{ p.depth }}</span>{% endif %}
-                {% if p.status == 'followed_up' %}<span class="status-badge followed-up">✓ followed up</span>{% endif %}
-                {% if p.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
+                <span class="chips">
+                  {% if p.predicted_role %}<span class="role-chip">{{ p.predicted_role }}</span>{% endif %}
+                  {% if p.probability %}<span class="prob-chip">{{ p.probability }}%</span>{% endif %}
+                  {% if p.is_new %}<span class="new-badge">NEW</span>{% endif %}
+                  {% if p.window_label %}<span class="window-badge">{{ p.window_label }}</span>{% endif %}
+                  {% if p.depth > 1 %}<span class="stack-label stacked">stacked × {{ p.depth }}</span>{% endif %}
+                  {% if p.status == 'followed_up' %}<span class="status-badge followed-up">✓ followed up</span>{% endif %}
+                  {% if p.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
+                </span>
                 <span class="expand-toggle">▾</span>
               </div>
               <div class="row-preview">
