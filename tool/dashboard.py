@@ -488,28 +488,36 @@ TEMPLATE = r"""
   <title>Account Director Dashboard · VMA Group</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --navy: #0E2845;
-      --navy-deep: #061528;
-      --navy-soft: rgba(14, 40, 69, 0.08);
-      --navy-hairline: rgba(14, 40, 69, 0.12);
-      --teal: #5BA6AD;
-      --teal-bright: #6FB8BF;
-      --teal-dark: #458C92;
-      --teal-glow: rgba(91, 166, 173, 0.35);
-      --teal-soft: rgba(91, 166, 173, 0.10);
-      --bg: #F6F8FB;
+      /* Claude-warmth palette. Existing variable names preserved so the
+         rest of the dashboard CSS just inherits the new colours — only
+         the values change here. "navy" now maps to deep warm ink,
+         "teal" remaps to Anthropic coral. */
+      --navy: #181613;
+      --navy-deep: #0F0D0B;
+      --navy-soft: rgba(24, 22, 19, 0.06);
+      --navy-hairline: rgba(24, 22, 19, 0.10);
+      --teal: #C96442;
+      --teal-bright: #E6764E;
+      --teal-dark: #A04E32;
+      --teal-glow: rgba(201, 100, 66, 0.34);
+      --teal-soft: rgba(201, 100, 66, 0.09);
+      --bg: #F5F0E8;
+      --bg-warm: #EDE5D6;
       --surface: #FFFFFF;
-      --surface-elevated: #FFFFFF;
-      --border: rgba(14, 40, 69, 0.08);
-      --border-hover: rgba(14, 40, 69, 0.16);
-      --text: #0E2845;
-      --text-muted: #6B7888;
-      --shadow-sm: 0 1px 2px rgba(14, 40, 69, 0.04);
-      --shadow-md: 0 4px 12px rgba(14, 40, 69, 0.06), 0 1px 3px rgba(14, 40, 69, 0.04);
-      --shadow-lg: 0 10px 32px rgba(14, 40, 69, 0.10);
+      --surface-elevated: #FBF7EF;
+      --border: rgba(140, 120, 80, 0.18);
+      --border-hover: rgba(201, 100, 66, 0.36);
+      --text: #181613;
+      --text-muted: #7A7164;
+      --text-dim: #B7AC9A;
+      --gold: #C49A3B;
+      --green: #6B8C3B;
+      --shadow-sm: 0 1px 2px rgba(140, 120, 80, 0.06);
+      --shadow-md: 0 4px 14px rgba(140, 120, 80, 0.10), 0 1px 3px rgba(140, 120, 80, 0.06);
+      --shadow-lg: 0 10px 36px rgba(140, 120, 80, 0.14);
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
@@ -517,137 +525,93 @@ TEMPLATE = r"""
       font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
       background-color: var(--bg);
       background-image:
-        radial-gradient(circle at 1px 1px, rgba(14, 40, 69, 0.04) 1px, transparent 0);
-      background-size: 20px 20px;
+        radial-gradient(ellipse 700px 500px at 8% 12%, rgba(201, 100, 66, 0.07), transparent 60%),
+        radial-gradient(ellipse 600px 420px at 92% 92%, rgba(196, 154, 59, 0.08), transparent 60%);
+      background-attachment: fixed;
       color: var(--text);
       line-height: 1.5;
       font-weight: 400;
-      font-size: 13px;
-      font-feature-settings: "ss01", "cv11";
+      font-size: 13.5px;
+      font-feature-settings: "ss01", "cv11", "cv02", "cv03";
       -webkit-font-smoothing: antialiased;
       letter-spacing: -0.005em;
     }
+    .serif { font-family: "Crimson Pro", Georgia, serif; }
 
-    /* HEADER — navy backlit gradient, 3-col grid (title | wordmark | meta) */
-    .header {
-      background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 60%, #143352 100%);
-      color: white;
-      padding: 18px 32px;
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      align-items: center;
-      gap: 32px;
-      border-bottom: 1px solid rgba(91, 166, 173, 0.18);
+    /* LOGO BANNER — full-width brand band at the very top.
+       The SVG carries its own navy background + wave decoration so we
+       just need the surrounding chrome (slight bottom shadow). */
+    .logo-banner {
+      width: 100%;
+      line-height: 0;
+      background: #0E2845;
+      box-shadow: 0 4px 18px rgba(14, 40, 69, 0.18);
       position: relative;
-      overflow: hidden;
+      z-index: 2;
     }
-    .header::before {
-      content: "";
-      position: absolute;
-      top: -50%; left: 50%;
-      transform: translateX(-50%);
-      width: 700px; height: 220%;
-      background: radial-gradient(ellipse, rgba(91, 166, 173, 0.16) 0%, transparent 65%);
-      pointer-events: none;
+    .logo-banner img {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 132px;
+      object-fit: cover;
     }
-    .header .title-left {
-      position: relative; z-index: 1;
-      justify-self: start;
+    /* SUB-HEADER — sits below the banner; carries "Account Director
+       Dashboard" + "Last brief" meta. Cream-themed to match the body. */
+    .sub-header {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 18px 28px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
     }
-    .header h1 {
+    .sub-header h1 {
       margin: 0;
-      font-size: 16px;
-      font-weight: 600;
+      font-size: 18px;
+      font-weight: 700;
       letter-spacing: -0.01em;
-      color: white;
+      color: var(--text);
       line-height: 1.2;
     }
-    .header h1 .sub {
+    .sub-header h1 .sub {
       display: block;
-      font-size: 11px;
+      font-family: "Crimson Pro", Georgia, serif;
+      font-style: italic;
+      font-size: 13px;
       font-weight: 400;
-      opacity: 0.6;
-      margin-top: 4px;
+      color: var(--text-muted);
+      margin-top: 3px;
       letter-spacing: 0;
     }
-    .header .wordmark {
-      position: relative; z-index: 1;
-      justify-self: center;
-      font-size: 32px;
-      letter-spacing: 0.04em;
-      line-height: 1;
-      color: white;
-      text-align: center;
-    }
-    .header .wordmark .vma { font-weight: 700; letter-spacing: 0.015em; }
-    .header .wordmark .group {
-      font-weight: 300;
-      margin-left: 10px;
-      opacity: 0.88;
-      letter-spacing: 0.32em;
-      font-size: 28px;
-    }
-    .header .meta {
+    .sub-header .last {
       font-size: 11px;
-      opacity: 0.92;
-      text-align: right;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
       display: flex;
       align-items: center;
-      gap: 14px;
-      position: relative;
-      z-index: 1;
-      justify-self: end;
+      gap: 9px;
     }
-    .header .meta .last {
-      font-weight: 400;
+    .sub-header .last strong {
+      display: inline-block;
+      font-weight: 600;
       letter-spacing: 0;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      color: rgba(255,255,255,0.78);
+      color: var(--text);
+      font-size: 13px;
     }
-    .header .meta .last::before {
+    .sub-header .last::before {
       content: "";
-      width: 6px; height: 6px;
-      background: var(--teal-bright);
+      width: 7px; height: 7px;
+      background: var(--teal);
       border-radius: 50%;
-      box-shadow: 0 0 0 0 rgba(91, 166, 173, 0.7), 0 0 8px var(--teal-glow);
+      box-shadow: 0 0 0 4px rgba(201, 100, 66, 0.14);
       animation: pulse 2.4s infinite;
     }
     @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(91, 166, 173, 0.6), 0 0 8px var(--teal-glow); }
-      70% { box-shadow: 0 0 0 8px rgba(91, 166, 173, 0), 0 0 8px var(--teal-glow); }
-      100% { box-shadow: 0 0 0 0 rgba(91, 166, 173, 0), 0 0 8px var(--teal-glow); }
-    }
-    .header .meta button {
-      background: linear-gradient(135deg, var(--teal-bright) 0%, var(--teal) 60%, var(--teal-dark) 100%);
-      color: white;
-      border: 1px solid var(--teal-bright);
-      padding: 9px 18px;
-      border-radius: 6px;
-      font-size: 12px;
-      font-family: inherit;
-      font-weight: 600;
-      letter-spacing: 0.03em;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow:
-        0 2px 8px var(--teal-glow),
-        0 0 0 1px rgba(91, 166, 173, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.15);
-      text-shadow: 0 1px 1px rgba(0, 0, 0, 0.12);
-    }
-    .header .meta button:hover {
-      transform: translateY(-1px);
-      box-shadow:
-        0 6px 20px var(--teal-glow),
-        0 0 0 1px var(--teal-bright),
-        inset 0 1px 0 rgba(255, 255, 255, 0.25);
-      filter: brightness(1.06);
-    }
-    .header .meta button:active {
-      transform: translateY(0);
-      filter: brightness(0.96);
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.55; }
     }
 
     .container {
@@ -1316,14 +1280,13 @@ TEMPLATE = r"""
 </head>
 <body>
 
-<div class="header">
-  <div class="title-left">
-    <h1>Account Director Dashboard</h1>
-  </div>
-  <div class="wordmark"><span class="vma">VMA</span><span class="group">GROUP</span></div>
-  <div class="meta">
-    <div class="last">Last brief: {{ last_updated }}</div>
-  </div>
+<div class="logo-banner">
+  <img src="/static/vma_logo.svg" alt="VMA Group — Recruitment · Executive Search · Advisory Services">
+</div>
+
+<div class="sub-header">
+  <h1>Account Director Dashboard<span class="sub">Sara's workspace</span></h1>
+  <div class="last">Last brief <strong>{{ last_updated }}</strong></div>
 </div>
 
 {% if not has_token %}
