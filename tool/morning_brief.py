@@ -82,6 +82,9 @@ def run() -> dict:
     except Exception as e:
         log.exception("sec_edgar: %s", e)
 
+    # Companies House emits TriggerEvents directly (see pipeline below);
+    # the back-compat to_signals() call returns [] now and is kept only
+    # so the source tally line is preserved in the brief footer.
     try:
         _tally("Companies House", companies_house.to_signals())
     except Exception as e:
@@ -131,12 +134,21 @@ def main() -> int:
     pcluster.ingest_jobs(signals)
     trigger_events = pdet.detect_events(signals)
     cluster_events = pcluster.detect_clusters()
-    all_events = trigger_events + cluster_events
+    # Companies House officer-change events: daily snapshot diff across
+    # ~200-company watchlist. Catches private-company leadership changes
+    # that don't surface via RNS.
+    try:
+        ch_events = companies_house.detect_officer_changes()
+    except Exception as e:
+        log.exception("CH officer-change scan: %s", e)
+        ch_events = []
+    all_events = trigger_events + cluster_events + ch_events
     stacks = stack_events(all_events)
     ranked_stacks = pr.rank(stacks)
     log.info(
-        "Predictive: %d trigger events + %d cluster events → %d stacks → %d ranked.",
-        len(trigger_events), len(cluster_events), len(stacks), len(ranked_stacks),
+        "Predictive: %d trigger + %d cluster + %d CH-officer events → %d stacks → %d ranked.",
+        len(trigger_events), len(cluster_events), len(ch_events),
+        len(stacks), len(ranked_stacks),
     )
 
     # Same LinkedIn resolution for top predictors
