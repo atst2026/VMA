@@ -64,4 +64,7 @@ jobs:
             tool/state/latest_sweep.html
             tool/state/latest_sweep.txt
             tool/state/latest_sweep_signals.json
+            tool/state/latest_predictive.json
+            tool/state/predictor_pipeline.json
+            tool/state/predictive_jobs.json
           if-no-files-found: warn

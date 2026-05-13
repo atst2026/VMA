@@ -107,7 +107,10 @@ def trigger_workflow(workflow_filename: str, inputs: dict) -> dict:
 
 
 def refresh_latest_brief_from_github() -> dict:
-    """Download the most recent morning-brief artifact and unpack into state."""
+    """Download the most recent artifact (morning-brief OR fortnightly-sweep)
+    and unpack into state. The sweep artifact is what backfill produces, so
+    accepting either lets a single Refresh button pull the freshest data
+    regardless of which workflow last ran."""
     if not GITHUB_TOKEN:
         return {"ok": False, "detail": "GITHUB_TOKEN not set in .env"}
     list_url = (f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}"
@@ -117,10 +120,14 @@ def refresh_latest_brief_from_github() -> dict:
         if r.status_code != 200:
             return {"ok": False, "detail": f"Artifact list: HTTP {r.status_code}"}
         artifacts = r.json().get("artifacts", [])
-        morning_artifacts = [a for a in artifacts if a.get("name") == "morning-brief" and not a.get("expired")]
-        if not morning_artifacts:
-            return {"ok": False, "detail": "No recent morning-brief artifact found."}
-        latest = morning_artifacts[0]
+        # Accept both names; use the most recently-created of either.
+        wanted = [a for a in artifacts
+                  if a.get("name") in ("morning-brief", "fortnightly-sweep")
+                  and not a.get("expired")]
+        if not wanted:
+            return {"ok": False, "detail": "No recent brief/sweep artifact found."}
+        # GitHub returns artifacts newest-first by default
+        latest = wanted[0]
         zip_url = latest["archive_download_url"]
         r2 = requests.get(zip_url, headers=_github_headers(), timeout=30)
         if r2.status_code != 200:
@@ -129,7 +136,7 @@ def refresh_latest_brief_from_github() -> dict:
             for member in zf.namelist():
                 if member.endswith((".html", ".txt", ".json")):
                     zf.extract(member, STATE_DIR)
-        return {"ok": True, "detail": f"Refreshed from artifact {latest['id']} "
+        return {"ok": True, "detail": f"Refreshed from {latest.get('name', '?')} artifact "
                                        f"({latest.get('created_at', '?')[:10]})."}
     except Exception as e:
         return {"ok": False, "detail": f"Refresh failed: {e}"}
@@ -1565,10 +1572,16 @@ document.addEventListener('click', (event) => {
 });
 
 // 30-day backfill: trigger the existing sweep workflow with window_days=30.
-// It runs the same engine as the daily brief over a wider window and
-// upserts into the predictor pipeline. Takes ~3-4 minutes to land.
+// It runs the same engine as the daily brief over a wider 30-day window
+// and upserts into the predictor pipeline.
+//
+// Timing: the workflow runs for ~4 min on GitHub Actions. When it
+// completes it uploads predictor_pipeline.json as an artifact. The
+// dashboard then needs to PULL that artifact via Daily Refresh to see
+// the new data. We start polling for the new artifact automatically
+// 3 minutes after dispatch so the user doesn't have to wait + click.
 async function backfill30() {
-  if (!confirm('Run a 30-day backfill sweep? This takes ~3-4 minutes and will populate the predictor pipeline with the wider window.')) return;
+  if (!confirm('Run a 30-day backfill sweep?\n\nIt runs in the background on GitHub Actions for ~4 minutes, then the dashboard auto-pulls the new pipeline data. Total wait ~4-5 minutes.')) return;
   const buttons = document.querySelectorAll('.backfill-btn, .empty .btn-mini');
   buttons.forEach(b => { b.disabled = true; b.textContent = 'Dispatching…'; });
   try {
@@ -1578,18 +1591,69 @@ async function backfill30() {
       body: JSON.stringify({ window_days: '30', mode: 'preview' }),
     });
     const j = await r.json();
-    if (j.ok) {
-      buttons.forEach(b => { b.textContent = '✓ Dispatched — check GitHub Actions'; });
-      setTimeout(() => { window.location.reload(); }, 3500);
-    } else {
+    if (!j.ok) {
       alert(j.detail || 'Backfill dispatch failed');
       buttons.forEach(b => { b.disabled = false; b.textContent = '↻ Backfill 30 days'; });
+      return;
     }
+    // Persist a marker so the countdown survives a page reload
+    const dispatchedAt = Date.now();
+    localStorage.setItem('backfillDispatchedAt', String(dispatchedAt));
+    runBackfillCountdown(dispatchedAt, buttons);
   } catch (e) {
     alert('Backfill dispatch failed: ' + e.message);
     buttons.forEach(b => { b.disabled = false; b.textContent = '↻ Backfill 30 days'; });
   }
 }
+
+function runBackfillCountdown(startedAt, buttons) {
+  const totalSecs = 4 * 60;   // 4-min headline; we'll start trying refresh at 3 min
+  const updateLabel = () => {
+    const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+    const remaining = Math.max(0, totalSecs - elapsed);
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    buttons.forEach(b => { b.textContent = `⏱ Sweep running · ${m}:${String(s).padStart(2,'0')}`; });
+    if (remaining > 0) {
+      setTimeout(updateLabel, 1000);
+    } else {
+      // Try to pull the new artifact
+      buttons.forEach(b => { b.textContent = '↻ Pulling new pipeline…'; });
+      fetch('/api/refresh', { method: 'POST' })
+        .then(r => r.json())
+        .then(j => {
+          localStorage.removeItem('backfillDispatchedAt');
+          if (j.ok) {
+            buttons.forEach(b => { b.textContent = '✓ Loaded — reloading…'; });
+            setTimeout(() => window.location.reload(), 900);
+          } else {
+            buttons.forEach(b => { b.disabled = false; b.textContent = '↻ Backfill 30 days'; });
+            alert('Sweep finished but refresh failed: ' + (j.detail || 'unknown')
+                  + '\n\nClick "Daily Refresh" manually in 30 seconds.');
+          }
+        })
+        .catch(() => {
+          buttons.forEach(b => { b.disabled = false; b.textContent = '↻ Backfill 30 days'; });
+        });
+    }
+  };
+  updateLabel();
+}
+
+// Resume any in-flight backfill countdown after a page reload
+(function resumeBackfillIfNeeded() {
+  const startedAt = parseInt(localStorage.getItem('backfillDispatchedAt') || '0', 10);
+  if (!startedAt) return;
+  // If more than 8 min have passed, the sweep has likely finished and the
+  // artifact's already on GitHub — just clear and let user refresh manually.
+  if (Date.now() - startedAt > 8 * 60 * 1000) {
+    localStorage.removeItem('backfillDispatchedAt');
+    return;
+  }
+  const buttons = document.querySelectorAll('.backfill-btn, .empty .btn-mini');
+  buttons.forEach(b => { b.disabled = true; });
+  runBackfillCountdown(startedAt, buttons);
+})();
 
 // Predictor status actions: mark followed up / dismiss / restore.
 // Updates the item in place — no page reload. On Render free tier the
