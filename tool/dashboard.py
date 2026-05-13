@@ -134,9 +134,17 @@ def refresh_latest_brief_from_github() -> dict:
         extracted = []
         with zipfile.ZipFile(io.BytesIO(r2.content)) as zf:
             for member in zf.namelist():
-                if member.endswith((".html", ".txt", ".json")):
-                    zf.extract(member, STATE_DIR)
-                    extracted.append(member)
+                if not member.endswith((".html", ".txt", ".json")):
+                    continue
+                # Strip any path prefix and write the file directly into
+                # STATE_DIR. actions/upload-artifact v4 may preserve the
+                # tool/state/ prefix in the zip; without this, files would
+                # land in STATE_DIR/tool/state/* (doubled prefix) and the
+                # loader would not find them.
+                basename = member.rsplit("/", 1)[-1]
+                with zf.open(member) as src, open(STATE_DIR / basename, "wb") as dst:
+                    dst.write(src.read())
+                extracted.append(member)
 
         # Count what we got so the user can SEE whether the artifact has data
         leads_n, predictors_n = 0, 0
@@ -151,9 +159,12 @@ def refresh_latest_brief_from_github() -> dict:
         except Exception:
             pass
 
-        has_signals_file = "tool/state/latest_signals.json" in extracted
-        has_brief_html = any(f.endswith("latest_brief.html") for f in extracted)
-        has_pipeline = "tool/state/predictor_pipeline.json" in extracted
+        # Match by basename (filename only) so we don't depend on whether
+        # actions/upload-artifact v4 preserves the tool/state/ prefix.
+        basenames = {f.rsplit("/", 1)[-1] for f in extracted}
+        has_signals_file = "latest_signals.json" in basenames
+        has_brief_html = "latest_brief.html" in basenames
+        has_pipeline = "predictor_pipeline.json" in basenames
         ts = (latest.get("created_at", "?") or "")[:16].replace("T", " ")
 
         # Full file list — most direct way to see what the workflow actually
