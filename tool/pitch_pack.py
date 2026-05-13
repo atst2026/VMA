@@ -116,12 +116,21 @@ def recent_news_for(target: str, hours_back: int = 24 * 90) -> list[dict]:
         "maxrecords": 10,
         "sort": "datedesc",
     })
-    if not r or r.status_code != 200:
+    if not r:
+        log.warning("GDELT %r: no HTTP response", target)
+        return []
+    if r.status_code != 200:
+        log.warning("GDELT %r: HTTP %s body=%s",
+                    target, r.status_code, (r.text or "")[:200])
         return []
     try:
-        return (r.json().get("articles") or [])[:10]
-    except Exception:
+        articles = (r.json().get("articles") or [])[:10]
+    except Exception as e:
+        log.warning("GDELT %r: JSON parse failed (%s); raw=%s",
+                    target, e, (r.text or "")[:200])
         return []
+    log.info("GDELT %r: %d articles", target, len(articles))
+    return articles
 
 
 # ---- HTML email rendering --------------------------------------------
@@ -360,6 +369,15 @@ def main() -> int:
     role = os.environ.get("PITCH_ROLE", "Head of Internal Communications")
     mode = (sys.argv[2] if len(sys.argv) > 2 else "preview").lower()
     log.info("Building pitch pack for %r · role %r · mode %r", target, role, mode)
+
+    # Diagnostic startup banner — surfaces secret-propagation issues early.
+    log.info("env check: COMPANIES_HOUSE_KEY=%s · BRIGHT_DATA_KEY=%s · "
+             "GMAIL_USER=%s · PITCH_SALARY_MIN=%r · PITCH_SALARY_MAX=%r",
+             "set" if os.environ.get("COMPANIES_HOUSE_KEY") else "EMPTY",
+             "set" if os.environ.get("BRIGHT_DATA_KEY") else "EMPTY",
+             "set" if os.environ.get("GMAIL_USER") else "EMPTY",
+             os.environ.get("PITCH_SALARY_MIN", ""),
+             os.environ.get("PITCH_SALARY_MAX", ""))
 
     ch = companies_house.company_events(target)
     news = recent_news_for(target)

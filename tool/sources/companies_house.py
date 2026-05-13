@@ -168,13 +168,22 @@ def _save_watchlist(d: dict) -> None:
 def search_company(name: str) -> list[dict]:
     """Search Companies House for a company by name. Returns top 5 candidates."""
     if not COMPANIES_HOUSE_KEY:
+        log.warning("search_company(%r): COMPANIES_HOUSE_KEY env var is empty — "
+                    "secret not propagated to this workflow?", name)
         return []
     url = f"{SOURCES['companies_house_api']}/search/companies"
     r = get(url, params={"q": name, "items_per_page": 5},
             auth=(COMPANIES_HOUSE_KEY, ""))
-    if not r or r.status_code != 200:
+    if not r:
+        log.warning("search_company(%r): no HTTP response (network/timeout?)", name)
         return []
-    return r.json().get("items", [])
+    if r.status_code != 200:
+        log.warning("search_company(%r): HTTP %s body=%s",
+                    name, r.status_code, (r.text or "")[:200])
+        return []
+    items = r.json().get("items", []) or []
+    log.info("search_company(%r): %d hits", name, len(items))
+    return items
 
 
 def company_events(name: str) -> dict:
