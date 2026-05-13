@@ -166,11 +166,16 @@ def main() -> int:
     (STATE_DIR / "latest_brief.html").write_text(html)
     (STATE_DIR / "latest_brief.txt").write_text(text)
     (STATE_DIR / "latest_signals.json").write_text(json.dumps(ranked, indent=2, default=str))
-    (STATE_DIR / "latest_predictive.json").write_text(json.dumps([
-        {
+    from tool.predictive.render import window_for_stack
+    def _serialise_stack(stk, sc):
+        w = window_for_stack(stk)
+        return {
             "company": stk.company,
             "score": sc,
             "depth": stk.depth,
+            "window_weeks_min": w[0] if w else None,
+            "window_weeks_max": w[1] if w else None,
+            "window_label": f"{w[0]}–{w[1]} weeks" if w else None,
             "linkedin_profile_url": getattr(stk, "_resolved_profile_url", None),
             "linkedin_profile_role": getattr(stk, "_resolved_profile_role", None),
             "events": [
@@ -186,8 +191,10 @@ def main() -> int:
                 for e in stk.events
             ],
         }
-        for stk, sc in ranked_stacks
-    ], indent=2, default=str))
+    (STATE_DIR / "latest_predictive.json").write_text(json.dumps(
+        [_serialise_stack(stk, sc) for stk, sc in ranked_stacks],
+        indent=2, default=str,
+    ))
 
     # Deliver
     if mode in ("send", "test"):

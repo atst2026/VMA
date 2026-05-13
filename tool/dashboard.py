@@ -872,6 +872,20 @@ TEMPLATE = r"""
       color: var(--teal-dark);
       border: 1px solid var(--teal-soft);
     }
+    .window-badge {
+      display: inline-block;
+      font-size: 9.5px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 3px;
+      margin-left: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      vertical-align: middle;
+      background: rgba(14, 40, 69, 0.04);
+      color: var(--navy);
+      border: 1px solid var(--navy-soft);
+    }
     .predictor .evidence {
       font-size: 11px;
       color: var(--text-muted);
@@ -1159,6 +1173,7 @@ TEMPLATE = r"""
               <span class="stack-label {{ 'stacked' if p.depth > 1 else 'single' }}">
                 {{ 'stacked × ' ~ p.depth if p.depth > 1 else 'single' }}
               </span>
+              {% if p.window_label %}<span class="window-badge">{{ p.window_label }}</span>{% endif %}
               <div class="meta">
                 {% for e in p.events[:3] %}
                   <div class="evidence">
