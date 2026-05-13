@@ -1,48 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 88" preserveAspectRatio="xMidYMid slice" role="img" aria-label="VMA Group">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#0B2240"/>
-      <stop offset="50%" stop-color="#0E2845"/>
-      <stop offset="100%" stop-color="#10304F"/>
-    </linearGradient>
-    <linearGradient id="tealWave" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#6FD3DC" stop-opacity="0.0"/>
-      <stop offset="40%" stop-color="#6FD3DC" stop-opacity="0.55"/>
-      <stop offset="100%" stop-color="#6FD3DC" stop-opacity="0.0"/>
-    </linearGradient>
-    <linearGradient id="pinkWave" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#E86A8F" stop-opacity="0.0"/>
-      <stop offset="50%" stop-color="#E86A8F" stop-opacity="0.55"/>
-      <stop offset="100%" stop-color="#C2548A" stop-opacity="0.0"/>
-    </linearGradient>
-  </defs>
-
-  <rect width="1200" height="88" fill="url(#bg)"/>
-
-  <!-- Left teal waves -->
-  <g fill="none" stroke="url(#tealWave)" stroke-width="0.7" opacity="0.85">
-    <path d="M -10 14 Q 70 -6 150 14 T 340 14"/>
-    <path d="M -10 26 Q 70 6  150 26 T 340 26"/>
-    <path d="M -10 38 Q 70 18 150 38 T 340 38"/>
-    <path d="M -10 50 Q 70 30 150 50 T 340 50"/>
-    <path d="M -10 62 Q 70 42 150 62 T 340 62"/>
-    <path d="M -10 74 Q 70 54 150 74 T 340 74"/>
-  </g>
-
-  <!-- Right pink waves -->
-  <g fill="none" stroke="url(#pinkWave)" stroke-width="0.7" opacity="0.85">
-    <path d="M 860 14 Q 950 -6 1030 14 T 1220 14"/>
-    <path d="M 860 26 Q 950 6  1030 26 T 1220 26"/>
-    <path d="M 860 38 Q 950 18 1030 38 T 1220 38"/>
-    <path d="M 860 50 Q 950 30 1030 50 T 1220 50"/>
-    <path d="M 860 62 Q 950 42 1030 62 T 1220 62"/>
-    <path d="M 860 74 Q 950 54 1030 74 T 1220 74"/>
-  </g>
-
-  <!-- Wordmark -->
-  <g font-family="Inter, 'Helvetica Neue', Arial, sans-serif" fill="#FFFFFF">
-    <text x="488" y="50" font-weight="800" font-size="30" letter-spacing="-1.2">VMA</text>
-    <text x="565" y="50" font-weight="300" font-size="30" letter-spacing="1.8">GROUP</text>
-    <text x="488" y="68" font-weight="500" font-size="6.5" letter-spacing="3.4" opacity="0.92">RECRUITMENT  ·  EXECUTIVE SEARCH  ·  ADVISORY SERVICES</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 56" preserveAspectRatio="xMidYMid meet" role="img" aria-label="VMA Group">
+  <g font-family="Inter, 'Helvetica Neue', Arial, sans-serif">
+    <text x="0" y="42" font-weight="800" font-size="42" letter-spacing="-1.5" fill="#181613">VMA</text>
+    <text x="105" y="42" font-weight="300" font-size="42" letter-spacing="2" fill="#7A7164">GROUP</text>
   </g>
 </svg>

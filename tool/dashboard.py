@@ -538,74 +538,65 @@ TEMPLATE = r"""
     }
     .serif { font-family: "Crimson Pro", Georgia, serif; }
 
-    /* LOGO BANNER — fixed-height brand band at the top.
-       The SVG fills the band; height is locked so it doesn't scale
-       with viewport width. */
-    .logo-banner {
-      width: 100%;
-      height: 76px;
-      background: #0E2845;
-      box-shadow: 0 4px 14px rgba(14, 40, 69, 0.15);
-      position: relative;
-      z-index: 2;
-      overflow: hidden;
-    }
-    .logo-banner img {
-      display: block;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center;
-    }
-    @media (max-width: 720px) {
-      .logo-banner { height: 60px; }
-    }
-    /* SUB-HEADER — sits below the banner; carries "Account Director
-       Dashboard" + "Last brief" meta. Cream-themed to match the body. */
-    .sub-header {
+    /* TOP BAR — 3-column header on the cream background.
+       Left: Account Director Dashboard meta. Centre: VMA Group logo
+       wordmark (symmetrically centred via the auto column). Right:
+       Last brief timestamp with pulsing coral dot. */
+    .top-bar {
       max-width: 1280px;
       margin: 0 auto;
-      padding: 18px 28px 0;
-      display: flex;
+      padding: 22px 28px 12px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
       align-items: center;
-      justify-content: space-between;
-      gap: 16px;
+      gap: 24px;
+      border-bottom: 1px solid var(--border);
     }
-    .sub-header h1 {
+    .top-bar .col-left { justify-self: start; }
+    .top-bar .col-centre { justify-self: center; }
+    .top-bar .col-right { justify-self: end; }
+    .top-bar h1 {
       margin: 0;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 700;
       letter-spacing: -0.01em;
       color: var(--text);
       line-height: 1.2;
     }
-    .sub-header h1 .sub {
+    .top-bar h1 .sub {
       display: block;
       font-family: "Crimson Pro", Georgia, serif;
       font-style: italic;
       font-size: 13px;
       font-weight: 400;
       color: var(--text-muted);
-      margin-top: 3px;
+      margin-top: 2px;
       letter-spacing: 0;
     }
-    .sub-header .last {
-      font-size: 11px;
+    .top-bar .logo {
+      display: block;
+      height: 38px;
+      width: auto;
+    }
+    .top-bar .last {
+      font-size: 10.5px;
       font-weight: 500;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
       color: var(--text-muted);
       display: flex;
       align-items: center;
       gap: 9px;
     }
-    .sub-header .last strong {
+    .top-bar .last strong {
       display: inline-block;
       font-weight: 600;
       letter-spacing: 0;
+      text-transform: none;
       color: var(--text);
       font-size: 13px;
     }
-    .sub-header .last::before {
+    .top-bar .last::before {
       content: "";
       width: 7px; height: 7px;
       background: var(--teal);
@@ -616,6 +607,11 @@ TEMPLATE = r"""
     @keyframes pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.55; }
+    }
+    @media (max-width: 720px) {
+      .top-bar { grid-template-columns: 1fr; padding: 16px 18px 12px; gap: 12px; }
+      .top-bar .col-left, .top-bar .col-centre, .top-bar .col-right { justify-self: center; }
+      .top-bar .logo { height: 34px; }
     }
 
     .container {
@@ -1284,14 +1280,17 @@ TEMPLATE = r"""
 </head>
 <body>
 
-<div class="logo-banner">
-  <img src="/static/vma_logo.svg" alt="VMA Group — Recruitment · Executive Search · Advisory Services">
-</div>
-
-<div class="sub-header">
-  <h1>Account Director Dashboard<span class="sub">Sara's workspace</span></h1>
-  <div class="last">Last brief <strong>{{ last_updated }}</strong></div>
-</div>
+<header class="top-bar">
+  <div class="col-left">
+    <h1>Account Director Dashboard<span class="sub">Sara's workspace</span></h1>
+  </div>
+  <div class="col-centre">
+    <img src="/static/vma_logo.svg" alt="VMA Group" class="logo">
+  </div>
+  <div class="col-right">
+    <div class="last">Last brief <strong>{{ last_updated }}</strong></div>
+  </div>
+</header>
 
 {% if not has_token %}
 <div class="warn-banner">
