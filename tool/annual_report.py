@@ -128,26 +128,51 @@ def candidate_quotes(text: str, heading: str, page: int,
 
 # ---- PDF text extraction -----------------------------------------------
 def extract_pages(pdf_bytes: bytes, max_pages: int = 80) -> list[tuple[int, str]]:
-    """Returns [(1-based page number, page text)]. Caps at max_pages."""
+    """Returns [(1-based page number, page text)]. Caps at max_pages.
+    Tries pypdf first; falls back to pdfplumber for tricky PDFs (e.g.
+    linearised / iXBRL-wrapped filings where pypdf's recovery mode loses
+    the embedded text)."""
+    # First-try: pypdf (lightweight)
     try:
         import pypdf
+        reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
+        pages = []
+        for i, page in enumerate(reader.pages[:max_pages]):
+            try:
+                text = page.extract_text() or ""
+            except Exception:
+                text = ""
+            if text.strip():
+                pages.append((i + 1, text))
+        if pages:
+            return pages
+        log.info("pypdf returned 0 pages of text — trying pdfplumber fallback")
     except ImportError:
         log.warning("pypdf not installed; annual_report extraction disabled")
         return []
-    try:
-        reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
     except Exception as e:
-        log.info("PDF read failed: %s", e)
+        log.info("pypdf failed (%s); trying pdfplumber fallback", e)
+
+    # Fallback: pdfplumber (heavier but more tolerant of optimised PDFs)
+    try:
+        import pdfplumber
+    except ImportError:
+        log.info("pdfplumber not installed — cannot fall back; aborting")
         return []
-    pages = []
-    for i, page in enumerate(reader.pages[:max_pages]):
-        try:
-            text = page.extract_text() or ""
-        except Exception:
-            text = ""
-        if text.strip():
-            pages.append((i + 1, text))
-    return pages
+    try:
+        with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+            pages = []
+            for i, page in enumerate(pdf.pages[:max_pages]):
+                try:
+                    text = page.extract_text() or ""
+                except Exception:
+                    text = ""
+                if text.strip():
+                    pages.append((i + 1, text))
+            return pages
+    except Exception as e:
+        log.info("pdfplumber also failed: %s", e)
+        return []
 
 
 def find_quotes_in_pdf(pdf_bytes: bytes, top_n: int = 5) -> tuple[list[Quote], int]:
@@ -221,41 +246,60 @@ def _is_full_annual_report(filing: dict) -> bool:
 
 def _download_pdf(document_metadata_url: str) -> bytes | None:
     """Fetch the PDF content for a filing. CH Document API redirects to
-    an AWS S3 URL — requests follows redirects automatically."""
+    an AWS S3 URL — we follow redirects but strip auth from the S3 leg
+    (Basic Auth in an S3 signed-URL request can break the signature)."""
     if not COMPANIES_HOUSE_KEY or not document_metadata_url:
         return None
-    # Document API serves the content when you append /content + Accept header
     content_url = document_metadata_url.rstrip("/") + "/content"
     try:
+        # Don't auto-follow redirects so we can re-issue the second leg
+        # without Basic Auth (S3 URLs are pre-signed and don't need it).
         r = requests.get(
             content_url,
             auth=(COMPANIES_HOUSE_KEY, ""),
             headers={"Accept": "application/pdf"},
             timeout=45,
+            allow_redirects=False,
         )
+        if r.status_code in (301, 302, 303, 307, 308):
+            redirect_url = r.headers.get("Location", "")
+            if redirect_url:
+                r = requests.get(redirect_url, timeout=45)
     except requests.RequestException as e:
         log.info("annual_report PDF fetch failed: %s", e)
         return None
     if r.status_code != 200 or not r.content:
         log.info("annual_report PDF fetch HTTP %s", r.status_code)
         return None
+    # Diagnostic: how big is the PDF and does it look like one?
+    head = r.content[:8]
+    log.info("annual_report PDF: %d bytes, magic=%r",
+             len(r.content), head)
     return r.content
 
 
 def fetch_strategic_quotes(company_number: str,
-                           top_n: int = 5) -> AnnualReport | None:
+                           top_n: int = 5,
+                           max_filings_to_try: int = 3) -> AnnualReport | None:
     """End-to-end: find the latest full annual report at CH, download
     the PDF, extract top N strategic-priority quotes.
-    Returns None if any step fails (caller should fall back to GDELT)."""
+    Returns None if any step fails (caller should fall back to GDELT).
+
+    Caps at max_filings_to_try (default 3) to avoid wasting time on
+    successive failed PDF parses — if the 3 most recent filings can't
+    be extracted, older ones almost certainly can't be either, and the
+    pitch pack should fall back to GDELT quickly instead of waiting
+    a minute per call."""
     if not company_number:
         return None
     filings = _fetch_filings_accounts(company_number)
     if not filings:
         log.info("annual_report: no accounts filings for %s", company_number)
         return None
-    for filing in filings:
-        if not _is_full_annual_report(filing):
-            continue
+    eligible = [f for f in filings if _is_full_annual_report(f)][:max_filings_to_try]
+    log.info("annual_report: trying up to %d of %d eligible filings",
+             len(eligible), len([f for f in filings if _is_full_annual_report(f)]))
+    for filing in eligible:
         links = filing.get("links") or {}
         metadata_url = links.get("document_metadata")
         if not metadata_url:
@@ -278,6 +322,6 @@ def fetch_strategic_quotes(company_number: str,
             quotes=quotes,
             page_count=pages,
         )
-    log.info("annual_report: exhausted %d candidate filings without success",
-             len(filings))
+    log.info("annual_report: tried %d filings without success — falling back to GDELT",
+             len(eligible))
     return None
