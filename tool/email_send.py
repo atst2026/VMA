@@ -34,12 +34,18 @@ from tool.config import RESEND_API_KEY, RESEND_FROM
 log = logging.getLogger("brief.email")
 
 
-def send(to: str, subject: str, html: str, text: str | None = None) -> dict:
-    """Return {ok: bool, detail: ..., provider: 'resend'|'gmail'|'none'}."""
+def send(to: str, subject: str, html: str, text: str | None = None,
+         bcc: list[str] | None = None) -> dict:
+    """Return {ok: bool, detail: ..., provider: 'resend'|'gmail'|'none'}.
+
+    `bcc` is an optional list of additional addresses to silently copy.
+    Used in send mode so Amir's hotmail confirms whether the email left
+    the system — when Sara's spam filter eats a pack we can tell the
+    difference between "didn't send" and "sent but trapped"."""
     if RESEND_API_KEY:
-        return _send_resend(to, subject, html, text)
+        return _send_resend(to, subject, html, text, bcc=bcc)
     if os.environ.get("GMAIL_APP_PASSWORD") and os.environ.get("GMAIL_USER"):
-        return _send_gmail(to, subject, html, text)
+        return _send_gmail(to, subject, html, text, bcc=bcc)
     return {
         "ok": False,
         "provider": "none",
@@ -50,14 +56,18 @@ def send(to: str, subject: str, html: str, text: str | None = None) -> dict:
     }
 
 
-def _send_resend(to: str, subject: str, html: str, text: str | None) -> dict:
-    log.info("Resend: from=%r to=%r subject=%r", RESEND_FROM, to, subject)
+def _send_resend(to: str, subject: str, html: str, text: str | None,
+                 bcc: list[str] | None = None) -> dict:
+    log.info("Resend: from=%r to=%r bcc=%r subject=%r",
+             RESEND_FROM, to, bcc, subject)
     payload = {
         "from": RESEND_FROM,
         "to": [to],
         "subject": subject,
         "html": html,
     }
+    if bcc:
+        payload["bcc"] = list(bcc)
     if text:
         payload["text"] = text
     try:
@@ -77,7 +87,8 @@ def _send_resend(to: str, subject: str, html: str, text: str | None) -> dict:
         return {"ok": False, "provider": "resend", "detail": str(e)}
 
 
-def _send_gmail(to: str, subject: str, html: str, text: str | None) -> dict:
+def _send_gmail(to: str, subject: str, html: str, text: str | None,
+                bcc: list[str] | None = None) -> dict:
     gmail_user = os.environ["GMAIL_USER"].strip()
     gmail_pw = os.environ["GMAIL_APP_PASSWORD"].replace(" ", "").strip()
     display_name = os.environ.get("GMAIL_FROM_NAME", "Sara's Morning Brief")
@@ -87,6 +98,10 @@ def _send_gmail(to: str, subject: str, html: str, text: str | None) -> dict:
     msg["Subject"] = subject
     msg["From"] = from_header
     msg["To"] = to
+    # Bcc is intentionally NOT added as a header (so the To recipient doesn't
+    # see the bcc list), but the address IS included in the sendmail
+    # destination list per RFC 5321 / smtplib.
+    recipients = [to] + list(bcc or [])
 
     if text:
         msg.attach(MIMEText(text, "plain"))
@@ -95,9 +110,9 @@ def _send_gmail(to: str, subject: str, html: str, text: str | None) -> dict:
     try:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=30) as s:
             s.login(gmail_user, gmail_pw)
-            s.sendmail(gmail_user, [to], msg.as_string())
+            s.sendmail(gmail_user, recipients, msg.as_string())
         return {"ok": True, "provider": "gmail",
-                "detail": f"sent {gmail_user} → {to}"}
+                "detail": f"sent {gmail_user} → {to} (bcc={bcc or []})"}
     except smtplib.SMTPAuthenticationError as e:
         return {"ok": False, "provider": "gmail",
                 "detail": f"SMTPAuthenticationError: {e}. Make sure you used an "
