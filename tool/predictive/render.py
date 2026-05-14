@@ -48,7 +48,7 @@ def window_for_stack(stk: Stack) -> tuple[int, int] | None:
 
 def _window(stk: Stack) -> str:
     w = window_for_stack(stk)
-    return f"{w[0]}–{w[1]} weeks" if w else "—"
+    return f"{w[0]}–{w[1]} weeks" if w else "-"
 
 
 def _who_to_call(stk: Stack) -> str:
@@ -80,7 +80,7 @@ def _implication(stk: Stack) -> str:
         for e in stk.events:
             if e.trigger_key == key:
                 if key == "job_ad_cluster":
-                    return (f"Job-ad cluster pattern at {stk.company} — "
+                    return (f"Job-ad cluster pattern at {stk.company}: "
                             f"~60% base rate for a senior hire within 90 days.")
                 t = P.BY_KEY.get(key)
                 if t:
@@ -167,7 +167,7 @@ def render_html(ranked: list[tuple[Stack, float]], limit: int = 5,
         </div>
         """)
     return f"""
-<h3 style="margin:24px 0 4px 0;">Pre-advert signals — new today</h3>
+<h3 style="margin:24px 0 4px 0;">Pre-advert signals · new today</h3>
 <div style="color:#666;font-size:12px;margin-bottom:8px;">
   Upstream triggers that empirically precede senior comms hires. Every item has a named public source.
   Probabilities are trigger-class base rates, not calibrated per-company predictions.
@@ -183,15 +183,15 @@ def render_text(ranked: list[tuple[Stack, float]], limit: int = 5,
     if not ranked and total_active:
         return (
             "Pre-advert signals\n"
-            "—" * 56 + "\n"
+            "-" * 56 + "\n"
             f"No new predictors today. {total_active} active in your pipeline:\n"
             f"  {DASHBOARD_URL}\n"
         )
     if not ranked:
         return ""
     lines = [
-        "Pre-advert signals — new today",
-        "—" * 56,
+        "Pre-advert signals · new today",
+        "-" * 56,
     ]
     if total_active is not None and new_count is not None:
         lines.append(f"  {new_count} new today · {total_active} active in pipeline: {DASHBOARD_URL}")
