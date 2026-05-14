@@ -179,7 +179,7 @@ def refresh_latest_brief_from_github() -> dict:
                   f"Loaded {leads_n} leads, {predictors_n} predictors. "
                   f"Files in artifact: {files_line}.")
         if not has_brief_html:
-            detail += (" ⚠ Brief script likely crashed before writing any state — "
+            detail += (" ⚠ Brief script likely crashed before writing any state - "
                        "check the GitHub Actions run logs for that workflow.")
         elif leads_n == 0 and not has_signals_file:
             detail += (" ⚠ Artifact has the rendered brief but no signals.json. "
@@ -1369,7 +1369,7 @@ TEMPLATE = r"""
 
 {% if not has_token %}
 <div class="warn-banner">
-  <strong>GITHUB_TOKEN not set</strong> in your .env — the "Run and Send" buttons won't work until you add one.
+  <strong>GITHUB_TOKEN not set</strong> in your .env. The "Run and Send" buttons won't work until you add one.
   See <code>DASHBOARD_SETUP.md</code> for instructions (it's a 5-minute one-time setup).
 </div>
 {% endif %}
@@ -1428,7 +1428,7 @@ TEMPLATE = r"""
                   {% else %}{{ s.title }}{% endif %}
                 </span>
                 <div class="meta">
-                  <span class="badge">{{ s.company or '—' }}</span>
+                  <span class="badge">{{ s.company or '-' }}</span>
                   <span class="badge">{{ s.source }}</span>
                   <span class="badge">{{ s.geo }}</span>
                 </div>
@@ -1505,7 +1505,7 @@ TEMPLATE = r"""
             </div>
           {% endfor %}
         {% else %}
-          <div class="empty compact">Pipeline empty. Click Daily Refresh, or wait for tomorrow's morning brief — the 90-day window populates automatically.</div>
+          <div class="empty compact">Pipeline empty. Click Daily Refresh, or wait for tomorrow's morning brief. The 90-day window populates automatically.</div>
         {% endif %}
       </div>
     </div>

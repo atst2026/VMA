@@ -180,7 +180,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
             quote_items.append(
                 f"<li style='margin-bottom:10px;'>"
                 f"<span style='font-style:italic;color:#222;'>“{_esc(q.text)}”</span>"
-                f"<div style='font-size:11px;color:#888;margin-top:2px;'>— {_esc(q.heading)}, p.{q.page}</div>"
+                f"<div style='font-size:11px;color:#888;margin-top:2px;'>- {_esc(q.heading)}, p.{q.page}</div>"
                 f"</li>"
             )
         news_html = (
@@ -194,7 +194,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
         section2_heading = "2. Recent market context"
         news_html = (
             "<div style='font-size:13px;color:#555;margin-bottom:8px;'>"
-            "Generic news context (annual report quote extraction unavailable for this company — "
+            "Generic news context (annual report quote extraction unavailable for this company - "
             "consider adding a bespoke strategic line in your cover note):"
             "</div>"
             "<ul style='padding-left:18px;font-size:13px;'>"
@@ -204,10 +204,10 @@ def render_html(target: str, role: str, ch_snapshot: dict,
         news_html += "</ul>"
     else:
         section2_heading = "2. Recent market context"
-        news_html = "<div style='color:#888;'>No strategic-report quotes available and no GDELT coverage — check trade press manually.</div>"
+        news_html = "<div style='color:#888;'>No strategic-report quotes available and no GDELT coverage - check trade press manually.</div>"
 
     # Peer market map
-    sector_label = sector.replace("_", " ").title() if sector else "Detected sector unclear — generic FTSE list"
+    sector_label = sector.replace("_", " ").title() if sector else "Detected sector unclear - generic FTSE list"
     peer_html = "<ol style='padding-left:18px;font-size:13px;'>"
     for p in peers:
         peer_html += f"<li>{_esc(p)}</li>"
@@ -234,12 +234,12 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 
     note_banner = ""
     if mode == "test":
-        note_banner = "<div style='background:#fff3cd;border:1px solid #ffeaa7;padding:8px;margin-bottom:16px;font-size:13px;'>⚠️ TEST PACK — generated for Amir's review. Do not send to client.</div>"
+        note_banner = "<div style='background:#fff3cd;border:1px solid #ffeaa7;padding:8px;margin-bottom:16px;font-size:13px;'>⚠️ TEST PACK - generated for Amir's review. Do not send to client.</div>"
 
     return f"""<!doctype html>
 <html><body style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px;color:#111;">
 {note_banner}
-<h2 style="margin:0 0 4px 0;">Retained Pitch Pack — {_esc(target)}</h2>
+<h2 style="margin:0 0 4px 0;">Retained Pitch Pack - {_esc(target)}</h2>
 <div style="color:#666;font-size:13px;margin-bottom:18px;">
   Role: {_esc(role)} · Generated {_esc(datetime.now().strftime('%a %d %b %Y · %H:%M'))} · For Sara Tehrani, VMA Group
 </div>
@@ -277,14 +277,14 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 <h3 style="margin:18px 0 6px 0;">7. Why retained over contingent</h3>
 <ul style='padding-left:18px;font-size:13px;color:#333;'>
   <li>Exclusivity unlocks deeper passive-candidate outreach (~3× larger universe vs contingent)</li>
-  <li>Milestone fees align our priority with yours — we're not racing 6 other firms on the same role</li>
+  <li>Milestone fees align our priority with yours, so we're not racing 6 other firms on the same role</li>
   <li>Pre-agreed methodology removes 8–10 hours of back-and-forth at submission stage</li>
-  <li>Senior comms placements typically open 2–4 downstream hires (IC Business Partners, Change Comms Leads, Digital Comms Managers) over the following 12–18 months — a retained engagement positions VMA Group for the full pipeline, not just the headline role</li>
+  <li>Senior comms placements typically open 2-4 downstream hires (IC Business Partners, Change Comms Leads, Digital Comms Managers) over the following 12-18 months, so a retained engagement positions VMA Group for the full pipeline, not just the headline role</li>
 </ul>
 
 <h3 style="margin:18px 0 6px 0;">8. Risk-mitigation terms</h3>
 <div style='font-size:13px;color:#333;'>
-  Standard rebate schedule, off-limits clause, exclusivity period, and replacement guarantee per VMA Group's terms of engagement — provided separately as part of the contract pack.
+  Standard rebate schedule, off-limits clause, exclusivity period, and replacement guarantee per VMA Group's terms of engagement, provided separately as part of the contract pack.
 </div>
 
 <hr style="margin:24px 0;border:none;border-top:1px solid #ddd;">
@@ -303,7 +303,7 @@ def render_text(target: str, role: str, ch_snapshot: dict,
     low, high, matched = salary_band
     mid = (low + high) // 2
     lines = [
-        f"Retained Pitch Pack — {target}",
+        f"Retained Pitch Pack - {target}",
         f"Role: {role}  ·  Generated {datetime.now().strftime('%a %d %b %Y · %H:%M')}",
         "=" * 60, "",
         "1. ACCOUNT SNAPSHOT",
@@ -322,7 +322,7 @@ def render_text(target: str, role: str, ch_snapshot: dict,
             lines.append(f"   - \"{q.text}\"")
             lines.append(f"     [{q.heading}, p.{q.page}]")
     elif news:
-        lines += ["", "2. RECENT MARKET CONTEXT (generic — no annual report quotes available)"]
+        lines += ["", "2. RECENT MARKET CONTEXT (generic, no annual report quotes available)"]
         for a in news[:5]:
             lines.append(f"   - {a.get('title','')} ({a.get('seendate','')[:8]})")
             lines.append(f"     {a.get('url','')}")
@@ -351,11 +351,11 @@ def render_text(target: str, role: str, ch_snapshot: dict,
               "   - Milestone fees align priority",
               "   - Pre-agreed methodology removes 8-10 hrs of back-and-forth",
               "   - Senior comms placements typically open 2-4 downstream hires over",
-              "     12-18 months — retained positions VMA Group for the full pipeline",
+              "     12-18 months, so retained positions VMA Group for the full pipeline",
               "",
               "8. RISK-MITIGATION TERMS",
               "   Standard rebate schedule, off-limits clause, exclusivity period, and",
-              "   replacement guarantee per VMA Group's terms of engagement — provided",
+              "   replacement guarantee per VMA Group's terms of engagement, provided",
               "   separately as part of the contract pack."]
     return "\n".join(lines)
 
@@ -428,7 +428,7 @@ def main() -> int:
 
     if mode in ("send", "test"):
         to = config.TEST_RECIPIENT if mode == "test" else config.RECIPIENT
-        subject = f"[Pitch Pack] {target} — {role}"
+        subject = f"[Pitch Pack] {target} - {role}"
         if mode == "test":
             subject = "[TEST] " + subject
         result = email_send(to, subject, html_out, text_out)

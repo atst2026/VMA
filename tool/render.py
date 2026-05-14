@@ -43,7 +43,7 @@ def render_html(ranked: list[dict], source_report: dict, now_str: str,
     rest_rows = "".join(
         f"<li style='margin:4px 0;'>"
         f"<a href='{_esc(s.get('url') or '#')}' style='color:#0366d6;'>{_esc(s.get('title') or '')}</a> "
-        f"<span style='color:#666;font-size:12px;'>— {_esc(s.get('source') or '')} · {_esc(s.get('geo') or '')}</span>"
+        f"<span style='color:#666;font-size:12px;'>· {_esc(s.get('source') or '')} · {_esc(s.get('geo') or '')}</span>"
         f"</li>"
         for s in rest
     )
@@ -55,7 +55,7 @@ def render_html(ranked: list[dict], source_report: dict, now_str: str,
 
     return f"""<!doctype html>
 <html><body style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:720px;margin:0 auto;padding:20px;color:#111;">
-<h2 style="margin:0 0 4px 0;">Sara's Morning Brief — {_esc(now_str)}</h2>
+<h2 style="margin:0 0 4px 0;">Sara's Morning Brief · {_esc(now_str)}</h2>
 <div style="color:#666;font-size:13px;margin-bottom:18px;">
   Coverage: {_esc(covered_days)}. Ranked by fee-value × signal strength. UK primary.
 </div>
@@ -83,15 +83,15 @@ def render_html(ranked: list[dict], source_report: dict, now_str: str,
 def render_plaintext(ranked: list[dict], now_str: str, covered_days: str,
                      predictive_text: str = "") -> str:
     lines = [
-        f"Sara's Morning Brief — {now_str}",
+        f"Sara's Morning Brief · {now_str}",
         f"Coverage: {covered_days}. Ranked by fee-value × signal strength. UK primary.",
         "",
         "Call these 5 first",
-        "—" * 40,
+        "-" * 40,
     ]
     for i, s in enumerate(ranked[:5], 1):
         lines.append(f"{i}. {s.get('title','')}")
-        lines.append(f"   {s.get('company','—')} · {s.get('source','')} · {s.get('geo','')}")
+        lines.append(f"   {s.get('company','-')} · {s.get('source','')} · {s.get('geo','')}")
         lines.append(f"   Angle: {suggest_angle(s)}")
         lines.append(f"   {s.get('url','')}")
         lines.append("")
@@ -101,7 +101,7 @@ def render_plaintext(ranked: list[dict], now_str: str, covered_days: str,
         lines.append("")
     lines.append(f"Full signal set ({len(ranked)} items):")
     for s in ranked[5:40]:
-        lines.append(f"  · {s.get('title','')} — {s.get('source','')} [{s.get('geo','')}]")
+        lines.append(f"  · {s.get('title','')} · {s.get('source','')} [{s.get('geo','')}]")
         if s.get("url"):
             lines.append(f"    {s['url']}")
     return "\n".join(lines)
