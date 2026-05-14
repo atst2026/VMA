@@ -68,5 +68,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: pitch-pack
-          path: tool/state/pitch_pack_*.{html,txt}
+          # Two patterns rather than {html,txt} brace expansion - actions/
+          # upload-artifact@v4's minimatch does not expand braces, so the
+          # brace form was matching zero files and uploading nothing.
+          path: |
+            tool/state/pitch_pack_*.html
+            tool/state/pitch_pack_*.txt
           if-no-files-found: warn

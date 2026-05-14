@@ -92,5 +92,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: reverse-match
-          path: tool/state/reverse_match_*.{html,txt}
+          # Two patterns rather than {html,txt} brace expansion - actions/
+          # upload-artifact@v4's minimatch does not expand braces, so the
+          # brace form was matching zero files and uploading nothing.
+          path: |
+            tool/state/reverse_match_*.html
+            tool/state/reverse_match_*.txt
           if-no-files-found: warn
