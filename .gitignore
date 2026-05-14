@@ -21,4 +21,9 @@ tool/state/seed_audit_*.json
 tool/state/hiring_contacts.json
 tool/state/contact_resolution_log.jsonl
 tool/state/contact_reverify_queue.json
+tool/state/ch_watchlist.json
+tool/state/ch_officers_snapshot.json
+tool/state/linkedin_profile_cache.json
+tool/state/rns_velocity_state.json
+tool/state/predictor_pipeline.json
 .DS_Store
