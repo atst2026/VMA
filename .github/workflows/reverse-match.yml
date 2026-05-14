@@ -24,6 +24,7 @@ on:
 
 permissions:
   contents: read
+  actions: read   # needed to download morning-brief artifact for cross-reference
 
 jobs:
   match:
@@ -38,6 +39,36 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install requests beautifulsoup4 lxml python-dateutil
+
+      # Pull the most recent morning-brief artifact so reverse-match can
+      # cross-reference its 15 target companies against the predictor
+      # pipeline + live-leads. Without this, every target falls back to
+      # COLD (the workflow runner starts fresh with empty tool/state/).
+      - name: Hydrate state from latest morning-brief
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          mkdir -p tool/state
+          # Find the latest successful morning-brief artifact
+          ARTIFACT_ID=$(gh api "repos/${{ github.repository }}/actions/artifacts?per_page=30" \
+            --jq '[.artifacts[] | select(.name == "morning-brief" and .expired == false)] | sort_by(.created_at) | reverse | .[0].id' || echo "")
+          if [ -z "$ARTIFACT_ID" ] || [ "$ARTIFACT_ID" = "null" ]; then
+            echo "No morning-brief artifact found — every target will fall back to COLD."
+            exit 0
+          fi
+          echo "Found morning-brief artifact id=$ARTIFACT_ID — downloading state files"
+          gh api "repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID/zip" > artifact.zip
+          unzip -o -j artifact.zip 'latest_signals.json' 'latest_predictive.json' \
+                                    'predictor_pipeline.json' 'predictive_jobs.json' \
+                                    -d tool/state/ 2>/dev/null || true
+          # The artifact may store files with the tool/state/ prefix; strip + flatten
+          unzip -o -j artifact.zip 'tool/state/latest_signals.json' \
+                                    'tool/state/latest_predictive.json' \
+                                    'tool/state/predictor_pipeline.json' \
+                                    'tool/state/predictive_jobs.json' \
+                                    -d tool/state/ 2>/dev/null || true
+          ls -la tool/state/ | head -20
 
       - name: Generate reverse-match
         env:
