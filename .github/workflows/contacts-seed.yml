@@ -1,0 +1,99 @@
+name: Contacts seed (manual only)
+
+# Two-mode workflow for the hiring-contacts table:
+#   dry-run  -> resolves the 31-entity adversarial sample and uploads the
+#               audit JSON as a workflow artifact. Nothing is written to
+#               the contacts table. Use this BEFORE the bulk seed.
+#   commit   -> runs the full seed across all watchlist entities. Only
+#               run this after eyeballing the dry-run audit and confirming
+#               resolution quality is acceptable.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run (safe, no writes) | commit (full seed)"
+        default: "dry-run"
+        required: true
+        type: choice
+        options:
+          - dry-run
+          - commit
+      limit:
+        description: "Cap on watchlist entities (commit mode only; blank = all)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 lxml python-dateutil
+
+      # Hydrate state from latest morning-brief artifact so the RNS-based
+      # source in the resolver has data to mine. Without this, the
+      # rns_announcements source returns empty for every entity.
+      - name: Hydrate state from latest morning-brief
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          mkdir -p tool/state
+          ARTIFACT_ID=$(gh api "repos/${{ github.repository }}/actions/artifacts?per_page=30" \
+            --jq '[.artifacts[] | select(.name == "morning-brief" and .expired == false)] | sort_by(.created_at) | reverse | .[0].id' || echo "")
+          if [ -z "$ARTIFACT_ID" ] || [ "$ARTIFACT_ID" = "null" ]; then
+            echo "No morning-brief artifact found — RNS source will be empty."
+            exit 0
+          fi
+          echo "Found morning-brief artifact id=$ARTIFACT_ID"
+          gh api "repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID/zip" > artifact.zip
+          unzip -o -j artifact.zip 'latest_signals.json' 'ch_watchlist.json' \
+                                    -d tool/state/ 2>/dev/null || true
+          unzip -o -j artifact.zip 'tool/state/latest_signals.json' \
+                                    'tool/state/ch_watchlist.json' \
+                                    -d tool/state/ 2>/dev/null || true
+          ls -la tool/state/ | head -20
+
+      - name: Run seeder
+        env:
+          BRIGHT_DATA_KEY: ${{ secrets.BRIGHT_DATA_KEY }}
+          BRIGHT_DATA_ZONE: ${{ secrets.BRIGHT_DATA_ZONE }}
+          COMPANIES_HOUSE_KEY: ${{ secrets.COMPANIES_HOUSE_KEY }}
+          PYTHONUNBUFFERED: "1"
+          PYTHONPATH: "."
+        run: |
+          set -x
+          if [ "${{ github.event.inputs.mode }}" = "dry-run" ]; then
+            python -m tool.contacts.seeder --dry-run
+          else
+            LIMIT_ARG=""
+            if [ -n "${{ github.event.inputs.limit }}" ]; then
+              LIMIT_ARG="--limit ${{ github.event.inputs.limit }}"
+            fi
+            python -m tool.contacts.seeder --commit $LIMIT_ARG
+          fi
+
+      - name: Upload audit + state artefacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: contacts-seed
+          path: |
+            tool/state/seed_audit_*.json
+            tool/state/hiring_contacts.json
+            tool/state/contact_resolution_log.jsonl
+          if-no-files-found: warn
+          retention-days: 30
