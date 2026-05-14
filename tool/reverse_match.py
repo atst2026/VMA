@@ -145,7 +145,7 @@ def _build_rationale(target: str, candidate_company: str, candidate_title: str,
             "priority": "HOT",
             "label": "Live brief",
             "detail": (f"{target} has '{role_title}' posted right now. "
-                       f"Immediate fit — call today before competitors do."),
+                       f"Immediate fit - call today before competitors do."),
             "trigger_hint": "open role",
         }
 
@@ -161,7 +161,7 @@ def _build_rationale(target: str, candidate_company: str, candidate_title: str,
             return {
                 "priority": "WARM",
                 "label": "Predictor active",
-                "detail": (f"{trigger_label.capitalize()} at {target}{prob_str} — "
+                "detail": (f"{trigger_label.capitalize()} at {target}{prob_str} - "
                            f"comms hire forecast{window_str}. "
                            f"Candidate fits the brief about to land."),
                 "trigger_hint": trigger_label,
@@ -185,21 +185,21 @@ def _build_opener(candidate_name: str, candidate_title: str,
     hint = rationale.get("trigger_hint", "")
     if priority == "HOT":
         return (
-            f'"Hi — saw {target} has a senior comms role open right now. '
+            f'"Hi - saw {target} has a senior comms role open right now. '
             f"I'm working with {candidate_name}, currently {candidate_title} at "
             f"{candidate_company}. They're exploring next moves and {target} "
             f'is a natural fit. Can I send their profile across today?"'
         )
     if priority == "WARM":
         return (
-            f'"Hi — noticed the {hint} at {target} recently. '
+            f'"Hi - noticed the {hint} at {target} recently. '
             f"I'm working with {candidate_name}, currently {candidate_title} at "
             f"{candidate_company}. Given the comms picture forming at {target}, "
             f'they could be a strong fit ahead of any formal brief. Worth a 15-minute call?"'
         )
     # COLD / sector-peer default
     return (
-        f'"Hi — I\'m working with {candidate_name}, currently {candidate_title} at '
+        f'"Hi - I\'m working with {candidate_name}, currently {candidate_title} at '
         f"{candidate_company}. They're at the point of exploring next moves and "
         f'{target} came up as a natural fit. Open to a 15-minute call?"'
     )
@@ -314,7 +314,7 @@ def render_text(candidate_name: str, candidate_company: str, candidate_title: st
         priority = rationale.get("priority", "COLD")
         opener = _build_opener(candidate_name, candidate_title, candidate_company,
                                 target, rationale)
-        lines.append(f"{i:>2}. [{priority}] {target} — {rationale.get('label', '')}")
+        lines.append(f"{i:>2}. [{priority}] {target} - {rationale.get('label', '')}")
         lines.append(f"    {rationale.get('detail', '')}")
         lines.append(f"    Opener: {opener}")
         lines.append("")
