@@ -130,22 +130,47 @@ def main() -> int:
     ranked = rank(fresh)
     log.info("Ranked %d fresh signals for the email body.", len(ranked))
 
-    # Resolve direct LinkedIn profile URLs for the top-N items via Bright
-    # Data. ~10 BD requests/day, well inside the 5k/mo free tier. Cache
-    # in tool/state/linkedin_profile_cache.json so same (company,role)
-    # never re-queries. Silent no-op if BRIGHT_DATA_KEY isn't configured.
-    # First pass: enrich EVERY ranked signal with seeded contact name
-    # if the contacts table has one for that company + role. Free (no
-    # API call) - just an in-memory dict lookup. The dashboard uses this
-    # name to build a search-by-name URL (one-click landing) when no
-    # direct LinkedIn URL is available.
+    # ORDER MATTERS: run CH officer-change scan + auto-update BEFORE
+    # enriching signals with seeded names. Otherwise we'd enrich with
+    # pre-update data and write the now-known-wrong name to today's
+    # latest_signals.json. Auto-update mutates hiring_contacts.json on
+    # disk; the subsequent enrichment loop reloads the freshly-updated
+    # table.
+    log.info("Running CH officer-change scan (pre-enrichment for fresh contacts)…")
+    try:
+        ch_events = companies_house.detect_officer_changes()
+    except Exception as e:
+        log.exception("CH officer-change scan: %s", e)
+        ch_events = []
+
+    try:
+        from tool.contacts import auto_update as cau
+        from tool.contacts.store import load_contacts as _load_contacts_pre
+        from tool.contacts.store import save_contacts as _save_contacts_pre
+        contacts_for_update = _load_contacts_pre()
+        snapshot = cau.load_ch_snapshot_for_autoupdate()
+        update_stats = cau.auto_update_contacts(
+            contacts_for_update, ch_events, snapshot,
+        )
+        if any(update_stats[k] for k in ("expired", "populated", "refreshed")):
+            _save_contacts_pre(contacts_for_update)
+        log.info("contacts auto-update: %s", update_stats)
+    except Exception as e:
+        log.exception("contacts auto-update failed: %s", e)
+
+    # First pass: enrich EVERY signal (the FULL ranked_all set, what
+    # the dashboard reads via latest_signals.json) with seeded contact
+    # name if the contacts table has one for that company + role. Free
+    # (no API call) - just an in-memory dict lookup. Iterating ranked_all
+    # (not ranked) ensures both fresh and previously-seen signals get
+    # enriched, since the dashboard surfaces both.
     log.info("Annotating signals with seeded contact names…")
     try:
         from tool.contacts.store import load_contacts as _load_contacts
         _contacts_cache = _load_contacts()
     except Exception:
         _contacts_cache = {}
-    for sig in ranked:
+    for sig in ranked_all:
         if not (sig.get("company") or "").strip():
             continue
         named = lnr.resolve_named_contact_for_lead(sig, contacts=_contacts_cache)
@@ -193,33 +218,10 @@ def main() -> int:
         velocity_events = []
     trigger_events = pdet.detect_events(signals)
     cluster_events = pcluster.detect_clusters()
-    # Companies House officer-change events: daily snapshot diff across
-    # ~200-company watchlist. Catches private-company leadership changes
-    # that don't surface via RNS.
-    try:
-        ch_events = companies_house.detect_officer_changes()
-    except Exception as e:
-        log.exception("CH officer-change scan: %s", e)
-        ch_events = []
-
-    # Auto-update hiring_contacts.json from the freshly-computed CH
-    # data. Safety-first: only Companies House can add/refresh names;
-    # any detected departure expires the matching entry immediately.
-    # Stats are printed so the auto-commit step can summarise the run.
-    try:
-        from tool.contacts import auto_update as cau
-        from tool.contacts.store import load_contacts, save_contacts
-        contacts_for_update = load_contacts()
-        snapshot = cau.load_ch_snapshot_for_autoupdate()
-        update_stats = cau.auto_update_contacts(
-            contacts_for_update, ch_events, snapshot,
-        )
-        if any(update_stats[k] for k in ("expired", "populated", "refreshed")):
-            save_contacts(contacts_for_update)
-        log.info("contacts auto-update: %s", update_stats)
-    except Exception as e:
-        log.exception("contacts auto-update failed: %s", e)
-
+    # CH officer-change scan + contacts auto-update already ran earlier
+    # (pre-enrichment) so signals are enriched with fresh data. The
+    # ch_events list from that earlier call is reused here as part of
+    # the all-events combination for the predictor pipeline.
     all_events = trigger_events + cluster_events + ch_events + velocity_events
     stacks = stack_events(all_events)
     ranked_stacks = pr.rank(stacks)
