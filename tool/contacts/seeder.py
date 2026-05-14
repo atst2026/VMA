@@ -104,13 +104,16 @@ def _all_watchlist() -> list[str]:
 
 
 def _make_fetch():
-    """Return a callable that performs Bright Data fetches, or None if
-    BRIGHT_DATA_KEY isn't configured."""
+    """Return a callable that performs Bright Data fetches with full
+    diagnostic info (HTTP status / error reason), or None if
+    BRIGHT_DATA_KEY isn't configured. Uses the diagnostic wrapper so
+    the audit can show actual error messages rather than collapsing
+    every failure to 'fetch returned empty'."""
     import os
     if not os.environ.get("BRIGHT_DATA_KEY", "").strip():
         return None
-    from tool.linkedin_resolver import _bright_data_fetch
-    return _bright_data_fetch
+    from tool.linkedin_resolver import _bright_data_fetch_diag
+    return _bright_data_fetch_diag
 
 
 def _audit_path(when: datetime) -> Path:

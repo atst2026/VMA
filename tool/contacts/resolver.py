@@ -249,21 +249,22 @@ def _extract_title_substring(title: str, slot: str) -> str:
 
 # ---- Source 3: Company leadership page (Bright Data) ----------------
 def _query_leadership_page(company: str, role_slot: str,
-                           fetch: Callable[[str], str | None]
+                           fetch: Callable[[str], dict | str | None]
                            ) -> tuple[list[CandidateRecord], SourceQuery]:
     """Use Bright Data to fetch a Google result for '<company> leadership team',
     then parse the first plausible company-owned URL and extract name+title
     pairs.
 
-    The function is parameterised on `fetch` so the seeder can pass in the
-    real Bright Data callable while tests can pass a fixture."""
+    `fetch` may return either a string (legacy) or a dict with diagnostic
+    info (text, status, error). The dict form lets the audit surface the
+    actual HTTP status code instead of just 'fetch returned empty'."""
     query = f'"{company}" leadership team OR executive team OR our people site:{_likely_domain(company)} OR "{company}" leadership'
     google_url = f"https://www.google.com/search?q={quote_plus(query)}"
-    html = fetch(google_url)
+    html, fetch_reason = _normalise_fetch_result(fetch(google_url))
     if not html:
         return [], SourceQuery(
             source="leadership_page", returned_data=False,
-            reason="fetch returned empty",
+            reason=fetch_reason,
         )
 
     # Parse name + title pairs from the leadership page HTML. We don't
@@ -275,6 +276,24 @@ def _query_leadership_page(company: str, role_slot: str,
         returned_data=bool(candidates),
         reason="" if candidates else "no name/title pairs in SERP",
     )
+
+
+def _normalise_fetch_result(result) -> tuple[str | None, str]:
+    """Accept either a plain str/None or a diag dict from
+    _bright_data_fetch_diag. Returns (html, reason_when_failed)."""
+    if isinstance(result, dict):
+        text = result.get("text")
+        if text:
+            return text, ""
+        err = result.get("error") or "fetch returned empty"
+        zone = result.get("used_zone")
+        if zone:
+            err = f"{err} [zone={zone!r}]"
+        return None, err
+    # Legacy str/None path
+    if result:
+        return result, ""
+    return None, "fetch returned empty"
 
 
 def _likely_domain(company: str) -> str:
@@ -324,17 +343,17 @@ def _extract_name_title_pairs(html: str) -> list[CandidateRecord]:
 
 # ---- Source 4: Bright Data LinkedIn search (fallback) ----------------
 def _query_linkedin(company: str, role_slot: str,
-                    fetch: Callable[[str], str | None]
+                    fetch: Callable[[str], dict | str | None]
                     ) -> tuple[list[CandidateRecord], SourceQuery]:
     """Last-resort: Google for 'site:linkedin.com/in' results."""
     role = display_title_for_slot(role_slot)
     query = f'"{role}" "{company}" site:linkedin.com/in'
     google_url = f"https://www.google.com/search?q={quote_plus(query)}"
-    html = fetch(google_url)
+    html, fetch_reason = _normalise_fetch_result(fetch(google_url))
     if not html:
         return [], SourceQuery(
             source="bright_data_linkedin", returned_data=False,
-            reason="fetch returned empty",
+            reason=fetch_reason,
         )
 
     # Reuse existing linkedin profile regex
