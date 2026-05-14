@@ -140,10 +140,15 @@ def main() -> int:
     # name to build a search-by-name URL (one-click landing) when no
     # direct LinkedIn URL is available.
     log.info("Annotating signals with seeded contact names…")
+    try:
+        from tool.contacts.store import load_contacts as _load_contacts
+        _contacts_cache = _load_contacts()
+    except Exception:
+        _contacts_cache = {}
     for sig in ranked:
         if not (sig.get("company") or "").strip():
             continue
-        named = lnr.resolve_named_contact_for_lead(sig)
+        named = lnr.resolve_named_contact_for_lead(sig, contacts=_contacts_cache)
         if named:
             if named.get("name"):
                 sig["seeded_contact_name"] = named["name"]
@@ -196,6 +201,25 @@ def main() -> int:
     except Exception as e:
         log.exception("CH officer-change scan: %s", e)
         ch_events = []
+
+    # Auto-update hiring_contacts.json from the freshly-computed CH
+    # data. Safety-first: only Companies House can add/refresh names;
+    # any detected departure expires the matching entry immediately.
+    # Stats are printed so the auto-commit step can summarise the run.
+    try:
+        from tool.contacts import auto_update as cau
+        from tool.contacts.store import load_contacts, save_contacts
+        contacts_for_update = load_contacts()
+        snapshot = cau.load_ch_snapshot_for_autoupdate()
+        update_stats = cau.auto_update_contacts(
+            contacts_for_update, ch_events, snapshot,
+        )
+        if any(update_stats[k] for k in ("expired", "populated", "refreshed")):
+            save_contacts(contacts_for_update)
+        log.info("contacts auto-update: %s", update_stats)
+    except Exception as e:
+        log.exception("contacts auto-update failed: %s", e)
+
     all_events = trigger_events + cluster_events + ch_events + velocity_events
     stacks = stack_events(all_events)
     ranked_stacks = pr.rank(stacks)
@@ -208,6 +232,11 @@ def main() -> int:
     # First pass: enrich EVERY ranked stack with seeded contact name
     # (free, no API). Dashboard uses this for search-by-name URL.
     log.info("Annotating predictor stacks with seeded contact names…")
+    try:
+        from tool.contacts.store import load_contacts as _load_contacts
+        _contacts_cache_p = _load_contacts()
+    except Exception:
+        _contacts_cache_p = {}
     for stk, _sc in ranked_stacks:
         company = (stk.company or "").strip()
         if not company:
@@ -216,7 +245,7 @@ def main() -> int:
             {"trigger_key": e.trigger_key, "company": stk.company}
             for e in stk.events
         ]}
-        named = lnr.resolve_named_contact_for_predictor(predictor_dict)
+        named = lnr.resolve_named_contact_for_predictor(predictor_dict, contacts=_contacts_cache_p)
         if named:
             if named.get("name"):
                 stk._seeded_contact_name = named["name"]   # type: ignore[attr-defined]
