@@ -17,4 +17,8 @@ tool/state/reverse_match_*.txt
 __pycache__/
 tool/state/deep_dive_*.html
 tool/state/analyse_*.md
+tool/state/seed_audit_*.json
+tool/state/hiring_contacts.json
+tool/state/contact_resolution_log.jsonl
+tool/state/contact_reverify_queue.json
 .DS_Store

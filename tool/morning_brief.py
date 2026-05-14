@@ -140,6 +140,13 @@ def main() -> int:
         company = (sig.get("company") or "").strip()
         if not company:
             continue
+        named = lnr.resolve_named_contact_for_lead(sig)
+        if named and named.get("url"):
+            sig["linkedin_profile_url"] = named["url"]
+            sig["linkedin_profile_role"] = named["role"]
+            sig["linkedin_profile_name"] = named.get("name")
+            sig["linkedin_profile_verified_at"] = named.get("verified_at")
+            continue
         resolved = lnr.resolve_profile(company, role)
         if resolved and resolved.get("url"):
             sig["linkedin_profile_url"] = resolved["url"]
@@ -184,13 +191,20 @@ def main() -> int:
         company = (stk.company or "").strip()
         if not company:
             continue
-        role = lnr.role_for_predictor({"events": [
-            {"trigger_key": e.trigger_key} for e in stk.events
-        ]})
+        predictor_dict = {"events": [
+            {"trigger_key": e.trigger_key, "company": stk.company}
+            for e in stk.events
+        ]}
+        named = lnr.resolve_named_contact_for_predictor(predictor_dict)
+        if named and named.get("url"):
+            stk._resolved_profile_url = named["url"]   # type: ignore[attr-defined]
+            stk._resolved_profile_role = named["role"]  # type: ignore[attr-defined]
+            stk._resolved_profile_name = named.get("name")  # type: ignore[attr-defined]
+            stk._resolved_profile_verified_at = named.get("verified_at")  # type: ignore[attr-defined]
+            continue
+        role = lnr.role_for_predictor(predictor_dict)
         resolved = lnr.resolve_profile(company, role)
         if resolved and resolved.get("url"):
-            # Attach to the stack via a side dict — we'll merge into the
-            # serialised predictive JSON below
             stk._resolved_profile_url = resolved["url"]   # type: ignore[attr-defined]
             stk._resolved_profile_role = resolved["role"]  # type: ignore[attr-defined]
 

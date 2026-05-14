@@ -184,3 +184,108 @@ def role_for_predictor(predictor: dict) -> str:
         if k in keys:
             return ROLE_FOR_PREDICTOR_TRIGGER[k]
     return "Head of Communications"
+
+
+# ---- Hiring-contacts integration -------------------------------------
+# Consult the seeded contacts table before falling back to a generic
+# Bright Data search. If a fresh, verified contact exists for the role
+# the trigger implies, return it directly (no API call). Otherwise the
+# existing resolve_profile() path runs.
+def resolve_named_contact_for_predictor(predictor: dict) -> dict | None:
+    """Return {url, role, name, confidence} if a fresh verified contact is
+    available, else None. Picks the role_slot by walking the trigger's
+    priority chain (routing.role_priority_for_trigger)."""
+    try:
+        from tool.contacts.routing import pick_contact_for_trigger, display_title_for_slot
+        from tool.contacts.store import load_contacts, get_contact
+    except Exception:
+        return None
+    events = predictor.get("events") or []
+    if not events:
+        return None
+    company = events[0].get("company") or ""
+    if not company:
+        return None
+    keys = [e.get("trigger_key") for e in events if e.get("trigger_key")]
+    if not keys:
+        return None
+    primary = _highest_priority_trigger(keys)
+    contacts = load_contacts()
+    card = get_contact(contacts, company)
+    entry, slot_used = pick_contact_for_trigger(card, primary)
+    if entry is None or not entry.linkedin_url:
+        return None
+    return {
+        "url": entry.linkedin_url,
+        "role": display_title_for_slot(slot_used),
+        "name": entry.name,
+        "confidence": entry.confidence,
+        "tenure_start": entry.tenure_start,
+        "verified_at": entry.verified_at,
+    }
+
+
+def resolve_named_contact_for_lead(signal: dict) -> dict | None:
+    """Lead-side equivalent of resolve_named_contact_for_predictor. Maps
+    signal kind -> role_slot via LEAD_KIND_TO_SLOT, then walks the
+    contacts table for `signal['company']`. Returns the fresh entry's
+    LinkedIn URL or None."""
+    try:
+        from tool.contacts.routing import display_title_for_slot
+        from tool.contacts.store import load_contacts, get_contact
+    except Exception:
+        return None
+    company = (signal.get("company") or "").strip()
+    if not company:
+        return None
+    kind = signal.get("kind", "")
+    slot = LEAD_KIND_TO_SLOT.get(kind, "cco")
+    contacts = load_contacts()
+    card = get_contact(contacts, company)
+    if card is None:
+        return None
+    entry = card.get(slot)
+    # Lead-side: walk a short fallback if the primary slot is missing
+    if entry is None or not entry.is_fresh():
+        for fallback in ("cco", "head_of_comms", "chro", "ceo"):
+            cand = card.get(fallback)
+            if cand and cand.is_fresh():
+                entry = cand
+                slot = fallback
+                break
+        else:
+            entry = None
+    if entry is None or not entry.linkedin_url:
+        return None
+    return {
+        "url": entry.linkedin_url,
+        "role": display_title_for_slot(slot),
+        "name": entry.name,
+        "confidence": entry.confidence,
+        "tenure_start": entry.tenure_start,
+        "verified_at": entry.verified_at,
+    }
+
+
+# Lead-kind -> role_slot. Mirrors ROLE_FOR_LEAD_KIND but keyed to the
+# canonical role slot vocabulary in tool.contacts.schema.
+LEAD_KIND_TO_SLOT = {
+    "job":                "chro",
+    "rns":                "cco",
+    "filing":             "cco",
+    "regulator":          "cco",
+    "procurement":        "cco",
+    "trade_press":        "cco",
+    "leadership_change":  "chro",
+}
+
+
+def _highest_priority_trigger(keys: list[str]) -> str:
+    for k in ("comms_leader_departure", "ic_platform_rfp", "ipo_listing",
+              "ceo_change", "mna", "regulator_action", "contract_loss",
+              "chair_change", "cfo_change", "ir_director_change",
+              "chro_change", "restructure", "press_velocity_spike",
+              "job_ad_cluster"):
+        if k in keys:
+            return k
+    return keys[0]
