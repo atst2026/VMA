@@ -32,13 +32,12 @@ CACHE_TTL_DAYS = 90
 STATE_DIR.mkdir(parents=True, exist_ok=True)
 
 BRIGHT_DATA_KEY = os.environ.get("BRIGHT_DATA_KEY", "").strip()
-# Zone name configured on the Bright Data account. The free tier
-# defaults to a zone named 'web_unlocker' or 'web_unlocker1' - both
-# work; this env var lets you override without touching code.
-# Note: `os.environ.get(k, default)` only uses `default` when the key
-# is missing. If GitHub Actions expands an unset secret it returns
-# empty string, which would override the default. Guard against that.
-BD_ZONE = (os.environ.get("BRIGHT_DATA_ZONE", "") or "").strip() or "web_unlocker"
+# Zone name configured on the Bright Data account. There is no sensible
+# default - free-tier accounts may not have any zone provisioned, and
+# guessing 'web_unlocker' produces HTTP 400 'zone not found' on every
+# call which floods the resolution log with noise. If unset, BD calls
+# are skipped entirely (treated as a third-party source not configured).
+BD_ZONE = (os.environ.get("BRIGHT_DATA_ZONE", "") or "").strip()
 BD_ENDPOINT = "https://api.brightdata.com/request"
 
 
@@ -86,7 +85,7 @@ def _parse_first_profile(html: str) -> str | None:
 
 
 def _bright_data_fetch(url: str, timeout: int = 30) -> str | None:
-    if not BRIGHT_DATA_KEY:
+    if not BRIGHT_DATA_KEY or not BD_ZONE:
         return None
     payload = {"zone": BD_ZONE, "url": url, "format": "raw"}
     headers = {
@@ -120,6 +119,10 @@ def _bright_data_fetch_diag(url: str, timeout: int = 30) -> dict:
         return {"text": None, "status": None,
                 "error": "BRIGHT_DATA_KEY env var empty",
                 "used_zone": BD_ZONE}
+    if not BD_ZONE:
+        return {"text": None, "status": None,
+                "error": "BRIGHT_DATA_ZONE not configured (no zone on BD account)",
+                "used_zone": ""}
     payload = {"zone": BD_ZONE, "url": url, "format": "raw"}
     headers = {
         "Authorization": f"Bearer {BRIGHT_DATA_KEY}",

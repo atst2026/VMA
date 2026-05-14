@@ -104,13 +104,17 @@ def _all_watchlist() -> list[str]:
 
 
 def _make_fetch():
-    """Return a callable that performs Bright Data fetches with full
-    diagnostic info (HTTP status / error reason), or None if
-    BRIGHT_DATA_KEY isn't configured. Uses the diagnostic wrapper so
-    the audit can show actual error messages rather than collapsing
-    every failure to 'fetch returned empty'."""
+    """Return a Bright Data fetch callable, or None if BD isn't
+    configured. Returns None when EITHER:
+      - BRIGHT_DATA_KEY env var is empty (no API key), OR
+      - BRIGHT_DATA_ZONE env var is empty (no zone on the BD account)
+    When None, the resolver records 'fetch disabled (no Bright Data)'
+    instead of attempting calls that would 400. Lets us seed the
+    contacts table on CH + RNS alone until BD is provisioned."""
     import os
     if not os.environ.get("BRIGHT_DATA_KEY", "").strip():
+        return None
+    if not os.environ.get("BRIGHT_DATA_ZONE", "").strip():
         return None
     from tool.linkedin_resolver import _bright_data_fetch_diag
     return _bright_data_fetch_diag
