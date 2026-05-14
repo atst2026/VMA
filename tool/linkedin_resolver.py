@@ -33,9 +33,12 @@ STATE_DIR.mkdir(parents=True, exist_ok=True)
 
 BRIGHT_DATA_KEY = os.environ.get("BRIGHT_DATA_KEY", "").strip()
 # Zone name configured on the Bright Data account. The free tier
-# defaults to a zone named 'web_unlocker' or 'web_unlocker1' — both
+# defaults to a zone named 'web_unlocker' or 'web_unlocker1' - both
 # work; this env var lets you override without touching code.
-BD_ZONE = os.environ.get("BRIGHT_DATA_ZONE", "web_unlocker").strip()
+# Note: `os.environ.get(k, default)` only uses `default` when the key
+# is missing. If GitHub Actions expands an unset secret it returns
+# empty string, which would override the default. Guard against that.
+BD_ZONE = (os.environ.get("BRIGHT_DATA_ZONE", "") or "").strip() or "web_unlocker"
 BD_ENDPOINT = "https://api.brightdata.com/request"
 
 
