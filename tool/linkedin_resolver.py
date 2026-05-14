@@ -104,6 +104,45 @@ def _bright_data_fetch(url: str, timeout: int = 30) -> str | None:
         return None
 
 
+def _bright_data_fetch_diag(url: str, timeout: int = 30) -> dict:
+    """Same as _bright_data_fetch, but returns a dict carrying full
+    diagnostic info so callers (the seeder audit) can surface the
+    actual HTTP status / error rather than collapsing every failure
+    to 'fetch returned empty'.
+
+    Returns: {text, status, error, used_zone}
+      text     str | None  -- the HTML if 200 and non-empty
+      status   int  | None -- HTTP status code, or None on RequestException
+      error    str  | None -- short error string when text is None
+      used_zone str        -- the BD_ZONE value that was actually sent
+    """
+    if not BRIGHT_DATA_KEY:
+        return {"text": None, "status": None,
+                "error": "BRIGHT_DATA_KEY env var empty",
+                "used_zone": BD_ZONE}
+    payload = {"zone": BD_ZONE, "url": url, "format": "raw"}
+    headers = {
+        "Authorization": f"Bearer {BRIGHT_DATA_KEY}",
+        "Content-Type": "application/json",
+    }
+    try:
+        r = requests.post(BD_ENDPOINT, json=payload, headers=headers, timeout=timeout)
+        if r.status_code == 200 and r.text:
+            return {"text": r.text, "status": 200, "error": None,
+                    "used_zone": BD_ZONE}
+        # Non-200 OR empty body. Capture the actual reason.
+        body = (r.text or "")[:200]
+        err = f"HTTP {r.status_code} body={body!r}" if body else f"HTTP {r.status_code} (empty body)"
+        log.info("Bright Data %s -> %s", url[:60], err)
+        return {"text": None, "status": r.status_code, "error": err,
+                "used_zone": BD_ZONE}
+    except requests.RequestException as e:
+        log.info("Bright Data fetch failed: %s", e)
+        return {"text": None, "status": None,
+                "error": f"RequestException: {e.__class__.__name__}: {e}",
+                "used_zone": BD_ZONE}
+
+
 def resolve_profile(company: str, role: str) -> dict | None:
     """Return {url, role, company, at} or None if unresolved.
     Cached across runs."""
