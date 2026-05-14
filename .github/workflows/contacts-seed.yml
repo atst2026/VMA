@@ -70,7 +70,6 @@ jobs:
       - name: Run seeder
         env:
           BRIGHT_DATA_KEY: ${{ secrets.BRIGHT_DATA_KEY }}
-          BRIGHT_DATA_ZONE: ${{ secrets.BRIGHT_DATA_ZONE }}
           COMPANIES_HOUSE_KEY: ${{ secrets.COMPANIES_HOUSE_KEY }}
           PYTHONUNBUFFERED: "1"
           PYTHONPATH: "."
