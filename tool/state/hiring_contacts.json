@@ -1,0 +1,1656 @@
+{
+  "HSBC": {
+    "company": "HSBC",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Georges Elhedery",
+        "role_title": "Group Chief Executive Officer",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Sir Mark Tucker",
+        "role_title": "Group Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "cfo": {
+        "name": "Pam Kaur",
+        "role_title": "Group Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "head_of_corporate_affairs": {
+        "name": "Aileen Taylor",
+        "role_title": "Group Chief Strategy & Corporate Affairs Officer",
+        "role_slot": "head_of_corporate_affairs",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "gc": {
+        "name": "Bob Hoyt",
+        "role_title": "Group General Counsel",
+        "role_slot": "gc",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  },
+  "NatWest Group": {
+    "company": "NatWest Group",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Paul Thwaite",
+        "role_title": "Group Chief Executive Officer",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Rick Haythornthwaite",
+        "role_title": "Group Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "cfo": {
+        "name": "Katie Murray",
+        "role_title": "Group Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chro": {
+        "name": "Maria Allen",
+        "role_title": "Group Chief People Officer",
+        "role_slot": "chro",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "gc": {
+        "name": "Hema Kerai",
+        "role_title": "Group General Counsel & Company Secretary",
+        "role_slot": "gc",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.85
+      }
+    }
+  },
+  "Lloyds Banking Group": {
+    "company": "Lloyds Banking Group",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Charlie Nunn",
+        "role_title": "Group Chief Executive",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Sir Robin Budenberg",
+        "role_title": "Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "cfo": {
+        "name": "William Chalmers",
+        "role_title": "Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chro": {
+        "name": "Sharon Doherty",
+        "role_title": "Chief People & Places Officer",
+        "role_slot": "chro",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "head_of_corporate_affairs": {
+        "name": "Andrew Walton",
+        "role_title": "Chief Corporate Affairs Officer",
+        "role_slot": "head_of_corporate_affairs",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "gc": {
+        "name": "Kate Cheetham",
+        "role_title": "Group General Counsel",
+        "role_slot": "gc",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  },
+  "Barclays": {
+    "company": "Barclays",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "C.S. Venkatakrishnan",
+        "role_title": "Group Chief Executive",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Nigel Higgins",
+        "role_title": "Group Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "cfo": {
+        "name": "Anna Cross",
+        "role_title": "Group Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "gc": {
+        "name": "Stephen Shapiro",
+        "role_title": "Group General Counsel",
+        "role_slot": "gc",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  },
+  "Aviva": {
+    "company": "Aviva",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Amanda Blanc",
+        "role_title": "Group Chief Executive",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Pippa Lambert",
+        "role_title": "Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.7
+      },
+      "cfo": {
+        "name": "Charlotte Jones",
+        "role_title": "Group Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chro": {
+        "name": "Danny Harmer",
+        "role_title": "Chief People Officer",
+        "role_slot": "chro",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "gc": {
+        "name": "Kirsty Cooper",
+        "role_title": "Group General Counsel & Company Secretary",
+        "role_slot": "gc",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  },
+  "Legal & General": {
+    "company": "Legal & General",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "António Simões",
+        "role_title": "Group Chief Executive",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Sir John Kingman",
+        "role_title": "Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "cfo": {
+        "name": "Jeff Davies",
+        "role_title": "Group Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.8
+      }
+    }
+  },
+  "Phoenix Group": {
+    "company": "Phoenix Group",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Andy Briggs",
+        "role_title": "Group Chief Executive Officer",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Nicholas Lyons",
+        "role_title": "Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.85
+      },
+      "cfo": {
+        "name": "Rakesh Thakrar",
+        "role_title": "Group Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chro": {
+        "name": "Sara Thompson",
+        "role_title": "Chief People Officer",
+        "role_slot": "chro",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "gc": {
+        "name": "Andy Moss",
+        "role_title": "Group General Counsel",
+        "role_slot": "gc",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  },
+  "Standard Chartered": {
+    "company": "Standard Chartered",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Bill Winters",
+        "role_title": "Group Chief Executive",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "José Viñals",
+        "role_title": "Group Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.85
+      },
+      "cfo": {
+        "name": "Diego De Giorgi",
+        "role_title": "Group Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chro": {
+        "name": "Tanuj Kapilashrami",
+        "role_title": "Chief Strategy & Talent Officer",
+        "role_slot": "chro",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "gc": {
+        "name": "David Fein",
+        "role_title": "Group General Counsel",
+        "role_slot": "gc",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  },
+  "Schroders": {
+    "company": "Schroders",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Richard Oldfield",
+        "role_title": "Group Chief Executive",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Dame Elizabeth Corley",
+        "role_title": "Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "cfo": {
+        "name": "Meagen Burnett",
+        "role_title": "Group Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chro": {
+        "name": "Sonia Cassidy",
+        "role_title": "Chief People Officer",
+        "role_slot": "chro",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "cco": {
+        "name": "Beth Saint",
+        "role_title": "Global Head of Marketing and Communications",
+        "role_slot": "cco",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "ir_director": {
+        "name": "Edward Houghton",
+        "role_title": "Head of Strategy & Investor Relations",
+        "role_slot": "ir_director",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  },
+  "AstraZeneca": {
+    "company": "AstraZeneca",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Pascal Soriot",
+        "role_title": "Chief Executive Officer",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Michel Demaré",
+        "role_title": "Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "cfo": {
+        "name": "Aradhana Sarin",
+        "role_title": "Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "head_of_corporate_affairs": {
+        "name": "Rebekah Martin",
+        "role_title": "EVP Sustainability & Corporate Affairs",
+        "role_slot": "head_of_corporate_affairs",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "gc": {
+        "name": "Jeff Pott",
+        "role_title": "General Counsel",
+        "role_slot": "gc",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  },
+  "GSK": {
+    "company": "GSK",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Emma Walmsley",
+        "role_title": "Chief Executive Officer",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Jonathan Symonds",
+        "role_title": "Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "cfo": {
+        "name": "Julie Brown",
+        "role_title": "Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chro": {
+        "name": "Adrian Connell",
+        "role_title": "Chief People Officer",
+        "role_slot": "chro",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.85
+      },
+      "head_of_corporate_affairs": {
+        "name": "Tim Allen",
+        "role_title": "Chief Corporate Affairs Officer",
+        "role_slot": "head_of_corporate_affairs",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.85
+      },
+      "gc": {
+        "name": "James Ford",
+        "role_title": "Senior VP, Global General Counsel",
+        "role_slot": "gc",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  },
+  "Haleon": {
+    "company": "Haleon",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Brian McNamara",
+        "role_title": "Chief Executive Officer",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Dave Lewis",
+        "role_title": "Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "cfo": {
+        "name": "Dawn Allen",
+        "role_title": "Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "head_of_corporate_affairs": {
+        "name": "Ed Petter",
+        "role_title": "Chief Corporate Affairs Officer",
+        "role_slot": "head_of_corporate_affairs",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "gc": {
+        "name": "Stuart Williams",
+        "role_title": "Chief Legal Officer",
+        "role_slot": "gc",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  },
+  "Bupa UK": {
+    "company": "Bupa UK",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Iñaki Ereño",
+        "role_title": "Group CEO",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "cfo": {
+        "name": "David Hynam",
+        "role_title": "Group Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.8
+      },
+      "chro": {
+        "name": "Nigel Sullivan",
+        "role_title": "Chief Sustainability and People Officer",
+        "role_slot": "chro",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  },
+  "NHS England": {
+    "company": "NHS England",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Sir Jim Mackey",
+        "role_title": "Chief Executive",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Penny Dash",
+        "role_title": "Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "cfo": {
+        "name": "Julian Kelly",
+        "role_title": "Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chro": {
+        "name": "Dr Navina Evans",
+        "role_title": "Chief Workforce Officer",
+        "role_slot": "chro",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "head_of_corporate_affairs": {
+        "name": "Rob Cooper",
+        "role_title": "Executive Director of Corporate Affairs & Communications",
+        "role_slot": "head_of_corporate_affairs",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "gc": {
+        "name": "Christopher Forester",
+        "role_title": "General Legal Counsel",
+        "role_slot": "gc",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.8
+      }
+    }
+  },
+  "National Grid": {
+    "company": "National Grid",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "John Pettigrew",
+        "role_title": "Group Chief Executive",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Paula Rosput Reynolds",
+        "role_title": "Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chro": {
+        "name": "Amanda Lyne",
+        "role_title": "Chief Sustainability Officer (people remit)",
+        "role_slot": "chro",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.8
+      },
+      "gc": {
+        "name": "Alison Kay",
+        "role_title": "Group General Counsel",
+        "role_slot": "gc",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  },
+  "SSE": {
+    "company": "SSE",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Rhian Kelly",
+        "role_title": "Group Chief Executive",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.85
+      },
+      "chair": {
+        "name": "Sir John Manzoni",
+        "role_title": "Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.8
+      },
+      "cfo": {
+        "name": "Barry O'Regan",
+        "role_title": "Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "gc": {
+        "name": "Sally Fairbairn",
+        "role_title": "Group General Counsel",
+        "role_slot": "gc",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.8
+      }
+    }
+  },
+  "BP": {
+    "company": "BP",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Murray Auchincloss",
+        "role_title": "Chief Executive Officer",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Helge Lund",
+        "role_title": "Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "cfo": {
+        "name": "Kate Thomson",
+        "role_title": "Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "head_of_corporate_affairs": {
+        "name": "Geoff Morrell",
+        "role_title": "EVP Communications & Advocacy",
+        "role_slot": "head_of_corporate_affairs",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.8
+      },
+      "gc": {
+        "name": "Eric Nitcher",
+        "role_title": "Group General Counsel",
+        "role_slot": "gc",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  },
+  "Shell": {
+    "company": "Shell",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Wael Sawan",
+        "role_title": "Chief Executive Officer",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Sir Andrew Mackenzie",
+        "role_title": "Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "cfo": {
+        "name": "Anna Mason",
+        "role_title": "Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "head_of_corporate_affairs": {
+        "name": "Pia Heidenmark Cook",
+        "role_title": "Chief Group VP Communications",
+        "role_slot": "head_of_corporate_affairs",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.8
+      },
+      "gc": {
+        "name": "Donny Ching",
+        "role_title": "Legal Director",
+        "role_slot": "gc",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  },
+  "Severn Trent": {
+    "company": "Severn Trent",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Liv Garfield",
+        "role_title": "Chief Executive",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Christine Hodgson",
+        "role_title": "Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chro": {
+        "name": "Carla Sherry",
+        "role_title": "Chief People Officer",
+        "role_slot": "chro",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "gc": {
+        "name": "Bronagh Kennedy",
+        "role_title": "General Counsel & Company Secretary",
+        "role_slot": "gc",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  },
+  "United Utilities": {
+    "company": "United Utilities",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Louise Beardmore",
+        "role_title": "Group Chief Executive",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Sir David Lewis",
+        "role_title": "Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.8
+      },
+      "cfo": {
+        "name": "Phil Aspin",
+        "role_title": "Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.85
+      },
+      "gc": {
+        "name": "Sally Cabrini",
+        "role_title": "Director of Business Services",
+        "role_slot": "gc",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.7
+      }
+    }
+  },
+  "BT Group": {
+    "company": "BT Group",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Allison Kirkby",
+        "role_title": "Group Chief Executive",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Adam Crozier",
+        "role_title": "Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "cfo": {
+        "name": "Simon Lowth",
+        "role_title": "Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chro": {
+        "name": "Alison Wilcox",
+        "role_title": "Chief People Officer",
+        "role_slot": "chro",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.85
+      },
+      "gc": {
+        "name": "Sabine Chalmers",
+        "role_title": "Chief Legal & Regulatory Officer",
+        "role_slot": "gc",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  },
+  "Vodafone": {
+    "company": "Vodafone",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Margherita Della Valle",
+        "role_title": "Group Chief Executive",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Jean-François van Boxmeer",
+        "role_title": "Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "cfo": {
+        "name": "Luka Mucic",
+        "role_title": "Group Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chro": {
+        "name": "Leanne Wood",
+        "role_title": "Chief Human Resources & Comms Officer",
+        "role_slot": "chro",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.85
+      },
+      "head_of_corporate_affairs": {
+        "name": "Nicki Lyons",
+        "role_title": "Chief Corporate Affairs & Sustainability Officer (Vodafone UK)",
+        "role_slot": "head_of_corporate_affairs",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "gc": {
+        "name": "Maaike de Bie",
+        "role_title": "Group General Counsel",
+        "role_slot": "gc",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  },
+  "Microsoft": {
+    "company": "Microsoft",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Satya Nadella",
+        "role_title": "Chair & Chief Executive Officer",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "cfo": {
+        "name": "Amy Hood",
+        "role_title": "Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chro": {
+        "name": "Kathleen Hogan",
+        "role_title": "EVP & Chief Human Resources Officer",
+        "role_slot": "chro",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "head_of_corporate_affairs": {
+        "name": "Clare Barclay",
+        "role_title": "President, Western Europe (Microsoft UK & Ireland)",
+        "role_slot": "head_of_corporate_affairs",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "gc": {
+        "name": "Brad Smith",
+        "role_title": "President & Vice Chair",
+        "role_slot": "gc",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  },
+  "Google": {
+    "company": "Google",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Debbie Weinstein",
+        "role_title": "VP & MD, UK & Ireland",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "John L. Hennessy",
+        "role_title": "Chair (Alphabet)",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "cfo": {
+        "name": "Anat Ashkenazi",
+        "role_title": "Chief Financial Officer (Alphabet)",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chro": {
+        "name": "Fiona Cicconi",
+        "role_title": "Chief People Officer (Alphabet)",
+        "role_slot": "chro",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "head_of_corporate_affairs": {
+        "name": "Karan Bhatia",
+        "role_title": "VP, Government Affairs & Public Policy",
+        "role_slot": "head_of_corporate_affairs",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "gc": {
+        "name": "Kent Walker",
+        "role_title": "President, Global Affairs & Chief Legal Officer (Alphabet)",
+        "role_slot": "gc",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  },
+  "Sage Group": {
+    "company": "Sage Group",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Steve Hare",
+        "role_title": "Chief Executive Officer",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Andrew Duff",
+        "role_title": "Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "cfo": {
+        "name": "Jonathan Howell",
+        "role_title": "Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.85
+      }
+    }
+  },
+  "BBC": {
+    "company": "BBC",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Tim Davie",
+        "role_title": "Director-General (until 18 May 2026)",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Samir Shah",
+        "role_title": "Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.95
+      }
+    }
+  },
+  "Cabinet Office": {
+    "company": "Cabinet Office",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Simon Baugh",
+        "role_title": "Chief Executive, Government Communication Service",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.85
+      },
+      "chair": {
+        "name": "Sir Chris Wormald",
+        "role_title": "Cabinet Secretary",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  },
+  "FCA": {
+    "company": "FCA",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Nikhil Rathi",
+        "role_title": "Chief Executive",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Ashley Alder",
+        "role_title": "Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chro": {
+        "name": "Sarah Pritchard",
+        "role_title": "Deputy CEO",
+        "role_slot": "chro",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.8
+      },
+      "cco": {
+        "name": "Tom Chambers",
+        "role_title": "Joint Executive Director of Communications",
+        "role_slot": "cco",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  },
+  "Macmillan Cancer Support": {
+    "company": "Macmillan Cancer Support",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Gemma Peters",
+        "role_title": "Chief Executive",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  },
+  "BAE Systems": {
+    "company": "BAE Systems",
+    "last_seeded_at": "2026-05-14T14:59:09.763943+00:00",
+    "entries": {
+      "ceo": {
+        "name": "Charles Woodburn",
+        "role_title": "Group Chief Executive",
+        "role_slot": "ceo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chair": {
+        "name": "Cressida Hogg",
+        "role_title": "Chair",
+        "role_slot": "chair",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "cfo": {
+        "name": "Brad Greve",
+        "role_title": "Group Chief Financial Officer",
+        "role_slot": "cfo",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "chro": {
+        "name": "Tom Keaney",
+        "role_title": "Chief People Officer",
+        "role_slot": "chro",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      },
+      "gc": {
+        "name": "David Parkes",
+        "role_title": "Group General Counsel",
+        "role_slot": "gc",
+        "linkedin_url": null,
+        "source_url": "",
+        "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
+        "tenure_start": null,
+        "verified_at": "2026-05-14T14:59:09.763943+00:00",
+        "confidence": 0.92
+      }
+    }
+  }
+}
