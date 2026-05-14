@@ -236,10 +236,14 @@ def role_for_predictor(predictor: dict) -> str:
 # Bright Data search. If a fresh, verified contact exists for the role
 # the trigger implies, return it directly (no API call). Otherwise the
 # existing resolve_profile() path runs.
-def resolve_named_contact_for_predictor(predictor: dict) -> dict | None:
+def resolve_named_contact_for_predictor(predictor: dict, contacts: dict | None = None) -> dict | None:
     """Return {url, role, name, confidence} if a fresh verified contact is
     available, else None. Picks the role_slot by walking the trigger's
-    priority chain (routing.role_priority_for_trigger)."""
+    priority chain (routing.role_priority_for_trigger).
+
+    `contacts` is an optional preloaded contacts dict. Pass it to avoid
+    re-reading hiring_contacts.json from disk on every call when enriching
+    many signals in one pass (morning_brief enrichment loop)."""
     try:
         from tool.contacts.routing import pick_contact_for_trigger, display_title_for_slot
         from tool.contacts.store import load_contacts, get_contact
@@ -255,7 +259,8 @@ def resolve_named_contact_for_predictor(predictor: dict) -> dict | None:
     if not keys:
         return None
     primary = _highest_priority_trigger(keys)
-    contacts = load_contacts()
+    if contacts is None:
+        contacts = load_contacts()
     card = get_contact(contacts, company)
     entry, slot_used = pick_contact_for_trigger(card, primary)
     if entry is None:
@@ -273,11 +278,14 @@ def resolve_named_contact_for_predictor(predictor: dict) -> dict | None:
     }
 
 
-def resolve_named_contact_for_lead(signal: dict) -> dict | None:
+def resolve_named_contact_for_lead(signal: dict, contacts: dict | None = None) -> dict | None:
     """Lead-side equivalent of resolve_named_contact_for_predictor. Maps
     signal kind -> role_slot via LEAD_KIND_TO_SLOT, then walks the
     contacts table for `signal['company']`. Returns the fresh entry's
-    LinkedIn URL or None."""
+    LinkedIn URL or None.
+
+    `contacts` is an optional preloaded contacts dict. Pass it to avoid
+    per-call disk reads when enriching many signals in one pass."""
     try:
         from tool.contacts.routing import display_title_for_slot
         from tool.contacts.store import load_contacts, get_contact
@@ -288,7 +296,8 @@ def resolve_named_contact_for_lead(signal: dict) -> dict | None:
         return None
     kind = signal.get("kind", "")
     slot = LEAD_KIND_TO_SLOT.get(kind, "cco")
-    contacts = load_contacts()
+    if contacts is None:
+        contacts = load_contacts()
     card = get_contact(contacts, company)
     if card is None:
         return None
