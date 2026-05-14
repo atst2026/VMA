@@ -295,12 +295,16 @@ def _people_search(keywords: str) -> str:
 
 
 def linkedin_search_for_lead(signal: dict) -> dict:
-    """Two-tier URL builder.
-       Tier 1 — Bright Data resolved a direct linkedin.com/in/ URL during
-                the morning brief → one click, lands on the named person.
-       Tier 2 — Fall back to LinkedIn global people search with a tight
-                quoted-phrase query. Always loads. Top result is usually
-                the right person.
+    """Three-tier URL builder.
+       Tier 1  - Bright Data resolved a direct linkedin.com/in/ URL during
+                 the morning brief -> one click, lands on the named person.
+       Tier 1b - Contacts table has a NAME for this company + role-slot
+                 (seeded from Companies House etc.). Search-by-name URL
+                 puts that named person at the top of LinkedIn results,
+                 so Sara lands on them in roughly one click.
+       Tier 2  - Fall back to LinkedIn global people search with a tight
+                 quoted-phrase query by role. Always loads. Top result
+                 is usually the right kind of person.
     """
     if signal.get("linkedin_profile_url"):
         role = (signal.get("linkedin_profile_role") or "").strip()
@@ -313,7 +317,14 @@ def linkedin_search_for_lead(signal: dict) -> dict:
             label = "Open profile"
         return {"label": label, "url": signal["linkedin_profile_url"]}
 
+    # Tier 1b: search by the seeded contact's actual name. Lands Sara on
+    # the right person without a second click.
+    seeded_name = (signal.get("seeded_contact_name") or "").strip()
     company = (signal.get("company") or "").strip()
+    if seeded_name and company:
+        return {"label": f"Search {seeded_name} ({signal.get('seeded_contact_role') or 'contact'}) at {company}",
+                "url": _people_search(f'"{seeded_name}" "{company}"')}
+
     title = (signal.get("title") or "").strip()
     kind = (signal.get("kind") or "").strip().lower()
     tlow = title.lower()
@@ -382,14 +393,22 @@ def linkedin_search_for_lead(signal: dict) -> dict:
 
 
 def linkedin_search_for_predictor(p: dict) -> dict:
-    """Same two-tier behaviour as leads."""
+    """Three-tier: direct profile -> seeded name search -> role search."""
     if p.get("linkedin_profile_url"):
         role = (p.get("linkedin_profile_role") or "").strip()
         company = (p.get("company") or "").strip()
         label = f"Open {role} at {company}" if role and company else "Open profile"
         return {"label": label, "url": p["linkedin_profile_url"]}
 
-    company = (p.get("company") or "").strip() or "your target"
+    # Tier 1b: search by the seeded contact's actual name.
+    seeded_name = (p.get("seeded_contact_name") or "").strip()
+    company = (p.get("company") or "").strip()
+    if seeded_name and company:
+        role_label = p.get("seeded_contact_role") or "contact"
+        return {"label": f"Search {seeded_name} ({role_label}) at {company}",
+                "url": _people_search(f'"{seeded_name}" "{company}"')}
+
+    company = company or "your target"
     events = p.get("events") or []
     keys = {e.get("trigger_key") for e in events}
 

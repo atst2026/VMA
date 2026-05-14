@@ -134,18 +134,38 @@ def main() -> int:
     # Data. ~10 BD requests/day, well inside the 5k/mo free tier. Cache
     # in tool/state/linkedin_profile_cache.json so same (company,role)
     # never re-queries. Silent no-op if BRIGHT_DATA_KEY isn't configured.
+    # First pass: enrich EVERY ranked signal with seeded contact name
+    # if the contacts table has one for that company + role. Free (no
+    # API call) - just an in-memory dict lookup. The dashboard uses this
+    # name to build a search-by-name URL (one-click landing) when no
+    # direct LinkedIn URL is available.
+    log.info("Annotating signals with seeded contact names…")
+    for sig in ranked:
+        if not (sig.get("company") or "").strip():
+            continue
+        named = lnr.resolve_named_contact_for_lead(sig)
+        if named:
+            if named.get("name"):
+                sig["seeded_contact_name"] = named["name"]
+                sig["seeded_contact_role"] = named.get("role")
+            if named.get("url"):
+                sig["linkedin_profile_url"] = named["url"]
+                sig["linkedin_profile_role"] = named["role"]
+                sig["linkedin_profile_name"] = named.get("name")
+                sig["linkedin_profile_verified_at"] = named.get("verified_at")
+
+    # Second pass: top-5 only - if we still don't have a direct LinkedIn
+    # URL, spend a Bright Data call to find one. ~10 BD requests/day,
+    # well inside the 5k/mo free tier. Cached in
+    # tool/state/linkedin_profile_cache.json. Silent no-op if BD isn't
+    # configured.
     log.info("Resolving direct LinkedIn URLs for top leads…")
     for sig in ranked[:5]:
+        if sig.get("linkedin_profile_url"):
+            continue   # already resolved via contacts table
         role = lnr.role_for_lead(sig)
         company = (sig.get("company") or "").strip()
         if not company:
-            continue
-        named = lnr.resolve_named_contact_for_lead(sig)
-        if named and named.get("url"):
-            sig["linkedin_profile_url"] = named["url"]
-            sig["linkedin_profile_role"] = named["role"]
-            sig["linkedin_profile_name"] = named.get("name")
-            sig["linkedin_profile_verified_at"] = named.get("verified_at")
             continue
         resolved = lnr.resolve_profile(company, role)
         if resolved and resolved.get("url"):
@@ -185,9 +205,10 @@ def main() -> int:
         len(stacks), len(ranked_stacks),
     )
 
-    # Same LinkedIn resolution for top predictors
-    log.info("Resolving direct LinkedIn URLs for top predictors…")
-    for stk, _sc in ranked_stacks[:5]:
+    # First pass: enrich EVERY ranked stack with seeded contact name
+    # (free, no API). Dashboard uses this for search-by-name URL.
+    log.info("Annotating predictor stacks with seeded contact names…")
+    for stk, _sc in ranked_stacks:
         company = (stk.company or "").strip()
         if not company:
             continue
@@ -196,12 +217,29 @@ def main() -> int:
             for e in stk.events
         ]}
         named = lnr.resolve_named_contact_for_predictor(predictor_dict)
-        if named and named.get("url"):
-            stk._resolved_profile_url = named["url"]   # type: ignore[attr-defined]
-            stk._resolved_profile_role = named["role"]  # type: ignore[attr-defined]
-            stk._resolved_profile_name = named.get("name")  # type: ignore[attr-defined]
-            stk._resolved_profile_verified_at = named.get("verified_at")  # type: ignore[attr-defined]
+        if named:
+            if named.get("name"):
+                stk._seeded_contact_name = named["name"]   # type: ignore[attr-defined]
+                stk._seeded_contact_role = named.get("role")  # type: ignore[attr-defined]
+            if named.get("url"):
+                stk._resolved_profile_url = named["url"]   # type: ignore[attr-defined]
+                stk._resolved_profile_role = named["role"]  # type: ignore[attr-defined]
+                stk._resolved_profile_name = named.get("name")  # type: ignore[attr-defined]
+                stk._resolved_profile_verified_at = named.get("verified_at")  # type: ignore[attr-defined]
+
+    # Second pass: top-5 only - spend a BD call to resolve a direct URL
+    # for the ones that didn't already get one from the contacts table.
+    log.info("Resolving direct LinkedIn URLs for top predictors…")
+    for stk, _sc in ranked_stacks[:5]:
+        if getattr(stk, "_resolved_profile_url", None):
             continue
+        company = (stk.company or "").strip()
+        if not company:
+            continue
+        predictor_dict = {"events": [
+            {"trigger_key": e.trigger_key, "company": stk.company}
+            for e in stk.events
+        ]}
         role = lnr.role_for_predictor(predictor_dict)
         resolved = lnr.resolve_profile(company, role)
         if resolved and resolved.get("url"):
