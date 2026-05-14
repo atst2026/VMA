@@ -258,10 +258,13 @@ def resolve_named_contact_for_predictor(predictor: dict) -> dict | None:
     contacts = load_contacts()
     card = get_contact(contacts, company)
     entry, slot_used = pick_contact_for_trigger(card, primary)
-    if entry is None or not entry.linkedin_url:
+    if entry is None:
         return None
+    # Return the entry even if linkedin_url is None - the dashboard uses
+    # the name in a search-by-name URL as a middle tier between "direct
+    # profile" and "generic role search".
     return {
-        "url": entry.linkedin_url,
+        "url": entry.linkedin_url,         # may be None
         "role": display_title_for_slot(slot_used),
         "name": entry.name,
         "confidence": entry.confidence,
@@ -300,10 +303,13 @@ def resolve_named_contact_for_lead(signal: dict) -> dict | None:
                 break
         else:
             entry = None
-    if entry is None or not entry.linkedin_url:
+    if entry is None:
         return None
+    # Return the entry even if linkedin_url is None - the dashboard uses
+    # the name in a search-by-name URL as a middle tier between "direct
+    # profile" and "generic role search".
     return {
-        "url": entry.linkedin_url,
+        "url": entry.linkedin_url,         # may be None
         "role": display_title_for_slot(slot),
         "name": entry.name,
         "confidence": entry.confidence,

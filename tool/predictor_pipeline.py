@@ -120,6 +120,9 @@ def _serialise_stack(stk: Stack, score: float, now_iso: str) -> dict:
         "last_seen": now_iso,
         "linkedin_profile_url": getattr(stk, "_resolved_profile_url", None),
         "linkedin_profile_role": getattr(stk, "_resolved_profile_role", None),
+        "linkedin_profile_name": getattr(stk, "_resolved_profile_name", None),
+        "seeded_contact_name": getattr(stk, "_seeded_contact_name", None),
+        "seeded_contact_role": getattr(stk, "_seeded_contact_role", None),
         "events": [
             {
                 "trigger_key": e.trigger_key,

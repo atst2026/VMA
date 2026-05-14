@@ -18,7 +18,10 @@ __pycache__/
 tool/state/deep_dive_*.html
 tool/state/analyse_*.md
 tool/state/seed_audit_*.json
-tool/state/hiring_contacts.json
+# hiring_contacts.json is NOT gitignored - it's a small file of public
+# names (CEOs, CFOs, Chairs) that we want shipped to the dashboard
+# deployment via git, so search-by-name URLs work without runtime
+# artifact-fetching plumbing.
 tool/state/contact_resolution_log.jsonl
 tool/state/contact_reverify_queue.json
 tool/state/ch_watchlist.json
