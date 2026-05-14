@@ -175,6 +175,37 @@ def upsert(ranked_stacks: list[tuple[Stack, float]]) -> dict:
             updated_items.append(entry)
 
     aged = age_out(pipeline, ROLLING_WINDOW_DAYS)
+
+    # Refresh seeded contact names on EVERY active pipeline entry, not just
+    # the ones in today's ranked_stacks. Otherwise an entry that fired e.g.
+    # 2 weeks ago keeps its old seeded_contact_name forever (until aged
+    # out), even after the contact has departed. Per-entry lookup is an
+    # in-memory dict access against the current hiring_contacts.json, so
+    # cost is negligible. Setting to None on stale/missing entries makes
+    # the dashboard fall back to the generic role-search URL (the
+    # safety-first behaviour: better generic than wrong-named).
+    try:
+        from tool.contacts.store import load_contacts
+        from tool.linkedin_resolver import resolve_named_contact_for_predictor
+        contacts = load_contacts()
+        for _pid, entry in predictors.items():
+            if entry.get("status") == "dismissed":
+                continue
+            predictor_dict = {
+                "events": [
+                    {"trigger_key": e.get("trigger_key"),
+                     "company": entry.get("company", "")}
+                    for e in (entry.get("events") or [])
+                ]
+            }
+            named = resolve_named_contact_for_predictor(
+                predictor_dict, contacts=contacts,
+            )
+            entry["seeded_contact_name"] = (named or {}).get("name")
+            entry["seeded_contact_role"] = (named or {}).get("role")
+    except Exception as e:
+        log.exception("pipeline: failed to refresh seeded contacts: %s", e)
+
     save_pipeline(pipeline)
 
     total_active = sum(1 for p in predictors.values() if p.get("status") == "active")
