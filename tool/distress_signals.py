@@ -90,19 +90,31 @@ def _safe_weight(v) -> float:
 # distress hits on a real run, ~1 concerned a watchlist account. This
 # gate ties every surfaced distress signal to a known account.
 
-# Watchlist names that are also common English words / too short to
-# match safely inside a free-text headline. We still match these via the
-# structured `company` field (exact), just not via loose title scanning.
-_AMBIGUOUS_NAMES = {
+# Two distinct buckets — the previous single _AMBIGUOUS_NAMES set wrongly
+# binned core accounts (BP/GSK/SSE/ITV/BBC/M&G) the same as common-word
+# collisions, so their distress headlines were dropped when the feed
+# carried no structured company field (RNS / FCA / CMA RSS always do).
+#
+# 1. _ENGLISH_WORD_NAMES — watchlist names that are real English words.
+#    Matched ONLY via the structured `company` field, never scanned for
+#    in free-text titles ("Next quarter", "peace of mind" would collide).
+_ENGLISH_WORD_NAMES = {
     "mind", "next", "scope", "saga", "sage", "boots", "drax", "shell",
-    "just group", "future plc", "reach plc", "mace group", "rank group",
-    "informa", "halma", "bunzl", "senior plc", "genus", "wise", "boku",
-    "ey", "iag", "imi", "dnv", "rs group", "m&g", "sse", "bp", "visa",
-    "relx", "itv", "bbc", "gsk", "ibm", "kkr", "tpg", "aon", "888 holdings",
+    "wise", "genus", "visa", "future plc", "reach plc", "rank group",
+    "just group", "senior plc", "mace group",
 }
+#
+# 2. Acronym / short proper-noun accounts (BP, GSK, SSE, M&G, ITV, BBC,
+#    IAG, IMI, DNV, RELX, EY, KKR, TPG, IBM, DCC, Aon ...) are derived
+#    automatically: any single-token watchlist name <= 4 chars that is
+#    NOT an English word. These are matched in the ORIGINAL-CASE title
+#    case-sensitively (companies appear as "BP" / "GSK" / "M&G", not the
+#    lowercase common-word form), which is safe because the account gate
+#    only ever runs on items already classified as distress.
 
 _WATCHLIST_NAMES: list[str] | None = None
 _WATCHLIST_PATTERNS: list[tuple[str, re.Pattern]] | None = None
+_ACRONYM_PATTERNS: list[tuple[str, re.Pattern]] | None = None
 
 
 def _norm(s: str) -> str:
@@ -136,25 +148,51 @@ def _load_watchlist_names() -> list[str]:
 
 
 def _watchlist_patterns() -> list[tuple[str, re.Pattern]]:
-    """(display_name, word-boundary regex) for every non-ambiguous
-    watchlist name, longest-first so 'HSBC Holdings' wins over 'HSBC'."""
+    """(display_name, case-insensitive word-boundary regex) for the
+    DISTINCTIVE watchlist names: multiword, or single tokens >= 5 chars
+    that aren't English words. Longest-first so 'HSBC Holdings' wins
+    over 'HSBC'."""
     global _WATCHLIST_PATTERNS
     if _WATCHLIST_PATTERNS is not None:
         return _WATCHLIST_PATTERNS
     pats: list[tuple[str, re.Pattern]] = []
     for name in _load_watchlist_names():
         norm = _norm(name)
-        if not norm:
+        if not norm or norm in _ENGLISH_WORD_NAMES:
             continue
-        # Loose title matching only for distinctive names: multiword, or
-        # >= 5 chars, and never the ambiguous-common-word set.
-        if norm in _AMBIGUOUS_NAMES:
-            continue
-        if " " not in norm and len(norm) < 5:
-            continue
+        token = norm.replace("&", "").replace(" ", "")
+        if " " not in norm and len(token) <= 4:
+            continue  # short single token → handled by _acronym_patterns
         pats.append((name, re.compile(r"(?<!\w)" + re.escape(norm) + r"(?!\w)")))
     _WATCHLIST_PATTERNS = pats
     return _WATCHLIST_PATTERNS
+
+
+def _acronym_patterns() -> list[tuple[str, re.Pattern]]:
+    """(display_name, case-SENSITIVE regex on the ORIGINAL title) for
+    short single-token accounts (BP, GSK, SSE, M&G, ITV, BBC, IAG, ...)
+    that aren't English words. Companies appear in headlines in their
+    canonical casing ('BP issues profit warning'); the lowercase form is
+    a common word. Boundary excludes alphanumerics but allows '&' so
+    'M&G' works."""
+    global _ACRONYM_PATTERNS
+    if _ACRONYM_PATTERNS is not None:
+        return _ACRONYM_PATTERNS
+    pats: list[tuple[str, re.Pattern]] = []
+    for name in _load_watchlist_names():
+        norm = _norm(name)
+        if not norm or norm in _ENGLISH_WORD_NAMES:
+            continue
+        token = norm.replace("&", "").replace(" ", "")
+        if " " in norm or len(token) > 4:
+            continue  # distinctive / multiword → handled elsewhere
+        disp = name.strip()
+        pats.append((
+            name,
+            re.compile(r"(?<![A-Za-z0-9])" + re.escape(disp) + r"(?![A-Za-z0-9])"),
+        ))
+    _ACRONYM_PATTERNS = pats
+    return _ACRONYM_PATTERNS
 
 
 def _word_in(needle: str, haystack: str) -> bool:
@@ -181,11 +219,16 @@ def _account_for_signal(signal: dict) -> str | None:
                 continue
             if comp_norm == n or _word_in(n, comp_norm) or _word_in(comp_norm, n):
                 return name
-    title = signal.get("title")
-    title_norm = _norm(title if isinstance(title, str) else "")
-    if title_norm:
-        for name, pat in _watchlist_patterns():
-            if pat.search(title_norm):
+    title = signal.get("title") if isinstance(signal.get("title"), str) else ""
+    if title:
+        title_norm = _norm(title)
+        if title_norm:
+            for name, pat in _watchlist_patterns():
+                if pat.search(title_norm):
+                    return name
+        # Acronym accounts: case-sensitive against the ORIGINAL title.
+        for name, pat in _acronym_patterns():
+            if pat.search(title):
                 return name
     return None
 
