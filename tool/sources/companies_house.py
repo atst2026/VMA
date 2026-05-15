@@ -194,11 +194,42 @@ def company_events(name: str) -> dict:
     report quote source). Returns {company, found, resolved, officers,
     filings} — keep this shape stable, downstream renders depend on it."""
     hits = search_company(name)
+    # Retry with " PLC" suffix if the bare name returned nothing. CH's
+    # relevance algorithm sometimes ranks subsidiaries above the parent
+    # plc for short names ("Unilever" -> UNILEVER UK LIMITED before
+    # UNILEVER PLC); the explicit suffix forces the parent to the top.
+    if not hits and not re.search(r"\b(plc|limited|ltd|group|holdings|llp)\b",
+                                   name, re.IGNORECASE):
+        hits = search_company(f"{name} PLC")
+        if not hits:
+            hits = search_company(f"{name} GROUP PLC") or hits
     if not hits:
         return {"company": name, "found": False}
-    # Prefer active over dissolved companies in the search results
+    # Among ACTIVE prefix-matches (titles starting with the query name),
+    # prefer the shortest title ending in "PLC" - that's the parent /
+    # canonical entity in UK company structure. Falls through to other
+    # prefix matches, then any active, then first hit.
+    # E.g. for "Unilever":  UNILEVER PLC (parent) beats UNILEVER UK
+    # LIMITED, UNILEVER UK HOLDINGS LIMITED, etc.
+    name_lower = name.strip().lower()
     active = [it for it in hits if it.get("company_status") == "active"]
-    top = active[0] if active else hits[0]
+    prefix_active = [
+        it for it in active
+        if (it.get("title") or "").lower().startswith(name_lower)
+    ]
+    plc_active = sorted(
+        [it for it in prefix_active
+         if (it.get("title") or "").rstrip().lower().endswith(" plc")],
+        key=lambda it: len(it.get("title") or ""),
+    )
+    if plc_active:
+        top = plc_active[0]
+    elif prefix_active:
+        top = prefix_active[0]
+    elif active:
+        top = active[0]
+    else:
+        top = hits[0]
     num = top.get("company_number", "")
     officers = company_officers(num) if num else []
     filings: list[dict] = []
