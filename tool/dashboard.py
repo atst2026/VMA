@@ -558,6 +558,21 @@ def api_reverse_match():
     return jsonify(trigger_workflow("reverse-match.yml", inputs))
 
 
+@app.route("/api/dispatch/pre-meeting", methods=["POST"])
+@_auth_required
+def api_pre_meeting():
+    data = request.get_json(force=True) or {}
+    inputs = {
+        "account_name": (data.get("account_name") or "").strip(),
+        "contact_name": (data.get("contact_name") or "").strip(),
+        "meeting_context": (data.get("meeting_context") or "").strip(),
+        "mode": data.get("mode", "send"),
+    }
+    if not inputs["account_name"]:
+        return jsonify({"ok": False, "detail": "Account name required"}), 400
+    return jsonify(trigger_workflow("pre-meeting-brief.yml", inputs))
+
+
 @app.route("/api/dispatch/sweep", methods=["POST"])
 @_auth_required
 def api_sweep():
@@ -1561,6 +1576,22 @@ TEMPLATE = r"""
         <input id="rm-title" name="current_title" placeholder="e.g. Head of Internal Communications" required>
         <button type="submit">Run and send via email</button>
         <div class="status" id="rm-status"></div>
+      </form>
+    </div>
+
+    <!-- PRE-MEETING BRIEF -->
+    <div class="panel action-card">
+      <h3>Pre-meeting Brief</h3>
+      <div class="subhead">Walk into any client meeting with prep no competitor matches.</div>
+      <form id="pm-form" onsubmit="dispatch(event, 'pm-form', '/api/dispatch/pre-meeting')">
+        <label for="pm-account">Account name</label>
+        <input id="pm-account" name="account_name" placeholder="e.g. Severn Trent" required>
+        <label for="pm-contact">Contact (optional)</label>
+        <input id="pm-contact" name="contact_name" placeholder="e.g. Carla Sherry">
+        <label for="pm-context">Meeting context (optional)</label>
+        <input id="pm-context" name="meeting_context" placeholder="e.g. 10am Mon, Zoom">
+        <button type="submit">Run and send via email</button>
+        <div class="status" id="pm-status"></div>
       </form>
     </div>
 
