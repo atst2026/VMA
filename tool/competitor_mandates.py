@@ -126,15 +126,21 @@ def reconcile(signals_path: Path | None = None,
             log.info("competitor_mandates reconcile failed: %s", e)
 
     # Mark IDs not in this run as missed; evict after N runs.
+    # Guard: if this run produced ZERO job signals at all, the source
+    # likely failed (network error, ATS API down) — don't punish tracked
+    # ads by ticking their missed_runs counter, which would otherwise
+    # evict every tracked ad after EVICT_AFTER_MISSED_RUNS consecutive
+    # failed runs.
     to_remove: list[str] = []
-    for sid, row in tracker.items():
-        if sid in fresh_ids:
-            continue
-        row["missed_runs"] = int(row.get("missed_runs", 0)) + 1
-        if row["missed_runs"] >= EVICT_AFTER_MISSED_RUNS:
-            to_remove.append(sid)
-    for sid in to_remove:
-        tracker.pop(sid, None)
+    if fresh_ids:
+        for sid, row in tracker.items():
+            if sid in fresh_ids:
+                continue
+            row["missed_runs"] = int(row.get("missed_runs", 0)) + 1
+            if row["missed_runs"] >= EVICT_AFTER_MISSED_RUNS:
+                to_remove.append(sid)
+        for sid in to_remove:
+            tracker.pop(sid, None)
 
     if tracker_path == TRACKER_FILE:
         _save_tracker(tracker)

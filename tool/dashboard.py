@@ -2263,8 +2263,8 @@ async function loadMandates() {
     for (const m of j.rows.slice(0, 12)) {
       out.push(
         '<li style="padding:8px 0;border-bottom:1px solid var(--border);">' +
-          '<span class="mandate-age">' + m.days_live + 'd</span> ' +
-          '<a href="' + esc(m.url || '#') + '" target="_blank" style="color:var(--text);">' +
+          '<span class="mandate-age">' + esc(m.days_live) + 'd</span> ' +
+          '<a href="' + safeUrl(m.url) + '" target="_blank" rel="noopener noreferrer" style="color:var(--text);">' +
             esc(m.title || '(no title)') + '</a>' +
           '<span style="color:var(--text-muted);font-size:12px;display:block;margin-top:2px;">' +
             esc(m.company || '') + ' &middot; ' + esc(m.source || '') +
