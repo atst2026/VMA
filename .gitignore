@@ -34,3 +34,5 @@ tool/state/predictor_pipeline.json
 
 # Concurrency lock files (created by tool.candidate_watch._locked_state)
 tool/state/*.lock
+
+tool/state/ch_scan_cursor.json

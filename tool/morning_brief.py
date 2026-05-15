@@ -138,7 +138,15 @@ def main() -> int:
     # table.
     log.info("Running CH officer-change scan (pre-enrichment for fresh contacts)…")
     try:
-        ch_events = companies_house.detect_officer_changes()
+        # Bounded so the ~550-company watchlist can't stall the whole job
+        # (which previously prevented the Actions cache — and therefore
+        # the resolver cache — from ever being saved). Rotating cursor in
+        # detect_officer_changes covers the full list across a few runs;
+        # once the resolver cache is warm, cached lookups are ~free and
+        # coverage is effectively daily again.
+        ch_events = companies_house.detect_officer_changes(
+            max_companies=180, time_budget_s=420,
+        )
     except Exception as e:
         log.exception("CH officer-change scan: %s", e)
         ch_events = []
