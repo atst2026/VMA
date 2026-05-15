@@ -625,7 +625,11 @@ def api_mpc_build():
         specialism=(data.get("specialism") or "").strip(),
         notes=(data.get("notes") or "").strip(),
     )
-    top_n = int(data.get("top_n") or 20)
+    try:
+        top_n = int(data.get("top_n") or 20)
+    except (TypeError, ValueError):
+        top_n = 20
+    top_n = max(1, min(top_n, 50))   # clamp so negative / huge values can't break the slice
     hits = build_hit_list(candidate, top_n=top_n)
     return jsonify({"ok": True, "hits": hit_list_to_json(hits), "count": len(hits)})
 
@@ -2305,15 +2309,16 @@ async function runMPC(event) {
       status.textContent = 'Built ' + j.count + ' hooks.'; status.className = 'status ok';
       const out = ['<ol style="margin:10px 0 0 0;padding-left:20px;">'];
       for (const h of j.hits) {
+        const evHref = safeUrl(h.evidence_url);
         out.push(
           '<li style="margin-bottom:12px;">' +
             '<div><strong>' + esc(h.account) + '</strong> ' +
               '<span class="hook-badge ' + esc(h.hook_kind) + '">' + esc(h.hook_kind.replace(/_/g, ' ')) + '</span>' +
-              ' <span style="color:var(--text-muted);font-size:11px;">score ' + h.score + '</span>' +
+              ' <span style="color:var(--text-muted);font-size:11px;">score ' + esc(h.score) + '</span>' +
             '</div>' +
             '<div style="color:#333;margin-top:4px;">' + esc(h.hook) + '</div>' +
-            (h.evidence_url ? '<a href="' + esc(h.evidence_url) +
-              '" target="_blank" style="font-size:11px;">↗ evidence</a>' : '') +
+            (evHref !== '#' ? '<a href="' + evHref +
+              '" target="_blank" rel="noopener noreferrer" style="font-size:11px;">↗ evidence</a>' : '') +
           '</li>'
         );
       }

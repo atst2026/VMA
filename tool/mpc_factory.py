@@ -102,9 +102,9 @@ def _detect_sectors(candidate: MPCCandidate) -> list[str]:
     tags: list[str] = []
     sector_hints = {
         "banking":      ["bank", "hsbc", "natwest", "lloyds", "barclays", "santander",
-                         "santander", "monzo", "starling", "revolut"],
+                         "monzo", "starling", "revolut"],
         "insurance":    ["insur", "aviva", "phoenix", "legal & general", "l&g", "prudential"],
-        "asset_mgmt":   ["asset management", "fund manager", "schroders", "bla"],
+        "asset_mgmt":   ["asset management", "fund manager", "schroders", "blackrock", "vanguard"],
         "pharma":       ["pharma", "biotech", "astrazeneca", "gsk", "glaxo", "haleon", "pfizer"],
         "health":       ["health", "nhs", "bupa", "hospital", "clinical"],
         "energy":       ["oil", "gas", "energy", "bp", "shell", "centrica", "octopus",
@@ -152,6 +152,44 @@ def _leadership_for(name: str, contacts: dict) -> list[str]:
     return []
 
 
+def _word_match(target: str, *fields: str) -> bool:
+    """Word-boundary substring match of `target` (already normalised)
+    against each of the given fields. Three rules, in order:
+
+      A. target appears whole-word inside field
+         ('hsbc' inside 'hsbc holdings plc' → True;
+          'hsbc' inside 'ahsbc industries'  → False — no whitespace
+          boundary)
+      B. field appears whole-word inside target
+         (short-form signal company 'natwest' against long-form
+          account 'natwest group')
+      C. target's first word appears whole-word inside field
+         (account 'natwest group' against a signal that mentions
+          'natwest' alongside other text)
+    """
+    if not target:
+        return False
+    target_pat = re.compile(r"(?:^|\s)" + re.escape(target) + r"(?:\s|$)")
+    words = target.split()
+    first_word_pat = None
+    if len(words) > 1:
+        first_word_pat = re.compile(r"(?:^|\s)" + re.escape(words[0]) + r"(?:\s|$)")
+    for f in fields:
+        if not f:
+            continue
+        if target_pat.search(f):
+            return True
+        # Rule B: short-form field substring of long-form target
+        f_clean = f.strip()
+        if f_clean:
+            field_pat = re.compile(r"(?:^|\s)" + re.escape(f_clean) + r"(?:\s|$)")
+            if field_pat.search(target):
+                return True
+        if first_word_pat and first_word_pat.search(f):
+            return True
+    return False
+
+
 def _signals_for(name: str, signals: list[dict]) -> list[dict]:
     target = _normalise(name)
     matches = []
@@ -160,19 +198,21 @@ def _signals_for(name: str, signals: list[dict]) -> list[dict]:
             continue
         company = _normalise(s.get("company") or "")
         title   = _normalise(s.get("title") or "")
-        if target and (target in company or target in title.split() or
-                       (" " + target + " ") in (" " + title + " ")):
+        if _word_match(target, company, title):
             matches.append(s)
     return matches
 
 
 def _predictors_for(name: str, predictors: list[dict]) -> list[dict]:
+    """Match by word-boundary substring so a predictor stored under the
+    canonical name ('HSBC HOLDINGS PLC') still matches the dashboard's
+    short form ('HSBC') and vice versa."""
     target = _normalise(name)
     return [
         p for p in predictors
         if isinstance(p, dict)
         and p.get("status") != "dismissed"
-        and _normalise(p.get("company") or "") == target
+        and _word_match(target, _normalise(p.get("company") or ""))
     ]
 
 
