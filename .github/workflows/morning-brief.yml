@@ -56,6 +56,21 @@ jobs:
           restore-keys: |
             vma-state-
 
+      # CRITICAL: the cache restore above can overwrite the git-tracked
+      # hiring_contacts.json with a stale cached copy from an earlier
+      # run (this is exactly what wiped the 30-company seeded version
+      # back to {} in May 2026 - the cache had {} from the first seed
+      # run, and the auto-commit step then pushed that empty file back
+      # to main).
+      #
+      # Restore the git version after the cache restore so the seeded
+      # contacts are always authoritative. Future-proofs against any
+      # cache shape we add later.
+      - name: Restore git-tracked hiring_contacts.json (cache-overwrite guard)
+        run: |
+          git checkout HEAD -- tool/state/hiring_contacts.json 2>/dev/null || true
+          echo "hiring_contacts.json size after restore: $(wc -c < tool/state/hiring_contacts.json) bytes"
+
       - name: Log local time (informational only)
         run: |
           # Previously this step gated the rest of the job to 08:30-10:30
@@ -131,6 +146,19 @@ jobs:
           if git diff --quiet tool/state/hiring_contacts.json 2>/dev/null; then
             echo "hiring_contacts.json unchanged - nothing to commit."
             exit 0
+          fi
+          # Safety guard: refuse to commit an empty / near-empty file.
+          # The seeded contacts table is ~56KB. An honest auto-update
+          # adds/removes a few entries - the file should never shrink
+          # below 10KB. If it does, something has gone wrong (cache
+          # corruption, load failure, etc.) and we must NOT push that
+          # state to main.
+          SIZE=$(wc -c < tool/state/hiring_contacts.json)
+          if [ "$SIZE" -lt 10000 ]; then
+            echo "REFUSING to commit: hiring_contacts.json shrunk to $SIZE bytes (threshold 10000)."
+            echo "This is the regression that wiped the seeded contacts in May 2026."
+            echo "Investigate the auto-update logic; do not push."
+            exit 1
           fi
           git config user.email "actions@github.com"
           git config user.name "morning-brief-bot"
