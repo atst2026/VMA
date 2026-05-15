@@ -584,6 +584,165 @@ def api_sweep():
     return jsonify(trigger_workflow("fortnightly-sweep.yml", inputs))
 
 
+# ---------------------------------------------------------------------------
+# Demand-creation tools (in-process; no GitHub Actions roundtrip).
+# These run heuristically against the existing state files. They are what
+# turn the dashboard from "react fast when market moves" into "create demand
+# when market is dead" — distress signals, MPC outreach factory, pipeline
+# triage, objection coach, candidate watch, competitor mandates.
+# ---------------------------------------------------------------------------
+
+@app.route("/api/distress", methods=["GET"])
+@_auth_required
+def api_distress():
+    """Distress subset of the latest morning-brief signals — surface
+    profit warnings, regulatory probes, restructurings, etc. that drive
+    crisis-comms / IR / restructuring-comms hiring."""
+    from tool.distress_signals import load_distress_signals, category_label
+    rows = load_distress_signals(limit=40)
+    for r in rows:
+        r["_category_label"] = category_label(r.get("_distress_category", ""))
+    return jsonify({"rows": rows, "total": len(rows)})
+
+
+@app.route("/api/mpc/build", methods=["POST"])
+@_auth_required
+def api_mpc_build():
+    """Build a per-account MPC outreach hit list for one pasted candidate."""
+    from tool.mpc_factory import MPCCandidate, build_hit_list, hit_list_to_json
+    data = request.get_json(force=True) or {}
+    name = (data.get("name") or "").strip()
+    current_company = (data.get("current_company") or "").strip()
+    current_title = (data.get("current_title") or "").strip()
+    if not name or not current_company or not current_title:
+        return jsonify({"ok": False,
+                        "detail": "Missing: name, current_company, current_title required"}), 400
+    candidate = MPCCandidate(
+        name=name,
+        current_company=current_company,
+        current_title=current_title,
+        sectors=[s.strip() for s in (data.get("sectors") or "").split(",") if s.strip()],
+        specialism=(data.get("specialism") or "").strip(),
+        notes=(data.get("notes") or "").strip(),
+    )
+    top_n = int(data.get("top_n") or 20)
+    hits = build_hit_list(candidate, top_n=top_n)
+    return jsonify({"ok": True, "hits": hit_list_to_json(hits), "count": len(hits)})
+
+
+@app.route("/api/pipeline/triage", methods=["POST"])
+@_auth_required
+def api_pipeline_triage():
+    """Score Sara's pasted pipeline lines into alive/stalled/cold/dead/unclear."""
+    from tool.pipeline_triage import triage_pipeline, triage_to_json
+    data = request.get_json(force=True) or {}
+    text = data.get("text") or ""
+    if not text.strip():
+        return jsonify({"ok": False, "detail": "Pipeline text required"}), 400
+    rows = triage_pipeline(text)
+    return jsonify({"ok": True, **triage_to_json(rows)})
+
+
+@app.route("/api/objection", methods=["POST"])
+@_auth_required
+def api_objection_coach():
+    """Match a pasted situation against the VMA objection playbook."""
+    from tool.objection_coach import coach, coach_to_json
+    data = request.get_json(force=True) or {}
+    text = (data.get("situation") or "").strip()
+    if not text:
+        return jsonify({"ok": False, "detail": "Situation text required"}), 400
+    responses = coach(text)
+    return jsonify({"ok": True, "responses": coach_to_json(responses)})
+
+
+@app.route("/api/candidates/watch", methods=["GET"])
+@_auth_required
+def api_candidates_watch_list():
+    """List watched candidates, sorted by call urgency."""
+    from tool.candidate_watch import list_watched
+    include_snoozed = request.args.get("include_snoozed") == "1"
+    rows = list_watched(include_snoozed=include_snoozed)
+    return jsonify({"rows": rows, "total": len(rows)})
+
+
+@app.route("/api/candidates/watch/add", methods=["POST"])
+@_auth_required
+def api_candidates_watch_add():
+    from tool.candidate_watch import add_candidate
+    data = request.get_json(force=True) or {}
+    name = (data.get("name") or "").strip()
+    if not name:
+        return jsonify({"ok": False, "detail": "Name required"}), 400
+    sectors = [s.strip() for s in (data.get("sectors") or "").split(",") if s.strip()]
+    rec = add_candidate(
+        name=name,
+        current_company=(data.get("current_company") or "").strip(),
+        current_title=(data.get("current_title") or "").strip(),
+        linkedin_url=(data.get("linkedin_url") or "").strip(),
+        sectors=sectors,
+        notes=(data.get("notes") or "").strip(),
+        touch_cadence_days=int(data.get("touch_cadence_days") or 30),
+    )
+    return jsonify({"ok": True, "candidate": rec})
+
+
+@app.route("/api/candidates/watch/touch", methods=["POST"])
+@_auth_required
+def api_candidates_watch_touch():
+    from tool.candidate_watch import mark_touched
+    data = request.get_json(force=True) or {}
+    name = (data.get("name") or "").strip()
+    if not name:
+        return jsonify({"ok": False, "detail": "Name required"}), 400
+    rec = mark_touched(
+        name=name,
+        current_company=(data.get("current_company") or "").strip(),
+        signal=(data.get("signal") or "").strip(),
+    )
+    if not rec:
+        return jsonify({"ok": False, "detail": "Candidate not found"}), 404
+    return jsonify({"ok": True, "candidate": rec})
+
+
+@app.route("/api/candidates/watch/snooze", methods=["POST"])
+@_auth_required
+def api_candidates_watch_snooze():
+    from tool.candidate_watch import snooze_candidate
+    data = request.get_json(force=True) or {}
+    name = (data.get("name") or "").strip()
+    current_company = (data.get("current_company") or "").strip()
+    days = int(data.get("days") or 14)
+    rec = snooze_candidate(name, current_company, days)
+    if not rec:
+        return jsonify({"ok": False, "detail": "Candidate not found"}), 404
+    return jsonify({"ok": True, "candidate": rec})
+
+
+@app.route("/api/candidates/watch/remove", methods=["POST"])
+@_auth_required
+def api_candidates_watch_remove():
+    from tool.candidate_watch import remove_candidate
+    data = request.get_json(force=True) or {}
+    name = (data.get("name") or "").strip()
+    current_company = (data.get("current_company") or "").strip()
+    ok = remove_candidate(name, current_company)
+    if not ok:
+        return jsonify({"ok": False, "detail": "Candidate not found"}), 404
+    return jsonify({"ok": True})
+
+
+@app.route("/api/competitor-mandates", methods=["GET"])
+@_auth_required
+def api_competitor_mandates():
+    """Comms job ads that have been live > 60 days — clients open to a
+    second agency or to off-piste candidates."""
+    from tool.competitor_mandates import stale_mandates
+    min_age = int(request.args.get("min_age") or 60)
+    rows = stale_mandates(min_age_days=min_age)
+    return jsonify({"rows": rows, "total": len(rows), "min_age_days": min_age})
+
+
 TEMPLATE = r"""
 <!doctype html>
 <html lang="en">
@@ -1134,6 +1293,109 @@ TEMPLATE = r"""
       background: rgba(201, 55, 55, 0.05);
       box-shadow: 0 0 0 3px rgba(201, 55, 55, 0.08);
     }
+    /* ---- Demand-creation tool badges & pills ---- */
+    .distress-badge {
+      display: inline-block;
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 4px;
+      margin-right: 6px;
+      background: #FCE7E0;
+      color: #7A3A22;
+    }
+    .distress-badge.cat-profit_warning,
+    .distress-badge.cat-share_price_shock,
+    .distress-badge.cat-ceo_exit_under_cloud,
+    .distress-badge.cat-crisis    { background: #FCD5C9; color: #8C2A0E; }
+    .distress-badge.cat-ratings,
+    .distress-badge.cat-guidance_cut,
+    .distress-badge.cat-activist  { background: #FCEED1; color: #6B4A0B; }
+    .distress-badge.cat-regulatory_probe,
+    .distress-badge.cat-restructuring,
+    .distress-badge.cat-m_and_a_distress { background: #E2E6F0; color: #2A3556; }
+    .mandate-age {
+      display: inline-block;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: #F5E9D8;
+      color: #6B4A0B;
+      margin-right: 6px;
+    }
+    .hook-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 1px 6px;
+      border-radius: 3px;
+      margin-left: 4px;
+      vertical-align: 2px;
+      background: #ECE8DD;
+      color: #4A4537;
+    }
+    .hook-badge.distress_signal   { background: #FCD5C9; color: #8C2A0E; }
+    .hook-badge.predictor_signal  { background: #E0EAD8; color: #3F5727; }
+    .hook-badge.leadership_change { background: #E2E6F0; color: #2A3556; }
+    .hook-badge.recent_signal     { background: #F5E9D8; color: #6B4A0B; }
+    .hook-badge.generic_fit       { background: #ECE8DD; color: #7A7164; }
+    .triage-label {
+      display: inline-block;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 3px;
+      margin-right: 6px;
+    }
+    .triage-label.alive   { background: #E0EAD8; color: #3F5727; }
+    .triage-label.stalled { background: #FCEED1; color: #6B4A0B; }
+    .triage-label.cold    { background: #E2E6F0; color: #2A3556; }
+    .triage-label.dead    { background: #ECE8DD; color: #7A7164; text-decoration: line-through; }
+    .triage-label.unclear { background: #F0E8E0; color: #6B5A4A; }
+    :root {
+      --alive-bar:   #6B8C3B;
+      --stalled-bar: #C49A3B;
+      --cold-bar:    #5C6BA0;
+      --dead-bar:    #B7AC9A;
+      --unclear-bar: #A89684;
+    }
+    .overdue-pill {
+      display: inline-block;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: #FCD5C9;
+      color: #8C2A0E;
+      margin-right: 4px;
+    }
+    .restless-pill {
+      display: inline-block;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: #FCEED1;
+      color: #6B4A0B;
+      margin-right: 4px;
+    }
+    .inline-result {
+      margin-top: 12px;
+      max-height: 480px;
+      overflow-y: auto;
+    }
+    .inline-result::-webkit-scrollbar { width: 6px; }
+    .inline-result::-webkit-scrollbar-thumb {
+      background: var(--navy-soft);
+      border-radius: 3px;
+    }
     /* Compact predictor rows — single-line summary, expand for full detail */
     .panel-body.compact .item.predictor {
       padding: 9px 14px;
@@ -1546,8 +1808,111 @@ TEMPLATE = r"""
 
   </div>
 
+  <!-- DEMAND-CREATION INTEL (dead-market: distress signals + steal-this-mandate) -->
+  <div class="row">
+
+    <!-- DISTRESS WATCH -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Distress Watch</h2>
+        <span class="count" id="distress-count">—</span>
+      </div>
+      <div class="panel-body" id="distress-body">
+        <div class="empty compact">Loading…</div>
+      </div>
+    </div>
+
+    <!-- COMPETITOR MANDATES -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Mandates Worth Stealing</h2>
+        <span class="count" id="mandates-count">—</span>
+      </div>
+      <div class="panel-body" id="mandates-body">
+        <div class="empty compact">Loading…</div>
+      </div>
+    </div>
+
+  </div>
+
   <!-- ACTION BOXES -->
   <div class="actions">
+
+    <!-- MPC OUTREACH FACTORY -->
+    <div class="panel action-card">
+      <h3>MPC Outreach Factory</h3>
+      <div class="subhead">One candidate → 20-account hit list with evidence-cited hooks. Demand creation, not capture.</div>
+      <form id="mpc-form" onsubmit="runMPC(event)">
+        <label for="mpc-name">Candidate name</label>
+        <input id="mpc-name" name="name" placeholder="e.g. James Carter" required>
+        <label for="mpc-company">Current company</label>
+        <input id="mpc-company" name="current_company" placeholder="e.g. Barclays" required>
+        <label for="mpc-title">Current title</label>
+        <input id="mpc-title" name="current_title" placeholder="e.g. Director of Corporate Comms" required>
+        <label for="mpc-specialism">Specialism (optional)</label>
+        <input id="mpc-specialism" name="specialism" placeholder="e.g. IR, crisis, internal comms">
+        <label for="mpc-notes">Notes (optional)</label>
+        <input id="mpc-notes" name="notes" placeholder="e.g. led IR through 2023 restructure">
+        <button type="submit">Build hit list</button>
+        <div class="status" id="mpc-status"></div>
+        <div id="mpc-result" class="inline-result"></div>
+      </form>
+    </div>
+
+    <!-- PIPELINE TRIAGE -->
+    <div class="panel action-card">
+      <h3>Pipeline Triage</h3>
+      <div class="subhead">Paste your active conversations; honest scoring (alive / stalled / cold / dead) with next-action.</div>
+      <form id="triage-form" onsubmit="runTriage(event)">
+        <label for="triage-text">Active pipeline (one per line)</label>
+        <textarea id="triage-text" name="text" rows="6" placeholder="HSBC Head of IC - shortlist sent, interview booked&#10;NatWest CCO - haven't heard in 3 weeks&#10;BP Crisis Comms - they moved on, hired internally" required></textarea>
+        <button type="submit">Triage</button>
+        <div class="status" id="triage-status"></div>
+        <div id="triage-result" class="inline-result"></div>
+      </form>
+    </div>
+
+    <!-- OBJECTION COACH -->
+    <div class="panel action-card">
+      <h3>Objection Coach</h3>
+      <div class="subhead">Paste a negotiation / objection situation; get 3 VMA-rooted angles.</div>
+      <form id="coach-form" onsubmit="runCoach(event)">
+        <label for="coach-text">Situation</label>
+        <textarea id="coach-text" name="situation" rows="3" placeholder="e.g. Client wants to push our 22% fee down to 18%" required></textarea>
+        <button type="submit">Get angles</button>
+        <div class="status" id="coach-status"></div>
+        <div id="coach-result" class="inline-result"></div>
+      </form>
+    </div>
+
+    <!-- CANDIDATE WATCH -->
+    <div class="panel action-card">
+      <h3>Candidate Watch</h3>
+      <div class="subhead">Warm passive candidates Sara wants to stay liquid to. Overdue + restlessness signals float to top.</div>
+      <div id="watch-list-wrap">
+        <div class="status" id="watch-list-status">Loading…</div>
+        <div id="watch-list"></div>
+      </div>
+      <details style="margin-top:10px;">
+        <summary>+ Add candidate</summary>
+        <form id="watch-add-form" onsubmit="addWatchCandidate(event)" style="margin-top:8px;">
+          <label for="wa-name">Name</label>
+          <input id="wa-name" name="name" required>
+          <label for="wa-company">Current company</label>
+          <input id="wa-company" name="current_company">
+          <label for="wa-title">Current title</label>
+          <input id="wa-title" name="current_title">
+          <label for="wa-linkedin">LinkedIn URL</label>
+          <input id="wa-linkedin" name="linkedin_url" placeholder="https://linkedin.com/in/...">
+          <label for="wa-cadence">Touch cadence (days)</label>
+          <input id="wa-cadence" name="touch_cadence_days" type="number" value="30" min="7" max="180">
+          <label for="wa-notes">Notes</label>
+          <input id="wa-notes" name="notes">
+          <button type="submit">Add</button>
+          <div class="status" id="watch-add-status"></div>
+        </form>
+      </details>
+    </div>
 
     <!-- PITCH PACK -->
     <div class="panel action-card">
@@ -1825,6 +2190,315 @@ function showRefreshBanner(result) {
   }
   banner.textContent = result.detail || (result.ok ? 'Refreshed.' : 'Refresh failed.');
 }
+
+// ===========================================================================
+// DEMAND-CREATION TOOLS (in-process; no GitHub Actions roundtrip)
+// ===========================================================================
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// ---------- Distress Watch (auto-loads on page ready) ----------
+async function loadDistress() {
+  const body = document.getElementById('distress-body');
+  const count = document.getElementById('distress-count');
+  try {
+    const r = await fetch('/api/distress');
+    const j = await r.json();
+    count.textContent = j.total;
+    if (!j.rows || j.rows.length === 0) {
+      body.innerHTML = '<div class="empty compact">No distress signals at watchlist accounts in the latest scour. ' +
+        'This filter looks for profit warnings, ratings downgrades, activist letters, regulatory probes, ' +
+        'restructurings, CEO exits under cloud, and crisis events.</div>';
+      return;
+    }
+    const out = ['<ul style="margin:6px 0;padding:0;list-style:none;">'];
+    for (const s of j.rows.slice(0, 12)) {
+      out.push(
+        '<li style="padding:8px 0;border-bottom:1px solid var(--border);">' +
+          '<span class="distress-badge cat-' + esc(s._distress_category) + '">' +
+            esc(s._category_label) + '</span> ' +
+          '<a href="' + esc(s.url || '#') + '" target="_blank" style="color:var(--text);">' +
+            esc(s.title || '(no title)') + '</a>' +
+          '<span style="color:var(--text-muted);font-size:12px;display:block;margin-top:2px;">' +
+            esc(s.company || '') + ' &middot; ' + esc(s.source || '') +
+          '</span>' +
+        '</li>'
+      );
+    }
+    out.push('</ul>');
+    body.innerHTML = out.join('');
+  } catch (e) {
+    body.innerHTML = '<div class="empty compact">Failed to load distress signals: ' + esc(e.message) + '</div>';
+  }
+}
+
+// ---------- Mandates Worth Stealing ----------
+async function loadMandates() {
+  const body = document.getElementById('mandates-body');
+  const count = document.getElementById('mandates-count');
+  try {
+    const r = await fetch('/api/competitor-mandates');
+    const j = await r.json();
+    count.textContent = j.total;
+    if (!j.rows || j.rows.length === 0) {
+      body.innerHTML = '<div class="empty compact">No comms ads currently live &ge; ' + j.min_age_days +
+        ' days. Tracker builds up over multiple morning-brief runs ' +
+        '— ads need to be seen across consecutive runs before they qualify as &ldquo;stale&rdquo;.</div>';
+      return;
+    }
+    const out = ['<ul style="margin:6px 0;padding:0;list-style:none;">'];
+    for (const m of j.rows.slice(0, 12)) {
+      out.push(
+        '<li style="padding:8px 0;border-bottom:1px solid var(--border);">' +
+          '<span class="mandate-age">' + m.days_live + 'd</span> ' +
+          '<a href="' + esc(m.url || '#') + '" target="_blank" style="color:var(--text);">' +
+            esc(m.title || '(no title)') + '</a>' +
+          '<span style="color:var(--text-muted);font-size:12px;display:block;margin-top:2px;">' +
+            esc(m.company || '') + ' &middot; ' + esc(m.source || '') +
+            ' &middot; first seen ' + esc(m.first_seen) +
+          '</span>' +
+        '</li>'
+      );
+    }
+    out.push('</ul>');
+    body.innerHTML = out.join('');
+  } catch (e) {
+    body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
+  }
+}
+
+// ---------- MPC Outreach Factory ----------
+async function runMPC(event) {
+  event.preventDefault();
+  const form = document.getElementById('mpc-form');
+  const btn = form.querySelector('button[type=submit]');
+  const status = document.getElementById('mpc-status');
+  const result = document.getElementById('mpc-result');
+  const data = {};
+  new FormData(form).forEach((v, k) => { data[k] = v; });
+  btn.disabled = true; btn.textContent = 'Building…';
+  status.textContent = ''; status.className = 'status';
+  result.innerHTML = '';
+  try {
+    const r = await fetch('/api/mpc/build', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const j = await r.json();
+    if (!j.ok) {
+      status.textContent = j.detail || 'Failed.'; status.className = 'status err';
+    } else {
+      status.textContent = 'Built ' + j.count + ' hooks.'; status.className = 'status ok';
+      const out = ['<ol style="margin:10px 0 0 0;padding-left:20px;">'];
+      for (const h of j.hits) {
+        out.push(
+          '<li style="margin-bottom:12px;">' +
+            '<div><strong>' + esc(h.account) + '</strong> ' +
+              '<span class="hook-badge ' + esc(h.hook_kind) + '">' + esc(h.hook_kind.replace(/_/g, ' ')) + '</span>' +
+              ' <span style="color:var(--text-muted);font-size:11px;">score ' + h.score + '</span>' +
+            '</div>' +
+            '<div style="color:#333;margin-top:4px;">' + esc(h.hook) + '</div>' +
+            (h.evidence_url ? '<a href="' + esc(h.evidence_url) +
+              '" target="_blank" style="font-size:11px;">↗ evidence</a>' : '') +
+          '</li>'
+        );
+      }
+      out.push('</ol>');
+      result.innerHTML = out.join('');
+    }
+  } catch (e) {
+    status.textContent = 'Network error: ' + e.message; status.className = 'status err';
+  }
+  btn.disabled = false; btn.textContent = 'Build hit list';
+}
+
+// ---------- Pipeline Triage ----------
+async function runTriage(event) {
+  event.preventDefault();
+  const form = document.getElementById('triage-form');
+  const btn = form.querySelector('button[type=submit]');
+  const status = document.getElementById('triage-status');
+  const result = document.getElementById('triage-result');
+  btn.disabled = true; btn.textContent = 'Scoring…';
+  status.textContent = ''; status.className = 'status';
+  result.innerHTML = '';
+  try {
+    const r = await fetch('/api/pipeline/triage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: document.getElementById('triage-text').value }),
+    });
+    const j = await r.json();
+    if (!j.ok) {
+      status.textContent = j.detail || 'Failed.'; status.className = 'status err';
+    } else {
+      status.textContent =
+        j.counts.alive + ' alive · ' + j.counts.stalled + ' stalled · ' +
+        j.counts.cold + ' cold · ' + j.counts.dead + ' dead' +
+        (j.counts.unclear ? ' · ' + j.counts.unclear + ' unclear' : '');
+      status.className = 'status ok';
+      const out = ['<ul style="margin:10px 0 0 0;padding:0;list-style:none;">'];
+      for (const r of j.rows) {
+        out.push(
+          '<li style="margin-bottom:10px;padding:8px 10px;border-left:3px solid var(--' + esc(r.label) + '-bar, var(--border));background:rgba(255,255,255,0.4);">' +
+            '<div><span class="triage-label ' + esc(r.label) + '">' + esc(r.label) + ' &middot; ' + r.score + '</span> ' +
+              esc(r.raw) +
+            '</div>' +
+            '<div style="color:#555;margin-top:4px;font-size:12.5px;"><em>' + esc(r.reasoning) + '</em></div>' +
+            '<div style="color:#222;margin-top:4px;font-size:12.5px;"><strong>Next:</strong> ' + esc(r.next_action) + '</div>' +
+          '</li>'
+        );
+      }
+      out.push('</ul>');
+      result.innerHTML = out.join('');
+    }
+  } catch (e) {
+    status.textContent = 'Network error: ' + e.message; status.className = 'status err';
+  }
+  btn.disabled = false; btn.textContent = 'Triage';
+}
+
+// ---------- Objection Coach ----------
+async function runCoach(event) {
+  event.preventDefault();
+  const form = document.getElementById('coach-form');
+  const btn = form.querySelector('button[type=submit]');
+  const status = document.getElementById('coach-status');
+  const result = document.getElementById('coach-result');
+  btn.disabled = true; btn.textContent = 'Coaching…';
+  status.textContent = ''; status.className = 'status';
+  result.innerHTML = '';
+  try {
+    const r = await fetch('/api/objection', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ situation: document.getElementById('coach-text').value }),
+    });
+    const j = await r.json();
+    if (!j.ok) {
+      status.textContent = j.detail || 'Failed.'; status.className = 'status err';
+    } else {
+      status.textContent = 'Matched ' + j.responses.length + ' situation(s).'; status.className = 'status ok';
+      const out = [];
+      for (const resp of j.responses) {
+        out.push('<div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.4);border-left:3px solid var(--teal);">');
+        out.push('<div style="font-weight:600;">' + esc(resp.matched_situation) +
+          ' <span style="font-size:11px;color:var(--text-muted);">conf ' +
+          Math.round(resp.match_confidence * 100) + '%</span></div>');
+        out.push('<ol style="margin:8px 0 0 0;padding-left:20px;">');
+        for (const a of resp.angles) out.push('<li style="margin-bottom:6px;">' + esc(a) + '</li>');
+        out.push('</ol></div>');
+      }
+      result.innerHTML = out.join('');
+    }
+  } catch (e) {
+    status.textContent = 'Network error: ' + e.message; status.className = 'status err';
+  }
+  btn.disabled = false; btn.textContent = 'Get angles';
+}
+
+// ---------- Candidate Watch ----------
+async function loadWatchList() {
+  const wrap = document.getElementById('watch-list');
+  const status = document.getElementById('watch-list-status');
+  try {
+    const r = await fetch('/api/candidates/watch');
+    const j = await r.json();
+    if (!j.rows || j.rows.length === 0) {
+      status.textContent = 'No candidates yet — add one below.';
+      wrap.innerHTML = '';
+      return;
+    }
+    status.textContent = j.total + ' watched · sorted by call urgency';
+    const out = ['<ul style="margin:8px 0 0 0;padding:0;list-style:none;">'];
+    for (const c of j.rows.slice(0, 10)) {
+      const overdue = c._overdue_days > 0
+        ? '<span class="overdue-pill">overdue ' + c._overdue_days + 'd</span> '
+        : '';
+      const restless = c._restlessness_hits > 0
+        ? '<span class="restless-pill">restless ×' + c._restlessness_hits + '</span> '
+        : '';
+      out.push(
+        '<li style="padding:8px 0;border-bottom:1px solid var(--border);">' +
+          overdue + restless +
+          '<strong>' + esc(c.name) + '</strong> ' +
+          '<span style="color:var(--text-muted);font-size:12px;">@ ' + esc(c.current_company || '?') + '</span>' +
+          (c.current_title ? '<div style="font-size:12px;color:#444;">' + esc(c.current_title) + '</div>' : '') +
+          (c.last_signal ? '<div style="font-size:12px;color:#555;"><em>' + esc(c.last_signal) + '</em></div>' : '') +
+          '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">' + esc(c._status_label) + '</div>' +
+          '<div style="margin-top:6px;">' +
+            '<button class="btn-mini" onclick="touchCandidate(\'' + esc(c.name) + '\',\'' + esc(c.current_company) + '\')">✓ Touched</button> ' +
+            '<button class="btn-mini" onclick="snoozeCandidate(\'' + esc(c.name) + '\',\'' + esc(c.current_company) + '\')">⏸ Snooze 14d</button> ' +
+            '<button class="btn-mini ghost" onclick="removeCandidate(\'' + esc(c.name) + '\',\'' + esc(c.current_company) + '\')">✕</button>' +
+          '</div>' +
+        '</li>'
+      );
+    }
+    out.push('</ul>');
+    wrap.innerHTML = out.join('');
+  } catch (e) {
+    status.textContent = 'Failed: ' + e.message;
+  }
+}
+
+async function addWatchCandidate(event) {
+  event.preventDefault();
+  const form = document.getElementById('watch-add-form');
+  const status = document.getElementById('watch-add-status');
+  const data = {};
+  new FormData(form).forEach((v, k) => { data[k] = v; });
+  try {
+    const r = await fetch('/api/candidates/watch/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const j = await r.json();
+    if (!j.ok) { status.textContent = j.detail || 'Failed.'; status.className = 'status err'; return; }
+    status.textContent = 'Added.'; status.className = 'status ok';
+    form.reset();
+    document.getElementById('wa-cadence').value = '30';
+    loadWatchList();
+  } catch (e) {
+    status.textContent = 'Network error: ' + e.message; status.className = 'status err';
+  }
+}
+
+async function touchCandidate(name, company) {
+  const signal = prompt('What did you observe? (optional restlessness notes; e.g. "updated profile, posting more")', '') || '';
+  const r = await fetch('/api/candidates/watch/touch', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, current_company: company, signal }),
+  });
+  if (r.ok) loadWatchList();
+}
+async function snoozeCandidate(name, company) {
+  const r = await fetch('/api/candidates/watch/snooze', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, current_company: company, days: 14 }),
+  });
+  if (r.ok) loadWatchList();
+}
+async function removeCandidate(name, company) {
+  if (!confirm('Remove ' + name + ' from the watch list?')) return;
+  const r = await fetch('/api/candidates/watch/remove', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, current_company: company }),
+  });
+  if (r.ok) loadWatchList();
+}
+
+// Auto-load the intel panels on page ready.
+document.addEventListener('DOMContentLoaded', () => {
+  loadDistress();
+  loadMandates();
+  loadWatchList();
+});
 </script>
 
 </body>
