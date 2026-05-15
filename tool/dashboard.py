@@ -2360,7 +2360,7 @@ async function runTriage(event) {
       for (const r of j.rows) {
         out.push(
           '<li style="margin-bottom:10px;padding:8px 10px;border-left:3px solid var(--' + esc(r.label) + '-bar, var(--border));background:rgba(255,255,255,0.4);">' +
-            '<div><span class="triage-label ' + esc(r.label) + '">' + esc(r.label) + ' &middot; ' + r.score + '</span> ' +
+            '<div><span class="triage-label ' + esc(r.label) + '">' + esc(r.label) + ' &middot; ' + esc(r.score) + '</span> ' +
               esc(r.raw) +
             '</div>' +
             '<div style="color:#555;margin-top:4px;font-size:12.5px;"><em>' + esc(r.reasoning) + '</em></div>' +
