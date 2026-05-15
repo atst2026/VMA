@@ -164,6 +164,65 @@ REGULATOR_ACTION = TriggerType(
 )
 
 
+# ---- Early regulatory probe (pre-enforcement) --------------------------
+# Broadens REGULATOR_ACTION (which only fires on enforcement-grade
+# language + a £5m+ amount, see detector.py) to catch the *opening* of
+# an investigation / probe / inquiry — the point at which a 6-12 month
+# crisis-comms / reputation-Director hiring window starts, well before
+# any fine lands. This is the signal class that previously only lived in
+# the standalone Distress Watch panel.
+REGULATOR_PROBE_EARLY = TriggerType(
+    key="regulator_probe_early",
+    label="Early regulatory probe",
+    weight=0.7,
+    lead_time_weeks=(6, 26),
+    who_to_call="CCO / GC — pitch crisis-comms interim ahead of the live period",
+    implication=(
+        "A regulator has opened an investigation / probe into {company} "
+        "(pre-enforcement). These run 6-12 months and typically trigger "
+        "an interim crisis-comms hire and a reputation-facing Corporate "
+        "Affairs review before any penalty is decided."
+    ),
+    patterns=[
+        re.compile(p, re.IGNORECASE) for p in (
+            r"\b(?:FCA|PRA|Ofcom|Ofgem|Ofwat|CMA|SFO|ICO)\b.{0,40}\b(?:investigation|probe|inquiry|opens? (?:an? )?(?:investigation|probe|inquiry))\b",
+            r"\b(?:investigation|probe|inquiry) (?:by|from|into|launched by) (?:the )?(?:FCA|PRA|Ofcom|Ofgem|Ofwat|CMA|SFO|ICO)\b",
+            r"\b(?:section 166|skilled person review)\b",
+            r"\bunder investigation by\b",
+            r"\b(?:CMA|FCA|Ofcom|Ofgem|Ofwat) (?:launches|opens|begins) (?:a |an )?(?:strategic market status |market |formal )?(?:investigation|inquiry|probe|review into)\b",
+        )
+    ],
+)
+
+
+# ---- Crisis event (breach / litigation / suspension) -------------------
+# Cyber / data breach, class action or group litigation, suspended
+# trading — high-conversion crisis-comms triggers at a watchlist entity.
+# Account relevance is enforced downstream by extract_company (no
+# company extracted → dropped, same as every other trigger).
+CRISIS_EVENT = TriggerType(
+    key="crisis_event",
+    label="Crisis event (breach / litigation / suspension)",
+    weight=0.75,
+    lead_time_weeks=(2, 16),
+    who_to_call="CCO / GC — pitch crisis-comms interim immediately",
+    implication=(
+        "A crisis event at {company} (data breach / cyber / litigation / "
+        "trading suspension). Interim crisis-comms capacity is usually "
+        "engaged within days and a permanent reputation hire follows."
+    ),
+    patterns=[
+        re.compile(p, re.IGNORECASE) for p in (
+            r"\b(?:data breach|cyber[- ]?attack|cyberattack|ransomware|hacked|"
+            r"data leak|security breach)\b",
+            r"\b(?:class action|group litigation|group claim)\b",
+            r"\bsuspended trading\b|\btrading (?:in its shares )?suspended\b",
+            r"\b(?:major|nationwide|systemwide|system-wide) outage\b",
+        )
+    ],
+)
+
+
 # ---- Restructure / transformation / strategic review -------------------
 RESTRUCTURE = TriggerType(
     key="restructure",
@@ -458,7 +517,8 @@ PRESS_VELOCITY_SPIKE = TriggerType(
 
 TRIGGERS = [CEO_CHANGE, CHAIR_CHANGE, CHRO_CHANGE, CFO_CHANGE,
             IR_DIRECTOR_CHANGE, COMMS_LEADER_DEPARTURE,
-            MNA, REGULATOR_ACTION, RESTRUCTURE, IC_PLATFORM_RFP,
+            MNA, REGULATOR_ACTION, REGULATOR_PROBE_EARLY, CRISIS_EVENT,
+            RESTRUCTURE, IC_PLATFORM_RFP,
             IPO_LISTING, CONTRACT_LOSS, PRESS_VELOCITY_SPIKE]
 BY_KEY = {t.key: t for t in TRIGGERS}
 

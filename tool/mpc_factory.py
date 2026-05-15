@@ -31,13 +31,18 @@ import logging
 import re
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
-from typing import Iterable
-
-from tool.distress_signals import filter_distress, category_label
 
 log = logging.getLogger("brief.mpc")
 
 STATE_DIR = Path(__file__).resolve().parent / "state"
+
+# Predictor trigger keys that represent a distress event. The MPC
+# distress-tier hook is now sourced from these predictor events (in
+# latest_predictive.json) rather than the retired standalone
+# latest_distress.json feed — same signal capture, but it inherits the
+# predictor's company-resolution, probability and stacking.
+_DISTRESS_TRIGGER_KEYS = {"regulator_probe_early", "crisis_event",
+                          "regulator_action"}
 
 
 @dataclass
@@ -230,10 +235,11 @@ def _build_hook(candidate: MPCCandidate, account: str,
     cur_title = candidate.current_title
     specialism = candidate.specialism or "comms"
 
-    # 1. Distress signal — highest-priority hook in a dead market
+    # 1. Distress signal — highest-priority hook in a dead market.
+    # `distress` items are predictor events: {label, title, url}.
     if distress:
         d = distress[0]
-        cat_label = category_label(d.get("_distress_category", ""))
+        cat_label = (d.get("label") or "distress event").strip()
         title = (d.get("title") or "").strip()
         url = (d.get("url") or "")
         return (
@@ -308,8 +314,7 @@ def build_hit_list(candidate: MPCCandidate,
                    top_n: int = 20,
                    contacts_path: Path | None = None,
                    signals_path: Path | None = None,
-                   predictors_path: Path | None = None,
-                   distress_path: Path | None = None) -> list[MPCAccountHit]:
+                   predictors_path: Path | None = None) -> list[MPCAccountHit]:
     """Build a per-account hit list for the candidate.
 
     Top-N is the number of accounts to score (default 20 per the
@@ -317,20 +322,20 @@ def build_hit_list(candidate: MPCCandidate,
     universe (30 accounts). The list is ranked by hook strength —
     distress > predictor > leadership change > recent signal > generic.
 
-    Distress hooks are sourced from latest_distress.json (the raw
-    pre-rank scour, classified) — NOT from latest_signals.json, which
-    rank() has already stripped of every non-comms-keyword signal.
-    Without this, distress hooks would almost never fire on real data.
+    Distress hooks are derived from the predictor pipeline's distress-
+    class trigger events (regulator_probe_early / crisis_event /
+    regulator_action) in latest_predictive.json. The standalone
+    latest_distress.json feed was retired (Option A) — the predictor
+    already runs on the raw pre-rank scour, so it sees these events and
+    additionally gives them a probability, lead-time and stacking.
     """
     contacts_path   = contacts_path or STATE_DIR / "hiring_contacts.json"
     signals_path    = signals_path or STATE_DIR / "latest_signals.json"
     predictors_path = predictors_path or STATE_DIR / "latest_predictive.json"
-    distress_path   = distress_path or STATE_DIR / "latest_distress.json"
 
     contacts: dict = {}
     signals: list[dict] = []
     predictors: list[dict] = []
-    distress_all: list[dict] = []
     try:
         if contacts_path.exists():
             contacts = json.loads(contacts_path.read_text()) or {}
@@ -346,11 +351,6 @@ def build_hit_list(candidate: MPCCandidate,
             predictors = json.loads(predictors_path.read_text()) or []
     except Exception as e:
         log.info("latest_predictive load failed: %s", e)
-    try:
-        if distress_path.exists():
-            distress_all = json.loads(distress_path.read_text()) or []
-    except Exception as e:
-        log.info("latest_distress load failed: %s", e)
 
     sectors = _detect_sectors(candidate)
 
@@ -378,23 +378,22 @@ def build_hit_list(candidate: MPCCandidate,
 
     candidate_universe = same_sector_accounts + other_accounts
 
-    # Distress feed is pre-classified upstream. If we somehow got an
-    # unclassified list (old artifact), classify defensively.
-    if distress_all and not (
-        isinstance(distress_all[0], dict) and "_distress_score" in distress_all[0]
-    ):
-        # Already a distress feed; don't re-apply the account gate (the
-        # per-account _signals_for narrowing below handles relevance).
-        distress_all = filter_distress(distress_all, require_account=False)
-
     hits: list[MPCAccountHit] = []
     for account in candidate_universe:
         acc_signals = _signals_for(account, signals)
-        # Distress hooks come from the dedicated feed, matched per
-        # account — NOT from filter_distress(acc_signals), which was
-        # starved because acc_signals is the comms-filtered set.
-        acc_distress = _signals_for(account, distress_all)
         acc_predictors = _predictors_for(account, predictors)
+        # Distress hook is now derived from the account's distress-class
+        # predictor events (regulator_probe_early / crisis_event /
+        # regulator_action), shaped as {label, title, url} for _build_hook.
+        acc_distress = []
+        for p in acc_predictors:
+            for ev in (p.get("events") or []):
+                if isinstance(ev, dict) and ev.get("trigger_key") in _DISTRESS_TRIGGER_KEYS:
+                    acc_distress.append({
+                        "label": ev.get("trigger_label") or "distress event",
+                        "title": (ev.get("evidence") or ev.get("trigger_label") or ""),
+                        "url":   ev.get("url", ""),
+                    })
         leadership = _leadership_for(account, contacts)
         kind, hook, url = _build_hook(
             candidate, account, acc_signals, acc_predictors, acc_distress, leadership

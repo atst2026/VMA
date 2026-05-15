@@ -54,7 +54,8 @@ def _window(stk: Stack) -> str:
 def _who_to_call(stk: Stack) -> str:
     """Prefer the most senior contact mentioned across triggers."""
     order = ["comms_leader_departure", "ic_platform_rfp", "ipo_listing",
-             "ceo_change", "mna", "regulator_action", "contract_loss",
+             "ceo_change", "mna", "regulator_action", "regulator_probe_early",
+             "crisis_event", "contract_loss",
              "chair_change", "cfo_change", "ir_director_change",
              "chro_change", "restructure", "press_velocity_spike",
              "job_ad_cluster"]
@@ -72,7 +73,8 @@ def _who_to_call(stk: Stack) -> str:
 def _implication(stk: Stack) -> str:
     """Use the strongest trigger's implication template."""
     order = ["comms_leader_departure", "ic_platform_rfp", "ipo_listing",
-             "ceo_change", "mna", "regulator_action", "contract_loss",
+             "ceo_change", "mna", "regulator_action", "regulator_probe_early",
+             "crisis_event", "contract_loss",
              "chair_change", "cfo_change", "ir_director_change",
              "chro_change", "restructure", "press_velocity_spike",
              "job_ad_cluster"]
