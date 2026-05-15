@@ -206,24 +206,49 @@ def company_events(name: str) -> dict:
     if not hits:
         return {"company": name, "found": False}
     # Among ACTIVE prefix-matches (titles starting with the query name),
-    # prefer the shortest title ending in "PLC" - that's the parent /
-    # canonical entity in UK company structure. Falls through to other
-    # prefix matches, then any active, then first hit.
-    # E.g. for "Unilever":  UNILEVER PLC (parent) beats UNILEVER UK
-    # LIMITED, UNILEVER UK HOLDINGS LIMITED, etc.
+    # prefer the parent / canonical entity. UK company structure ranks
+    # parent holding companies in this order:
+    #   1. "<NAME> HOLDINGS PLC" (e.g. HSBC HOLDINGS PLC)
+    #   2. "<NAME> GROUP PLC" (e.g. BT GROUP PLC)
+    #   3. shortest "<NAME> ... PLC" (e.g. UNILEVER PLC, BARCLAYS PLC)
+    # Subsidiaries (e.g. HSBC BANK PLC, UNILEVER UK LIMITED) fall through.
+    # Falls back to first prefix-active, then any active, then first hit.
     name_lower = name.strip().lower()
     active = [it for it in hits if it.get("company_status") == "active"]
     prefix_active = [
         it for it in active
         if (it.get("title") or "").lower().startswith(name_lower)
     ]
-    plc_active = sorted(
-        [it for it in prefix_active
-         if (it.get("title") or "").rstrip().lower().endswith(" plc")],
-        key=lambda it: len(it.get("title") or ""),
+
+    def _title(it: dict) -> str:
+        return (it.get("title") or "").upper().strip()
+
+    # Tier 1: HOLDINGS PLC variants (the parent in a holding-company structure)
+    holdings_active = sorted(
+        [it for it in prefix_active if " HOLDINGS PLC" in _title(it)],
+        key=lambda it: len(_title(it)),
     )
-    if plc_active:
-        top = plc_active[0]
+    # Tier 2: GROUP PLC variants (the parent in a group structure)
+    group_active = sorted(
+        [it for it in prefix_active
+         if " GROUP PLC" in _title(it) and " HOLDINGS PLC" not in _title(it)],
+        key=lambda it: len(_title(it)),
+    )
+    # Tier 3: any other PLC variant, shortest first
+    other_plc_active = sorted(
+        [it for it in prefix_active
+         if _title(it).endswith(" PLC")
+         and " HOLDINGS PLC" not in _title(it)
+         and " GROUP PLC" not in _title(it)],
+        key=lambda it: len(_title(it)),
+    )
+
+    if holdings_active:
+        top = holdings_active[0]
+    elif group_active:
+        top = group_active[0]
+    elif other_plc_active:
+        top = other_plc_active[0]
     elif prefix_active:
         top = prefix_active[0]
     elif active:
