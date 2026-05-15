@@ -83,13 +83,125 @@ def _safe_weight(v) -> float:
         return 1.0
 
 
-def filter_distress(signals: Iterable[dict]) -> list[dict]:
-    """Return a list of signals that contain at least one distress hit,
-    each annotated with `_distress` = the hit dicts and a derived
-    `_distress_score` = max weight * source weight (if any).
+# --- Account-relevance gate ----------------------------------------------
+# Distress Watch is only useful if a row concerns a company Sara works.
+# Without this, the FCA/CMA RSS feeds (which publish the regulators' own
+# thematic reviews) and generic non-UK news flood the panel: of 28 raw
+# distress hits on a real run, ~1 concerned a watchlist account. This
+# gate ties every surfaced distress signal to a known account.
 
-    Sorted by distress score descending so the most urgent hires float
-    to the top of the dashboard panel.
+# Watchlist names that are also common English words / too short to
+# match safely inside a free-text headline. We still match these via the
+# structured `company` field (exact), just not via loose title scanning.
+_AMBIGUOUS_NAMES = {
+    "mind", "next", "scope", "saga", "sage", "boots", "drax", "shell",
+    "just group", "future plc", "reach plc", "mace group", "rank group",
+    "informa", "halma", "bunzl", "senior plc", "genus", "wise", "boku",
+    "ey", "iag", "imi", "dnv", "rs group", "m&g", "sse", "bp", "visa",
+    "relx", "itv", "bbc", "gsk", "ibm", "kkr", "tpg", "aon", "888 holdings",
+}
+
+_WATCHLIST_NAMES: list[str] | None = None
+_WATCHLIST_PATTERNS: list[tuple[str, re.Pattern]] | None = None
+
+
+def _norm(s: str) -> str:
+    return re.sub(r"\s+", " ", re.sub(r"[^\w& ]+", " ", (s or "").lower())).strip()
+
+
+def _load_watchlist_names() -> list[str]:
+    """Sara's account universe: the ~550 peer/midcap watchlist plus the
+    seeded Tier-A contacts. Loaded once, lazily."""
+    global _WATCHLIST_NAMES
+    if _WATCHLIST_NAMES is not None:
+        return _WATCHLIST_NAMES
+    names: set[str] = set()
+    try:
+        from tool.sources.companies_house import _all_watchlist_names
+        for n in _all_watchlist_names():
+            if n and n.strip():
+                names.add(n.strip())
+    except Exception as e:
+        log.info("distress: watchlist load (peers) failed: %s", e)
+    try:
+        hc = json.loads((STATE_DIR / "hiring_contacts.json").read_text())
+        if isinstance(hc, dict):
+            for k in hc:
+                if isinstance(k, str) and not k.startswith("_") and k.strip():
+                    names.add(k.strip())
+    except Exception as e:
+        log.info("distress: watchlist load (contacts) failed: %s", e)
+    _WATCHLIST_NAMES = sorted(names, key=len, reverse=True)
+    return _WATCHLIST_NAMES
+
+
+def _watchlist_patterns() -> list[tuple[str, re.Pattern]]:
+    """(display_name, word-boundary regex) for every non-ambiguous
+    watchlist name, longest-first so 'HSBC Holdings' wins over 'HSBC'."""
+    global _WATCHLIST_PATTERNS
+    if _WATCHLIST_PATTERNS is not None:
+        return _WATCHLIST_PATTERNS
+    pats: list[tuple[str, re.Pattern]] = []
+    for name in _load_watchlist_names():
+        norm = _norm(name)
+        if not norm:
+            continue
+        # Loose title matching only for distinctive names: multiword, or
+        # >= 5 chars, and never the ambiguous-common-word set.
+        if norm in _AMBIGUOUS_NAMES:
+            continue
+        if " " not in norm and len(norm) < 5:
+            continue
+        pats.append((name, re.compile(r"(?<!\w)" + re.escape(norm) + r"(?!\w)")))
+    _WATCHLIST_PATTERNS = pats
+    return _WATCHLIST_PATTERNS
+
+
+def _word_in(needle: str, haystack: str) -> bool:
+    """True if `needle` occurs in `haystack` on word boundaries. Avoids
+    the false positive where company 'SSE' matched watchlist
+    'Liontrust Asset Management' via the raw substring inside 'asset'."""
+    if not needle or not haystack:
+        return False
+    return re.search(r"(?<!\w)" + re.escape(needle) + r"(?!\w)", haystack) is not None
+
+
+def _account_for_signal(signal: dict) -> str | None:
+    """Return the watchlist account this distress signal concerns, or
+    None. Checks the structured `company` field first (reliable for any
+    length incl. ambiguous short names — but word-boundary matched, not
+    raw substring), then falls back to scanning the title for
+    distinctive watchlist names."""
+    company = signal.get("company")
+    comp_norm = _norm(company if isinstance(company, str) else "")
+    if comp_norm:
+        for name in _load_watchlist_names():
+            n = _norm(name)
+            if not n:
+                continue
+            if comp_norm == n or _word_in(n, comp_norm) or _word_in(comp_norm, n):
+                return name
+    title = signal.get("title")
+    title_norm = _norm(title if isinstance(title, str) else "")
+    if title_norm:
+        for name, pat in _watchlist_patterns():
+            if pat.search(title_norm):
+                return name
+    return None
+
+
+def filter_distress(signals: Iterable[dict],
+                    require_account: bool = True) -> list[dict]:
+    """Return signals that (a) match a distress category AND (b) concern
+    a company in Sara's account universe. Each is annotated with
+    `_distress`, `_distress_score`, `_distress_category`, and
+    `_distress_account` (the matched watchlist company).
+
+    `require_account=False` disables the account gate (used only by
+    callers that have already narrowed to a specific account, e.g. the
+    MPC factory's per-account distress lookup).
+
+    Sorted by distress score descending.
     """
     annotated: list[dict] = []
     for s in signals:
@@ -98,12 +210,14 @@ def filter_distress(signals: Iterable[dict]) -> list[dict]:
         is_d, hits = signal_is_distress(s)
         if not is_d:
             continue
+        account = _account_for_signal(s)
+        if require_account and not account:
+            continue
         copy = dict(s)
         copy["_distress"] = hits
         copy["_distress_score"] = max(h["weight"] for h in hits) * _safe_weight(s.get("weight"))
-        # Primary category is the highest-weight hit. Used by the
-        # dashboard for the colour-coded label badge.
         copy["_distress_category"] = hits[0]["category"]
+        copy["_distress_account"] = account or ""
         annotated.append(copy)
     annotated.sort(key=lambda s: s["_distress_score"], reverse=True)
     return annotated

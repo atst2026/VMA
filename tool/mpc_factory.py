@@ -383,7 +383,9 @@ def build_hit_list(candidate: MPCCandidate,
     if distress_all and not (
         isinstance(distress_all[0], dict) and "_distress_score" in distress_all[0]
     ):
-        distress_all = filter_distress(distress_all)
+        # Already a distress feed; don't re-apply the account gate (the
+        # per-account _signals_for narrowing below handles relevance).
+        distress_all = filter_distress(distress_all, require_account=False)
 
     hits: list[MPCAccountHit] = []
     for account in candidate_universe:
