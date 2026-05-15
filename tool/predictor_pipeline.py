@@ -188,7 +188,7 @@ def upsert(ranked_stacks: list[tuple[Stack, float]]) -> dict:
         from tool.contacts.store import load_contacts
         from tool.linkedin_resolver import resolve_named_contact_for_predictor
         contacts = load_contacts()
-        for _pid, entry in predictors.items():
+        for _pid_key, entry in predictors.items():
             if entry.get("status") == "dismissed":
                 continue
             predictor_dict = {
