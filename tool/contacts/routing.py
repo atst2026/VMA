@@ -45,6 +45,10 @@ TRIGGER_ROLE_CHAIN: dict[str, tuple[str, ...]] = {
     # signatory for any regulator-facing hire, CHRO for non-financial
     # operational matters, CEO last resort.
     "regulator_action":        ("cco", "gc", "chro", "ceo"),
+    # Early probe / crisis event -> same crisis-comms routing as a
+    # material regulator action (CCO leads, GC second signatory).
+    "regulator_probe_early":   ("cco", "gc", "chro", "ceo"),
+    "crisis_event":            ("cco", "gc", "chro", "ceo"),
 
     # Material contract loss -> CCO reposition + reputation defence.
     "contract_loss":           ("cco", "head_of_comms", "ceo"),

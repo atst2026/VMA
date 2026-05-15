@@ -475,7 +475,7 @@ def linkedin_search_for_predictor(p: dict) -> dict:
     if "chair_change" in keys:
         return {"label": f"Search Chair at {company}",
                 "url": _people_search(f'"Chair" OR "Chairman" "{company}"')}
-    if "regulator_action" in keys:
+    if "regulator_action" in keys or "regulator_probe_early" in keys or "crisis_event" in keys:
         return {"label": f"Search CHRO at {company}",
                 "url": _people_search(f'"CHRO" OR "Head of Communications" "{company}"')}
     if "mna" in keys:
@@ -643,19 +643,6 @@ def api_sweep():
 # when market is dead" — distress signals, MPC outreach factory, pipeline
 # triage, objection coach, candidate watch, competitor mandates.
 # ---------------------------------------------------------------------------
-
-@app.route("/api/distress", methods=["GET"])
-@_auth_required
-def api_distress():
-    """Distress subset of the latest morning-brief signals — surface
-    profit warnings, regulatory probes, restructurings, etc. that drive
-    crisis-comms / IR / restructuring-comms hiring."""
-    from tool.distress_signals import load_distress_signals, category_label
-    rows = load_distress_signals(limit=40)
-    for r in rows:
-        r["_category_label"] = category_label(r.get("_distress_category", ""))
-    return jsonify({"rows": rows, "total": len(rows)})
-
 
 @app.route("/api/mpc/build", methods=["POST"])
 @_auth_required
@@ -1359,28 +1346,6 @@ TEMPLATE = r"""
       box-shadow: 0 0 0 3px rgba(201, 55, 55, 0.08);
     }
     /* ---- Demand-creation tool badges & pills ---- */
-    .distress-badge {
-      display: inline-block;
-      font-size: 10.5px;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      padding: 2px 7px;
-      border-radius: 4px;
-      margin-right: 6px;
-      background: #FCE7E0;
-      color: #7A3A22;
-    }
-    .distress-badge.cat-profit_warning,
-    .distress-badge.cat-share_price_shock,
-    .distress-badge.cat-ceo_exit_under_cloud,
-    .distress-badge.cat-crisis    { background: #FCD5C9; color: #8C2A0E; }
-    .distress-badge.cat-ratings,
-    .distress-badge.cat-guidance_cut,
-    .distress-badge.cat-activist  { background: #FCEED1; color: #6B4A0B; }
-    .distress-badge.cat-regulatory_probe,
-    .distress-badge.cat-restructuring,
-    .distress-badge.cat-m_and_a_distress { background: #E2E6F0; color: #2A3556; }
     .mandate-age {
       display: inline-block;
       font-size: 10.5px;
@@ -1873,19 +1838,8 @@ TEMPLATE = r"""
 
   </div>
 
-  <!-- DEMAND-CREATION INTEL (dead-market: distress signals + steal-this-mandate) -->
+  <!-- DEMAND-CREATION INTEL (dead-market: steal-this-mandate) -->
   <div class="row">
-
-    <!-- DISTRESS WATCH -->
-    <div class="panel">
-      <div class="panel-header">
-        <h2>Distress Watch</h2>
-        <span class="count" id="distress-count">—</span>
-      </div>
-      <div class="panel-body" id="distress-body">
-        <div class="empty compact">Loading…</div>
-      </div>
-    </div>
 
     <!-- COMPETITOR MANDATES -->
     <div class="panel">
@@ -2275,40 +2229,6 @@ function safeUrl(u) {
   return '#';
 }
 
-// ---------- Distress Watch (auto-loads on page ready) ----------
-async function loadDistress() {
-  const body = document.getElementById('distress-body');
-  const count = document.getElementById('distress-count');
-  try {
-    const r = await fetch('/api/distress');
-    const j = await r.json();
-    count.textContent = j.total;
-    if (!j.rows || j.rows.length === 0) {
-      body.innerHTML = '<div class="empty compact">No distress signals in the latest scour. ' +
-        'This filter looks across all morning-brief signals for profit warnings, ratings downgrades, activist letters, regulatory probes, ' +
-        'restructurings, CEO exits under cloud, and crisis events.</div>';
-      return;
-    }
-    const out = ['<ul style="margin:6px 0;padding:0;list-style:none;">'];
-    for (const s of j.rows.slice(0, 12)) {
-      out.push(
-        '<li style="padding:8px 0;border-bottom:1px solid var(--border);">' +
-          '<span class="distress-badge cat-' + esc(s._distress_category) + '">' +
-            esc(s._category_label) + '</span> ' +
-          '<a href="' + safeUrl(s.url) + '" target="_blank" rel="noopener noreferrer" style="color:var(--text);">' +
-            esc(s.title || '(no title)') + '</a>' +
-          '<span style="color:var(--text-muted);font-size:12px;display:block;margin-top:2px;">' +
-            esc(s.company || '') + ' &middot; ' + esc(s.source || '') +
-          '</span>' +
-        '</li>'
-      );
-    }
-    out.push('</ul>');
-    body.innerHTML = out.join('');
-  } catch (e) {
-    body.innerHTML = '<div class="empty compact">Failed to load distress signals: ' + esc(e.message) + '</div>';
-  }
-}
 
 // ---------- Mandates Worth Stealing ----------
 async function loadMandates() {
@@ -2585,7 +2505,6 @@ async function addWatchCandidate(event) {
 
 // Auto-load the intel panels on page ready.
 document.addEventListener('DOMContentLoaded', () => {
-  loadDistress();
   loadMandates();
   loadWatchList();
 });
