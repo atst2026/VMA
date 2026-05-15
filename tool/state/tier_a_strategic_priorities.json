@@ -1,0 +1,156 @@
+{
+  "_meta": {
+    "purpose": "Hand-curated strategic priorities for top 30 Tier-A accounts. Used as a fallback in pre_meeting.py Section 4 when live Companies House annual report extraction fails (massive PDFs that timeout, image-only filings, etc.). All entries are paraphrased from each company's PUBLICLY published strategic priorities (latest annual report, investor presentations, or strategic update decks). Last refreshed 2026-05.",
+    "format": "Each value is a list of 3 short bullet-style strings (Sara reads these aloud)."
+  },
+  "HSBC": [
+    "Focus on international wholesale, markets and wealth where HSBC has competitive advantage, exiting non-core retail markets",
+    "Boost the wealth and personal banking franchise in Asia, particularly in Hong Kong and mainland China cross-border flows",
+    "Drive operational efficiency through digitisation, AI deployment in middle office, and a flatter management structure"
+  ],
+  "NatWest Group": [
+    "Become the bank of choice for UK families, businesses and corporates, with sharper segment focus on retail, commercial and private banking",
+    "Simplify the bank to be easier and cheaper to run, with cost-to-income ratio target below 50%",
+    "Accelerate climate and energy transition financing, having committed £100bn in climate and sustainable funding by end-2025"
+  ],
+  "Lloyds Banking Group": [
+    "Deliver the strategic transformation programme: grow and diversify revenues from wealth, insurance and corporate-and-institutional banking",
+    "Modernise technology and data foundations - 75% of applications targeted to be cloud-hosted",
+    "Build deeper customer relationships through the mass-affluent proposition and embedded finance partnerships"
+  ],
+  "Barclays": [
+    "Re-allocate £30bn of capital from the investment bank to higher-returning UK consumer, cards and corporate banking by 2026",
+    "Deliver £2bn of gross cost savings via 'simpler, better and more dynamic' operating model and structural cost programme",
+    "Expand the US consumer business and grow Barclays UK's mass-affluent and small-business segments"
+  ],
+  "Aviva": [
+    "Grow the capital-light UK businesses (general insurance, health, wealth, protection) - now 56% of operating profit",
+    "Defend leadership in UK life pensions and bulk purchase annuities (BPA) where competition is intensifying",
+    "Become the UK's go-to retirement and savings provider through workplace pensions and adviser distribution"
+  ],
+  "Legal & General": [
+    "Simplify the group around three divisions: institutional retirement, asset management and retail",
+    "Scale the £1.2tn LGIM asset management business by deepening private markets capability and global distribution",
+    "Return £5bn-plus of capital to shareholders over 2024-27 while growing core operating profit at high single digits"
+  ],
+  "Phoenix Group": [
+    "Grow the open-business pension and savings franchises (Standard Life, SunLife, ReAssure) at 25% of new business value",
+    "Continue to be the UK's leading consolidator of closed life-insurance books, leveraging M&A capacity",
+    "Deliver £900m of operating cash generation reliably to support the progressive dividend"
+  ],
+  "Standard Chartered": [
+    "Focus on Asia, Africa and Middle East corridors where the bank has cross-border franchise advantage",
+    "Grow the affluent client business (Wealth Solutions) - target $200bn AUM uplift by 2029",
+    "Drive operational efficiency to reach a cost-to-income ratio in the low-60s, including $1.5bn productivity programme"
+  ],
+  "Schroders": [
+    "Grow the four strategic engines: wealth management, private assets, solutions and active equity",
+    "Expand the Schroders Capital private-markets platform towards £100bn AUM through institutional and wealth distribution",
+    "Improve operational gearing - target 'mid-50s' adjusted operating margin through technology and platform consolidation"
+  ],
+  "AstraZeneca": [
+    "Deliver $80bn revenue ambition by 2030, anchored on oncology, biopharmaceuticals and rare disease franchises",
+    "Launch 20 new medicines by 2030 across high-margin therapy areas, with $4bn-plus annual peak-sales potential each",
+    "Build manufacturing capacity in the US and UK as global biopharma supply chains regionalise"
+  ],
+  "GSK": [
+    "Strengthen the specialty medicines and vaccines portfolio, with 12 launches expected by 2031 with peak-year sales over £20bn",
+    "Deliver above-50% growth in HIV and respiratory franchises (dolutegravir, Trelegy, Nucala)",
+    "Sustain R&D productivity through AI-enabled discovery and external partnerships"
+  ],
+  "Haleon": [
+    "Be the world's number-one consumer health company by science-led innovation across nine power brands",
+    "Grow organic revenue 4-6% annually, with adjusted operating margin expansion through productivity and pricing",
+    "Pay down debt towards 2.5x net leverage and return surplus capital via buy-backs"
+  ],
+  "Bupa UK": [
+    "Be the most personal, accessible health partner - investing in clinics, dental and digital primary-care apps",
+    "Grow the UK Insurance and Health Services businesses (Cromwell Hospital, dental, care services) through integrated provision",
+    "Use technology and data to deliver better health outcomes at lower cost across all customer touchpoints"
+  ],
+  "NHS England": [
+    "Recover core services and reduce waiting lists - especially elective surgery, A&E performance and cancer pathways",
+    "Reform health and care delivery via Integrated Care Systems, shifting capacity from acute to community",
+    "Modernise the NHS through digital transformation (NHS App, federated data platform) and workforce expansion"
+  ],
+  "National Grid": [
+    "Deploy the £60bn five-year capital plan (FY24-FY29) - the largest investment programme in National Grid's history",
+    "Build out UK and US electricity transmission networks to support net-zero and the energy transition",
+    "Exit non-core gas distribution to focus the portfolio on regulated electricity infrastructure"
+  ],
+  "SSE": [
+    "Invest £20.5bn over 2024-2027 (£10m/day) in the electricity transmission, distribution and renewables businesses",
+    "Build out offshore wind (Dogger Bank, Berwick Bank) to be the UK's largest renewables developer",
+    "Deliver Net Zero Acceleration Programme: 50% increase in renewables output, 75% in regulated electricity assets by 2027"
+  ],
+  "BP": [
+    "Reset strategy back towards oil and gas: lift hydrocarbon production to 2.3-2.5 million boe/day by 2030",
+    "Cut $5bn of structural costs by 2027 through portfolio reshaping and operating efficiencies",
+    "Maintain disciplined investment in transition businesses (EV charging, biofuels) but reduce growth ambition"
+  ],
+  "Shell": [
+    "Maintain disciplined capital allocation - $22-25bn cash capex annually, with majority directed at upstream and integrated gas",
+    "Grow LNG sales by 20-30% by 2030 versus 2022, leveraging Shell's leadership in global LNG trading",
+    "Deliver $40-45bn shareholder distributions over 2023-2025 through dividends and buy-backs"
+  ],
+  "Severn Trent": [
+    "Deliver the largest investment plan in the company's history - £12.9bn during the 2025-30 regulatory period (AMP8)",
+    "Cut leakage by 16% and reduce pollution incidents by 30% during AMP8",
+    "Build new water resources (Mythe and others) and upgrade wastewater treatment to meet stricter river-water standards"
+  ],
+  "United Utilities": [
+    "Deliver the AMP8 (2025-30) £13.7bn investment programme - 88% increase versus the prior period",
+    "Cut storm overflow spills by 60% through £3bn programme on wastewater network",
+    "Improve customer service and operational resilience to lift performance against Ofwat's outcome delivery incentives"
+  ],
+  "BT Group": [
+    "Complete the full-fibre Openreach build to 25 million UK premises by December 2026",
+    "Cut £3bn of annual costs by FY29 through network simplification, AI deployment and workforce reduction",
+    "Generate normalised free cash flow of £2bn by FY27, supporting deleveraging and dividend"
+  ],
+  "Vodafone": [
+    "Reshape the European business after the German weakness: scale through the merger with Three UK and disposals in Italy and Spain",
+    "Grow Vodafone Business and Vodacom Africa as the engines of profitable growth",
+    "Drive efficiency and customer satisfaction to restore service-revenue growth and improve EBITDAaL margins"
+  ],
+  "Microsoft": [
+    "Lead the AI platform shift: embed Copilot and OpenAI capabilities across Microsoft 365, Azure and Dynamics",
+    "Grow Azure as the leading cloud for AI workloads through accelerated data-centre and silicon investment",
+    "Expand the gaming franchise post-Activision and continue to grow LinkedIn as the talent platform of record"
+  ],
+  "Google": [
+    "Lead the next era of AI through Gemini and Search transformation, defending the Ads moat",
+    "Grow Google Cloud at premium rates through generative-AI infrastructure and Vertex AI tooling",
+    "Drive long-term operational discipline - cap headcount growth and rationalise hardware and other 'bets'"
+  ],
+  "Sage Group": [
+    "Win the global mid-market accounting and HR cloud opportunity with Sage Intacct and Sage Business Cloud",
+    "Reach Rule-of-40 financial profile (organic revenue growth + operating margin) over the medium term",
+    "Deliver Sage Copilot and AI-embedded products to lift productivity for SMB customers"
+  ],
+  "BBC": [
+    "Deliver 'A BBC for the next generation' - reform funding model, modernise content commissioning and prioritise digital",
+    "Make BBC iPlayer the primary platform for UK audiences, with new streaming-first programming approach",
+    "Invest in trusted news and global services while finding £700m of annual savings to close the funding gap"
+  ],
+  "Cabinet Office": [
+    "Deliver the Government's missions and growth agenda through better cross-Whitehall coordination",
+    "Modernise the civil service via the Government People Plan - smaller, more skilled, more productive workforce",
+    "Drive digital transformation of public services through the Central Digital and Data Office"
+  ],
+  "FCA": [
+    "Deliver the FCA's 5-year strategy: smarter regulator, supporting growth, helping consumers and fighting financial crime",
+    "Sharpen supervision through outcomes-based Consumer Duty, intelligence-led data and faster, more decisive enforcement",
+    "Adapt to crypto, AI and DeFi while keeping UK markets internationally competitive post-Edinburgh Reforms"
+  ],
+  "Macmillan Cancer Support": [
+    "Be there for everyone with cancer in the UK by 2030 - reach more people earlier in their cancer pathway",
+    "Drive system change in NHS cancer care through partnership funding of nurses, professionals and services",
+    "Diversify and grow income to weather cost-of-living pressure on charitable giving"
+  ],
+  "BAE Systems": [
+    "Capitalise on sustained higher Western defence spending - record £77bn order backlog at end-2024",
+    "Deliver the AUKUS programme (Australian nuclear submarines) and the GCAP next-gen fighter with Italy and Japan",
+    "Grow the US business (BAE Systems Inc) and electronic systems franchise organically and through M&A"
+  ]
+}
