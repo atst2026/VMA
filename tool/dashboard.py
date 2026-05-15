@@ -1721,6 +1721,39 @@ TEMPLATE = r"""
       font-weight: 400;
     }
 
+    /* Developer-only maintenance control. Deliberately drab and set
+       apart from the user-facing footer text so it reads as "not for
+       you" and doesn't invite a curious click. */
+    .dev-zone {
+      display: block;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border);
+      opacity: 0.45;
+      font-size: 10px;
+    }
+    .dev-zone:hover { opacity: 0.8; }
+    .dev-zone-label {
+      color: var(--text-dim);
+      font-style: italic;
+      margin-right: 6px;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .dev-btn {
+      font: inherit;
+      font-size: 10px;
+      color: var(--text-muted);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 8px;
+      cursor: pointer;
+    }
+    .dev-btn:hover { color: var(--text); border-color: var(--text-dim); }
+    .dev-btn:disabled { opacity: 0.5; cursor: default; }
+    .dev-status { margin-left: 8px; color: var(--text-dim); }
+
     .warn-banner {
       background: rgba(212, 162, 26, 0.08);
       color: #6B5012;
@@ -2059,6 +2092,15 @@ TEMPLATE = r"""
     Data refreshed from GitHub Actions artifacts.
     All sources are free public surfaces. No automation of LinkedIn account.
     <span style="opacity:0.5; margin-left:8px;">· build {{ build_stamp }}</span>
+    <span class="dev-zone">
+      <span class="dev-zone-label">dev / tech only — not a user feature:</span>
+      <button type="button" id="dev-run-brief" class="dev-btn"
+              onclick="devTriggerBrief()"
+              title="Maintenance: triggers a fresh morning-brief workflow run. Not for day-to-day use — Daily Refresh is the user control.">
+        trigger fresh scour
+      </button>
+      <span class="dev-status" id="dev-run-status"></span>
+    </span>
   </div>
 
 </div>
@@ -2563,6 +2605,37 @@ async function addWatchCandidate(event) {
   } catch (e) {
     status.textContent = 'Network error: ' + e.message; status.className = 'status err';
   }
+}
+
+// Developer/tech-only: trigger a fresh morning-brief workflow run in
+// preview mode (no email). NOT the user "Daily Refresh" — that only
+// pulls the last artifact. Guarded by an explicit confirm so a curious
+// click can't fire a CI run blind.
+async function devTriggerBrief() {
+  const btn = document.getElementById('dev-run-brief');
+  const status = document.getElementById('dev-run-status');
+  if (!confirm(
+    'DEVELOPER / TECH ACTION — not a day-to-day feature.\n\n' +
+    'This starts a fresh morning-brief scour on GitHub Actions ' +
+    '(~5–8 min, no email sent). The user-facing control is ' +
+    '"Daily Refresh", which just loads the last completed run.\n\n' +
+    'Proceed with the maintenance run?'
+  )) return;
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = 'dispatching…';
+  status.textContent = '';
+  try {
+    const r = await fetch('/api/dispatch/brief', { method: 'POST' });
+    const j = await r.json();
+    status.textContent = j.ok
+      ? 'dispatched — ~5–8 min, then click Daily Refresh'
+      : ('failed: ' + (j.detail || ('HTTP ' + r.status)));
+  } catch (e) {
+    status.textContent = 'network error: ' + e.message;
+  }
+  btn.disabled = false;
+  btn.textContent = orig;
 }
 
 // Auto-load the intel panels on page ready.
