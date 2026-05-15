@@ -29,6 +29,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
+import re
+
 from tool import config
 from tool.email_send import send as email_send
 
@@ -73,6 +75,20 @@ def _load_contacts_for_company(company: str) -> list[str]:
     return out
 
 
+def _company_word_match(target: str, *fields: str) -> bool:
+    """True if `target` appears as a whole word (case-insensitive) in
+    any of the given fields. Used instead of strict equality because
+    morning-brief's signals carry various forms ('HSBC', 'HSBC Holdings
+    PLC', 'HSBC Bank PLC') and matching them all requires a fuzzier
+    rule than '=='. Word-boundary check prevents false positives like
+    'BT' matching 'BPT' or 'BTW'."""
+    if not target or not target.strip():
+        return False
+    pattern = re.compile(r"\b" + re.escape(target.strip()) + r"\b",
+                         re.IGNORECASE)
+    return any(pattern.search(f or "") for f in fields)
+
+
 def _load_recent_signals_for_company(company: str, limit: int = 5) -> list[dict]:
     path = STATE_DIR / "latest_signals.json"
     if not path.exists():
@@ -83,10 +99,15 @@ def _load_recent_signals_for_company(company: str, limit: int = 5) -> list[dict]
         return []
     if not isinstance(data, list):
         return []
+    # Match the company name (case-insensitive, word-boundary) against
+    # both the signal's `company` field AND its `title`. Catches signals
+    # where extract_company missed the company name but the title
+    # clearly mentions it, AND signals where company is the longer form
+    # ('HSBC Holdings PLC') vs the user's input ('HSBC').
     matched = [
         s for s in data
         if isinstance(s, dict)
-        and (s.get("company") or "").strip().lower() == company.lower()
+        and _company_word_match(company, s.get("company", ""), s.get("title", ""))
     ]
     matched.sort(key=lambda s: s.get("published", ""), reverse=True)
     return matched[:limit]
@@ -102,11 +123,15 @@ def _load_recent_predictors_for_company(company: str, limit: int = 3) -> list[di
         return []
     if not isinstance(data, list):
         return []
+    # Same word-boundary match as signals. Predictors usually have a
+    # clean `company` field set from the stacker's company name, but
+    # accommodate variants ('HSBC' vs 'HSBC Holdings PLC') in case the
+    # stacker output differs from the user's input form.
     matched = [
         p for p in data
         if isinstance(p, dict)
-        and (p.get("company") or "").strip().lower() == company.lower()
         and p.get("status") != "dismissed"
+        and _company_word_match(company, p.get("company", ""))
     ]
     matched.sort(key=lambda p: float(p.get("score") or 0), reverse=True)
     return matched[:limit]
