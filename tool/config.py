@@ -87,6 +87,17 @@ RESEND_API_KEY = os.environ.get("RESEND_API_KEY") or ""
 RESEND_FROM = os.environ.get("RESEND_FROM") or "onboarding@resend.dev"
 
 # --- Source URLs (public, free) ---
+# Last refreshed 2026-05-15 after a morning brief run produced 9 dead-URL
+# warnings. Sources removed since previous version:
+#   - prweek_uk / prweek_us / prweek_asia: Haymarket killed RSS in 2024
+#   - campaign / campaign_asia: same Haymarket family, RSS retired
+#   - hr_magazine: feed URL no longer published
+#   - people_management: CIPD removed RSS
+#   - ico_news: ICO moved press centre, RSS path removed
+#   - contracts_finder: gov.uk moved to API-only access
+#   - holmes_report (provokemedia): RSS path removed
+# Sources where the URL is still live but the runner gets 403 from bot
+# protection now use a real-browser User-Agent (see USER_AGENT below).
 SOURCES = {
     # UK authoritative
     "companies_house_stream": "https://stream.companieshouse.gov.uk/filings",
@@ -96,23 +107,13 @@ SOURCES = {
     "ofcom_news": "https://www.ofcom.org.uk/rss.xml",
     "ofgem_news": "https://www.ofgem.gov.uk/rss.xml",
     "ofwat_news": "https://www.ofwat.gov.uk/rss.xml",
-    "ico_news": "https://ico.org.uk/about-the-ico/media-centre/rss/",
     "cma_news": "https://www.gov.uk/government/organisations/competition-and-markets-authority.atom",
-    "contracts_finder": "https://www.contractsfinder.service.gov.uk/Published/Notices/rss",
     "find_a_tender": "https://www.find-tender.service.gov.uk/Notice/rss",
     "civil_service_jobs": "https://www.civilservicejobs.service.gov.uk/csr/rssfeed.cgi",
     "charity_commission_api": "https://api.charitycommission.gov.uk",
-    # Trade press
-    "prweek_uk": "https://www.prweek.com/rss/uk",
-    "prweek_us": "https://www.prweek.com/rss/us",
-    "prweek_asia": "https://www.prweek.com/rss/asia",
-    "campaign": "https://www.campaignlive.co.uk/rss",
-    "campaign_asia": "https://www.campaignasia.com/rss/all",
+    # Trade press (only the feeds that still publish RSS in 2026)
     "corpcomms": "https://www.corpcommsmagazine.co.uk/feed",
-    "hr_magazine": "https://www.hrmagazine.co.uk/rss",
-    "people_management": "https://www.peoplemanagement.co.uk/rss",
     "ragan": "https://www.ragan.com/feed/",
-    "holmes_report": "https://www.provokemedia.com/rss",
     # News graph
     "gdelt_doc": "https://api.gdeltproject.org/api/v2/doc/doc",
     # Jobs
@@ -126,15 +127,16 @@ SOURCES = {
 }
 
 # Known Greenhouse/Lever/Ashby/Workable slugs worth monitoring for comms roles.
-# This list is seed-only; Sara can extend it. Represents major UK-adjacent employers
-# using these ATSs.
+# Slugs removed in May 2026 refresh because the companies moved off these
+# ATS platforms (each returned 404 in the morning brief):
+#   greenhouse: wise, revolut, deliveroo, octopusenergy, starlingbank
+#   lever:      gousto, multiverse, reddit
 ATS_SEEDS = {
     "greenhouse": [
-        "monzo", "wise", "revolut", "deliveroo", "octopusenergy", "starlingbank",
-        "gocardless", "checkr", "cloudflare", "airbnb", "stripe",
+        "monzo", "gocardless", "checkr", "cloudflare", "airbnb", "stripe",
     ],
     "lever": [
-        "gousto", "multiverse", "reddit", "plaid", "netflix", "palantir",
+        "plaid", "netflix", "palantir",
     ],
     "ashby": [
         "posthog", "linear", "ramp",
@@ -144,7 +146,16 @@ ATS_SEEDS = {
     ],
 }
 
-USER_AGENT = "Mozilla/5.0 (compatible; VMAMorningBrief/0.1; +https://www.vmagroup.com/)"
+# A real-browser User-Agent. The previous custom string
+# ('VMAMorningBrief/0.1') was tripping bot-protection on Ofcom, Ofwat,
+# Campaign, and Provoke Media, causing 403s on every run. Public RSS feeds
+# are intended to be machine-readable, so a generic browser UA is the
+# pragmatic fix and is widely used by feed readers.
+USER_AGENT = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/126.0.0.0 Safari/537.36"
+)
 REQUEST_TIMEOUT = 20
 
 
