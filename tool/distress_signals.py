@@ -110,11 +110,43 @@ def filter_distress(signals: Iterable[dict]) -> list[dict]:
 
 
 def load_distress_signals(limit: int = 30) -> list[dict]:
-    """Read latest_signals.json and return the distress subset, ready
-    for the dashboard. No external API calls."""
+    """Return the distress subset for the dashboard. No external API.
+
+    Primary source: latest_distress.json — written by morning_brief
+    from the RAW pre-rank scour, so it contains profit warnings / CMA
+    probes / CEO exits that carry no comms-role keyword and are
+    therefore absent from latest_signals.json (which rank() filters to
+    comms-role matches only). Entries there are already classified by
+    filter_distress(), so they carry _distress / _distress_category /
+    _distress_score.
+
+    Fallback: if latest_distress.json is missing (fresh deploy before
+    the first morning-brief run, or an old artifact predating this
+    feed), degrade to filtering latest_signals.json — strictly worse
+    (comms-filtered) but better than an empty panel.
+    """
+    dedicated = STATE_DIR / "latest_distress.json"
+    if dedicated.exists():
+        try:
+            data = json.loads(dedicated.read_text())
+            if isinstance(data, list):
+                # Already classified upstream. Re-sort defensively in
+                # case the artifact was written by an older version.
+                annotated = [d for d in data if isinstance(d, dict)]
+                if annotated and "_distress_score" not in annotated[0]:
+                    annotated = filter_distress(annotated)
+                else:
+                    annotated.sort(
+                        key=lambda s: s.get("_distress_score", 0.0),
+                        reverse=True,
+                    )
+                return annotated[:limit]
+        except Exception as e:
+            log.info("latest_distress.json parse failed: %s — falling back", e)
+
     path = STATE_DIR / "latest_signals.json"
     if not path.exists():
-        log.info("latest_signals.json missing — distress panel empty")
+        log.info("no distress feed and no latest_signals.json — panel empty")
         return []
     try:
         data = json.loads(path.read_text())
@@ -123,6 +155,8 @@ def load_distress_signals(limit: int = 30) -> list[dict]:
         return []
     if not isinstance(data, list):
         return []
+    log.info("latest_distress.json absent — degraded fallback to "
+             "comms-filtered latest_signals.json")
     return filter_distress(data)[:limit]
 
 
