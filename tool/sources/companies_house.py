@@ -414,33 +414,85 @@ def _save_snapshot(d: dict) -> None:
     SNAPSHOT_FILE.write_text(json.dumps(d, indent=0))
 
 
+_SCAN_CURSOR_FILE = STATE_DIR / "ch_scan_cursor.json"
+
+
+def _load_scan_cursor() -> int:
+    try:
+        return int(json.loads(_SCAN_CURSOR_FILE.read_text()).get("cursor", 0))
+    except Exception:
+        return 0
+
+
+def _save_scan_cursor(cursor: int) -> None:
+    try:
+        _SCAN_CURSOR_FILE.write_text(json.dumps({"cursor": cursor}))
+    except Exception as e:
+        log.info("CH: could not persist scan cursor: %s", e)
+
+
 # ---- Main entry point ---------------------------------------------------
-def detect_officer_changes(max_companies: int | None = None) -> list[TriggerEvent]:
+def detect_officer_changes(max_companies: int | None = None,
+                           time_budget_s: float | None = None) -> list[TriggerEvent]:
     """For each watchlist company, fetch today's officer list and compare
     against yesterday's snapshot. Emit a TriggerEvent for each departed
     officer whose title matches a known trigger key.
 
-    On first run the snapshot is empty, so zero events fire — we just
-    populate the snapshot. From the second run onwards we get day-over-day
-    deltas.
+    The watchlist is ~550 companies and resolving an uncached name costs
+    up to 3 Companies House searches. Doing all of them every run blew
+    past the job's time budget, so the job never completed, so the
+    resolver cache (ch_watchlist_v2.json, persisted only via the Actions
+    cache on SUCCESS) was never saved — a vicious cycle that made every
+    run slow forever.
+
+    Fix: this scan is now bounded by BOTH a per-run company cap and a
+    wall-clock `time_budget_s`, and it ROTATES through the watchlist via
+    a persisted cursor so successive runs cover different slices. Each
+    resolved number is cached as it goes, so within a few runs the whole
+    watchlist is cached and full coverage resumes automatically (cached
+    lookups cost zero API calls).
+
+    Snapshot is MERGED, not replaced — capping/rotation must not wipe
+    day-over-day history for companies not visited this run.
     """
     if not COMPANIES_HOUSE_KEY:
         log.info("CH: no COMPANIES_HOUSE_KEY, skipping officer-change scan")
         return []
 
     snapshot = _load_snapshot()
-    new_snapshot: dict[str, dict] = {}
+    # Start from the existing snapshot and update in place so unvisited
+    # companies keep their prior officer set for future diffing.
+    new_snapshot: dict[str, dict] = dict(snapshot)
     events: list[TriggerEvent] = []
     first_snapshot = not snapshot
 
-    names = _all_watchlist_names()
-    if max_companies is not None:
-        names = names[:max_companies]
+    all_names = _all_watchlist_names()
+    total = len(all_names)
+    if total == 0:
+        return []
 
-    log.info("CH: officer-change scan across %d watchlist companies (first_snapshot=%s)",
-             len(names), first_snapshot)
+    # Rotate: begin at the persisted cursor so each run covers a fresh
+    # slice rather than always re-doing the first N companies.
+    cursor = _load_scan_cursor() % total
+    rotated = all_names[cursor:] + all_names[:cursor]
 
-    for name in names:
+    cap = max_companies if max_companies is not None else total
+    deadline = (time.monotonic() + time_budget_s) if time_budget_s is not None else None
+
+    log.info("CH: officer-change scan — %d/%d companies from cursor %d "
+             "(budget=%ss, first_snapshot=%s)",
+             min(cap, total), total, cursor,
+             time_budget_s or "none", first_snapshot)
+
+    processed = 0
+    for name in rotated:
+        if processed >= cap:
+            break
+        if deadline is not None and time.monotonic() >= deadline:
+            log.info("CH: time budget reached after %d companies — "
+                     "remaining will be covered next run", processed)
+            break
+        processed += 1
         number = resolve_company_number(name)
         if not number:
             continue
@@ -553,8 +605,16 @@ def detect_officer_changes(max_companies: int | None = None) -> list[TriggerEven
                 tier_hint="covered",
             ))
 
+    # new_snapshot started as a copy of the prior snapshot and was
+    # updated in place for visited companies, so this is a merge — no
+    # history is lost for companies skipped by the cap / time budget.
     _save_snapshot(new_snapshot)
-    log.info("CH: emitted %d officer-change trigger events", len(events))
+    # Advance the rotation cursor so the next run picks up where this
+    # one stopped (wrapping around the watchlist).
+    _save_scan_cursor((cursor + processed) % total)
+    log.info("CH: emitted %d officer-change trigger events "
+             "(processed %d companies, next cursor=%d)",
+             len(events), processed, (cursor + processed) % total)
     return events
 
 
