@@ -297,7 +297,7 @@ OBJECTION_PLAYBOOK = [
         ],
     },
     {
-        "pattern": r"\b(?:already (?:using|working with|engaged with))\b.{0,30}\b(?:another|other|different) (?:agency|firm|search|recruiter)\b",
+        "pattern": r"\b(?:already\s+)?(?:using|working with|engaged with|have|has|got|with)\b.{0,30}\b(?:another|other|different)\s+(?:agency|firm|search|recruiter|partner)\b",
         "label":   "Client already using another search firm",
         "angles":  [
             "Compete on niche: VMA's comms-only specialism vs generalist exec search means we maintain a deeper bench in the function. Ask: 'how many comms-only retained briefs does your current partner run per year?'",

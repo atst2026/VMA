@@ -27,16 +27,30 @@ class ObjectionResponse:
 def coach(situation: str, top_n: int = 2) -> list[ObjectionResponse]:
     """Return the top-N best-matching playbook situations for the
     pasted text. Each match gets a confidence score = number of pattern
-    keywords hit / 10 (capped at 1.0).
+    keywords hit / 6 (capped at 1.0).
 
     If no playbook entry hits, returns a single generic-prompt response
-    that asks Sara to specify the situation more concretely."""
+    that asks Sara to specify the situation more concretely.
+
+    Resilient to malformed playbook entries: a bad regex or missing
+    key skips the entry and continues, rather than crashing the whole
+    coach() call."""
     text = (situation or "").strip().lower()
     if not text:
         return []
     out: list[ObjectionResponse] = []
     for entry in OBJECTION_PLAYBOOK:
-        rx = re.compile(entry["pattern"], re.IGNORECASE)
+        if not isinstance(entry, dict):
+            continue
+        pat   = entry.get("pattern")
+        label = entry.get("label")
+        angles = entry.get("angles") or []
+        if not pat or not label or not angles:
+            continue
+        try:
+            rx = re.compile(pat, re.IGNORECASE)
+        except re.error:
+            continue
         m = rx.search(text)
         if not m:
             continue
@@ -44,8 +58,8 @@ def coach(situation: str, top_n: int = 2) -> list[ObjectionResponse]:
         # situation that the pattern's intended for, hit in the input.
         confidence = min(1.0, len(m.group(0).split()) / 6)
         out.append(ObjectionResponse(
-            matched_situation=entry["label"],
-            angles=list(entry["angles"]),
+            matched_situation=label,
+            angles=list(angles),
             match_confidence=round(confidence, 2),
         ))
 
