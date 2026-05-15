@@ -308,21 +308,29 @@ def build_hit_list(candidate: MPCCandidate,
                    top_n: int = 20,
                    contacts_path: Path | None = None,
                    signals_path: Path | None = None,
-                   predictors_path: Path | None = None) -> list[MPCAccountHit]:
+                   predictors_path: Path | None = None,
+                   distress_path: Path | None = None) -> list[MPCAccountHit]:
     """Build a per-account hit list for the candidate.
 
     Top-N is the number of accounts to score (default 20 per the
     critique). Accounts are taken from hiring_contacts.json's Tier-A
     universe (30 accounts). The list is ranked by hook strength —
     distress > predictor > leadership change > recent signal > generic.
+
+    Distress hooks are sourced from latest_distress.json (the raw
+    pre-rank scour, classified) — NOT from latest_signals.json, which
+    rank() has already stripped of every non-comms-keyword signal.
+    Without this, distress hooks would almost never fire on real data.
     """
     contacts_path   = contacts_path or STATE_DIR / "hiring_contacts.json"
     signals_path    = signals_path or STATE_DIR / "latest_signals.json"
     predictors_path = predictors_path or STATE_DIR / "latest_predictive.json"
+    distress_path   = distress_path or STATE_DIR / "latest_distress.json"
 
     contacts: dict = {}
     signals: list[dict] = []
     predictors: list[dict] = []
+    distress_all: list[dict] = []
     try:
         if contacts_path.exists():
             contacts = json.loads(contacts_path.read_text()) or {}
@@ -338,6 +346,11 @@ def build_hit_list(candidate: MPCCandidate,
             predictors = json.loads(predictors_path.read_text()) or []
     except Exception as e:
         log.info("latest_predictive load failed: %s", e)
+    try:
+        if distress_path.exists():
+            distress_all = json.loads(distress_path.read_text()) or []
+    except Exception as e:
+        log.info("latest_distress load failed: %s", e)
 
     sectors = _detect_sectors(candidate)
 
@@ -365,10 +378,20 @@ def build_hit_list(candidate: MPCCandidate,
 
     candidate_universe = same_sector_accounts + other_accounts
 
+    # Distress feed is pre-classified upstream. If we somehow got an
+    # unclassified list (old artifact), classify defensively.
+    if distress_all and not (
+        isinstance(distress_all[0], dict) and "_distress_score" in distress_all[0]
+    ):
+        distress_all = filter_distress(distress_all)
+
     hits: list[MPCAccountHit] = []
     for account in candidate_universe:
         acc_signals = _signals_for(account, signals)
-        acc_distress = filter_distress(acc_signals)
+        # Distress hooks come from the dedicated feed, matched per
+        # account — NOT from filter_distress(acc_signals), which was
+        # starved because acc_signals is the comms-filtered set.
+        acc_distress = _signals_for(account, distress_all)
         acc_predictors = _predictors_for(account, predictors)
         leadership = _leadership_for(account, contacts)
         kind, hook, url = _build_hook(

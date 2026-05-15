@@ -312,6 +312,26 @@ def main() -> int:
         json.dumps(ranked_all, indent=2, default=str)
     )
 
+    # Distress feed — classified from the RAW pre-rank `signals` set,
+    # NOT from ranked_all. This is the fundamental fix: rank() drops
+    # every signal without a comms-role keyword, but distress events
+    # (profit warnings, CMA probes, CEO exits) almost never contain
+    # one — so if Distress Watch filtered latest_signals.json it would
+    # see ~nothing on real data. Classifying the unfiltered scour and
+    # persisting it to its own artifact is what makes Distress Watch
+    # (and MPC's distress hooks) actually work in production.
+    try:
+        from tool import distress_signals as _ds
+        distress_feed = _ds.filter_distress(signals)
+        (STATE_DIR / "latest_distress.json").write_text(
+            json.dumps(distress_feed, indent=2, default=str)
+        )
+        log.info("Distress feed: %d distress signals from %d raw "
+                 "(latest_signals.json after comms filter: %d)",
+                 len(distress_feed), len(signals), len(ranked_all))
+    except Exception as e:
+        log.info("distress feed write failed: %s", e)
+
     # Update competitor-mandate tracker so the dashboard's "Mandates
     # Worth Stealing" panel sees fresh first-seen / last-seen dates.
     try:
