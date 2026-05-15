@@ -2200,6 +2200,15 @@ function esc(s) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
+// URL whitelist: only http(s) and mailto pass through. Defends against
+// javascript: / data: URLs that could appear in upstream RSS/GDELT data
+// and execute on click.
+function safeUrl(u) {
+  if (!u) return '#';
+  const s = String(u).trim();
+  if (/^https?:\/\//i.test(s) || /^mailto:/i.test(s)) return esc(s);
+  return '#';
+}
 
 // ---------- Distress Watch (auto-loads on page ready) ----------
 async function loadDistress() {
@@ -2210,8 +2219,8 @@ async function loadDistress() {
     const j = await r.json();
     count.textContent = j.total;
     if (!j.rows || j.rows.length === 0) {
-      body.innerHTML = '<div class="empty compact">No distress signals at watchlist accounts in the latest scour. ' +
-        'This filter looks for profit warnings, ratings downgrades, activist letters, regulatory probes, ' +
+      body.innerHTML = '<div class="empty compact">No distress signals in the latest scour. ' +
+        'This filter looks across all morning-brief signals for profit warnings, ratings downgrades, activist letters, regulatory probes, ' +
         'restructurings, CEO exits under cloud, and crisis events.</div>';
       return;
     }
@@ -2221,7 +2230,7 @@ async function loadDistress() {
         '<li style="padding:8px 0;border-bottom:1px solid var(--border);">' +
           '<span class="distress-badge cat-' + esc(s._distress_category) + '">' +
             esc(s._category_label) + '</span> ' +
-          '<a href="' + esc(s.url || '#') + '" target="_blank" style="color:var(--text);">' +
+          '<a href="' + safeUrl(s.url) + '" target="_blank" rel="noopener noreferrer" style="color:var(--text);">' +
             esc(s.title || '(no title)') + '</a>' +
           '<span style="color:var(--text-muted);font-size:12px;display:block;margin-top:2px;">' +
             esc(s.company || '') + ' &middot; ' + esc(s.source || '') +
