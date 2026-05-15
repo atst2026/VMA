@@ -2,11 +2,21 @@ name: Sara's Morning Brief (Mon–Fri)
 
 on:
   schedule:
-    # Single weekday cron at 07:55 UTC.
-    # In BST (Mar-Oct) that's 08:55 London. In GMT (Oct-Mar) that's 07:55
-    # London — slightly early in winter, fine in summer. Single cron means
-    # one brief per day; no risk of duplicate firings on the same morning.
-    - cron: "55 7 * * 1-5"
+    # Single weekday cron at 05:30 UTC.
+    # In BST (Mar-Oct) that's 06:30 London. In GMT (Oct-Mar) that's 05:30
+    # London — an hour earlier than target in winter, but that just buys
+    # more margin. Goal: workflow definitely completed by 09:00 London
+    # so Sara's dashboard refresh button shows today's data when she
+    # arrives at her desk.
+    #
+    # GitHub free-tier cron is "best effort" and can lag 30-60 minutes
+    # under peak load. 06:30 London BST + worst-case 60 min drift +
+    # ~15 min runtime = done by 07:45 London. Generous margin to 09:00.
+    #
+    # 05:30 UTC is also off-peak (overnight in most of the world) and
+    # off-the-hour, which GitHub's own scheduling docs recommend to
+    # minimise queue lag vs HH:00 / HH:30 top-of-hour rushes.
+    - cron: "30 5 * * 1-5"
   workflow_dispatch:
     inputs:
       mode:
