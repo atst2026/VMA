@@ -21,6 +21,10 @@ No external scraping. Pure state management + a heuristic.
 from __future__ import annotations
 import json
 import logging
+import os
+import tempfile
+import threading
+from contextlib import contextmanager
 from dataclasses import dataclass, field, asdict
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -29,6 +33,63 @@ log = logging.getLogger("brief.candidate_watch")
 
 STATE_DIR = Path(__file__).resolve().parent / "state"
 WATCH_FILE = STATE_DIR / "candidate_watch.json"
+
+# fcntl is POSIX-only. On Windows we fall back to thread-only locking,
+# which is enough for the dev server but not for a multi-process WSGI.
+# Render runs Linux, so the cross-process lock is the path we need.
+try:
+    import fcntl
+    _HAVE_FCNTL = True
+except ImportError:
+    _HAVE_FCNTL = False
+
+# Thread-level lock so concurrent threads in the same Flask worker
+# don't race even before fcntl serialises across processes.
+_THREAD_LOCK = threading.Lock()
+
+
+@contextmanager
+def _locked_state():
+    """Serialise read-modify-write on WATCH_FILE across both threads
+    (via _THREAD_LOCK) and processes (via fcntl on a lock file). Without
+    this, 20 concurrent /api/candidates/watch/add requests dropped
+    ~50% of writes due to the lost-update race."""
+    lock_path = WATCH_FILE.with_suffix(".lock")
+    WATCH_FILE.parent.mkdir(exist_ok=True, parents=True)
+    with _THREAD_LOCK:
+        lock_fd = None
+        if _HAVE_FCNTL:
+            lock_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+            fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            if lock_fd is not None:
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
+                os.close(lock_fd)
+
+
+def _atomic_write(path: Path, content: str) -> None:
+    """Write content via tempfile-then-rename so a crash mid-write
+    leaves the previous valid file intact (rather than a half-written
+    truncated JSON that subsequent reads can't parse)."""
+    path.parent.mkdir(exist_ok=True, parents=True)
+    tmp = tempfile.NamedTemporaryFile(
+        mode="w", encoding="utf-8", suffix=".tmp",
+        dir=str(path.parent), delete=False,
+    )
+    try:
+        tmp.write(content)
+        tmp.flush()
+        os.fsync(tmp.fileno())
+        tmp.close()
+        os.replace(tmp.name, str(path))
+    except Exception:
+        try:
+            os.unlink(tmp.name)
+        except OSError:
+            pass
+        raise
 
 
 @dataclass
@@ -61,8 +122,7 @@ def _load_all() -> list[dict]:
 
 
 def _save_all(data: list[dict]) -> None:
-    WATCH_FILE.parent.mkdir(exist_ok=True, parents=True)
-    WATCH_FILE.write_text(json.dumps(data, indent=2))
+    _atomic_write(WATCH_FILE, json.dumps(data, indent=2))
 
 
 def _parse_iso(s: str) -> date | None:
@@ -148,86 +208,89 @@ def add_candidate(name: str,
                   touch_cadence_days: int = 30) -> dict:
     """Add a new candidate to the watch list. If a candidate with the
     same name+current_company already exists, it's updated rather
-    than duplicated."""
-    rows = _load_all()
-    key_name = name.strip().lower()
-    key_co   = current_company.strip().lower()
-    for r in rows:
-        if (r.get("name", "").strip().lower() == key_name and
-            r.get("current_company", "").strip().lower() == key_co):
-            # update in place
-            r.update({
-                "current_title":      current_title or r.get("current_title", ""),
-                "linkedin_url":       linkedin_url  or r.get("linkedin_url", ""),
-                "sectors":            sectors       or r.get("sectors", []),
-                "notes":              notes         or r.get("notes", ""),
-                "touch_cadence_days": touch_cadence_days,
-            })
-            _save_all(rows)
-            return r
-    new = asdict(WatchedCandidate(
-        name=name.strip(),
-        current_company=current_company.strip(),
-        current_title=current_title.strip(),
-        linkedin_url=linkedin_url.strip(),
-        sectors=sectors or [],
-        notes=notes.strip(),
-        touch_cadence_days=touch_cadence_days,
-    ))
-    rows.append(new)
-    _save_all(rows)
-    return new
+    than duplicated. Serialised so concurrent adds can't lose writes."""
+    with _locked_state():
+        rows = _load_all()
+        key_name = name.strip().lower()
+        key_co   = current_company.strip().lower()
+        for r in rows:
+            if (r.get("name", "").strip().lower() == key_name and
+                r.get("current_company", "").strip().lower() == key_co):
+                r.update({
+                    "current_title":      current_title or r.get("current_title", ""),
+                    "linkedin_url":       linkedin_url  or r.get("linkedin_url", ""),
+                    "sectors":            sectors       or r.get("sectors", []),
+                    "notes":              notes         or r.get("notes", ""),
+                    "touch_cadence_days": touch_cadence_days,
+                })
+                _save_all(rows)
+                return r
+        new = asdict(WatchedCandidate(
+            name=name.strip(),
+            current_company=current_company.strip(),
+            current_title=current_title.strip(),
+            linkedin_url=linkedin_url.strip(),
+            sectors=sectors or [],
+            notes=notes.strip(),
+            touch_cadence_days=touch_cadence_days,
+        ))
+        rows.append(new)
+        _save_all(rows)
+        return new
 
 
 def mark_touched(name: str, current_company: str = "",
                  signal: str = "") -> dict | None:
     """Mark a candidate as just-touched. Optionally records a free-text
     signal note Sara observed (drives the restlessness score)."""
-    rows = _load_all()
-    key_name = name.strip().lower()
-    key_co   = current_company.strip().lower()
-    for r in rows:
-        if r.get("name", "").strip().lower() != key_name:
-            continue
-        if key_co and r.get("current_company", "").strip().lower() != key_co:
-            continue
-        r["last_touched"] = _today_iso()
-        if signal:
-            r["last_signal"] = signal
-        r["snoozed_until"] = ""
-        _save_all(rows)
-        return r
-    return None
+    with _locked_state():
+        rows = _load_all()
+        key_name = name.strip().lower()
+        key_co   = current_company.strip().lower()
+        for r in rows:
+            if r.get("name", "").strip().lower() != key_name:
+                continue
+            if key_co and r.get("current_company", "").strip().lower() != key_co:
+                continue
+            r["last_touched"] = _today_iso()
+            if signal:
+                r["last_signal"] = signal
+            r["snoozed_until"] = ""
+            _save_all(rows)
+            return r
+        return None
 
 
 def snooze_candidate(name: str, current_company: str, days: int) -> dict | None:
-    rows = _load_all()
-    key_name = name.strip().lower()
-    key_co   = current_company.strip().lower()
-    for r in rows:
-        if r.get("name", "").strip().lower() != key_name:
-            continue
-        if key_co and r.get("current_company", "").strip().lower() != key_co:
-            continue
-        r["snoozed_until"] = (date.today() + timedelta(days=max(1, days))).isoformat()
-        _save_all(rows)
-        return r
-    return None
+    with _locked_state():
+        rows = _load_all()
+        key_name = name.strip().lower()
+        key_co   = current_company.strip().lower()
+        for r in rows:
+            if r.get("name", "").strip().lower() != key_name:
+                continue
+            if key_co and r.get("current_company", "").strip().lower() != key_co:
+                continue
+            r["snoozed_until"] = (date.today() + timedelta(days=max(1, days))).isoformat()
+            _save_all(rows)
+            return r
+        return None
 
 
 def remove_candidate(name: str, current_company: str = "") -> bool:
-    rows = _load_all()
-    key_name = name.strip().lower()
-    key_co   = current_company.strip().lower()
-    new_rows = [
-        r for r in rows
-        if not (r.get("name", "").strip().lower() == key_name
-                and (not key_co or r.get("current_company", "").strip().lower() == key_co))
-    ]
-    if len(new_rows) == len(rows):
-        return False
-    _save_all(new_rows)
-    return True
+    with _locked_state():
+        rows = _load_all()
+        key_name = name.strip().lower()
+        key_co   = current_company.strip().lower()
+        new_rows = [
+            r for r in rows
+            if not (r.get("name", "").strip().lower() == key_name
+                    and (not key_co or r.get("current_company", "").strip().lower() == key_co))
+        ]
+        if len(new_rows) == len(rows):
+            return False
+        _save_all(new_rows)
+        return True
 
 
 def weekly_call_list(top_n: int = 5) -> list[dict]:

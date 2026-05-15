@@ -80,6 +80,42 @@ def _auth_required(f):
     return wrapper
 
 
+def _register_json_error_handlers(app):
+    """API routes should return JSON errors, not Flask's HTML default.
+    Wired below right after `app = Flask(__name__)`."""
+    from werkzeug.exceptions import HTTPException
+
+    @app.errorhandler(HTTPException)
+    def _http_err(e):
+        if request.path.startswith("/api/"):
+            return jsonify({"ok": False, "detail": e.description, "code": e.code}), e.code
+        return e
+
+    @app.errorhandler(Exception)
+    def _unhandled(e):
+        log.exception("Unhandled error on %s", request.path)
+        if request.path.startswith("/api/"):
+            return jsonify({"ok": False, "detail": "internal error", "code": 500}), 500
+        raise e
+
+
+def _safe_json_body() -> dict:
+    """Return the request JSON body as a dict, always. Defends against:
+      - empty body / non-JSON body                → {} (Flask raises 400
+        when Content-Type=application/json and body is invalid; we catch
+        that and treat as empty)
+      - non-object JSON (lists, numbers, strings) → {} (caller does
+        .get(...) which would otherwise AttributeError)
+      - null                                       → {}
+    Always returns a dict so downstream `.get(...)` is safe.
+    """
+    try:
+        data = request.get_json(force=True, silent=True)
+    except Exception:
+        data = None
+    return data if isinstance(data, dict) else {}
+
+
 # ---- GitHub API helpers ------------------------------------------------
 def _github_headers() -> dict:
     return {
@@ -469,6 +505,22 @@ def last_updated() -> str:
 
 # ---- Flask app ----------------------------------------------------------
 app = Flask(__name__)
+_register_json_error_handlers(app)
+
+
+@app.template_filter("safe_url")
+def _safe_url_filter(u):
+    """Jinja-side counterpart of the JS safeUrl(): rewrite URLs to '#'
+    unless they're http(s) or mailto. Defends against javascript:/data:
+    URLs that could appear in upstream RSS/GDELT signals and execute on
+    click when rendered server-side in Today's Leads / Predictor rows."""
+    if not u:
+        return "#"
+    s = str(u).strip()
+    low = s.lower()
+    if low.startswith("http://") or low.startswith("https://") or low.startswith("mailto:"):
+        return s
+    return "#"
 
 
 @app.route("/")
@@ -493,7 +545,7 @@ def index():
 @_auth_required
 def api_predictor_status(pid: str):
     from tool import predictor_pipeline
-    data = request.get_json(force=True) or {}
+    data = _safe_json_body()
     status = (data.get("status") or "").strip()
     if status not in ("active", "followed_up", "dismissed"):
         return jsonify({"ok": False, "detail": "invalid status"}), 400
@@ -520,7 +572,7 @@ def api_dispatch_brief():
 @app.route("/api/dispatch/pitch-pack", methods=["POST"])
 @_auth_required
 def api_pitch_pack():
-    data = request.get_json(force=True) or {}
+    data = _safe_json_body()
     inputs = {
         "account_name": (data.get("account_name") or "").strip(),
         "role": (data.get("role") or "Head of Internal Communications").strip(),
@@ -544,7 +596,7 @@ def api_pitch_pack():
 @app.route("/api/dispatch/reverse-match", methods=["POST"])
 @_auth_required
 def api_reverse_match():
-    data = request.get_json(force=True) or {}
+    data = _safe_json_body()
     inputs = {
         "candidate_name": (data.get("candidate_name") or "").strip(),
         "current_company": (data.get("current_company") or "").strip(),
@@ -561,7 +613,7 @@ def api_reverse_match():
 @app.route("/api/dispatch/pre-meeting", methods=["POST"])
 @_auth_required
 def api_pre_meeting():
-    data = request.get_json(force=True) or {}
+    data = _safe_json_body()
     inputs = {
         "account_name": (data.get("account_name") or "").strip(),
         "contact_name": (data.get("contact_name") or "").strip(),
@@ -576,7 +628,7 @@ def api_pre_meeting():
 @app.route("/api/dispatch/sweep", methods=["POST"])
 @_auth_required
 def api_sweep():
-    data = request.get_json(force=True) or {}
+    data = _safe_json_body()
     inputs = {
         "window_days": str(data.get("window_days", "14")),
         "mode": data.get("mode", "send"),
@@ -610,7 +662,7 @@ def api_distress():
 def api_mpc_build():
     """Build a per-account MPC outreach hit list for one pasted candidate."""
     from tool.mpc_factory import MPCCandidate, build_hit_list, hit_list_to_json
-    data = request.get_json(force=True) or {}
+    data = _safe_json_body()
     name = (data.get("name") or "").strip()
     current_company = (data.get("current_company") or "").strip()
     current_title = (data.get("current_title") or "").strip()
@@ -639,7 +691,7 @@ def api_mpc_build():
 def api_pipeline_triage():
     """Score Sara's pasted pipeline lines into alive/stalled/cold/dead/unclear."""
     from tool.pipeline_triage import triage_pipeline, triage_to_json
-    data = request.get_json(force=True) or {}
+    data = _safe_json_body()
     text = data.get("text") or ""
     if not text.strip():
         return jsonify({"ok": False, "detail": "Pipeline text required"}), 400
@@ -652,7 +704,7 @@ def api_pipeline_triage():
 def api_objection_coach():
     """Match a pasted situation against the VMA objection playbook."""
     from tool.objection_coach import coach, coach_to_json
-    data = request.get_json(force=True) or {}
+    data = _safe_json_body()
     text = (data.get("situation") or "").strip()
     if not text:
         return jsonify({"ok": False, "detail": "Situation text required"}), 400
@@ -674,7 +726,7 @@ def api_candidates_watch_list():
 @_auth_required
 def api_candidates_watch_add():
     from tool.candidate_watch import add_candidate
-    data = request.get_json(force=True) or {}
+    data = _safe_json_body()
     name = (data.get("name") or "").strip()
     if not name:
         return jsonify({"ok": False, "detail": "Name required"}), 400
@@ -700,7 +752,7 @@ def api_candidates_watch_add():
 @_auth_required
 def api_candidates_watch_touch():
     from tool.candidate_watch import mark_touched
-    data = request.get_json(force=True) or {}
+    data = _safe_json_body()
     name = (data.get("name") or "").strip()
     if not name:
         return jsonify({"ok": False, "detail": "Name required"}), 400
@@ -718,7 +770,7 @@ def api_candidates_watch_touch():
 @_auth_required
 def api_candidates_watch_snooze():
     from tool.candidate_watch import snooze_candidate
-    data = request.get_json(force=True) or {}
+    data = _safe_json_body()
     name = (data.get("name") or "").strip()
     current_company = (data.get("current_company") or "").strip()
     try:
@@ -736,7 +788,7 @@ def api_candidates_watch_snooze():
 @_auth_required
 def api_candidates_watch_remove():
     from tool.candidate_watch import remove_candidate
-    data = request.get_json(force=True) or {}
+    data = _safe_json_body()
     name = (data.get("name") or "").strip()
     current_company = (data.get("current_company") or "").strip()
     ok = remove_candidate(name, current_company)
@@ -1711,7 +1763,7 @@ TEMPLATE = r"""
             <div class="item">
               <span class="rank">{{ loop.index }}</span>
               <span class="title">
-                {% if s.url %}<a href="{{ s.url }}" target="_blank">{{ s.title }}</a>
+                {% if s.url %}<a href="{{ s.url | safe_url }}" target="_blank">{{ s.title }}</a>
                 {% else %}{{ s.title }}{% endif %}
               </span>
               <div class="meta">
@@ -1722,7 +1774,7 @@ TEMPLATE = r"""
               <pre class="outreach-text">{{ s.outreach }}</pre>
               <div class="item-actions">
                 <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                <a class="btn-mini" href="{{ s.linkedin.url }}" target="_blank" title="{{ s.linkedin.label }}">↗ {{ s.linkedin.label }}</a>
+                <a class="btn-mini" href="{{ s.linkedin.url | safe_url }}" target="_blank" title="{{ s.linkedin.label }}">↗ {{ s.linkedin.label }}</a>
               </div>
             </div>
           {% endfor %}
@@ -1733,7 +1785,7 @@ TEMPLATE = r"""
               <div class="item">
                 <span class="rank">{{ loop.index + 5 }}</span>
                 <span class="title">
-                  {% if s.url %}<a href="{{ s.url }}" target="_blank">{{ s.title }}</a>
+                  {% if s.url %}<a href="{{ s.url | safe_url }}" target="_blank">{{ s.title }}</a>
                   {% else %}{{ s.title }}{% endif %}
                 </span>
                 <div class="meta">
@@ -1744,7 +1796,7 @@ TEMPLATE = r"""
                 <pre class="outreach-text">{{ s.outreach }}</pre>
                 <div class="item-actions">
                   <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                  <a class="btn-mini" href="{{ s.linkedin.url }}" target="_blank" title="{{ s.linkedin.label }}">↗ {{ s.linkedin.label }}</a>
+                  <a class="btn-mini" href="{{ s.linkedin.url | safe_url }}" target="_blank" title="{{ s.linkedin.label }}">↗ {{ s.linkedin.label }}</a>
                 </div>
               </div>
             {% endfor %}
@@ -1795,14 +1847,14 @@ TEMPLATE = r"""
                   {% for e in p.events[:3] %}
                     <div class="evidence">
                       <strong>{{ e.trigger_label }}:</strong> {{ e.evidence[:200] }}
-                      {% if e.url %} · <a href="{{ e.url }}" target="_blank">source</a>{% endif %}
+                      {% if e.url %} · <a href="{{ e.url | safe_url }}" target="_blank">source</a>{% endif %}
                     </div>
                   {% endfor %}
                 </div>
                 <pre class="outreach-text">{{ p.outreach }}</pre>
                 <div class="item-actions">
                   <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                  <a class="btn-mini" href="{{ p.linkedin.url }}" target="_blank" title="{{ p.linkedin.label }}">↗ {{ p.linkedin.label }}</a>
+                  <a class="btn-mini" href="{{ p.linkedin.url | safe_url }}" target="_blank" title="{{ p.linkedin.label }}">↗ {{ p.linkedin.label }}</a>
                   {% if p.status == 'active' %}
                     <button class="btn-mini status-action" data-status="followed_up" type="button">✓ Mark followed up</button>
                     <button class="btn-mini status-action ghost" data-status="dismissed" type="button">✕ Dismiss</button>
