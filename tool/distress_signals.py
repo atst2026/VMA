@@ -59,12 +59,28 @@ def classify(text: str) -> list[dict]:
 
 def signal_is_distress(signal: dict) -> tuple[bool, list[dict]]:
     """Apply classify() across title + summary of one signal. Returns
-    (is_distress, hits)."""
-    haystack = " ".join(
-        s for s in (signal.get("title"), signal.get("summary")) if s
-    )
+    (is_distress, hits). Defensive against non-string field values
+    (some upstream feeds return numbers or lists for title)."""
+    parts: list[str] = []
+    for field in ("title", "summary"):
+        v = signal.get(field)
+        if v is None:
+            continue
+        parts.append(v if isinstance(v, str) else str(v))
+    haystack = " ".join(p for p in parts if p)
     hits = classify(haystack)
     return bool(hits), hits
+
+
+def _safe_weight(v) -> float:
+    """Coerce a signal's `weight` field to float. Returns 1.0 on any
+    failure (missing, None, non-numeric string, etc.)."""
+    if v is None:
+        return 1.0
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return 1.0
 
 
 def filter_distress(signals: Iterable[dict]) -> list[dict]:
@@ -77,12 +93,14 @@ def filter_distress(signals: Iterable[dict]) -> list[dict]:
     """
     annotated: list[dict] = []
     for s in signals:
+        if not isinstance(s, dict):
+            continue
         is_d, hits = signal_is_distress(s)
         if not is_d:
             continue
         copy = dict(s)
         copy["_distress"] = hits
-        copy["_distress_score"] = max(h["weight"] for h in hits) * float(s.get("weight") or 1.0)
+        copy["_distress_score"] = max(h["weight"] for h in hits) * _safe_weight(s.get("weight"))
         # Primary category is the highest-weight hit. Used by the
         # dashboard for the colour-coded label badge.
         copy["_distress_category"] = hits[0]["category"]
@@ -123,5 +141,7 @@ CATEGORY_LABELS = {
 }
 
 
-def category_label(category: str) -> str:
+def category_label(category: str | None) -> str:
+    if not category:
+        return ""
     return CATEGORY_LABELS.get(category, category)

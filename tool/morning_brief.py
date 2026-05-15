@@ -312,6 +312,15 @@ def main() -> int:
         json.dumps(ranked_all, indent=2, default=str)
     )
 
+    # Update competitor-mandate tracker so the dashboard's "Mandates
+    # Worth Stealing" panel sees fresh first-seen / last-seen dates.
+    try:
+        from tool import competitor_mandates
+        summary = competitor_mandates.reconcile()
+        log.info("competitor_mandates reconcile: %s", summary)
+    except Exception as e:
+        log.info("competitor_mandates reconcile failed: %s", e)
+
     # Back-compat: dashboard's load_latest_predictive() reads this file.
     # We populate it from the full active pipeline so the dashboard shows
     # the rolling-window view, not just today's snapshot.

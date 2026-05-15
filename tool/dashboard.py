@@ -625,7 +625,11 @@ def api_mpc_build():
         specialism=(data.get("specialism") or "").strip(),
         notes=(data.get("notes") or "").strip(),
     )
-    top_n = int(data.get("top_n") or 20)
+    try:
+        top_n = int(data.get("top_n") or 20)
+    except (TypeError, ValueError):
+        top_n = 20
+    top_n = max(1, min(top_n, 50))   # clamp so negative / huge values can't break the slice
     hits = build_hit_list(candidate, top_n=top_n)
     return jsonify({"ok": True, "hits": hit_list_to_json(hits), "count": len(hits)})
 
@@ -675,6 +679,11 @@ def api_candidates_watch_add():
     if not name:
         return jsonify({"ok": False, "detail": "Name required"}), 400
     sectors = [s.strip() for s in (data.get("sectors") or "").split(",") if s.strip()]
+    try:
+        cadence = int(data.get("touch_cadence_days") or 30)
+    except (TypeError, ValueError):
+        cadence = 30
+    cadence = max(1, min(cadence, 365))
     rec = add_candidate(
         name=name,
         current_company=(data.get("current_company") or "").strip(),
@@ -682,7 +691,7 @@ def api_candidates_watch_add():
         linkedin_url=(data.get("linkedin_url") or "").strip(),
         sectors=sectors,
         notes=(data.get("notes") or "").strip(),
-        touch_cadence_days=int(data.get("touch_cadence_days") or 30),
+        touch_cadence_days=cadence,
     )
     return jsonify({"ok": True, "candidate": rec})
 
@@ -712,7 +721,11 @@ def api_candidates_watch_snooze():
     data = request.get_json(force=True) or {}
     name = (data.get("name") or "").strip()
     current_company = (data.get("current_company") or "").strip()
-    days = int(data.get("days") or 14)
+    try:
+        days = int(data.get("days") or 14)
+    except (TypeError, ValueError):
+        days = 14
+    days = max(1, min(days, 365))
     rec = snooze_candidate(name, current_company, days)
     if not rec:
         return jsonify({"ok": False, "detail": "Candidate not found"}), 404
@@ -2200,6 +2213,15 @@ function esc(s) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
+// URL whitelist: only http(s) and mailto pass through. Defends against
+// javascript: / data: URLs that could appear in upstream RSS/GDELT data
+// and execute on click.
+function safeUrl(u) {
+  if (!u) return '#';
+  const s = String(u).trim();
+  if (/^https?:\/\//i.test(s) || /^mailto:/i.test(s)) return esc(s);
+  return '#';
+}
 
 // ---------- Distress Watch (auto-loads on page ready) ----------
 async function loadDistress() {
@@ -2210,8 +2232,8 @@ async function loadDistress() {
     const j = await r.json();
     count.textContent = j.total;
     if (!j.rows || j.rows.length === 0) {
-      body.innerHTML = '<div class="empty compact">No distress signals at watchlist accounts in the latest scour. ' +
-        'This filter looks for profit warnings, ratings downgrades, activist letters, regulatory probes, ' +
+      body.innerHTML = '<div class="empty compact">No distress signals in the latest scour. ' +
+        'This filter looks across all morning-brief signals for profit warnings, ratings downgrades, activist letters, regulatory probes, ' +
         'restructurings, CEO exits under cloud, and crisis events.</div>';
       return;
     }
@@ -2221,7 +2243,7 @@ async function loadDistress() {
         '<li style="padding:8px 0;border-bottom:1px solid var(--border);">' +
           '<span class="distress-badge cat-' + esc(s._distress_category) + '">' +
             esc(s._category_label) + '</span> ' +
-          '<a href="' + esc(s.url || '#') + '" target="_blank" style="color:var(--text);">' +
+          '<a href="' + safeUrl(s.url) + '" target="_blank" rel="noopener noreferrer" style="color:var(--text);">' +
             esc(s.title || '(no title)') + '</a>' +
           '<span style="color:var(--text-muted);font-size:12px;display:block;margin-top:2px;">' +
             esc(s.company || '') + ' &middot; ' + esc(s.source || '') +
@@ -2254,8 +2276,8 @@ async function loadMandates() {
     for (const m of j.rows.slice(0, 12)) {
       out.push(
         '<li style="padding:8px 0;border-bottom:1px solid var(--border);">' +
-          '<span class="mandate-age">' + m.days_live + 'd</span> ' +
-          '<a href="' + esc(m.url || '#') + '" target="_blank" style="color:var(--text);">' +
+          '<span class="mandate-age">' + esc(m.days_live) + 'd</span> ' +
+          '<a href="' + safeUrl(m.url) + '" target="_blank" rel="noopener noreferrer" style="color:var(--text);">' +
             esc(m.title || '(no title)') + '</a>' +
           '<span style="color:var(--text-muted);font-size:12px;display:block;margin-top:2px;">' +
             esc(m.company || '') + ' &middot; ' + esc(m.source || '') +
@@ -2296,15 +2318,16 @@ async function runMPC(event) {
       status.textContent = 'Built ' + j.count + ' hooks.'; status.className = 'status ok';
       const out = ['<ol style="margin:10px 0 0 0;padding-left:20px;">'];
       for (const h of j.hits) {
+        const evHref = safeUrl(h.evidence_url);
         out.push(
           '<li style="margin-bottom:12px;">' +
             '<div><strong>' + esc(h.account) + '</strong> ' +
               '<span class="hook-badge ' + esc(h.hook_kind) + '">' + esc(h.hook_kind.replace(/_/g, ' ')) + '</span>' +
-              ' <span style="color:var(--text-muted);font-size:11px;">score ' + h.score + '</span>' +
+              ' <span style="color:var(--text-muted);font-size:11px;">score ' + esc(h.score) + '</span>' +
             '</div>' +
             '<div style="color:#333;margin-top:4px;">' + esc(h.hook) + '</div>' +
-            (h.evidence_url ? '<a href="' + esc(h.evidence_url) +
-              '" target="_blank" style="font-size:11px;">↗ evidence</a>' : '') +
+            (evHref !== '#' ? '<a href="' + evHref +
+              '" target="_blank" rel="noopener noreferrer" style="font-size:11px;">↗ evidence</a>' : '') +
           '</li>'
         );
       }
@@ -2346,7 +2369,7 @@ async function runTriage(event) {
       for (const r of j.rows) {
         out.push(
           '<li style="margin-bottom:10px;padding:8px 10px;border-left:3px solid var(--' + esc(r.label) + '-bar, var(--border));background:rgba(255,255,255,0.4);">' +
-            '<div><span class="triage-label ' + esc(r.label) + '">' + esc(r.label) + ' &middot; ' + r.score + '</span> ' +
+            '<div><span class="triage-label ' + esc(r.label) + '">' + esc(r.label) + ' &middot; ' + esc(r.score) + '</span> ' +
               esc(r.raw) +
             '</div>' +
             '<div style="color:#555;margin-top:4px;font-size:12.5px;"><em>' + esc(r.reasoning) + '</em></div>' +
@@ -2418,11 +2441,17 @@ async function loadWatchList() {
     const out = ['<ul style="margin:8px 0 0 0;padding:0;list-style:none;">'];
     for (const c of j.rows.slice(0, 10)) {
       const overdue = c._overdue_days > 0
-        ? '<span class="overdue-pill">overdue ' + c._overdue_days + 'd</span> '
+        ? '<span class="overdue-pill">overdue ' + esc(c._overdue_days) + 'd</span> '
         : '';
       const restless = c._restlessness_hits > 0
-        ? '<span class="restless-pill">restless ×' + c._restlessness_hits + '</span> '
+        ? '<span class="restless-pill">restless ×' + esc(c._restlessness_hits) + '</span> '
         : '';
+      // Data attributes carry name/company so we never inject user-controlled
+      // text into onclick="..." (which HTML-decodes attribute values before
+      // JS parses — a name like O'Brien or '); alert(1); // would otherwise
+      // break or inject script).
+      const dn = esc(c.name);
+      const dc = esc(c.current_company || '');
       out.push(
         '<li style="padding:8px 0;border-bottom:1px solid var(--border);">' +
           overdue + restless +
@@ -2432,9 +2461,9 @@ async function loadWatchList() {
           (c.last_signal ? '<div style="font-size:12px;color:#555;"><em>' + esc(c.last_signal) + '</em></div>' : '') +
           '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">' + esc(c._status_label) + '</div>' +
           '<div style="margin-top:6px;">' +
-            '<button class="btn-mini" onclick="touchCandidate(\'' + esc(c.name) + '\',\'' + esc(c.current_company) + '\')">✓ Touched</button> ' +
-            '<button class="btn-mini" onclick="snoozeCandidate(\'' + esc(c.name) + '\',\'' + esc(c.current_company) + '\')">⏸ Snooze 14d</button> ' +
-            '<button class="btn-mini ghost" onclick="removeCandidate(\'' + esc(c.name) + '\',\'' + esc(c.current_company) + '\')">✕</button>' +
+            '<button class="btn-mini watch-action" data-action="touch"  data-name="' + dn + '" data-company="' + dc + '">✓ Touched</button> ' +
+            '<button class="btn-mini watch-action" data-action="snooze" data-name="' + dn + '" data-company="' + dc + '">⏸ Snooze 14d</button> ' +
+            '<button class="btn-mini ghost watch-action" data-action="remove" data-name="' + dn + '" data-company="' + dc + '">✕</button>' +
           '</div>' +
         '</li>'
       );
@@ -2445,6 +2474,39 @@ async function loadWatchList() {
     status.textContent = 'Failed: ' + e.message;
   }
 }
+
+// Delegated handler: data-action / data-name / data-company carry the
+// payload as DOM attributes, so user-controlled text never touches an
+// onclick attribute (where HTML decoding would un-escape quotes and
+// break or inject JS).
+document.addEventListener('click', async (event) => {
+  const btn = event.target.closest('.watch-action');
+  if (!btn) return;
+  const action  = btn.dataset.action;
+  const name    = btn.dataset.name    || '';
+  const company = btn.dataset.company || '';
+  if (action === 'touch') {
+    const signal = prompt('What did you observe? (optional restlessness notes; e.g. "updated profile, posting more")', '') || '';
+    const r = await fetch('/api/candidates/watch/touch', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, current_company: company, signal }),
+    });
+    if (r.ok) loadWatchList();
+  } else if (action === 'snooze') {
+    const r = await fetch('/api/candidates/watch/snooze', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, current_company: company, days: 14 }),
+    });
+    if (r.ok) loadWatchList();
+  } else if (action === 'remove') {
+    if (!confirm('Remove ' + name + ' from the watch list?')) return;
+    const r = await fetch('/api/candidates/watch/remove', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, current_company: company }),
+    });
+    if (r.ok) loadWatchList();
+  }
+});
 
 async function addWatchCandidate(event) {
   event.preventDefault();
@@ -2467,30 +2529,6 @@ async function addWatchCandidate(event) {
   } catch (e) {
     status.textContent = 'Network error: ' + e.message; status.className = 'status err';
   }
-}
-
-async function touchCandidate(name, company) {
-  const signal = prompt('What did you observe? (optional restlessness notes; e.g. "updated profile, posting more")', '') || '';
-  const r = await fetch('/api/candidates/watch/touch', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, current_company: company, signal }),
-  });
-  if (r.ok) loadWatchList();
-}
-async function snoozeCandidate(name, company) {
-  const r = await fetch('/api/candidates/watch/snooze', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, current_company: company, days: 14 }),
-  });
-  if (r.ok) loadWatchList();
-}
-async function removeCandidate(name, company) {
-  if (!confirm('Remove ' + name + ' from the watch list?')) return;
-  const r = await fetch('/api/candidates/watch/remove', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, current_company: company }),
-  });
-  if (r.ok) loadWatchList();
 }
 
 // Auto-load the intel panels on page ready.
