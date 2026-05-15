@@ -51,6 +51,7 @@ class PrepBrief:
     recent_predictors: list[dict] = field(default_factory=list)
     annual_quotes: list[str] = field(default_factory=list)
     annual_quotes_reason: str = ""   # why quotes are empty, when they are
+    annual_quotes_source: str = ""   # 'annual_report' | 'curated' | ''
     conversation_hooks: list[str] = field(default_factory=list)
 
 
@@ -90,21 +91,28 @@ def _company_word_match(target: str, *fields: str) -> bool:
 
 
 def _load_recent_signals_for_company(company: str, limit: int = 5) -> list[dict]:
-    """Two sources, deduplicated:
+    """Three sources, deduplicated:
       1. Morning brief's filtered signals (latest_signals.json) - high
          relevance (already filtered to comms / IC / corporate affairs)
          but narrow.
-      2. Live GDELT query for the company - last 14 days of any news
-         mentioning the company. Catches CEO interviews, product
-         announcements, regulatory actions, M&A - context Sara needs
-         for a meeting that the morning brief filter would reject.
+      2. Live Google News RSS query for the company - last 14 days of
+         general news. Reliable, no API key, returns headlines for any
+         company name. The primary live source.
+      3. Live GDELT query for the company - secondary live source,
+         catches international coverage Google News may down-rank.
 
-    Without source 2, the brief returned 'no recent press' for major
-    PLCs that have news every day - because the filtered morning brief
+    Without 2 + 3, the brief returned 'no recent press' for major PLCs
+    that have news every day - because the filtered morning brief
     rarely surfaces non-comms-specific events at any single account.
     """
     matched: list[dict] = []
     seen_titles: set[str] = set()
+
+    def _add(s: dict) -> None:
+        title_key = (s.get("title") or "")[:120].lower().strip()
+        if title_key and title_key not in seen_titles:
+            seen_titles.add(title_key)
+            matched.append(s)
 
     # Source 1: morning brief signals
     path = STATE_DIR / "latest_signals.json"
@@ -117,22 +125,68 @@ def _load_recent_signals_for_company(company: str, limit: int = 5) -> list[dict]
                         continue
                     if _company_word_match(company, s.get("company", ""),
                                             s.get("title", "")):
-                        title_key = (s.get("title") or "")[:120].lower()
-                        if title_key and title_key not in seen_titles:
-                            seen_titles.add(title_key)
-                            matched.append(s)
+                        _add(s)
         except Exception:
             pass
 
-    # Source 2: live GDELT
+    # Source 2: live Google News RSS
+    for art in _fetch_google_news_rss(company, max_articles=limit + 5):
+        _add(art)
+
+    # Source 3: live GDELT
     for art in _fetch_live_gdelt_news(company, days_back=14, max_articles=limit + 5):
-        title_key = (art.get("title") or "")[:120].lower()
-        if title_key and title_key not in seen_titles:
-            seen_titles.add(title_key)
-            matched.append(art)
+        _add(art)
 
     matched.sort(key=lambda s: s.get("published", ""), reverse=True)
     return matched[:limit]
+
+
+def _fetch_google_news_rss(company: str, max_articles: int = 10) -> list[dict]:
+    """Live Google News RSS query for `company`. Reliable, no API key,
+    returns recent headlines for any company name. Returns [] silently
+    on network errors. UK-prefixed (hl=en-GB, gl=GB) to bias coverage
+    to UK outlets - Sara's accounts are UK-centric."""
+    try:
+        from tool.sources._http import get
+        from tool.sources._http import parse_rss
+    except Exception as e:
+        log.info("Google News RSS unavailable: %s", e)
+        return []
+    from urllib.parse import quote_plus
+    q = quote_plus(f'"{company}"')
+    url = f"https://news.google.com/rss/search?q={q}&hl=en-GB&gl=GB&ceid=GB:en"
+    r = get(url, timeout=15)
+    if not r or r.status_code != 200 or not r.content:
+        log.info("Google News RSS %s -> %s",
+                 company[:40], r.status_code if r else "no-resp")
+        return []
+    try:
+        items = parse_rss(r.content)
+    except Exception as e:
+        log.info("Google News RSS parse failed for %s: %s", company, e)
+        return []
+    out: list[dict] = []
+    for it in items[:max_articles]:
+        title = (it.get("title") or "").strip()
+        if not title:
+            continue
+        # Google News RSS titles are "<headline> - <source>"; split off source.
+        source = "Google News"
+        if " - " in title:
+            head, _, tail = title.rpartition(" - ")
+            if head and tail and len(tail) < 60:
+                title = head.strip()
+                source = tail.strip()
+        out.append({
+            "title": title,
+            "url": it.get("link", ""),
+            "source": source,
+            "published": it.get("published", ""),
+            "company": company,
+            "kind": "news",
+        })
+    log.info("Google News RSS: %d articles for %s", len(out), company)
+    return out
 
 
 def _fetch_live_gdelt_news(company: str, days_back: int = 14,
@@ -211,43 +265,99 @@ def _load_recent_predictors_for_company(company: str, limit: int = 3) -> list[di
     return matched[:limit]
 
 
-def _load_annual_quotes_for_company(company: str, limit: int = 3) -> tuple[list[str], str]:
-    """Returns (quotes, reason_when_empty). reason is "" when quotes are
-    successfully extracted, otherwise a short truthful explanation
-    suitable for rendering to Sara. Fixes the previous bug where every
-    failure was misreported as 'non-UK-registered, abbreviated filing,
-    or scanned PDF' regardless of actual cause."""
+_TIER_A_PRIORITIES_CACHE: dict | None = None
+
+
+def _load_curated_priorities(company: str) -> list[str]:
+    """Look up `company` in the hand-curated tier-A strategic priorities
+    cache. Returns [] if not found. Match is case- and whitespace-
+    insensitive, and tolerant of suffixes like 'PLC' / 'Group plc' /
+    'Holdings plc' so 'HSBC Holdings PLC' resolves to the 'HSBC' entry."""
+    global _TIER_A_PRIORITIES_CACHE
+    if _TIER_A_PRIORITIES_CACHE is None:
+        path = STATE_DIR / "tier_a_strategic_priorities.json"
+        try:
+            _TIER_A_PRIORITIES_CACHE = json.loads(path.read_text())
+        except Exception as e:
+            log.info("tier_a_strategic_priorities load failed: %s", e)
+            _TIER_A_PRIORITIES_CACHE = {}
+
+    if not _TIER_A_PRIORITIES_CACHE:
+        return []
+
+    needle = company.strip().lower()
+    if not needle:
+        return []
+    # Strip common public-company suffixes for fuzzy match.
+    suffixes = (" holdings plc", " group plc", " plc", " group",
+                " holdings", " ltd", " limited")
+    for suf in suffixes:
+        if needle.endswith(suf):
+            needle_short = needle[: -len(suf)].strip()
+            break
+    else:
+        needle_short = needle
+
+    for key, value in _TIER_A_PRIORITIES_CACHE.items():
+        if key.startswith("_"):
+            continue
+        k = key.strip().lower()
+        if k == needle or k == needle_short:
+            return list(value) if isinstance(value, list) else []
+        # Also match if user typed a longer form like "HSBC UK"
+        if needle.startswith(k) or needle_short == k:
+            return list(value) if isinstance(value, list) else []
+    return []
+
+
+def _load_annual_quotes_for_company(company: str, limit: int = 3) -> tuple[list[str], str, str]:
+    """Returns (quotes, reason_when_empty, source). source is one of:
+      "annual_report" - live extraction from Companies House PDF
+      "curated"       - hand-curated tier-A public-priorities cache
+      ""              - empty-state (reason explains why)
+
+    Three-tier fallback chain:
+      1. Live Companies House annual-report PDF extraction (richest, but
+         fails for huge PDFs / scanned filings / non-UK entities)
+      2. Hand-curated tier_a_strategic_priorities.json - publicly stated
+         priorities for the top 30 Tier-A accounts. Always populates
+         Section 4 for any seeded account even when CH extraction fails.
+      3. Honest empty-state explanation when neither above produces.
+    """
     try:
         from tool.sources.companies_house import resolve_company_number
         from tool.annual_report import fetch_strategic_quotes
     except Exception as e:
         log.info("annual_report pipeline unavailable: %s", e)
-        return [], f"Annual report extraction module failed to load: {e}"
+        curated = _load_curated_priorities(company)
+        if curated:
+            return curated[:limit], "", "curated"
+        return [], f"Annual report extraction module failed to load: {e}", ""
+
     number = resolve_company_number(company)
+    if number:
+        try:
+            report = fetch_strategic_quotes(number, top_n=limit)
+        except Exception as e:
+            log.info("annual_report extraction failed for %s: %s", company, e)
+            report = None
+        if report and report.quotes:
+            return [q.text for q in report.quotes[:limit]], "", "annual_report"
+
+    curated = _load_curated_priorities(company)
+    if curated:
+        return curated[:limit], "", "curated"
+
     if not number:
-        return [], (f"Companies House did not resolve {company!r} - either it's "
-                    f"not registered in the UK, or the CH search returned no "
-                    f"matching active entity.")
-    try:
-        report = fetch_strategic_quotes(number, top_n=limit)
-    except Exception as e:
-        log.info("annual_report extraction failed for %s: %s", company, e)
-        return [], (f"Companies House resolved {company} to {number} but the "
-                    f"annual report extraction raised an error: {e}. "
-                    f"Workflow log has details.")
-    if not report:
-        return [], (f"Companies House resolved {company} to {number} but no "
-                    f"annual report could be downloaded - either no full "
-                    f"accounts have been filed, only abbreviated/exemption "
-                    f"variants exist, or the document API returned empty.")
-    if not report.quotes:
-        return [], (f"Annual report PDF for {company} ({number}, filed "
-                    f"{report.filing_date}) was downloaded and parsed "
-                    f"({report.page_count} pages), but no sentences scored "
-                    f"above the strategic-priority threshold. The PDF may be "
-                    f"image-only / scanned, or the strategic report may use "
-                    f"unusual phrasing the scorer doesn't pick up.")
-    return [q.text for q in report.quotes[:limit]], ""
+        return [], (f"Companies House did not resolve {company!r} and no "
+                    f"curated priorities are seeded for this account. "
+                    f"Either it's not UK-registered, or it isn't yet on "
+                    f"the Tier-A account list (tool/state/"
+                    f"tier_a_strategic_priorities.json)."), ""
+    return [], (f"Companies House resolved {company} to {number} but the "
+                f"latest annual-report PDF couldn't be parsed (often the "
+                f"case for very large filings), and {company} isn't yet "
+                f"on the curated Tier-A priorities list."), ""
 
 
 def _build_conversation_hooks(brief: PrepBrief) -> list[str]:
@@ -303,10 +413,17 @@ def _build_conversation_hooks(brief: PrepBrief) -> list[str]:
         snippet = q.strip()
         if len(snippet) > 200:
             snippet = snippet[:197] + "..."
-        hooks.append(
-            f"Quote-back angle: their own annual report says \"{snippet}\" - "
-            f"ask how that translates into headcount priorities."
-        )
+        if brief.annual_quotes_source == "annual_report":
+            hooks.append(
+                f"Quote-back angle: their own annual report says \"{snippet}\" - "
+                f"ask how that translates into headcount priorities."
+            )
+        else:
+            hooks.append(
+                f"Priority angle: their published priorities include \"{snippet}\" - "
+                f"ask how that translates into comms / IC / corporate-affairs "
+                f"headcount priorities for the year."
+            )
         break
 
     # Varied fallbacks if any of the three primary slots came up empty.
@@ -343,7 +460,7 @@ def build_brief(account: str, contact_name: str = "", meeting_context: str = "")
     brief.contact_summary = _load_contacts_for_company(brief.account)
     brief.recent_signals = _load_recent_signals_for_company(brief.account)
     brief.recent_predictors = _load_recent_predictors_for_company(brief.account)
-    brief.annual_quotes, brief.annual_quotes_reason = _load_annual_quotes_for_company(brief.account)
+    brief.annual_quotes, brief.annual_quotes_reason, brief.annual_quotes_source = _load_annual_quotes_for_company(brief.account)
     brief.conversation_hooks = _build_conversation_hooks(brief)
     return brief
 
@@ -406,8 +523,13 @@ def render_html(brief: PrepBrief) -> str:
             for q in brief.annual_quotes
         ) + "</ul>"
     else:
-        reason = brief.annual_quotes_reason or "Annual report quotes not available."
+        reason = brief.annual_quotes_reason or "Strategic priorities not available."
         quotes_html = f"<div style='color:#888;'>{_esc(reason)}</div>"
+
+    quotes_subtitle = {
+        "annual_report": "Verbatim from the company's most recent annual report (Companies House).",
+        "curated":       "Paraphrased from the company's publicly stated strategic priorities (latest annual report / investor materials).",
+    }.get(brief.annual_quotes_source, "From public sources.")
 
     hooks_html = "<ol style='margin:6px 0;padding-left:22px;'>" + "".join(
         f"<li style='margin-bottom:6px;'>{_esc(h)}</li>" for h in brief.conversation_hooks
@@ -437,7 +559,7 @@ def render_html(brief: PrepBrief) -> str:
 
 <div style="margin-top:14px;font-size:14px;">
   <h3 style="margin:14px 0 4px 0;">4. Their stated strategic priorities</h3>
-  <div style="color:#666;font-size:12px;margin-bottom:4px;">From the company's most recent annual report.</div>
+  <div style="color:#666;font-size:12px;margin-bottom:4px;">{quotes_subtitle}</div>
   {quotes_html}
 </div>
 
@@ -492,7 +614,14 @@ def render_text(brief: PrepBrief) -> str:
         lines.append("   (no recent matches)")
     lines.append("")
 
-    lines.append("4. THEIR STATED STRATEGIC PRIORITIES (annual report)")
+    src_label = {
+        "annual_report": "annual report",
+        "curated":       "publicly stated priorities",
+    }.get(brief.annual_quotes_source, "")
+    header = "4. THEIR STATED STRATEGIC PRIORITIES"
+    if src_label:
+        header += f" ({src_label})"
+    lines.append(header)
     if brief.annual_quotes:
         for q in brief.annual_quotes:
             lines.append(f'   "{q[:240]}"')
