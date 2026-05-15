@@ -1,28 +1,28 @@
-name: Pre-meeting brief (Mon-Fri)
+name: Pre-meeting brief (manual only)
 
-# Generates a prep-pack email for today's meetings that have external
-# attendees at a Tier-A watchlist company. Sends to Sara (BCC Amir) by
-# ~7am London so she has it before her first meeting of the day.
+# Triggered from the dashboard (Pre-meeting brief panel) or directly via
+# the Actions UI. Generates an on-demand prep pack for ONE meeting given
+# an account name + optional contact + optional meeting context, and
+# emails it to Sara (BCC Amir) or amirt12 in test mode.
 #
-# Requires the CALENDAR_ICAL_URL secret: Sara generates a private
-# iCal URL from her calendar (Google Calendar -> Settings -> Integrate
-# Calendar -> Secret address in iCal format, OR Microsoft 365 ->
-# Calendar -> Publish a calendar -> ICS URL) and pastes the URL into
-# the repo secret. Same security model as a Doodle link - whoever holds
-# the URL can read the calendar; rotate by regenerating in calendar
-# settings.
+# No cron - this is on-demand only. The morning brief continues to run
+# nightly and provides the underlying signals + predictors that this
+# tool reads from.
 
 on:
-  schedule:
-    # 04:30 UTC = 05:30 London BST / 04:30 London GMT.
-    # Morning brief runs at 05:30 UTC, so this fires an hour before to
-    # use yesterday's signals (still fresh enough for prep) without
-    # competing for the same compute slot.
-    # 60-min worst-case cron drift -> done by 06:00-06:30 London latest.
-    # Delivers email by ~07:00 London comfortably.
-    - cron: "30 4 * * 1-5"
   workflow_dispatch:
     inputs:
+      account_name:
+        description: "Account / company name (e.g. 'Severn Trent')"
+        required: true
+      contact_name:
+        description: "Optional - specific contact (e.g. 'Carla Sherry')"
+        required: false
+        default: ""
+      meeting_context:
+        description: "Optional - meeting date/time/format (e.g. '10am Mon, Zoom')"
+        required: false
+        default: ""
       mode:
         description: "send (live -> Sara) | test (-> amirt12) | preview (Actions log only)"
         default: "test"
@@ -52,10 +52,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests beautifulsoup4 lxml python-dateutil pypdf pdfplumber
 
-      # Pull yesterday's morning-brief artifact so the prep email can
-      # reference recent signals and predictors. Without this, the
-      # signals/predictors sections render empty (still useful, but less
-      # rich).
+      # Pull the most recent morning-brief artefact so the prep pack can
+      # reference signals + predictors from this morning's scour. Without
+      # this, those sections render as "(no recent matches)" - still
+      # useful but less rich.
       - name: Hydrate state from latest morning-brief
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -65,7 +65,7 @@ jobs:
           ARTIFACT_ID=$(gh api "repos/${{ github.repository }}/actions/artifacts?per_page=30" \
             --jq '[.artifacts[] | select(.name == "morning-brief" and .expired == false)] | sort_by(.created_at) | reverse | .[0].id' || echo "")
           if [ -z "$ARTIFACT_ID" ] || [ "$ARTIFACT_ID" = "null" ]; then
-            echo "No morning-brief artifact yet - prep brief will render without signals/predictors context."
+            echo "No morning-brief artifact yet - prep pack will render without signals/predictors context."
             exit 0
           fi
           echo "Found morning-brief artifact id=$ARTIFACT_ID"
@@ -79,7 +79,6 @@ jobs:
 
       - name: Generate pre-meeting brief
         env:
-          CALENDAR_ICAL_URL: ${{ secrets.CALENDAR_ICAL_URL }}
           COMPANIES_HOUSE_KEY: ${{ secrets.COMPANIES_HOUSE_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           RESEND_FROM: ${{ secrets.RESEND_FROM }}
@@ -90,17 +89,18 @@ jobs:
           PYTHONPATH: "."
         run: |
           set -x
-          MODE="${{ github.event.inputs.mode || 'send' }}"
-          echo "Running pre-meeting brief in mode: $MODE"
-          python -m tool.pre_meeting "$MODE"
+          python -m tool.pre_meeting \
+            "${{ github.event.inputs.account_name }}" \
+            "${{ github.event.inputs.mode }}" \
+            "${{ github.event.inputs.contact_name }}" \
+            "${{ github.event.inputs.meeting_context }}"
 
       - name: Upload artefacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: pre-meeting-brief
-          # Multi-line path - actions/upload-artifact@v4's minimatch does
-          # not expand brace syntax (same issue as pitch-pack / reverse-match)
+          # Multi-line path (brace expansion not supported by minimatch)
           path: |
             tool/state/pre_meeting_*.html
             tool/state/pre_meeting_*.txt
