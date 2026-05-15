@@ -73,7 +73,7 @@ GEO_SECONDARY_WEIGHT = 0.6  # non-UK leads are weighted down but not excluded
 
 # --- Delivery ---
 RECIPIENT = "stehrani@vmagroup.com"
-TEST_RECIPIENT = "amirt12@hotmail.com"   # practice-run inbox
+TEST_RECIPIENT = "franc.laude1994@gmail.com"   # practice-run inbox (Gmail for reliable test delivery)
 SEND_AT = "08:55"                         # Europe/London
 SEND_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"]  # Monday sweeps Sat+Sun too
 

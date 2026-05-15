@@ -431,12 +431,7 @@ def main() -> int:
         subject = f"[Pitch Pack] {target} - {role}"
         if mode == "test":
             subject = "[TEST] " + subject
-        # In send mode, BCC Amir's hotmail as a confirmation channel: if Sara's
-        # spam filter eats the pack, the Bcc copy still arrives so we can tell
-        # send-failure apart from spam-trap. Bcc is silent - the To recipient
-        # doesn't see it.
-        bcc = [config.TEST_RECIPIENT] if mode == "send" else None
-        result = email_send(to, subject, html_out, text_out, bcc=bcc)
+        result = email_send(to, subject, html_out, text_out)
         log.info("Send: %s", result)
         if not result.get("ok"):
             print("\n--- EMAIL SEND FAILED ---")
