@@ -679,6 +679,11 @@ def api_candidates_watch_add():
     if not name:
         return jsonify({"ok": False, "detail": "Name required"}), 400
     sectors = [s.strip() for s in (data.get("sectors") or "").split(",") if s.strip()]
+    try:
+        cadence = int(data.get("touch_cadence_days") or 30)
+    except (TypeError, ValueError):
+        cadence = 30
+    cadence = max(1, min(cadence, 365))
     rec = add_candidate(
         name=name,
         current_company=(data.get("current_company") or "").strip(),
@@ -686,7 +691,7 @@ def api_candidates_watch_add():
         linkedin_url=(data.get("linkedin_url") or "").strip(),
         sectors=sectors,
         notes=(data.get("notes") or "").strip(),
-        touch_cadence_days=int(data.get("touch_cadence_days") or 30),
+        touch_cadence_days=cadence,
     )
     return jsonify({"ok": True, "candidate": rec})
 
@@ -716,7 +721,11 @@ def api_candidates_watch_snooze():
     data = request.get_json(force=True) or {}
     name = (data.get("name") or "").strip()
     current_company = (data.get("current_company") or "").strip()
-    days = int(data.get("days") or 14)
+    try:
+        days = int(data.get("days") or 14)
+    except (TypeError, ValueError):
+        days = 14
+    days = max(1, min(days, 365))
     rec = snooze_candidate(name, current_company, days)
     if not rec:
         return jsonify({"ok": False, "detail": "Candidate not found"}), 404
@@ -2432,11 +2441,17 @@ async function loadWatchList() {
     const out = ['<ul style="margin:8px 0 0 0;padding:0;list-style:none;">'];
     for (const c of j.rows.slice(0, 10)) {
       const overdue = c._overdue_days > 0
-        ? '<span class="overdue-pill">overdue ' + c._overdue_days + 'd</span> '
+        ? '<span class="overdue-pill">overdue ' + esc(c._overdue_days) + 'd</span> '
         : '';
       const restless = c._restlessness_hits > 0
-        ? '<span class="restless-pill">restless ×' + c._restlessness_hits + '</span> '
+        ? '<span class="restless-pill">restless ×' + esc(c._restlessness_hits) + '</span> '
         : '';
+      // Data attributes carry name/company so we never inject user-controlled
+      // text into onclick="..." (which HTML-decodes attribute values before
+      // JS parses — a name like O'Brien or '); alert(1); // would otherwise
+      // break or inject script).
+      const dn = esc(c.name);
+      const dc = esc(c.current_company || '');
       out.push(
         '<li style="padding:8px 0;border-bottom:1px solid var(--border);">' +
           overdue + restless +
@@ -2446,9 +2461,9 @@ async function loadWatchList() {
           (c.last_signal ? '<div style="font-size:12px;color:#555;"><em>' + esc(c.last_signal) + '</em></div>' : '') +
           '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">' + esc(c._status_label) + '</div>' +
           '<div style="margin-top:6px;">' +
-            '<button class="btn-mini" onclick="touchCandidate(\'' + esc(c.name) + '\',\'' + esc(c.current_company) + '\')">✓ Touched</button> ' +
-            '<button class="btn-mini" onclick="snoozeCandidate(\'' + esc(c.name) + '\',\'' + esc(c.current_company) + '\')">⏸ Snooze 14d</button> ' +
-            '<button class="btn-mini ghost" onclick="removeCandidate(\'' + esc(c.name) + '\',\'' + esc(c.current_company) + '\')">✕</button>' +
+            '<button class="btn-mini watch-action" data-action="touch"  data-name="' + dn + '" data-company="' + dc + '">✓ Touched</button> ' +
+            '<button class="btn-mini watch-action" data-action="snooze" data-name="' + dn + '" data-company="' + dc + '">⏸ Snooze 14d</button> ' +
+            '<button class="btn-mini ghost watch-action" data-action="remove" data-name="' + dn + '" data-company="' + dc + '">✕</button>' +
           '</div>' +
         '</li>'
       );
@@ -2459,6 +2474,39 @@ async function loadWatchList() {
     status.textContent = 'Failed: ' + e.message;
   }
 }
+
+// Delegated handler: data-action / data-name / data-company carry the
+// payload as DOM attributes, so user-controlled text never touches an
+// onclick attribute (where HTML decoding would un-escape quotes and
+// break or inject JS).
+document.addEventListener('click', async (event) => {
+  const btn = event.target.closest('.watch-action');
+  if (!btn) return;
+  const action  = btn.dataset.action;
+  const name    = btn.dataset.name    || '';
+  const company = btn.dataset.company || '';
+  if (action === 'touch') {
+    const signal = prompt('What did you observe? (optional restlessness notes; e.g. "updated profile, posting more")', '') || '';
+    const r = await fetch('/api/candidates/watch/touch', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, current_company: company, signal }),
+    });
+    if (r.ok) loadWatchList();
+  } else if (action === 'snooze') {
+    const r = await fetch('/api/candidates/watch/snooze', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, current_company: company, days: 14 }),
+    });
+    if (r.ok) loadWatchList();
+  } else if (action === 'remove') {
+    if (!confirm('Remove ' + name + ' from the watch list?')) return;
+    const r = await fetch('/api/candidates/watch/remove', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, current_company: company }),
+    });
+    if (r.ok) loadWatchList();
+  }
+});
 
 async function addWatchCandidate(event) {
   event.preventDefault();
@@ -2481,30 +2529,6 @@ async function addWatchCandidate(event) {
   } catch (e) {
     status.textContent = 'Network error: ' + e.message; status.className = 'status err';
   }
-}
-
-async function touchCandidate(name, company) {
-  const signal = prompt('What did you observe? (optional restlessness notes; e.g. "updated profile, posting more")', '') || '';
-  const r = await fetch('/api/candidates/watch/touch', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, current_company: company, signal }),
-  });
-  if (r.ok) loadWatchList();
-}
-async function snoozeCandidate(name, company) {
-  const r = await fetch('/api/candidates/watch/snooze', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, current_company: company, days: 14 }),
-  });
-  if (r.ok) loadWatchList();
-}
-async function removeCandidate(name, company) {
-  if (!confirm('Remove ' + name + ' from the watch list?')) return;
-  const r = await fetch('/api/candidates/watch/remove', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, current_company: company }),
-  });
-  if (r.ok) loadWatchList();
 }
 
 // Auto-load the intel panels on page ready.
