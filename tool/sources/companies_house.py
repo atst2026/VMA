@@ -250,24 +250,80 @@ def _pick_canonical_hit(hits: list[dict], query_name: str) -> dict | None:
     return hits[0]
 
 
+def _resolve_to_canonical(name: str) -> dict | None:
+    """Top-level resolver: turn a query name into the parent / canonical
+    Companies House hit (or None if nothing found). Does up to 3 API
+    searches if needed:
+
+      1. Bare name (always).
+      2. If first search returned zero hits AND name lacks a corporate
+         suffix, retry with ' PLC' then ' GROUP PLC'.
+      3. After picking from those hits, if the picked entity is NOT a
+         HOLDINGS PLC or GROUP PLC variant, do an explicit search for
+         '<name> HOLDINGS PLC' to surface the parent. CH's relevance
+         algorithm ranks subsidiaries above the parent for queries
+         like 'HSBC' (HSBC HOLDINGS PLC files annually so subsidiaries
+         with more recent filings push it past items_per_page=5).
+         Same again with ' GROUP PLC'. Combined results re-picked.
+
+    The cache (resolve_company_number's WATCHLIST_FILE) sits on top of
+    this so each name resolves at most once per workflow run.
+    """
+    # Check what variants the name already contains
+    has_holdings = bool(re.search(r"\bholdings\b", name, re.IGNORECASE))
+    has_group = bool(re.search(r"\bgroup\b", name, re.IGNORECASE))
+    has_suffix = bool(re.search(r"\b(plc|limited|ltd|llp)\b",
+                                  name, re.IGNORECASE))
+
+    hits = search_company(name) or []
+
+    # Retry with PLC suffix if bare name returned nothing
+    if not hits and not has_suffix:
+        hits = search_company(f"{name} PLC") or []
+    if not hits and not has_suffix and not has_group:
+        hits = search_company(f"{name} GROUP PLC") or []
+    if not hits:
+        return None
+
+    top = _pick_canonical_hit(hits, name)
+    if top is None:
+        return None
+
+    # If we already picked a HOLDINGS or GROUP PLC, we're done
+    title_upper = (top.get("title") or "").upper()
+    if " HOLDINGS PLC" in title_upper or " GROUP PLC" in title_upper:
+        return top
+
+    # Otherwise, surface the parent by explicit secondary searches
+    extra = []
+    if not has_holdings:
+        extra.extend(search_company(f"{name} HOLDINGS PLC") or [])
+    if not has_group:
+        extra.extend(search_company(f"{name} GROUP PLC") or [])
+
+    if extra:
+        seen_numbers = {h.get("company_number") for h in hits}
+        merged = list(hits) + [
+            h for h in extra
+            if h.get("company_number") not in seen_numbers
+        ]
+        new_top = _pick_canonical_hit(merged, name)
+        if new_top is not None:
+            new_title = (new_top.get("title") or "").upper()
+            # Only switch if the new pick is genuinely a HOLDINGS/GROUP
+            # variant - never downgrade.
+            if " HOLDINGS PLC" in new_title or " GROUP PLC" in new_title:
+                return new_top
+
+    return top
+
+
 def company_events(name: str) -> dict:
     """Snapshot + officer list + filing history for one company.
     Used by pitch_pack (Section 1 account snapshot + Section 2 annual
     report quote source). Returns {company, found, resolved, officers,
     filings} — keep this shape stable, downstream renders depend on it."""
-    hits = search_company(name)
-    # Retry with " PLC" suffix if the bare name returned nothing. CH's
-    # relevance algorithm sometimes ranks subsidiaries above the parent
-    # plc for short names ("Unilever" -> UNILEVER UK LIMITED before
-    # UNILEVER PLC); the explicit suffix forces the parent to the top.
-    if not hits and not re.search(r"\b(plc|limited|ltd|group|holdings|llp)\b",
-                                   name, re.IGNORECASE):
-        hits = search_company(f"{name} PLC")
-        if not hits:
-            hits = search_company(f"{name} GROUP PLC") or hits
-    if not hits:
-        return {"company": name, "found": False}
-    top = _pick_canonical_hit(hits, name)
+    top = _resolve_to_canonical(name)
     if top is None:
         return {"company": name, "found": False}
     num = top.get("company_number", "")
@@ -292,26 +348,24 @@ def resolve_company_number(name: str) -> str | None:
     """One-time-per-name. Caches result in WATCHLIST_FILE.
     Only caches 'permanent' results — actual API responses (incl. zero hits).
     Network failures / rate-limit timeouts are NOT cached, so they retry
-    on subsequent runs until they succeed."""
+    on subsequent runs until they succeed.
+
+    Uses _resolve_to_canonical so the cached number is for the parent /
+    holding company, not a subsidiary that happens to rank higher in
+    CH's relevance algorithm. Without this, 'HSBC' was caching the
+    number of an HSBC subsidiary that files exemption accounts and the
+    annual report extraction tried (and failed) to parse those.
+    """
     cache = _load_watchlist()
     entry = cache.get(name)
     if entry is not None:
         return entry.get("number")
-    items = search_company(name)
-    if items is None:
-        # Network failure / rate limit. Do NOT cache — retry next run.
-        return None
-    # API actually responded — cache the result (incl. zero-hits result).
-    # Use the SAME canonical picker as company_events so the cache hits
-    # the parent / holding company, not a subsidiary that happens to
-    # rank higher in CH's relevance algorithm. Without this, "HSBC" was
-    # caching the number of HSBC PRIVATE BANK (UK) LIMITED and the
-    # annual report extraction tried to parse 37KB exemption filings.
-    number = None
-    if items:
-        picked = _pick_canonical_hit(items, name)
-        if picked is not None:
-            number = picked.get("company_number")
+    top = _resolve_to_canonical(name)
+    # If the resolver returned a hit, cache it (incl. None for zero-hits).
+    # Network failures inside _resolve_to_canonical bubble through as
+    # None too, but we don't distinguish here - the caller sees None
+    # and the next run retries.
+    number = top.get("company_number") if top else None
     cache[name] = {
         "number": number,
         "resolved_at": datetime.now(timezone.utc).isoformat(),
