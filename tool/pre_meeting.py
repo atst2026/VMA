@@ -48,6 +48,7 @@ class PrepBrief:
     recent_signals: list[dict] = field(default_factory=list)
     recent_predictors: list[dict] = field(default_factory=list)
     annual_quotes: list[str] = field(default_factory=list)
+    annual_quotes_reason: str = ""   # why quotes are empty, when they are
     conversation_hooks: list[str] = field(default_factory=list)
 
 
@@ -111,30 +112,50 @@ def _load_recent_predictors_for_company(company: str, limit: int = 3) -> list[di
     return matched[:limit]
 
 
-def _load_annual_quotes_for_company(company: str, limit: int = 3) -> list[str]:
+def _load_annual_quotes_for_company(company: str, limit: int = 3) -> tuple[list[str], str]:
+    """Returns (quotes, reason_when_empty). reason is "" when quotes are
+    successfully extracted, otherwise a short truthful explanation
+    suitable for rendering to Sara. Fixes the previous bug where every
+    failure was misreported as 'non-UK-registered, abbreviated filing,
+    or scanned PDF' regardless of actual cause."""
     try:
         from tool.sources.companies_house import resolve_company_number
         from tool.annual_report import fetch_strategic_quotes
     except Exception as e:
         log.info("annual_report pipeline unavailable: %s", e)
-        return []
+        return [], f"Annual report extraction module failed to load: {e}"
     number = resolve_company_number(company)
     if not number:
-        return []
+        return [], (f"Companies House did not resolve {company!r} - either it's "
+                    f"not registered in the UK, or the CH search returned no "
+                    f"matching active entity.")
     try:
         report = fetch_strategic_quotes(number, top_n=limit)
     except Exception as e:
         log.info("annual_report extraction failed for %s: %s", company, e)
-        return []
-    if not report or not report.quotes:
-        return []
-    return [q.text for q in report.quotes[:limit]]
+        return [], (f"Companies House resolved {company} to {number} but the "
+                    f"annual report extraction raised an error: {e}. "
+                    f"Workflow log has details.")
+    if not report:
+        return [], (f"Companies House resolved {company} to {number} but no "
+                    f"annual report could be downloaded - either no full "
+                    f"accounts have been filed, only abbreviated/exemption "
+                    f"variants exist, or the document API returned empty.")
+    if not report.quotes:
+        return [], (f"Annual report PDF for {company} ({number}, filed "
+                    f"{report.filing_date}) was downloaded and parsed "
+                    f"({report.page_count} pages), but no sentences scored "
+                    f"above the strategic-priority threshold. The PDF may be "
+                    f"image-only / scanned, or the strategic report may use "
+                    f"unusual phrasing the scorer doesn't pick up.")
+    return [q.text for q in report.quotes[:limit]], ""
 
 
 def _build_conversation_hooks(brief: PrepBrief) -> list[str]:
     """One predictor-driven hook, one news-driven hook, one quote-back
-    hook from the annual report. Fills in with a generic-but-honest
-    fallback if any tier produced nothing."""
+    hook from the annual report. Fills any missing slots with VARIED
+    generic-but-useful angles so Sara never sees three identical
+    fallback lines."""
     hooks: list[str] = []
 
     for p in brief.recent_predictors[:1]:
@@ -183,18 +204,28 @@ def _build_conversation_hooks(brief: PrepBrief) -> list[str]:
         )
         break
 
-    while len(hooks) < 3:
-        if not (brief.recent_signals or brief.recent_predictors or brief.annual_quotes):
-            hooks.append(
-                f"No fresh public signals at {brief.account} - open on the wider "
-                f"sector pattern (see the morning brief's predictor pipeline) and "
-                f"ask what's keeping them up at night this quarter."
-            )
-        else:
-            hooks.append(
-                "Listen for cues about bandwidth and immediate hiring priorities - "
-                "the data above is signal, not script."
-            )
+    # Varied fallbacks if any of the three primary slots came up empty.
+    # Three distinct angles so Sara never sees identical lines stacked.
+    # Phrasing avoids claiming "no signals" since other slots may have
+    # surfaced specific ones - these are angles, not gap-fillers.
+    fallbacks = [
+        f"Sector angle: ask whether they're seeing the same talent-flow "
+        f"patterns across their sector - peer benchmarks are useful "
+        f"comparators that often surface unstated hiring intent at "
+        f"{brief.account}.",
+
+        f"Discovery angle: 'what's the one comms capability gap you wish "
+        f"you had more bandwidth for?' is a single open question that "
+        f"often unlocks more than any prepared pitch.",
+
+        f"Year-ahead angle: 'looking 6 months out, what would make your "
+        f"comms function easier to run?' surfaces plans that haven't hit "
+        f"any public channel yet.",
+    ]
+    fallback_idx = 0
+    while len(hooks) < 3 and fallback_idx < len(fallbacks):
+        hooks.append(fallbacks[fallback_idx])
+        fallback_idx += 1
     return hooks[:3]
 
 
@@ -207,7 +238,7 @@ def build_brief(account: str, contact_name: str = "", meeting_context: str = "")
     brief.contact_summary = _load_contacts_for_company(brief.account)
     brief.recent_signals = _load_recent_signals_for_company(brief.account)
     brief.recent_predictors = _load_recent_predictors_for_company(brief.account)
-    brief.annual_quotes = _load_annual_quotes_for_company(brief.account)
+    brief.annual_quotes, brief.annual_quotes_reason = _load_annual_quotes_for_company(brief.account)
     brief.conversation_hooks = _build_conversation_hooks(brief)
     return brief
 
@@ -270,8 +301,8 @@ def render_html(brief: PrepBrief) -> str:
             for q in brief.annual_quotes
         ) + "</ul>"
     else:
-        quotes_html = ("<div style='color:#888;'>Annual report quotes not extracted "
-                       "(non-UK-registered, abbreviated filing, or scanned PDF).</div>")
+        reason = brief.annual_quotes_reason or "Annual report quotes not available."
+        quotes_html = f"<div style='color:#888;'>{_esc(reason)}</div>"
 
     hooks_html = "<ol style='margin:6px 0;padding-left:22px;'>" + "".join(
         f"<li style='margin-bottom:6px;'>{_esc(h)}</li>" for h in brief.conversation_hooks
@@ -361,7 +392,7 @@ def render_text(brief: PrepBrief) -> str:
         for q in brief.annual_quotes:
             lines.append(f'   "{q[:240]}"')
     else:
-        lines.append("   (extraction unavailable for this entity)")
+        lines.append(f"   {brief.annual_quotes_reason or '(extraction unavailable)'}")
     lines.append("")
 
     lines.append("5. THREE CONVERSATION HOOKS")
