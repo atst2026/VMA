@@ -90,27 +90,101 @@ def _company_word_match(target: str, *fields: str) -> bool:
 
 
 def _load_recent_signals_for_company(company: str, limit: int = 5) -> list[dict]:
+    """Two sources, deduplicated:
+      1. Morning brief's filtered signals (latest_signals.json) - high
+         relevance (already filtered to comms / IC / corporate affairs)
+         but narrow.
+      2. Live GDELT query for the company - last 14 days of any news
+         mentioning the company. Catches CEO interviews, product
+         announcements, regulatory actions, M&A - context Sara needs
+         for a meeting that the morning brief filter would reject.
+
+    Without source 2, the brief returned 'no recent press' for major
+    PLCs that have news every day - because the filtered morning brief
+    rarely surfaces non-comms-specific events at any single account.
+    """
+    matched: list[dict] = []
+    seen_titles: set[str] = set()
+
+    # Source 1: morning brief signals
     path = STATE_DIR / "latest_signals.json"
-    if not path.exists():
-        return []
-    try:
-        data = json.loads(path.read_text())
-    except Exception:
-        return []
-    if not isinstance(data, list):
-        return []
-    # Match the company name (case-insensitive, word-boundary) against
-    # both the signal's `company` field AND its `title`. Catches signals
-    # where extract_company missed the company name but the title
-    # clearly mentions it, AND signals where company is the longer form
-    # ('HSBC Holdings PLC') vs the user's input ('HSBC').
-    matched = [
-        s for s in data
-        if isinstance(s, dict)
-        and _company_word_match(company, s.get("company", ""), s.get("title", ""))
-    ]
+    if path.exists():
+        try:
+            data = json.loads(path.read_text())
+            if isinstance(data, list):
+                for s in data:
+                    if not isinstance(s, dict):
+                        continue
+                    if _company_word_match(company, s.get("company", ""),
+                                            s.get("title", "")):
+                        title_key = (s.get("title") or "")[:120].lower()
+                        if title_key and title_key not in seen_titles:
+                            seen_titles.add(title_key)
+                            matched.append(s)
+        except Exception:
+            pass
+
+    # Source 2: live GDELT
+    for art in _fetch_live_gdelt_news(company, days_back=14, max_articles=limit + 5):
+        title_key = (art.get("title") or "")[:120].lower()
+        if title_key and title_key not in seen_titles:
+            seen_titles.add(title_key)
+            matched.append(art)
+
     matched.sort(key=lambda s: s.get("published", ""), reverse=True)
     return matched[:limit]
+
+
+def _fetch_live_gdelt_news(company: str, days_back: int = 14,
+                           max_articles: int = 10) -> list[dict]:
+    """Live GDELT query for `company` over the last N days. Returns
+    articles in the same dict shape as morning brief signals (kind,
+    title, url, source, published, company) for downstream rendering.
+    Silent failure on network errors - returns []."""
+    try:
+        import requests
+        from tool.config import SOURCES
+    except Exception as e:
+        log.info("GDELT live query unavailable: %s", e)
+        return []
+    query = f'"{company}"'
+    params = {
+        "query": f"sourcelang:eng {query}",
+        "mode": "ArtList",
+        "format": "json",
+        "timespan": f"{days_back}d",
+        "maxrecords": max_articles,
+        "sort": "datedesc",
+    }
+    try:
+        r = requests.get(SOURCES["gdelt_doc"], params=params, timeout=20)
+    except Exception as e:
+        log.info("GDELT live fetch failed: %s", e)
+        return []
+    if not r or r.status_code != 200:
+        log.info("GDELT live %s -> HTTP %s",
+                 company[:40], r.status_code if r else "no-resp")
+        return []
+    try:
+        articles = r.json().get("articles", []) or []
+    except Exception:
+        return []
+    out = []
+    for a in articles:
+        title = (a.get("title") or "").strip()
+        if not title:
+            continue
+        out.append({
+            "title": title,
+            "url": a.get("url", ""),
+            "source": (a.get("domain") or a.get("sourcecountry") or "GDELT"),
+            "published": a.get("seendate", ""),
+            "company": company,
+            "kind": "news",
+        })
+    log.info("GDELT live: %d articles for %s (last %dd)",
+             len(out), company, days_back)
+    return out
 
 
 def _load_recent_predictors_for_company(company: str, limit: int = 3) -> list[dict]:
@@ -211,6 +285,12 @@ def _build_conversation_hooks(brief: PrepBrief) -> list[str]:
             hooks.append(
                 f"News angle: their recent disclosure \"{title[:140]}\" - "
                 f"pivot to how it affects their comms / IR rhythm."
+            )
+        elif kind == "news":
+            hooks.append(
+                f"News angle: \"{title[:140]}\" - reference it in opening "
+                f"to show you've been tracking them, then ask what it means "
+                f"for the year ahead."
             )
         else:
             hooks.append(

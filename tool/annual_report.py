@@ -244,34 +244,61 @@ def _is_full_annual_report(filing: dict) -> bool:
     return True
 
 
+def _annual_report_priority(filing: dict) -> int:
+    """Score filings by how likely they contain a strategic report we
+    can quote from. Higher = better. Used to pick which of the (up to
+    20) recent accounts filings to attempt FIRST. Important because
+    some companies file 'group accounts', 'parent accounts',
+    'consolidated accounts' under category=accounts and the parent /
+    consolidated variant is the one with the strategic report."""
+    desc = (filing.get("description") or "").lower()
+    type_code = (filing.get("type") or "").upper()
+    score = 0
+    # Strong positive signals
+    if "group" in desc or "consolidated" in desc:
+        score += 10
+    if "annual report" in desc:
+        score += 8
+    if "full accounts" in desc:
+        score += 5
+    if type_code in ("AA", "AAB"):   # full annual accounts type codes
+        score += 4
+    # Mild positives
+    if "accounts" in desc:
+        score += 2
+    return score
+
+
 def _download_pdf(document_metadata_url: str) -> bytes | None:
     """Fetch the PDF content for a filing. CH Document API redirects to
     an AWS S3 URL — we follow redirects but strip auth from the S3 leg
-    (Basic Auth in an S3 signed-URL request can break the signature)."""
+    (Basic Auth in an S3 signed-URL request can break the signature).
+
+    Timeout extended to 90s because some FTSE100 annual reports are
+    20-50MB (HSBC HOLDINGS PLC's most recent is ~40MB, ~600 pages)
+    and the previous 45s budget was timing out partway through the
+    download for the largest ones."""
     if not COMPANIES_HOUSE_KEY or not document_metadata_url:
         return None
     content_url = document_metadata_url.rstrip("/") + "/content"
     try:
-        # Don't auto-follow redirects so we can re-issue the second leg
-        # without Basic Auth (S3 URLs are pre-signed and don't need it).
         r = requests.get(
             content_url,
             auth=(COMPANIES_HOUSE_KEY, ""),
             headers={"Accept": "application/pdf"},
-            timeout=45,
+            timeout=90,
             allow_redirects=False,
         )
         if r.status_code in (301, 302, 303, 307, 308):
             redirect_url = r.headers.get("Location", "")
             if redirect_url:
-                r = requests.get(redirect_url, timeout=45)
+                r = requests.get(redirect_url, timeout=90)
     except requests.RequestException as e:
         log.info("annual_report PDF fetch failed: %s", e)
         return None
     if r.status_code != 200 or not r.content:
         log.info("annual_report PDF fetch HTTP %s", r.status_code)
         return None
-    # Diagnostic: how big is the PDF and does it look like one?
     head = r.content[:8]
     log.info("annual_report PDF: %d bytes, magic=%r",
              len(r.content), head)
@@ -280,25 +307,43 @@ def _download_pdf(document_metadata_url: str) -> bytes | None:
 
 def fetch_strategic_quotes(company_number: str,
                            top_n: int = 5,
-                           max_filings_to_try: int = 3) -> AnnualReport | None:
+                           max_filings_to_try: int = 8) -> AnnualReport | None:
     """End-to-end: find the latest full annual report at CH, download
     the PDF, extract top N strategic-priority quotes.
     Returns None if any step fails (caller should fall back to GDELT).
 
-    Caps at max_filings_to_try (default 3) to avoid wasting time on
-    successive failed PDF parses — if the 3 most recent filings can't
-    be extracted, older ones almost certainly can't be either, and the
-    pitch pack should fall back to GDELT quickly instead of waiting
-    a minute per call."""
+    Default max_filings_to_try=8 (was 3). For large groups like HSBC,
+    BP, Unilever the most-recent filing under category=accounts is
+    often a supplementary document (charge filing, director appointment
+    receipt, AA01 amendment) - the actual annual report sits 2-5
+    positions deeper. Trying 8 catches the proper annual report
+    without wasting too much budget if extraction is genuinely
+    impossible.
+
+    Filings are scored by _annual_report_priority and tried in
+    descending priority order, not strict reverse-chronological. Group
+    / consolidated / 'annual report' / type=AA filings are tried
+    BEFORE plain 'accounts' filings - the consolidated parent variant
+    is the one with the strategic report."""
     if not company_number:
         return None
     filings = _fetch_filings_accounts(company_number)
     if not filings:
         log.info("annual_report: no accounts filings for %s", company_number)
         return None
-    eligible = [f for f in filings if _is_full_annual_report(f)][:max_filings_to_try]
-    log.info("annual_report: trying up to %d of %d eligible filings",
-             len(eligible), len([f for f in filings if _is_full_annual_report(f)]))
+    # Filter exemption / dormant / abbreviated filings, then sort by
+    # annual-report priority so consolidated / group / 'annual report'
+    # / type=AA filings are tried first. Reverse-chronological is the
+    # tiebreaker (newer date wins among same-priority filings).
+    all_eligible = [f for f in filings if _is_full_annual_report(f)]
+    all_eligible.sort(
+        key=lambda f: (_annual_report_priority(f), f.get("date", "")),
+        reverse=True,
+    )
+    eligible = all_eligible[:max_filings_to_try]
+    log.info("annual_report: trying up to %d of %d eligible filings "
+             "(sorted by priority: group/consolidated > AA > accounts)",
+             len(eligible), len(all_eligible))
     for filing in eligible:
         links = filing.get("links") or {}
         metadata_url = links.get("document_metadata")
