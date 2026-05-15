@@ -213,10 +213,16 @@ DISTRESS_SIGNALS = [
     (r"\bproxy (?:fight|battle|contest)\b",          "activist",             0.85),
     (r"\b(?:requisitions?|calls? for) (?:an? )?(?:EGM|extraordinary general meeting)\b",
                                                      "activist",             0.8),
-    # Regulatory probes
-    (r"\b(?:FCA|PRA|Ofcom|Ofgem|Ofwat|CMA|SFO|ICO)\b.{0,40}\b(?:investigation|probe|inquiry|review|opens? (?:an? )?(?:investigation|probe|inquiry))\b",
+    # Regulatory probes. Deliberately NOT matching bare "review" /
+    # "reviews" — regulators publish thematic reviews of topics/sectors
+    # constantly ("FCA to review claims management practices") and those
+    # are not an account in distress. Require enforcement-grade language:
+    # investigation / probe / inquiry / fine / enforcement / sanction.
+    (r"\b(?:FCA|PRA|Ofcom|Ofgem|Ofwat|CMA|SFO|ICO)\b.{0,40}\b(?:investigation|probe|inquiry|opens? (?:an? )?(?:investigation|probe|inquiry)|fines?|sanctions?|enforcement)\b",
                                                      "regulatory_probe",     0.9),
     (r"\b(?:investigation|probe|inquiry) (?:by|from|into|launched by) (?:the )?(?:FCA|PRA|Ofcom|Ofgem|Ofwat|CMA|SFO|ICO)\b",
+                                                     "regulatory_probe",     0.9),
+    (r"\b(?:FCA|PRA|Ofcom|Ofgem|Ofwat|CMA|SFO|ICO) fines?\b",
                                                      "regulatory_probe",     0.9),
     (r"\b(?:section 166|skilled person review)\b",   "regulatory_probe",     0.85),
     (r"\b(?:fine[ds]?|penalt(?:y|ies)) of (?:£|\$)\d",
