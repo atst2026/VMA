@@ -1345,6 +1345,60 @@ TEMPLATE = r"""
       background: rgba(201, 55, 55, 0.05);
       box-shadow: 0 0 0 3px rgba(201, 55, 55, 0.08);
     }
+    /* ---- Secondary (collapsed) support tools ---- */
+    .secondary-tools {
+      max-width: 1200px;
+      margin: 28px auto 0;
+      padding: 0 4px;
+    }
+    .secondary-tools-heading {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin: 0 0 10px 2px;
+    }
+    .secondary-tools-note {
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      color: var(--text-dim);
+    }
+    details.collapsible-tool {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+    details.collapsible-tool > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      user-select: none;
+      transition: background 0.12s;
+    }
+    details.collapsible-tool > summary::-webkit-details-marker { display: none; }
+    details.collapsible-tool > summary::before {
+      content: "▸";
+      float: right;
+      color: var(--text-dim);
+      font-size: 12px;
+      margin-left: 12px;
+    }
+    details.collapsible-tool[open] > summary::before { content: "▾"; }
+    details.collapsible-tool > summary:hover { background: var(--surface-elevated); }
+    .collapsible-tool .ct-title { font-weight: 700; font-size: 14px; color: var(--text); }
+    .collapsible-tool .ct-sub   { font-size: 12px; color: var(--text-muted); }
+    .collapsible-tool .collapsible-body {
+      padding: 4px 18px 18px;
+      border-top: 1px solid var(--border);
+    }
     /* ---- Demand-creation tool badges & pills ---- */
     .mandate-age {
       display: inline-block;
@@ -1878,32 +1932,6 @@ TEMPLATE = r"""
       </form>
     </div>
 
-    <!-- PIPELINE TRIAGE -->
-    <div class="panel action-card">
-      <h3>Pipeline Triage</h3>
-      <div class="subhead">Paste your active conversations; honest scoring (alive / stalled / cold / dead) with next-action.</div>
-      <form id="triage-form" onsubmit="runTriage(event)">
-        <label for="triage-text">Active pipeline (one per line)</label>
-        <textarea id="triage-text" name="text" rows="6" placeholder="HSBC Head of IC - shortlist sent, interview booked&#10;NatWest CCO - haven't heard in 3 weeks&#10;BP Crisis Comms - they moved on, hired internally" required></textarea>
-        <button type="submit">Triage</button>
-        <div class="status" id="triage-status"></div>
-        <div id="triage-result" class="inline-result"></div>
-      </form>
-    </div>
-
-    <!-- OBJECTION COACH -->
-    <div class="panel action-card">
-      <h3>Objection Coach</h3>
-      <div class="subhead">Paste a negotiation / objection situation; get 3 VMA-rooted angles.</div>
-      <form id="coach-form" onsubmit="runCoach(event)">
-        <label for="coach-text">Situation</label>
-        <textarea id="coach-text" name="situation" rows="3" placeholder="e.g. Client wants to push our 22% fee down to 18%" required></textarea>
-        <button type="submit">Get angles</button>
-        <div class="status" id="coach-status"></div>
-        <div id="coach-result" class="inline-result"></div>
-      </form>
-    </div>
-
     <!-- CANDIDATE WATCH -->
     <div class="panel action-card">
       <h3>Candidate Watch</h3>
@@ -1991,6 +2019,40 @@ TEMPLATE = r"""
       </form>
     </div>
 
+  </div>
+
+  <!-- SECONDARY TOOLS — not commission-causal; collapsed by default,
+       click to open. Pinned to the bottom below the lead-gen tools. -->
+  <div class="secondary-tools">
+    <div class="secondary-tools-heading">Pipeline &amp; negotiation aids
+      <span class="secondary-tools-note">· support tools, not lead generation — open when needed</span>
+    </div>
+
+    <details class="collapsible-tool">
+      <summary><span class="ct-title">Pipeline Triage</span><span class="ct-sub">Paste your active conversations → honest alive / stalled / cold / dead scoring with next-action</span></summary>
+      <div class="collapsible-body">
+        <form id="triage-form" onsubmit="runTriage(event)">
+          <label for="triage-text">Active pipeline (one per line)</label>
+          <textarea id="triage-text" name="text" rows="6" placeholder="HSBC Head of IC - shortlist sent, interview booked&#10;NatWest CCO - haven't heard in 3 weeks&#10;BP Crisis Comms - they moved on, hired internally" required></textarea>
+          <button type="submit">Triage</button>
+          <div class="status" id="triage-status"></div>
+          <div id="triage-result" class="inline-result"></div>
+        </form>
+      </div>
+    </details>
+
+    <details class="collapsible-tool">
+      <summary><span class="ct-title">Objection Coach</span><span class="ct-sub">Paste a negotiation / objection situation → 3 VMA-rooted angles</span></summary>
+      <div class="collapsible-body">
+        <form id="coach-form" onsubmit="runCoach(event)">
+          <label for="coach-text">Situation</label>
+          <textarea id="coach-text" name="situation" rows="3" placeholder="e.g. Client wants to push our 22% fee down to 18%" required></textarea>
+          <button type="submit">Get angles</button>
+          <div class="status" id="coach-status"></div>
+          <div id="coach-result" class="inline-result"></div>
+        </form>
+      </div>
+    </details>
   </div>
 
   <div class="footer">
