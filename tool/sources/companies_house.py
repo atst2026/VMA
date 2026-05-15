@@ -45,7 +45,13 @@ log = logging.getLogger("brief.ch")
 
 STATE_DIR = Path(__file__).resolve().parent.parent / "state"
 STATE_DIR.mkdir(parents=True, exist_ok=True)
-WATCHLIST_FILE = STATE_DIR / "ch_watchlist.json"
+# Cache file renamed from ch_watchlist.json -> ch_watchlist_v2.json in
+# May 2026 to bust stale cached resolutions. The previous version cached
+# the WRONG CH entity for some watchlist names (e.g. "HSBC" -> some
+# subsidiary filing exemption accounts, not HSBC HOLDINGS PLC) because
+# the picker was naive. Renaming forces a fresh resolution on the next
+# run using the holdings/group/PLC priority logic in _pick_canonical_hit.
+WATCHLIST_FILE = STATE_DIR / "ch_watchlist_v2.json"
 SNAPSHOT_FILE = STATE_DIR / "ch_officers_snapshot.json"
 
 
@@ -188,6 +194,62 @@ def search_company(name: str) -> list[dict] | None:
     return items
 
 
+def _pick_canonical_hit(hits: list[dict], query_name: str) -> dict | None:
+    """Among CH search hits for `query_name`, pick the parent / canonical
+    entity. UK company structure ranks parent holding companies in this
+    order:
+      1. "<NAME> HOLDINGS PLC"  (e.g. HSBC HOLDINGS PLC)
+      2. "<NAME> GROUP PLC"     (e.g. BT GROUP PLC)
+      3. shortest "<NAME> ... PLC"  (e.g. UNILEVER PLC, SEVERN TRENT PLC)
+    Subsidiaries (e.g. HSBC BANK PLC, UNILEVER UK LIMITED, HSBC PRIVATE
+    BANK (UK) LIMITED) fall through. Returns None if hits is empty.
+
+    This is the SINGLE point of truth for "which CH entity does a query
+    name resolve to". Both company_events and resolve_company_number
+    delegate to it - keeps the pitch pack's annual report extraction
+    and the contacts auto-update logic aligned on the same parent."""
+    if not hits:
+        return None
+    name_lower = query_name.strip().lower()
+    active = [it for it in hits if it.get("company_status") == "active"]
+    prefix_active = [
+        it for it in active
+        if (it.get("title") or "").lower().startswith(name_lower)
+    ]
+
+    def _title(it: dict) -> str:
+        return (it.get("title") or "").upper().strip()
+
+    holdings_active = sorted(
+        [it for it in prefix_active if " HOLDINGS PLC" in _title(it)],
+        key=lambda it: len(_title(it)),
+    )
+    group_active = sorted(
+        [it for it in prefix_active
+         if " GROUP PLC" in _title(it) and " HOLDINGS PLC" not in _title(it)],
+        key=lambda it: len(_title(it)),
+    )
+    other_plc_active = sorted(
+        [it for it in prefix_active
+         if _title(it).endswith(" PLC")
+         and " HOLDINGS PLC" not in _title(it)
+         and " GROUP PLC" not in _title(it)],
+        key=lambda it: len(_title(it)),
+    )
+
+    if holdings_active:
+        return holdings_active[0]
+    if group_active:
+        return group_active[0]
+    if other_plc_active:
+        return other_plc_active[0]
+    if prefix_active:
+        return prefix_active[0]
+    if active:
+        return active[0]
+    return hits[0]
+
+
 def company_events(name: str) -> dict:
     """Snapshot + officer list + filing history for one company.
     Used by pitch_pack (Section 1 account snapshot + Section 2 annual
@@ -205,56 +267,9 @@ def company_events(name: str) -> dict:
             hits = search_company(f"{name} GROUP PLC") or hits
     if not hits:
         return {"company": name, "found": False}
-    # Among ACTIVE prefix-matches (titles starting with the query name),
-    # prefer the parent / canonical entity. UK company structure ranks
-    # parent holding companies in this order:
-    #   1. "<NAME> HOLDINGS PLC" (e.g. HSBC HOLDINGS PLC)
-    #   2. "<NAME> GROUP PLC" (e.g. BT GROUP PLC)
-    #   3. shortest "<NAME> ... PLC" (e.g. UNILEVER PLC, BARCLAYS PLC)
-    # Subsidiaries (e.g. HSBC BANK PLC, UNILEVER UK LIMITED) fall through.
-    # Falls back to first prefix-active, then any active, then first hit.
-    name_lower = name.strip().lower()
-    active = [it for it in hits if it.get("company_status") == "active"]
-    prefix_active = [
-        it for it in active
-        if (it.get("title") or "").lower().startswith(name_lower)
-    ]
-
-    def _title(it: dict) -> str:
-        return (it.get("title") or "").upper().strip()
-
-    # Tier 1: HOLDINGS PLC variants (the parent in a holding-company structure)
-    holdings_active = sorted(
-        [it for it in prefix_active if " HOLDINGS PLC" in _title(it)],
-        key=lambda it: len(_title(it)),
-    )
-    # Tier 2: GROUP PLC variants (the parent in a group structure)
-    group_active = sorted(
-        [it for it in prefix_active
-         if " GROUP PLC" in _title(it) and " HOLDINGS PLC" not in _title(it)],
-        key=lambda it: len(_title(it)),
-    )
-    # Tier 3: any other PLC variant, shortest first
-    other_plc_active = sorted(
-        [it for it in prefix_active
-         if _title(it).endswith(" PLC")
-         and " HOLDINGS PLC" not in _title(it)
-         and " GROUP PLC" not in _title(it)],
-        key=lambda it: len(_title(it)),
-    )
-
-    if holdings_active:
-        top = holdings_active[0]
-    elif group_active:
-        top = group_active[0]
-    elif other_plc_active:
-        top = other_plc_active[0]
-    elif prefix_active:
-        top = prefix_active[0]
-    elif active:
-        top = active[0]
-    else:
-        top = hits[0]
+    top = _pick_canonical_hit(hits, name)
+    if top is None:
+        return {"company": name, "found": False}
     num = top.get("company_number", "")
     officers = company_officers(num) if num else []
     filings: list[dict] = []
@@ -286,12 +301,17 @@ def resolve_company_number(name: str) -> str | None:
     if items is None:
         # Network failure / rate limit. Do NOT cache — retry next run.
         return None
-    # API actually responded — cache the result (incl. zero-hits result)
+    # API actually responded — cache the result (incl. zero-hits result).
+    # Use the SAME canonical picker as company_events so the cache hits
+    # the parent / holding company, not a subsidiary that happens to
+    # rank higher in CH's relevance algorithm. Without this, "HSBC" was
+    # caching the number of HSBC PRIVATE BANK (UK) LIMITED and the
+    # annual report extraction tried to parse 37KB exemption filings.
     number = None
     if items:
-        active = [it for it in items if it.get("company_status") == "active"]
-        picked = active[0] if active else items[0]
-        number = picked.get("company_number")
+        picked = _pick_canonical_hit(items, name)
+        if picked is not None:
+            number = picked.get("company_number")
     cache[name] = {
         "number": number,
         "resolved_at": datetime.now(timezone.utc).isoformat(),

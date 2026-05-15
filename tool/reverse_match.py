@@ -373,9 +373,7 @@ def main() -> int:
                    f"({n_hot} HOT, {n_warm} WARM)")
         if mode == "test":
             subject = "[TEST] " + subject
-        # Silent confirmation channel - see pitch_pack.py for rationale.
-        bcc = [config.TEST_RECIPIENT] if mode == "send" else None
-        result = email_send(to, subject, html_out, text_out, bcc=bcc)
+        result = email_send(to, subject, html_out, text_out)
         log.info("Send: %s", result)
         if not result.get("ok"):
             print("\n--- EMAIL SEND FAILED ---")

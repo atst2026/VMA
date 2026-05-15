@@ -408,8 +408,7 @@ def main(argv: list[str] | None = None) -> int:
         subject += f" - {contact}"
     if mode == "test":
         subject = "[TEST] " + subject
-    bcc = [config.TEST_RECIPIENT] if mode == "send" else None
-    result = email_send(to, subject, html_out, text_out, bcc=bcc)
+    result = email_send(to, subject, html_out, text_out)
     log.info("Send: %s", result)
     if not result.get("ok"):
         print("\n--- EMAIL SEND FAILED ---")
