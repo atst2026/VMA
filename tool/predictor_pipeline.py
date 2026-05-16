@@ -77,6 +77,7 @@ def _predicted_role_for(stk: Stack) -> str:
         ("regulator_action",       "Crisis / Head of Comms"),
         ("regulator_probe_early",  "Crisis / Head of Comms"),
         ("crisis_event",           "Crisis / Head of Comms"),
+        ("profit_warning",         "IR Director / Head of Corporate Affairs"),
         ("contract_loss",          "Head of Communications"),
         ("chair_change",           "Head of Communications"),
         ("cfo_change",             "Head of Investor Relations"),

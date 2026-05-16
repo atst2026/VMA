@@ -478,6 +478,9 @@ def linkedin_search_for_predictor(p: dict) -> dict:
     if "regulator_action" in keys or "regulator_probe_early" in keys or "crisis_event" in keys:
         return {"label": f"Search CHRO at {company}",
                 "url": _people_search(f'"CHRO" OR "Head of Communications" "{company}"')}
+    if "profit_warning" in keys:
+        return {"label": f"Search IR Director at {company}",
+                "url": _people_search(f'"Investor Relations" OR "Corporate Affairs" "{company}"')}
     if "mna" in keys:
         return {"label": f"Search Head of Comms at {company}",
                 "url": _people_search(f'"Head of Communications" OR "Corporate Affairs" "{company}"')}

@@ -208,6 +208,7 @@ ROLE_FOR_PREDICTOR_TRIGGER = {
     "regulator_action":       "Head of Communications",
     "regulator_probe_early":  "Head of Communications",
     "crisis_event":           "Head of Communications",
+    "profit_warning":         "Head of Investor Relations",
     "mna":                    "Head of Communications",
     "restructure":            "Chief People Officer",
     "press_velocity_spike":   "Head of Communications",
@@ -225,7 +226,7 @@ def role_for_predictor(predictor: dict) -> str:
     # Pick the highest-priority trigger
     for k in ("comms_leader_departure", "ic_platform_rfp", "ipo_listing",
               "ceo_change", "mna", "regulator_action", "regulator_probe_early",
-              "crisis_event", "contract_loss",
+              "crisis_event", "profit_warning", "contract_loss",
               "chair_change", "cfo_change", "ir_director_change",
               "chro_change", "restructure", "press_velocity_spike",
               "job_ad_cluster"):
@@ -346,7 +347,7 @@ LEAD_KIND_TO_SLOT = {
 def _highest_priority_trigger(keys: list[str]) -> str:
     for k in ("comms_leader_departure", "ic_platform_rfp", "ipo_listing",
               "ceo_change", "mna", "regulator_action", "regulator_probe_early",
-              "crisis_event", "contract_loss",
+              "crisis_event", "profit_warning", "contract_loss",
               "chair_change", "cfo_change", "ir_director_change",
               "chro_change", "restructure", "press_velocity_spike",
               "job_ad_cluster"):

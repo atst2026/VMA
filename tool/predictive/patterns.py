@@ -223,6 +223,38 @@ CRISIS_EVENT = TriggerType(
 )
 
 
+# ---- Profit warning / negative trading update --------------------------
+# Phase 1 amend: the densest free signal in the UK market (Investegate
+# RNS). A profit warning is statistically associated with crisis-comms
+# interim demand and, within 6-12 months, permanent corporate-affairs
+# and IR hires. Deliberately excluded earlier as "downstream of
+# restructure"; that call is reversed per the detection-engine report.
+PROFIT_WARNING = TriggerType(
+    key="profit_warning",
+    label="Profit warning / negative trading update",
+    weight=0.75,
+    lead_time_weeks=(2, 26),
+    who_to_call="CCO / IR Director — crisis-comms interim now, permanent CorpAffairs/IR follows",
+    implication=(
+        "A profit warning / materially negative trading update at "
+        "{company}. Associated with near-term crisis-comms interim "
+        "demand and a permanent Corporate Affairs / IR hire within "
+        "6-12 months."
+    ),
+    patterns=[
+        re.compile(p, re.IGNORECASE) for p in (
+            r"\bprofit warning\b",
+            r"\bissues?\b.{0,30}\bprofit warning\b",
+            r"\bwarns?\b.{0,20}\bon\b.{0,20}\b(?:full[- ]year|FY|annual)?\s*(?:profit|profits|earnings|guidance|outlook)\b",
+            r"\b(?:profit|profits|earnings|revenue|sales)\b.{0,40}\b(?:materially |significantly |substantially )?(?:below|behind|short of)\b.{0,40}\b(?:expectation|expectations|forecast|guidance|consensus|market)\b",
+            r"\b(?:significantly|materially|substantially)\s+below\b.{0,30}\b(?:expectation|expectations|guidance|forecast|consensus)\b",
+            r"\b(?:downgrades?|cuts?|lowers?|reduces?)\b.{0,30}\b(?:full[- ]year |FY |annual )?(?:guidance|outlook|forecast|profit (?:guidance|expectations?))\b",
+            r"\b(?:trading update|trading statement|update on trading)\b.{0,70}\b(?:below|behind|shortfall|disappointing|weaker than|deteriorat)\b",
+        )
+    ],
+)
+
+
 # ---- Restructure / transformation / strategic review -------------------
 RESTRUCTURE = TriggerType(
     key="restructure",
@@ -518,7 +550,7 @@ PRESS_VELOCITY_SPIKE = TriggerType(
 TRIGGERS = [CEO_CHANGE, CHAIR_CHANGE, CHRO_CHANGE, CFO_CHANGE,
             IR_DIRECTOR_CHANGE, COMMS_LEADER_DEPARTURE,
             MNA, REGULATOR_ACTION, REGULATOR_PROBE_EARLY, CRISIS_EVENT,
-            RESTRUCTURE, IC_PLATFORM_RFP,
+            PROFIT_WARNING, RESTRUCTURE, IC_PLATFORM_RFP,
             IPO_LISTING, CONTRACT_LOSS, PRESS_VELOCITY_SPIKE]
 BY_KEY = {t.key: t for t in TRIGGERS}
 
