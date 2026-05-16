@@ -35,6 +35,11 @@ RSS_SOURCES = [
     ("utility_week",    "Utility Week",          "trade_press", "UK", 1.0),
     ("pharmaphorum",    "pharmaphorum",          "trade_press", "UK", 0.9),
     ("fierce_biotech",  "FierceBiotech",         "trade_press", "US", 0.7),
+    # Public-sector / HE / charity / media comms JOB feeds (kind=job ->
+    # KIND_MULTIPLIER 1.4; flows to Today's Leads + Mandates Worth
+    # Stealing). Opens the hot dark sectors the FTSE-skewed lanes miss.
+    ("jobs_ac_uk",      "jobs.ac.uk",            "job", "UK", 1.0),
+    ("guardian_jobs",   "Guardian Jobs",         "job", "UK", 1.0),
 ]
 
 

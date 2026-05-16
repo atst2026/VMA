@@ -165,6 +165,15 @@ SOURCES = {
     "fierce_biotech": "https://www.fiercebiotech.com/rss/xml",
     "inside_housing": "https://www.insidehousing.co.uk/rss",
     "utility_week": "https://utilityweek.co.uk/feed/",
+    # Public-sector / HE / charity / media comms JOB lanes — the hot
+    # sectors (public_sector_charities heat 1.25) that the FTSE-skewed
+    # Adzuna/ATS lanes under-cover. Both publish standard search RSS;
+    # graceful-skip if a feed path moves (logged like the dead feeds).
+    #   jobs.ac.uk   — HE / research / university / some public-sector
+    #   Guardian Jobs — the UK board for charity / public-sector / media
+    #                    / NGO comms & PR leadership
+    "jobs_ac_uk": "https://www.jobs.ac.uk/search/?keywords=communications&format=rss",
+    "guardian_jobs": "https://jobs.theguardian.com/jobs/marketing-and-pr/?format=rss",
     # News graph
     "gdelt_doc": "https://api.gdeltproject.org/api/v2/doc/doc",
     # Jobs
