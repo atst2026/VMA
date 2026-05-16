@@ -6,6 +6,13 @@ tool/state/latest_brief.html
 tool/state/latest_brief.txt
 tool/state/latest_signals.json
 tool/state/latest_predictive.json
+# Phase 2/3 detector snapshots — runtime artefacts, same class as
+# latest_signals/latest_predictive above (regenerated every brief run).
+tool/state/latest_following.json
+tool/state/latest_pulses.json
+tool/state/latest_water_sar.json
+tool/state/latest_contract_end.json
+tool/state/latest_funding.json
 tool/state/predictive_jobs.json
 tool/state/latest_sweep.html
 tool/state/latest_sweep.txt
