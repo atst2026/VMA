@@ -252,6 +252,32 @@ def peers_for(name: str, k: int = 15) -> tuple[list[str], str | None]:
     return GENERIC_FALLBACK[:k], None
 
 
+# Phase 1.3: sector-heat re-weighting. Detection emphasis is biased
+# toward the UK sub-sectors actually hiring senior comms in 2026 and
+# away from the cold ones (Indeed Hiring Lab + the detection-engine
+# report). Config-only — no new feeds, no signals added or removed; it
+# only shifts ranking emphasis so hot-sector opportunities surface
+# higher and cold-sector ones lower.
+SECTOR_HEAT: dict[str, float] = {
+    "financial_services":      1.30,   # hot: Consumer Duty, IR, change comms
+    "pharma_healthcare":       1.30,   # hot: pipeline + restructuring comms
+    "energy_utilities":        1.30,   # hot: water special-admin, transition
+    "public_sector_charities": 1.25,   # steady-to-hot: GCS growth, MOG
+    "real_estate":             1.15,   # housing-leaning but mixed bag
+    "retail_consumer":         0.65,   # cold: retail/hospitality contracting
+    # neutral (1.0): technology, media_telecoms, professional_services,
+    # industrial_manufacturing, transport_logistics, international, and
+    # unclassified — the account-relevance gate already ensures the
+    # company is on the watchlist, so unknown sector is not penalised.
+}
+
+
+def sector_heat_multiplier(name: str) -> float:
+    """Sector-heat weight for a company name. 1.0 for neutral/unknown."""
+    sec = detect_sector(name)
+    return SECTOR_HEAT.get(sec, 1.0) if sec else 1.0
+
+
 # ---- LinkedIn company-slug mapping -------------------------------------
 # LinkedIn's company-employees URL pattern:
 #     linkedin.com/company/{slug}/people/?keywords=...

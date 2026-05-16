@@ -80,11 +80,13 @@ def score_stack(stk: Stack) -> float:
     fresh = _freshness(stk.latest_date)
     if fresh == 0:
         return 0.0
+    from tool.peers import sector_heat_multiplier
     return round(
         _trigger_weight_for_stack(stk.events)
         * _stack_multiplier(stk.depth)
         * _tier_multiplier(stk.events)
         * _geo_multiplier(stk.company)
+        * sector_heat_multiplier(stk.company)
         * fresh,
         3,
     )
