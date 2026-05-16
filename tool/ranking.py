@@ -181,6 +181,17 @@ def score(signal: dict) -> float:
         if p.search(title):
             return 0.0
 
+    # Predictive-trigger news lanes (kind="news": GDELT predictive,
+    # Google News, the UKTN/BusinessCloud/Tech.eu funding feeds) exist to
+    # feed the PREDICTOR and the standalone detectors — which read the
+    # raw signal stream, NOT this ranked set. They are upstream-event
+    # news, never advertised vacancies, so they must never appear as a
+    # "Today's Lead" (this is what put "Pierre Poilievre's communications
+    # director stepping down" into Sara's emailed top-5). detect_events /
+    # detect_funding / etc. are unaffected — they don't go through rank().
+    if signal.get("kind") == "news":
+        return 0.0
+
     # Trade press: only let actual news through (appointments, departures,
     # restructures). Editorial / thought leadership / trend pieces all drop.
     if signal.get("kind") == "trade_press" and not _looks_like_news(title):
