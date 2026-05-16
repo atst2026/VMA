@@ -47,6 +47,11 @@ RSS_SOURCES = [
     # Stealing). Opens the hot dark sectors the FTSE-skewed lanes miss.
     ("jobs_ac_uk",      "jobs.ac.uk",            "job", "UK", 1.0, 150),
     ("guardian_jobs",   "Guardian Jobs",         "job", "UK", 1.0, 150),
+    # Funding / scale-up news — feeds the Funding-Round detector (was
+    # GDELT-only) and the predictor. kind=news.
+    ("uktn",            "UKTN",                  "news", "UK", 0.9, 100),
+    ("businesscloud",   "BusinessCloud",         "news", "UK", 0.9, 100),
+    ("tech_eu",         "Tech.eu",               "news", "EU", 0.7, 100),
 ]
 
 

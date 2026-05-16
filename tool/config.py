@@ -174,6 +174,14 @@ SOURCES = {
     #                    / NGO comms & PR leadership
     "jobs_ac_uk": "https://www.jobs.ac.uk/search/?keywords=communications&format=rss",
     "guardian_jobs": "https://jobs.theguardian.com/jobs/marketing-and-pr/?format=rss",
+    # Funding / scale-up news — so the Funding-Round detector is no
+    # longer GDELT-only (Sifted is paywalled with no clean public RSS;
+    # these three publish standard WordPress RSS and cover UK/EU growth
+    # rounds). kind=news -> flows into funding_round.detect_funding (and
+    # the predictor). Graceful-skip if a feed path moves.
+    "uktn": "https://www.uktech.news/feed",
+    "businesscloud": "https://www.businesscloud.co.uk/feed/",
+    "tech_eu": "https://tech.eu/feed/",
     # News graph
     "gdelt_doc": "https://api.gdeltproject.org/api/v2/doc/doc",
     # Jobs
