@@ -178,7 +178,9 @@ def score(signal: dict) -> float:
     kind = KIND_MULTIPLIER.get(signal.get("kind", ""), 1.0)
     geo = _geo_weight(signal.get("geo", ""))
     fresh = _freshness(signal.get("published", ""))
-    return round(base * kind * geo * fresh * (1.0 + 0.25 * rs), 3)
+    from tool.peers import sector_heat_multiplier
+    heat = sector_heat_multiplier(signal.get("company", "") or "")
+    return round(base * kind * geo * fresh * heat * (1.0 + 0.25 * rs), 3)
 
 
 def _norm_title(t: str) -> str:
