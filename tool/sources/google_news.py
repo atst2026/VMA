@@ -20,11 +20,26 @@ from __future__ import annotations
 
 import logging
 
+import re
+
 from tool.sources._http import get, parse_rss, signal_id
 
 log = logging.getLogger("brief.gnews")
 
 GOOGLE_NEWS_RSS = "https://news.google.com/rss/search"
+
+# Google News appends " - <Publisher>" to every title. That publisher is
+# itself frequently a watchlist name (BBC, Sky, ITV ...), which would
+# manufacture the SAME fake-mega-stack as the description chrome did,
+# just via the title instead. Strip a trailing " - <Publisher>" /
+# " – <Publisher>" / " — <Publisher>" (publisher 2-60 chars, no internal
+# spaced dash) so the headline alone drives resolution.
+_PUB_SUFFIX_RX = re.compile(r"\s+[-–—]\s+[^-–—]{2,60}\s*$")
+
+
+def _strip_publisher(title: str) -> str:
+    cleaned = _PUB_SUFFIX_RX.sub("", title or "").strip()
+    return cleaned or (title or "").strip()
 
 # Mirrors the high-cascade subset of gdelt.PREDICTIVE_TRIGGER_QUERIES.
 # Google News query syntax supports quoted phrases, OR, and a trailing
@@ -84,7 +99,7 @@ def fetch_predictive_signals(when_days: int | None = None) -> list[dict]:
             continue
         for it in items:
             url = it.get("link", "")
-            title = it.get("title", "")
+            title = _strip_publisher(it.get("title", ""))
             if not url or not title or url in seen:
                 continue
             seen.add(url)
@@ -93,7 +108,16 @@ def fetch_predictive_signals(when_days: int | None = None) -> list[dict]:
                 "source": "Google News",
                 "kind": "news",
                 "title": title,
-                "summary": (it.get("summary") or "")[:600],
+                # IMPORTANT: do NOT carry the RSS <description>. Google
+                # News descriptions are aggregator CHROME (news.google.com
+                # links + "Google News" attribution), not article text —
+                # normalising it yields the token "google", and "Google"
+                # is a watchlist name, so the text-first account gate
+                # resolved ~every Google-News signal to a fake "Google"
+                # mega-stack. Title-only is correct + sufficient (the
+                # trigger language lives in the headline); this exactly
+                # mirrors gdelt.fetch_predictive_signals (summary="").
+                "summary": "",
                 "url": url,
                 "published": it.get("published", ""),
                 "company": "",
