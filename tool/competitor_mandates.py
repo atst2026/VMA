@@ -34,8 +34,24 @@ TRACKER_FILE = STATE_DIR / "competitor_mandates.json"
 SIGNALS_FILE = STATE_DIR / "latest_signals.json"
 
 
-STALE_THRESHOLD_DAYS = 60       # ads live this long are flagged
+STALE_THRESHOLD_DAYS = 60       # generic / aggregator default
 EVICT_AFTER_MISSED_RUNS = 3     # after N consecutive runs missing, drop
+
+# Per-source stale thresholds. A flat 60d flagged public-sector roles
+# that legitimately run 90-120d (Civil Service Jobs is a direct feed
+# into the tracker), drowning the genuine private-sector stalls. Direct
+# ATS postings (Greenhouse/Lever/Ashby) are almost always private and
+# fast-cycle, so 60d there is already a strong stall signal.
+#   public sector (slow by design) → 100d
+#   direct private ATS             → 50d
+#   aggregators / everything else  → 60d (STALE_THRESHOLD_DAYS)
+def _threshold_for_source(source: str) -> int:
+    s = (source or "").strip().lower()
+    if "civil service" in s or "public sector" in s or "nhs" in s:
+        return 100
+    if s.startswith(("greenhouse", "lever", "ashby", "workable")):
+        return 50
+    return STALE_THRESHOLD_DAYS
 
 
 def _today() -> date:
@@ -155,11 +171,17 @@ def reconcile(signals_path: Path | None = None,
     }
 
 
-def stale_mandates(min_age_days: int = STALE_THRESHOLD_DAYS,
+def stale_mandates(min_age_days: int | None = None,
                    limit: int = 30) -> list[dict]:
-    """Return tracked ads older than `min_age_days` (sorted by age
-    descending). Each row carries:
-      first_seen, last_seen, days_live, title, url, company, source
+    """Return tracked ads past their stale threshold (sorted by age
+    descending). The threshold is PER SOURCE (see _threshold_for_source):
+    100d public sector, 50d direct ATS, 60d aggregators — so a slow-by-
+    design Civil Service ad no longer drowns genuine private stalls.
+
+    `min_age_days`, if given, is a global floor applied on top of the
+    per-source threshold (effective = max(per_source, min_age_days)).
+    Default None = pure per-source. Each row carries first_seen,
+    last_seen, days_live, threshold, title, url, company, source.
     """
     tracker = _load_tracker()
     out: list[dict] = []
@@ -169,17 +191,22 @@ def stale_mandates(min_age_days: int = STALE_THRESHOLD_DAYS,
         if not first:
             continue
         days = (today - first).days
-        if days < min_age_days:
+        src = row.get("source", "")
+        threshold = _threshold_for_source(src)
+        if min_age_days is not None:
+            threshold = max(threshold, min_age_days)
+        if days < threshold:
             continue
         out.append({
             "id":          sid,
             "first_seen":  row.get("first_seen", ""),
             "last_seen":   row.get("last_seen",  ""),
             "days_live":   days,
+            "threshold":   threshold,
             "title":       row.get("title", ""),
             "url":         row.get("url", ""),
             "company":     row.get("company", ""),
-            "source":      row.get("source", ""),
+            "source":      src,
         })
     out.sort(key=lambda r: r["days_live"], reverse=True)
     return out[:limit]
