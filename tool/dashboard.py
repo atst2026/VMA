@@ -1347,57 +1347,74 @@ TEMPLATE = r"""
     }
     /* ---- Secondary (collapsed) support tools ---- */
     .secondary-tools {
-      max-width: 1200px;
-      margin: 28px auto 0;
+      max-width: 440px;
+      margin: 26px auto 0;
       padding: 0 4px;
     }
     .secondary-tools-heading {
-      font-size: 12px;
+      font-size: 10.5px;
       font-weight: 700;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
       color: var(--text-muted);
-      margin: 0 0 10px 2px;
+      margin: 0 0 6px 2px;
     }
     .secondary-tools-note {
       font-weight: 400;
       text-transform: none;
       letter-spacing: 0;
       color: var(--text-dim);
+      font-size: 10px;
     }
     details.collapsible-tool {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      margin-bottom: 10px;
+      border-radius: 7px;
+      margin-bottom: 6px;
       box-shadow: var(--shadow-sm);
       overflow: hidden;
     }
     details.collapsible-tool > summary {
       list-style: none;
       cursor: pointer;
-      padding: 14px 18px;
+      padding: 7px 11px;
       display: flex;
-      flex-direction: column;
-      gap: 2px;
+      align-items: baseline;
+      gap: 8px;
       user-select: none;
       transition: background 0.12s;
     }
     details.collapsible-tool > summary::-webkit-details-marker { display: none; }
-    details.collapsible-tool > summary::before {
+    details.collapsible-tool > summary::after {
       content: "▸";
-      float: right;
+      margin-left: auto;
       color: var(--text-dim);
-      font-size: 12px;
-      margin-left: 12px;
+      font-size: 10px;
     }
-    details.collapsible-tool[open] > summary::before { content: "▾"; }
+    details.collapsible-tool[open] > summary::after { content: "▾"; }
     details.collapsible-tool > summary:hover { background: var(--surface-elevated); }
-    .collapsible-tool .ct-title { font-weight: 700; font-size: 14px; color: var(--text); }
-    .collapsible-tool .ct-sub   { font-size: 12px; color: var(--text-muted); }
+    .collapsible-tool .ct-title {
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--text);
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+    .collapsible-tool .ct-sub {
+      font-size: 10.5px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1 1 auto;
+    }
     .collapsible-tool .collapsible-body {
-      padding: 4px 18px 18px;
+      padding: 8px 11px 12px;
       border-top: 1px solid var(--border);
+      font-size: 12px;
+    }
+    .collapsible-tool .collapsible-body textarea {
+      font-size: 12px;
     }
     /* ---- Demand-creation tool badges & pills ---- */
     .mandate-age {
