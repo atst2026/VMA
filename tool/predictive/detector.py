@@ -151,9 +151,12 @@ def detect_events(signals: Iterable[dict]) -> list[TriggerEvent]:
 
     events: list[TriggerEvent] = []
     rejected_no_company = 0
+    rejected_off_watchlist = 0
     rejected_subthreshold_regulator = 0
     rejected_contract_loss_immaterial = 0
     pattern_hits = 0
+
+    from tool.account_match import resolve_account
 
     for s in signals:
         title = s.get("title") or ""
@@ -168,6 +171,20 @@ def detect_events(signals: Iterable[dict]) -> list[TriggerEvent]:
             rejected_no_company += 1
             log.info("drop (no company): %r [%s]", title[:100], s.get("source", ""))
             continue
+        # Account-relevance gate (text-first). Kills predictor noise the
+        # extractor created: 'Three UK' from "Three arrested…", 'SSE'
+        # from a Nano Dimension story, plus off-universe news (EQS wire,
+        # Fnac Darty, Nestlé France). A watchlist name must actually
+        # appear in the headline/evidence. Fail-open if the watchlist
+        # can't load. Use the resolved canonical name so display +
+        # downstream contact-matching are consistent.
+        resolved = resolve_account(company, title, summary)
+        if not resolved:
+            rejected_off_watchlist += 1
+            log.info("drop (off-watchlist): %s — %r [%s]",
+                     company, title[:90], s.get("source", ""))
+            continue
+        company = resolved
         for trigger in hits:
             if trigger.key == "regulator_action":
                 amt = P.extract_gbp_amount_millions(body)
@@ -211,9 +228,10 @@ def detect_events(signals: Iterable[dict]) -> list[TriggerEvent]:
 
     log.info(
         "detect_events summary: %d items matched patterns, %d events emitted, "
-        "%d dropped no-company, %d dropped regulator-subthreshold, "
-        "%d dropped contract-loss-immaterial",
+        "%d dropped no-company, %d dropped off-watchlist, "
+        "%d dropped regulator-subthreshold, %d dropped contract-loss-immaterial",
         pattern_hits, len(events), rejected_no_company,
+        rejected_off_watchlist,
         rejected_subthreshold_regulator, rejected_contract_loss_immaterial,
     )
     return events
