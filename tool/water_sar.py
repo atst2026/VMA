@@ -142,6 +142,8 @@ def detect_water_sar(signals: Iterable[dict]) -> list[dict]:
     Each record: {company, stage, signal, evidence, url, source,
     sector, who_to_call, confidence}.
     """
+    from tool.advisory import advisory_for
+
     out: list[dict] = []
     seen: set[tuple] = set()
     for s in signals:
@@ -181,6 +183,7 @@ def detect_water_sar(signals: Iterable[dict]) -> list[dict]:
             "source":      s.get("source", ""),
             "sector":      "energy_utilities",
             "who_to_call": _WHO_TO_CALL[stage],
+            "advisory":    advisory_for("water_sar"),
             "confidence":  confidence,
         })
 

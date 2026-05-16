@@ -111,6 +111,7 @@ def detect_following(signals: Iterable[dict]) -> list[dict]:
     seat that is now the brief).
     """
     from tool.account_match import resolve_account
+    from tool.advisory import advisory_for
     try:
         from tool.peers import detect_sector
     except Exception:
@@ -161,6 +162,7 @@ def detect_following(signals: Iterable[dict]) -> list[dict]:
             "url":          s.get("url", ""),
             "source":       s.get("source", ""),
             "sector":       detect_sector(prev_company) or "",
+            "advisory":     advisory_for("following"),
             "confidence":   _confidence(s.get("source", "")),
         })
 
