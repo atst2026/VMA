@@ -351,6 +351,22 @@ def main() -> int:
     except Exception as e:
         log.info("calendar pulses failed: %s", e)
 
+    # Water Special-Administration Watch — the highest-value single comms
+    # event in UK utilities. Runs over the RAW signals (Ofwat News RSS /
+    # RNS / GDELT / trade press already scoured); a small extension of
+    # the existing Ofwat feed, anchored to the fixed England & Wales
+    # regulated-water universe so it stays high-precision.
+    try:
+        from tool import water_sar as _wsar
+        water_feed = _wsar.detect_water_sar(signals)
+        (STATE_DIR / "latest_water_sar.json").write_text(
+            json.dumps(water_feed, indent=2, default=str)
+        )
+        log.info("Water SAR Watch: %d record(s) from %d raw signals",
+                 len(water_feed), len(signals))
+    except Exception as e:
+        log.info("water SAR watch failed: %s", e)
+
     # Update competitor-mandate tracker so the dashboard's "Mandates
     # Worth Stealing" panel sees fresh first-seen / last-seen dates.
     try:

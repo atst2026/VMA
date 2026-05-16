@@ -799,6 +799,18 @@ def api_pulses():
     return jsonify({"rows": rows, "total": len(rows)})
 
 
+@app.route("/api/water-sar", methods=["GET"])
+@_auth_required
+def api_water_sar():
+    """Water Special-Administration Watch — SAR / financial-resilience
+    events at England & Wales regulated water companies. Highest-value
+    single comms event in UK utilities; the resilience run-up is visible
+    weeks before the appointment news everyone else reacts to."""
+    from tool.water_sar import load_water_sar
+    rows = load_water_sar(limit=20)
+    return jsonify({"rows": rows, "total": len(rows)})
+
+
 TEMPLATE = r"""
 <!doctype html>
 <html lang="en">
@@ -1898,6 +1910,22 @@ TEMPLATE = r"""
 
   </div>
 
+  <!-- WATER SPECIAL-ADMINISTRATION WATCH (highest-value utilities event) -->
+  <div class="row row-full">
+
+    <!-- WATER SAR WATCH -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Water Special-Administration Watch</h2>
+        <span class="count" id="watersar-count">—</span>
+      </div>
+      <div class="panel-body" id="watersar-body">
+        <div class="empty compact">Loading…</div>
+      </div>
+    </div>
+
+  </div>
+
   <!-- VACATED-SEAT BACKFILL DETECTOR (highest-yield missing feature) -->
   <div class="row row-full">
 
@@ -2377,6 +2405,51 @@ async function loadPulses() {
   }
 }
 
+// ---------- Water Special-Administration Watch ----------
+async function loadWaterSar() {
+  const body = document.getElementById('watersar-body');
+  const count = document.getElementById('watersar-count');
+  try {
+    const r = await fetch('/api/water-sar');
+    const j = await r.json();
+    count.textContent = j.total;
+    if (!j.rows || j.rows.length === 0) {
+      body.innerHTML = '<div class="empty compact">No SAR or financial-resilience ' +
+        'signal at an England &amp; Wales water company right now. This fires when ' +
+        'a named regulated water company hits the special-administration path ' +
+        '(order applied for / administrator appointed) or shows resilience stress ' +
+        '(Ofwat action, sub-IG downgrade, going-concern doubt, failed equity raise) ' +
+        '— the resilience run-up is visible weeks before the appointment news.</div>';
+      return;
+    }
+    const out = ['<ul style="margin:6px 0;padding:0;list-style:none;">'];
+    for (const w of j.rows.slice(0, 16)) {
+      const live = (w.stage === 'SAR live / imminent');
+      const stageBadge = live ? 'mandate-age' : 'hook-badge generic_fit';
+      const confBadge = (w.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
+      out.push(
+        '<li style="padding:9px 0;border-bottom:1px solid var(--border);">' +
+          '<span class="' + stageBadge + '">' + esc(w.stage || '') + '</span> ' +
+          '<span class="' + confBadge + '">' + esc(w.confidence || '') + '</span> ' +
+          '<strong style="color:var(--text);">' + esc(w.company || '(unknown)') + '</strong>' +
+          '<div style="color:var(--text);font-size:12px;margin-top:3px;">' +
+            esc(w.who_to_call || '') + '</div>' +
+          '<div style="color:var(--text-muted);font-size:12px;margin-top:3px;">' +
+            (w.url
+              ? '<a href="' + safeUrl(w.url) + '" target="_blank" rel="noopener noreferrer" style="color:#0366d6;">' + esc(w.evidence || 'source') + '</a>'
+              : esc(w.evidence || '')) +
+            (w.source ? ' &middot; ' + esc(w.source) : '') +
+          '</div>' +
+        '</li>'
+      );
+    }
+    out.push('</ul>');
+    body.innerHTML = out.join('');
+  } catch (e) {
+    body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
+  }
+}
+
 // ---------- Mandates Worth Following (vacated-seat detector) ----------
 async function loadFollowing() {
   const body = document.getElementById('following-body');
@@ -2605,6 +2678,7 @@ async function devTriggerBrief() {
 // Auto-load the intel panels on page ready.
 document.addEventListener('DOMContentLoaded', () => {
   loadPulses();
+  loadWaterSar();
   loadFollowing();
   loadMandates();
   loadWatchList();
