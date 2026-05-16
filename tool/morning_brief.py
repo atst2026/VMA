@@ -335,6 +335,22 @@ def main() -> int:
     except Exception as e:
         log.info("following detector failed: %s", e)
 
+    # Calendar Pulses — deterministic, date-driven placement windows
+    # (FCA Consumer Duty board-report ramp, UK SRS first-cycle build-up,
+    # post-Spending-Review machinery-of-government reshuffle). No signals
+    # needed; the dashboard recomputes these live (days_left changes
+    # daily) — this snapshot is for the artifact / email only.
+    try:
+        from tool import calendar_pulses as _pulses
+        pulses_feed = _pulses.active_pulses()
+        (STATE_DIR / "latest_pulses.json").write_text(
+            json.dumps(pulses_feed, indent=2, default=str)
+        )
+        log.info("Calendar Pulses: %d active placement window(s) today",
+                 len(pulses_feed))
+    except Exception as e:
+        log.info("calendar pulses failed: %s", e)
+
     # Update competitor-mandate tracker so the dashboard's "Mandates
     # Worth Stealing" panel sees fresh first-seen / last-seen dates.
     try:

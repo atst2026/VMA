@@ -787,6 +787,18 @@ def api_following():
     return jsonify({"rows": rows, "total": len(rows)})
 
 
+@app.route("/api/pulses", methods=["GET"])
+@_auth_required
+def api_pulses():
+    """Calendar Pulses — deterministic, date-driven placement windows.
+    Computed live (days_left changes daily): a statute/regulator date
+    forces a comms-capacity build-up in a named watchlist cohort; get
+    the retained brief before it's advertised."""
+    from tool.calendar_pulses import load_pulses
+    rows = load_pulses(limit=10)
+    return jsonify({"rows": rows, "total": len(rows)})
+
+
 TEMPLATE = r"""
 <!doctype html>
 <html lang="en">
@@ -1870,6 +1882,22 @@ TEMPLATE = r"""
 
   </div>
 
+  <!-- DETERMINISTIC, DATE-DRIVEN PLACEMENT WINDOWS -->
+  <div class="row row-full">
+
+    <!-- CALENDAR PULSES -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Calendar Pulses</h2>
+        <span class="count" id="pulses-count">—</span>
+      </div>
+      <div class="panel-body" id="pulses-body">
+        <div class="empty compact">Loading…</div>
+      </div>
+    </div>
+
+  </div>
+
   <!-- VACATED-SEAT BACKFILL DETECTOR (highest-yield missing feature) -->
   <div class="row row-full">
 
@@ -2298,6 +2326,57 @@ async function loadMandates() {
   }
 }
 
+// ---------- Calendar Pulses (deterministic placement windows) ----------
+async function loadPulses() {
+  const body = document.getElementById('pulses-body');
+  const count = document.getElementById('pulses-count');
+  try {
+    const r = await fetch('/api/pulses');
+    const j = await r.json();
+    count.textContent = j.total;
+    if (!j.rows || j.rows.length === 0) {
+      body.innerHTML = '<div class="empty compact">No placement window open today. ' +
+        'Pulses surface only inside a statutory/regulator run-up (FCA Consumer Duty ' +
+        'board-report ramp, UK SRS first-cycle build-up, post-Spending-Review ' +
+        'machinery-of-government reshuffle) — by design they go quiet outside those ' +
+        'dated windows rather than show stale noise.</div>';
+      return;
+    }
+    const out = ['<ul style="margin:6px 0;padding:0;list-style:none;">'];
+    for (const p of j.rows) {
+      const conf = (p.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
+      const targets = (p.targets || []).map(t =>
+        '<span class="hook-badge generic_fit" style="margin:2px 4px 2px 0;display:inline-block;">' +
+        esc(t) + '</span>').join('');
+      out.push(
+        '<li style="padding:10px 0;border-bottom:1px solid var(--border);">' +
+          '<span class="' + conf + '">' + esc(p.confidence || '') + '</span> ' +
+          '<strong style="color:var(--text);">' + esc(p.name || '') + '</strong>' +
+          ' &middot; <span style="color:var(--text-muted);font-size:12px;">' +
+            esc(p.window || '') +
+            (typeof p.days_left === 'number'
+              ? ' &middot; ' + esc(String(p.days_left)) + ' days left in window' : '') +
+          '</span>' +
+          '<div style="color:var(--text);font-size:13px;margin-top:4px;">' +
+            esc(p.seat || '') + '</div>' +
+          '<div style="color:var(--text-muted);font-size:12px;margin-top:3px;">' +
+            esc(p.angle || '') + '</div>' +
+          (targets
+            ? '<div style="margin-top:6px;">' + targets + '</div>' : '') +
+          '<div style="color:var(--text-muted);font-size:11px;margin-top:5px;">' +
+            esc(p.scope_note || '') +
+            (p.source ? ' &middot; ' + esc(p.source) : '') +
+          '</div>' +
+        '</li>'
+      );
+    }
+    out.push('</ul>');
+    body.innerHTML = out.join('');
+  } catch (e) {
+    body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
+  }
+}
+
 // ---------- Mandates Worth Following (vacated-seat detector) ----------
 async function loadFollowing() {
   const body = document.getElementById('following-body');
@@ -2525,6 +2604,7 @@ async function devTriggerBrief() {
 
 // Auto-load the intel panels on page ready.
 document.addEventListener('DOMContentLoaded', () => {
+  loadPulses();
   loadFollowing();
   loadMandates();
   loadWatchList();
