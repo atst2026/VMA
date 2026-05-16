@@ -1002,6 +1002,10 @@ TEMPLATE = r"""
       gap: 16px;
       margin-bottom: 18px;
     }
+    /* Single full-width panel (e.g. Mandates Worth Stealing) — without
+       this it sits in the left half of a 2-col grid with dead space
+       beside it. */
+    .row.row-full { grid-template-columns: 1fr; }
     @media (max-width: 900px) {
       .row { grid-template-columns: 1fr; }
     }
@@ -1345,9 +1349,9 @@ TEMPLATE = r"""
       background: rgba(201, 55, 55, 0.05);
       box-shadow: 0 0 0 3px rgba(201, 55, 55, 0.08);
     }
-    /* ---- Secondary tools: identical to .action-card, just collapsed
-       until the header is clicked. ---- */
-    .secondary-tools { margin-top: 22px; }
+    /* ---- Collapsible action cards: a normal .action-card that is
+       minimised to just its header until clicked, then expands to the
+       exact size/look of every other card in the .actions grid. ---- */
     details.collapsible-card > summary {
       list-style: none;
       cursor: pointer;
@@ -1585,7 +1589,7 @@ TEMPLATE = r"""
       text-transform: uppercase;
       letter-spacing: 0.1em;
     }
-    .action-card input, .action-card select {
+    .action-card input, .action-card select, .action-card textarea {
       width: 100%;
       padding: 8px 11px;
       border: 1px solid var(--border);
@@ -1597,7 +1601,9 @@ TEMPLATE = r"""
       font-weight: 400;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
-    .action-card input::placeholder { color: #A6AFBE; font-weight: 400; }
+    .action-card textarea { resize: vertical; line-height: 1.5; }
+    .action-card input::placeholder,
+    .action-card textarea::placeholder { color: #A6AFBE; font-weight: 400; }
     .action-card .salary-row-label {
       display: block;
       margin-top: 4px;
@@ -1626,7 +1632,8 @@ TEMPLATE = r"""
       margin-bottom: 10px;
       font-style: italic;
     }
-    .action-card input:focus, .action-card select:focus {
+    .action-card input:focus, .action-card select:focus,
+    .action-card textarea:focus {
       outline: none;
       border-color: var(--teal);
       box-shadow: 0 0 0 3px var(--teal-soft);
@@ -1893,7 +1900,7 @@ TEMPLATE = r"""
   </div>
 
   <!-- DEMAND-CREATION INTEL (dead-market: steal-this-mandate) -->
-  <div class="row">
+  <div class="row row-full">
 
     <!-- COMPETITOR MANDATES -->
     <div class="panel">
@@ -2019,12 +2026,9 @@ TEMPLATE = r"""
       </form>
     </div>
 
-  </div>
-
-  <!-- SECONDARY TOOLS — same look as the action cards above, just
-       collapsed by default; click the header to expand to full size. -->
-  <div class="actions secondary-tools">
-
+    <!-- PIPELINE TRIAGE — same action card, collapsed until its header
+         is clicked, then expands to the exact size/look of the cards
+         above it. -->
     <details class="panel action-card collapsible-card">
       <summary><h3>Pipeline Triage</h3></summary>
       <div class="subhead">Paste your active conversations; honest scoring (alive / stalled / cold / dead) with next-action.</div>
@@ -2037,6 +2041,7 @@ TEMPLATE = r"""
       </form>
     </details>
 
+    <!-- OBJECTION COACH -->
     <details class="panel action-card collapsible-card">
       <summary><h3>Objection Coach</h3></summary>
       <div class="subhead">Paste a negotiation / objection situation; get 3 VMA-rooted angles.</div>
@@ -2048,6 +2053,7 @@ TEMPLATE = r"""
         <div id="coach-result" class="inline-result"></div>
       </form>
     </details>
+
   </div>
 
   <div class="footer">
