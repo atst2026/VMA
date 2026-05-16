@@ -787,12 +787,16 @@ def api_candidates_watch_remove():
 @app.route("/api/competitor-mandates", methods=["GET"])
 @_auth_required
 def api_competitor_mandates():
-    """Comms job ads that have been live > 60 days — clients open to a
-    second agency or to off-piste candidates."""
+    """Comms job ads past their per-source stale threshold (100d public
+    sector, 50d direct ATS, 60d aggregators) — clients open to a second
+    agency or to off-piste candidates. An optional ?min_age=N raises the
+    bar globally on top of the per-source thresholds."""
     from tool.competitor_mandates import stale_mandates
-    min_age = int(request.args.get("min_age") or 60)
+    raw = request.args.get("min_age")
+    min_age = int(raw) if (raw and raw.isdigit()) else None
     rows = stale_mandates(min_age_days=min_age)
-    return jsonify({"rows": rows, "total": len(rows), "min_age_days": min_age})
+    return jsonify({"rows": rows, "total": len(rows),
+                    "min_age_days": min_age, "per_source": min_age is None})
 
 
 TEMPLATE = r"""
@@ -2311,9 +2315,10 @@ async function loadMandates() {
     const j = await r.json();
     count.textContent = j.total;
     if (!j.rows || j.rows.length === 0) {
-      body.innerHTML = '<div class="empty compact">No comms ads currently live &ge; ' + j.min_age_days +
-        ' days. Tracker builds up over multiple morning-brief runs ' +
-        '— ads need to be seen across consecutive runs before they qualify as &ldquo;stale&rdquo;.</div>';
+      body.innerHTML = '<div class="empty compact">No comms ads past their stale threshold ' +
+        '(60d aggregators · 100d public sector · 50d direct ATS). The tracker builds up over ' +
+        'multiple morning-brief runs — ads must be seen across consecutive runs before they ' +
+        'qualify as &ldquo;stale&rdquo;.</div>';
       return;
     }
     const out = ['<ul style="margin:6px 0;padding:0;list-style:none;">'];
@@ -2325,6 +2330,7 @@ async function loadMandates() {
             esc(m.title || '(no title)') + '</a>' +
           '<span style="color:var(--text-muted);font-size:12px;display:block;margin-top:2px;">' +
             esc(m.company || '') + ' &middot; ' + esc(m.source || '') +
+            (m.threshold ? ' &middot; flagged at ' + esc(m.threshold) + 'd' : '') +
             ' &middot; first seen ' + esc(m.first_seen) +
           '</span>' +
         '</li>'
