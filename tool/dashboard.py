@@ -1347,57 +1347,74 @@ TEMPLATE = r"""
     }
     /* ---- Secondary (collapsed) support tools ---- */
     .secondary-tools {
-      max-width: 1200px;
-      margin: 28px auto 0;
+      max-width: 440px;
+      margin: 26px auto 0;
       padding: 0 4px;
     }
     .secondary-tools-heading {
-      font-size: 12px;
+      font-size: 10.5px;
       font-weight: 700;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
       color: var(--text-muted);
-      margin: 0 0 10px 2px;
+      margin: 0 0 6px 2px;
     }
     .secondary-tools-note {
       font-weight: 400;
       text-transform: none;
       letter-spacing: 0;
       color: var(--text-dim);
+      font-size: 10px;
     }
     details.collapsible-tool {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      margin-bottom: 10px;
+      border-radius: 7px;
+      margin-bottom: 6px;
       box-shadow: var(--shadow-sm);
       overflow: hidden;
     }
     details.collapsible-tool > summary {
       list-style: none;
       cursor: pointer;
-      padding: 14px 18px;
+      padding: 7px 11px;
       display: flex;
-      flex-direction: column;
-      gap: 2px;
+      align-items: baseline;
+      gap: 8px;
       user-select: none;
       transition: background 0.12s;
     }
     details.collapsible-tool > summary::-webkit-details-marker { display: none; }
-    details.collapsible-tool > summary::before {
+    details.collapsible-tool > summary::after {
       content: "▸";
-      float: right;
+      margin-left: auto;
       color: var(--text-dim);
-      font-size: 12px;
-      margin-left: 12px;
+      font-size: 10px;
     }
-    details.collapsible-tool[open] > summary::before { content: "▾"; }
+    details.collapsible-tool[open] > summary::after { content: "▾"; }
     details.collapsible-tool > summary:hover { background: var(--surface-elevated); }
-    .collapsible-tool .ct-title { font-weight: 700; font-size: 14px; color: var(--text); }
-    .collapsible-tool .ct-sub   { font-size: 12px; color: var(--text-muted); }
+    .collapsible-tool .ct-title {
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--text);
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+    .collapsible-tool .ct-sub {
+      font-size: 10.5px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1 1 auto;
+    }
     .collapsible-tool .collapsible-body {
-      padding: 4px 18px 18px;
+      padding: 8px 11px 12px;
       border-top: 1px solid var(--border);
+      font-size: 12px;
+    }
+    .collapsible-tool .collapsible-body textarea {
+      font-size: 12px;
     }
     /* ---- Demand-creation tool badges & pills ---- */
     .mandate-age {
@@ -1720,6 +1737,39 @@ TEMPLATE = r"""
       letter-spacing: 0;
       font-weight: 400;
     }
+
+    /* Developer-only maintenance control. Deliberately drab and set
+       apart from the user-facing footer text so it reads as "not for
+       you" and doesn't invite a curious click. */
+    .dev-zone {
+      display: block;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border);
+      opacity: 0.45;
+      font-size: 10px;
+    }
+    .dev-zone:hover { opacity: 0.8; }
+    .dev-zone-label {
+      color: var(--text-dim);
+      font-style: italic;
+      margin-right: 6px;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .dev-btn {
+      font: inherit;
+      font-size: 10px;
+      color: var(--text-muted);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 8px;
+      cursor: pointer;
+    }
+    .dev-btn:hover { color: var(--text); border-color: var(--text-dim); }
+    .dev-btn:disabled { opacity: 0.5; cursor: default; }
+    .dev-status { margin-left: 8px; color: var(--text-dim); }
 
     .warn-banner {
       background: rgba(212, 162, 26, 0.08);
@@ -2059,6 +2109,15 @@ TEMPLATE = r"""
     Data refreshed from GitHub Actions artifacts.
     All sources are free public surfaces. No automation of LinkedIn account.
     <span style="opacity:0.5; margin-left:8px;">· build {{ build_stamp }}</span>
+    <span class="dev-zone">
+      <span class="dev-zone-label">dev / tech only — not a user feature:</span>
+      <button type="button" id="dev-run-brief" class="dev-btn"
+              onclick="devTriggerBrief()"
+              title="Maintenance: triggers a fresh morning-brief workflow run. Not for day-to-day use — Daily Refresh is the user control.">
+        trigger fresh scour
+      </button>
+      <span class="dev-status" id="dev-run-status"></span>
+    </span>
   </div>
 
 </div>
@@ -2563,6 +2622,37 @@ async function addWatchCandidate(event) {
   } catch (e) {
     status.textContent = 'Network error: ' + e.message; status.className = 'status err';
   }
+}
+
+// Developer/tech-only: trigger a fresh morning-brief workflow run in
+// preview mode (no email). NOT the user "Daily Refresh" — that only
+// pulls the last artifact. Guarded by an explicit confirm so a curious
+// click can't fire a CI run blind.
+async function devTriggerBrief() {
+  const btn = document.getElementById('dev-run-brief');
+  const status = document.getElementById('dev-run-status');
+  if (!confirm(
+    'DEVELOPER / TECH ACTION — not a day-to-day feature.\n\n' +
+    'This starts a fresh morning-brief scour on GitHub Actions ' +
+    '(~5–8 min, no email sent). The user-facing control is ' +
+    '"Daily Refresh", which just loads the last completed run.\n\n' +
+    'Proceed with the maintenance run?'
+  )) return;
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = 'dispatching…';
+  status.textContent = '';
+  try {
+    const r = await fetch('/api/dispatch/brief', { method: 'POST' });
+    const j = await r.json();
+    status.textContent = j.ok
+      ? 'dispatched — ~5–8 min, then click Daily Refresh'
+      : ('failed: ' + (j.detail || ('HTTP ' + r.status)));
+  } catch (e) {
+    status.textContent = 'network error: ' + e.message;
+  }
+  btn.disabled = false;
+  btn.textContent = orig;
 }
 
 // Auto-load the intel panels on page ready.
