@@ -50,6 +50,34 @@ JOB_TITLE_KEYWORDS = ROLE_KEYWORDS + [
     "head of external communications",
 ]
 
+# Canonical job-search query set. ONE source of truth for the phrases the
+# job lanes (Adzuna / LinkedIn-public / Bright Data) search for, so a
+# query added here widens every lane at once. Previously each lane hard-
+# coded ~4-6 phrases — under-covering the role taxonomy and capping
+# Today's-Leads recall. Ordered most→least senior so budget-capped lanes
+# (LinkedIn/Bright Data) take the highest-value slice first.
+JOB_SEARCH_QUERIES = [
+    "chief communications officer",
+    "director of communications",
+    "communications director",
+    "head of communications",
+    "head of corporate communications",
+    "corporate communications director",
+    "head of corporate affairs",
+    "corporate affairs director",
+    "head of internal communications",
+    "internal communications director",
+    "head of external communications",
+    "head of public affairs",
+    "director of public affairs",
+    "head of media relations",
+    "head of investor relations",
+    "pr director",
+    "head of pr",
+    "change communications lead",
+    "employee communications manager",
+]
+
 # --- Filters ---
 # VMA Group's specialism is Executive Search / Permanent Recruitment /
 # Advisory — NOT interim staffing. A role whose only salary signal is a
@@ -137,6 +165,23 @@ SOURCES = {
     "fierce_biotech": "https://www.fiercebiotech.com/rss/xml",
     "inside_housing": "https://www.insidehousing.co.uk/rss",
     "utility_week": "https://utilityweek.co.uk/feed/",
+    # Public-sector / HE / charity / media comms JOB lanes — the hot
+    # sectors (public_sector_charities heat 1.25) that the FTSE-skewed
+    # Adzuna/ATS lanes under-cover. Both publish standard search RSS;
+    # graceful-skip if a feed path moves (logged like the dead feeds).
+    #   jobs.ac.uk   — HE / research / university / some public-sector
+    #   Guardian Jobs — the UK board for charity / public-sector / media
+    #                    / NGO comms & PR leadership
+    "jobs_ac_uk": "https://www.jobs.ac.uk/search/?keywords=communications&format=rss",
+    "guardian_jobs": "https://jobs.theguardian.com/jobs/marketing-and-pr/?format=rss",
+    # Funding / scale-up news — so the Funding-Round detector is no
+    # longer GDELT-only (Sifted is paywalled with no clean public RSS;
+    # these three publish standard WordPress RSS and cover UK/EU growth
+    # rounds). kind=news -> flows into funding_round.detect_funding (and
+    # the predictor). Graceful-skip if a feed path moves.
+    "uktn": "https://www.uktech.news/feed",
+    "businesscloud": "https://www.businesscloud.co.uk/feed/",
+    "tech_eu": "https://tech.eu/feed/",
     # News graph
     "gdelt_doc": "https://api.gdeltproject.org/api/v2/doc/doc",
     # Jobs
@@ -149,23 +194,33 @@ SOURCES = {
     "sec_edgar": "https://www.sec.gov/cgi-bin/browse-edgar",
 }
 
-# Known Greenhouse/Lever/Ashby/Workable slugs worth monitoring for comms roles.
-# Slugs removed in May 2026 refresh because the companies moved off these
-# ATS platforms (each returned 404 in the morning brief):
+# Greenhouse/Lever/Ashby/Workable slugs to monitor for in-house comms
+# roles. This is an OPPORTUNISTIC lane: large UK comms employers (FTSE,
+# NHS, gov, housing) mostly use Workday/Eploy/bespoke ATS we can't seed
+# here — so this lane targets the UK scale-ups / media / charities that
+# DO use these public ATS boards. A wrong/retired slug is fully non-
+# fatal: fetch_* skips any board returning non-200 (404). The real
+# public-sector / HE recall comes from the dedicated RSS job lanes
+# (jobs.ac.uk / NHS / Civil Service), not from here.
+#   Slugs removed May 2026 (moved off-platform, 404):
 #   greenhouse: wise, revolut, deliveroo, octopusenergy, starlingbank
 #   lever:      gousto, multiverse, reddit
 ATS_SEEDS = {
     "greenhouse": [
-        "monzo", "gocardless", "checkr", "cloudflare", "airbnb", "stripe",
+        "monzo", "gocardless", "cloudflare", "stripe",
+        "trustpilot", "depop", "onfido", "snyk", "improbable",
+        "thetrainline", "moonpig", "secretescapes", "bulb",
+        "marshmallow", "zego", "tide", "cleo",
     ],
     "lever": [
-        "plaid", "netflix", "palantir",
+        "plaid", "netflix", "palantir", "brewdog", "elvie",
     ],
     "ashby": [
-        "posthog", "linear", "ramp",
+        "posthog", "linear", "ramp", "synthesia", "pleo",
     ],
     "workable": [
-        # add on demand
+        # UK charities / NGOs / mid-size orgs commonly use Workable.
+        "comicrelief", "shelter", "scope", "mind",
     ],
 }
 

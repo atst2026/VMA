@@ -95,6 +95,18 @@ _ADVISORY: dict[str, str] = {
     "mog_post_sr_2026":
         "Advisory: GCS comms operating-model & transition-capability "
         "review for the reorganised department.",
+    "agm_reporting_2026":
+        "Advisory: IR & corporate-reporting comms capability review + "
+        "AGM/governance-narrative readiness ahead of results season.",
+    "gender_pay_gap_2026":
+        "Advisory: internal/DEI-comms capability review + gender-pay "
+        "narrative & scrutiny-response readiness.",
+    "nhs_planning_2026":
+        "Advisory: NHS comms operating-model & change-capability review "
+        "for the planning/restructure round.",
+    "he_clearing_2026":
+        "Advisory: student-recruitment & brand-comms capability review "
+        "+ market map ahead of clearing.",
 }
 
 

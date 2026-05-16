@@ -81,6 +81,45 @@ UK_PRIVATE_MIDCAPS = [
     "Clarion Housing Group",
     "Pret a Manger", "Costa Coffee",
     "Capita Pension Solutions",
+    # --- May 2026 expansion -------------------------------------------
+    # Widens BOTH the CH officer-change scan (housing associations /
+    # private cos file at CH as Registered Providers / CLG / Ltd) AND
+    # the account-relevance gate used by the predictor + following +
+    # the new job/news feeds (so a "University of Manchester appoints
+    # Director of Comms" Guardian-Jobs/Google-News item now resolves).
+    # Non-CH bodies (universities, NHS trusts — Royal Charter / statutory)
+    # just cache None in the CH resolver and are skipped gracefully;
+    # their value here is the account gate. Multiword names only — keeps
+    # the distinctive-name matcher safe from common-word collisions.
+    # Housing associations (RNS-dark, core Sara private market)
+    "Sanctuary Housing", "Places for People", "Sovereign Network Group",
+    "The Riverside Group", "Anchor Hanover", "Home Group",
+    "Southern Housing Group", "Platform Housing Group", "Aster Group",
+    "Stonewater", "Orbit Group", "Great Places Housing Group",
+    # Large universities (account-gate value via jobs.ac.uk / news)
+    "University of Oxford", "University of Cambridge",
+    "University of Manchester", "University College London",
+    "King's College London", "University of Edinburgh",
+    "University of Leeds", "University of Birmingham",
+    "Imperial College London", "University of Bristol",
+    "University of Glasgow", "Durham University",
+    # Large NHS trusts / bodies (account-gate value via news / jobs)
+    "Barts Health NHS Trust",
+    "Guy's and St Thomas' NHS Foundation Trust",
+    "Manchester University NHS Foundation Trust",
+    "Leeds Teaching Hospitals NHS Trust",
+    "University College London Hospitals NHS Foundation Trust",
+    "NHS Scotland", "NHS Wales",
+    # Private / PE-backed / family-owned (CH-resolvable, RNS-dark)
+    "INEOS", "JCB", "Dyson", "Bestway Group", "Arnold Clark Automobiles",
+    "Boparan Holdings", "Swire Group", "Laing O'Rourke",
+    "BAM Construct UK", "Dentsu UK", "Reed Global", "Pentland Group",
+    "Bibby Line Group", "Matalan Retail", "The Very Group",
+    "EG Group", "Stagecoach Group", "Liberty Global UK",
+    # Large charities / national bodies
+    "National Trust", "Wellcome Trust", "Nuffield Health",
+    "Barnardo's", "The Salvation Army UK", "Citizens Advice",
+    "Leonard Cheshire",
 ]
 
 

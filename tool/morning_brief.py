@@ -26,7 +26,8 @@ from tool.predictive import cluster as pcluster, detector as pdet, ranker as pr,
 from tool.ranking import rank
 from tool.render import render_html, render_plaintext
 from tool.sources import (
-    bright_data, companies_house, gdelt, jobs, rss_feeds, sec_edgar,
+    bright_data, companies_house, gdelt, google_news, jobs, rss_feeds,
+    sec_edgar,
 )
 from tool.state_store import filter_unseen
 from tool.predictive.stacker import stack as stack_events
@@ -87,6 +88,16 @@ def run() -> dict:
                gdelt.fetch_predictive_signals())
     except Exception as e:
         log.exception("gdelt predictive: %s", e)
+
+    # Redundant predictive lane: same trigger phrasing via Google News
+    # RSS (free, no rate-limit wall) so GDELT drops don't silently cost
+    # the predictor leads. Precision unchanged — the account gate still
+    # decides what survives.
+    try:
+        _tally("Google News (redundant predictive lane)",
+               google_news.fetch_predictive_signals())
+    except Exception as e:
+        log.exception("google_news predictive: %s", e)
 
     try:
         _tally("SEC EDGAR (8-K filings)", sec_edgar.fetch_all())

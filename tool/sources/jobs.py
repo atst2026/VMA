@@ -106,14 +106,13 @@ def fetch_adzuna() -> list[dict]:
         # sources (Greenhouse/Lever/Ashby public feeds, LinkedIn Jobs logged-off)
         # still give us job-side coverage.
         return []
-    from tool.config import sweep_days
+    from tool.config import sweep_days, JOB_SEARCH_QUERIES
     days = max(3, sweep_days())
     out: list[dict] = []
-    queries = [
-        "internal communications", "corporate communications",
-        "head of communications", "communications director",
-        "pr director", "head of media relations",
-    ]
+    # Full canonical taxonomy (was 6 hard-coded phrases — under-covered
+    # the role set and capped recall). Adzuna's free tier comfortably
+    # absorbs one call per query, daily.
+    queries = JOB_SEARCH_QUERIES
     for q in queries:
         r = get(SOURCES["adzuna_gb"], params={
             "app_id": ADZUNA_APP_ID,
@@ -244,17 +243,16 @@ def fetch_linkedin_jobs_public() -> list[dict]:
     For comprehensive LinkedIn post/activity coverage, Bright Data handles it.
     """
     from datetime import datetime, timezone
-    from tool.config import sweep_days
+    from tool.config import sweep_days, JOB_SEARCH_QUERIES
     now_iso = datetime.now(timezone.utc).isoformat()
     days = sweep_days()
     tpr_seconds = 86400 * days   # f_TPR=r{seconds} — LinkedIn time-posted-range
     out: list[dict] = []
-    queries = [
-        ("head of internal communications", "gb"),
-        ("head of corporate communications", "gb"),
-        ("communications director", "gb"),
-        ("pr director", "gb"),
-    ]
+    # Broader than the old 4, but still a courteous, budget-capped slice
+    # of the canonical taxonomy — LinkedIn rate-limits guest search hard
+    # and the standing constraint is ZERO risk to Sara's account, so we
+    # take the 8 highest-value senior titles only, spaced 1.5s apart.
+    queries = [(q, "gb") for q in JOB_SEARCH_QUERIES[:8]]
     for q, geo in queries:
         url = (
             "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"

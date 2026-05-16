@@ -226,16 +226,23 @@ def upsert(ranked_stacks: list[tuple[Stack, float]]) -> dict:
     }
 
 
-def _entry_resolves(entry: dict) -> bool:
-    """True if a persisted predictor still resolves to its company under
-    the CURRENT account gate. Re-validates an entry's own evidence (the
-    same text-first check detect_events applies to fresh signals).
-    Fail-open: returns True if the gate can't run, so a degraded
-    watchlist never empties the pipeline."""
+_SENTINEL_FAILOPEN = "\x00__failopen__"
+
+
+def _regate(entry: dict) -> str | None:
+    """Re-validate a persisted predictor against the CURRENT account gate
+    over its OWN evidence (the same text-first check detect_events
+    applies to fresh signals). Returns the RESOLVED CANONICAL name (so
+    callers can also fix a stale display name, e.g. legacy 'Brown' ->
+    'Brown-Forman'), or None if it no longer resolves (caller drops).
+
+    Fail-open: returns a sentinel (truthy, != any real name) if the gate
+    can't run / errors, so a degraded watchlist never empties or rewrites
+    the pipeline."""
     try:
         from tool.account_match import resolve_account
     except Exception:
-        return True
+        return _SENTINEL_FAILOPEN
     company = (entry.get("company") or "").strip()
     parts: list[str] = []
     for e in (entry.get("events") or []):
@@ -247,9 +254,9 @@ def _entry_resolves(entry: dict) -> bool:
                 parts.append(str(tl))
     text = " . ".join(parts) or company
     try:
-        return resolve_account(company, text) is not None
+        return resolve_account(company, text)
     except Exception:
-        return True  # never nuke the pipeline on a gate error
+        return _SENTINEL_FAILOPEN  # never nuke the pipeline on a gate error
 
 
 def purge_off_watchlist(pipeline: dict) -> int:
@@ -260,17 +267,55 @@ def purge_off_watchlist(pipeline: dict) -> int:
     extractor) survive their full 90-day window — this is exactly why
     'EQS' (a wire prefix), 'Capita' (from "Capital Signs…"), 'Three UK'
     (from "Three arrested…") and foreign-subsidiary mentions kept
-    showing on the board long after the gate would reject them. Drop any
-    entry whose own evidence no longer resolves. followed_up entries are
-    preserved (Sara's manual record), same carve-out as age_out."""
+    showing on the board long after the gate would reject them.
+
+    Two corrections per entry:
+      * drop it if its own evidence no longer resolves;
+      * otherwise CANONICALISE it — rewrite a stale display name to the
+        resolved name (legacy 'Brown' -> 'Brown-Forman') and re-key to
+        the canonical pid, merging onto an existing canonical entry
+        (keep the earlier first_seen / higher score) so canonicalising
+        can't create a duplicate.
+
+    followed_up entries are preserved untouched (Sara's manual record),
+    same carve-out as age_out. Returns the count removed."""
     removed = 0
     predictors = pipeline.get("predictors") or {}
     for pid, entry in list(predictors.items()):
         if entry.get("status") == "followed_up":
             continue
-        if not _entry_resolves(entry):
+        if pid not in predictors:
+            continue  # already merged away by a prior iteration
+        resolved = _regate(entry)
+        if resolved is None:
             del predictors[pid]
             removed += 1
+            continue
+        if resolved == _SENTINEL_FAILOPEN:
+            continue  # gate degraded — leave entry untouched
+        if resolved == entry.get("company"):
+            continue  # already canonical
+        # Canonicalise display name + pid.
+        entry["company"] = resolved
+        new_pid = _pid(resolved)
+        entry["pid"] = new_pid
+        if new_pid == pid:
+            continue
+        existing = predictors.get(new_pid)
+        del predictors[pid]
+        if existing is None:
+            predictors[new_pid] = entry
+        else:
+            # Merge: keep the entry with the earlier first_seen, else the
+            # higher score — never surface the same company twice.
+            keep = existing
+            try:
+                if (entry.get("first_seen") or "") < (existing.get("first_seen") or "") \
+                   or float(entry.get("score") or 0) > float(existing.get("score") or 0):
+                    keep = entry
+            except Exception:
+                pass
+            predictors[new_pid] = keep
     return removed
 
 
@@ -333,13 +378,23 @@ def all_predictors() -> list[dict]:
     pipeline = load_pipeline()
     items = list((pipeline.get("predictors") or {}).values())
     # Defensive re-gate on the READ path so the dashboard never shows an
-    # entry the current account gate would reject, even before the next
-    # morning brief persists the purge. In-memory only (no save here);
-    # followed_up entries are always kept (Sara's manual record).
-    items = [
-        p for p in items
-        if p.get("status") == "followed_up" or _entry_resolves(p)
-    ]
+    # entry the current account gate would reject — and shows the
+    # canonical name (legacy 'Brown' -> 'Brown-Forman') — even before
+    # the next morning brief persists the purge. In-memory only (no save
+    # here); followed_up entries are always kept untouched.
+    kept: list[dict] = []
+    for p in items:
+        if p.get("status") == "followed_up":
+            kept.append(p)
+            continue
+        resolved = _regate(p)
+        if resolved is None:
+            continue  # off-watchlist — hide
+        if resolved != _SENTINEL_FAILOPEN and resolved != p.get("company"):
+            p["company"] = resolved  # canonicalise display (not persisted here)
+            p["pid"] = _pid(resolved)
+        kept.append(p)
+    items = kept
     status_rank = {"active": 0, "followed_up": 1, "dismissed": 2}
     items.sort(key=lambda p: (status_rank.get(p.get("status"), 3),
                               -float(p.get("score") or 0)))
