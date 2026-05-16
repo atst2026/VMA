@@ -41,6 +41,17 @@ EXCLUDE_TITLE_TERMS = [
     "chief customer officer", "chief cost officer",
     "compliance officer", "bsa officer", "anti-money laundering",
     "bsa/aml", "aml officer",
+    # Interim / fixed-term / temporary — OFF-PRODUCT. VMA's specialism is
+    # Executive Search / Permanent Recruitment / Advisory, not interim
+    # staffing. R1 removed the day-rate SALARY path; this also drops
+    # interim/FTC/maternity-cover roles advertised WITHOUT a day rate
+    # (e.g. "Interim Chief Communications Officer" on LinkedIn). Word-
+    # boundary matched on the TITLE only (jobs._EXCLUDE_RE +
+    # ranking._EXCLUDE_PATTERNS), so role bodies can't false-trip it.
+    "interim", "temporary", "secondment", "secondee",
+    "maternity cover", "maternity leave", "paternity cover",
+    "mat cover", "mat leave", "fixed term", "fixed-term", "ftc",
+    "month contract", "months contract",
 ]
 
 # Role titles we surface even at lower seniority (kept tight to avoid noise)
@@ -96,6 +107,12 @@ COMPANY_EXCLUDE = [
     "Ellwood Atfield", "Reuben Sinclair", "CommsSearch",
     "PRfect Search", "Madigan Search", "Quill Recruitment",
     "Major Players",
+    # Observed posting comms roles on Sara's behalf-of-a-hidden-client
+    # (agency mandates, not direct employer briefs — off-product for an
+    # exec-search firm). The generic agency-name regex in ranking.py
+    # catches the "...Recruitment/Search/Resourcing/Staffing/Talent
+    # Solutions..." long tail; these two are brand names it can't infer.
+    "EquiTalent", "Harris Hill",
 ]
 # --- Geography ---
 # UK primary; international secondary. Primary markets are boosted in ranking.
