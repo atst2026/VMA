@@ -811,6 +811,18 @@ def api_water_sar():
     return jsonify({"rows": rows, "total": len(rows)})
 
 
+@app.route("/api/contract-end", methods=["GET"])
+@_auth_required
+def api_contract_end():
+    """Contract-End / Re-Tender Window — proactive leading indicator. A
+    watchlist employer's flagship contract is approaching expiry /
+    recompete / hand-over; the change & transition comms review happens
+    in that window, months before any contract-loss RNS."""
+    from tool.contract_end import load_contract_end
+    rows = load_contract_end(limit=30)
+    return jsonify({"rows": rows, "total": len(rows)})
+
+
 TEMPLATE = r"""
 <!doctype html>
 <html lang="en">
@@ -1926,6 +1938,22 @@ TEMPLATE = r"""
 
   </div>
 
+  <!-- CONTRACT-END / RE-TENDER WINDOW (proactive leading indicator) -->
+  <div class="row row-full">
+
+    <!-- CONTRACT-END WINDOW -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Contract-End / Re-Tender Window</h2>
+        <span class="count" id="contractend-count">—</span>
+      </div>
+      <div class="panel-body" id="contractend-body">
+        <div class="empty compact">Loading…</div>
+      </div>
+    </div>
+
+  </div>
+
   <!-- VACATED-SEAT BACKFILL DETECTOR (highest-yield missing feature) -->
   <div class="row row-full">
 
@@ -2450,6 +2478,47 @@ async function loadWaterSar() {
   }
 }
 
+// ---------- Contract-End / Re-Tender Window ----------
+async function loadContractEnd() {
+  const body = document.getElementById('contractend-body');
+  const count = document.getElementById('contractend-count');
+  try {
+    const r = await fetch('/api/contract-end');
+    const j = await r.json();
+    count.textContent = j.total;
+    if (!j.rows || j.rows.length === 0) {
+      body.innerHTML = '<div class="empty compact">No contract-end / re-tender window ' +
+        'detected at a watchlist employer yet. This fires PROACTIVELY when a flagship ' +
+        'contract is approaching expiry / recompete / hand-over (Find a Tender, RNS, ' +
+        'trade press) — the change &amp; transition comms review happens in that window, ' +
+        'months before any contract-loss RNS the predictor would catch.</div>';
+      return;
+    }
+    const out = ['<ul style="margin:6px 0;padding:0;list-style:none;">'];
+    for (const c of j.rows.slice(0, 16)) {
+      const conf = (c.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
+      out.push(
+        '<li style="padding:8px 0;border-bottom:1px solid var(--border);">' +
+          '<span class="' + conf + '">' + esc(c.confidence || '') + '</span> ' +
+          '<strong style="color:var(--text);">' + esc(c.company || '(unknown)') + '</strong>' +
+          ' &middot; <span style="color:var(--text);">' + esc(c.event || 'contract-end window') + '</span>' +
+          '<span style="color:var(--text-muted);font-size:12px;display:block;margin-top:2px;">' +
+            (c.url
+              ? '<a href="' + safeUrl(c.url) + '" target="_blank" rel="noopener noreferrer" style="color:#0366d6;">' + esc(c.evidence || 'source') + '</a>'
+              : esc(c.evidence || '')) +
+            (c.source ? ' &middot; ' + esc(c.source) : '') +
+            (c.sector ? ' &middot; ' + esc(c.sector) : '') +
+          '</span>' +
+        '</li>'
+      );
+    }
+    out.push('</ul>');
+    body.innerHTML = out.join('');
+  } catch (e) {
+    body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
+  }
+}
+
 // ---------- Mandates Worth Following (vacated-seat detector) ----------
 async function loadFollowing() {
   const body = document.getElementById('following-body');
@@ -2679,6 +2748,7 @@ async function devTriggerBrief() {
 document.addEventListener('DOMContentLoaded', () => {
   loadPulses();
   loadWaterSar();
+  loadContractEnd();
   loadFollowing();
   loadMandates();
   loadWatchList();
