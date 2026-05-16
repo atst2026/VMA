@@ -320,6 +320,21 @@ def main() -> int:
         json.dumps(ranked_all, indent=2, default=str)
     )
 
+    # Mandates Worth Following — vacated-seat / backfill detector. Runs
+    # over the RAW scoured signals (like the predictor): when a senior
+    # comms person is publicly announced moving, the seat they LEFT at
+    # a watchlist company becomes a live brief.
+    try:
+        from tool import following as _fol
+        following_feed = _fol.detect_following(signals)
+        (STATE_DIR / "latest_following.json").write_text(
+            json.dumps(following_feed, indent=2, default=str)
+        )
+        log.info("Mandates Worth Following: %d vacated-seat records from "
+                 "%d raw signals", len(following_feed), len(signals))
+    except Exception as e:
+        log.info("following detector failed: %s", e)
+
     # Update competitor-mandate tracker so the dashboard's "Mandates
     # Worth Stealing" panel sees fresh first-seen / last-seen dates.
     try:

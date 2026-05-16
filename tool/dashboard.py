@@ -776,6 +776,17 @@ def api_competitor_mandates():
                     "min_age_days": min_age, "per_source": min_age is None})
 
 
+@app.route("/api/following", methods=["GET"])
+@_auth_required
+def api_following():
+    """Mandates Worth Following — vacated-seat / backfill detector. A
+    senior comms person publicly moved; the seat they left at a
+    watchlist company is the live brief."""
+    from tool.following import load_following
+    rows = load_following(limit=40)
+    return jsonify({"rows": rows, "total": len(rows)})
+
+
 TEMPLATE = r"""
 <!doctype html>
 <html lang="en">
@@ -1859,6 +1870,22 @@ TEMPLATE = r"""
 
   </div>
 
+  <!-- VACATED-SEAT BACKFILL DETECTOR (highest-yield missing feature) -->
+  <div class="row row-full">
+
+    <!-- MANDATES WORTH FOLLOWING -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Mandates Worth Following</h2>
+        <span class="count" id="following-count">—</span>
+      </div>
+      <div class="panel-body" id="following-body">
+        <div class="empty compact">Loading…</div>
+      </div>
+    </div>
+
+  </div>
+
   <!-- DEMAND-CREATION INTEL (dead-market: steal-this-mandate) -->
   <div class="row row-full">
 
@@ -2271,6 +2298,47 @@ async function loadMandates() {
   }
 }
 
+// ---------- Mandates Worth Following (vacated-seat detector) ----------
+async function loadFollowing() {
+  const body = document.getElementById('following-body');
+  const count = document.getElementById('following-count');
+  try {
+    const r = await fetch('/api/following');
+    const j = await r.json();
+    count.textContent = j.total;
+    if (!j.rows || j.rows.length === 0) {
+      body.innerHTML = '<div class="empty compact">No vacated senior-comms seats detected yet. ' +
+        'This fires when a senior comms person is publicly announced moving (RNS / trade press) ' +
+        'and the employer they left is on the watchlist — that seat is the live brief. ' +
+        'Strong for board-level/listed names; the unlisted long tail is covered by Today’s Leads ' +
+        'and the Companies House officer scan.</div>';
+      return;
+    }
+    const out = ['<ul style="margin:6px 0;padding:0;list-style:none;">'];
+    for (const f of j.rows.slice(0, 14)) {
+      const conf = (f.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
+      out.push(
+        '<li style="padding:8px 0;border-bottom:1px solid var(--border);">' +
+          '<span class="' + conf + '">' + esc(f.confidence || '') + '</span> ' +
+          '<strong style="color:var(--text);">' + esc(f.company || '(unknown)') + '</strong>' +
+          ' &middot; <span style="color:var(--text);">' + esc(f.vacated_role || 'senior comms seat') + '</span>' +
+          '<span style="color:var(--text-muted);font-size:12px;display:block;margin-top:2px;">' +
+            (f.url
+              ? '<a href="' + safeUrl(f.url) + '" target="_blank" rel="noopener noreferrer" style="color:#0366d6;">' + esc(f.evidence || 'source') + '</a>'
+              : esc(f.evidence || '')) +
+            (f.source ? ' &middot; ' + esc(f.source) : '') +
+            (f.sector ? ' &middot; ' + esc(f.sector) : '') +
+          '</span>' +
+        '</li>'
+      );
+    }
+    out.push('</ul>');
+    body.innerHTML = out.join('');
+  } catch (e) {
+    body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
+  }
+}
+
 // ---------- MPC Outreach Factory ----------
 async function runMPC(event) {
   event.preventDefault();
@@ -2457,6 +2525,7 @@ async function devTriggerBrief() {
 
 // Auto-load the intel panels on page ready.
 document.addEventListener('DOMContentLoaded', () => {
+  loadFollowing();
   loadMandates();
   loadWatchList();
 });
