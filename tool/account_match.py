@@ -76,13 +76,58 @@ _FOREIGN_QUALIFIER_RX = re.compile(
 )
 
 
+# Background-employer suppressor. "Boots confirms ex-Currys boss as new
+# CEO" / "former Tesco executive appointed CEO of Acme": the watchlist
+# name is the new hire's PRIOR employer, not the subject of the event —
+# attributing a ceo_change to Currys/Tesco there is a false positive
+# (the same class as 'Three'/'SSE'). Only the UNAMBIGUOUS origin
+# prefixes are handled: ex- / former / formerly of / previously of /
+# onetime / erstwhile immediately before the name. Deliberately NOT
+# "outgoing"/"departing" (ambiguous — "departing BP boss" can mean BP
+# itself is losing its boss, a legitimate signal) and NOT "<Co>-backed"
+# (after _norm the hyphen is gone, so it can't be told apart from the
+# verb "<Co> backed the bid" without over-suppressing). [\s\-]+ so it
+# works on both the normalised distinctive text ("ex currys") and the
+# raw acronym text ("ex-BP").
+_BACKGROUND_PREFIX_RX = re.compile(
+    r"\b(?:ex|former|formerly of|previously of|onetime|one[\s\-]?time|"
+    r"erstwhile)[\s\-]+$",
+    re.IGNORECASE,
+)
+
+
+# PE/VC backer suppressor. "Bridgepoint-backed NMi Group to acquire
+# TechnoLab" mis-attributes an M&A predictor to the watchlist PE firm
+# (Bridgepoint/Blackstone/Carlyle/KKR…) when the deal is its portfolio
+# company's bolt-on. Operate on the ORIGINAL text (pre-_norm) so the
+# HYPHEN survives: "X-backed" (financial-backer adjective) is
+# unambiguous and distinct from the verb "X backed the bid" (space) —
+# the hyphen is what makes this safe. Deliberately ONLY "-backed" (+
+# "X portfolio company"), NOT "-owned"/"-controlled": those frequently
+# denote a corporate PARENT that IS the comms-relevant subject (e.g.
+# "Unilever-owned brand recalled"), and suppressing those would lose
+# real signal. Scrubbed to a space BEFORE the watchlist scan so neither
+# the distinctive nor the acronym path can resolve to the backer.
+_BACKER_COMPOUND_RX = re.compile(
+    r"\b[A-Za-z][\w.&]*-backed\b"
+    r"|\b[A-Z][\w.&]+(?:\s+[A-Z][\w.&]+){0,3}\s+portfolio\s+"
+    r"(?:company|business|firm)\b"
+)
+
+
 def _has_bare_occurrence(pat: re.Pattern, text: str) -> bool:
-    """True if `pat` matches at least once WITHOUT a foreign-country
-    qualifier immediately after — i.e. a genuine parent-company mention,
-    not only a 'X Ghana' / 'X Canada' subsidiary reference."""
+    """True if `pat` matches at least once as a genuine SUBJECT mention —
+    i.e. not immediately followed by a foreign-country qualifier
+    (subsidiary: 'X Ghana') and not immediately preceded by an origin
+    marker (prior employer: 'ex-X' / 'former X'). Any single bare
+    occurrence keeps the name (so 'former Currys boss returns to lead
+    Currys' still resolves to Currys via the second mention)."""
     for m in pat.finditer(text):
-        if not _FOREIGN_QUALIFIER_RX.match(text, m.end()):
-            return True
+        if _FOREIGN_QUALIFIER_RX.match(text, m.end()):
+            continue
+        if _BACKGROUND_PREFIX_RX.search(text[:m.start()]):
+            continue
+        return True
     return False
 
 
@@ -183,6 +228,9 @@ def resolve_account(company: str | None, *texts: str) -> str | None:
         return (company or None)  # fail open
 
     original = " ".join(t for t in texts if t)
+    # Strip "<X>-backed" / "<X> portfolio company" BEFORE the watchlist
+    # scan so a PE backer can't be mis-read as the deal's subject.
+    original = _BACKER_COMPOUND_RX.sub(" ", original)
     norm_text = _norm(original)
 
     if norm_text:
