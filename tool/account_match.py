@@ -51,6 +51,41 @@ _REGULATOR_EXCLUDE = {
     "information commissioner s office",
 }
 
+# Foreign-subsidiary suppressor. "Standard Chartered Ghana appoints a
+# CEO", "Aviva Canada chief people officer", "Nestlé France restructure"
+# resolve to a real watchlist PARENT, but the event is at an overseas
+# unit and is weak/noise for a UK senior in-house comms hire. If a
+# watchlist name appears ONLY immediately followed by a foreign COUNTRY
+# / territory, it is a subsidiary mention and is dropped. Deliberately
+# country-only (no "europe"/"asia"/"americas" region words — those
+# double as descriptors, e.g. "Aviva, Europe's largest insurer", and
+# must NOT suppress). UK qualifiers are intentionally absent so
+# "Barclays UK" / "HSBC UK" still resolve.
+_FOREIGN_QUALIFIER_RX = re.compile(
+    r"\s+(?:ghana|nigeria|kenya|tanzania|uganda|zambia|cameroon|egypt|"
+    r"morocco|south africa|canada|brazil|mexico|argentina|chile|"
+    r"colombia|india|pakistan|bangladesh|sri lanka|nepal|china|"
+    r"hong kong|taiwan|singapore|malaysia|indonesia|thailand|vietnam|"
+    r"philippines|japan|korea|australia|new zealand|france|germany|"
+    r"spain|italy|portugal|netherlands|belgium|switzerland|austria|"
+    r"poland|sweden|norway|denmark|finland|ireland|greece|turkey|"
+    r"romania|hungary|czech|uae|united arab emirates|qatar|"
+    r"saudi arabia|saudi|kuwait|bahrain|oman|israel|russia|ukraine|"
+    r"kazakhstan)\b",
+    re.IGNORECASE,
+)
+
+
+def _has_bare_occurrence(pat: re.Pattern, text: str) -> bool:
+    """True if `pat` matches at least once WITHOUT a foreign-country
+    qualifier immediately after — i.e. a genuine parent-company mention,
+    not only a 'X Ghana' / 'X Canada' subsidiary reference."""
+    for m in pat.finditer(text):
+        if not _FOREIGN_QUALIFIER_RX.match(text, m.end()):
+            return True
+    return False
+
+
 _WATCHLIST_NAMES: list[str] | None = None
 _DISTINCTIVE_PATTERNS: list[tuple[str, re.Pattern]] | None = None
 _ACRONYM_PATTERNS: list[tuple[str, re.Pattern]] | None = None
@@ -152,10 +187,10 @@ def resolve_account(company: str | None, *texts: str) -> str | None:
 
     if norm_text:
         for name, pat in _distinctive_patterns():
-            if pat.search(norm_text):
+            if pat.search(norm_text) and _has_bare_occurrence(pat, norm_text):
                 return name
     if original:
         for name, pat in _acronym_patterns():
-            if pat.search(original):
+            if pat.search(original) and _has_bare_occurrence(pat, original):
                 return name
     return None
