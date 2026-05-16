@@ -76,13 +76,39 @@ _FOREIGN_QUALIFIER_RX = re.compile(
 )
 
 
+# Background-employer suppressor. "Boots confirms ex-Currys boss as new
+# CEO" / "former Tesco executive appointed CEO of Acme": the watchlist
+# name is the new hire's PRIOR employer, not the subject of the event —
+# attributing a ceo_change to Currys/Tesco there is a false positive
+# (the same class as 'Three'/'SSE'). Only the UNAMBIGUOUS origin
+# prefixes are handled: ex- / former / formerly of / previously of /
+# onetime / erstwhile immediately before the name. Deliberately NOT
+# "outgoing"/"departing" (ambiguous — "departing BP boss" can mean BP
+# itself is losing its boss, a legitimate signal) and NOT "<Co>-backed"
+# (after _norm the hyphen is gone, so it can't be told apart from the
+# verb "<Co> backed the bid" without over-suppressing). [\s\-]+ so it
+# works on both the normalised distinctive text ("ex currys") and the
+# raw acronym text ("ex-BP").
+_BACKGROUND_PREFIX_RX = re.compile(
+    r"\b(?:ex|former|formerly of|previously of|onetime|one[\s\-]?time|"
+    r"erstwhile)[\s\-]+$",
+    re.IGNORECASE,
+)
+
+
 def _has_bare_occurrence(pat: re.Pattern, text: str) -> bool:
-    """True if `pat` matches at least once WITHOUT a foreign-country
-    qualifier immediately after — i.e. a genuine parent-company mention,
-    not only a 'X Ghana' / 'X Canada' subsidiary reference."""
+    """True if `pat` matches at least once as a genuine SUBJECT mention —
+    i.e. not immediately followed by a foreign-country qualifier
+    (subsidiary: 'X Ghana') and not immediately preceded by an origin
+    marker (prior employer: 'ex-X' / 'former X'). Any single bare
+    occurrence keeps the name (so 'former Currys boss returns to lead
+    Currys' still resolves to Currys via the second mention)."""
     for m in pat.finditer(text):
-        if not _FOREIGN_QUALIFIER_RX.match(text, m.end()):
-            return True
+        if _FOREIGN_QUALIFIER_RX.match(text, m.end()):
+            continue
+        if _BACKGROUND_PREFIX_RX.search(text[:m.start()]):
+            continue
+        return True
     return False
 
 
