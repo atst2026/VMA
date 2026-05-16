@@ -26,7 +26,9 @@ Design (per the strict detection-engine filter report):
   * Two stages, both placeable:
       - "SAR live / imminent" (high)  — order applied for / made,
         special administrator appointed, Defra/SoS invoking the regime.
-        Pitch crisis-comms interim within days; permanent follows.
+        The permanent reputation/stakeholder-comms hire (+ a comms-
+        function review) follows; the SAR is the trigger to win the
+        retained mandate now.
       - "financial-resilience watch" (medium) — Ofwat resilience action,
         cash lock-up, sub-IG downgrade, going-concern / material-
         uncertainty doubt, failed equity raise, turnaround oversight.
@@ -109,11 +111,14 @@ _RESILIENCE_RX = re.compile(
 
 _WHO_TO_CALL = {
     "SAR live / imminent":
-        "CCO / GC + special administrator's comms lead — crisis-comms "
-        "interim within days; permanent reputation hire post-stabilisation.",
+        "CCO / GC + the special administrator's adviser bench — the "
+        "permanent reputation/stakeholder-comms hire and a comms-function "
+        "review follow stabilisation; the SAR is the trigger to secure "
+        "the retained search now.",
     "financial-resilience watch":
-        "CCO / Director of Corporate Affairs — restructuring & "
-        "stakeholder-comms capacity builds ahead of any formal step.",
+        "CCO / Director of Corporate Affairs — the permanent change & "
+        "stakeholder-comms hire (and a capability review) is reviewed "
+        "ahead of any formal step; long retained-search runway.",
 }
 
 
@@ -137,6 +142,8 @@ def detect_water_sar(signals: Iterable[dict]) -> list[dict]:
     Each record: {company, stage, signal, evidence, url, source,
     sector, who_to_call, confidence}.
     """
+    from tool.advisory import advisory_for
+
     out: list[dict] = []
     seen: set[tuple] = set()
     for s in signals:
@@ -176,6 +183,7 @@ def detect_water_sar(signals: Iterable[dict]) -> list[dict]:
             "source":      s.get("source", ""),
             "sector":      "energy_utilities",
             "who_to_call": _WHO_TO_CALL[stage],
+            "advisory":    advisory_for("water_sar"),
             "confidence":  confidence,
         })
 

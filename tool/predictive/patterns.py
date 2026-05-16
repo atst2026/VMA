@@ -150,11 +150,12 @@ REGULATOR_ACTION = TriggerType(
     label="Material regulator action",
     weight=0.8,
     lead_time_weeks=(2, 12),
-    who_to_call="HR Director — pitch crisis comms interim + permanent",
+    who_to_call="CCO / HR Director — open the retained search for the permanent reputation/comms hire now",
     implication=(
         "Material regulator action against {company}. Reputation exposure "
-        "often triggers interim crisis comms hire within 2–8 weeks and a "
-        "permanent Head of Comms review shortly after."
+        "triggers a permanent Head of Comms / Corporate Affairs hire and a "
+        "comms-function review within ~2–12 weeks — the window to land the "
+        "retained mandate is now, before the search is run internally."
     ),
     patterns=_rx(
         r"\bfines\b.{0,60}(£|$|€)",
@@ -182,12 +183,13 @@ REGULATOR_PROBE_EARLY = TriggerType(
     label="Early regulatory probe",
     weight=0.7,
     lead_time_weeks=(6, 26),
-    who_to_call="CCO / GC — pitch crisis-comms interim ahead of the live period",
+    who_to_call="CCO / GC — secure the retained brief for the permanent reputation hire ahead of the live period",
     implication=(
         "A regulator has opened an investigation / probe into {company} "
-        "(pre-enforcement). These run 6-12 months and typically trigger "
-        "an interim crisis-comms hire and a reputation-facing Corporate "
-        "Affairs review before any penalty is decided."
+        "(pre-enforcement). These run 6-12 months and typically trigger a "
+        "permanent reputation-facing Corporate Affairs hire and a comms-"
+        "function review before any penalty is decided — a long retained-"
+        "search runway if engaged early."
     ),
     patterns=[
         re.compile(p, re.IGNORECASE) for p in (
@@ -211,11 +213,12 @@ CRISIS_EVENT = TriggerType(
     label="Crisis event (breach / litigation / suspension)",
     weight=0.75,
     lead_time_weeks=(2, 16),
-    who_to_call="CCO / GC — pitch crisis-comms interim immediately",
+    who_to_call="CCO / GC — pitch the retained search for the permanent reputation hire immediately",
     implication=(
         "A crisis event at {company} (data breach / cyber / litigation / "
-        "trading suspension). Interim crisis-comms capacity is usually "
-        "engaged within days and a permanent reputation hire follows."
+        "trading suspension). A permanent reputation / Corporate Affairs "
+        "hire follows within weeks; being in front of the decision-maker "
+        "on day one is what wins the retained mandate."
     ),
     patterns=[
         re.compile(p, re.IGNORECASE) for p in (
@@ -231,21 +234,21 @@ CRISIS_EVENT = TriggerType(
 
 # ---- Profit warning / negative trading update --------------------------
 # Phase 1 amend: the densest free signal in the UK market (Investegate
-# RNS). A profit warning is statistically associated with crisis-comms
-# interim demand and, within 6-12 months, permanent corporate-affairs
-# and IR hires. Deliberately excluded earlier as "downstream of
-# restructure"; that call is reversed per the detection-engine report.
+# RNS). A profit warning is statistically associated with a permanent
+# Corporate Affairs / IR hire within 6-12 months — the billable event
+# for an Exec Search / Permanent firm. Deliberately excluded earlier as
+# "downstream of restructure"; reversed per the detection-engine report.
 PROFIT_WARNING = TriggerType(
     key="profit_warning",
     label="Profit warning / negative trading update",
     weight=0.75,
     lead_time_weeks=(2, 26),
-    who_to_call="CCO / IR Director — crisis-comms interim now, permanent CorpAffairs/IR follows",
+    who_to_call="CCO / IR Director — open the retained search for the permanent CorpAffairs/IR hire now",
     implication=(
         "A profit warning / materially negative trading update at "
-        "{company}. Associated with near-term crisis-comms interim "
-        "demand and a permanent Corporate Affairs / IR hire within "
-        "6-12 months."
+        "{company}. Associated with a permanent Corporate Affairs / IR "
+        "hire within 6-12 months; the warning is the timing trigger to "
+        "secure the retained search early."
     ),
     patterns=[
         re.compile(p, re.IGNORECASE) for p in (

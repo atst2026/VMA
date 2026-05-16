@@ -262,6 +262,7 @@ def load_latest_predictive() -> list[dict]:
             except Exception:
                 data = []
 
+    from tool.advisory import advisory_for
     today = datetime.now(timezone.utc).date().isoformat()
     for p_item in data:
         first_seen = p_item.get("first_seen") or ""
@@ -270,6 +271,10 @@ def load_latest_predictive() -> list[dict]:
         p_item.setdefault("pid", predictor_pipeline._pid(p_item.get("company", "")))
         p_item["outreach"] = draft_outreach_for_predictor(p_item)
         p_item["linkedin"] = linkedin_search_for_predictor(p_item)
+        evs = p_item.get("events") or []
+        p_item["advisory"] = advisory_for(
+            evs[0].get("trigger_key") if evs and isinstance(evs[0], dict) else None
+        )
     return data
 
 
@@ -1214,6 +1219,20 @@ TEMPLATE = r"""
     }
     .outreach-text { display: none; }
 
+    /* Advisory Services lens — the second billable path on the same
+       signal (capability review / talent map / benchmarking). Subtle
+       accent so it reads as a distinct revenue line, not noise. */
+    .advisory-line {
+      margin: 6px 0 2px;
+      padding: 6px 9px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--teal-dark);
+      background: var(--teal-soft);
+      border-left: 2px solid var(--teal);
+      border-radius: 3px;
+    }
+
     /* PREDICTORS */
     .predictor .stack-label {
       display: inline-block;
@@ -1895,6 +1914,7 @@ TEMPLATE = r"""
                     </div>
                   {% endfor %}
                 </div>
+                {% if p.advisory %}<div class="advisory-line">{{ p.advisory }}</div>{% endif %}
                 <pre class="outreach-text">{{ p.outreach }}</pre>
                 <div class="item-actions">
                   <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
@@ -2450,6 +2470,7 @@ async function loadPulses() {
             esc(p.scope_note || '') +
             (p.source ? ' &middot; ' + esc(p.source) : '') +
           '</div>' +
+          (p.advisory ? '<div class="advisory-line">' + esc(p.advisory) + '</div>' : '') +
         '</li>'
       );
     }
@@ -2495,6 +2516,7 @@ async function loadWaterSar() {
               : esc(w.evidence || '')) +
             (w.source ? ' &middot; ' + esc(w.source) : '') +
           '</div>' +
+          (w.advisory ? '<div class="advisory-line">' + esc(w.advisory) + '</div>' : '') +
         '</li>'
       );
     }
@@ -2536,6 +2558,7 @@ async function loadContractEnd() {
             (c.source ? ' &middot; ' + esc(c.source) : '') +
             (c.sector ? ' &middot; ' + esc(c.sector) : '') +
           '</span>' +
+          (c.advisory ? '<div class="advisory-line">' + esc(c.advisory) + '</div>' : '') +
         '</li>'
       );
     }
@@ -2579,6 +2602,7 @@ async function loadFunding() {
             (f.source ? ' &middot; ' + esc(f.source) : '') +
             (f.sector ? ' &middot; ' + esc(f.sector) : '') +
           '</span>' +
+          (f.advisory ? '<div class="advisory-line">' + esc(f.advisory) + '</div>' : '') +
         '</li>'
       );
     }
@@ -2620,6 +2644,7 @@ async function loadFollowing() {
             (f.source ? ' &middot; ' + esc(f.source) : '') +
             (f.sector ? ' &middot; ' + esc(f.sector) : '') +
           '</span>' +
+          (f.advisory ? '<div class="advisory-line">' + esc(f.advisory) + '</div>' : '') +
         '</li>'
       );
     }

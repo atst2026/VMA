@@ -152,6 +152,7 @@ def detect_funding(signals: Iterable[dict]) -> list[dict]:
     company. Each: {company, round, amount, evidence, url, source,
     sector, window, confidence}.
     """
+    from tool.advisory import advisory_for
     try:
         from tool.peers import detect_sector
     except Exception:
@@ -216,6 +217,7 @@ def detect_funding(signals: Iterable[dict]) -> list[dict]:
             "source":     s.get("source", ""),
             "sector":     detect_sector(company) or "",
             "window":     "senior-comms hire window: now → ~6 months",
+            "advisory":   advisory_for("funding"),
             "confidence": "high" if (is_gbp and gbp_m >= MIN_GBP_M) else "medium",
         })
 

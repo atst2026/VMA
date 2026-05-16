@@ -51,9 +51,12 @@ JOB_TITLE_KEYWORDS = ROLE_KEYWORDS + [
 ]
 
 # --- Filters ---
+# VMA Group's specialism is Executive Search / Permanent Recruitment /
+# Advisory — NOT interim staffing. A role whose only salary signal is a
+# contractor day rate is therefore off-product and is filtered out;
+# permanent salaries (>= floor) and unlabelled roles still pass. The old
+# DAY_RATE_FLOOR/CEILING interim band was removed for this reason.
 SALARY_FLOOR_PERM_GBP = 40_000
-DAY_RATE_FLOOR_GBP = 350
-DAY_RATE_CEILING_GBP = 800
 
 # Companies whose jobs should NEVER appear in Sara's leads list.
 # VMA Group is her own employer; the others are direct competitor

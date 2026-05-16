@@ -96,6 +96,7 @@ def detect_contract_end(signals: Iterable[dict]) -> list[dict]:
     confidence}.
     """
     from tool.account_match import resolve_account
+    from tool.advisory import advisory_for
     try:
         from tool.peers import detect_sector
     except Exception:
@@ -130,6 +131,7 @@ def detect_contract_end(signals: Iterable[dict]) -> list[dict]:
             "url":        s.get("url", ""),
             "source":     s.get("source", ""),
             "sector":     detect_sector(company) or "",
+            "advisory":   advisory_for("contract_end"),
             "confidence": _confidence(s.get("source", "")),
         })
 

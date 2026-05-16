@@ -63,8 +63,9 @@ PULSES: list[dict] = [
         "seat": "Head of Regulatory / Customer Communications "
                 "(Consumer Duty board report + remediation comms)",
         "angle": "FS firms must lay an annual Consumer Duty board report "
-                 "by 31 Jul; the Q2 run-up is a repeatable interim/retained "
-                 "regulatory-comms window — pitch before they advertise.",
+                 "by 31 Jul; the Q2 run-up is a repeatable retained-search "
+                 "window for the permanent regulatory-comms seat — pitch "
+                 "before they advertise.",
         "scope_note": "FCA-regulated retail financial-services firms "
                       "(banks, insurers, asset & wealth managers).",
         "confidence": "high",
@@ -151,6 +152,8 @@ def active_pulses(today: Optional[date] = None) -> list[dict]:
     Sorted high-confidence first, then by urgency (fewest days left in
     the window first) so the most time-critical pulse is at the top.
     """
+    from tool.advisory import advisory_for
+
     if today is None:
         today = date.today()
 
@@ -179,6 +182,7 @@ def active_pulses(today: Optional[date] = None) -> list[dict]:
             "targets":     targets,
             "confidence":  p.get("confidence", "medium"),
             "source":      p.get("source", ""),
+            "advisory":    advisory_for(p["key"]),
         })
 
     out.sort(key=lambda r: (r["confidence"] != "high", r["days_left"]))
