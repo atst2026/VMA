@@ -49,6 +49,9 @@ TRIGGER_ROLE_CHAIN: dict[str, tuple[str, ...]] = {
     # material regulator action (CCO leads, GC second signatory).
     "regulator_probe_early":   ("cco", "gc", "chro", "ceo"),
     "crisis_event":            ("cco", "gc", "chro", "ceo"),
+    # Profit warning -> IR Director leads the market narrative, CCO for
+    # reputation, CFO as the numbers owner.
+    "profit_warning":          ("ir_director", "cco", "cfo", "ceo"),
 
     # Material contract loss -> CCO reposition + reputation defence.
     "contract_loss":           ("cco", "head_of_comms", "ceo"),
