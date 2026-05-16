@@ -26,6 +26,15 @@ RSS_SOURCES = [
     ("civil_service_jobs","Civil Service Jobs",  "job", "UK", 0.9),
     ("corpcomms",       "CorpComms Magazine",    "trade_press", "UK", 1.0),
     ("ragan",           "Ragan",                 "trade_press", "US", 0.6),
+    # Phase 3.9 — sector trade feeds (hot-sector depth). trade_press
+    # kind means ranking.py only lets actual BD news through
+    # (appoint/hire/depart/restructure/etc.) — editorial is dropped by
+    # the existing precision filter, so these add signal not noise.
+    # Missing/dead keys are skipped silently by the loop below.
+    ("inside_housing",  "Inside Housing",        "trade_press", "UK", 1.0),
+    ("utility_week",    "Utility Week",          "trade_press", "UK", 1.0),
+    ("pharmaphorum",    "pharmaphorum",          "trade_press", "UK", 0.9),
+    ("fierce_biotech",  "FierceBiotech",         "trade_press", "US", 0.7),
 ]
 
 

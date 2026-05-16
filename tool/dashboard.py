@@ -823,6 +823,17 @@ def api_contract_end():
     return jsonify({"rows": rows, "total": len(rows)})
 
 
+@app.route("/api/funding", methods=["GET"])
+@_auth_required
+def api_funding():
+    """Funding-Round detector — a scaling private firm closed a >=£20m
+    growth round; a step-change senior in-house comms hire typically
+    follows ~6 months later, months after the round is public."""
+    from tool.funding_round import load_funding
+    rows = load_funding(limit=30)
+    return jsonify({"rows": rows, "total": len(rows)})
+
+
 TEMPLATE = r"""
 <!doctype html>
 <html lang="en">
@@ -1954,6 +1965,22 @@ TEMPLATE = r"""
 
   </div>
 
+  <!-- FUNDING-ROUND PRE-HIRE WINDOW (>=£20m -> ~6-month comms hire) -->
+  <div class="row row-full">
+
+    <!-- FUNDING ROUNDS -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Funding-Round Pre-Hire Window</h2>
+        <span class="count" id="funding-count">—</span>
+      </div>
+      <div class="panel-body" id="funding-body">
+        <div class="empty compact">Loading…</div>
+      </div>
+    </div>
+
+  </div>
+
   <!-- VACATED-SEAT BACKFILL DETECTOR (highest-yield missing feature) -->
   <div class="row row-full">
 
@@ -2519,6 +2546,49 @@ async function loadContractEnd() {
   }
 }
 
+// ---------- Funding-Round Pre-Hire Window ----------
+async function loadFunding() {
+  const body = document.getElementById('funding-body');
+  const count = document.getElementById('funding-count');
+  try {
+    const r = await fetch('/api/funding');
+    const j = await r.json();
+    count.textContent = j.total;
+    if (!j.rows || j.rows.length === 0) {
+      body.innerHTML = '<div class="empty compact">No qualifying funding round ' +
+        '(&ge;£20m growth/Series round) detected yet. This fires when a scaling ' +
+        'private firm closes a material equity round — a step-change senior in-house ' +
+        'comms hire typically follows ~6 months later, months after the round is ' +
+        'public. Debt/refinancing is excluded by design.</div>';
+      return;
+    }
+    const out = ['<ul style="margin:6px 0;padding:0;list-style:none;">'];
+    for (const f of j.rows.slice(0, 16)) {
+      const conf = (f.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
+      out.push(
+        '<li style="padding:8px 0;border-bottom:1px solid var(--border);">' +
+          '<span class="' + conf + '">' + esc(f.confidence || '') + '</span> ' +
+          '<strong style="color:var(--text);">' + esc(f.company || '(unknown)') + '</strong>' +
+          ' &middot; <span style="color:var(--text);">' + esc(f.amount || '') +
+            ' ' + esc(f.round || 'funding round') + '</span>' +
+          '<span style="color:var(--text-muted);font-size:12px;display:block;margin-top:2px;">' +
+            (f.url
+              ? '<a href="' + safeUrl(f.url) + '" target="_blank" rel="noopener noreferrer" style="color:#0366d6;">' + esc(f.evidence || 'source') + '</a>'
+              : esc(f.evidence || '')) +
+            (f.window ? ' &middot; ' + esc(f.window) : '') +
+            (f.source ? ' &middot; ' + esc(f.source) : '') +
+            (f.sector ? ' &middot; ' + esc(f.sector) : '') +
+          '</span>' +
+        '</li>'
+      );
+    }
+    out.push('</ul>');
+    body.innerHTML = out.join('');
+  } catch (e) {
+    body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
+  }
+}
+
 // ---------- Mandates Worth Following (vacated-seat detector) ----------
 async function loadFollowing() {
   const body = document.getElementById('following-body');
@@ -2749,6 +2819,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadPulses();
   loadWaterSar();
   loadContractEnd();
+  loadFunding();
   loadFollowing();
   loadMandates();
   loadWatchList();

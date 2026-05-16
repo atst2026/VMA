@@ -135,6 +135,7 @@ jobs:
             tool/state/latest_pulses.json
             tool/state/latest_water_sar.json
             tool/state/latest_contract_end.json
+            tool/state/latest_funding.json
             tool/state/predictor_pipeline.json
             tool/state/predictive_jobs.json
           if-no-files-found: warn

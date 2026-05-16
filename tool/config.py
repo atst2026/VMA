@@ -114,6 +114,26 @@ SOURCES = {
     # Trade press (only the feeds that still publish RSS in 2026)
     "corpcomms": "https://www.corpcommsmagazine.co.uk/feed",
     "ragan": "https://www.ragan.com/feed/",
+    # Phase 3.9 — sector trade feeds. These deepen coverage of the
+    # hot sectors (housing/real-estate, pharma, utilities) so the
+    # predictor + following/contract-end detectors see sector moves
+    # the generalist feeds miss. Standard CMS feed endpoints:
+    #   - pharmaphorum / utility_week: WordPress default (/feed/)
+    #   - fierce_biotech: Questex standard (/rss/xml)
+    #   - inside_housing: Ocean Media public headline RSS (/rss)
+    # Inside Housing & Utility Week are subscription titles: the public
+    # feed is headline+standfirst only, which is exactly what the
+    # detectors need (appointment / restructure / contract wording in
+    # the title). Live reachability is verified in the GitHub Actions
+    # run, NOT the sandbox (sandbox egress is 403-filtered). A dead /
+    # paywalled / moved feed is fully non-fatal: rss_feeds.fetch_all()
+    # skips any source whose key is missing, returns None, is empty, or
+    # fails to parse — so a wrong URL degrades to "no items", never an
+    # error, and is logged honestly like the removed feeds above.
+    "pharmaphorum": "https://pharmaphorum.com/feed/",
+    "fierce_biotech": "https://www.fiercebiotech.com/rss/xml",
+    "inside_housing": "https://www.insidehousing.co.uk/rss",
+    "utility_week": "https://utilityweek.co.uk/feed/",
     # News graph
     "gdelt_doc": "https://api.gdeltproject.org/api/v2/doc/doc",
     # Jobs
