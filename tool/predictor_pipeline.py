@@ -178,6 +178,7 @@ def upsert(ranked_stacks: list[tuple[Stack, float]]) -> dict:
             updated_items.append(entry)
 
     aged = age_out(pipeline, ROLLING_WINDOW_DAYS)
+    purged = purge_off_watchlist(pipeline)
 
     # Refresh seeded contact names on EVERY active pipeline entry, not just
     # the ones in today's ranked_stacks. Otherwise an entry that fired e.g.
@@ -212,15 +213,65 @@ def upsert(ranked_stacks: list[tuple[Stack, float]]) -> dict:
     save_pipeline(pipeline)
 
     total_active = sum(1 for p in predictors.values() if p.get("status") == "active")
-    log.info("pipeline: %d new, %d updated, %d aged out, %d active total",
-             len(new_items), len(updated_items), aged, total_active)
+    log.info("pipeline: %d new, %d updated, %d aged out, %d purged "
+             "(off-watchlist), %d active total",
+             len(new_items), len(updated_items), aged, purged, total_active)
     return {
         "new": new_items,
         "updated": updated_items,
         "new_pids": new_pids,
         "total_active": total_active,
         "aged_out": aged,
+        "purged": purged,
     }
+
+
+def _entry_resolves(entry: dict) -> bool:
+    """True if a persisted predictor still resolves to its company under
+    the CURRENT account gate. Re-validates an entry's own evidence (the
+    same text-first check detect_events applies to fresh signals).
+    Fail-open: returns True if the gate can't run, so a degraded
+    watchlist never empties the pipeline."""
+    try:
+        from tool.account_match import resolve_account
+    except Exception:
+        return True
+    company = (entry.get("company") or "").strip()
+    parts: list[str] = []
+    for e in (entry.get("events") or []):
+        if isinstance(e, dict):
+            ev, tl = e.get("evidence"), e.get("trigger_label")
+            if ev:
+                parts.append(str(ev))
+            if tl:
+                parts.append(str(tl))
+    text = " . ".join(parts) or company
+    try:
+        return resolve_account(company, text) is not None
+    except Exception:
+        return True  # never nuke the pipeline on a gate error
+
+
+def purge_off_watchlist(pipeline: dict) -> int:
+    """Re-validate persisted predictors against the CURRENT account gate.
+
+    age_out only expires by DATE. Without this, predictors created
+    before the gate existed (or under an older watchlist / a buggy
+    extractor) survive their full 90-day window — this is exactly why
+    'EQS' (a wire prefix), 'Capita' (from "Capital Signs…"), 'Three UK'
+    (from "Three arrested…") and foreign-subsidiary mentions kept
+    showing on the board long after the gate would reject them. Drop any
+    entry whose own evidence no longer resolves. followed_up entries are
+    preserved (Sara's manual record), same carve-out as age_out."""
+    removed = 0
+    predictors = pipeline.get("predictors") or {}
+    for pid, entry in list(predictors.items()):
+        if entry.get("status") == "followed_up":
+            continue
+        if not _entry_resolves(entry):
+            del predictors[pid]
+            removed += 1
+    return removed
 
 
 def age_out(pipeline: dict, max_days: int = ROLLING_WINDOW_DAYS) -> int:
@@ -281,6 +332,14 @@ def all_predictors() -> list[dict]:
     (status priority, then score desc) so active leads sort to the top."""
     pipeline = load_pipeline()
     items = list((pipeline.get("predictors") or {}).values())
+    # Defensive re-gate on the READ path so the dashboard never shows an
+    # entry the current account gate would reject, even before the next
+    # morning brief persists the purge. In-memory only (no save here);
+    # followed_up entries are always kept (Sara's manual record).
+    items = [
+        p for p in items
+        if p.get("status") == "followed_up" or _entry_resolves(p)
+    ]
     status_rank = {"active": 0, "followed_up": 1, "dismissed": 2}
     items.sort(key=lambda p: (status_rank.get(p.get("status"), 3),
                               -float(p.get("score") or 0)))
