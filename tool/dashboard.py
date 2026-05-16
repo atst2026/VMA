@@ -673,32 +673,6 @@ def api_mpc_build():
     return jsonify({"ok": True, "hits": hit_list_to_json(hits), "count": len(hits)})
 
 
-@app.route("/api/pipeline/triage", methods=["POST"])
-@_auth_required
-def api_pipeline_triage():
-    """Score Sara's pasted pipeline lines into alive/stalled/cold/dead/unclear."""
-    from tool.pipeline_triage import triage_pipeline, triage_to_json
-    data = _safe_json_body()
-    text = data.get("text") or ""
-    if not text.strip():
-        return jsonify({"ok": False, "detail": "Pipeline text required"}), 400
-    rows = triage_pipeline(text)
-    return jsonify({"ok": True, **triage_to_json(rows)})
-
-
-@app.route("/api/objection", methods=["POST"])
-@_auth_required
-def api_objection_coach():
-    """Match a pasted situation against the VMA objection playbook."""
-    from tool.objection_coach import coach, coach_to_json
-    data = _safe_json_body()
-    text = (data.get("situation") or "").strip()
-    if not text:
-        return jsonify({"ok": False, "detail": "Situation text required"}), 400
-    responses = coach(text)
-    return jsonify({"ok": True, "responses": coach_to_json(responses)})
-
-
 @app.route("/api/candidates/watch", methods=["GET"])
 @_auth_required
 def api_candidates_watch_list():
@@ -1353,27 +1327,6 @@ TEMPLATE = r"""
       background: rgba(201, 55, 55, 0.05);
       box-shadow: 0 0 0 3px rgba(201, 55, 55, 0.08);
     }
-    /* ---- Collapsible action cards: a normal .action-card that is
-       minimised to just its header until clicked, then expands to the
-       exact size/look of every other card in the .actions grid. ---- */
-    details.collapsible-card > summary {
-      list-style: none;
-      cursor: pointer;
-    }
-    details.collapsible-card > summary::-webkit-details-marker { display: none; }
-    /* h3 already carries the card title styling; show a caret after it
-       so it's clearly expandable. Closed = just this header (minimised);
-       open = subhead + form appear → identical to the cards above. */
-    details.collapsible-card > summary > h3::after {
-      content: "▸";
-      margin-left: auto;
-      color: var(--text-dim);
-      font-size: 12px;
-      font-weight: 400;
-    }
-    details.collapsible-card[open] > summary > h3::after { content: "▾"; }
-    details.collapsible-card > summary > h3 { margin-bottom: 0; }
-    details.collapsible-card[open] > summary > h3 { margin-bottom: 4px; }
     /* ---- Demand-creation tool badges & pills ---- */
     .mandate-age {
       display: inline-block;
@@ -2030,34 +1983,6 @@ TEMPLATE = r"""
       </form>
     </div>
 
-    <!-- PIPELINE TRIAGE — same action card, collapsed until its header
-         is clicked, then expands to the exact size/look of the cards
-         above it. -->
-    <details class="panel action-card collapsible-card">
-      <summary><h3>Pipeline Triage</h3></summary>
-      <div class="subhead">Paste your active conversations; honest scoring (alive / stalled / cold / dead) with next-action.</div>
-      <form id="triage-form" onsubmit="runTriage(event)">
-        <label for="triage-text">Active pipeline (one per line)</label>
-        <textarea id="triage-text" name="text" rows="6" placeholder="HSBC Head of IC - shortlist sent, interview booked&#10;NatWest CCO - haven't heard in 3 weeks&#10;BP Crisis Comms - they moved on, hired internally" required></textarea>
-        <button type="submit">Triage</button>
-        <div class="status" id="triage-status"></div>
-        <div id="triage-result" class="inline-result"></div>
-      </form>
-    </details>
-
-    <!-- OBJECTION COACH -->
-    <details class="panel action-card collapsible-card">
-      <summary><h3>Objection Coach</h3></summary>
-      <div class="subhead">Paste a negotiation / objection situation; get 3 VMA-rooted angles.</div>
-      <form id="coach-form" onsubmit="runCoach(event)">
-        <label for="coach-text">Situation</label>
-        <textarea id="coach-text" name="situation" rows="3" placeholder="e.g. Client wants to push our 22% fee down to 18%" required></textarea>
-        <button type="submit">Get angles</button>
-        <div class="status" id="coach-status"></div>
-        <div id="coach-result" class="inline-result"></div>
-      </form>
-    </details>
-
   </div>
 
   <div class="footer">
@@ -2388,91 +2313,6 @@ async function runMPC(event) {
     status.textContent = 'Network error: ' + e.message; status.className = 'status err';
   }
   btn.disabled = false; btn.textContent = 'Build hit list';
-}
-
-// ---------- Pipeline Triage ----------
-async function runTriage(event) {
-  event.preventDefault();
-  const form = document.getElementById('triage-form');
-  const btn = form.querySelector('button[type=submit]');
-  const status = document.getElementById('triage-status');
-  const result = document.getElementById('triage-result');
-  btn.disabled = true; btn.textContent = 'Scoring…';
-  status.textContent = ''; status.className = 'status';
-  result.innerHTML = '';
-  try {
-    const r = await fetch('/api/pipeline/triage', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: document.getElementById('triage-text').value }),
-    });
-    const j = await r.json();
-    if (!j.ok) {
-      status.textContent = j.detail || 'Failed.'; status.className = 'status err';
-    } else {
-      status.textContent =
-        j.counts.alive + ' alive · ' + j.counts.stalled + ' stalled · ' +
-        j.counts.cold + ' cold · ' + j.counts.dead + ' dead' +
-        (j.counts.unclear ? ' · ' + j.counts.unclear + ' unclear' : '');
-      status.className = 'status ok';
-      const out = ['<ul style="margin:10px 0 0 0;padding:0;list-style:none;">'];
-      for (const r of j.rows) {
-        out.push(
-          '<li style="margin-bottom:10px;padding:8px 10px;border-left:3px solid var(--' + esc(r.label) + '-bar, var(--border));background:rgba(255,255,255,0.4);">' +
-            '<div><span class="triage-label ' + esc(r.label) + '">' + esc(r.label) + ' &middot; ' + esc(r.score) + '</span> ' +
-              esc(r.raw) +
-            '</div>' +
-            '<div style="color:#555;margin-top:4px;font-size:12.5px;"><em>' + esc(r.reasoning) + '</em></div>' +
-            '<div style="color:#222;margin-top:4px;font-size:12.5px;"><strong>Next:</strong> ' + esc(r.next_action) + '</div>' +
-          '</li>'
-        );
-      }
-      out.push('</ul>');
-      result.innerHTML = out.join('');
-    }
-  } catch (e) {
-    status.textContent = 'Network error: ' + e.message; status.className = 'status err';
-  }
-  btn.disabled = false; btn.textContent = 'Triage';
-}
-
-// ---------- Objection Coach ----------
-async function runCoach(event) {
-  event.preventDefault();
-  const form = document.getElementById('coach-form');
-  const btn = form.querySelector('button[type=submit]');
-  const status = document.getElementById('coach-status');
-  const result = document.getElementById('coach-result');
-  btn.disabled = true; btn.textContent = 'Coaching…';
-  status.textContent = ''; status.className = 'status';
-  result.innerHTML = '';
-  try {
-    const r = await fetch('/api/objection', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ situation: document.getElementById('coach-text').value }),
-    });
-    const j = await r.json();
-    if (!j.ok) {
-      status.textContent = j.detail || 'Failed.'; status.className = 'status err';
-    } else {
-      status.textContent = 'Matched ' + j.responses.length + ' situation(s).'; status.className = 'status ok';
-      const out = [];
-      for (const resp of j.responses) {
-        out.push('<div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.4);border-left:3px solid var(--teal);">');
-        out.push('<div style="font-weight:600;">' + esc(resp.matched_situation) +
-          ' <span style="font-size:11px;color:var(--text-muted);">conf ' +
-          Math.round(resp.match_confidence * 100) + '%</span></div>');
-        out.push('<ol style="margin:8px 0 0 0;padding-left:20px;">');
-        for (const a of resp.angles) out.push('<li style="margin-bottom:6px;">' + esc(a) + '</li>');
-        out.push('</ol></div>');
-      }
-      result.innerHTML = out.join('');
-    }
-  } catch (e) {
-    status.textContent = 'Network error: ' + e.message; status.className = 'status err';
-  }
-  btn.disabled = false; btn.textContent = 'Get angles';
 }
 
 // ---------- Candidate Watch ----------
