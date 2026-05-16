@@ -2,7 +2,8 @@
 
 Test applied:
 - role titles match `ROLE_KEYWORDS` (title OR summary OR company name)
-- salary ≥ £40k perm, OR falls in £350–800/day interim band, OR unknown
+- salary ≥ £40k perm, OR unknown (interim day-rate-only roles dropped:
+  Exec Search / Permanent Recruitment is the specialism, not interim)
 - UK-primary weighting; international kept but discounted
 
 Rank score = base_weight × geo_weight × role_strength × kind_multiplier × freshness
@@ -240,7 +241,7 @@ def suggest_angle(signal: dict) -> str:
     if k == "rns":
         return "Regulatory announcement — comms restructure often follows within 4–8 weeks."
     if k == "regulator":
-        return "Regulator action — reputation exposure, interim comms capacity often needed fast."
+        return "Regulator action — reputation exposure; a permanent reputation hire follows. Engage the decision-maker now for the retained search."
     if k == "procurement":
         return "Public-sector comms procurement — framework or contract entry point."
     if k == "trade_press":

@@ -9,7 +9,7 @@ from urllib.parse import quote_plus
 from bs4 import BeautifulSoup
 
 from tool.config import (
-    ATS_SEEDS, DAY_RATE_CEILING_GBP, DAY_RATE_FLOOR_GBP, EXCLUDE_TITLE_TERMS,
+    ATS_SEEDS, EXCLUDE_TITLE_TERMS,
     ROLE_KEYWORDS, SALARY_FLOOR_PERM_GBP, SOURCES,
 )
 from tool.sources._http import get, signal_id
@@ -86,14 +86,15 @@ def _has_role_match(text: str) -> bool:
 
 
 def _salary_ok(minimum: float | None, maximum: float | None) -> bool:
-    """Accept if max (or min) clears £40k perm, or falls in £350–800/day interim range."""
+    """Accept permanent-grade roles only. Clears the £40k perm floor, or
+    salary is unlabelled (kept — many genuine permanent senior briefs
+    omit pay). A role whose only salary signal is a contractor day rate
+    (low absolute value, no perm floor) is interim — off-product for an
+    Executive Search / Permanent Recruitment firm — and is dropped."""
     if not minimum and not maximum:
         return True  # unknown salary — don't filter out
     value = maximum or minimum
     if value and value >= SALARY_FLOOR_PERM_GBP:
-        return True
-    # interim day-rate band (crude): 350–800 falls within
-    if value and DAY_RATE_FLOOR_GBP <= value <= DAY_RATE_CEILING_GBP:
         return True
     return False
 

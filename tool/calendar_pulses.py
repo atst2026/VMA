@@ -63,8 +63,9 @@ PULSES: list[dict] = [
         "seat": "Head of Regulatory / Customer Communications "
                 "(Consumer Duty board report + remediation comms)",
         "angle": "FS firms must lay an annual Consumer Duty board report "
-                 "by 31 Jul; the Q2 run-up is a repeatable interim/retained "
-                 "regulatory-comms window — pitch before they advertise.",
+                 "by 31 Jul; the Q2 run-up is a repeatable retained-search "
+                 "window for the permanent regulatory-comms seat — pitch "
+                 "before they advertise.",
         "scope_note": "FCA-regulated retail financial-services firms "
                       "(banks, insurers, asset & wealth managers).",
         "confidence": "high",

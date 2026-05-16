@@ -86,20 +86,22 @@ COV_WEEKS = 16
 
 
 def cost_of_vacancy(role: str, salary_midpoint: int) -> dict:
-    """Industry-standard estimates for the £ value of a vacant senior comms seat:
-    - Productivity loss while seat is unfilled (16 weeks)
-    - Interim cover cost (assume £600/day for ~16 weeks)
-    - Risk premium for a bad hire (~30% of first-year salary)
+    """The £ cost to the CLIENT of leaving the permanent seat empty —
+    the business case for engaging the retained search now (NOT a
+    recommendation to place an interim; interim is off-product):
+    - Productivity loss while the seat is unfilled (16 weeks)
+    - Stop-gap cover the client bears during the gap (~£600/day equiv.)
+    - Risk premium for a rushed bad hire (~30% of first-year salary)
     Returns a dict of {label: amount}.
     """
     productivity = int(salary_midpoint * 1.5 * (COV_WEEKS / 52))
-    interim_cover = 600 * 5 * COV_WEEKS
+    gap_cover = 600 * 5 * COV_WEEKS
     bad_hire_risk = int(salary_midpoint * 0.30)
     return {
         f"Lost productivity ({COV_WEEKS} wks vacant)": productivity,
-        f"Interim cover (£600/day × {COV_WEEKS} wks)": interim_cover,
-        "Bad-hire downside risk (30% salary)": bad_hire_risk,
-        "Total cost of getting it wrong": productivity + interim_cover + bad_hire_risk,
+        f"Stop-gap cover during the vacancy ({COV_WEEKS} wks)": gap_cover,
+        "Rushed bad-hire downside risk (30% salary)": bad_hire_risk,
+        "Cost of leaving the seat empty": productivity + gap_cover + bad_hire_risk,
     }
 
 
