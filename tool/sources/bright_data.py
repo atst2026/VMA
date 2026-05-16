@@ -23,14 +23,16 @@ log = logging.getLogger("brief.bright")
 # Note: free-tier limits apply per month, not per day. We cap per-call volume.
 API_BASE = "https://api.brightdata.com"
 
-# Known UK companies with public comms/PR job posts to search via the licensed
-# logged-off LinkedIn surface. Kept small to stay within free-tier budget.
-LINKEDIN_JOB_QUERIES = [
-    "head of internal communications United Kingdom",
-    "head of corporate communications United Kingdom",
-    "communications director United Kingdom",
-    "pr director United Kingdom",
-]
+# Senior comms job queries for the licensed logged-off LinkedIn surface.
+# Drawn from the canonical taxonomy (tool.config.JOB_SEARCH_QUERIES) so
+# it widens with every other lane; sliced + UK-scoped, kept small to
+# stay inside the Bright Data free-tier monthly budget.
+def _linkedin_job_queries() -> list[str]:
+    from tool.config import JOB_SEARCH_QUERIES
+    return [f"{q} United Kingdom" for q in JOB_SEARCH_QUERIES]
+
+
+LINKEDIN_JOB_QUERIES = _linkedin_job_queries()
 
 
 def _authed_get(url: str, params: dict | None = None):
@@ -53,7 +55,7 @@ def fetch_all() -> list[dict]:
     # Bright Data's free-tier Web Unlocker can proxy any URL; we use it to hit
     # LinkedIn's public guest-view jobs search without the direct-scrape
     # rate-limit wall.
-    for q in LINKEDIN_JOB_QUERIES[:2]:   # keep the budget tight for the daily run
+    for q in LINKEDIN_JOB_QUERIES[:4]:   # budget-tight slice (free tier 5k/mo)
         from urllib.parse import quote_plus
         target = (
             "https://www.linkedin.com/jobs/search?"

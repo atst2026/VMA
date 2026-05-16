@@ -50,6 +50,34 @@ JOB_TITLE_KEYWORDS = ROLE_KEYWORDS + [
     "head of external communications",
 ]
 
+# Canonical job-search query set. ONE source of truth for the phrases the
+# job lanes (Adzuna / LinkedIn-public / Bright Data) search for, so a
+# query added here widens every lane at once. Previously each lane hard-
+# coded ~4-6 phrases — under-covering the role taxonomy and capping
+# Today's-Leads recall. Ordered most→least senior so budget-capped lanes
+# (LinkedIn/Bright Data) take the highest-value slice first.
+JOB_SEARCH_QUERIES = [
+    "chief communications officer",
+    "director of communications",
+    "communications director",
+    "head of communications",
+    "head of corporate communications",
+    "corporate communications director",
+    "head of corporate affairs",
+    "corporate affairs director",
+    "head of internal communications",
+    "internal communications director",
+    "head of external communications",
+    "head of public affairs",
+    "director of public affairs",
+    "head of media relations",
+    "head of investor relations",
+    "pr director",
+    "head of pr",
+    "change communications lead",
+    "employee communications manager",
+]
+
 # --- Filters ---
 # VMA Group's specialism is Executive Search / Permanent Recruitment /
 # Advisory — NOT interim staffing. A role whose only salary signal is a
@@ -149,23 +177,33 @@ SOURCES = {
     "sec_edgar": "https://www.sec.gov/cgi-bin/browse-edgar",
 }
 
-# Known Greenhouse/Lever/Ashby/Workable slugs worth monitoring for comms roles.
-# Slugs removed in May 2026 refresh because the companies moved off these
-# ATS platforms (each returned 404 in the morning brief):
+# Greenhouse/Lever/Ashby/Workable slugs to monitor for in-house comms
+# roles. This is an OPPORTUNISTIC lane: large UK comms employers (FTSE,
+# NHS, gov, housing) mostly use Workday/Eploy/bespoke ATS we can't seed
+# here — so this lane targets the UK scale-ups / media / charities that
+# DO use these public ATS boards. A wrong/retired slug is fully non-
+# fatal: fetch_* skips any board returning non-200 (404). The real
+# public-sector / HE recall comes from the dedicated RSS job lanes
+# (jobs.ac.uk / NHS / Civil Service), not from here.
+#   Slugs removed May 2026 (moved off-platform, 404):
 #   greenhouse: wise, revolut, deliveroo, octopusenergy, starlingbank
 #   lever:      gousto, multiverse, reddit
 ATS_SEEDS = {
     "greenhouse": [
-        "monzo", "gocardless", "checkr", "cloudflare", "airbnb", "stripe",
+        "monzo", "gocardless", "cloudflare", "stripe",
+        "trustpilot", "depop", "onfido", "snyk", "improbable",
+        "thetrainline", "moonpig", "secretescapes", "bulb",
+        "marshmallow", "zego", "tide", "cleo",
     ],
     "lever": [
-        "plaid", "netflix", "palantir",
+        "plaid", "netflix", "palantir", "brewdog", "elvie",
     ],
     "ashby": [
-        "posthog", "linear", "ramp",
+        "posthog", "linear", "ramp", "synthesia", "pleo",
     ],
     "workable": [
-        # add on demand
+        # UK charities / NGOs / mid-size orgs commonly use Workable.
+        "comicrelief", "shelter", "scope", "mind",
     ],
 }
 
