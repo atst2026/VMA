@@ -228,6 +228,28 @@ def upsert(ranked_stacks: list[tuple[Stack, float]]) -> dict:
 
 _SENTINEL_FAILOPEN = "\x00__failopen__"
 
+# Poisoned-aggregate guard. A pre-fix bug let hundreds of unrelated
+# Google-News items collapse onto one watchlist name ("Google ×9
+# +340"). The source fixes stop NEW such stacks, but _regate can't
+# evict the EXISTING one: it concatenates every event's evidence into
+# one blob, and across 340 headlines the token ("google") inevitably
+# appears, so the blob keeps resolving and the entry is never purged
+# (and re-merges every run, staying "fresh"). No legitimate single
+# UK-comms company accumulates anywhere near this many distinct trigger
+# headlines in the 90-day window — the largest genuine stacks observed
+# are ~9 events ("+8 more"). A count this high is, by construction, a
+# poisoned aggregate. Cap is set ~4-5x the largest legitimate stack so
+# it cannot nuke a heavily-covered real company; and if an edge case
+# ever did exceed it, the next brief rebuilds a correctly-sized stack
+# from fresh signals (the fixes ensure clean aggregation now), so the
+# worst case self-heals within one run with nothing false shown.
+MAX_EVENTS_PER_ENTRY = 40
+
+
+def _is_poisoned_aggregate(entry: dict) -> bool:
+    evs = entry.get("events")
+    return isinstance(evs, list) and len(evs) > MAX_EVENTS_PER_ENTRY
+
 
 def _regate(entry: dict) -> str | None:
     """Re-validate a persisted predictor against the CURRENT account gate
@@ -286,6 +308,10 @@ def purge_off_watchlist(pipeline: dict) -> int:
             continue
         if pid not in predictors:
             continue  # already merged away by a prior iteration
+        if _is_poisoned_aggregate(entry):
+            del predictors[pid]
+            removed += 1
+            continue
         resolved = _regate(entry)
         if resolved is None:
             del predictors[pid]
@@ -387,6 +413,8 @@ def all_predictors() -> list[dict]:
         if p.get("status") == "followed_up":
             kept.append(p)
             continue
+        if _is_poisoned_aggregate(p):
+            continue  # poisoned aggregate — hide (purged on next brief)
         resolved = _regate(p)
         if resolved is None:
             continue  # off-watchlist — hide
