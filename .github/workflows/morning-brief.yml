@@ -131,6 +131,9 @@ jobs:
             tool/state/latest_brief.txt
             tool/state/latest_signals.json
             tool/state/latest_predictive.json
+            tool/state/latest_following.json
+            tool/state/latest_pulses.json
+            tool/state/latest_water_sar.json
             tool/state/predictor_pipeline.json
             tool/state/predictive_jobs.json
           if-no-files-found: warn

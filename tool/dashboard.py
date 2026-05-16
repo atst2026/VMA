@@ -776,6 +776,41 @@ def api_competitor_mandates():
                     "min_age_days": min_age, "per_source": min_age is None})
 
 
+@app.route("/api/following", methods=["GET"])
+@_auth_required
+def api_following():
+    """Mandates Worth Following — vacated-seat / backfill detector. A
+    senior comms person publicly moved; the seat they left at a
+    watchlist company is the live brief."""
+    from tool.following import load_following
+    rows = load_following(limit=40)
+    return jsonify({"rows": rows, "total": len(rows)})
+
+
+@app.route("/api/pulses", methods=["GET"])
+@_auth_required
+def api_pulses():
+    """Calendar Pulses — deterministic, date-driven placement windows.
+    Computed live (days_left changes daily): a statute/regulator date
+    forces a comms-capacity build-up in a named watchlist cohort; get
+    the retained brief before it's advertised."""
+    from tool.calendar_pulses import load_pulses
+    rows = load_pulses(limit=10)
+    return jsonify({"rows": rows, "total": len(rows)})
+
+
+@app.route("/api/water-sar", methods=["GET"])
+@_auth_required
+def api_water_sar():
+    """Water Special-Administration Watch — SAR / financial-resilience
+    events at England & Wales regulated water companies. Highest-value
+    single comms event in UK utilities; the resilience run-up is visible
+    weeks before the appointment news everyone else reacts to."""
+    from tool.water_sar import load_water_sar
+    rows = load_water_sar(limit=20)
+    return jsonify({"rows": rows, "total": len(rows)})
+
+
 TEMPLATE = r"""
 <!doctype html>
 <html lang="en">
@@ -1859,6 +1894,54 @@ TEMPLATE = r"""
 
   </div>
 
+  <!-- DETERMINISTIC, DATE-DRIVEN PLACEMENT WINDOWS -->
+  <div class="row row-full">
+
+    <!-- CALENDAR PULSES -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Calendar Pulses</h2>
+        <span class="count" id="pulses-count">—</span>
+      </div>
+      <div class="panel-body" id="pulses-body">
+        <div class="empty compact">Loading…</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- WATER SPECIAL-ADMINISTRATION WATCH (highest-value utilities event) -->
+  <div class="row row-full">
+
+    <!-- WATER SAR WATCH -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Water Special-Administration Watch</h2>
+        <span class="count" id="watersar-count">—</span>
+      </div>
+      <div class="panel-body" id="watersar-body">
+        <div class="empty compact">Loading…</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- VACATED-SEAT BACKFILL DETECTOR (highest-yield missing feature) -->
+  <div class="row row-full">
+
+    <!-- MANDATES WORTH FOLLOWING -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Mandates Worth Following</h2>
+        <span class="count" id="following-count">—</span>
+      </div>
+      <div class="panel-body" id="following-body">
+        <div class="empty compact">Loading…</div>
+      </div>
+    </div>
+
+  </div>
+
   <!-- DEMAND-CREATION INTEL (dead-market: steal-this-mandate) -->
   <div class="row row-full">
 
@@ -2271,6 +2354,143 @@ async function loadMandates() {
   }
 }
 
+// ---------- Calendar Pulses (deterministic placement windows) ----------
+async function loadPulses() {
+  const body = document.getElementById('pulses-body');
+  const count = document.getElementById('pulses-count');
+  try {
+    const r = await fetch('/api/pulses');
+    const j = await r.json();
+    count.textContent = j.total;
+    if (!j.rows || j.rows.length === 0) {
+      body.innerHTML = '<div class="empty compact">No placement window open today. ' +
+        'Pulses surface only inside a statutory/regulator run-up (FCA Consumer Duty ' +
+        'board-report ramp, UK SRS first-cycle build-up, post-Spending-Review ' +
+        'machinery-of-government reshuffle) — by design they go quiet outside those ' +
+        'dated windows rather than show stale noise.</div>';
+      return;
+    }
+    const out = ['<ul style="margin:6px 0;padding:0;list-style:none;">'];
+    for (const p of j.rows) {
+      const conf = (p.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
+      const targets = (p.targets || []).map(t =>
+        '<span class="hook-badge generic_fit" style="margin:2px 4px 2px 0;display:inline-block;">' +
+        esc(t) + '</span>').join('');
+      out.push(
+        '<li style="padding:10px 0;border-bottom:1px solid var(--border);">' +
+          '<span class="' + conf + '">' + esc(p.confidence || '') + '</span> ' +
+          '<strong style="color:var(--text);">' + esc(p.name || '') + '</strong>' +
+          ' &middot; <span style="color:var(--text-muted);font-size:12px;">' +
+            esc(p.window || '') +
+            (typeof p.days_left === 'number'
+              ? ' &middot; ' + esc(String(p.days_left)) + ' days left in window' : '') +
+          '</span>' +
+          '<div style="color:var(--text);font-size:13px;margin-top:4px;">' +
+            esc(p.seat || '') + '</div>' +
+          '<div style="color:var(--text-muted);font-size:12px;margin-top:3px;">' +
+            esc(p.angle || '') + '</div>' +
+          (targets
+            ? '<div style="margin-top:6px;">' + targets + '</div>' : '') +
+          '<div style="color:var(--text-muted);font-size:11px;margin-top:5px;">' +
+            esc(p.scope_note || '') +
+            (p.source ? ' &middot; ' + esc(p.source) : '') +
+          '</div>' +
+        '</li>'
+      );
+    }
+    out.push('</ul>');
+    body.innerHTML = out.join('');
+  } catch (e) {
+    body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
+  }
+}
+
+// ---------- Water Special-Administration Watch ----------
+async function loadWaterSar() {
+  const body = document.getElementById('watersar-body');
+  const count = document.getElementById('watersar-count');
+  try {
+    const r = await fetch('/api/water-sar');
+    const j = await r.json();
+    count.textContent = j.total;
+    if (!j.rows || j.rows.length === 0) {
+      body.innerHTML = '<div class="empty compact">No SAR or financial-resilience ' +
+        'signal at an England &amp; Wales water company right now. This fires when ' +
+        'a named regulated water company hits the special-administration path ' +
+        '(order applied for / administrator appointed) or shows resilience stress ' +
+        '(Ofwat action, sub-IG downgrade, going-concern doubt, failed equity raise) ' +
+        '— the resilience run-up is visible weeks before the appointment news.</div>';
+      return;
+    }
+    const out = ['<ul style="margin:6px 0;padding:0;list-style:none;">'];
+    for (const w of j.rows.slice(0, 16)) {
+      const live = (w.stage === 'SAR live / imminent');
+      const stageBadge = live ? 'mandate-age' : 'hook-badge generic_fit';
+      const confBadge = (w.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
+      out.push(
+        '<li style="padding:9px 0;border-bottom:1px solid var(--border);">' +
+          '<span class="' + stageBadge + '">' + esc(w.stage || '') + '</span> ' +
+          '<span class="' + confBadge + '">' + esc(w.confidence || '') + '</span> ' +
+          '<strong style="color:var(--text);">' + esc(w.company || '(unknown)') + '</strong>' +
+          '<div style="color:var(--text);font-size:12px;margin-top:3px;">' +
+            esc(w.who_to_call || '') + '</div>' +
+          '<div style="color:var(--text-muted);font-size:12px;margin-top:3px;">' +
+            (w.url
+              ? '<a href="' + safeUrl(w.url) + '" target="_blank" rel="noopener noreferrer" style="color:#0366d6;">' + esc(w.evidence || 'source') + '</a>'
+              : esc(w.evidence || '')) +
+            (w.source ? ' &middot; ' + esc(w.source) : '') +
+          '</div>' +
+        '</li>'
+      );
+    }
+    out.push('</ul>');
+    body.innerHTML = out.join('');
+  } catch (e) {
+    body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
+  }
+}
+
+// ---------- Mandates Worth Following (vacated-seat detector) ----------
+async function loadFollowing() {
+  const body = document.getElementById('following-body');
+  const count = document.getElementById('following-count');
+  try {
+    const r = await fetch('/api/following');
+    const j = await r.json();
+    count.textContent = j.total;
+    if (!j.rows || j.rows.length === 0) {
+      body.innerHTML = '<div class="empty compact">No vacated senior-comms seats detected yet. ' +
+        'This fires when a senior comms person is publicly announced moving (RNS / trade press) ' +
+        'and the employer they left is on the watchlist — that seat is the live brief. ' +
+        'Strong for board-level/listed names; the unlisted long tail is covered by Today’s Leads ' +
+        'and the Companies House officer scan.</div>';
+      return;
+    }
+    const out = ['<ul style="margin:6px 0;padding:0;list-style:none;">'];
+    for (const f of j.rows.slice(0, 14)) {
+      const conf = (f.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
+      out.push(
+        '<li style="padding:8px 0;border-bottom:1px solid var(--border);">' +
+          '<span class="' + conf + '">' + esc(f.confidence || '') + '</span> ' +
+          '<strong style="color:var(--text);">' + esc(f.company || '(unknown)') + '</strong>' +
+          ' &middot; <span style="color:var(--text);">' + esc(f.vacated_role || 'senior comms seat') + '</span>' +
+          '<span style="color:var(--text-muted);font-size:12px;display:block;margin-top:2px;">' +
+            (f.url
+              ? '<a href="' + safeUrl(f.url) + '" target="_blank" rel="noopener noreferrer" style="color:#0366d6;">' + esc(f.evidence || 'source') + '</a>'
+              : esc(f.evidence || '')) +
+            (f.source ? ' &middot; ' + esc(f.source) : '') +
+            (f.sector ? ' &middot; ' + esc(f.sector) : '') +
+          '</span>' +
+        '</li>'
+      );
+    }
+    out.push('</ul>');
+    body.innerHTML = out.join('');
+  } catch (e) {
+    body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
+  }
+}
+
 // ---------- MPC Outreach Factory ----------
 async function runMPC(event) {
   event.preventDefault();
@@ -2457,6 +2677,9 @@ async function devTriggerBrief() {
 
 // Auto-load the intel panels on page ready.
 document.addEventListener('DOMContentLoaded', () => {
+  loadPulses();
+  loadWaterSar();
+  loadFollowing();
   loadMandates();
   loadWatchList();
 });
