@@ -96,6 +96,25 @@ _BACKGROUND_PREFIX_RX = re.compile(
 )
 
 
+# PE/VC backer suppressor. "Bridgepoint-backed NMi Group to acquire
+# TechnoLab" mis-attributes an M&A predictor to the watchlist PE firm
+# (Bridgepoint/Blackstone/Carlyle/KKR…) when the deal is its portfolio
+# company's bolt-on. Operate on the ORIGINAL text (pre-_norm) so the
+# HYPHEN survives: "X-backed" (financial-backer adjective) is
+# unambiguous and distinct from the verb "X backed the bid" (space) —
+# the hyphen is what makes this safe. Deliberately ONLY "-backed" (+
+# "X portfolio company"), NOT "-owned"/"-controlled": those frequently
+# denote a corporate PARENT that IS the comms-relevant subject (e.g.
+# "Unilever-owned brand recalled"), and suppressing those would lose
+# real signal. Scrubbed to a space BEFORE the watchlist scan so neither
+# the distinctive nor the acronym path can resolve to the backer.
+_BACKER_COMPOUND_RX = re.compile(
+    r"\b[A-Za-z][\w.&]*-backed\b"
+    r"|\b[A-Z][\w.&]+(?:\s+[A-Z][\w.&]+){0,3}\s+portfolio\s+"
+    r"(?:company|business|firm)\b"
+)
+
+
 def _has_bare_occurrence(pat: re.Pattern, text: str) -> bool:
     """True if `pat` matches at least once as a genuine SUBJECT mention —
     i.e. not immediately followed by a foreign-country qualifier
@@ -209,6 +228,9 @@ def resolve_account(company: str | None, *texts: str) -> str | None:
         return (company or None)  # fail open
 
     original = " ".join(t for t in texts if t)
+    # Strip "<X>-backed" / "<X> portfolio company" BEFORE the watchlist
+    # scan so a PE backer can't be mis-read as the deal's subject.
+    original = _BACKER_COMPOUND_RX.sub(" ", original)
     norm_text = _norm(original)
 
     if norm_text:
