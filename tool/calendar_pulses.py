@@ -115,6 +115,74 @@ PULSES: list[dict] = [
                   "departmental delivery-plan / reorganisation cycle, "
                   "FY2026/27.",
     },
+    {
+        "key": "agm_reporting_2026",
+        "name": "UK annual-report & AGM season",
+        "window": ("2026-02-01", "2026-06-30"),
+        "legal_date": "Dec-year-end reporting + AGM cycle, 2026",
+        "sectors": ["financial_services", "energy_utilities",
+                    "industrial_manufacturing", "pharma_healthcare"],
+        "seat": "Head of Investor Relations / Corporate-Reporting & "
+                "Governance Communications",
+        "angle": "Dec-year-end issuers publish annual reports Feb–Apr and "
+                 "run AGMs Apr–Jun; the run-up is a repeatable retained-"
+                 "search window for the permanent IR/corporate-reporting "
+                 "comms seat — pitch before the crunch.",
+        "scope_note": "FTSE-weight Dec-year-end UK-listed issuers "
+                      "(financials, energy/utilities, industrials, pharma).",
+        "confidence": "high",
+        "source": "Companies Act annual-report + Listing Rules AGM cycle "
+                  "(December year-ends), 2026.",
+    },
+    {
+        "key": "gender_pay_gap_2026",
+        "name": "Gender Pay Gap — reporting & scrutiny window",
+        "window": ("2026-03-01", "2026-06-30"),
+        "legal_date": "2026-04-04 (private) / 2026-03-30 (public)",
+        "sectors": ["financial_services", "public_sector_charities",
+                    "retail_consumer"],
+        "seat": "Head of Internal / DEI Communications "
+                "(gender-pay narrative + scrutiny response)",
+        "angle": "Statutory GPG reports land Mar–Apr; the publication & "
+                 "media-scrutiny window is a repeatable retained-search "
+                 "window for the permanent internal/DEI-comms seat.",
+        "scope_note": "UK employers with 250+ staff (statutory GPG "
+                      "reporters).",
+        "confidence": "high",
+        "source": "Equality Act 2010 (Gender Pay Gap Information) "
+                  "Regulations 2017 — annual 4 Apr / 30 Mar deadlines.",
+    },
+    {
+        "key": "nhs_planning_2026",
+        "name": "NHS operational-planning & restructure round",
+        "window": ("2026-01-01", "2026-05-31"),
+        "legal_date": "NHS England 2026/27 operational planning + Apr FY",
+        "sectors": ["public_sector_charities"],
+        "seat": "Director of Communications — NHS transition & "
+                "change communications",
+        "angle": "NHS planning guidance + ICB/trust restructures cluster "
+                 "Q1 into the new financial year; comms-leadership and "
+                 "change-comms briefs open before the recruitment cycle.",
+        "scope_note": "NHS trusts, ICBs and arm's-length bodies.",
+        "confidence": "medium",
+        "source": "NHS England operational planning guidance + FY2026/27 "
+                  "cycle.",
+    },
+    {
+        "key": "he_clearing_2026",
+        "name": "Higher-Education clearing & new-intake comms",
+        "window": ("2026-06-15", "2026-09-30"),
+        "legal_date": "UCAS Clearing Jul–Aug; academic year starts Sep 2026",
+        "sectors": ["public_sector_charities"],
+        "seat": "Head of Communications / Student Recruitment & "
+                "Marketing Communications",
+        "angle": "Clearing + new-intake drive a predictable HE comms & "
+                 "marketing capacity surge; secure the retained brief "
+                 "before the summer scramble.",
+        "scope_note": "UK universities and higher-education providers.",
+        "confidence": "medium",
+        "source": "UCAS Clearing cycle + academic year 2026/27.",
+    },
 ]
 
 
