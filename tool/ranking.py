@@ -147,6 +147,20 @@ def _freshness(published: str) -> float:
 
 _COMPANY_EXCLUDE_LC = tuple(c.lower() for c in COMPANY_EXCLUDE)
 
+# Generic recruitment-agency name detector. Agency-posted ads hide the
+# real client and are another recruiter's mandate — off-product for an
+# exec-search firm and noise in Sara's top-5. High-precision, word-
+# boundary tokens only (NOT bare "search"/"talent" — those false-trip
+# on "Research"/product names; brand-name agencies like EquiTalent are
+# handled via the curated COMPANY_EXCLUDE list instead).
+_AGENCY_NAME_RX = re.compile(
+    r"\b(?:recruitment|recruiters?|recruiting|resourcing|staffing|"
+    r"headhunters?|headhunting|executive search|"
+    r"search (?:&|and) selection|"
+    r"talent (?:acquisition|solutions|partners|associates|group))\b",
+    re.IGNORECASE,
+)
+
 
 def score(signal: dict) -> float:
     title = signal.get("title") or ""
@@ -157,6 +171,9 @@ def score(signal: dict) -> float:
     for excluded in _COMPANY_EXCLUDE_LC:
         if excluded and excluded in company:
             return 0.0
+    # Recruitment-agency posting (hidden client, competitor mandate).
+    if company and _AGENCY_NAME_RX.search(company):
+        return 0.0
     # Hard exclusion: agency/sales client-service roles are out regardless of
     # what else matches. Word-boundary matched to avoid clobbering legit
     # in-house titles that happen to share a word.
