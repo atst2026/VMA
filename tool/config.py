@@ -185,6 +185,10 @@ OBJECTION_PLAYBOOK = [
     {
         "pattern": r"(?:\b(?:fee|commission|percentage|percent)\b|\d{1,2}\s*%).{0,60}\b(?:too high|negotiate|reduce|lower|push back|come down|drop|cut)\b|\b(?:reduce|lower|push back|come down|drop|cut)\b.{0,60}(?:\b(?:fee|commission|percentage|percent)\b|\d{1,2}\s*%)",
         "label":   "Client pushing back on fee",
+        "keywords": ["fee", "fees", "rate", "%", "percent", "percentage",
+                     "commission", "expensive", "pricey", "costly",
+                     "too much", "discount", "cheaper", "come down",
+                     "knock off", "margin", "price", "cost too", "haggle"],
         "angles":  [
             "Cost-to-replace defence: VMA's last comms hire at their cap-size segment averaged 7.4 months tenure; their internal-recruiter spend per failed comms hire is ~£28k. The 22% retained fee buys risk-share, not headcount.",
             "Speed-to-shortlist defence: contingent at 18% means they're competing for our consultant time with three other live mandates. Retained at 22% means we run the search exclusively, with named candidate progress every 5 working days.",
@@ -194,6 +198,11 @@ OBJECTION_PLAYBOOK = [
     {
         "pattern": r"\b(?:not sure|still thinking|need to think|undecided|weighing|exploring options|in two minds)\b",
         "label":   "Candidate hesitation ('I'm not sure')",
+        "keywords": ["not sure", "thinking", "think about it", "unsure",
+                     "hesitant", "cold feet", "second thought",
+                     "undecided", "weighing", "sleep on it",
+                     "get back to", "dragging their feet", "wavering",
+                     "on the fence", "gone cold", "lukewarm", "wobbling"],
         "angles":  [
             "Surface the real objection: 'I'm not sure' is usually one of three things — comp not enough to move, scope unclear, or counter-offer fear. Ask which, don't assume.",
             "Reframe the risk: at this point in market a passive candidate stays in role 18+ more months on average. The cost of declining is rarely zero — what's the cost of staying?",
@@ -203,6 +212,12 @@ OBJECTION_PLAYBOOK = [
     {
         "pattern": r"\b(?:counter[\s-]?offer|counter offered|matched my salary|matched the offer|stay)\b",
         "label":   "Candidate received a counter-offer",
+        "keywords": ["counter", "counter-offer", "counteroffer",
+                     "counter offer", "matched", "match the",
+                     "staying put", "stay put", "retention",
+                     "talked them", "persuaded to stay", "boss offered",
+                     "employer offered", "offer to keep", "kept them",
+                     "made them an offer", "talked round"],
         "angles":  [
             "Statistics defence: 80% of candidates who accept counter-offers leave within 12 months anyway (CIPD). The reasons they were looking don't get fixed by money.",
             "Trust defence: their employer just told them what they're really worth, but only because they were about to lose them. That's not a vote of confidence.",
@@ -212,6 +227,12 @@ OBJECTION_PLAYBOOK = [
     {
         "pattern": r"\b(?:budget|sign[\s-]?off|approval)\b.{0,50}\b(?:delayed|hold|pause|frozen|cancelled)\b",
         "label":   "Brief stalled on internal sign-off",
+        "keywords": ["sign off", "sign-off", "signoff", "approval",
+                     "on hold", "paused", "freeze", "frozen", "stalled",
+                     "gone quiet", "no decision", "waiting on",
+                     "internal", "slipped", "delayed", "dragging",
+                     "no response", "sat with hr", "no movement",
+                     "stuck with", "not heard back", "chasing"],
         "angles":  [
             "Audit the stall: name the specific person who needs to sign off and the specific question that hasn't been answered. 'Stalled' is usually one decision, not a brief problem.",
             "Offer a partial commitment: 'happy to do an exploratory longlist while you finalise — no fee until brief confirmed'. Buys 2-3 weeks of warmth without commercial risk.",
@@ -221,6 +242,11 @@ OBJECTION_PLAYBOOK = [
     {
         "pattern": r"\b(?:already\s+)?(?:using|working with|engaged with|have|has|got|with)\b.{0,30}\b(?:another|other|different)\s+(?:agency|firm|search|recruiter|partner)\b",
         "label":   "Client already using another search firm",
+        "keywords": ["another agency", "other agency", "different agency",
+                     "another recruiter", "other recruiter", "another firm",
+                     "other firm", "already using", "multiple agenc",
+                     "psl", "incumbent", "also briefed", "gone to others",
+                     "competing", "already have someone", "exclusive with"],
         "angles":  [
             "Compete on niche: VMA's comms-only specialism vs generalist exec search means we maintain a deeper bench in the function. Ask: 'how many comms-only retained briefs does your current partner run per year?'",
             "Offer a stalking horse: 'happy to run a confidential shadow shortlist at no upfront cost — if our 3 candidates beat theirs you switch, if not you've lost nothing'. Bold, but works in dead markets.",
@@ -230,6 +256,11 @@ OBJECTION_PLAYBOOK = [
     {
         "pattern": r"\b(?:remote|hybrid|days in (?:the )?office|return to office|RTO|in[\s-]?person)\b",
         "label":   "Remote / hybrid friction",
+        "keywords": ["remote", "hybrid", "office", "days in", "rto",
+                     "return to office", "in person", "in-person",
+                     "on site", "onsite", "on-site", "relocat",
+                     "location", "commute", "wfh", "work from home",
+                     "back to the office", "5 days a week"],
         "angles":  [
             "Reset to outcomes: 'what does the role actually need in-person? Leadership presence is one answer, butt-in-seat is another'. Many CCOs over-spec days because policy is set above them.",
             "Reframe the candidate constraint: top comms talent has options. A '4-day in office' requirement at this seniority shrinks the pool by ~60% in our latest VMA bench data — flag the trade-off explicitly.",
@@ -239,6 +270,12 @@ OBJECTION_PLAYBOOK = [
     {
         "pattern": r"\b(?:salary|comp|package|offer)\b.{0,40}\b(?:below|under|less than|short|gap)\b",
         "label":   "Comp gap between client offer and candidate ask",
+        "keywords": ["salary", "comp", "package", "money", "below",
+                     "under", "short", "gap", "lowball", "low offer",
+                     "not enough", "won't stretch", "can't match",
+                     "can't afford", "budget won't", "asking for more",
+                     "wants more", "out of range", "more than we",
+                     "rejected the offer", "turned down the offer"],
         "angles":  [
             "Reverse the question: 'what's the cost of restart-the-search?' Typically 8-12 weeks + £8-15k internal-team time + lost momentum. £10k bump usually under-prices that.",
             "Reframe the £10k: 'over a 3-year tenure that's £278/month — what's the brand cost of a 6-month vacancy in comms right now?'",

@@ -64,6 +64,38 @@ def coach(situation: str, top_n: int = 2) -> list[ObjectionResponse]:
         ))
 
     if not out:
+        # Strict regexes missed. Fall back to keyword/intent scoring so
+        # natural phrasings of the SAME 7 situations still resolve
+        # ("they think we're expensive" → fee pushback) without an LLM.
+        # A multi-word phrase hit, or >=2 distinct keyword hits, is
+        # enough; a single short generic token ("offer", "cost") is not.
+        scored: list[tuple[int, float, ObjectionResponse]] = []
+        for entry in OBJECTION_PLAYBOOK:
+            if not isinstance(entry, dict):
+                continue
+            label = entry.get("label")
+            angles = entry.get("angles") or []
+            kws = entry.get("keywords") or []
+            if not label or not angles or not kws:
+                continue
+            hit_terms = [k for k in kws if isinstance(k, str) and k and k in text]
+            if not hit_terms:
+                continue
+            strong = any((" " in k or "-" in k or len(k) >= 6) for k in hit_terms)
+            if len(hit_terms) < 2 and not strong:
+                continue
+            # Fuzzy confidence, deliberately capped below strict-regex
+            # matches so the UI signals it's an inferred match.
+            conf = round(min(0.6, 0.25 + 0.12 * len(hit_terms)), 2)
+            scored.append((len(hit_terms), conf,
+                           ObjectionResponse(matched_situation=label,
+                                             angles=list(angles),
+                                             match_confidence=conf)))
+        if scored:
+            scored.sort(key=lambda t: (t[0], t[1]), reverse=True)
+            return [r for _, _, r in scored][:top_n]
+
+    if not out:
         return [ObjectionResponse(
             matched_situation="No exact match in playbook",
             angles=[
