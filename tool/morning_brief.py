@@ -383,6 +383,21 @@ def main() -> int:
     except Exception as e:
         log.info("contract-end detector failed: %s", e)
 
+    # Funding-Round detector — the pre-hire window at scaling private
+    # firms (>=£20m growth round -> ~6-month senior-comms-hire lag).
+    # Runs over the RAW signals (GDELT news graph + trade press already
+    # scoured). Distinct population from the IPO_LISTING predictor.
+    try:
+        from tool import funding_round as _fund
+        funding_feed = _fund.detect_funding(signals)
+        (STATE_DIR / "latest_funding.json").write_text(
+            json.dumps(funding_feed, indent=2, default=str)
+        )
+        log.info("Funding-Round: %d record(s) from %d raw signals",
+                 len(funding_feed), len(signals))
+    except Exception as e:
+        log.info("funding-round detector failed: %s", e)
+
     # Update competitor-mandate tracker so the dashboard's "Mandates
     # Worth Stealing" panel sees fresh first-seen / last-seen dates.
     try:
