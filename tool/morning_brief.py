@@ -367,6 +367,22 @@ def main() -> int:
     except Exception as e:
         log.info("water SAR watch failed: %s", e)
 
+    # Contract-End / Re-Tender Window — proactive leading indicator
+    # (complements, does NOT duplicate, the reactive CONTRACT_LOSS
+    # predictor). Runs over the RAW signals (Find a Tender RSS / RNS /
+    # GDELT / trade press already scoured); only emits when the affected
+    # employer resolves to a watchlist account.
+    try:
+        from tool import contract_end as _cend
+        contract_feed = _cend.detect_contract_end(signals)
+        (STATE_DIR / "latest_contract_end.json").write_text(
+            json.dumps(contract_feed, indent=2, default=str)
+        )
+        log.info("Contract-End Window: %d record(s) from %d raw signals",
+                 len(contract_feed), len(signals))
+    except Exception as e:
+        log.info("contract-end detector failed: %s", e)
+
     # Update competitor-mandate tracker so the dashboard's "Mandates
     # Worth Stealing" panel sees fresh first-seen / last-seen dates.
     try:
