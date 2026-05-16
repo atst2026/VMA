@@ -179,4 +179,29 @@ jobs:
           entries (verified_at -> 365d ago, forcing freshness check to fail);
           appointment events populate empty/stale slots only. Fresh entries
           are never overwritten."
-          git push origin HEAD:main
+
+          # `main` can advance DURING the run (e.g. a PR merged mid-brief),
+          # which makes a bare `git push` rejected ("fetch first") and
+          # reds the whole workflow even though the brief itself + its
+          # artifact already succeeded. This step is pure housekeeping, so
+          # rebase our single hiring_contacts.json commit onto the latest
+          # origin/main and retry. That file never conflicts with code
+          # merges (different file); if a rebase ever does conflict we
+          # abort and skip rather than fail the job. The earlier size-
+          # guard exit 1 is the ONLY hard failure path (real corruption).
+          for attempt in 1 2 3; do
+            if git fetch origin main \
+               && git rebase origin/main \
+               && git push origin HEAD:main; then
+              echo "auto-commit pushed (attempt ${attempt})."
+              exit 0
+            fi
+            echo "push attempt ${attempt} rejected (main moved?) — re-syncing…"
+            git rebase --abort 2>/dev/null || true
+            sleep $((attempt * 3))
+          done
+          echo "auto-commit could not be pushed after 3 attempts; skipping."
+          echo "Non-fatal: the brief ran and its artifact uploaded — only"
+          echo "the hiring_contacts housekeeping commit was dropped. It"
+          echo "will be retried on the next run."
+          exit 0
