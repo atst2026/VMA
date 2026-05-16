@@ -1597,6 +1597,11 @@ TEMPLATE = r"""
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 16px;
+      /* Size each card to its own content. Without this, grid's default
+         align-items:stretch makes Candidate Watch + Pitch Pack stretch
+         to the tall 5-field MPC card sharing their row, so they looked
+         bigger than Reverse Match / Pre-meeting / 14-Day. */
+      align-items: start;
     }
     @media (max-width: 1000px) { .actions { grid-template-columns: 1fr; } }
 
