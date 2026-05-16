@@ -1233,6 +1233,23 @@ TEMPLATE = r"""
       border-radius: 3px;
     }
 
+    /* Specialist Signals — four low-frequency detectors collapsed into
+       one panel that renders ONLY when a sub-detector has results, so
+       the dashboard never advertises empty panels (the empty-panel
+       state trains the user to stop checking). Detector logic + the
+       /api endpoints are unchanged; this is pure presentation. */
+    .specialist-sub { margin: 0 0 18px; }
+    .specialist-sub:last-child { margin-bottom: 0; }
+    .specialist-h {
+      margin: 0 0 6px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--text);
+      border-bottom: 1px solid var(--navy-hairline);
+      padding-bottom: 4px;
+    }
+
     /* PREDICTORS */
     .predictor .stack-label {
       display: inline-block;
@@ -1953,37 +1970,10 @@ TEMPLATE = r"""
 
   </div>
 
-  <!-- WATER SPECIAL-ADMINISTRATION WATCH (highest-value utilities event) -->
-  <div class="row row-full">
-
-    <!-- WATER SAR WATCH -->
-    <div class="panel">
-      <div class="panel-header">
-        <h2>Water Special-Administration Watch</h2>
-        <span class="count" id="watersar-count">—</span>
-      </div>
-      <div class="panel-body" id="watersar-body">
-        <div class="empty compact">Loading…</div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- CONTRACT-END / RE-TENDER WINDOW (proactive leading indicator) -->
-  <div class="row row-full">
-
-    <!-- CONTRACT-END WINDOW -->
-    <div class="panel">
-      <div class="panel-header">
-        <h2>Contract-End / Re-Tender Window</h2>
-        <span class="count" id="contractend-count">—</span>
-      </div>
-      <div class="panel-body" id="contractend-body">
-        <div class="empty compact">Loading…</div>
-      </div>
-    </div>
-
-  </div>
+  <!-- Water SAR + Contract-End moved into the consolidated Specialist
+       Signals panel below (with Mandates Worth Following / Stealing).
+       Calendar Pulses + Funding-Round stay standalone because they
+       reliably fire; the four rare detectors do not. -->
 
   <!-- FUNDING-ROUND PRE-HIRE WINDOW (>=£20m -> ~6-month comms hire) -->
   <div class="row row-full">
@@ -2001,36 +1991,41 @@ TEMPLATE = r"""
 
   </div>
 
-  <!-- VACATED-SEAT BACKFILL DETECTOR (highest-yield missing feature) -->
-  <div class="row row-full">
-
-    <!-- MANDATES WORTH FOLLOWING -->
+  <!-- SPECIALIST SIGNALS — Mandates Worth Following / Water SAR /
+       Contract-End / Mandates Worth Stealing, collapsed into one panel
+       that is HIDDEN unless a sub-detector actually has rows. Each
+       sub-section also hides itself when empty. Detectors + /api
+       endpoints unchanged; pure presentation. -->
+  <div class="row row-full" id="specialist-row" style="display:none">
     <div class="panel">
       <div class="panel-header">
-        <h2>Mandates Worth Following</h2>
-        <span class="count" id="following-count">—</span>
+        <h2>Specialist Signals</h2>
+        <span class="count" id="specialist-count">—</span>
       </div>
-      <div class="panel-body" id="following-body">
-        <div class="empty compact">Loading…</div>
+      <div class="panel-body" id="specialist-body">
+
+        <div class="specialist-sub" id="sub-following" style="display:none">
+          <h3 class="specialist-h">Mandates Worth Following</h3>
+          <div id="following-body"></div>
+        </div>
+
+        <div class="specialist-sub" id="sub-watersar" style="display:none">
+          <h3 class="specialist-h">Water Special-Administration Watch</h3>
+          <div id="watersar-body"></div>
+        </div>
+
+        <div class="specialist-sub" id="sub-contractend" style="display:none">
+          <h3 class="specialist-h">Contract-End / Re-Tender Window</h3>
+          <div id="contractend-body"></div>
+        </div>
+
+        <div class="specialist-sub" id="sub-mandates" style="display:none">
+          <h3 class="specialist-h">Mandates Worth Stealing</h3>
+          <div id="mandates-body"></div>
+        </div>
+
       </div>
     </div>
-
-  </div>
-
-  <!-- DEMAND-CREATION INTEL (dead-market: steal-this-mandate) -->
-  <div class="row row-full">
-
-    <!-- COMPETITOR MANDATES -->
-    <div class="panel">
-      <div class="panel-header">
-        <h2>Mandates Worth Stealing</h2>
-        <span class="count" id="mandates-count">—</span>
-      </div>
-      <div class="panel-body" id="mandates-body">
-        <div class="empty compact">Loading…</div>
-      </div>
-    </div>
-
   </div>
 
   <!-- ACTION BOXES -->
@@ -2395,20 +2390,14 @@ function safeUrl(u) {
 // ---------- Mandates Worth Stealing ----------
 async function loadMandates() {
   const body = document.getElementById('mandates-body');
-  const count = document.getElementById('mandates-count');
+  const sub = document.getElementById('sub-mandates');
   try {
     const r = await fetch('/api/competitor-mandates');
     const j = await r.json();
-    count.textContent = j.total;
-    if (!j.rows || j.rows.length === 0) {
-      body.innerHTML = '<div class="empty compact">No comms ads past their stale threshold ' +
-        '(60d aggregators · 100d public sector · 50d direct ATS). The tracker builds up over ' +
-        'multiple morning-brief runs — ads must be seen across consecutive runs before they ' +
-        'qualify as &ldquo;stale&rdquo;.</div>';
-      return;
-    }
+    const rows = (j && j.rows) || [];
+    if (!rows.length) { sub.style.display = 'none'; return 0; }
     const out = ['<ul style="margin:6px 0;padding:0;list-style:none;">'];
-    for (const m of j.rows.slice(0, 12)) {
+    for (const m of rows.slice(0, 12)) {
       out.push(
         '<li style="padding:8px 0;border-bottom:1px solid var(--border);">' +
           '<span class="mandate-age">' + esc(m.days_live) + 'd</span> ' +
@@ -2424,8 +2413,11 @@ async function loadMandates() {
     }
     out.push('</ul>');
     body.innerHTML = out.join('');
+    sub.style.display = '';
+    return rows.length;
   } catch (e) {
-    body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
+    sub.style.display = 'none';
+    return 0;
   }
 }
 
@@ -2484,22 +2476,14 @@ async function loadPulses() {
 // ---------- Water Special-Administration Watch ----------
 async function loadWaterSar() {
   const body = document.getElementById('watersar-body');
-  const count = document.getElementById('watersar-count');
+  const sub = document.getElementById('sub-watersar');
   try {
     const r = await fetch('/api/water-sar');
     const j = await r.json();
-    count.textContent = j.total;
-    if (!j.rows || j.rows.length === 0) {
-      body.innerHTML = '<div class="empty compact">No SAR or financial-resilience ' +
-        'signal at an England &amp; Wales water company right now. This fires when ' +
-        'a named regulated water company hits the special-administration path ' +
-        '(order applied for / administrator appointed) or shows resilience stress ' +
-        '(Ofwat action, sub-IG downgrade, going-concern doubt, failed equity raise) ' +
-        '— the resilience run-up is visible weeks before the appointment news.</div>';
-      return;
-    }
+    const rows = (j && j.rows) || [];
+    if (!rows.length) { sub.style.display = 'none'; return 0; }
     const out = ['<ul style="margin:6px 0;padding:0;list-style:none;">'];
-    for (const w of j.rows.slice(0, 16)) {
+    for (const w of rows.slice(0, 16)) {
       const live = (w.stage === 'SAR live / imminent');
       const stageBadge = live ? 'mandate-age' : 'hook-badge generic_fit';
       const confBadge = (w.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
@@ -2522,29 +2506,25 @@ async function loadWaterSar() {
     }
     out.push('</ul>');
     body.innerHTML = out.join('');
+    sub.style.display = '';
+    return rows.length;
   } catch (e) {
-    body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
+    sub.style.display = 'none';
+    return 0;
   }
 }
 
 // ---------- Contract-End / Re-Tender Window ----------
 async function loadContractEnd() {
   const body = document.getElementById('contractend-body');
-  const count = document.getElementById('contractend-count');
+  const sub = document.getElementById('sub-contractend');
   try {
     const r = await fetch('/api/contract-end');
     const j = await r.json();
-    count.textContent = j.total;
-    if (!j.rows || j.rows.length === 0) {
-      body.innerHTML = '<div class="empty compact">No contract-end / re-tender window ' +
-        'detected at a watchlist employer yet. This fires PROACTIVELY when a flagship ' +
-        'contract is approaching expiry / recompete / hand-over (Find a Tender, RNS, ' +
-        'trade press) — the change &amp; transition comms review happens in that window, ' +
-        'months before any contract-loss RNS the predictor would catch.</div>';
-      return;
-    }
+    const rows = (j && j.rows) || [];
+    if (!rows.length) { sub.style.display = 'none'; return 0; }
     const out = ['<ul style="margin:6px 0;padding:0;list-style:none;">'];
-    for (const c of j.rows.slice(0, 16)) {
+    for (const c of rows.slice(0, 16)) {
       const conf = (c.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
       out.push(
         '<li style="padding:8px 0;border-bottom:1px solid var(--border);">' +
@@ -2564,8 +2544,11 @@ async function loadContractEnd() {
     }
     out.push('</ul>');
     body.innerHTML = out.join('');
+    sub.style.display = '';
+    return rows.length;
   } catch (e) {
-    body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
+    sub.style.display = 'none';
+    return 0;
   }
 }
 
@@ -2616,21 +2599,14 @@ async function loadFunding() {
 // ---------- Mandates Worth Following (vacated-seat detector) ----------
 async function loadFollowing() {
   const body = document.getElementById('following-body');
-  const count = document.getElementById('following-count');
+  const sub = document.getElementById('sub-following');
   try {
     const r = await fetch('/api/following');
     const j = await r.json();
-    count.textContent = j.total;
-    if (!j.rows || j.rows.length === 0) {
-      body.innerHTML = '<div class="empty compact">No vacated senior-comms seats detected yet. ' +
-        'This fires when a senior comms person is publicly announced moving (RNS / trade press) ' +
-        'and the employer they left is on the watchlist — that seat is the live brief. ' +
-        'Strong for board-level/listed names; the unlisted long tail is covered by Today’s Leads ' +
-        'and the Companies House officer scan.</div>';
-      return;
-    }
+    const rows = (j && j.rows) || [];
+    if (!rows.length) { sub.style.display = 'none'; return 0; }
     const out = ['<ul style="margin:6px 0;padding:0;list-style:none;">'];
-    for (const f of j.rows.slice(0, 14)) {
+    for (const f of rows.slice(0, 14)) {
       const conf = (f.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
       out.push(
         '<li style="padding:8px 0;border-bottom:1px solid var(--border);">' +
@@ -2650,8 +2626,36 @@ async function loadFollowing() {
     }
     out.push('</ul>');
     body.innerHTML = out.join('');
+    sub.style.display = '';
+    return rows.length;
   } catch (e) {
-    body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
+    sub.style.display = 'none';
+    return 0;
+  }
+}
+
+// ---------- Specialist Signals orchestrator ----------
+// Loads the four low-frequency sub-detectors via their unchanged /api
+// endpoints; reveals only the sub-sections that have rows, and the
+// whole panel only if at least one did. All empty -> panel stays
+// hidden (the dashboard never shows an empty Specialist panel).
+async function loadSpecialistSignals() {
+  const row = document.getElementById('specialist-row');
+  const cnt = document.getElementById('specialist-count');
+  let total = 0;
+  try {
+    const counts = await Promise.all([
+      loadFollowing(), loadWaterSar(), loadContractEnd(), loadMandates(),
+    ]);
+    total = counts.reduce((a, b) => a + (b || 0), 0);
+  } catch (e) {
+    total = 0;
+  }
+  if (total > 0) {
+    cnt.textContent = total;
+    row.style.display = '';
+  } else {
+    row.style.display = 'none';
   }
 }
 
@@ -2842,11 +2846,8 @@ async function devTriggerBrief() {
 // Auto-load the intel panels on page ready.
 document.addEventListener('DOMContentLoaded', () => {
   loadPulses();
-  loadWaterSar();
-  loadContractEnd();
   loadFunding();
-  loadFollowing();
-  loadMandates();
+  loadSpecialistSignals();
   loadWatchList();
 });
 </script>
