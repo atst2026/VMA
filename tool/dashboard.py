@@ -243,6 +243,7 @@ def load_latest_signals() -> list[dict]:
     # Enrich each lead with a personalised outreach draft + a targeted
     # LinkedIn search (role-at-company, not just company-wide flood)
     for s in data:
+        s["hiring_manager"] = _lead_hiring_manager(s)
         s["outreach"] = draft_outreach_for_lead(s)
         s["linkedin"] = linkedin_search_for_lead(s)
     return data
@@ -294,8 +295,86 @@ _DEFAULT_OUTREACH = (
 )
 
 
-def draft_outreach_for_lead(_signal: dict) -> str:
-    return _DEFAULT_OUTREACH
+def _display_role(title: str) -> str:
+    """Strip an embedded company / region suffix off a scraped job title
+    so it reads naturally inside a sentence, keeping original casing."""
+    import re as _re
+    t = (title or "").strip()
+    t = _re.split(r"\s+[–—-]\s+", t)[0]
+    t = _re.split(r"\s+at\s+[A-Z]", t)[0]
+    return t.split(",")[0].strip()
+
+
+def _lead_is_job_like(signal: dict) -> bool:
+    kind = (signal.get("kind") or "").strip().lower()
+    if kind == "job":
+        return True
+    # News / appointment / filing kinds keep their existing appointee /
+    # Head-of-Comms routing — the reporting-line rules are for vacancies.
+    if kind in ("rns", "filing", "regulator", "procurement",
+                "trade_press", "leadership_change"):
+        return False
+    title = (signal.get("title") or "").lower()
+    return (
+        any(t in title for t in _JOB_TITLE_TOKENS)
+        and any(t in title for t in ("communications", "comms", "pr ",
+                                      "corporate affairs", "media relations"))
+    )
+
+
+def _lead_hiring_manager(signal: dict) -> dict | None:
+    """Inferred reporting-line manager for a job-like lead, blended with
+    any named roster contact. None for non-job leads (those keep the
+    existing appointee/Head-of-Comms routing)."""
+    if not _lead_is_job_like(signal):
+        return None
+    from tool.hiring_manager import infer_hiring_manager, best_named_contact
+    company = (signal.get("company") or "").strip()
+    inf = infer_hiring_manager(signal.get("title") or "",
+                               signal.get("summary") or "", company)
+    hm = dict(inf)
+    named = best_named_contact(company, inf.get("slots") or ())
+    if named:
+        hm["name"] = named["name"]
+        hm["linkedin_url"] = named.get("linkedin_url")
+        hm["confidence"] = round(
+            min(0.95, 0.1 + inf["confidence"] * 0.5
+                + float(named.get("confidence") or 0) * 0.5), 2)
+    else:
+        hm["name"] = ""
+        hm["linkedin_url"] = None
+        # Role known, person not — honestly lower than a named contact.
+        if inf["basis"] != "jd_reporting_line":
+            hm["confidence"] = round(inf["confidence"] * 0.6, 2)
+    return hm
+
+
+def draft_outreach_for_lead(signal: dict) -> str:
+    hm = signal.get("hiring_manager")
+    company = (signal.get("company") or "").strip()
+    if not hm or not company:
+        return _DEFAULT_OUTREACH
+    name = (hm.get("name") or "").strip()
+    first = name.split()[0] if name else ""
+    mgr_title = hm.get("manager_title") or "Communications lead"
+    role = _display_role(signal.get("title") or "")
+    role_line = (f"I saw {company} is hiring a {role} — "
+                 if role else
+                 f"I saw {company} is building out its communications team — ")
+    you_line = (f"as {company}'s {mgr_title} you're likely shaping that hire, "
+                "so I wanted to reach out directly.")
+    return (
+        f"Hi {first or '(Name)'}, I'm Sara from VMA Group.\n\n"
+        "We specialise in executive search and recruitment across "
+        "corporate communications, internal comms and marketing. "
+        f"{role_line}{you_line}\n\n"
+        "I'd love to grab a coffee in the next couple of weeks to share "
+        "what we're seeing in the market — whether for this role or the "
+        "wider team. I've attached our brochure in case it's useful.\n\n"
+        "Would be great to connect.\n\n"
+        "Best,\n"
+        "Sara"
+    )
 
 
 def draft_outreach_for_predictor(_predictor: dict) -> str:
@@ -357,6 +436,22 @@ def linkedin_search_for_lead(signal: dict) -> dict:
         else:
             label = "Open profile"
         return {"label": label, "url": signal["linkedin_profile_url"]}
+
+    # Job-like lead: target the inferred reporting-line manager (the
+    # comms seniority-up rules), NOT the coarse kind->CHRO fallback.
+    hm = signal.get("hiring_manager")
+    company = (signal.get("company") or "").strip()
+    if hm and company:
+        mgr_title = hm.get("manager_title") or "Communications lead"
+        name = (hm.get("name") or "").strip()
+        if hm.get("linkedin_url"):
+            return {"label": f"Open {name or mgr_title} at {company}",
+                    "url": hm["linkedin_url"]}
+        if name:
+            return {"label": f"Search {name} ({mgr_title}) at {company}",
+                    "url": _people_search(f'"{name}" "{company}"')}
+        return {"label": f"Search {mgr_title} at {company}",
+                "url": _people_search(f'"{mgr_title}" "{company}"')}
 
     # Tier 1b: search by the seeded contact's actual name. Lands Sara on
     # the right person without a second click.
@@ -1959,6 +2054,13 @@ TEMPLATE = r"""
                 <span class="badge">{{ s.source }}</span>
                 <span class="badge">{{ s.geo }}</span>
               </div>
+              {% if s.hiring_manager %}
+              <div style="font-size:11px;color:var(--text-muted);margin:2px 0 4px;">
+                → Likely contact:
+                <strong style="color:#333;">{{ s.hiring_manager.name or s.hiring_manager.manager_title }}</strong>{% if s.hiring_manager.name %} · {{ s.hiring_manager.manager_title }}{% endif %}
+                · confidence {{ '%.0f' | format(s.hiring_manager.confidence * 100) }}%{% if s.hiring_manager.basis == 'jd_reporting_line' %} · from JD{% elif s.hiring_manager.basis == 'default' %} · low{% endif %}
+              </div>
+              {% endif %}
               <pre class="outreach-text">{{ s.outreach }}</pre>
               <div class="item-actions">
                 <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
@@ -1981,6 +2083,13 @@ TEMPLATE = r"""
                   <span class="badge">{{ s.source }}</span>
                   <span class="badge">{{ s.geo }}</span>
                 </div>
+                {% if s.hiring_manager %}
+                <div style="font-size:11px;color:var(--text-muted);margin:2px 0 4px;">
+                  → Likely contact:
+                  <strong style="color:#333;">{{ s.hiring_manager.name or s.hiring_manager.manager_title }}</strong>{% if s.hiring_manager.name %} · {{ s.hiring_manager.manager_title }}{% endif %}
+                  · confidence {{ '%.0f' | format(s.hiring_manager.confidence * 100) }}%{% if s.hiring_manager.basis == 'jd_reporting_line' %} · from JD{% elif s.hiring_manager.basis == 'default' %} · low{% endif %}
+                </div>
+                {% endif %}
                 <pre class="outreach-text">{{ s.outreach }}</pre>
                 <div class="item-actions">
                   <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
