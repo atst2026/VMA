@@ -2743,28 +2743,32 @@ async function loadFunding() {
         'by design.</div>';
       return;
     }
-    const out = ['<ul style="margin:6px 0;padding:0;list-style:none;">'];
+    const out = [];
+    let fi = 0;
     for (const f of j.rows.slice(0, 16)) {
+      fi++;
       const conf = (f.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
       out.push(
-        '<li style="padding:8px 0;border-bottom:1px solid var(--border);">' +
-          '<span class="' + conf + '">' + esc(f.confidence || '') + '</span> ' +
-          '<strong style="color:var(--text);">' + esc(f.company || '(unknown)') + '</strong>' +
-          ' &middot; <span style="color:var(--text);">' + esc(f.amount || '') +
-            ' ' + esc(f.round || 'funding round') + '</span>' +
-          '<span style="color:var(--text-muted);font-size:12px;display:block;margin-top:2px;">' +
+        '<div class="item">' +
+          '<span class="rank">' + fi + '</span>' +
+          '<span class="title">' +
+            '<span class="' + conf + '">' + esc(f.confidence || '') + '</span> ' +
+            '<strong style="color:var(--text);">' + esc(f.company || '(unknown)') + '</strong>' +
+            ' &middot; <span style="color:var(--text);">' + esc(f.amount || '') +
+              ' ' + esc(f.round || 'funding round') + '</span>' +
+          '</span>' +
+          '<div style="color:var(--text-muted);font-size:12px;margin-top:4px;margin-left:26px;">' +
             (f.url
               ? '<a href="' + safeUrl(f.url) + '" target="_blank" rel="noopener noreferrer" style="color:#0366d6;">' + esc(f.evidence || 'source') + '</a>'
               : esc(f.evidence || '')) +
             (f.window ? ' &middot; ' + esc(f.window) : '') +
             (f.source ? ' &middot; ' + esc(f.source) : '') +
             (f.sector ? ' &middot; ' + esc(f.sector) : '') +
-          '</span>' +
-          (f.advisory ? '<div class="advisory-line">' + esc(f.advisory) + '</div>' : '') +
-        '</li>'
+          '</div>' +
+          (f.advisory ? '<div class="advisory-line" style="margin-left:26px;">' + esc(f.advisory) + '</div>' : '') +
+        '</div>'
       );
     }
-    out.push('</ul>');
     body.innerHTML = out.join('');
   } catch (e) {
     body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
