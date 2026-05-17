@@ -14,8 +14,11 @@ already knows about that account:
                           activist, restructuring, etc.)
   * leadership_change   — leadership-change in recent_signals
   * peer_signal         — same-sector account had a recent signal
-  * generic_fit         — falls through to a sector-fit hook when no
-                          live signal exists
+  * generic_fit         — no live signal; these are NOT emitted one-per-
+                          account (that produced a wall of identical
+                          paragraphs). They are collapsed into a single
+                          summary row listing the names for light-touch
+                          outreach.
 
 A hit list of 20 accounts where the hook is the candidate's value to
 the prospect ("your competitor just hired X out of [team]") is the
@@ -87,6 +90,9 @@ SECTOR_BUCKETS = {
     "government":     ["Cabinet Office", "FCA", "NHS England"],
     "charity":        ["Macmillan Cancer Support"],
     "defence":        ["BAE Systems"],
+    "professional_services": ["Deloitte", "PwC", "EY", "KPMG", "Accenture",
+                              "McKinsey & Company", "Boston Consulting Group",
+                              "Bain & Company"],
 }
 
 
@@ -123,6 +129,11 @@ def _detect_sectors(candidate: MPCCandidate) -> list[str]:
                          "fca", "ofcom", "regulator"],
         "charity":      ["charity", "macmillan", "cancer research", "mind", "barnardo"],
         "defence":      ["bae", "defence", "rolls-royce", "babcock", "qinetiq"],
+        "professional_services": ["deloitte", "pwc", "pricewaterhouse",
+                                  "ernst & young", "kpmg", "accenture",
+                                  "mckinsey", "boston consulting", "bain & co",
+                                  "grant thornton", "professional services",
+                                  "management consult", "consulting firm"],
     }
     for tag, hints in sector_hints.items():
         if any(h in haystack for h in hints):
@@ -317,10 +328,12 @@ def build_hit_list(candidate: MPCCandidate,
                    predictors_path: Path | None = None) -> list[MPCAccountHit]:
     """Build a per-account hit list for the candidate.
 
-    Top-N is the number of accounts to score (default 20 per the
-    critique). Accounts are taken from hiring_contacts.json's Tier-A
-    universe (30 accounts). The list is ranked by hook strength —
-    distress > predictor > leadership change > recent signal > generic.
+    Returns up to `top_n` LIVE-signal hooks (distress > predictor >
+    leadership change > recent signal), ranked by strength, followed by
+    a SINGLE summary row collapsing every no-live-signal account (these
+    are not emitted one-per-account — that buried the real hooks under
+    identical boilerplate). Accounts are the same-sector cohort first,
+    then the rest of hiring_contacts.json's Tier-A universe.
 
     Distress hooks are derived from the predictor pipeline's distress-
     class trigger events (regulator_probe_early / crisis_event /
@@ -419,8 +432,35 @@ def build_hit_list(candidate: MPCCandidate,
             leadership=leadership,
         ))
 
-    hits.sort(key=lambda h: h.score, reverse=True)
-    return hits[:top_n]
+    # Only LIVE-signal hooks (distress/predictor/leadership/recent) are
+    # worth a paste-ready paragraph each — that is MPC's distinct value
+    # vs Reverse Match. The no-live-signal remainder used to emit one
+    # identical generic_fit paragraph PER account (15+ copy-paste lines
+    # that buried the real hooks). They are now collapsed into a single
+    # honest summary row so the breadth is preserved without the noise.
+    live = [h for h in hits if h.hook_kind != "generic_fit"]
+    generic = [h for h in hits if h.hook_kind == "generic_fit"]
+    live.sort(key=lambda h: h.score, reverse=True)
+    result = live[:top_n]
+
+    if generic:
+        generic.sort(key=lambda h: (h.score, h.account), reverse=True)
+        names = [h.account for h in generic]
+        shown = names[:15]
+        more = len(names) - len(shown)
+        listed = ", ".join(shown) + (f", +{more} more" if more > 0 else "")
+        result.append(MPCAccountHit(
+            account=f"{len(names)} structural-fit accounts — no live signal today",
+            score=0.2,
+            hook_kind="generic_fit",
+            hook=(f"No live trigger at these today, but {candidate.name} is a "
+                  f"structural fit. Light-touch only — a 'thought you'd want to "
+                  f"know they're open to a conversation' note, not a priority "
+                  f"dial: {listed}."),
+            evidence_url="",
+            leadership=[],
+        ))
+    return result
 
 
 def hit_list_to_json(hits: list[MPCAccountHit]) -> list[dict]:
