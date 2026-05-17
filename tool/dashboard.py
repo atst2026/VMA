@@ -1093,6 +1093,9 @@ TEMPLATE = r"""
        row so other panels keep the global .panel-body sizing. */
     #pulses-row .panel { height: 400px; }
     #pulses-row .panel-body { max-height: none; flex: 1; min-height: 0; overflow-y: auto; }
+    /* Match the 16px horizontal inset every other section's .item uses
+       so funding rows aren't jammed against the panel edge. */
+    #funding-body { padding: 8px 16px 12px; }
 
     .cal-wrap { padding: 14px 16px; }
     .cal-ribbon {
