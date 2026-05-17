@@ -371,17 +371,14 @@ def linkedin_click(signal: dict) -> dict:
     title = c.get("title") or "Head of Communications"
     direct = signal.get("linkedin_profile_url") or c.get("linkedin_url")
     if direct:
-        who = name or title
-        return {"label": f"Open {who} at {company}" if company
-                else f"Open {who}", "url": direct}
-    if not company:
-        return {"label": "Search LinkedIn",
-                "url": _people_search(name or title)}
-    if name:
-        return {"label": f"Open {name} ({title}) at {company}",
-                "url": _people_search(f'"{name}" "{company}"')}
-    return {"label": f"Open {title} at {company}",
-            "url": _people_search(f'"{title}" "{company}"')}
+        url = direct
+    elif not company:
+        url = _people_search(name or title)
+    elif name:
+        url = _people_search(f'"{name}" "{company}"')
+    else:
+        url = _people_search(f'"{title}" "{company}"')
+    return {"label": "LinkedIn", "url": url}
 
 
 def linkedin_search_for_predictor(p: dict) -> dict:
@@ -1835,7 +1832,6 @@ TEMPLATE = r"""
     .funding-details > summary::marker { content: ""; }
     .funding-details > summary:hover { border-color: var(--border-hover); }
     .funding-details[open] > summary { margin-bottom: 8px; }
-    .funding-details .fd-hint { color: var(--text-muted); font-size: 11px; }
     .action-card .status {
       margin-top: 10px;
       padding: 8px 11px;
@@ -2175,6 +2171,18 @@ TEMPLATE = r"""
       </form>
     </div>
 
+    <!-- 14-DAY CATCH-UP -->
+    <div class="panel action-card">
+      <h3>14-Day Catch-up</h3>
+      <div class="subhead">Sweep the last fortnight for any missed leads or predictors.</div>
+      <form id="sweep-form" onsubmit="dispatch(event, 'sweep-form', '/api/dispatch/sweep')">
+        <label for="sw-days">Window (days)</label>
+        <input id="sw-days" name="window_days" type="number" min="1" max="60" value="14" required>
+        <button type="submit">Run and send via email</button>
+        <div class="status" id="sweep-status"></div>
+      </form>
+    </div>
+
     <!-- PITCH PACK -->
     <div class="panel action-card">
       <h3>Pitch Pack</h3>
@@ -2186,18 +2194,6 @@ TEMPLATE = r"""
         <input id="pp-role" name="role" placeholder="e.g. Head of Internal Communications" required>
         <button type="submit">Run and send via email</button>
         <div class="status" id="pitch-status"></div>
-      </form>
-    </div>
-
-    <!-- 14-DAY CATCH-UP -->
-    <div class="panel action-card">
-      <h3>14-Day Catch-up</h3>
-      <div class="subhead">Sweep the last fortnight for any missed leads or predictors.</div>
-      <form id="sweep-form" onsubmit="dispatch(event, 'sweep-form', '/api/dispatch/sweep')">
-        <label for="sw-days">Window (days)</label>
-        <input id="sw-days" name="window_days" type="number" min="1" max="60" value="14" required>
-        <button type="submit">Run and send via email</button>
-        <div class="status" id="sweep-status"></div>
       </form>
     </div>
 
@@ -2766,49 +2762,34 @@ async function loadFunding() {
         'by design.</div>';
       return;
     }
+    // Each round is its own compact clickable row, stacked. The summary
+    // line is the at-a-glance view; clicking a row opens its evidence.
     const out = [];
-    let fi = 0;
     for (const f of j.rows.slice(0, 16)) {
-      fi++;
       const conf = (f.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
+      const summary =
+        '<span class="' + conf + '">' + esc(f.confidence || '') + '</span> ' +
+        (f.sector ? esc(f.sector) + ' ' : '') +
+        '<strong>' + esc(f.company || '(unknown)') + '</strong> &middot; ' +
+        esc(f.amount || '') + ' ' + esc(f.round || 'funding round');
+      const detail =
+        '<div style="color:var(--text-muted);font-size:12px;margin-top:6px;">' +
+          (f.url
+            ? '<a href="' + safeUrl(f.url) + '" target="_blank" rel="noopener noreferrer" style="color:#0366d6;">' + esc(f.evidence || 'source') + '</a>'
+            : esc(f.evidence || '')) +
+          (f.window ? ' &middot; ' + esc(f.window) : '') +
+          (f.source ? ' &middot; ' + esc(f.source) : '') +
+          (f.sector ? ' &middot; ' + esc(f.sector) : '') +
+        '</div>' +
+        (f.advisory ? '<div class="advisory-line">' + esc(f.advisory) + '</div>' : '');
       out.push(
-        '<div class="item">' +
-          '<span class="rank">' + fi + '</span>' +
-          '<span class="title">' +
-            '<span class="' + conf + '">' + esc(f.confidence || '') + '</span> ' +
-            '<strong style="color:var(--text);">' + esc(f.company || '(unknown)') + '</strong>' +
-            ' &middot; <span style="color:var(--text);">' + esc(f.amount || '') +
-              ' ' + esc(f.round || 'funding round') + '</span>' +
-          '</span>' +
-          '<div style="color:var(--text-muted);font-size:12px;margin-top:4px;margin-left:26px;">' +
-            (f.url
-              ? '<a href="' + safeUrl(f.url) + '" target="_blank" rel="noopener noreferrer" style="color:#0366d6;">' + esc(f.evidence || 'source') + '</a>'
-              : esc(f.evidence || '')) +
-            (f.window ? ' &middot; ' + esc(f.window) : '') +
-            (f.source ? ' &middot; ' + esc(f.source) : '') +
-            (f.sector ? ' &middot; ' + esc(f.sector) : '') +
-          '</div>' +
-          (f.advisory ? '<div class="advisory-line" style="margin-left:26px;">' + esc(f.advisory) + '</div>' : '') +
-        '</div>'
+        '<details class="funding-details" style="margin-bottom:8px;">' +
+          '<summary>' + summary + '</summary>' +
+          detail +
+        '</details>'
       );
     }
-    // Collapsed by default: show only the top row as a clickable
-    // summary; the full window opens on click.
-    const f0 = j.rows[0];
-    const conf0 = (f0.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
-    const more = (j.total > 1)
-      ? ' <span class="fd-hint">&middot; +' + (j.total - 1) + ' more in window — click to open</span>'
-      : ' <span class="fd-hint">&middot; click to open</span>';
-    const summary =
-      '<span class="' + conf0 + '">' + esc(f0.confidence || '') + '</span> ' +
-      (f0.sector ? esc(f0.sector) + ' ' : '') +
-      '<strong>' + esc(f0.company || '(unknown)') + '</strong> &middot; ' +
-      esc(f0.amount || '') + ' ' + esc(f0.round || 'funding round') + more;
-    body.innerHTML =
-      '<details class="funding-details">' +
-        '<summary>' + summary + '</summary>' +
-        '<div style="margin-top:8px;">' + out.join('') + '</div>' +
-      '</details>';
+    body.innerHTML = out.join('');
   } catch (e) {
     body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
   }
