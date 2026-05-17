@@ -2123,7 +2123,7 @@ TEMPLATE = r"""
     <!-- MPC OUTREACH FACTORY -->
     <div class="panel action-card">
       <h3>MPC Outreach Factory</h3>
-      <div class="subhead">One candidate → 20-account hit list with evidence-cited hooks. Demand creation, not capture.</div>
+      <div class="subhead">Type in a candidate; instantly get a ranked list of target accounts, each with a paste-ready outreach hook woven from signals already gathered (a live trigger at that company, or a structural fit). Built from intelligence we've already collected — so it comes back straight away, costs nothing to run, and every hook is backed by real evidence.</div>
       <form id="mpc-form" onsubmit="runMPC(event)">
         <label for="mpc-name">Candidate name</label>
         <input id="mpc-name" name="name" placeholder="e.g. James Carter" required>
@@ -2158,7 +2158,7 @@ TEMPLATE = r"""
     <!-- REVERSE MATCH -->
     <div class="panel action-card">
       <h3>Reverse Match</h3>
-      <div class="subhead">Turn one strong candidate into 10–15 named BD targets.</div>
+      <div class="subhead">Type in a candidate; get a ranked list of accounts where that person could be pitched. Unlike MPC Factory, this one goes out and searches the market fresh each time — it takes a few minutes rather than being instant, but casts a wider net than MPC's ready-made hooks.</div>
       <form id="rm-form" onsubmit="dispatch(event, 'rm-form', '/api/dispatch/reverse-match')">
         <label for="rm-name">Candidate name</label>
         <input id="rm-name" name="candidate_name" placeholder="e.g. Rebecca Torres" required>
@@ -2202,7 +2202,7 @@ TEMPLATE = r"""
     <!-- CANDIDATE WATCH (last → bottom-right; emptiest card) -->
     <div class="panel action-card">
       <h3>Candidate Watch</h3>
-      <div class="subhead">Warm passive candidates Sara wants to stay liquid to. Overdue + restlessness signals float to top.</div>
+      <div class="subhead">A manual roster of warm passive candidates Sara wants to stay in touch with. She sets a "call every N days" cadence; overdue ones float to the top so relationships don't go cold. A section for reminders — the "restlessness" score only keyword-matches notes Sara types herself, not live intelligence.</div>
       <div id="watch-list-wrap">
         <div class="status" id="watch-list-status">Loading…</div>
         <div id="watch-list"></div>
