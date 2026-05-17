@@ -305,33 +305,16 @@ def _display_role(title: str) -> str:
     return t.split(",")[0].strip()
 
 
-def _lead_is_job_like(signal: dict) -> bool:
-    kind = (signal.get("kind") or "").strip().lower()
-    if kind == "job":
-        return True
-    # News / appointment / filing kinds keep their existing appointee /
-    # Head-of-Comms routing — the reporting-line rules are for vacancies.
-    if kind in ("rns", "filing", "regulator", "procurement",
-                "trade_press", "leadership_change"):
-        return False
-    title = (signal.get("title") or "").lower()
-    return (
-        any(t in title for t in _JOB_TITLE_TOKENS)
-        and any(t in title for t in ("communications", "comms", "pr ",
-                                      "corporate affairs", "media relations"))
-    )
-
-
 def _lead_hiring_manager(signal: dict) -> dict | None:
     """Inferred reporting-line manager for a job-like lead, blended with
     any named roster contact. None for non-job leads (those keep the
     existing appointee/Head-of-Comms routing)."""
-    if not _lead_is_job_like(signal):
+    from tool.hiring_manager import (
+        is_job_like, manager_for_signal, best_named_contact)
+    if not is_job_like(signal):
         return None
-    from tool.hiring_manager import infer_hiring_manager, best_named_contact
     company = (signal.get("company") or "").strip()
-    inf = infer_hiring_manager(signal.get("title") or "",
-                               signal.get("summary") or "", company)
+    inf = manager_for_signal(signal)
     hm = dict(inf)
     named = best_named_contact(company, inf.get("slots") or ())
     if named:
@@ -606,6 +589,25 @@ def last_updated() -> str:
     return ts.strftime("%a %d %b %Y · %H:%M UTC")
 
 
+def _deploy_rev() -> str:
+    """Short commit of the running code, so a deploy can be confirmed at
+    a glance. Render exposes RENDER_GIT_COMMIT; fall back to local git."""
+    rev = (os.environ.get("RENDER_GIT_COMMIT") or "").strip()
+    if rev:
+        return rev[:7]
+    try:
+        import subprocess
+        return subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=str(Path(__file__).resolve().parent),
+            stderr=subprocess.DEVNULL, timeout=2).decode().strip() or "unknown"
+    except Exception:
+        return "unknown"
+
+
+_DEPLOY_REV = _deploy_rev()
+
+
 # ---- Flask app ----------------------------------------------------------
 app = Flask(__name__)
 _register_json_error_handlers(app)
@@ -641,6 +643,7 @@ def index():
         last_updated=last_updated(),
         has_token=bool(GITHUB_TOKEN),
         build_stamp=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        deploy_rev=_DEPLOY_REV,
     )
 
 
@@ -2357,7 +2360,7 @@ TEMPLATE = r"""
   <div class="footer">
     Data refreshed from GitHub Actions artifacts.
     All sources are free public surfaces. No automation of LinkedIn account.
-    <span style="opacity:0.5; margin-left:8px;">· build {{ build_stamp }}</span>
+    <span style="opacity:0.5; margin-left:8px;">· build {{ build_stamp }} · rev {{ deploy_rev }}</span>
     <span class="dev-zone">
       <span class="dev-zone-label">dev / tech only — not a user feature:</span>
       <button type="button" id="dev-run-brief" class="dev-btn"

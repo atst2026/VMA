@@ -186,11 +186,50 @@ def _slots_for_title(manager_title: str) -> tuple:
     return _CCO_SLOTS
 
 
-def best_named_contact(company: str, slots: tuple) -> dict | None:
+# Job-title tokens that mark a scraped item as an actual vacancy rather
+# than a news headline / filing. Shared by the dashboard and the morning
+# brief so both agree on which leads get reporting-line inference.
+_VACANCY_TITLE_TOKENS = (
+    "head of", "director of", "chief", "vp ", "vice president",
+    "manager", "lead", "officer", "specialist", "business partner",
+)
+_NON_JOB_KINDS = ("rns", "filing", "regulator", "procurement",
+                   "trade_press", "leadership_change")
+
+
+def is_job_like(signal: dict) -> bool:
+    """True if the lead is a vacancy (reporting-line inference applies).
+    News / appointment / filing kinds keep their existing routing."""
+    kind = (signal.get("kind") or "").strip().lower()
+    if kind == "job":
+        return True
+    if kind in _NON_JOB_KINDS:
+        return False
+    t = (signal.get("title") or "").lower()
+    return (
+        any(tok in t for tok in _VACANCY_TITLE_TOKENS)
+        and any(tok in t for tok in ("communication", "comms", "pr ",
+                                      "corporate affairs", "media relations"))
+    )
+
+
+def manager_for_signal(signal: dict) -> dict:
+    """Convenience: run infer_hiring_manager off a scraped signal dict."""
+    return infer_hiring_manager(
+        signal.get("title") or "",
+        signal.get("summary") or "",
+        (signal.get("company") or "").strip(),
+    )
+
+
+def best_named_contact(company: str, slots: tuple,
+                       contacts: dict | None = None) -> dict | None:
     """First fresh, named roster contact across `slots`, or None.
 
     {name, role_title, linkedin_url, confidence}. Isolated so a missing
-    or broken contacts layer never breaks lead enrichment."""
+    or broken contacts layer never breaks lead enrichment. Pass a
+    preloaded `contacts` dict to avoid a per-call disk read when
+    enriching many leads in one pass (morning-brief loop)."""
     if not company or not slots:
         return None
     try:
@@ -198,7 +237,9 @@ def best_named_contact(company: str, slots: tuple) -> dict | None:
     except Exception:
         return None
     try:
-        card = get_contact(load_contacts(), company)
+        if contacts is None:
+            contacts = load_contacts()
+        card = get_contact(contacts, company)
     except Exception:
         return None
     if card is None:
