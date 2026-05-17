@@ -2055,7 +2055,7 @@ TEMPLATE = r"""
             </div>
           {% endfor %}
         {% else %}
-          <div class="empty compact">Pipeline empty. Click Daily Refresh, or wait for tomorrow's morning brief. The 90-day window populates automatically.</div>
+          <div class="empty compact">No predictors loaded yet. Click Daily Refresh.</div>
         {% endif %}
       </div>
     </div>
@@ -2565,10 +2565,6 @@ async function loadPulses() {
     const newCount = rows.filter(p => p.just_opened).length;
     let freshMonth = -1;
     for (let m = 0; m < 12; m++) if (buckets[m].some(p => p.just_opened)) { freshMonth = m; break; }
-    const firstMonth = (() => {
-      for (let m = 0; m < 12; m++) if (buckets[m].length) return m;
-      return -1;
-    })();
 
     const pipFor = p => '<span class="cal-pip ' + (p.confidence === 'high' ? 'high' : 'med') + '"></span>';
     const out = ['<div class="cal-wrap"><div class="cal-ribbon">'];
@@ -2593,7 +2589,7 @@ async function loadPulses() {
     out.push(
       '<div class="cal-detail">' +
         '<div class="cal-card" id="cal-card">' +
-          '<span class="cal-ph">Click a month for the lead — seat, angle, target cohort.</span>' +
+          '<span class="cal-ph">Click a month with pips for the lead detail.</span>' +
         '</div>' +
         '<div class="cal-legend">' +
           '<span><i style="background:var(--teal)"></i>high confidence</span>' +
@@ -2644,10 +2640,8 @@ async function loadPulses() {
       nb.style.display = 'none';
     }
 
-    // Auto-open the most relevant month: a just-opened window if there
-    // is one (entices the click), else the top-ranked active pulse.
-    if (freshMonth >= 0) openMonth(freshMonth);
-    else if (firstMonth >= 0) openMonth(firstMonth);
+    // No auto-open: the ribbon shows the placeholder until Sara clicks
+    // a month. The NEW badge / header chip entice the click instead.
   } catch (e) {
     body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
   }
@@ -2742,10 +2736,11 @@ async function loadFunding() {
     count.textContent = j.total;
     if (!j.rows || j.rows.length === 0) {
       body.innerHTML = '<div class="empty compact">No qualifying funding round ' +
-        '(&ge;£20m growth/Series round) detected yet. This fires when a scaling ' +
-        'private firm closes a material equity round — a step-change senior in-house ' +
-        'comms hire typically follows ~6 months later, months after the round is ' +
-        'public. Debt/refinancing is excluded by design.</div>';
+        '(&ge;£20m growth/Series round) detected yet. Click daily refresh. ' +
+        'This fires when a scaling private firm closes a material equity round: ' +
+        'a step-change senior in-house comms hire typically follows ~6 months ' +
+        'later, months after the round is public. Debt/refinancing is excluded ' +
+        'by design.</div>';
       return;
     }
     const out = ['<ul style="margin:6px 0;padding:0;list-style:none;">'];
