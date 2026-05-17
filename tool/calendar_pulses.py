@@ -37,6 +37,11 @@ log = logging.getLogger("brief.pulses")
 # enough to stay a focused hit list rather than a sector dump.
 _MAX_TARGETS = 12
 
+# A pulse whose ACTION window opened within this many days is flagged
+# `just_opened` — a genuine, deterministic "new this week" cue for the
+# dashboard ribbon. No fabrication: it is purely (today - window_start).
+_JUST_OPENED_DAYS = 10
+
 
 # Each pulse:
 #   key         stable id
@@ -237,11 +242,16 @@ def active_pulses(today: Optional[date] = None) -> list[dict]:
 
         targets = _targets_for(p.get("sectors", []))
         days_left = (end - today).days
+        days_open = (today - start).days
         out.append({
             "key":         p["key"],
             "name":        p["name"],
             "window":      f"{p['window'][0]} → {p['window'][1]}",
             "days_left":   days_left,
+            # Ribbon places a pulse on the month its ACTION window ends
+            # (the deadline run-up Sara must have acted by).
+            "act_by":      p["window"][1],
+            "just_opened": 0 <= days_open <= _JUST_OPENED_DAYS,
             "legal_date":  p.get("legal_date", ""),
             "seat":        p.get("seat", ""),
             "angle":       p.get("angle", ""),

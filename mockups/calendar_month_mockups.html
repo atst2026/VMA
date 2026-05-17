@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendar (by month) + Pre-Funding — 3 minimalist mockups</title>
+<style>
+  :root{
+    --teal:#C96442; --teal-dark:#A04E32; --teal-soft:rgba(201,100,66,0.09);
+    --bg:#F5F0E8; --bg-warm:#EDE5D6; --surface:#FFFFFF; --surface-elevated:#FBF7EF;
+    --border:rgba(140,120,80,0.18); --border-hover:rgba(201,100,66,0.36);
+    --text:#181613; --text-muted:#7A7164; --text-dim:#B7AC9A;
+    --gold:#C49A3B; --green:#6B8C3B;
+    --shadow-md:0 4px 14px rgba(140,120,80,0.10),0 1px 3px rgba(140,120,80,0.06);
+  }
+  *{box-sizing:border-box;} html,body{margin:0;padding:0;}
+  body{
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    background-color:var(--bg);
+    background-image:
+      radial-gradient(ellipse 700px 500px at 8% 12%,rgba(201,100,66,0.07),transparent 60%),
+      radial-gradient(ellipse 600px 420px at 92% 92%,rgba(196,154,59,0.08),transparent 60%);
+    background-attachment:fixed;color:var(--text);line-height:1.5;font-size:13.5px;
+    letter-spacing:-0.005em;-webkit-font-smoothing:antialiased;padding:34px 20px 80px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;}
+  h1{font-size:21px;font-weight:650;margin:0 0 4px;}
+  .sub{color:var(--text-muted);font-size:13px;margin:0 0 18px;max-width:820px;}
+  .ctrl{margin:0 0 26px;}
+  .ctrl button{
+    font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
+    background:var(--surface);border:1px solid var(--border-hover);color:var(--teal-dark);
+    padding:8px 14px;border-radius:9px;
+  }
+  .ctrl button:hover{background:var(--teal-soft);}
+  .mk-title{font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--text-dim);margin:34px 0 10px;}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:stretch;}
+  @media (max-width:920px){.pair{grid-template-columns:1fr;}}
+
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+    box-shadow:var(--shadow-md);display:flex;flex-direction:column;overflow:hidden;}
+  .panel-head{display:flex;align-items:center;gap:9px;padding:13px 17px;
+    border-bottom:1px solid var(--border);background:var(--surface-elevated);flex:0 0 auto;}
+  .panel-head h2{font-size:14px;font-weight:640;margin:0;flex:1;}
+  .count{font-size:11.5px;font-weight:700;color:var(--teal);background:var(--teal-soft);
+    border:1px solid var(--border-hover);padding:1px 8px;border-radius:999px;}
+  .newchip{display:none;align-items:center;gap:6px;font-size:11px;font-weight:700;
+    color:var(--teal-dark);background:var(--teal-soft);border:1px solid var(--border-hover);
+    padding:2px 9px 2px 7px;border-radius:999px;}
+  .newchip.on{display:inline-flex;}
+  .newdot{width:7px;height:7px;border-radius:50%;background:var(--teal);
+    animation:pulse 1.5s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(201,100,66,.55);}50%{box-shadow:0 0 0 5px rgba(201,100,66,0);}}
+  .panel-body{flex:1;display:flex;flex-direction:column;padding:14px 16px;min-height:0;}
+
+  /* shared detail */
+  .conf{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+    padding:2px 7px;border-radius:5px;}
+  .conf.high{background:var(--teal-soft);color:var(--teal-dark);border:1px solid var(--border-hover);}
+  .conf.med{background:var(--bg-warm);color:var(--text-muted);border:1px solid var(--border);}
+  .nm{font-weight:640;font-size:13px;}
+  .days{font-size:10.5px;font-weight:700;color:#fff;background:var(--teal);
+    border-radius:999px;padding:2px 8px;margin-left:6px;}
+  .days.far{color:var(--text-dim);background:transparent;border:1px solid var(--border);}
+  .seat{font-size:12px;color:var(--text);margin-top:6px;}
+  .angle{font-size:11.5px;color:var(--text-muted);margin-top:4px;}
+  .adv{font-size:11px;color:var(--teal);border-left:2px solid var(--teal);padding-left:9px;margin-top:7px;}
+  .badge{display:inline-block;font-size:10.5px;color:var(--text-muted);background:var(--bg-warm);
+    border:1px solid var(--border);padding:2px 7px;border-radius:6px;margin:5px 4px 0 0;}
+  .detail{flex:0 0 auto;border-top:1px solid var(--border);padding-top:11px;margin-top:10px;min-height:110px;}
+  .detail .ph{color:var(--text-dim);font-size:12px;}
+
+  /* ===== M1: year ribbon (3x4 month tiles) ===== */
+  .ribbon{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:8px;flex:1;min-height:0;}
+  .mtile{position:relative;border:1px solid var(--border);border-radius:10px;padding:9px 10px;
+    display:flex;flex-direction:column;gap:6px;color:var(--text-muted);}
+  .mtile.past{opacity:.4;}
+  .mtile.now{border-color:var(--teal);}
+  .mtile.has{cursor:pointer;background:var(--surface-elevated);}
+  .mtile.has:hover{border-color:var(--border-hover);}
+  .mtile.sel{outline:2px solid var(--teal);outline-offset:-2px;}
+  .mtile .mlab{font-size:12px;font-weight:700;color:var(--text);}
+  .mtile.past .mlab{color:var(--text-muted);}
+  .mtile .pips{display:flex;gap:4px;}
+  .pip{width:7px;height:7px;border-radius:50%;}
+  .pip.high{background:var(--teal);} .pip.med{background:var(--gold);}
+  .mtile .cnt{font-size:10.5px;color:var(--text-dim);margin-top:auto;}
+  .mtile .nb{position:absolute;top:-6px;right:-6px;width:9px;height:9px;border-radius:50%;
+    background:var(--teal);animation:pulse 1.5s ease-in-out infinite;display:none;}
+  .mtile.fresh .nb{display:block;}
+
+  /* ===== M2: horizontal year rail ===== */
+  .rail{position:relative;flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;}
+  .rail .months{display:flex;}
+  .rail .rm{flex:1;text-align:center;border-right:1px solid var(--border);padding:6px 0;cursor:default;}
+  .rail .rm:last-child{border-right:0;}
+  .rail .rm.has{cursor:pointer;}
+  .rail .rm.has:hover{background:var(--surface-elevated);}
+  .rail .rm .lab{font-size:10.5px;font-weight:700;letter-spacing:.05em;color:var(--text-dim);}
+  .rail .rm.now .lab{color:var(--teal);}
+  .rail .rm.past .lab{opacity:.45;}
+  .rail .stack{height:34px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;padding-top:5px;}
+  .rail .stack .pip{position:relative;}
+  .rail .stack .pip.fresh::after{content:"";position:absolute;inset:-4px;border-radius:50%;
+    border:1px solid var(--teal);animation:pulse 1.5s ease-in-out infinite;}
+  .rail .axis{border-top:1px solid var(--border);margin-top:4px;}
+  .rail .nowline{position:absolute;top:0;bottom:26px;width:2px;background:var(--teal);}
+  .rail .nowline b{position:absolute;top:-16px;left:50%;transform:translateX(-50%);
+    font-size:9.5px;font-weight:800;color:var(--teal);}
+
+  /* ===== M3: collapsed month list (only active months) ===== */
+  .mlist{flex:1;overflow-y:auto;min-height:0;}
+  .qrow{display:flex;align-items:center;gap:11px;padding:13px 4px;border-bottom:1px solid var(--border);cursor:pointer;}
+  .qrow:hover{background:var(--surface-elevated);}
+  .qrow .mo{font-weight:700;font-size:13px;width:54px;color:var(--text);}
+  .qrow.now .mo{color:var(--teal);}
+  .qrow .what{flex:1;font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .qrow .pips{display:flex;gap:4px;}
+  .qrow .nb{width:8px;height:8px;border-radius:50%;background:var(--teal);
+    animation:pulse 1.5s ease-in-out infinite;display:none;}
+  .qrow.fresh .nb{display:inline-block;}
+  .quiet{text-align:center;font-size:11px;color:var(--text-dim);padding:9px 0;border-bottom:1px dashed var(--border);}
+
+  /* funding rows (symmetrical, all 3) */
+  .flist{flex:1;overflow-y:auto;min-height:0;}
+  .frow{border-bottom:1px solid var(--border);}
+  .frow.fresh{background:linear-gradient(90deg,var(--teal-soft),transparent 70%);
+    border-left:2px solid var(--teal);}
+  .frow .h{display:flex;align-items:center;gap:9px;padding:11px 6px;cursor:pointer;}
+  .frow .h:hover{background:var(--surface-elevated);}
+  .frow .co{font-weight:640;font-size:12.5px;}
+  .frow .amt{font-size:11.5px;color:var(--text-muted);}
+  .frow .tag{font-size:9.5px;font-weight:800;letter-spacing:.06em;color:#fff;
+    background:var(--teal);padding:2px 6px;border-radius:5px;display:none;}
+  .frow.fresh .tag{display:inline-block;}
+  .frow .win{margin-left:auto;font-size:10.5px;font-weight:700;color:var(--text-muted);
+    background:var(--bg-warm);border:1px solid var(--border);padding:2px 8px;border-radius:999px;}
+  .frow .chev{color:var(--text-dim);font-size:11px;}
+  .frow.open .chev{transform:rotate(90deg);}
+  .frow .b{display:none;padding:0 6px 13px;font-size:11.5px;color:var(--text-muted);}
+  .frow.open .b{display:block;}
+  .frow .adv2{font-size:11px;color:var(--teal);border-left:2px solid var(--teal);padding-left:9px;margin-top:6px;}
+  .illus{flex:0 0 auto;margin-top:8px;font-size:10.5px;color:var(--text-dim);
+    border-top:1px dashed var(--border);padding-top:8px;}
+  .legend{display:flex;gap:15px;font-size:10px;color:var(--text-dim);margin-top:9px;flex-wrap:wrap;}
+  .legend i{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Calendar by <em>month</em> + Pre-Funding — 3 minimalist mockups</h1>
+  <p class="sub">Month granularity (no day grid). Each mockup is the calendar + an equal-size
+  pre-funding panel, symmetrical. Today = May 2026, so only NHS (May) is near; SRS/MoG are far-right
+  Dec markers — never a parked wall. The button below simulates a <b>new finding</b> so you can see
+  the indicator (pulsing dot + “1 new” chip + highlighted row) appear and clear.</p>
+  <div class="ctrl"><button id="simBtn">▸ Simulate a new finding</button></div>
+
+  <div class="mk-title">Mockup 1 — year ribbon (12 month tiles)</div>
+  <div class="pair">
+    <div class="panel" style="height:300px;">
+      <div class="panel-head"><h2>Calendar Pulses · 2026</h2>
+        <span class="newchip" data-new><span class="newdot"></span>1 new</span>
+        <span class="count">6</span></div>
+      <div class="panel-body"><div class="ribbon" id="r1"></div>
+        <div class="detail" id="r1d"><span class="ph">Click a month with pips for the lead detail.</span>
+        <div class="legend"><span><i style="background:var(--teal)"></i>high</span>
+        <span><i style="background:var(--gold)"></i>policy firming</span>
+        <span><i style="background:var(--teal);box-shadow:0 0 0 3px var(--teal-soft)"></i>new finding</span></div></div>
+      </div>
+    </div>
+    <div class="panel" style="height:300px;">
+      <div class="panel-head"><h2>Funding-Round Pre-Hire Window</h2>
+        <span class="newchip" data-new><span class="newdot"></span>1 new</span>
+        <span class="count" data-fcount>3</span></div>
+      <div class="panel-body"><div class="flist" data-flist></div>
+        <div class="illus">Illustrative — live field shape; detector returned 2 last prod run.</div></div>
+    </div>
+  </div>
+
+  <div class="mk-title">Mockup 2 — horizontal year rail</div>
+  <div class="pair">
+    <div class="panel" style="height:300px;">
+      <div class="panel-head"><h2>Calendar Pulses · 2026</h2>
+        <span class="newchip" data-new><span class="newdot"></span>1 new</span>
+        <span class="count">6</span></div>
+      <div class="panel-body"><div class="rail" id="r2"></div>
+        <div class="detail" id="r2d"><span class="ph">Click a month with pips for the lead detail.</span></div>
+      </div>
+    </div>
+    <div class="panel" style="height:300px;">
+      <div class="panel-head"><h2>Funding-Round Pre-Hire Window</h2>
+        <span class="newchip" data-new><span class="newdot"></span>1 new</span>
+        <span class="count" data-fcount>3</span></div>
+      <div class="panel-body"><div class="flist" data-flist></div>
+        <div class="illus">Illustrative — live field shape; detector returned 2 last prod run.</div></div>
+    </div>
+  </div>
+
+  <div class="mk-title">Mockup 3 — collapsed month list (only active months render)</div>
+  <div class="pair">
+    <div class="panel" style="height:320px;">
+      <div class="panel-head"><h2>Calendar Pulses · 2026</h2>
+        <span class="newchip" data-new><span class="newdot"></span>1 new</span>
+        <span class="count">6</span></div>
+      <div class="panel-body"><div class="mlist" id="r3"></div>
+        <div class="detail" id="r3d"><span class="ph">Click a month for the lead detail. Empty months don’t render — no static wall.</span></div>
+      </div>
+    </div>
+    <div class="panel" style="height:320px;">
+      <div class="panel-head"><h2>Funding-Round Pre-Hire Window</h2>
+        <span class="newchip" data-new><span class="newdot"></span>1 new</span>
+        <span class="count" data-fcount>3</span></div>
+      <div class="panel-body"><div class="flist" data-flist></div>
+        <div class="illus">Illustrative — live field shape; detector returned 2 last prod run.</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const NOW=4; // May 2026
+const PULSES=[
+ {key:"nhs",m:4,winS:0,winE:4,conf:"med",days:14,name:"NHS operational-planning round",
+  seat:"Director of Communications — NHS transition & change communications",
+  angle:"NHS planning guidance + ICB/trust restructures cluster Q1 into the new financial year; comms-leadership briefs open before the recruitment cycle.",
+  adv:"Advisory: NHS comms operating-model & change-capability review for the planning/restructure round.",
+  tg:["DHSC","NHS trusts","ICBs","British Red Cross","Macmillan"]},
+ {key:"gpg",m:5,winS:2,winE:5,conf:"high",days:44,name:"Gender Pay Gap — reporting & scrutiny",
+  seat:"Head of Internal / DEI Communications (gender-pay narrative + scrutiny response)",
+  angle:"Statutory GPG reports land Mar–Apr; the publication & media-scrutiny window is a repeatable retained-search window for the permanent internal/DEI-comms seat.",
+  adv:"Advisory: internal/DEI-comms capability review + gender-pay narrative & scrutiny-response readiness.",
+  tg:["Barclays","HSBC","Lloyds","Aviva","Tesco"]},
+ {key:"agm",m:5,winS:1,winE:5,conf:"high",days:44,name:"UK annual-report & AGM season",
+  seat:"Head of Investor Relations / Corporate-Reporting & Governance Communications",
+  angle:"Dec-year-end issuers publish annual reports Feb–Apr and run AGMs Apr–Jun; the run-up is a repeatable retained-search window for the permanent IR/corporate-reporting comms seat.",
+  adv:"Advisory: IR & corporate-reporting comms capability review + AGM/governance-narrative readiness ahead of results season.",
+  tg:["Barclays","HSBC","NatWest","L&G","Prudential"]},
+ {key:"fca",m:6,winS:3,winE:6,conf:"high",days:75,name:"FCA Consumer Duty — board-report ramp",
+  seat:"Head of Regulatory / Customer Communications (Consumer Duty board report + remediation comms)",
+  angle:"FS firms must lay an annual Consumer Duty board report by 31 Jul; the Q2 run-up is a repeatable retained-search window — pitch before they advertise.",
+  adv:"Advisory: regulatory-comms capability & board-reporting readiness review + peer benchmarking ahead of 31 Jul.",
+  tg:["Barclays","HSBC","Santander UK","M&G","Aviva"]},
+ {key:"srs",m:11,winS:0,winE:11,conf:"med",days:228,name:"UK SRS — first sustainability-reporting build-up",
+  seat:"Head of Sustainability / ESG & Corporate-Reporting Communications",
+  angle:"UK SRS (IFRS S1/S2) endorsement + FCA listed-issuer consultation land in 2026; large issuers build sustainability-reporting comms ahead of the first mandatory cycle.",
+  adv:"Advisory: sustainability / ESG-comms capability review + peer benchmarking ahead of the first mandatory reporting cycle.",
+  tg:["FTSE-weight UK issuers","financials","energy","pharma"]},
+ {key:"mog",m:11,winS:3,winE:11,conf:"med",days:228,name:"Machinery-of-government — post-SR reshuffle",
+  seat:"Director of Communications (GCS) — transition & change communications",
+  angle:"Spending Review 2025 settlements drive 2026/27 departmental restructures; GCS comms-leadership briefs open as departments reorganise.",
+  adv:"Advisory: GCS comms operating-model & transition-capability review for the reorganised department.",
+  tg:["Cabinet Office","HMRC","DWP","DBT","DHSC"]},
+];
+let FRESH=false;                                  // toggled by sim button
+const FRESH_PULSE_KEY="fca";                      // pretend a new account entered FCA cohort
+const FUND=[
+ {co:"Synthesia",amt:"£140m Series D",hm:9,conf:"high",
+  ev:"AI video platform reaches unicorn-tier valuation on new equity round",
+  meta:"Comms-hire window ~ Oct 2026 (round +6mo) · BusinessCloud · technology",
+  adv:"Advisory: corporate-narrative & reputation build ahead of scale; senior comms seat scoping."},
+ {co:"Quantexa",amt:"£140m Series F",hm:10,conf:"high",
+  ev:"Decision-intelligence scale-up closes growth round led by existing backers",
+  meta:"Comms-hire window ~ Nov 2026 (round +6mo) · UKTN · technology",
+  adv:"Advisory: post-raise comms operating-model review + first senior in-house comms hire scoping."},
+ {co:"Multiverse",amt:"£170m Series D",hm:11,conf:"med",
+  ev:"Apprenticeship-tech firm raises growth round to expand enterprise base",
+  meta:"Comms-hire window ~ Dec 2026 (round +6mo) · Tech.eu · education-tech",
+  adv:"Advisory: growth-stage comms capability review; policy/public-affairs seat likely follows."},
+];
+const FUND_NEW={co:"Cleo AI",amt:"£120m Series D",hm:8,conf:"high",fresh:true,
+  ev:"Consumer-fintech scale-up closes new growth round — detected this run",
+  meta:"Comms-hire window ~ Sep 2026 (round +6mo) · UKTN · fintech",
+  adv:"Advisory: post-raise reputation & corporate-comms build; first senior in-house comms hire."};
+
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const pulsesIn=m=>PULSES.filter(p=>p.m===m);
+const detailHTML=p=>`<span class="conf ${p.conf==='high'?'high':'med'}">${p.conf}</span>
+  <span class="nm" style="margin-left:6px">${esc(p.name)}</span>
+  <span class="days ${p.days>150?'far':''}">${p.days}d</span>
+  <div class="seat">${esc(p.seat)}</div><div class="angle">${esc(p.angle)}</div>
+  <div>${p.tg.slice(0,5).map(t=>`<span class="badge">${esc(t)}</span>`).join('')}</div>
+  <div class="adv">${esc(p.adv)}</div>`;
+function showDetail(id,ms){
+  document.getElementById(id).innerHTML=ms.map(detailHTML).join('<hr style="border:0;border-top:1px solid var(--border);margin:11px 0">');
+}
+
+/* ---- M1 ribbon ---- */
+function buildR1(){
+  const g=document.getElementById('r1');g.innerHTML='';
+  for(let m=0;m<12;m++){
+    const ps=pulsesIn(m), has=ps.length>0;
+    const fresh=FRESH&&ps.some(p=>p.key===FRESH_PULSE_KEY);
+    const el=document.createElement('div');
+    el.className='mtile'+(m<NOW?' past':'')+(m===NOW?' now':'')+(has?' has':'')+(fresh?' fresh':'');
+    el.innerHTML=`<span class="nb"></span><span class="mlab">${MON[m]}</span>
+      <span class="pips">${ps.map(p=>`<span class="pip ${p.conf==='high'?'high':'med'}"></span>`).join('')}</span>
+      <span class="cnt">${has?ps.length+' pulse'+(ps.length>1?'s':''):'—'}</span>`;
+    if(has)el.onclick=()=>{document.querySelectorAll('#r1 .mtile').forEach(x=>x.classList.remove('sel'));el.classList.add('sel');showDetail('r1d',ps);};
+    g.appendChild(el);
+  }
+}
+/* ---- M2 rail ---- */
+function buildR2(){
+  const w=document.getElementById('r2');
+  let months='';
+  for(let m=0;m<12;m++){
+    const ps=pulsesIn(m), has=ps.length>0;
+    const fresh=FRESH&&ps.some(p=>p.key===FRESH_PULSE_KEY);
+    months+=`<div class="rm${has?' has':''}${m===NOW?' now':''}${m<NOW?' past':''}" data-m="${m}">
+      <div class="stack">${ps.map(p=>`<span class="pip ${p.conf==='high'?'high':'med'}${fresh?' fresh':''}"></span>`).join('')}</div>
+      <div class="lab">${MON[m]}</div></div>`;
+  }
+  w.innerHTML=`<div class="months">${months}</div><div class="axis"></div>
+    <div class="nowline" style="left:${(NOW+0.5)/12*100}%"><b>NOW</b></div>`;
+  w.querySelectorAll('.rm.has').forEach(r=>r.onclick=()=>showDetail('r2d',pulsesIn(+r.dataset.m)));
+}
+/* ---- M3 collapsed list ---- */
+function buildR3(){
+  const L=document.getElementById('r3');L.innerHTML='';
+  let lastQuiet=false;
+  for(let m=0;m<12;m++){
+    const ps=pulsesIn(m);
+    if(!ps.length){
+      if(!lastQuiet){const d=document.createElement('div');d.className='quiet';d.textContent='— quiet —';L.appendChild(d);lastQuiet=true;}
+      continue;
+    }
+    lastQuiet=false;
+    const fresh=FRESH&&ps.some(p=>p.key===FRESH_PULSE_KEY);
+    const row=document.createElement('div');
+    row.className='qrow'+(m===NOW?' now':'')+(fresh?' fresh':'');
+    row.innerHTML=`<span class="mo">${MON[m]}</span>
+      <span class="what">${ps.map(p=>esc(p.name)).join(' · ')}</span>
+      <span class="nb"></span>
+      <span class="pips">${ps.map(p=>`<span class="pip ${p.conf==='high'?'high':'med'}"></span>`).join('')}</span>`;
+    row.onclick=()=>showDetail('r3d',ps);
+    L.appendChild(row);
+  }
+}
+/* ---- funding (all 3, symmetrical) ---- */
+function buildFunding(){
+  const rows=FRESH?[FUND_NEW,...FUND]:FUND;
+  document.querySelectorAll('[data-flist]').forEach(L=>{
+    L.innerHTML='';
+    rows.forEach(f=>{
+      const w=document.createElement('div');
+      w.className='frow'+(f.fresh?' fresh':'');
+      w.innerHTML=`<div class="h">
+          <span class="conf ${f.conf==='high'?'high':'med'}">${f.conf}</span>
+          <span class="co">${esc(f.co)}</span><span class="amt">${esc(f.amt)}</span>
+          <span class="tag">NEW</span>
+          <span class="win">${MON[f.hm]} hire-window</span><span class="chev">▸</span></div>
+        <div class="b"><div>${esc(f.ev)}</div>
+          <div style="color:var(--text-dim);margin-top:5px">${esc(f.meta)}</div>
+          <div class="adv2">${esc(f.adv)}</div></div>`;
+      w.querySelector('.h').onclick=()=>w.classList.toggle('open');
+      L.appendChild(w);
+    });
+  });
+  document.querySelectorAll('[data-fcount]').forEach(c=>c.textContent=rows.length);
+  document.querySelectorAll('.newchip[data-new]').forEach(c=>c.classList.toggle('on',FRESH));
+}
+function renderAll(){buildR1();buildR2();buildR3();buildFunding();}
+document.getElementById('simBtn').onclick=function(){
+  FRESH=!FRESH;
+  this.textContent=FRESH?'▸ Clear the new finding':'▸ Simulate a new finding';
+  renderAll();
+};
+renderAll();
+</script>
+</body>
+</html>
