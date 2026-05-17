@@ -26,7 +26,7 @@ from tool.predictive import cluster as pcluster, detector as pdet, ranker as pr,
 from tool.ranking import rank
 from tool.render import render_html, render_plaintext
 from tool.sources import (
-    bright_data, companies_house, gdelt, google_news, jobs, rss_feeds,
+    companies_house, gdelt, google_news, jobs, rss_feeds,
     sec_edgar,
 )
 from tool.state_store import filter_unseen
@@ -111,11 +111,6 @@ def run() -> dict:
         _tally("Companies House", companies_house.to_signals())
     except Exception as e:
         log.exception("companies_house: %s", e)
-
-    try:
-        _tally("Bright Data (licensed LinkedIn surface)", bright_data.fetch_all())
-    except Exception as e:
-        log.exception("bright_data: %s", e)
 
     return {"signals": all_signals, "report": report}
 

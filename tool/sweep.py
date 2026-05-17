@@ -35,7 +35,7 @@ from tool.predictive.stacker import stack as stack_events
 from tool.ranking import rank
 from tool.render import render_html, render_plaintext
 from tool.sources import (
-    bright_data, companies_house, gdelt, jobs, rss_feeds, sec_edgar,
+    companies_house, gdelt, jobs, rss_feeds, sec_edgar,
 )
 from tool import linkedin_resolver as lnr
 from tool import predictor_pipeline
@@ -64,7 +64,6 @@ def fetch_all() -> dict:
         ("GDELT (global news graph)", gdelt.fetch_all),
         ("SEC EDGAR (8-K filings)", sec_edgar.fetch_all),
         ("Companies House", companies_house.to_signals),
-        ("Bright Data (licensed LinkedIn surface)", bright_data.fetch_all),
     ]:
         try:
             _tally(label, fn())
