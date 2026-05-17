@@ -203,17 +203,14 @@ def refresh_latest_brief_from_github() -> dict:
         has_pipeline = "predictor_pipeline.json" in basenames
         ts = (latest.get("created_at", "?") or "")[:16].replace("T", " ")
 
-        # Full file list — most direct way to see what the workflow actually
-        # uploaded. Strip the tool/state/ prefix for readability.
+        # Returned in the JSON for diagnostics, not surfaced in the UI.
         file_list = sorted(set(
             f.replace("tool/state/", "") for f in extracted
             if f.endswith((".html", ".txt", ".json"))
         ))
-        files_line = ", ".join(file_list) if file_list else "(nothing)"
 
-        detail = (f"Pulled {latest.get('name', '?')} artifact from {ts}. "
-                  f"Loaded {leads_n} leads, {predictors_n} predictors. "
-                  f"Files in artifact: {files_line}.")
+        detail = (f"Pulled today's brief — {leads_n} leads, "
+                  f"{predictors_n} predictors.")
         if not has_brief_html:
             detail += (" ⚠ Brief script likely crashed before writing any state - "
                        "check the GitHub Actions run logs for that workflow.")
@@ -2423,10 +2420,13 @@ async function refreshBrief() {
   try {
     const r = await fetch('/api/refresh', { method: 'POST' });
     const j = await r.json();
-    showRefreshBanner(j);
     if (j.ok && (j.leads > 0 || j.predictors > 0)) {
-      setTimeout(() => window.location.reload(), 1200);
+      // Normal success: just reload. No banner — the data speaks for itself.
+      setTimeout(() => window.location.reload(), 600);
     } else {
+      // Only surface a banner when something is actually wrong (refresh
+      // failed, or it succeeded but found nothing — both carry a warning).
+      showRefreshBanner(j);
       btn.disabled = false;
       btn.textContent = originalLabel;
     }

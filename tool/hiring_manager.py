@@ -283,12 +283,16 @@ def resolve_lead_contact(signal: dict, contacts: dict | None = None) -> dict:
         if nc:
             name = nc["name"]
             linkedin_url = nc.get("linkedin_url")
+            # Verified named person: blend role-inference certainty with
+            # the roster entry's own confidence, so a named hit always
+            # outranks a role-only one.
             confidence = round(
                 min(0.95, 0.1 + base_conf * 0.5
                     + float(nc.get("confidence") or 0) * 0.5), 2)
-        elif basis != "jd_reporting_line":
-            # Role known, person not — honestly lower than a named hit.
-            confidence = round(base_conf * 0.6, 2)
+        # else: role-only. Confidence stays = base_conf — the honest
+        # confidence in the reporting-line inference we're actually
+        # showing. The missing person is already signalled by the
+        # absence of a name; don't double-penalise it in the number.
 
     return {
         "name": name,
