@@ -1797,6 +1797,45 @@ TEMPLATE = r"""
       box-shadow: none;
       transform: none;
     }
+    .action-card summary.add-toggle {
+      list-style: none;
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      padding: 9px 14px;
+      background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
+      color: white;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: all 0.18s ease;
+      box-shadow: 0 1px 2px rgba(91, 166, 173, 0.15);
+    }
+    .action-card summary.add-toggle::-webkit-details-marker { display: none; }
+    .action-card summary.add-toggle::marker { content: ""; }
+    .action-card summary.add-toggle:hover {
+      box-shadow: 0 4px 16px var(--teal-glow), 0 0 0 1px var(--teal);
+      transform: translateY(-1px);
+    }
+    .funding-details > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface-elevated);
+      font-size: 13px;
+      line-height: 1.5;
+      transition: border-color 0.15s ease;
+    }
+    .funding-details > summary::-webkit-details-marker { display: none; }
+    .funding-details > summary::marker { content: ""; }
+    .funding-details > summary:hover { border-color: var(--border-hover); }
+    .funding-details[open] > summary { margin-bottom: 8px; }
+    .funding-details .fd-hint { color: var(--text-muted); font-size: 11px; }
     .action-card .status {
       margin-top: 10px;
       padding: 8px 11px;
@@ -2120,24 +2159,19 @@ TEMPLATE = r"""
   <!-- ACTION BOXES -->
   <div class="actions">
 
-    <!-- MPC OUTREACH FACTORY -->
+    <!-- PRE-MEETING BRIEF -->
     <div class="panel action-card">
-      <h3>MPC Outreach Factory</h3>
-      <div class="subhead">Type in a candidate; instantly get a ranked list of target accounts, each with a paste-ready outreach hook woven from signals already gathered (a live trigger at that company, or a structural fit). Built from intelligence we've already collected — so it comes back straight away, costs nothing to run, and every hook is backed by real evidence.</div>
-      <form id="mpc-form" onsubmit="runMPC(event)">
-        <label for="mpc-name">Candidate name</label>
-        <input id="mpc-name" name="name" placeholder="e.g. James Carter" required>
-        <label for="mpc-company">Current company</label>
-        <input id="mpc-company" name="current_company" placeholder="e.g. Barclays" required>
-        <label for="mpc-title">Current title</label>
-        <input id="mpc-title" name="current_title" placeholder="e.g. Director of Corporate Comms" required>
-        <label for="mpc-specialism">Specialism (optional)</label>
-        <input id="mpc-specialism" name="specialism" placeholder="e.g. IR, crisis, internal comms">
-        <label for="mpc-notes">Notes (optional)</label>
-        <input id="mpc-notes" name="notes" placeholder="e.g. led IR through 2023 restructure">
-        <button type="submit">Build hit list</button>
-        <div class="status" id="mpc-status"></div>
-        <div id="mpc-result" class="inline-result"></div>
+      <h3>Pre-meeting Brief</h3>
+      <div class="subhead">Walk into any client meeting with prep no competitor matches.</div>
+      <form id="pm-form" onsubmit="dispatch(event, 'pm-form', '/api/dispatch/pre-meeting')">
+        <label for="pm-account">Account name</label>
+        <input id="pm-account" name="account_name" placeholder="e.g. Severn Trent" required>
+        <label for="pm-contact">Contact (optional)</label>
+        <input id="pm-contact" name="contact_name" placeholder="e.g. Carla Sherry">
+        <label for="pm-context">Meeting context (optional)</label>
+        <input id="pm-context" name="meeting_context" placeholder="e.g. 10am Mon, Zoom">
+        <button type="submit">Run and send via email</button>
+        <div class="status" id="pm-status"></div>
       </form>
     </div>
 
@@ -2155,38 +2189,6 @@ TEMPLATE = r"""
       </form>
     </div>
 
-    <!-- REVERSE MATCH -->
-    <div class="panel action-card">
-      <h3>Reverse Match</h3>
-      <div class="subhead">Type in a candidate; get a ranked list of accounts where that person could be pitched. Unlike MPC Factory, this one goes out and searches the market fresh each time — it takes a few minutes rather than being instant, but casts a wider net than MPC's ready-made hooks.</div>
-      <form id="rm-form" onsubmit="dispatch(event, 'rm-form', '/api/dispatch/reverse-match')">
-        <label for="rm-name">Candidate name</label>
-        <input id="rm-name" name="candidate_name" placeholder="e.g. Rebecca Torres" required>
-        <label for="rm-company">Current company</label>
-        <input id="rm-company" name="current_company" placeholder="e.g. Vodafone" required>
-        <label for="rm-title">Current title</label>
-        <input id="rm-title" name="current_title" placeholder="e.g. Head of Internal Communications" required>
-        <button type="submit">Run and send via email</button>
-        <div class="status" id="rm-status"></div>
-      </form>
-    </div>
-
-    <!-- PRE-MEETING BRIEF -->
-    <div class="panel action-card">
-      <h3>Pre-meeting Brief</h3>
-      <div class="subhead">Walk into any client meeting with prep no competitor matches.</div>
-      <form id="pm-form" onsubmit="dispatch(event, 'pm-form', '/api/dispatch/pre-meeting')">
-        <label for="pm-account">Account name</label>
-        <input id="pm-account" name="account_name" placeholder="e.g. Severn Trent" required>
-        <label for="pm-contact">Contact (optional)</label>
-        <input id="pm-contact" name="contact_name" placeholder="e.g. Carla Sherry">
-        <label for="pm-context">Meeting context (optional)</label>
-        <input id="pm-context" name="meeting_context" placeholder="e.g. 10am Mon, Zoom">
-        <button type="submit">Run and send via email</button>
-        <div class="status" id="pm-status"></div>
-      </form>
-    </div>
-
     <!-- 14-DAY CATCH-UP -->
     <div class="panel action-card">
       <h3>14-Day Catch-up</h3>
@@ -2199,16 +2201,33 @@ TEMPLATE = r"""
       </form>
     </div>
 
-    <!-- CANDIDATE WATCH (last → bottom-right; emptiest card) -->
+    <!-- MPC OUTREACH FACTORY -->
+    <div class="panel action-card">
+      <h3>MPC Outreach Factory</h3>
+      <div class="subhead">Get a ranked list of target accounts for a candidate, each with a paste-ready outreach hook, woven from signals already gathered (a live trigger at that company, or a structural fit).</div>
+      <form id="mpc-form" onsubmit="runMPC(event)">
+        <label for="mpc-name">Candidate name</label>
+        <input id="mpc-name" name="name" placeholder="e.g. James Carter" required>
+        <label for="mpc-company">Current company</label>
+        <input id="mpc-company" name="current_company" placeholder="e.g. Barclays" required>
+        <label for="mpc-title">Current title</label>
+        <input id="mpc-title" name="current_title" placeholder="e.g. Director of Corporate Comms" required>
+        <button type="submit">Build hit list</button>
+        <div class="status" id="mpc-status"></div>
+        <div id="mpc-result" class="inline-result"></div>
+      </form>
+    </div>
+
+    <!-- CANDIDATE WATCH -->
     <div class="panel action-card">
       <h3>Candidate Watch</h3>
-      <div class="subhead">A manual roster of warm passive candidates Sara wants to stay in touch with. She sets a "call every N days" cadence; overdue ones float to the top so relationships don't go cold. A section for reminders — the "restlessness" score only keyword-matches notes Sara types herself, not live intelligence.</div>
+      <div class="subhead">Keep a roster of warm candidates to stay in touch with. Overdue ones float to the top so relationships don't go cold. Note — the "restlessness" score only keyword-matches notes Sara types herself, not live intelligence.</div>
       <div id="watch-list-wrap">
         <div class="status" id="watch-list-status">Loading…</div>
         <div id="watch-list"></div>
       </div>
       <details style="margin-top:10px;">
-        <summary>+ Add candidate</summary>
+        <summary class="add-toggle">+ Add candidate</summary>
         <form id="watch-add-form" onsubmit="addWatchCandidate(event)" style="margin-top:8px;">
           <label for="wa-name">Name</label>
           <input id="wa-name" name="name" required>
@@ -2226,6 +2245,22 @@ TEMPLATE = r"""
           <div class="status" id="watch-add-status"></div>
         </form>
       </details>
+    </div>
+
+    <!-- REVERSE MATCH -->
+    <div class="panel action-card">
+      <h3>Reverse Match</h3>
+      <div class="subhead">Get a ranked list of accounts where your candidate could be pitched. Unlike MPC Factory, this one goes out and searches the market fresh each time - casts a wider net.</div>
+      <form id="rm-form" onsubmit="dispatch(event, 'rm-form', '/api/dispatch/reverse-match')">
+        <label for="rm-name">Candidate name</label>
+        <input id="rm-name" name="candidate_name" placeholder="e.g. Rebecca Torres" required>
+        <label for="rm-company">Current company</label>
+        <input id="rm-company" name="current_company" placeholder="e.g. Vodafone" required>
+        <label for="rm-title">Current title</label>
+        <input id="rm-title" name="current_title" placeholder="e.g. Head of Internal Communications" required>
+        <button type="submit">Run and send via email</button>
+        <div class="status" id="rm-status"></div>
+      </form>
     </div>
 
   </div>
@@ -2757,7 +2792,23 @@ async function loadFunding() {
         '</div>'
       );
     }
-    body.innerHTML = out.join('');
+    // Collapsed by default: show only the top row as a clickable
+    // summary; the full window opens on click.
+    const f0 = j.rows[0];
+    const conf0 = (f0.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
+    const more = (j.total > 1)
+      ? ' <span class="fd-hint">&middot; +' + (j.total - 1) + ' more in window — click to open</span>'
+      : ' <span class="fd-hint">&middot; click to open</span>';
+    const summary =
+      '<span class="' + conf0 + '">' + esc(f0.confidence || '') + '</span> ' +
+      (f0.sector ? esc(f0.sector) + ' ' : '') +
+      '<strong>' + esc(f0.company || '(unknown)') + '</strong> &middot; ' +
+      esc(f0.amount || '') + ' ' + esc(f0.round || 'funding round') + more;
+    body.innerHTML =
+      '<details class="funding-details">' +
+        '<summary>' + summary + '</summary>' +
+        '<div style="margin-top:8px;">' + out.join('') + '</div>' +
+      '</details>';
   } catch (e) {
     body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
   }
