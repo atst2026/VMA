@@ -1607,8 +1607,13 @@ TEMPLATE = r"""
 
     .action-card {
       width: 100%;
-      height: 440px;          /* uniform box height for all six */
-      overflow-y: auto;       /* taller content (MPC) scrolls in-card */
+      /* Uniform box sized to the Reverse Match / Pitch Pack card (a
+         ~3-field form: padding+h3+subhead+3 fields+button ≈ 330px;
+         360 gives the reference card a little headroom so IT never
+         scrolls). The taller MPC card (5 fields) scrolls inside this
+         same box rather than growing it — all six are identical. */
+      height: 360px;
+      overflow-y: auto;
       padding: 16px 18px 18px 18px;
       background: var(--surface);
       border-radius: 10px;
