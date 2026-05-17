@@ -1600,10 +1600,10 @@ TEMPLATE = r"""
       grid-template-columns: 1fr 1fr 1fr;
       gap: 16px;
     }
-    @media (max-width: 1000px) { .actions { grid-template-columns: 1fr; } }
-    @media (max-width: 1400px) and (min-width: 1001px) {
-      .actions { grid-template-columns: 1fr 1fr; }
-    }
+    /* Always 3 across (2 rows of 3) on desktop/laptop; only collapse to
+       a single column on genuinely narrow screens. No 2-column tier —
+       that was forcing "3 rows of 2". */
+    @media (max-width: 900px) { .actions { grid-template-columns: 1fr; } }
 
     .action-card {
       width: 100%;
@@ -2065,35 +2065,6 @@ TEMPLATE = r"""
       </form>
     </div>
 
-    <!-- CANDIDATE WATCH -->
-    <div class="panel action-card">
-      <h3>Candidate Watch</h3>
-      <div class="subhead">Warm passive candidates Sara wants to stay liquid to. Overdue + restlessness signals float to top.</div>
-      <div id="watch-list-wrap">
-        <div class="status" id="watch-list-status">Loading…</div>
-        <div id="watch-list"></div>
-      </div>
-      <details style="margin-top:10px;">
-        <summary>+ Add candidate</summary>
-        <form id="watch-add-form" onsubmit="addWatchCandidate(event)" style="margin-top:8px;">
-          <label for="wa-name">Name</label>
-          <input id="wa-name" name="name" required>
-          <label for="wa-company">Current company</label>
-          <input id="wa-company" name="current_company">
-          <label for="wa-title">Current title</label>
-          <input id="wa-title" name="current_title">
-          <label for="wa-linkedin">LinkedIn URL</label>
-          <input id="wa-linkedin" name="linkedin_url" placeholder="https://linkedin.com/in/...">
-          <label for="wa-cadence">Touch cadence (days)</label>
-          <input id="wa-cadence" name="touch_cadence_days" type="number" value="30" min="7" max="180">
-          <label for="wa-notes">Notes</label>
-          <input id="wa-notes" name="notes">
-          <button type="submit">Add</button>
-          <div class="status" id="watch-add-status"></div>
-        </form>
-      </details>
-    </div>
-
     <!-- PITCH PACK -->
     <div class="panel action-card">
       <h3>Pitch Pack</h3>
@@ -2150,6 +2121,35 @@ TEMPLATE = r"""
         <button type="submit">Run and send via email</button>
         <div class="status" id="sweep-status"></div>
       </form>
+    </div>
+
+    <!-- CANDIDATE WATCH (last → bottom-right; emptiest card) -->
+    <div class="panel action-card">
+      <h3>Candidate Watch</h3>
+      <div class="subhead">Warm passive candidates Sara wants to stay liquid to. Overdue + restlessness signals float to top.</div>
+      <div id="watch-list-wrap">
+        <div class="status" id="watch-list-status">Loading…</div>
+        <div id="watch-list"></div>
+      </div>
+      <details style="margin-top:10px;">
+        <summary>+ Add candidate</summary>
+        <form id="watch-add-form" onsubmit="addWatchCandidate(event)" style="margin-top:8px;">
+          <label for="wa-name">Name</label>
+          <input id="wa-name" name="name" required>
+          <label for="wa-company">Current company</label>
+          <input id="wa-company" name="current_company">
+          <label for="wa-title">Current title</label>
+          <input id="wa-title" name="current_title">
+          <label for="wa-linkedin">LinkedIn URL</label>
+          <input id="wa-linkedin" name="linkedin_url" placeholder="https://linkedin.com/in/...">
+          <label for="wa-cadence">Touch cadence (days)</label>
+          <input id="wa-cadence" name="touch_cadence_days" type="number" value="30" min="7" max="180">
+          <label for="wa-notes">Notes</label>
+          <input id="wa-notes" name="notes">
+          <button type="submit">Add</button>
+          <div class="status" id="watch-add-status"></div>
+        </form>
+      </details>
     </div>
 
   </div>
