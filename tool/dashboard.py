@@ -1592,27 +1592,23 @@ TEMPLATE = r"""
       font-weight: 400;
     }
 
-    /* ACTION CARDS — refined, modern */
-    /* Masonry via CSS multi-column. The cards are intrinsically very
-       uneven (MPC has 5 fields and is ~3x taller than Candidate Watch /
-       Pitch Pack). A row grid can only handle that by stretching the
-       short cards (look oversized) or leaving big voids — both ugly.
-       Columns let every card keep its natural height and pack tightly
-       with no gaps. break-inside:avoid keeps a card whole. */
+    /* ACTION CARDS — fixed, uniform 3x2 grid. Every card is the SAME
+       size; a card whose content is taller than the box (e.g. MPC's
+       5 fields) scrolls internally rather than growing the box. */
     .actions {
-      column-count: 3;
-      column-gap: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
     }
-    @media (max-width: 1000px) { .actions { column-count: 1; } }
+    @media (max-width: 1000px) { .actions { grid-template-columns: 1fr; } }
     @media (max-width: 1400px) and (min-width: 1001px) {
-      .actions { column-count: 2; }
+      .actions { grid-template-columns: 1fr 1fr; }
     }
 
     .action-card {
       width: 100%;
-      margin: 0 0 16px;
-      break-inside: avoid;
-      -webkit-column-break-inside: avoid;
+      height: 440px;          /* uniform box height for all six */
+      overflow-y: auto;       /* taller content (MPC) scrolls in-card */
       padding: 16px 18px 18px 18px;
       background: var(--surface);
       border-radius: 10px;
