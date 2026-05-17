@@ -240,12 +240,19 @@ def load_latest_signals() -> list[dict]:
         data = json.loads(p.read_text())
     except Exception:
         return []
-    # Enrich each lead with a personalised outreach draft + a targeted
-    # LinkedIn search (role-at-company, not just company-wide flood)
+    # The uniform sequence, identical for every lead regardless of kind:
+    # resolve best-available contact (+ confidence) -> personalised draft
+    # -> one precise LinkedIn click.
+    from tool.hiring_manager import resolve_lead_contact
+    try:
+        from tool.contacts.store import load_contacts
+        _cc = load_contacts()
+    except Exception:
+        _cc = {}
     for s in data:
-        s["hiring_manager"] = _lead_hiring_manager(s)
+        s["contact"] = resolve_lead_contact(s, contacts=_cc)
         s["outreach"] = draft_outreach_for_lead(s)
-        s["linkedin"] = linkedin_search_for_lead(s)
+        s["linkedin"] = linkedin_click(s)
     return data
 
 
@@ -305,55 +312,37 @@ def _display_role(title: str) -> str:
     return t.split(",")[0].strip()
 
 
-def _lead_hiring_manager(signal: dict) -> dict | None:
-    """Inferred reporting-line manager for a job-like lead, blended with
-    any named roster contact. None for non-job leads (those keep the
-    existing appointee/Head-of-Comms routing)."""
-    from tool.hiring_manager import (
-        is_job_like, manager_for_signal, best_named_contact)
-    if not is_job_like(signal):
-        return None
-    company = (signal.get("company") or "").strip()
-    inf = manager_for_signal(signal)
-    hm = dict(inf)
-    named = best_named_contact(company, inf.get("slots") or ())
-    if named:
-        hm["name"] = named["name"]
-        hm["linkedin_url"] = named.get("linkedin_url")
-        hm["confidence"] = round(
-            min(0.95, 0.1 + inf["confidence"] * 0.5
-                + float(named.get("confidence") or 0) * 0.5), 2)
-    else:
-        hm["name"] = ""
-        hm["linkedin_url"] = None
-        # Role known, person not — honestly lower than a named contact.
-        if inf["basis"] != "jd_reporting_line":
-            hm["confidence"] = round(inf["confidence"] * 0.6, 2)
-    return hm
-
-
 def draft_outreach_for_lead(signal: dict) -> str:
-    hm = signal.get("hiring_manager")
+    """Personalised draft for ANY lead, off the uniform contact resolver
+    (signal['contact'])."""
+    c = signal.get("contact") or {}
     company = (signal.get("company") or "").strip()
-    if not hm or not company:
+    if not company:
         return _DEFAULT_OUTREACH
-    name = (hm.get("name") or "").strip()
+    from tool.hiring_manager import is_job_like
+    name = (c.get("name") or "").strip()
     first = name.split()[0] if name else ""
-    mgr_title = hm.get("manager_title") or "Communications lead"
-    role = _display_role(signal.get("title") or "")
-    role_line = (f"I saw {company} is hiring a {role} — "
-                 if role else
-                 f"I saw {company} is building out its communications team — ")
-    you_line = (f"as {company}'s {mgr_title} you're likely shaping that hire, "
-                "so I wanted to reach out directly.")
+    title = c.get("title") or "Head of Communications"
+    if c.get("basis") == "appointee":
+        body = (f"Congratulations on the move to {company} — I saw the "
+                "announcement. I'd love to introduce VMA Group as you "
+                "settle in and build out the team.")
+    elif is_job_like(signal):
+        role = _display_role(signal.get("title") or "")
+        what = f"for the {role} role" if role else "across its comms team"
+        body = (f"I saw {company} is hiring {what}. As {company}'s {title} "
+                "you're likely shaping that hire, so I'm reaching out "
+                "directly.")
+    else:
+        body = (f"I've been following developments at {company} — as its "
+                f"{title} you're the natural person to connect with.")
     return (
         f"Hi {first or '(Name)'}, I'm Sara from VMA Group.\n\n"
         "We specialise in executive search and recruitment across "
-        "corporate communications, internal comms and marketing. "
-        f"{role_line}{you_line}\n\n"
+        f"corporate communications, internal comms and marketing. {body}\n\n"
         "I'd love to grab a coffee in the next couple of weeks to share "
-        "what we're seeing in the market — whether for this role or the "
-        "wider team. I've attached our brochure in case it's useful.\n\n"
+        "what we're seeing in the market. I've attached our brochure in "
+        "case it's useful.\n\n"
         "Would be great to connect.\n\n"
         "Best,\n"
         "Sara"
@@ -362,28 +351,6 @@ def draft_outreach_for_lead(signal: dict) -> str:
 
 def draft_outreach_for_predictor(_predictor: dict) -> str:
     return _DEFAULT_OUTREACH
-
-
-_JOB_TITLE_TOKENS = (
-    "head of", "director of", "chief", "vp ", "vice president",
-    "communications", "comms", "corporate affairs", "internal comms",
-    "external comms", "pr ", "media relations", "marketing and brand",
-)
-
-# Patterns that often surround an appointee's name in a news headline
-_APPOINTEE_PATTERNS = [
-    re.compile(r"(?:appoints?|names?|hires?|promotes?)\s+([A-Z][a-z]+(?:\s[A-Z][a-z]+)+)"),
-    re.compile(r"([A-Z][a-z]+(?:\s[A-Z][a-z]+)+)\s+(?:joins|appointed|promoted|named|to lead|to head)"),
-    re.compile(r"new\s+(?:CCO|CEO|CHRO|chief|head of[^.]+)\s+is\s+([A-Z][a-z]+(?:\s[A-Z][a-z]+)+)"),
-]
-
-
-def _extract_appointee_name(title: str) -> str | None:
-    for pat in _APPOINTEE_PATTERNS:
-        m = pat.search(title or "")
-        if m:
-            return m.group(1).strip()
-    return None
 
 
 def _people_search(keywords: str) -> str:
@@ -397,118 +364,27 @@ def _people_search(keywords: str) -> str:
     return f"https://www.linkedin.com/talent/search?keywords={quote_plus(keywords.strip())}"
 
 
-def linkedin_search_for_lead(signal: dict) -> dict:
-    """Three-tier URL builder.
-       Tier 1  - Bright Data resolved a direct linkedin.com/in/ URL during
-                 the morning brief -> one click, lands on the named person.
-       Tier 1b - Contacts table has a NAME for this company + role-slot
-                 (seeded from Companies House etc.). Search-by-name URL
-                 puts that named person at the top of LinkedIn results,
-                 so Sara lands on them in roughly one click.
-       Tier 2  - Fall back to LinkedIn global people search with a tight
-                 quoted-phrase query by role. Always loads. Top result
-                 is usually the right kind of person.
-    """
-    if signal.get("linkedin_profile_url"):
-        role = (signal.get("linkedin_profile_role") or "").strip()
-        company = (signal.get("company") or "").strip()
-        if role and company:
-            label = f"Open {role} at {company}"
-        elif company:
-            label = f"Open profile at {company}"
-        else:
-            label = "Open profile"
-        return {"label": label, "url": signal["linkedin_profile_url"]}
-
-    # Job-like lead: target the inferred reporting-line manager (the
-    # comms seniority-up rules), NOT the coarse kind->CHRO fallback.
-    hm = signal.get("hiring_manager")
+def linkedin_click(signal: dict) -> dict:
+    """One uniform click for EVERY lead, off signal['contact']:
+    a resolved /in/ profile if we have one, else a precise name+company
+    search, else a precise role+company search. Never a dead end."""
+    c = signal.get("contact") or {}
     company = (signal.get("company") or "").strip()
-    if hm and company:
-        mgr_title = hm.get("manager_title") or "Communications lead"
-        name = (hm.get("name") or "").strip()
-        if hm.get("linkedin_url"):
-            return {"label": f"Open {name or mgr_title} at {company}",
-                    "url": hm["linkedin_url"]}
-        if name:
-            return {"label": f"Search {name} ({mgr_title}) at {company}",
-                    "url": _people_search(f'"{name}" "{company}"')}
-        return {"label": f"Search {mgr_title} at {company}",
-                "url": _people_search(f'"{mgr_title}" "{company}"')}
-
-    # Tier 1b: search by the seeded contact's actual name. Lands Sara on
-    # the right person without a second click.
-    seeded_name = (signal.get("seeded_contact_name") or "").strip()
-    company = (signal.get("company") or "").strip()
-    if seeded_name and company:
-        return {"label": f"Search {seeded_name} ({signal.get('seeded_contact_role') or 'contact'}) at {company}",
-                "url": _people_search(f'"{seeded_name}" "{company}"')}
-
-    title = (signal.get("title") or "").strip()
-    kind = (signal.get("kind") or "").strip().lower()
-    tlow = title.lower()
-
-    if not company and not title:
+    name = (c.get("name") or "").strip()
+    title = c.get("title") or "Head of Communications"
+    direct = signal.get("linkedin_profile_url") or c.get("linkedin_url")
+    if direct:
+        who = name or title
+        return {"label": f"Open {who} at {company}" if company
+                else f"Open {who}", "url": direct}
+    if not company:
         return {"label": "Search LinkedIn",
-                "url": "https://www.linkedin.com/search/results/people/"}
-
-    looks_like_job = (
-        kind == "job"
-        or (
-            any(t in tlow for t in _JOB_TITLE_TOKENS)
-            and any(t in tlow for t in ("communications", "comms", "pr ",
-                                          "corporate affairs", "media relations"))
-        )
-    )
-
-    # Leadership-change news — search the named appointee
-    if kind == "leadership_change" or any(
-        v in tlow for v in (" appoints ", " names ", " hired as ",
-                              " new ceo", " new chief", " new chair")
-    ):
-        name = _extract_appointee_name(title)
-        if name and company:
-            return {"label": f"Search {name} at {company}",
-                    "url": _people_search(f'"{name}" "{company}"')}
-        if company:
-            return {"label": f"Search comms appointee at {company}",
-                    "url": _people_search(f'"Head of Communications" "{company}"')}
-        return {"label": "Search LinkedIn",
-                "url": _people_search(title[:120])}
-
-    # Job posting — hiring manager (CHRO / HRD) at that company
-    if looks_like_job and company:
-        return {"label": f"Search hiring manager at {company}",
-                "url": _people_search(f'"Chief People Officer" OR "CHRO" "{company}"')}
-
-    # RNS / SEC filing / regulator — Head of Comms at that company
-    if kind in ("rns", "filing", "regulator") and company:
-        return {"label": f"Search Head of Comms at {company}",
-                "url": _people_search(f'"Head of Communications" OR "Corporate Affairs" "{company}"')}
-
-    # Procurement — comms lead at the buying body
-    if kind == "procurement" and company:
-        return {"label": f"Search Head of Comms at {company}",
-                "url": _people_search(f'"Head of Communications" "{company}"')}
-
-    # Trade press — pull the appointee name from the headline if we can
-    if kind == "trade_press":
-        name = _extract_appointee_name(title)
-        if name and company:
-            return {"label": f"Search {name} at {company}",
-                    "url": _people_search(f'"{name}" "{company}"')}
-        if company:
-            return {"label": f"Search comms at {company}",
-                    "url": _people_search(f'"Head of Communications" "{company}"')}
-        return {"label": "Search LinkedIn",
-                "url": _people_search(title[:120])}
-
-    # Generic — company known, intent unclear
-    if company:
-        return {"label": f"Search decision-maker at {company}",
-                "url": _people_search(f'"CHRO" OR "Head of Communications" "{company}"')}
-
-    return {"label": "Search LinkedIn", "url": _people_search(title or "")}
+                "url": _people_search(name or title)}
+    if name:
+        return {"label": f"Open {name} ({title}) at {company}",
+                "url": _people_search(f'"{name}" "{company}"')}
+    return {"label": f"Open {title} at {company}",
+            "url": _people_search(f'"{title}" "{company}"')}
 
 
 def linkedin_search_for_predictor(p: dict) -> dict:
@@ -2057,11 +1933,11 @@ TEMPLATE = r"""
                 <span class="badge">{{ s.source }}</span>
                 <span class="badge">{{ s.geo }}</span>
               </div>
-              {% if s.hiring_manager %}
+              {% if s.contact %}
               <div style="font-size:11px;color:var(--text-muted);margin:2px 0 4px;">
-                → Likely contact:
-                <strong style="color:#333;">{{ s.hiring_manager.name or s.hiring_manager.manager_title }}</strong>{% if s.hiring_manager.name %} · {{ s.hiring_manager.manager_title }}{% endif %}
-                · confidence {{ '%.0f' | format(s.hiring_manager.confidence * 100) }}%{% if s.hiring_manager.basis == 'jd_reporting_line' %} · from JD{% elif s.hiring_manager.basis == 'default' %} · low{% endif %}
+                → Contact:
+                <strong style="color:#333;">{{ s.contact.name or s.contact.title }}</strong>{% if s.contact.name %} · {{ s.contact.title }}{% endif %}
+                · confidence {{ '%.0f' | format(s.contact.confidence * 100) }}%{% if s.contact.basis == 'jd_reporting_line' %} · from JD{% elif s.contact.basis == 'appointee' %} · named in headline{% endif %}
               </div>
               {% endif %}
               <pre class="outreach-text">{{ s.outreach }}</pre>
@@ -2086,11 +1962,11 @@ TEMPLATE = r"""
                   <span class="badge">{{ s.source }}</span>
                   <span class="badge">{{ s.geo }}</span>
                 </div>
-                {% if s.hiring_manager %}
+                {% if s.contact %}
                 <div style="font-size:11px;color:var(--text-muted);margin:2px 0 4px;">
-                  → Likely contact:
-                  <strong style="color:#333;">{{ s.hiring_manager.name or s.hiring_manager.manager_title }}</strong>{% if s.hiring_manager.name %} · {{ s.hiring_manager.manager_title }}{% endif %}
-                  · confidence {{ '%.0f' | format(s.hiring_manager.confidence * 100) }}%{% if s.hiring_manager.basis == 'jd_reporting_line' %} · from JD{% elif s.hiring_manager.basis == 'default' %} · low{% endif %}
+                  → Contact:
+                  <strong style="color:#333;">{{ s.contact.name or s.contact.title }}</strong>{% if s.contact.name %} · {{ s.contact.title }}{% endif %}
+                  · confidence {{ '%.0f' | format(s.contact.confidence * 100) }}%{% if s.contact.basis == 'jd_reporting_line' %} · from JD{% elif s.contact.basis == 'appointee' %} · named in headline{% endif %}
                 </div>
                 {% endif %}
                 <pre class="outreach-text">{{ s.outreach }}</pre>

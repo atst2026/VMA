@@ -222,6 +222,84 @@ def manager_for_signal(signal: dict) -> dict:
     )
 
 
+# Patterns that surround an appointee's name in an appointment headline.
+_APPOINTEE_RX = [
+    re.compile(r"(?:appoints?|names?|hires?|promotes?)\s+"
+               r"([A-Z][a-z]+(?:\s[A-Z][a-z]+)+)"),
+    re.compile(r"([A-Z][a-z]+(?:\s[A-Z][a-z]+)+)\s+"
+               r"(?:joins|appointed|promoted|named|to lead|to head)"),
+    re.compile(r"new\s+(?:CCO|CEO|CHRO|chief|head of[^.]+)\s+is\s+"
+               r"([A-Z][a-z]+(?:\s[A-Z][a-z]+)+)"),
+]
+_COMMS_SLOTS = ("cco", "head_of_corporate_affairs", "head_of_comms", "chro")
+
+
+def _appointee_name(title: str) -> str | None:
+    for pat in _APPOINTEE_RX:
+        m = pat.search(title or "")
+        if m:
+            return m.group(1).strip()
+    return None
+
+
+def resolve_lead_contact(signal: dict, contacts: dict | None = None) -> dict:
+    """The single, uniform contact resolver for ANY lead, whatever its
+    kind. Always returns the same shape — never None, never a special
+    case the caller has to branch on:
+
+      {name, title, confidence, basis, linkedin_url}
+
+    Strategy lives here, once:
+      - vacancy        -> the reporting-line manager (seniority-up rules)
+      - appointment    -> the newly appointed person named in the headline
+      - filing / news  -> the comms decision-maker at that company
+    then, for any of the above, the best named roster contact is layered
+    on if one exists (a verified name beats a role guess).
+    """
+    company = (signal.get("company") or "").strip()
+    kind = (signal.get("kind") or "").strip().lower()
+    preset_name = ""
+
+    if is_job_like(signal):
+        inf = manager_for_signal(signal)
+        title, slots = inf["manager_title"], inf["slots"]
+        base_conf, basis = inf["confidence"], inf["basis"]
+    elif kind in ("leadership_change", "trade_press"):
+        appointee = _appointee_name(signal.get("title") or "")
+        if appointee:
+            preset_name = appointee
+            title, slots, base_conf, basis = (
+                "Communications leadership", _COMMS_SLOTS, 0.6, "appointee")
+        else:
+            title, slots, base_conf, basis = (
+                "Head of Communications", _COMMS_SLOTS, 0.4, "role_heuristic")
+    else:
+        title, slots, base_conf, basis = (
+            "Head of Communications", _COMMS_SLOTS, 0.45, "role_heuristic")
+
+    name, linkedin_url, confidence = preset_name, None, base_conf
+    if not preset_name:
+        nc = best_named_contact(company, slots, contacts=contacts)
+        if nc:
+            name = nc["name"]
+            linkedin_url = nc.get("linkedin_url")
+            confidence = round(
+                min(0.95, 0.1 + base_conf * 0.5
+                    + float(nc.get("confidence") or 0) * 0.5), 2)
+        elif basis != "jd_reporting_line":
+            # Role known, person not — honestly lower than a named hit.
+            confidence = round(base_conf * 0.6, 2)
+
+    return {
+        "name": name,
+        "title": title,
+        "confidence": confidence,
+        "basis": basis,
+        "linkedin_url": linkedin_url,
+    }
+
+
+
 def best_named_contact(company: str, slots: tuple,
                        contacts: dict | None = None) -> dict | None:
     """First fresh, named roster contact across `slots`, or None.

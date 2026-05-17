@@ -100,15 +100,16 @@ def main() -> int:
     log.info("Live-roles ranked: %d items.", len(ranked_live))
 
     log.info("Resolving direct LinkedIn URLs for top sweep leads…")
+    from tool import hiring_manager as _hm
     for sig in ranked_live[:10]:
-        role = lnr.role_for_lead(sig)
         company = (sig.get("company") or "").strip()
         if not company:
             continue
+        role = _hm.resolve_lead_contact(sig)["title"]
         resolved = lnr.resolve_profile(company, role)
         if resolved and resolved.get("url"):
             sig["linkedin_profile_url"] = resolved["url"]
-            sig["linkedin_profile_role"] = resolved["role"]
+            sig["linkedin_profile_role"] = role
 
     # Predictive pipeline
     pcluster.ingest_jobs(signals)

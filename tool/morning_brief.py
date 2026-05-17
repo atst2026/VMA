@@ -190,42 +190,26 @@ def main() -> int:
     except Exception:
         _contacts_cache = {}
     from tool import hiring_manager as _hm
+    # One uniform resolver for every lead, whatever its kind.
     for sig in ranked_all:
         company = (sig.get("company") or "").strip()
         if not company:
             continue
-        # Vacancies: resolve the inferred reporting-line manager (the
-        # comms seniority-up rules), NOT the coarse kind->CHRO slot, so
-        # the dashboard's named contact / draft / LinkedIn all agree.
-        if _hm.is_job_like(sig):
-            inf = _hm.manager_for_signal(sig)
-            nc = _hm.best_named_contact(company, inf["slots"],
-                                        contacts=_contacts_cache)
-            if nc:
-                if nc.get("name"):
-                    sig["seeded_contact_name"] = nc["name"]
-                    sig["seeded_contact_role"] = inf["manager_title"]
-                if nc.get("linkedin_url"):
-                    sig["linkedin_profile_url"] = nc["linkedin_url"]
-                    sig["linkedin_profile_role"] = inf["manager_title"]
-                    sig["linkedin_profile_name"] = nc["name"]
-            continue
-        named = lnr.resolve_named_contact_for_lead(sig, contacts=_contacts_cache)
-        if named:
-            if named.get("name"):
-                sig["seeded_contact_name"] = named["name"]
-                sig["seeded_contact_role"] = named.get("role")
-            if named.get("url"):
-                sig["linkedin_profile_url"] = named["url"]
-                sig["linkedin_profile_role"] = named["role"]
-                sig["linkedin_profile_name"] = named.get("name")
-                sig["linkedin_profile_verified_at"] = named.get("verified_at")
+        c = _hm.resolve_lead_contact(sig, contacts=_contacts_cache)
+        if c.get("name"):
+            sig["seeded_contact_name"] = c["name"]
+            sig["seeded_contact_role"] = c["title"]
+        if c.get("linkedin_url"):
+            sig["linkedin_profile_url"] = c["linkedin_url"]
+            sig["linkedin_profile_role"] = c["title"]
+            sig["linkedin_profile_name"] = c["name"]
 
     # Second pass: top-5 only - if we still don't have a direct LinkedIn
     # URL, spend a Bright Data call to find one. ~10 BD requests/day,
     # well inside the 5k/mo free tier. Cached in
     # tool/state/linkedin_profile_cache.json. Silent no-op if BD isn't
-    # configured.
+    # configured. Off-roster live-name resolution: BD-searches the same
+    # resolved target title used everywhere else.
     log.info("Resolving direct LinkedIn URLs for top leads…")
     for sig in ranked[:5]:
         if sig.get("linkedin_profile_url"):
@@ -233,13 +217,7 @@ def main() -> int:
         company = (sig.get("company") or "").strip()
         if not company:
             continue
-        # Off-roster vacancies: Bright-Data the *inferred reporting-line
-        # manager* (e.g. "Director of Communications"), not the generic
-        # CHRO — this is the off-roster live-name resolution.
-        if _hm.is_job_like(sig):
-            role = _hm.manager_for_signal(sig)["manager_title"]
-        else:
-            role = lnr.role_for_lead(sig)
+        role = _hm.resolve_lead_contact(sig, contacts=_contacts_cache)["title"]
         resolved = lnr.resolve_profile(company, role)
         if resolved and resolved.get("url"):
             sig["linkedin_profile_url"] = resolved["url"]
