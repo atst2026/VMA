@@ -1120,18 +1120,24 @@ TEMPLATE = r"""
     .panel-body::-webkit-scrollbar-thumb:hover { background: var(--navy-soft); }
 
     /* ===== Calendar Pulses — year ribbon (Alternate A) ===== */
-    .cal-wrap { padding: 12px 14px; }
+    /* Fixed-size boxes (mockup parity, 400px). Anything taller scrolls
+       inside the body — the panel/section never grows. Scoped to this
+       row so other panels keep the global .panel-body sizing. */
+    #pulses-row .panel { height: 400px; }
+    #pulses-row .panel-body { max-height: none; flex: 1; min-height: 0; overflow-y: auto; }
+
+    .cal-wrap { padding: 14px 16px; }
     .cal-ribbon {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 7px;
+      gap: 8px;
     }
     .cal-tile {
       position: relative;
       border: 1px solid var(--border);
       border-radius: 9px;
-      height: 44px;
-      padding: 6px 10px;
+      height: 46px;
+      padding: 7px 11px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -1147,7 +1153,7 @@ TEMPLATE = r"""
     .cal-mlab { font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; }
     .cal-tile.past .cal-mlab { color: var(--text-muted); }
     .cal-right { display: flex; align-items: center; gap: 7px; }
-    .cal-pips { display: flex; gap: 6px; }
+    .cal-pips { display: flex; gap: 7px; }
     .cal-pip { width: 9px; height: 9px; border-radius: 50%; }
     .cal-pip.high { background: var(--teal); }   /* high = coral */
     .cal-pip.med  { background: var(--green); }   /* policy-firming = green (distinct) */
@@ -1185,7 +1191,7 @@ TEMPLATE = r"""
       0%,100% { box-shadow: 0 0 0 0 rgba(201,100,66,.55); }
       50% { box-shadow: 0 0 0 5px rgba(201,100,66,0); }
     }
-    .cal-detail { margin-top: 11px; }
+    .cal-detail { margin-top: 12px; }
     .cal-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -2061,9 +2067,7 @@ TEMPLATE = r"""
        side-by-side at equal size (2-col grid; stacks under 900px).
        Both reliably fire; the rare detectors live in Specialist
        Signals below. -->
-  <div class="row">
-
-    <!-- CALENDAR PULSES (year ribbon) -->
+  <div class="row" id="pulses-row">
     <div class="panel">
       <div class="panel-header">
         <h2>Calendar Pulses</h2>
