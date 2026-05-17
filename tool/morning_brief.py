@@ -189,8 +189,26 @@ def main() -> int:
         _contacts_cache = _load_contacts()
     except Exception:
         _contacts_cache = {}
+    from tool import hiring_manager as _hm
     for sig in ranked_all:
-        if not (sig.get("company") or "").strip():
+        company = (sig.get("company") or "").strip()
+        if not company:
+            continue
+        # Vacancies: resolve the inferred reporting-line manager (the
+        # comms seniority-up rules), NOT the coarse kind->CHRO slot, so
+        # the dashboard's named contact / draft / LinkedIn all agree.
+        if _hm.is_job_like(sig):
+            inf = _hm.manager_for_signal(sig)
+            nc = _hm.best_named_contact(company, inf["slots"],
+                                        contacts=_contacts_cache)
+            if nc:
+                if nc.get("name"):
+                    sig["seeded_contact_name"] = nc["name"]
+                    sig["seeded_contact_role"] = inf["manager_title"]
+                if nc.get("linkedin_url"):
+                    sig["linkedin_profile_url"] = nc["linkedin_url"]
+                    sig["linkedin_profile_role"] = inf["manager_title"]
+                    sig["linkedin_profile_name"] = nc["name"]
             continue
         named = lnr.resolve_named_contact_for_lead(sig, contacts=_contacts_cache)
         if named:
@@ -212,14 +230,20 @@ def main() -> int:
     for sig in ranked[:5]:
         if sig.get("linkedin_profile_url"):
             continue   # already resolved via contacts table
-        role = lnr.role_for_lead(sig)
         company = (sig.get("company") or "").strip()
         if not company:
             continue
+        # Off-roster vacancies: Bright-Data the *inferred reporting-line
+        # manager* (e.g. "Director of Communications"), not the generic
+        # CHRO — this is the off-roster live-name resolution.
+        if _hm.is_job_like(sig):
+            role = _hm.manager_for_signal(sig)["manager_title"]
+        else:
+            role = lnr.role_for_lead(sig)
         resolved = lnr.resolve_profile(company, role)
         if resolved and resolved.get("url"):
             sig["linkedin_profile_url"] = resolved["url"]
-            sig["linkedin_profile_role"] = resolved["role"]
+            sig["linkedin_profile_role"] = role
 
     # Predictive pipeline: feed the raw (pre-filter) signals into trigger
     # detection, run the job-ad cluster detector off the rolling 30-day
