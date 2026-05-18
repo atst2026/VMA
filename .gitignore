@@ -37,6 +37,7 @@ tool/state/ch_officers_snapshot.json
 tool/state/linkedin_profile_cache.json
 tool/state/rns_velocity_state.json
 tool/state/predictor_pipeline.json
+tool/state/lead_status.json
 .DS_Store
 
 # Concurrency lock files (created by tool.candidate_watch._locked_state)

@@ -229,6 +229,18 @@ def refresh_latest_brief_from_github() -> dict:
 
 
 # ---- Local state loaders ------------------------------------------------
+def _lead_id(s: dict) -> str:
+    """Stable id for a lead so its triage status survives refreshes.
+    Most scraped leads carry a source-derived 'id'; fall back to a
+    hash of url|company|title when one is missing."""
+    sid = (s.get("id") or "").strip()
+    if sid:
+        return sid
+    import hashlib
+    basis = f"{s.get('url','')}|{s.get('company','')}|{s.get('title','')}"
+    return hashlib.sha1(basis.encode("utf-8")).hexdigest()[:16]
+
+
 def load_latest_signals() -> list[dict]:
     p = STATE_DIR / "latest_signals.json"
     if not p.exists():
@@ -241,12 +253,16 @@ def load_latest_signals() -> list[dict]:
     # resolve best-available contact (+ confidence) -> personalised draft
     # -> one precise LinkedIn click.
     from tool.hiring_manager import resolve_lead_contact
+    from tool import lead_status
     try:
         from tool.contacts.store import load_contacts
         _cc = load_contacts()
     except Exception:
         _cc = {}
+    _lstat = lead_status.get_statuses()
     for s in data:
+        s["lead_id"] = _lead_id(s)
+        s["status"] = _lstat.get(s["lead_id"], "active")
         s["contact"] = resolve_lead_contact(s, contacts=_cc)
         s["outreach"] = draft_outreach_for_lead(s)
         s["linkedin"] = linkedin_click(s)
@@ -529,6 +545,20 @@ def api_predictor_status(pid: str):
     if not ok:
         return jsonify({"ok": False, "detail": "predictor not found"}), 404
     return jsonify({"ok": True, "pid": pid, "status": status})
+
+
+@app.route("/api/lead/<lead_id>/status", methods=["POST"])
+@_auth_required
+def api_lead_status(lead_id: str):
+    from tool import lead_status
+    data = _safe_json_body()
+    status = (data.get("status") or "").strip()
+    if status not in ("active", "followed_up", "dismissed"):
+        return jsonify({"ok": False, "detail": "invalid status"}), 400
+    ok = lead_status.set_status(lead_id, status)
+    if not ok:
+        return jsonify({"ok": False, "detail": "could not set status"}), 400
+    return jsonify({"ok": True, "lead_id": lead_id, "status": status})
 
 
 @app.route("/api/refresh", methods=["POST"])
@@ -1433,6 +1463,8 @@ TEMPLATE = r"""
     }
     .item.predictor[data-status="dismissed"] { opacity: 0.55; }
     .item.predictor[data-status="followed_up"] { opacity: 0.8; }
+    .item.lead[data-status="dismissed"] { opacity: 0.55; }
+    .item.lead[data-status="followed_up"] { opacity: 0.8; }
 
     .filter-bar {
       display: flex;
@@ -1957,12 +1989,14 @@ TEMPLATE = r"""
       <div class="panel-body">
         {% if leads %}
           {% for s in leads[:5] %}
-            <div class="item">
+            <div class="item lead" data-lead-id="{{ s.lead_id }}" data-status="{{ s.status }}">
               <span class="rank">{{ loop.index }}</span>
               <span class="title">
                 {% if s.url %}<a href="{{ s.url | safe_url }}" target="_blank">{{ s.title }}</a>
                 {% else %}{{ s.title }}{% endif %}
               </span>
+              {% if s.status == 'followed_up' %}<span class="status-badge followed-up">✓ followed up</span>{% endif %}
+              {% if s.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
               <div class="meta">
                 <span class="badge">{{ s.company or '—' }}</span>
                 <span class="badge">{{ s.source }}</span>
@@ -1979,6 +2013,12 @@ TEMPLATE = r"""
               <div class="item-actions">
                 <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
                 <a class="btn-mini" href="{{ s.linkedin.url | safe_url }}" target="_blank" title="{{ s.linkedin.label }}">↗ {{ s.linkedin.label }}</a>
+                {% if s.status == 'active' %}
+                  <button class="btn-mini lead-status-action" data-status="followed_up" type="button">✓ Mark followed up</button>
+                  <button class="btn-mini lead-status-action ghost" data-status="dismissed" type="button">✕ Dismiss</button>
+                {% else %}
+                  <button class="btn-mini lead-status-action" data-status="active" type="button">↺ Restore</button>
+                {% endif %}
               </div>
             </div>
           {% endfor %}
@@ -1986,12 +2026,14 @@ TEMPLATE = r"""
           <details>
             <summary class="show-more">Show all {{ leads|length }} ▾</summary>
             {% for s in leads[5:] %}
-              <div class="item">
+              <div class="item lead" data-lead-id="{{ s.lead_id }}" data-status="{{ s.status }}">
                 <span class="rank">{{ loop.index + 5 }}</span>
                 <span class="title">
                   {% if s.url %}<a href="{{ s.url | safe_url }}" target="_blank">{{ s.title }}</a>
                   {% else %}{{ s.title }}{% endif %}
                 </span>
+                {% if s.status == 'followed_up' %}<span class="status-badge followed-up">✓ followed up</span>{% endif %}
+                {% if s.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
                 <div class="meta">
                   <span class="badge">{{ s.company or '-' }}</span>
                   <span class="badge">{{ s.source }}</span>
@@ -2008,6 +2050,12 @@ TEMPLATE = r"""
                 <div class="item-actions">
                   <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
                   <a class="btn-mini" href="{{ s.linkedin.url | safe_url }}" target="_blank" title="{{ s.linkedin.label }}">↗ {{ s.linkedin.label }}</a>
+                  {% if s.status == 'active' %}
+                    <button class="btn-mini lead-status-action" data-status="followed_up" type="button">✓ Mark followed up</button>
+                    <button class="btn-mini lead-status-action ghost" data-status="dismissed" type="button">✕ Dismiss</button>
+                  {% else %}
+                    <button class="btn-mini lead-status-action" data-status="active" type="button">↺ Restore</button>
+                  {% endif %}
                 </div>
               </div>
             {% endfor %}
@@ -2200,27 +2248,26 @@ TEMPLATE = r"""
       </form>
     </div>
 
-    <!-- MPC OUTREACH FACTORY -->
+    <!-- REVERSE MATCH -->
     <div class="panel action-card">
-      <h3>MPC Outreach Factory</h3>
-      <div class="subhead">Get a ranked list of target accounts for a candidate, each with a paste-ready outreach hook, woven from signals already gathered (a live trigger at that company, or a structural fit).</div>
-      <form id="mpc-form" onsubmit="runMPC(event)">
-        <label for="mpc-name">Candidate name</label>
-        <input id="mpc-name" name="name" placeholder="e.g. James Carter" required>
-        <label for="mpc-company">Current company</label>
-        <input id="mpc-company" name="current_company" placeholder="e.g. Barclays" required>
-        <label for="mpc-title">Current title</label>
-        <input id="mpc-title" name="current_title" placeholder="e.g. Director of Corporate Comms" required>
-        <button type="submit">Build hit list</button>
-        <div class="status" id="mpc-status"></div>
-        <div id="mpc-result" class="inline-result"></div>
+      <h3>Reverse Match</h3>
+      <div class="subhead">Get a ranked list of accounts where your candidate could be pitched. Unlike MPC Factory, this one goes out and searches the market fresh each time - casts a wider net.</div>
+      <form id="rm-form" onsubmit="dispatch(event, 'rm-form', '/api/dispatch/reverse-match')">
+        <label for="rm-name">Candidate name</label>
+        <input id="rm-name" name="candidate_name" placeholder="e.g. Rebecca Torres" required>
+        <label for="rm-company">Current company</label>
+        <input id="rm-company" name="current_company" placeholder="e.g. Vodafone" required>
+        <label for="rm-title">Current title</label>
+        <input id="rm-title" name="current_title" placeholder="e.g. Head of Internal Communications" required>
+        <button type="submit">Run and send via email</button>
+        <div class="status" id="rm-status"></div>
       </form>
     </div>
 
     <!-- CANDIDATE WATCH -->
     <div class="panel action-card">
       <h3>Candidate Watch</h3>
-      <div class="subhead">Keep a roster of warm candidates to stay in touch with. Overdue ones float to the top so relationships don't go cold. Note — the "restlessness" score only keyword-matches notes Sara types herself, not live intelligence.</div>
+      <div class="subhead">Keep a roster of warm candidates to stay in touch with. Overdue ones float to the top so relationships don't go cold. Note - the "restlessness" score only keyword-matches notes you type yourself, not live intelligence.</div>
       <div id="watch-list-wrap">
         <div class="status" id="watch-list-status">Loading…</div>
         <div id="watch-list"></div>
@@ -2246,19 +2293,20 @@ TEMPLATE = r"""
       </details>
     </div>
 
-    <!-- REVERSE MATCH -->
+    <!-- MPC OUTREACH FACTORY -->
     <div class="panel action-card">
-      <h3>Reverse Match</h3>
-      <div class="subhead">Get a ranked list of accounts where your candidate could be pitched. Unlike MPC Factory, this one goes out and searches the market fresh each time - casts a wider net.</div>
-      <form id="rm-form" onsubmit="dispatch(event, 'rm-form', '/api/dispatch/reverse-match')">
-        <label for="rm-name">Candidate name</label>
-        <input id="rm-name" name="candidate_name" placeholder="e.g. Rebecca Torres" required>
-        <label for="rm-company">Current company</label>
-        <input id="rm-company" name="current_company" placeholder="e.g. Vodafone" required>
-        <label for="rm-title">Current title</label>
-        <input id="rm-title" name="current_title" placeholder="e.g. Head of Internal Communications" required>
-        <button type="submit">Run and send via email</button>
-        <div class="status" id="rm-status"></div>
+      <h3>MPC Outreach Factory</h3>
+      <div class="subhead">Get a ranked list of target accounts for a candidate, each with a paste-ready outreach hook, woven from signals already gathered (a live trigger at that company, or a structural fit).</div>
+      <form id="mpc-form" onsubmit="runMPC(event)">
+        <label for="mpc-name">Candidate name</label>
+        <input id="mpc-name" name="name" placeholder="e.g. James Carter" required>
+        <label for="mpc-company">Current company</label>
+        <input id="mpc-company" name="current_company" placeholder="e.g. Barclays" required>
+        <label for="mpc-title">Current title</label>
+        <input id="mpc-title" name="current_title" placeholder="e.g. Director of Corporate Comms" required>
+        <button type="submit">Build hit list</button>
+        <div class="status" id="mpc-status"></div>
+        <div id="mpc-result" class="inline-result"></div>
       </form>
     </div>
 
@@ -2399,6 +2447,54 @@ document.addEventListener('click', async (event) => {
     // Re-apply current filter to hide/show row appropriately
     const activePill = document.querySelector('.filter-pill.active');
     if (activePill) applyFilter(activePill.dataset.filter);
+  } catch (e) {
+    alert('Update failed: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+});
+
+// Lead triage: mark followed up / dismiss / restore (mirrors predictors,
+// persisted by lead id via /api/lead/<id>/status).
+document.addEventListener('click', async (event) => {
+  const btn = event.target.closest('.lead-status-action');
+  if (!btn) return;
+  const item = btn.closest('.item.lead');
+  if (!item) return;
+  const id = item.dataset.leadId;
+  const newStatus = btn.dataset.status;
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '…';
+  try {
+    const r = await fetch(`/api/lead/${encodeURIComponent(id)}/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    const j = await r.json();
+    if (!j.ok) { alert(j.detail || 'Update failed'); btn.disabled = false; btn.textContent = orig; return; }
+    item.dataset.status = newStatus;
+    const actions = item.querySelector('.item-actions');
+    if (actions) {
+      actions.querySelectorAll('.lead-status-action').forEach(b => b.remove());
+      if (newStatus === 'active') {
+        actions.insertAdjacentHTML('beforeend',
+          '<button class="btn-mini lead-status-action" data-status="followed_up" type="button">✓ Mark followed up</button>' +
+          '<button class="btn-mini lead-status-action ghost" data-status="dismissed" type="button">✕ Dismiss</button>');
+      } else {
+        actions.insertAdjacentHTML('beforeend',
+          '<button class="btn-mini lead-status-action" data-status="active" type="button">↺ Restore</button>');
+      }
+    }
+    item.querySelectorAll('.status-badge').forEach(b => b.remove());
+    if (newStatus === 'followed_up') {
+      item.querySelector('.title').insertAdjacentHTML('afterend',
+        '<span class="status-badge followed-up">✓ followed up</span>');
+    } else if (newStatus === 'dismissed') {
+      item.querySelector('.title').insertAdjacentHTML('afterend',
+        '<span class="status-badge dismissed">dismissed</span>');
+    }
   } catch (e) {
     alert('Update failed: ' + e.message);
     btn.disabled = false;
