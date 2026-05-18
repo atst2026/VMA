@@ -518,10 +518,14 @@ def _safe_url_filter(u):
 @_auth_required
 def index():
     predictors = load_latest_predictive()
+    leads = load_latest_signals()
     return render_template_string(
         TEMPLATE,
-        leads=load_latest_signals(),
+        leads=leads,
         predictors=predictors,
+        leads_active_count=sum(1 for s in leads if s.get("status", "active") == "active"),
+        leads_followed_count=sum(1 for s in leads if s.get("status") == "followed_up"),
+        leads_dismissed_count=sum(1 for s in leads if s.get("status") == "dismissed"),
         active_count=sum(1 for p in predictors if p.get("status") == "active"),
         new_count=sum(1 for p in predictors if p.get("is_new")),
         followed_up_count=sum(1 for p in predictors if p.get("status") == "followed_up"),
@@ -1474,7 +1478,7 @@ TEMPLATE = r"""
       border-bottom: 1px solid var(--border);
       background: var(--bg);
     }
-    .filter-pill {
+    .filter-pill, .lead-filter-pill {
       display: inline-flex;
       align-items: center;
       gap: 6px;
@@ -1490,16 +1494,16 @@ TEMPLATE = r"""
       cursor: pointer;
       transition: all 0.15s;
     }
-    .filter-pill:hover {
+    .filter-pill:hover, .lead-filter-pill:hover {
       border-color: var(--teal);
       color: var(--teal-dark);
     }
-    .filter-pill.active {
+    .filter-pill.active, .lead-filter-pill.active {
       background: var(--navy);
       color: white;
       border-color: var(--navy);
     }
-    .filter-pill .pill-count {
+    .filter-pill .pill-count, .lead-filter-pill .pill-count {
       display: inline-block;
       font-size: 10px;
       padding: 1px 6px;
@@ -1507,7 +1511,8 @@ TEMPLATE = r"""
       border-radius: 10px;
       font-weight: 700;
     }
-    .filter-pill:not(.active) .pill-count {
+    .filter-pill:not(.active) .pill-count,
+    .lead-filter-pill:not(.active) .pill-count {
       background: rgba(14, 40, 69, 0.08);
       color: var(--navy);
     }
@@ -1984,11 +1989,18 @@ TEMPLATE = r"""
     <div class="panel">
       <div class="panel-header">
         <h2>Today's Leads</h2>
-        <span class="count">{{ leads|length }}</span>
+        <span class="count" id="leads-count">{{ leads_active_count }}</span>
+      </div>
+      <div class="filter-bar">
+        <button class="lead-filter-pill active" data-filter="active">Active <span class="pill-count" id="lead-pc-active">{{ leads_active_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="followed_up">Followed up <span class="pill-count" id="lead-pc-followed_up">{{ leads_followed_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="dismissed">Dismissed <span class="pill-count" id="lead-pc-dismissed">{{ leads_dismissed_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="all">All</button>
       </div>
       <div class="panel-body">
         {% if leads %}
-          {% for s in leads[:5] %}
+          <div id="leads-list">
+          {% for s in leads %}
             <div class="item lead" data-lead-id="{{ s.lead_id }}" data-status="{{ s.status }}">
               <span class="rank">{{ loop.index }}</span>
               <span class="title">
@@ -2022,45 +2034,8 @@ TEMPLATE = r"""
               </div>
             </div>
           {% endfor %}
-          {% if leads|length > 5 %}
-          <details>
-            <summary class="show-more">Show all {{ leads|length }} ▾</summary>
-            {% for s in leads[5:] %}
-              <div class="item lead" data-lead-id="{{ s.lead_id }}" data-status="{{ s.status }}">
-                <span class="rank">{{ loop.index + 5 }}</span>
-                <span class="title">
-                  {% if s.url %}<a href="{{ s.url | safe_url }}" target="_blank">{{ s.title }}</a>
-                  {% else %}{{ s.title }}{% endif %}
-                </span>
-                {% if s.status == 'followed_up' %}<span class="status-badge followed-up">✓ followed up</span>{% endif %}
-                {% if s.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
-                <div class="meta">
-                  <span class="badge">{{ s.company or '-' }}</span>
-                  <span class="badge">{{ s.source }}</span>
-                  <span class="badge">{{ s.geo }}</span>
-                </div>
-                {% if s.contact %}
-                <div style="font-size:11px;color:var(--text-muted);margin:2px 0 4px;">
-                  → Contact:
-                  <strong style="color:#333;">{{ s.contact.name or s.contact.title }}</strong>{% if s.contact.name %} · {{ s.contact.title }}{% endif %}
-                  · confidence {{ '%.0f' | format(s.contact.confidence * 100) }}%{% if s.contact.basis == 'jd_reporting_line' %} · from JD{% elif s.contact.basis == 'appointee' %} · named in headline{% endif %}
-                </div>
-                {% endif %}
-                <pre class="outreach-text">{{ s.outreach }}</pre>
-                <div class="item-actions">
-                  <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                  <a class="btn-mini" href="{{ s.linkedin.url | safe_url }}" target="_blank" title="{{ s.linkedin.label }}">↗ {{ s.linkedin.label }}</a>
-                  {% if s.status == 'active' %}
-                    <button class="btn-mini lead-status-action" data-status="followed_up" type="button">✓ Mark followed up</button>
-                    <button class="btn-mini lead-status-action ghost" data-status="dismissed" type="button">✕ Dismiss</button>
-                  {% else %}
-                    <button class="btn-mini lead-status-action" data-status="active" type="button">↺ Restore</button>
-                  {% endif %}
-                </div>
-              </div>
-            {% endfor %}
-          </details>
-          {% endif %}
+          </div>
+          <div class="empty" id="leads-empty" style="display:none">Nothing here — switch filter above.</div>
         {% else %}
           <div class="empty">No leads loaded yet. Click Daily Refresh.</div>
         {% endif %}
@@ -2071,13 +2046,13 @@ TEMPLATE = r"""
     <div class="panel">
       <div class="panel-header">
         <h2>Predicted Briefs <span class="window-sub">· next 90 days</span></h2>
-        <span class="count">{{ active_count }}</span>
+        <span class="count" id="pred-count">{{ active_count }}</span>
       </div>
       <div class="filter-bar">
-        <button class="filter-pill active" data-filter="active">Active <span class="pill-count">{{ active_count }}</span></button>
-        <button class="filter-pill" data-filter="new">New today <span class="pill-count">{{ new_count }}</span></button>
-        <button class="filter-pill" data-filter="followed_up">Followed up <span class="pill-count">{{ followed_up_count }}</span></button>
-        <button class="filter-pill" data-filter="dismissed">Dismissed <span class="pill-count">{{ dismissed_count }}</span></button>
+        <button class="filter-pill active" data-filter="active">Active <span class="pill-count" id="pred-pc-active">{{ active_count }}</span></button>
+        <button class="filter-pill" data-filter="new">New today <span class="pill-count" id="pred-pc-new">{{ new_count }}</span></button>
+        <button class="filter-pill" data-filter="followed_up">Followed up <span class="pill-count" id="pred-pc-followed_up">{{ followed_up_count }}</span></button>
+        <button class="filter-pill" data-filter="dismissed">Dismissed <span class="pill-count" id="pred-pc-dismissed">{{ dismissed_count }}</span></button>
         <button class="filter-pill" data-filter="all">All</button>
       </div>
       <div class="panel-body compact" id="predictor-list">
@@ -2383,6 +2358,63 @@ document.addEventListener('click', (event) => {
   applyFilter(pill.dataset.filter);
 });
 
+// Recompute predictor counts from the DOM (source of truth) and update
+// the header + pill badges, then re-apply the current filter so a
+// followed-up/dismissed item drops out of the active view.
+function recountPredictors() {
+  let a = 0, n = 0, f = 0, d = 0;
+  document.querySelectorAll('#predictor-list .item.predictor').forEach(it => {
+    const s = it.dataset.status || 'active';
+    if (s === 'active') { a++; if (it.dataset.new === '1') n++; }
+    else if (s === 'followed_up') f++;
+    else if (s === 'dismissed') d++;
+  });
+  const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  set('pred-count', a); set('pred-pc-active', a); set('pred-pc-new', n);
+  set('pred-pc-followed_up', f); set('pred-pc-dismissed', d);
+  const ap = document.querySelector('.filter-pill.active');
+  applyFilter(ap ? ap.dataset.filter : 'active');
+}
+
+// Leads filter — same model as predictors, scoped to the leads list so
+// the two panels' pills never cross-fire.
+function applyLeadFilter(name) {
+  document.querySelectorAll('.lead-filter-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.filter === name);
+  });
+  let visible = 0;
+  document.querySelectorAll('#leads-list .item.lead').forEach(item => {
+    const status = item.dataset.status || 'active';
+    const show = (name === 'all') ? true
+               : (name === 'active') ? status === 'active'
+               : status === name;
+    item.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  const empty = document.getElementById('leads-empty');
+  if (empty) empty.style.display = visible ? 'none' : '';
+}
+document.addEventListener('click', (event) => {
+  const pill = event.target.closest('.lead-filter-pill');
+  if (!pill) return;
+  applyLeadFilter(pill.dataset.filter);
+});
+
+function recountLeads() {
+  let a = 0, f = 0, d = 0;
+  document.querySelectorAll('#leads-list .item.lead').forEach(it => {
+    const s = it.dataset.status || 'active';
+    if (s === 'active') a++;
+    else if (s === 'followed_up') f++;
+    else if (s === 'dismissed') d++;
+  });
+  const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  set('leads-count', a); set('lead-pc-active', a);
+  set('lead-pc-followed_up', f); set('lead-pc-dismissed', d);
+  const ap = document.querySelector('.lead-filter-pill.active');
+  applyLeadFilter(ap ? ap.dataset.filter : 'active');
+}
+
 // Expand / collapse predictor rows on summary click. Buttons and links
 // inside the row stop propagation so they don't trigger the toggle.
 document.addEventListener('click', (event) => {
@@ -2444,9 +2476,8 @@ document.addEventListener('click', async (event) => {
       item.querySelector('.title').insertAdjacentHTML('afterend',
         '<span class="status-badge dismissed">dismissed</span>');
     }
-    // Re-apply current filter to hide/show row appropriately
-    const activePill = document.querySelector('.filter-pill.active');
-    if (activePill) applyFilter(activePill.dataset.filter);
+    // Update counts + drop the row out of the active view
+    recountPredictors();
   } catch (e) {
     alert('Update failed: ' + e.message);
     btn.disabled = false;
@@ -2495,6 +2526,8 @@ document.addEventListener('click', async (event) => {
       item.querySelector('.title').insertAdjacentHTML('afterend',
         '<span class="status-badge dismissed">dismissed</span>');
     }
+    // Update counts + drop the row out of the active view
+    recountLeads();
   } catch (e) {
     alert('Update failed: ' + e.message);
     btn.disabled = false;
@@ -3143,6 +3176,10 @@ async function devTriggerBrief() {
 
 // Auto-load the intel panels on page ready.
 document.addEventListener('DOMContentLoaded', () => {
+  // Apply the default 'active' filter immediately so followed-up /
+  // dismissed items aren't shown in the main view on first paint.
+  applyFilter('active');
+  applyLeadFilter('active');
   loadPulses();
   loadFunding();
   loadSpecialistSignals();
