@@ -1368,27 +1368,6 @@ TEMPLATE = r"""
     }
 
     /* PREDICTORS */
-    .predictor .stack-label {
-      display: inline-block;
-      font-size: 9px;
-      font-weight: 600;
-      padding: 2px 7px;
-      border-radius: 3px;
-      margin-left: 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      vertical-align: middle;
-    }
-    .stack-label.stacked {
-      background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
-      color: white;
-      box-shadow: 0 0 0 1px rgba(91, 166, 173, 0.2);
-    }
-    .stack-label.single {
-      background: var(--bg);
-      color: var(--teal-dark);
-      border: 1px solid var(--teal-soft);
-    }
     .window-badge {
       display: inline-block;
       font-size: 9.5px;
@@ -1672,9 +1651,10 @@ TEMPLATE = r"""
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .item.predictor .row-preview .more-count {
-      color: var(--teal-dark);
+    .item.predictor .row-preview .signal-sub {
+      color: var(--text-muted);
       font-weight: 600;
+      letter-spacing: 0.01em;
     }
     .item.predictor .row-details {
       display: none;
@@ -2092,14 +2072,13 @@ TEMPLATE = r"""
                   {% if p.probability %}<span class="prob-chip">{{ p.probability }}%</span>{% endif %}
                   {% if p.is_new %}<span class="new-badge">NEW</span>{% endif %}
                   {% if p.window_label %}<span class="window-badge">{{ p.window_label }}</span>{% endif %}
-                  {% if p.depth > 1 %}<span class="stack-label stacked">stacked × {{ p.depth }}</span>{% endif %}
                   {% if p.status == 'followed_up' %}<span class="status-badge followed-up">✓ followed up</span>{% endif %}
                   {% if p.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
                 </span>
                 <span class="expand-toggle">▾</span>
               </div>
               <div class="row-preview">
-                {% if p.events %}{{ p.events[0].trigger_label }}: {{ p.events[0].evidence[:140] }}{% if p.events|length > 1 %} <span class="more-count">+{{ p.events|length - 1 }} more</span>{% endif %}{% endif %}
+                {% if p.events %}<span class="signal-sub">{{ p.events[0].trigger_label }}</span>{% endif %}
               </div>
               <div class="row-details">
                 <div class="meta">
@@ -2113,8 +2092,6 @@ TEMPLATE = r"""
                 {% if p.advisory %}<div class="advisory-line">{{ p.advisory }}</div>{% endif %}
                 <pre class="outreach-text">{{ p.outreach }}</pre>
                 <div class="item-actions">
-                  <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                  <a class="btn-mini" href="{{ p.linkedin.url | safe_url }}" target="_blank" title="{{ p.linkedin.label }}">↗ {{ p.linkedin.label }}</a>
                   {% if p.status == 'active' %}
                     <button class="btn-mini status-action" data-status="followed_up" type="button">✓ Mark followed up</button>
                     <button class="btn-mini status-action ghost" data-status="dismissed" type="button">✕ Dismiss</button>
