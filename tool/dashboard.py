@@ -1609,14 +1609,18 @@ TEMPLATE = r"""
     .cw-pill.overdue{background:#F3D7CC;color:#8C3A1E;}
     .cw-pill.due{background:#E2EAD9;color:#4A6233;}
     .cw-pill.open{background:#EAE3D2;color:#6B5B33;cursor:help;}
-    .cw-right{display:flex;gap:4px;align-items:center;}
-    .cw-iconbtn{font:inherit;font-size:13px;cursor:pointer;border:none;
-      background:transparent;color:var(--text-dim);padding:4px 5px;border-radius:6px;
-      line-height:1;transition:.14s;}
-    .cw-iconbtn:hover{background:var(--bg-warm);color:var(--text);}
-    .cw-iconbtn.danger:hover{color:#A33A22;}
-    .cw-iconbtn.cw-primary{color:var(--teal-dark);font-weight:700;}
-    .cw-iconbtn.cw-primary:hover{background:var(--bg-warm);color:var(--teal-dark);}
+    .cw-right{display:flex;gap:6px;align-items:center;}
+    /* Scoped to .action-card so it beats the big ".action-card button"
+       primary style (which otherwise turns these into huge orange
+       blocks). All three are identical small icon buttons. */
+    .action-card .cw-iconbtn{
+      width:auto;margin:0;padding:5px 8px;background:transparent;
+      color:var(--text-muted);border:1px solid var(--border);
+      border-radius:6px;box-shadow:none;letter-spacing:normal;
+      font:inherit;font-size:14px;line-height:1;cursor:pointer;transition:.14s;}
+    .action-card .cw-iconbtn:hover{
+      background:var(--bg-warm);color:var(--text);border-color:var(--teal);}
+    .action-card .cw-iconbtn.danger:hover{color:#A33A22;border-color:#A33A22;}
     .inline-result {
       margin-top: 12px;
       max-height: 480px;
@@ -3108,7 +3112,7 @@ async function loadWatchList() {
             '<div class="cw-tags">' + duePill + openPill + '</div>' +
           '</div>' +
           '<div class="cw-right">' +
-            '<button class="cw-iconbtn cw-primary watch-action" data-action="touch" data-name="' + dn + '" data-company="' + dc + '">Mark contacted</button>' +
+            '<button class="cw-iconbtn watch-action" data-action="touch" data-name="' + dn + '" data-company="' + dc + '" title="Mark contacted">✓</button>' +
             '<button class="cw-iconbtn watch-action" data-action="snooze" data-name="' + dn + '" data-company="' + dc + '" title="Snooze 14 days">💤</button>' +
             '<button class="cw-iconbtn danger watch-action" data-action="remove" data-name="' + dn + '" data-company="' + dc + '" title="Remove from watch list">🗑</button>' +
           '</div>' +
@@ -3133,10 +3137,9 @@ document.addEventListener('click', async (event) => {
   const name    = btn.dataset.name    || '';
   const company = btn.dataset.company || '';
   if (action === 'touch') {
-    const signal = prompt('What did you observe? (optional restlessness notes; e.g. "updated profile, posting more")', '') || '';
     const r = await fetch('/api/candidates/watch/touch', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, current_company: company, signal }),
+      body: JSON.stringify({ name, current_company: company, signal: '' }),
     });
     if (r.ok) loadWatchList();
   } else if (action === 'snooze') {
