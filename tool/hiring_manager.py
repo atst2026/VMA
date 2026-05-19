@@ -232,6 +232,42 @@ _APPOINTEE_RX = [
                r"([A-Z][a-z]+(?:\s[A-Z][a-z]+)+)"),
 ]
 _COMMS_SLOTS = ("cco", "head_of_corporate_affairs", "head_of_comms", "chro")
+# Per-company structure -> the slot to put first for a comms vacancy.
+# Other slots in the original priority list fall through after.
+_STRUCTURE_LEADS = {
+    "chro_led": "chro",
+    "corp_affairs_led": "head_of_corporate_affairs",
+    "head_of_comms_led": "head_of_comms",
+    "cco_led": "cco",
+}
+
+
+def _apply_structure(slots: tuple, structure: str) -> tuple:
+    """If the company has a structure hint, put the hinted seat first.
+    Prepends even if the seat isn't in the default candidate list — the
+    hint is the user explicitly saying "for THIS company, that role is
+    the one to try", which is more authoritative than the generic
+    seniority-up rule."""
+    lead = _STRUCTURE_LEADS.get((structure or "").strip().lower())
+    if not lead:
+        return slots
+    if lead in slots:
+        return (lead,) + tuple(s for s in slots if s != lead)
+    return (lead,) + tuple(slots)
+
+
+def _company_structure(company: str, contacts: dict | None) -> str:
+    """Read the structure hint on the company's ContactCard, '' if none."""
+    if not company:
+        return ""
+    try:
+        from tool.contacts.store import load_contacts, get_contact
+        if contacts is None:
+            contacts = load_contacts()
+        card = get_contact(contacts, company)
+        return getattr(card, "structure", "") if card else ""
+    except Exception:
+        return ""
 
 
 def _appointee_name(title: str) -> str | None:
@@ -264,6 +300,9 @@ def resolve_lead_contact(signal: dict, contacts: dict | None = None) -> dict:
         inf = manager_for_signal(signal)
         title, slots = inf["manager_title"], inf["slots"]
         base_conf, basis = inf["confidence"], inf["basis"]
+        # Company-specific structure (e.g. comms reports to HR) reorders
+        # the slot priority before we look up the roster.
+        slots = _apply_structure(slots, _company_structure(company, contacts))
     elif kind in ("leadership_change", "trade_press"):
         appointee = _appointee_name(signal.get("title") or "")
         if appointee:
@@ -278,14 +317,47 @@ def resolve_lead_contact(signal: dict, contacts: dict | None = None) -> dict:
             "Head of Communications", _COMMS_SLOTS, 0.45, "role_heuristic")
 
     name, linkedin_url, confidence = preset_name, None, base_conf
-    if not preset_name:
+    stale = False
+    verified_at = ""
+    division = ""
+    divisional_uncertain = False
+    slot = ""
+    # For job-like leads, try the divisional roster first when the
+    # lead's title/JD names a division of this parent company. This
+    # catches "Head of Comms, Global Commercial Organization" at a
+    # conglomerate where the group-level CCO is the wrong person.
+    if not preset_name and is_job_like(signal):
+        try:
+            from tool import divisional_contacts as _div
+            lead_text = (signal.get("title") or "") + " " + (signal.get("summary") or "")
+            div_name, parent_has_divs = _div.match_division(company, lead_text)
+            if div_name:
+                d_entry = _div.lookup_division_entry(company, div_name, slots)
+                if d_entry and d_entry.get("name"):
+                    name = d_entry["name"]
+                    linkedin_url = d_entry.get("linkedin_url")
+                    verified_at = d_entry.get("verified_at", "")
+                    division = div_name
+                    confidence = round(
+                        min(0.95, 0.1 + base_conf * 0.5
+                            + float(d_entry.get("confidence") or 0) * 0.5), 2)
+            elif parent_has_divs and _div.has_divisional_hint(lead_text):
+                divisional_uncertain = True
+        except Exception:
+            pass
+
+    if not preset_name and not name:
         nc = best_named_contact(company, slots, contacts=contacts)
         if nc:
             name = nc["name"]
             linkedin_url = nc.get("linkedin_url")
+            stale = bool(nc.get("stale"))
+            verified_at = nc.get("verified_at", "") or ""
+            slot = nc.get("slot", "")
             # Verified named person: blend role-inference certainty with
             # the roster entry's own confidence, so a named hit always
-            # outranks a role-only one.
+            # outranks a role-only one. Stale entries are already
+            # confidence-discounted upstream in best_named_contact.
             confidence = round(
                 min(0.95, 0.1 + base_conf * 0.5
                     + float(nc.get("confidence") or 0) * 0.5), 2)
@@ -300,18 +372,24 @@ def resolve_lead_contact(signal: dict, contacts: dict | None = None) -> dict:
         "confidence": confidence,
         "basis": basis,
         "linkedin_url": linkedin_url,
+        "stale": stale,
+        "verified_at": verified_at,
+        "division": division,
+        "divisional_uncertain": divisional_uncertain,
+        "slot": slot,
     }
 
 
 
 def best_named_contact(company: str, slots: tuple,
                        contacts: dict | None = None) -> dict | None:
-    """First fresh, named roster contact across `slots`, or None.
+    """First fresh, named roster contact across `slots`. If none of the
+    slots have a fresh entry, falls back to the first stale-but-named
+    entry with stale=True — so the UI can surface "verify" rather than
+    silently dropping to a role-only search.
 
-    {name, role_title, linkedin_url, confidence}. Isolated so a missing
-    or broken contacts layer never breaks lead enrichment. Pass a
-    preloaded `contacts` dict to avoid a per-call disk read when
-    enriching many leads in one pass (morning-brief loop)."""
+    Returns {name, role_title, linkedin_url, confidence, stale,
+    verified_at} or None."""
     if not company or not slots:
         return None
     try:
@@ -326,13 +404,39 @@ def best_named_contact(company: str, slots: tuple,
         return None
     if card is None:
         return None
+    # Drop any contact the user has flagged as wrong (until the entry's
+    # name changes — CH/manual refresh implicitly clears the flag).
+    try:
+        from tool import contact_flags
+        flagged = contact_flags.get_flags()
+    except Exception:
+        flagged = {}
+    stale_fallback = None
     for slot in slots:
         entry = card.get(slot)
-        if entry and getattr(entry, "name", "") and entry.is_fresh():
+        if not entry or not getattr(entry, "name", ""):
+            continue
+        key = f"{company}::{slot}"
+        if flagged.get(key, {}).get("name") == entry.name:
+            continue   # user flagged this exact person as wrong
+        if entry.is_fresh():
             return {
                 "name": entry.name,
                 "role_title": getattr(entry, "role_title", "") or "",
                 "linkedin_url": entry.linkedin_url,
                 "confidence": getattr(entry, "confidence", 0.0),
+                "stale": False,
+                "verified_at": getattr(entry, "verified_at", "") or "",
+                "slot": slot,
             }
-    return None
+        if stale_fallback is None:
+            stale_fallback = {
+                "name": entry.name,
+                "role_title": getattr(entry, "role_title", "") or "",
+                "linkedin_url": entry.linkedin_url,
+                "confidence": max(0.0, getattr(entry, "confidence", 0.0) - 0.2),
+                "stale": True,
+                "verified_at": getattr(entry, "verified_at", "") or "",
+                "slot": slot,
+            }
+    return stale_fallback
