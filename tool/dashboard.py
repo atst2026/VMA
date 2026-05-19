@@ -538,12 +538,19 @@ def load_latest_predictive() -> list[dict]:
                 data = []
 
     from tool.advisory import advisory_for
+    from tool import predictor_status
+    _ps_overlay = predictor_status.get_statuses()
     today = datetime.now(timezone.utc).date().isoformat()
     for p_item in data:
         first_seen = p_item.get("first_seen") or ""
         p_item["is_new"] = first_seen.startswith(today)
         p_item.setdefault("status", "active")
         p_item.setdefault("pid", predictor_pipeline._pid(p_item.get("company", "")))
+        # Durable triage overlay wins over the (ephemeral) pipeline
+        # status so followed-up/dismissed survive redeploys.
+        _ov = _ps_overlay.get(p_item["pid"])
+        if _ov:
+            p_item["status"] = _ov
         p_item["outreach"] = draft_outreach_for_predictor(p_item)
         p_item["linkedin"] = linkedin_search_for_predictor(p_item)
         evs = p_item.get("events") or []
@@ -750,6 +757,7 @@ def _boot_state_hydrate():
             "tool/state/candidate_watch.json",
             "tool/state/lead_status.json",
             "tool/state/report_log.json",
+            "tool/state/predictor_status.json",
         ])
     except Exception as e:
         log.warning("state hydrate skipped: %s", e)
@@ -801,14 +809,16 @@ def index():
 @app.route("/api/predictor/<pid>/status", methods=["POST"])
 @_auth_required
 def api_predictor_status(pid: str):
-    from tool import predictor_pipeline
+    from tool import predictor_pipeline, predictor_status
     data = _safe_json_body()
     status = (data.get("status") or "").strip()
     if status not in ("active", "followed_up", "dismissed"):
         return jsonify({"ok": False, "detail": "invalid status"}), 400
-    ok = predictor_pipeline.set_status(pid, status)
-    if not ok:
-        return jsonify({"ok": False, "detail": "predictor not found"}), 404
+    # Durable overlay is authoritative + survives redeploys; the pipeline
+    # write is best-effort (keeps the in-session local file consistent,
+    # and may legitimately miss if the pipeline hasn't been refreshed yet).
+    predictor_status.set_status(pid, status)
+    predictor_pipeline.set_status(pid, status)
     return jsonify({"ok": True, "pid": pid, "status": status})
 
 
