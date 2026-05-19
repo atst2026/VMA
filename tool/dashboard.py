@@ -193,34 +193,50 @@ def _artifact_index() -> dict:
 
 
 def _recent_reports(hours: int = 48) -> list[dict]:
-    """The logged reports from the last `hours`, each resolved to its
-    artifact id (the run that produced it) so View/Download work.
-    id is None while the run is still going."""
+    """Reports from the last `hours`. Merges the dispatch log (gives
+    Type/Company/Name) with the actual artifacts (so historical runs
+    with no log entry still show, just without Company/Name). A log
+    entry whose artifact hasn't appeared yet shows as 'generating'."""
     from tool import report_log
-    logged = report_log.recent(hours)
-    idx = _artifact_index()
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(hours=hours)
+    idx = _artifact_index()                       # {name: [(created,id)…]}
+    used: set = set()
     out = []
-    for e in logged:
+
+    # 1. Logged dispatches — richest rows (Type/Company/Name).
+    for e in report_log.recent(hours):
         try:
             ts = datetime.fromisoformat(e.get("ts", ""))
         except Exception:
-            ts = None
+            continue
         art = e.get("artifact", "")
         aid = None
-        if ts is not None:
-            cutoff = ts - timedelta(seconds=90)
-            for created, _id in idx.get(art, []):
-                if created >= cutoff:
-                    aid = _id
-                    break
+        for created, _id in idx.get(art, []):
+            if _id in used:
+                continue
+            if created >= ts - timedelta(seconds=90):
+                aid, ts_eff = _id, created
+                used.add(_id)
+                break
         out.append({
-            "type": e.get("type", ""),
-            "company": e.get("company", ""),
-            "name": e.get("name", ""),
-            "artifact": art,
-            "ts": e.get("ts", ""),
-            "id": aid,            # None => still generating
+            "type": e.get("type", ""), "company": e.get("company", ""),
+            "name": e.get("name", ""), "artifact": art,
+            "ts": e.get("ts", ""), "id": aid,
         })
+
+    # 2. Artifacts with no matching log entry (pre-log / older runs).
+    for art, items in idx.items():
+        for created, _id in items:
+            if _id in used or created < cutoff:
+                continue
+            out.append({
+                "type": _ARTIFACT_LABEL.get(art, art), "company": "",
+                "name": "", "artifact": art,
+                "ts": created.isoformat(), "id": _id,
+            })
+
+    out.sort(key=lambda r: r.get("ts", ""), reverse=True)
     return out
 
 
@@ -303,7 +319,7 @@ _REPORT_SKIN = (
     'h1,h2,h3,h4{font-family:"Crimson Pro",Georgia,serif;color:#181613;'
     'line-height:1.25;font-weight:600;}'
     'body>h1:first-child,body>h2:first-child{font-size:26px;color:#A04E32;'
-    'margin:0 0 4px!important;padding-bottom:14px;border-bottom:2px solid #C96442;}'
+    'margin:0 0 4px!important;}'
     'h2{font-size:19px;margin:26px 0 8px;}h3{font-size:16px;margin:20px 0 6px;}'
     'p{margin:0 0 12px;}ul,ol{margin:6px 0 14px;padding-left:22px;}li{margin:5px 0;}'
     'a{color:#A04E32;}hr{border:none;border-top:1px solid rgba(140,120,80,.20);'
@@ -816,7 +832,7 @@ def api_pitch_pack():
     if res.get("ok"):
         from tool import report_log
         report_log.add("Pitch Pack", inputs["account_name"],
-                       inputs["role"], res["artifact"])
+                       "", res["artifact"])
     return jsonify(res)
 
 
@@ -876,9 +892,7 @@ def api_sweep():
     res["artifact"] = _WORKFLOW_ARTIFACT["fortnightly-sweep.yml"]
     if res.get("ok"):
         from tool import report_log
-        report_log.add("14-Day Catch-up", "—",
-                       f"market sweep · {inputs['window_days']}d",
-                       res["artifact"])
+        report_log.add("14-Day Catch-up", "", "", res["artifact"])
     return jsonify(res)
 
 
@@ -1342,16 +1356,22 @@ TEMPLATE = r"""
        stretch a short list across the full width. */
     #recent-row { margin-top: 24px; }
     #recent-row .panel { max-width: 880px; }
+    /* 16px container inset so the columns line up with the panel
+       title; top padding gives clear air below the panel-header rule
+       (otherwise the two hairlines look stacked/overlapping). */
+    #recent-reports { padding: 0 16px 14px; }
     .rr-table { width: 100%; border-collapse: collapse; }
     .rr-table th {
       text-align: left; font-size: 10px; letter-spacing: 0.06em;
       text-transform: uppercase; color: var(--text-dim);
-      font-weight: 700; padding: 0 12px 8px; border-bottom: 1px solid var(--border);
+      font-weight: 700; padding: 16px 0 9px; border-bottom: 1px solid var(--border);
     }
     .rr-table td {
-      padding: 11px 12px; border-bottom: 1px solid var(--border);
+      padding: 12px 0; border-bottom: 1px solid var(--border);
       font-size: 12.5px; vertical-align: middle;
     }
+    .rr-table th:not(:first-child),
+    .rr-table td:not(:first-child) { padding-left: 22px; }
     .rr-table tr:last-child td { border-bottom: none; }
     .rr-table tr:hover td { background: var(--surface-elevated); }
     .rr-type { font-weight: 600; white-space: nowrap; }
@@ -2519,7 +2539,7 @@ TEMPLATE = r"""
     <!-- REVERSE MATCH -->
     <div class="panel action-card">
       <h3>Reverse Match</h3>
-      <div class="subhead">Take a candidate, search the market fresh, and give me a ranked list of accounts to pitch them to.</div>
+      <div class="subhead">Take a candidate, search the market fresh, and give a ranked list of accounts to pitch them to.</div>
       <form id="rm-form" onsubmit="dispatch(event, 'rm-form', '/api/dispatch/reverse-match')">
         <label for="rm-name">Candidate name</label>
         <input id="rm-name" name="candidate_name" placeholder="e.g. Rebecca Torres" required>
@@ -2535,7 +2555,7 @@ TEMPLATE = r"""
     <!-- CANDIDATE WATCH -->
     <div class="panel action-card">
       <h3>Candidate Watch</h3>
-      <div class="subhead">Keep a roster of warm candidates to stay in touch with. Overdue ones float to the top so relationships don't go cold. Note - the "restlessness" score only keyword-matches notes you type yourself, not live intelligence.</div>
+      <div class="subhead">Keep a roster of warm candidates to stay in touch with. Overdue ones float to the top so relationships don't go cold.</div>
       <div id="watch-list-wrap">
         <div class="status" id="watch-list-status">Loading…</div>
         <div id="watch-list"></div>
@@ -2562,7 +2582,7 @@ TEMPLATE = r"""
     <!-- MPC OUTREACH FACTORY -->
     <div class="panel action-card">
       <h3>MPC Outreach Factory</h3>
-      <div class="subhead">Take a candidate, check against what signals we've already gathered today, and match the best fits.</div>
+      <div class="subhead">Take a candidate, check against signals already gathered today, and match potential fits.</div>
       <form id="mpc-form" onsubmit="runMPC(event)">
         <label for="mpc-name">Candidate name</label>
         <input id="mpc-name" name="name" placeholder="e.g. James Carter" required>
@@ -2578,7 +2598,7 @@ TEMPLATE = r"""
 
   </div>
 
-  <div class="row row-full" id="recent-row" style="display:none">
+  <div class="row row-full" id="recent-row">
     <div class="panel">
       <div class="panel-header">
         <h2>Recent Reports Generated</h2>
@@ -3571,7 +3591,13 @@ async function loadRecentReports() {
   try {
     const r = await fetch('/api/output/recent');
     const j = await r.json();
-    if (!j.rows || !j.rows.length) { row.style.display = 'none'; return; }
+    row.style.display = '';
+    if (!j.rows || !j.rows.length) {
+      count.textContent = '0';
+      body.innerHTML = '<div class="empty compact" style="padding:18px 16px;">' +
+        'No reports generated in the last 48 hours.</div>';
+      return;
+    }
     count.textContent = j.total;
     const now = Date.now();
     const out = ['<table class="rr-table"><thead><tr>' +
@@ -3596,10 +3622,8 @@ async function loadRecentReports() {
       }
       out.push(
         '<tr><td class="rr-type">' + esc(x.type) + '</td>' +
-        '<td>' + (x.company && x.company !== '—'
-          ? esc(x.company) : '<span class="rr-muted">—</span>') + '</td>' +
-        '<td>' + (x.name
-          ? esc(x.name) : '<span class="rr-muted">—</span>') + '</td>' +
+        '<td>' + (x.company && x.company !== '—' ? esc(x.company) : '') + '</td>' +
+        '<td>' + (x.name ? esc(x.name) : '') + '</td>' +
         '<td class="rr-when">' + esc(ago) + '</td>' +
         '<td class="rr-acts">' + acts + '</td></tr>'
       );
@@ -3608,7 +3632,9 @@ async function loadRecentReports() {
     body.innerHTML = out.join('');
     row.style.display = '';
   } catch (e) {
-    row.style.display = 'none';
+    row.style.display = '';
+    body.innerHTML = '<div class="empty compact" style="padding:18px 16px;">' +
+      'Could not load recent reports.</div>';
   }
 }
 </script>
