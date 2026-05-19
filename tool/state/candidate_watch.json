@@ -1,14 +1,1 @@
-[
-  {
-    "name": "Persistence Test Candidate",
-    "current_company": "TestCo",
-    "current_title": "Test Title",
-    "linkedin_url": "",
-    "sectors": [],
-    "last_touched": "",
-    "last_signal": "",
-    "touch_cadence_days": 30,
-    "snoozed_until": "",
-    "notes": ""
-  }
-]
+[]
