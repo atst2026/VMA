@@ -1,5 +1,12 @@
 [
   {
+    "ts": "2026-05-19T16:25:47.142421+00:00",
+    "type": "Reverse Match",
+    "company": "Man Group",
+    "name": "Kim Mamtora",
+    "artifact": "reverse-match"
+  },
+  {
     "ts": "2026-05-19T16:25:28.804030+00:00",
     "type": "Pitch Pack",
     "company": "Diageo",
