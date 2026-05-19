@@ -24,7 +24,7 @@ import os
 import sys
 import zipfile
 import io
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import re
@@ -126,20 +126,91 @@ def _github_headers() -> dict:
 
 
 def trigger_workflow(workflow_filename: str, inputs: dict) -> dict:
-    """POST to /actions/workflows/{file}/dispatches. Returns {ok, status, detail}."""
+    """POST to /actions/workflows/{file}/dispatches. Returns
+    {ok, status, detail, dispatched_at} — the timestamp lets the UI
+    poll for the artifact this run produces."""
     if not GITHUB_TOKEN:
         return {"ok": False, "detail": "GITHUB_TOKEN not set in .env"}
     url = (f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}"
            f"/actions/workflows/{workflow_filename}/dispatches")
     body = {"ref": "main", "inputs": inputs}
+    dispatched_at = datetime.now(timezone.utc).isoformat()
     try:
         r = requests.post(url, headers=_github_headers(), json=body, timeout=15)
         ok = r.status_code in (204, 200)
         return {"ok": ok, "status": r.status_code,
-                "detail": "Dispatched. Email in 1–2 minutes."
+                "dispatched_at": dispatched_at,
+                "detail": "Running… the report opens here when ready."
                           if ok else f"GitHub returned {r.status_code}: {r.text[:200]}"}
     except requests.RequestException as e:
         return {"ok": False, "detail": f"Network error: {e}"}
+
+
+# ---- Workflow output (artifact) polling + serving --------------------
+# Maps a dispatched workflow to the artifact name it uploads.
+_WORKFLOW_ARTIFACT = {
+    "pitch-pack.yml": "pitch-pack",
+    "reverse-match.yml": "reverse-match",
+    "pre-meeting-brief.yml": "pre-meeting-brief",
+    "fortnightly-sweep.yml": "fortnightly-sweep",
+}
+
+
+def _find_output_artifact(name: str, since_iso: str) -> dict | None:
+    """Newest non-expired artifact called `name` created at/after
+    `since_iso` (the dispatch time). None while the run is still going
+    (the artifact only exists once the run finished and uploaded)."""
+    if not GITHUB_TOKEN:
+        return None
+    try:
+        since = datetime.fromisoformat(since_iso)
+    except Exception:
+        since = datetime.now(timezone.utc) - timedelta(minutes=30)
+    # Small slack so clock skew between us and GitHub can't hide a hit.
+    cutoff = since - timedelta(seconds=90)
+    url = (f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}"
+           f"/actions/artifacts?per_page=40")
+    try:
+        r = requests.get(url, headers=_github_headers(), timeout=15)
+        if r.status_code != 200:
+            return None
+        cands = []
+        for a in r.json().get("artifacts", []):
+            if a.get("name") != name or a.get("expired"):
+                continue
+            try:
+                created = datetime.fromisoformat(
+                    a.get("created_at", "").replace("Z", "+00:00"))
+            except Exception:
+                continue
+            if created >= cutoff:
+                cands.append((created, a))
+        if not cands:
+            return None
+        cands.sort(key=lambda t: t[0], reverse=True)
+        return cands[0][1]
+    except requests.RequestException:
+        return None
+
+
+def _artifact_html(artifact_id: int) -> str | None:
+    """Download an artifact zip by id and return its first .html file."""
+    if not GITHUB_TOKEN:
+        return None
+    url = (f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}"
+           f"/actions/artifacts/{artifact_id}/zip")
+    try:
+        r = requests.get(url, headers=_github_headers(), timeout=40)
+        if r.status_code != 200 or not r.content:
+            return None
+        with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
+            html_members = sorted(
+                m for m in zf.namelist() if m.lower().endswith(".html"))
+            if not html_members:
+                return None
+            return zf.read(html_members[0]).decode("utf-8", "replace")
+    except (requests.RequestException, zipfile.BadZipFile):
+        return None
 
 
 def refresh_latest_brief_from_github() -> dict:
@@ -604,7 +675,9 @@ def api_pitch_pack():
             except ValueError:
                 return jsonify({"ok": False,
                                 "detail": f"{k} must be a whole number (e.g. 95000)"}), 400
-    return jsonify(trigger_workflow("pitch-pack.yml", inputs))
+    res = trigger_workflow("pitch-pack.yml", inputs)
+    res["artifact"] = _WORKFLOW_ARTIFACT["pitch-pack.yml"]
+    return jsonify(res)
 
 
 @app.route("/api/dispatch/reverse-match", methods=["POST"])
@@ -621,7 +694,9 @@ def api_reverse_match():
                if not inputs[k]]
     if missing:
         return jsonify({"ok": False, "detail": f"Missing: {', '.join(missing)}"}), 400
-    return jsonify(trigger_workflow("reverse-match.yml", inputs))
+    res = trigger_workflow("reverse-match.yml", inputs)
+    res["artifact"] = _WORKFLOW_ARTIFACT["reverse-match.yml"]
+    return jsonify(res)
 
 
 @app.route("/api/dispatch/pre-meeting", methods=["POST"])
@@ -636,7 +711,9 @@ def api_pre_meeting():
     }
     if not inputs["account_name"]:
         return jsonify({"ok": False, "detail": "Account name required"}), 400
-    return jsonify(trigger_workflow("pre-meeting-brief.yml", inputs))
+    res = trigger_workflow("pre-meeting-brief.yml", inputs)
+    res["artifact"] = _WORKFLOW_ARTIFACT["pre-meeting-brief.yml"]
+    return jsonify(res)
 
 
 @app.route("/api/dispatch/sweep", methods=["POST"])
@@ -647,7 +724,45 @@ def api_sweep():
         "window_days": str(data.get("window_days", "14")),
         "mode": data.get("mode", "send"),
     }
-    return jsonify(trigger_workflow("fortnightly-sweep.yml", inputs))
+    res = trigger_workflow("fortnightly-sweep.yml", inputs)
+    res["artifact"] = _WORKFLOW_ARTIFACT["fortnightly-sweep.yml"]
+    return jsonify(res)
+
+
+@app.route("/api/output/status", methods=["GET"])
+@_auth_required
+def api_output_status():
+    """Has the dispatched run produced its artifact yet? The browser
+    polls this after triggering a workflow."""
+    name = (request.args.get("artifact") or "").strip()
+    since = (request.args.get("since") or "").strip()
+    if not name or not since:
+        return jsonify({"ready": False, "detail": "missing artifact/since"}), 400
+    art = _find_output_artifact(name, since)
+    if art:
+        return jsonify({"ready": True, "id": art.get("id")})
+    return jsonify({"ready": False})
+
+
+@app.route("/api/output/view", methods=["GET"])
+@_auth_required
+def api_output_view():
+    """Serve the report HTML out of a finished run's artifact so the
+    browser tab can display it."""
+    try:
+        artifact_id = int(request.args.get("id") or 0)
+    except (TypeError, ValueError):
+        artifact_id = 0
+    if not artifact_id:
+        return Response("Invalid artifact id.", status=400,
+                        mimetype="text/plain")
+    html = _artifact_html(artifact_id)
+    if html is None:
+        return Response(
+            "Report not available (the run may have failed, or the "
+            "artifact expired). The emailed copy is the fallback.",
+            status=404, mimetype="text/plain")
+    return Response(html, mimetype="text/html")
 
 
 # ---------------------------------------------------------------------------
@@ -2181,7 +2296,7 @@ TEMPLATE = r"""
         <input id="pm-contact" name="contact_name" placeholder="e.g. Carla Sherry">
         <label for="pm-context">Meeting context (optional)</label>
         <input id="pm-context" name="meeting_context" placeholder="e.g. 10am Mon, Zoom">
-        <button type="submit">Run and send via email</button>
+        <button type="submit">Run</button>
         <div class="status" id="pm-status"></div>
       </form>
     </div>
@@ -2193,7 +2308,7 @@ TEMPLATE = r"""
       <form id="sweep-form" onsubmit="dispatch(event, 'sweep-form', '/api/dispatch/sweep')">
         <label for="sw-days">Window (days)</label>
         <input id="sw-days" name="window_days" type="number" min="1" max="60" value="14" required>
-        <button type="submit">Run and send via email</button>
+        <button type="submit">Run</button>
         <div class="status" id="sweep-status"></div>
       </form>
     </div>
@@ -2207,7 +2322,7 @@ TEMPLATE = r"""
         <input id="pp-account" name="account_name" placeholder="e.g. Unilever" required>
         <label for="pp-role">Role</label>
         <input id="pp-role" name="role" placeholder="e.g. Head of Internal Communications" required>
-        <button type="submit">Run and send via email</button>
+        <button type="submit">Run</button>
         <div class="status" id="pitch-status"></div>
       </form>
     </div>
@@ -2223,7 +2338,7 @@ TEMPLATE = r"""
         <input id="rm-company" name="current_company" placeholder="e.g. Vodafone" required>
         <label for="rm-title">Current title</label>
         <input id="rm-title" name="current_title" placeholder="e.g. Head of Internal Communications" required>
-        <button type="submit">Run and send via email</button>
+        <button type="submit">Run</button>
         <div class="status" id="rm-status"></div>
       </form>
     </div>
@@ -2299,28 +2414,96 @@ async function dispatch(event, formId, url) {
   const status = form.querySelector('.status');
   const data = {};
   new FormData(form).forEach((v, k) => { data[k] = v; });
-  data.mode = 'send';   // dashboard always fires live to Sara
+  data.mode = 'send';
+
+  // Open the result tab NOW, inside the click gesture, so the browser
+  // doesn't block it as a pop-up when it loads minutes later.
+  const win = window.open('', '_blank');
+  if (win) {
+    win.document.write(
+      '<!doctype html><meta charset="utf-8"><title>Preparing report…</title>' +
+      '<style>body{font-family:Inter,system-ui,sans-serif;background:#F5F0E8;' +
+      'color:#181613;display:flex;min-height:100vh;align-items:center;' +
+      'justify-content:center;margin:0}.b{text-align:center;padding:24px}' +
+      '.s{width:30px;height:30px;border:3px solid rgba(140,120,80,.25);' +
+      'border-top-color:#C96442;border-radius:50%;margin:0 auto 16px;' +
+      'animation:r .8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}' +
+      'p{font-size:13px;color:#7A7164;max-width:340px;line-height:1.55}</style>' +
+      '<div class="b"><div class="s"></div><h3>Preparing your report…</h3>' +
+      '<p>This runs on GitHub Actions and can take a few minutes. Keep this ' +
+      'tab open — it loads automatically when ready.</p></div>');
+  }
 
   btn.disabled = true;
-  btn.textContent = 'Dispatching…';
+  btn.textContent = 'Running…';
   status.className = 'status';
-  status.style.display = 'none';
+  status.style.display = '';
+  status.textContent = 'Dispatching…';
 
+  let j;
   try {
     const r = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    const j = await r.json();
-    status.textContent = j.detail || (j.ok ? 'Dispatched.' : 'Failed.');
-    status.className = 'status ' + (j.ok ? 'ok' : 'err');
+    j = await r.json();
   } catch (e) {
+    if (win && !win.closed) win.close();
     status.textContent = 'Network error: ' + e.message;
     status.className = 'status err';
+    btn.disabled = false; btn.textContent = 'Run';
+    return;
   }
-  btn.disabled = false;
-  btn.textContent = 'Run and send via email';
+  if (!j.ok || !j.artifact || !j.dispatched_at) {
+    if (win && !win.closed) win.close();
+    status.textContent = j.detail || 'Failed.';
+    status.className = 'status err';
+    btn.disabled = false; btn.textContent = 'Run';
+    return;
+  }
+
+  status.textContent = 'Running… the report opens here when ready.';
+  status.className = 'status ok';
+
+  const qs = 'artifact=' + encodeURIComponent(j.artifact) +
+             '&since=' + encodeURIComponent(j.dispatched_at);
+  const started = Date.now();
+  const MAX_MS = 25 * 60 * 1000;   // give up after ~25 min
+
+  const poll = async () => {
+    if (Date.now() - started > MAX_MS) {
+      if (win && !win.closed) win.close();
+      status.textContent = 'Still running after 25 min — the emailed copy will still arrive.';
+      status.className = 'status err';
+      btn.disabled = false; btn.textContent = 'Run';
+      return;
+    }
+    let s;
+    try {
+      const rr = await fetch('/api/output/status?' + qs);
+      s = await rr.json();
+    } catch (e) { s = { ready: false }; }
+    if (s.ready && s.id) {
+      const viewUrl = '/api/output/view?artifact=' +
+        encodeURIComponent(j.artifact) + '&id=' + encodeURIComponent(s.id);
+      if (win && !win.closed) {
+        win.location = viewUrl;
+        status.innerHTML = 'Report opened in a new tab · ' +
+          '<a href="' + viewUrl + '" target="_blank">open again ↗</a>';
+      } else {
+        status.innerHTML = 'Report ready · ' +
+          '<a href="' + viewUrl + '" target="_blank">open ↗</a>';
+      }
+      status.className = 'status ok';
+      btn.disabled = false; btn.textContent = 'Run';
+      return;
+    }
+    const mins = Math.floor((Date.now() - started) / 60000);
+    status.textContent = 'Running…' + (mins ? ' (' + mins + ' min)' : '');
+    setTimeout(poll, 12000);
+  };
+  setTimeout(poll, 12000);
 }
 
 // Pipeline filter pills: show only items matching the chosen filter.
