@@ -499,6 +499,23 @@ app = Flask(__name__)
 _register_json_error_handlers(app)
 
 
+# Render's filesystem is ephemeral — pull the durably-stored copies of
+# the dashboard-written state files into local state before serving, so
+# a redeploy/cold-start keeps dismissed leads and the watch roster.
+def _boot_state_hydrate():
+    try:
+        from tool import github_state
+        github_state.hydrate([
+            "tool/state/candidate_watch.json",
+            "tool/state/lead_status.json",
+        ])
+    except Exception as e:
+        log.warning("state hydrate skipped: %s", e)
+
+
+_boot_state_hydrate()
+
+
 @app.template_filter("safe_url")
 def _safe_url_filter(u):
     """Jinja-side counterpart of the JS safeUrl(): rewrite URLs to '#'

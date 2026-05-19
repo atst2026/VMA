@@ -68,13 +68,14 @@ def set_status(lead_id: str, status: str) -> bool:
             data.pop(lead_id, None)
         else:
             data[lead_id] = status
+        payload = json.dumps(data, indent=2)
         STATE_DIR.mkdir(parents=True, exist_ok=True)
         tmp = tempfile.NamedTemporaryFile(
             mode="w", encoding="utf-8", suffix=".tmp",
             dir=str(STATE_DIR), delete=False,
         )
         try:
-            tmp.write(json.dumps(data, indent=2))
+            tmp.write(payload)
             tmp.flush()
             os.fsync(tmp.fileno())
             tmp.close()
@@ -85,4 +86,11 @@ def set_status(lead_id: str, status: str) -> bool:
             except OSError:
                 pass
             raise
+    # Persist to the repo so triage survives Render redeploys.
+    try:
+        from tool import github_state
+        github_state.push("tool/state/lead_status.json", payload,
+                          "state: update lead triage status")
+    except Exception:
+        pass
     return True
