@@ -503,6 +503,17 @@ def load_latest_signals() -> list[dict]:
         data = json.loads(p.read_text())
     except Exception:
         return []
+    # Two filters before enrichment:
+    #  - drop appointment news (kind=leadership_change): the company in
+    #    the headline is NOT hiring (the seat is filled). That signal
+    #    still feeds the Mandates Worth Following detector via the
+    #    morning brief unchanged; here it's just noise.
+    #  - drop signals with no parsed company: structurally unusable
+    #    (these are the "—" dash badges, mostly GDELT headlines whose
+    #    entity extraction returned empty).
+    data = [s for s in data
+            if (s.get("kind") or "").strip().lower() != "leadership_change"
+            and (s.get("company") or "").strip()]
     # The uniform sequence, identical for every lead regardless of kind:
     # resolve best-available contact (+ confidence) -> personalised draft
     # -> one precise LinkedIn click.
