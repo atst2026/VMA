@@ -86,11 +86,11 @@ def set_status(lead_id: str, status: str) -> bool:
             except OSError:
                 pass
             raise
-    # Persist to the repo so triage survives Render redeploys.
+    # Persist to the repo (background; never blocks the request).
     try:
         from tool import github_state
-        github_state.push("tool/state/lead_status.json", payload,
-                          "state: update lead triage status")
+        github_state.push_async("tool/state/lead_status.json", payload,
+                                "state: update lead triage status")
     except Exception:
         pass
     return True

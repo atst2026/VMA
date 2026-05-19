@@ -1621,6 +1621,8 @@ TEMPLATE = r"""
     .action-card .cw-iconbtn:hover{
       background:var(--bg-warm);color:var(--text);border-color:var(--teal);}
     .action-card .cw-iconbtn.danger:hover{color:#A33A22;border-color:#A33A22;}
+    .action-card .cw-iconbtn.cw-tick{color:var(--green);}
+    .action-card .cw-iconbtn.cw-tick:hover{background:var(--bg-warm);color:var(--green);border-color:var(--green);}
     .inline-result {
       margin-top: 12px;
       max-height: 480px;
@@ -3081,7 +3083,7 @@ async function loadWatchList() {
     const out = ['<div class="cw-list">'];
     for (const c of j.rows.slice(0, 10)) {
       const cadence = c.touch_cadence_days || 30;
-      const seen = c._days_since_touched;          // null === never contacted
+      const seen = c._days_since_touched;          // null === not yet contacted
       let duePill;
       if (c._overdue_days > 0) {
         duePill = '<span class="cw-pill overdue">overdue ' + esc(c._overdue_days) + 'd</span>';
@@ -3094,9 +3096,6 @@ async function loadWatchList() {
           ' phrase(s) in notes you typed suggest this person may be open to a move">' +
           'may be open ×' + esc(c._restlessness_hits) + '</span>'
         : '';
-      const stateTxt = (seen === null || seen === undefined)
-        ? 'never contacted'
-        : 'last contacted ' + esc(seen) + 'd ago';
       const sub = [c.current_title, c.current_company].filter(Boolean).map(esc).join(' · ');
       // Data attributes carry name/company so user-controlled text is never
       // injected into an onclick string.
@@ -3108,12 +3107,10 @@ async function loadWatchList() {
             '<div class="cw-nm">' + esc(c.name) + '</div>' +
             (sub ? '<div class="cw-sub">' + sub + '</div>' : '') +
             (c.last_signal ? '<div class="cw-state"><em>' + esc(c.last_signal) + '</em></div>' : '') +
-            '<div class="cw-state">' + stateTxt + '</div>' +
             '<div class="cw-tags">' + duePill + openPill + '</div>' +
           '</div>' +
           '<div class="cw-right">' +
-            '<button class="cw-iconbtn watch-action" data-action="touch" data-name="' + dn + '" data-company="' + dc + '" title="Mark contacted">✓</button>' +
-            '<button class="cw-iconbtn watch-action" data-action="snooze" data-name="' + dn + '" data-company="' + dc + '" title="Snooze 14 days">💤</button>' +
+            '<button class="cw-iconbtn cw-tick watch-action" data-action="touch" data-name="' + dn + '" data-company="' + dc + '" title="Mark contacted">✓</button>' +
             '<button class="cw-iconbtn danger watch-action" data-action="remove" data-name="' + dn + '" data-company="' + dc + '" title="Remove from watch list">🗑</button>' +
           '</div>' +
         '</div>'
@@ -3140,12 +3137,6 @@ document.addEventListener('click', async (event) => {
     const r = await fetch('/api/candidates/watch/touch', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, current_company: company, signal: '' }),
-    });
-    if (r.ok) loadWatchList();
-  } else if (action === 'snooze') {
-    const r = await fetch('/api/candidates/watch/snooze', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, current_company: company, days: 14 }),
     });
     if (r.ok) loadWatchList();
   } else if (action === 'remove') {

@@ -32,7 +32,9 @@ log = logging.getLogger("brief.github_state")
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 GITHUB_OWNER = os.environ.get("GITHUB_OWNER", "atst2026")
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "VMA")
-BRANCH = os.environ.get("GITHUB_STATE_BRANCH", "main")
+# Default to a dedicated branch Render does NOT auto-deploy from, so
+# persisting state never triggers a redeploy. Override via env if needed.
+BRANCH = os.environ.get("GITHUB_STATE_BRANCH", "dashboard-state")
 
 # Repo root = two levels up from this file (tool/github_state.py).
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -122,3 +124,16 @@ def push(repo_path: str, text: str, message: str) -> bool:
     except Exception as e:
         log.info("github_state PUT %s failed: %s", repo_path, e)
         return False
+
+
+def push_async(repo_path: str, text: str, message: str) -> None:
+    """Fire-and-forget push on a daemon thread. Keeps the durable-state
+    write completely off the request path: adding/dismissing is an
+    instant local operation; GitHub persistence happens in the
+    background and can never block, slow, or break the UI."""
+    if not _enabled():
+        return
+    import threading
+    threading.Thread(
+        target=push, args=(repo_path, text, message), daemon=True,
+    ).start()
