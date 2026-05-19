@@ -1071,8 +1071,7 @@ def api_mpc_build():
 def api_candidates_watch_list():
     """List watched candidates, sorted by call urgency."""
     from tool.candidate_watch import list_watched
-    include_snoozed = request.args.get("include_snoozed") == "1"
-    rows = list_watched(include_snoozed=include_snoozed)
+    rows = list_watched()
     return jsonify({"rows": rows, "total": len(rows)})
 
 
@@ -1115,24 +1114,6 @@ def api_candidates_watch_touch():
         current_company=(data.get("current_company") or "").strip(),
         signal=(data.get("signal") or "").strip(),
     )
-    if not rec:
-        return jsonify({"ok": False, "detail": "Candidate not found"}), 404
-    return jsonify({"ok": True, "candidate": rec})
-
-
-@app.route("/api/candidates/watch/snooze", methods=["POST"])
-@_auth_required
-def api_candidates_watch_snooze():
-    from tool.candidate_watch import snooze_candidate
-    data = _safe_json_body()
-    name = (data.get("name") or "").strip()
-    current_company = (data.get("current_company") or "").strip()
-    try:
-        days = int(data.get("days") or 14)
-    except (TypeError, ValueError):
-        days = 14
-    days = max(1, min(days, 365))
-    rec = snooze_candidate(name, current_company, days)
     if not rec:
         return jsonify({"ok": False, "detail": "Candidate not found"}), 404
     return jsonify({"ok": True, "candidate": rec})
@@ -2524,7 +2505,7 @@ TEMPLATE = r"""
   <div class="row" id="pulses-row">
     <div class="panel">
       <div class="panel-header">
-        <h2>Calendar Pulses</h2>
+        <h2>BD Calendar</h2>
         <div style="display:flex;align-items:center;gap:8px;">
           <button class="cal-headnew" id="pulses-new" type="button" style="display:none;">
             <span class="cal-nd"></span><span id="pulses-new-n">0</span>&nbsp;new</button>
@@ -3711,7 +3692,7 @@ async function flagContact(e, link, company, slot, name) {
 }
 
 async function clearRecentReports(btn) {
-  if (!confirm('Permanently delete all generated reports? This frees the storage and cannot be undone.')) return;
+  if (!confirm('Delete all recently generated reports?')) return;
   if (btn) { btn.disabled = true; btn.textContent = 'Clearing…'; }
   try {
     await fetch('/api/output/clear', { method: 'POST' });

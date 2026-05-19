@@ -26,7 +26,7 @@ import tempfile
 import threading
 from contextlib import contextmanager
 from dataclasses import dataclass, field, asdict
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from pathlib import Path
 
 log = logging.getLogger("brief.candidate_watch")
@@ -149,20 +149,17 @@ def _days_since(iso: str) -> int | None:
     return (date.today() - d).days
 
 
-def list_watched(include_snoozed: bool = False) -> list[dict]:
+def list_watched() -> list[dict]:
     """Return all watched candidates, scored and sorted by call urgency.
 
     Score = max(0, days_since_touched - cadence) + 10*restlessness_hits.
-    Higher score = call sooner. Snoozed candidates are filtered out
-    unless `include_snoozed=True` (so Sara can review who she's
-    deliberately deferred)."""
+    Higher score = call sooner. (Snooze used to filter rows out here; the
+    snooze UI was removed, so the filter was too — otherwise a legacy
+    snoozed_until value silently hides the candidate with no way to
+    unhide.)"""
     rows = _load_all()
-    today = date.today()
     out: list[dict] = []
     for c in rows:
-        snooze = _parse_iso(c.get("snoozed_until", ""))
-        if snooze and snooze > today and not include_snoozed:
-            continue
         days = _days_since(c.get("last_touched", ""))
         cadence = int(c.get("touch_cadence_days") or 30)
         if days is None:
@@ -268,21 +265,6 @@ def mark_touched(name: str, current_company: str = "",
             return r
         return None
 
-
-def snooze_candidate(name: str, current_company: str, days: int) -> dict | None:
-    with _locked_state():
-        rows = _load_all()
-        key_name = name.strip().lower()
-        key_co   = current_company.strip().lower()
-        for r in rows:
-            if r.get("name", "").strip().lower() != key_name:
-                continue
-            if key_co and r.get("current_company", "").strip().lower() != key_co:
-                continue
-            r["snoozed_until"] = (date.today() + timedelta(days=max(1, days))).isoformat()
-            _save_all(rows)
-            return r
-        return None
 
 
 def remove_candidate(name: str, current_company: str = "") -> bool:
