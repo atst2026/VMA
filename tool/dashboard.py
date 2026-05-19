@@ -2505,7 +2505,7 @@ TEMPLATE = r"""
   <div class="row" id="pulses-row">
     <div class="panel">
       <div class="panel-header">
-        <h2>Calendar Pulses</h2>
+        <h2>BD Calendar</h2>
         <div style="display:flex;align-items:center;gap:8px;">
           <button class="cal-headnew" id="pulses-new" type="button" style="display:none;">
             <span class="cal-nd"></span><span id="pulses-new-n">0</span>&nbsp;new</button>
