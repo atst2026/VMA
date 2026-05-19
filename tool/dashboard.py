@@ -757,6 +757,8 @@ def index():
         leads=leads,
         predictors=predictors,
         leads_active_count=sum(1 for s in leads if s.get("status", "active") == "active"),
+        leads_new_count=sum(1 for s in leads if s.get("is_new")
+                            and s.get("status", "active") == "active"),
         leads_followed_count=sum(1 for s in leads if s.get("status") == "followed_up"),
         leads_dismissed_count=sum(1 for s in leads if s.get("status") == "dismissed"),
         active_count=sum(1 for p in predictors if p.get("status") == "active"),
@@ -2325,6 +2327,7 @@ TEMPLATE = r"""
       </div>
       <div class="filter-bar">
         <button class="lead-filter-pill active" data-filter="active">Active <span class="pill-count" id="lead-pc-active">{{ leads_active_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="new">New today <span class="pill-count" id="lead-pc-new">{{ leads_new_count }}</span></button>
         <button class="lead-filter-pill" data-filter="followed_up">Followed up <span class="pill-count" id="lead-pc-followed_up">{{ leads_followed_count }}</span></button>
         <button class="lead-filter-pill" data-filter="dismissed">Dismissed <span class="pill-count" id="lead-pc-dismissed">{{ leads_dismissed_count }}</span></button>
         <button class="lead-filter-pill" data-filter="all">All</button>
@@ -2333,12 +2336,13 @@ TEMPLATE = r"""
         {% if leads %}
           <div id="leads-list">
           {% for s in leads %}
-            <div class="item lead" data-lead-id="{{ s.lead_id }}" data-status="{{ s.status }}">
+            <div class="item lead" data-lead-id="{{ s.lead_id }}" data-status="{{ s.status }}" data-new="{{ '1' if s.is_new else '0' }}">
               <span class="rank">{{ loop.index }}</span>
               <span class="title">
                 {% if s.url %}<a href="{{ s.url | safe_url }}" target="_blank">{{ s.title }}</a>
                 {% else %}{{ s.title }}{% endif %}
               </span>
+              {% if s.is_new %}<span class="new-badge">NEW</span>{% endif %}
               {% if s.status == 'followed_up' %}<span class="status-badge followed-up">✓ followed up</span>{% endif %}
               {% if s.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
               <div class="meta">
@@ -2796,7 +2800,9 @@ function applyLeadFilter(name) {
   let visible = 0;
   document.querySelectorAll('#leads-list .item.lead').forEach(item => {
     const status = item.dataset.status || 'active';
+    const isNew = item.dataset.new === '1';
     const show = (name === 'all') ? true
+               : (name === 'new') ? (isNew && status === 'active')
                : (name === 'active') ? status === 'active'
                : status === name;
     item.style.display = show ? '' : 'none';
@@ -2812,15 +2818,15 @@ document.addEventListener('click', (event) => {
 });
 
 function recountLeads() {
-  let a = 0, f = 0, d = 0;
+  let a = 0, n = 0, f = 0, d = 0;
   document.querySelectorAll('#leads-list .item.lead').forEach(it => {
     const s = it.dataset.status || 'active';
-    if (s === 'active') a++;
+    if (s === 'active') { a++; if (it.dataset.new === '1') n++; }
     else if (s === 'followed_up') f++;
     else if (s === 'dismissed') d++;
   });
   const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-  set('leads-count', a); set('lead-pc-active', a);
+  set('leads-count', a); set('lead-pc-active', a); set('lead-pc-new', n);
   set('lead-pc-followed_up', f); set('lead-pc-dismissed', d);
   const ap = document.querySelector('.lead-filter-pill.active');
   applyLeadFilter(ap ? ap.dataset.filter : 'active');
