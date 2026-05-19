@@ -122,7 +122,15 @@ def _load_all() -> list[dict]:
 
 
 def _save_all(data: list[dict]) -> None:
-    _atomic_write(WATCH_FILE, json.dumps(data, indent=2))
+    payload = json.dumps(data, indent=2)
+    _atomic_write(WATCH_FILE, payload)
+    # Persist to the repo so the roster survives Render redeploys.
+    try:
+        from tool import github_state
+        github_state.push("tool/state/candidate_watch.json", payload,
+                          "state: update candidate watch roster")
+    except Exception as e:
+        log.info("candidate_watch github persist skipped: %s", e)
 
 
 def _parse_iso(s: str) -> date | None:
