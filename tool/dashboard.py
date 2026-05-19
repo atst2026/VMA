@@ -192,6 +192,36 @@ def _artifact_index() -> dict:
         return {}
 
 
+def _delete_report_artifacts() -> dict:
+    """Permanently delete every report artifact from GitHub (frees the
+    storage; nothing can reappear on refresh). Returns {deleted, failed}."""
+    if not GITHUB_TOKEN:
+        return {"deleted": 0, "failed": 0}
+    deleted = failed = 0
+    base = f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}"
+    try:
+        r = requests.get(f"{base}/actions/artifacts?per_page=100",
+                         headers=_github_headers(), timeout=15)
+        if r.status_code != 200:
+            return {"deleted": 0, "failed": 0}
+        for a in r.json().get("artifacts", []):
+            if a.get("name") not in _ARTIFACT_LABEL:
+                continue
+            try:
+                d = requests.delete(
+                    f"{base}/actions/artifacts/{a.get('id')}",
+                    headers=_github_headers(), timeout=15)
+                if d.status_code in (204, 200):
+                    deleted += 1
+                else:
+                    failed += 1
+            except requests.RequestException:
+                failed += 1
+    except requests.RequestException:
+        pass
+    return {"deleted": deleted, "failed": failed}
+
+
 def _recent_reports(hours: int = 48) -> list[dict]:
     """Reports from the last `hours`. Merges the dispatch log (gives
     Type/Company/Name) with the actual artifacts (so historical runs
@@ -200,9 +230,6 @@ def _recent_reports(hours: int = 48) -> list[dict]:
     from tool import report_log
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(hours=hours)
-    cleared = report_log.cleared_at()
-    if cleared and cleared > cutoff:        # Clear button watermark
-        cutoff = cleared
     idx = _artifact_index()                       # {name: [(created,id)…]}
     used: set = set()
     out = []
@@ -723,7 +750,6 @@ def _boot_state_hydrate():
             "tool/state/candidate_watch.json",
             "tool/state/lead_status.json",
             "tool/state/report_log.json",
-            "tool/state/report_clear.json",
         ])
     except Exception as e:
         log.warning("state hydrate skipped: %s", e)
@@ -957,11 +983,12 @@ def api_output_recent():
 @app.route("/api/output/clear", methods=["POST"])
 @_auth_required
 def api_output_clear():
-    """Clear the Recent Reports panel (sets a watermark; artifacts can't
-    be deleted, so anything generated up to now is hidden)."""
+    """Permanently clear the panel: delete every report artifact from
+    GitHub (frees storage, can't reappear) and empty the dispatch log."""
     from tool import report_log
-    report_log.set_cleared()
-    return jsonify({"ok": True})
+    res = _delete_report_artifacts()
+    report_log.clear_log()
+    return jsonify({"ok": True, **res})
 
 
 # ---------------------------------------------------------------------------
@@ -2623,7 +2650,7 @@ TEMPLATE = r"""
       <div class="panel-header">
         <h2>Recent Reports Generated</h2>
         <span style="display:flex;align-items:center;gap:10px;">
-          <button type="button" class="btn-mini" onclick="clearRecentReports()">Clear</button>
+          <button type="button" class="btn-mini" onclick="clearRecentReports(this)">Clear</button>
           <span class="count" id="recent-count">—</span>
         </span>
       </div>
@@ -3611,11 +3638,13 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ---------- Recent Reports Generated (last 48h) ----------
-async function clearRecentReports() {
-  if (!confirm('Clear all reports from this panel? (the files themselves are kept)')) return;
+async function clearRecentReports(btn) {
+  if (!confirm('Permanently delete all generated reports? This frees the storage and cannot be undone.')) return;
+  if (btn) { btn.disabled = true; btn.textContent = 'Clearing…'; }
   try {
     await fetch('/api/output/clear', { method: 'POST' });
   } catch (e) { /* best-effort */ }
+  if (btn) { btn.disabled = false; btn.textContent = 'Clear'; }
   loadRecentReports();
 }
 

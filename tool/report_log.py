@@ -20,7 +20,6 @@ from pathlib import Path
 STATE_DIR = Path(__file__).resolve().parent / "state"
 LOG_FILE = STATE_DIR / "report_log.json"
 _MAX = 100
-CLEAR_FILE = STATE_DIR / "report_clear.json"
 
 try:
     import fcntl
@@ -98,14 +97,13 @@ def add(report_type: str, company: str, name: str, artifact: str) -> None:
         pass
 
 
-def set_cleared() -> None:
-    """Watermark: hide everything generated up to now from the panel.
-    GitHub artifacts can't be deleted, so the panel filters by this
-    timestamp instead. Persisted like the log."""
+def clear_log() -> None:
+    """Empty the dispatch log and persist it, so the panel stays clear
+    across refresh, page close and redeploy (the artifacts themselves
+    are deleted separately)."""
     try:
         with _locked():
-            payload = json.dumps(
-                {"cleared_at": datetime.now(timezone.utc).isoformat()})
+            payload = "[]"
             STATE_DIR.mkdir(parents=True, exist_ok=True)
             tmp = tempfile.NamedTemporaryFile(
                 mode="w", encoding="utf-8", suffix=".tmp",
@@ -115,7 +113,7 @@ def set_cleared() -> None:
                 tmp.flush()
                 os.fsync(tmp.fileno())
                 tmp.close()
-                os.replace(tmp.name, str(CLEAR_FILE))
+                os.replace(tmp.name, str(LOG_FILE))
             except Exception:
                 try:
                     os.unlink(tmp.name)
@@ -124,23 +122,12 @@ def set_cleared() -> None:
                 raise
         try:
             from tool import github_state
-            github_state.push_async("tool/state/report_clear.json", payload,
-                                    "state: clear recent reports panel")
+            github_state.push_async("tool/state/report_log.json", payload,
+                                    "state: clear report log")
         except Exception:
             pass
     except Exception:
         pass
-
-
-def cleared_at():
-    """The clear watermark as a tz-aware datetime, or None."""
-    if not CLEAR_FILE.exists():
-        return None
-    try:
-        d = json.loads(CLEAR_FILE.read_text())
-        return datetime.fromisoformat(d.get("cleared_at", ""))
-    except Exception:
-        return None
 
 
 def recent(hours: int = 48) -> list[dict]:
