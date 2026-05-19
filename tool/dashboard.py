@@ -213,6 +213,51 @@ def _artifact_html(artifact_id: int) -> str | None:
         return None
 
 
+# A reader skin injected at serve time so every report (pitch pack,
+# reverse match, pre-meeting, sweep) looks on-brand without touching
+# the four generators. The generators emit bare <html><body style=…>;
+# we strip that inline body style and inject this.
+_REPORT_SKIN = (
+    '<link rel="preconnect" href="https://fonts.googleapis.com">'
+    '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800'
+    '&family=Crimson+Pro:wght@500;600&display=swap" rel="stylesheet">'
+    '<style>'
+    'html{background:#EDE7DA;-webkit-text-size-adjust:100%;}'
+    'body{font-family:"Inter",-apple-system,system-ui,sans-serif!important;'
+    'max-width:840px!important;margin:32px auto!important;padding:46px 56px!important;'
+    'background:#fff!important;color:#181613!important;font-size:14px!important;'
+    'line-height:1.62!important;border-radius:14px;'
+    'box-shadow:0 6px 30px rgba(140,120,80,.14);}'
+    'h1,h2,h3,h4{font-family:"Crimson Pro",Georgia,serif;color:#181613;'
+    'line-height:1.25;font-weight:600;}'
+    'body>h1:first-child,body>h2:first-child{font-size:26px;color:#A04E32;'
+    'margin:0 0 4px!important;padding-bottom:14px;border-bottom:2px solid #C96442;}'
+    'h2{font-size:19px;margin:26px 0 8px;}h3{font-size:16px;margin:20px 0 6px;}'
+    'p{margin:0 0 12px;}ul,ol{margin:6px 0 14px;padding-left:22px;}li{margin:5px 0;}'
+    'a{color:#A04E32;}hr{border:none;border-top:1px solid rgba(140,120,80,.20);'
+    'margin:22px 0;}'
+    'table{border-collapse:collapse;width:100%;margin:10px 0 16px;font-size:13px;}'
+    'td,th{padding:8px 10px;border-bottom:1px solid rgba(140,120,80,.20);'
+    'text-align:left;}th{color:#7A7164;font-weight:600;}'
+    '</style>'
+)
+
+
+def _skin_report_html(html: str) -> str:
+    """Strip the generator's inline body style and inject the reader
+    skin, so the served report is on-brand and readable."""
+    import re
+    html = re.sub(r"<body[^>]*>", "<body>", html, count=1, flags=re.I)
+    if re.search(r"</head>", html, re.I):
+        return re.sub(r"</head>", _REPORT_SKIN + "</head>", html,
+                      count=1, flags=re.I)
+    m = re.search(r"<html[^>]*>", html, re.I)
+    if m:
+        return (html[:m.end()] + "<head>" + _REPORT_SKIN + "</head>"
+                + html[m.end():])
+    return _REPORT_SKIN + html
+
+
 def refresh_latest_brief_from_github() -> dict:
     """Download the most recent artifact (morning-brief OR fortnightly-sweep)
     and unpack into state. Returns ok/detail PLUS counts of what landed so
@@ -762,7 +807,7 @@ def api_output_view():
             "Report not available (the run may have failed, or the "
             "artifact expired). The emailed copy is the fallback.",
             status=404, mimetype="text/plain")
-    return Response(html, mimetype="text/html")
+    return Response(_skin_report_html(html), mimetype="text/html")
 
 
 # ---------------------------------------------------------------------------
@@ -2390,7 +2435,6 @@ TEMPLATE = r"""
   </div>
 
   <div class="footer">
-    Data refreshed from GitHub Actions artifacts.
     All sources are free public surfaces. No automation of LinkedIn account.
     <span style="opacity:0.5; margin-left:8px;">· build {{ build_stamp }} · rev {{ deploy_rev }}</span>
     <span class="dev-zone">
@@ -2430,8 +2474,8 @@ async function dispatch(event, formId, url) {
       'animation:r .8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}' +
       'p{font-size:13px;color:#7A7164;max-width:340px;line-height:1.55}</style>' +
       '<div class="b"><div class="s"></div><h3>Preparing your report…</h3>' +
-      '<p>This runs on GitHub Actions and can take a few minutes. Keep this ' +
-      'tab open — it loads automatically when ready.</p></div>');
+      '<p>This can take a few minutes. Keep this tab open — it loads ' +
+      'automatically when ready.</p></div>');
   }
 
   btn.disabled = true;
