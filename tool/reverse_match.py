@@ -286,11 +286,6 @@ def render_html(candidate_name: str, candidate_company: str, candidate_title: st
 
 {''.join(rows)}
 
-<hr style="margin:24px 0;border:none;border-top:1px solid #ddd;">
-<div style="color:#888;font-size:12px;">
-  Sources: peer-employer maps (tool/peers.py) + predictor pipeline + live leads.
-  Named decision-makers per target require LinkedIn Recruiter.
-</div>
 </body></html>
 """
 

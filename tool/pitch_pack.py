@@ -289,11 +289,6 @@ def render_html(target: str, role: str, ch_snapshot: dict,
   Standard rebate schedule, off-limits clause, exclusivity period, and replacement guarantee per VMA Group's terms of engagement, provided separately as part of the contract pack.
 </div>
 
-<hr style="margin:24px 0;border:none;border-top:1px solid #ddd;">
-<div style="color:#888;font-size:12px;">
-  Sources: Companies House · LSE RNS · GDELT global news · Sara's market knowledge.
-  No personal data on candidates included until brief is engaged.
-</div>
 </body></html>
 """
 

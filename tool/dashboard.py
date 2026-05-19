@@ -155,6 +155,49 @@ _WORKFLOW_ARTIFACT = {
     "fortnightly-sweep.yml": "fortnightly-sweep",
 }
 
+# Artifact name -> human label for the Recent Reports panel.
+_ARTIFACT_LABEL = {
+    "pitch-pack": "Pitch Pack",
+    "reverse-match": "Reverse Match",
+    "pre-meeting-brief": "Pre-meeting Brief",
+    "fortnightly-sweep": "14-Day Catch-up",
+}
+
+
+def _recent_artifacts(hours: int = 48) -> list[dict]:
+    """Report artifacts generated in the last `hours`, newest first."""
+    if not GITHUB_TOKEN:
+        return []
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    url = (f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}"
+           f"/actions/artifacts?per_page=100")
+    try:
+        r = requests.get(url, headers=_github_headers(), timeout=15)
+        if r.status_code != 200:
+            return []
+        out = []
+        for a in r.json().get("artifacts", []):
+            nm = a.get("name")
+            if nm not in _ARTIFACT_LABEL or a.get("expired"):
+                continue
+            try:
+                created = datetime.fromisoformat(
+                    a.get("created_at", "").replace("Z", "+00:00"))
+            except Exception:
+                continue
+            if created < cutoff:
+                continue
+            out.append({
+                "tool": _ARTIFACT_LABEL[nm],
+                "artifact": nm,
+                "id": a.get("id"),
+                "created_at": a.get("created_at"),
+            })
+        out.sort(key=lambda x: x["created_at"], reverse=True)
+        return out
+    except requests.RequestException:
+        return []
+
 
 def _find_output_artifact(name: str, since_iso: str) -> dict | None:
     """Newest non-expired artifact called `name` created at/after
@@ -226,8 +269,12 @@ _REPORT_SKIN = (
     'body{font-family:"Inter",-apple-system,system-ui,sans-serif!important;'
     'max-width:840px!important;margin:32px auto!important;padding:46px 56px!important;'
     'background:#fff!important;color:#181613!important;font-size:14px!important;'
-    'line-height:1.62!important;border-radius:14px;'
+    'line-height:1.62!important;border-radius:14px;position:relative;'
     'box-shadow:0 6px 30px rgba(140,120,80,.14);}'
+    '.vma-brand{position:absolute;top:34px;right:56px;'
+    'font-family:"Crimson Pro",Georgia,serif;font-size:20px;font-weight:600;'
+    'color:#A04E32;letter-spacing:.01em;}'
+    'body>h1:first-of-type,body>h2:first-of-type{padding-right:130px;}'
     'h1,h2,h3,h4{font-family:"Crimson Pro",Georgia,serif;color:#181613;'
     'line-height:1.25;font-weight:600;}'
     'body>h1:first-child,body>h2:first-child{font-size:26px;color:#A04E32;'
@@ -247,7 +294,9 @@ def _skin_report_html(html: str) -> str:
     """Strip the generator's inline body style and inject the reader
     skin, so the served report is on-brand and readable."""
     import re
-    html = re.sub(r"<body[^>]*>", "<body>", html, count=1, flags=re.I)
+    html = re.sub(r"<body[^>]*>",
+                   '<body><div class="vma-brand">VMA&nbsp;Group</div>',
+                   html, count=1, flags=re.I)
     if re.search(r"</head>", html, re.I):
         return re.sub(r"</head>", _REPORT_SKIN + "</head>", html,
                       count=1, flags=re.I)
@@ -807,7 +856,21 @@ def api_output_view():
             "Report not available (the run may have failed, or the "
             "artifact expired). The emailed copy is the fallback.",
             status=404, mimetype="text/plain")
-    return Response(_skin_report_html(html), mimetype="text/html")
+    skinned = _skin_report_html(html)
+    if request.args.get("download"):
+        art = (request.args.get("artifact") or "report").strip()
+        fname = f"{art}_{artifact_id}.html"
+        return Response(skinned, mimetype="text/html", headers={
+            "Content-Disposition": f'attachment; filename="{fname}"'})
+    return Response(skinned, mimetype="text/html")
+
+
+@app.route("/api/output/recent", methods=["GET"])
+@_auth_required
+def api_output_recent():
+    """Reports generated in the last 48h, for the Recent Reports panel."""
+    rows = _recent_artifacts(48)
+    return jsonify({"rows": rows, "total": len(rows)})
 
 
 # ---------------------------------------------------------------------------
@@ -2375,7 +2438,7 @@ TEMPLATE = r"""
     <!-- REVERSE MATCH -->
     <div class="panel action-card">
       <h3>Reverse Match</h3>
-      <div class="subhead">Get a ranked list of accounts where your candidate could be pitched. Unlike MPC Factory, this one goes out and searches the market fresh each time - casts a wider net.</div>
+      <div class="subhead">Take a candidate, search the market fresh, and give me a ranked list of accounts to pitch them to.</div>
       <form id="rm-form" onsubmit="dispatch(event, 'rm-form', '/api/dispatch/reverse-match')">
         <label for="rm-name">Candidate name</label>
         <input id="rm-name" name="candidate_name" placeholder="e.g. Rebecca Torres" required>
@@ -2418,7 +2481,7 @@ TEMPLATE = r"""
     <!-- MPC OUTREACH FACTORY -->
     <div class="panel action-card">
       <h3>MPC Outreach Factory</h3>
-      <div class="subhead">Get a ranked list of target accounts for a candidate, each with a paste-ready outreach hook, woven from signals already gathered (a live trigger at that company, or a structural fit).</div>
+      <div class="subhead">Take a candidate, check against what signals we've already gathered today, and match the best fits.</div>
       <form id="mpc-form" onsubmit="runMPC(event)">
         <label for="mpc-name">Candidate name</label>
         <input id="mpc-name" name="name" placeholder="e.g. James Carter" required>
@@ -2432,6 +2495,18 @@ TEMPLATE = r"""
       </form>
     </div>
 
+  </div>
+
+  <div class="row row-full" id="recent-row" style="display:none">
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Recent Reports Generated</h2>
+        <span class="count" id="recent-count">—</span>
+      </div>
+      <div class="panel-body" id="recent-reports">
+        <div class="empty compact">Loading…</div>
+      </div>
+    </div>
   </div>
 
   <div class="footer">
@@ -3404,7 +3479,47 @@ document.addEventListener('DOMContentLoaded', () => {
   loadFunding();
   loadSpecialistSignals();
   loadWatchList();
+  loadRecentReports();
 });
+
+// ---------- Recent Reports Generated (last 48h) ----------
+async function loadRecentReports() {
+  const row = document.getElementById('recent-row');
+  const body = document.getElementById('recent-reports');
+  const count = document.getElementById('recent-count');
+  try {
+    const r = await fetch('/api/output/recent');
+    const j = await r.json();
+    if (!j.rows || !j.rows.length) { row.style.display = 'none'; return; }
+    count.textContent = j.total;
+    const now = Date.now();
+    const out = ['<div>'];
+    for (const x of j.rows.slice(0, 20)) {
+      const t = new Date(x.created_at).getTime();
+      const mins = Math.max(0, Math.round((now - t) / 60000));
+      const ago = mins < 60 ? mins + ' min ago'
+                : mins < 1440 ? Math.round(mins / 60) + 'h ago'
+                : Math.round(mins / 1440) + 'd ago';
+      const base = '/api/output/view?artifact=' +
+        encodeURIComponent(x.artifact) + '&id=' + encodeURIComponent(x.id);
+      out.push(
+        '<div class="cw-row">' +
+          '<div><div class="cw-nm">' + esc(x.tool) + '</div>' +
+            '<div class="cw-sub">' + esc(ago) + '</div></div>' +
+          '<div class="cw-right">' +
+            '<a class="btn-mini" href="' + base + '" target="_blank" rel="noopener noreferrer">↗ View</a>' +
+            '<a class="btn-mini" href="' + base + '&download=1">⬇ Download</a>' +
+          '</div>' +
+        '</div>'
+      );
+    }
+    out.push('</div>');
+    body.innerHTML = out.join('');
+    row.style.display = '';
+  } catch (e) {
+    row.style.display = 'none';
+  }
+}
 </script>
 
 </body>
