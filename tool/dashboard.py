@@ -200,6 +200,9 @@ def _recent_reports(hours: int = 48) -> list[dict]:
     from tool import report_log
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(hours=hours)
+    cleared = report_log.cleared_at()
+    if cleared and cleared > cutoff:        # Clear button watermark
+        cutoff = cleared
     idx = _artifact_index()                       # {name: [(created,id)…]}
     used: set = set()
     out = []
@@ -209,6 +212,8 @@ def _recent_reports(hours: int = 48) -> list[dict]:
         try:
             ts = datetime.fromisoformat(e.get("ts", ""))
         except Exception:
+            continue
+        if ts < cutoff:
             continue
         art = e.get("artifact", "")
         aid = None
@@ -718,6 +723,7 @@ def _boot_state_hydrate():
             "tool/state/candidate_watch.json",
             "tool/state/lead_status.json",
             "tool/state/report_log.json",
+            "tool/state/report_clear.json",
         ])
     except Exception as e:
         log.warning("state hydrate skipped: %s", e)
@@ -944,6 +950,16 @@ def api_output_recent():
     """Reports generated in the last 48h, for the Recent Reports panel."""
     rows = _recent_reports(48)
     return jsonify({"rows": rows, "total": len(rows)})
+
+
+@app.route("/api/output/clear", methods=["POST"])
+@_auth_required
+def api_output_clear():
+    """Clear the Recent Reports panel (sets a watermark; artifacts can't
+    be deleted, so anything generated up to now is hidden)."""
+    from tool import report_log
+    report_log.set_cleared()
+    return jsonify({"ok": True})
 
 
 # ---------------------------------------------------------------------------
@@ -1355,7 +1371,6 @@ TEMPLATE = r"""
     /* Recent Reports: breathing room below the action grid, and don't
        stretch a short list across the full width. */
     #recent-row { margin-top: 24px; }
-    #recent-row .panel { max-width: 880px; }
     #recent-row .panel-header { border-bottom: none; }
     /* 16px container inset so the columns line up with the panel
        title; top padding gives clear air below the panel-header rule
@@ -2603,7 +2618,10 @@ TEMPLATE = r"""
     <div class="panel">
       <div class="panel-header">
         <h2>Recent Reports Generated</h2>
-        <span class="count" id="recent-count">—</span>
+        <span style="display:flex;align-items:center;gap:10px;">
+          <button type="button" class="btn-mini" onclick="clearRecentReports()">Clear</button>
+          <span class="count" id="recent-count">—</span>
+        </span>
       </div>
       <div class="panel-body" id="recent-reports">
         <div class="empty compact">Loading…</div>
@@ -3587,6 +3605,14 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ---------- Recent Reports Generated (last 48h) ----------
+async function clearRecentReports() {
+  if (!confirm('Clear all reports from this panel? (the files themselves are kept)')) return;
+  try {
+    await fetch('/api/output/clear', { method: 'POST' });
+  } catch (e) { /* best-effort */ }
+  loadRecentReports();
+}
+
 async function loadRecentReports() {
   const row = document.getElementById('recent-row');
   const body = document.getElementById('recent-reports');

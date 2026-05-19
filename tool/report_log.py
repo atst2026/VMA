@@ -20,6 +20,7 @@ from pathlib import Path
 STATE_DIR = Path(__file__).resolve().parent / "state"
 LOG_FILE = STATE_DIR / "report_log.json"
 _MAX = 100
+CLEAR_FILE = STATE_DIR / "report_clear.json"
 
 try:
     import fcntl
@@ -95,6 +96,51 @@ def add(report_type: str, company: str, name: str, artifact: str) -> None:
             pass
     except Exception:
         pass
+
+
+def set_cleared() -> None:
+    """Watermark: hide everything generated up to now from the panel.
+    GitHub artifacts can't be deleted, so the panel filters by this
+    timestamp instead. Persisted like the log."""
+    try:
+        with _locked():
+            payload = json.dumps(
+                {"cleared_at": datetime.now(timezone.utc).isoformat()})
+            STATE_DIR.mkdir(parents=True, exist_ok=True)
+            tmp = tempfile.NamedTemporaryFile(
+                mode="w", encoding="utf-8", suffix=".tmp",
+                dir=str(STATE_DIR), delete=False)
+            try:
+                tmp.write(payload)
+                tmp.flush()
+                os.fsync(tmp.fileno())
+                tmp.close()
+                os.replace(tmp.name, str(CLEAR_FILE))
+            except Exception:
+                try:
+                    os.unlink(tmp.name)
+                except OSError:
+                    pass
+                raise
+        try:
+            from tool import github_state
+            github_state.push_async("tool/state/report_clear.json", payload,
+                                    "state: clear recent reports panel")
+        except Exception:
+            pass
+    except Exception:
+        pass
+
+
+def cleared_at():
+    """The clear watermark as a tz-aware datetime, or None."""
+    if not CLEAR_FILE.exists():
+        return None
+    try:
+        d = json.loads(CLEAR_FILE.read_text())
+        return datetime.fromisoformat(d.get("cleared_at", ""))
+    except Exception:
+        return None
 
 
 def recent(hours: int = 48) -> list[dict]:
