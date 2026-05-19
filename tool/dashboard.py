@@ -326,39 +326,26 @@ def _display_role(title: str) -> str:
 
 
 def draft_outreach_for_lead(signal: dict) -> str:
-    """Personalised draft for ANY lead, off the uniform contact resolver
-    (signal['contact'])."""
+    """Outreach draft for a lead — fixed template with the contact's
+    first name, the advertised role, and the company filled in."""
     c = signal.get("contact") or {}
-    company = (signal.get("company") or "").strip()
-    if not company:
-        return _DEFAULT_OUTREACH
-    from tool.hiring_manager import is_job_like
+    company = (signal.get("company") or "").strip() or "[Company]"
     name = (c.get("name") or "").strip()
     first = name.split()[0] if name else ""
-    title = c.get("title") or "Head of Communications"
-    if c.get("basis") == "appointee":
-        body = (f"Congratulations on the move to {company} — I saw the "
-                "announcement. I'd love to introduce VMA Group as you "
-                "settle in and build out the team.")
-    elif is_job_like(signal):
-        role = _display_role(signal.get("title") or "")
-        what = f"for the {role} role" if role else "across its comms team"
-        body = (f"I saw {company} is hiring {what}. As {company}'s {title} "
-                "you're likely shaping that hire, so I'm reaching out "
-                "directly.")
-    else:
-        body = (f"I've been following developments at {company} — as its "
-                f"{title} you're the natural person to connect with.")
+    role = _display_role(signal.get("title") or "")
+    role_phrase = f"the {role}" if role else "the role you've advertised"
     return (
-        f"Hi {first or '(Name)'}, I'm Sara from VMA Group.\n\n"
-        "We specialise in executive search and recruitment across "
-        f"corporate communications, internal comms and marketing. {body}\n\n"
-        "I'd love to grab a coffee in the next couple of weeks to share "
-        "what we're seeing in the market. I've attached our brochure in "
-        "case it's useful.\n\n"
-        "Would be great to connect.\n\n"
+        f"Hi {first or '[Name]'},\n\n"
+        f"I noticed your recent ad for {role_phrase} and thought it might "
+        f"be worth reaching out. We work with companies like {company} to "
+        "support with talent solutions across communications, marketing, "
+        "digital, sales and change.\n\n"
+        "I'll attach our corporate brochure which includes some more "
+        "information. If you're open for a quick conversation, I'd love to "
+        "hear some more about the role and what you're looking for to see "
+        "if there's any way we could add value.\n\n"
         "Best,\n"
-        "Sara"
+        "[Your name]"
     )
 
 
