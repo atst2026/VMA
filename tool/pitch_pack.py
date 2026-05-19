@@ -245,6 +245,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 <div style="color:#666;font-size:13px;margin-bottom:18px;">
   Role: {_esc(role)} · Generated {_esc(datetime.now().strftime('%a %d %b %Y · %H:%M'))} · For Sara Tehrani, VMA Group
 </div>
+<hr style="border:none;border-top:2px solid #C96442;margin:14px 0 24px;">
 
 <h3 style="margin:18px 0 6px 0;">1. Account snapshot</h3>
 {ch_html}
@@ -289,11 +290,6 @@ def render_html(target: str, role: str, ch_snapshot: dict,
   Standard rebate schedule, off-limits clause, exclusivity period, and replacement guarantee per VMA Group's terms of engagement, provided separately as part of the contract pack.
 </div>
 
-<hr style="margin:24px 0;border:none;border-top:1px solid #ddd;">
-<div style="color:#888;font-size:12px;">
-  Sources: Companies House · LSE RNS · GDELT global news · Sara's market knowledge.
-  No personal data on candidates included until brief is engaged.
-</div>
 </body></html>
 """
 

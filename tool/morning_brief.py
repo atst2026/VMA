@@ -133,6 +133,11 @@ def main() -> int:
     fresh = filter_unseen(signals)
     log.info("Scoured %d raw signals; %d new since last run (email-fresh).",
              len(signals), len(fresh))
+    # Tag the dashboard set: "new today" == not seen before this run
+    # (same identity filter_unseen uses). Drives the leads NEW badge.
+    _fresh_ids = {s.get("id") for s in fresh if s.get("id")}
+    for _sig in ranked_all:
+        _sig["is_new"] = _sig.get("id") in _fresh_ids
     ranked = rank(fresh)
     log.info("Ranked %d fresh signals for the email body.", len(ranked))
 

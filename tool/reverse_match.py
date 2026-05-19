@@ -272,6 +272,7 @@ def render_html(candidate_name: str, candidate_company: str, candidate_title: st
   Currently {_esc(candidate_title)} at {_esc(candidate_company)} ({_esc(sector_label)}) ·
   Generated {_esc(datetime.now().strftime('%a %d %b %Y · %H:%M'))}
 </div>
+<hr style="border:none;border-top:2px solid #C96442;margin:14px 0 24px;">
 <div style="font-size:13px;margin-bottom:18px;">
   {len(targets_with_rationale)} target employers · {priority_summary}
 </div>
@@ -286,11 +287,6 @@ def render_html(candidate_name: str, candidate_company: str, candidate_title: st
 
 {''.join(rows)}
 
-<hr style="margin:24px 0;border:none;border-top:1px solid #ddd;">
-<div style="color:#888;font-size:12px;">
-  Sources: peer-employer maps (tool/peers.py) + predictor pipeline + live leads.
-  Named decision-makers per target require LinkedIn Recruiter.
-</div>
 </body></html>
 """
 

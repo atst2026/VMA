@@ -24,7 +24,7 @@ import os
 import sys
 import zipfile
 import io
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import re
@@ -126,20 +126,274 @@ def _github_headers() -> dict:
 
 
 def trigger_workflow(workflow_filename: str, inputs: dict) -> dict:
-    """POST to /actions/workflows/{file}/dispatches. Returns {ok, status, detail}."""
+    """POST to /actions/workflows/{file}/dispatches. Returns
+    {ok, status, detail, dispatched_at} — the timestamp lets the UI
+    poll for the artifact this run produces."""
     if not GITHUB_TOKEN:
         return {"ok": False, "detail": "GITHUB_TOKEN not set in .env"}
     url = (f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}"
            f"/actions/workflows/{workflow_filename}/dispatches")
     body = {"ref": "main", "inputs": inputs}
+    dispatched_at = datetime.now(timezone.utc).isoformat()
     try:
         r = requests.post(url, headers=_github_headers(), json=body, timeout=15)
         ok = r.status_code in (204, 200)
         return {"ok": ok, "status": r.status_code,
-                "detail": "Dispatched. Email in 1–2 minutes."
+                "dispatched_at": dispatched_at,
+                "detail": "Running… the report opens here when ready."
                           if ok else f"GitHub returned {r.status_code}: {r.text[:200]}"}
     except requests.RequestException as e:
         return {"ok": False, "detail": f"Network error: {e}"}
+
+
+# ---- Workflow output (artifact) polling + serving --------------------
+# Maps a dispatched workflow to the artifact name it uploads.
+_WORKFLOW_ARTIFACT = {
+    "pitch-pack.yml": "pitch-pack",
+    "reverse-match.yml": "reverse-match",
+    "pre-meeting-brief.yml": "pre-meeting-brief",
+    "fortnightly-sweep.yml": "fortnightly-sweep",
+}
+
+# Artifact name -> human label for the Recent Reports panel.
+_ARTIFACT_LABEL = {
+    "pitch-pack": "Pitch Pack",
+    "reverse-match": "Reverse Match",
+    "pre-meeting-brief": "Pre-meeting Brief",
+    "fortnightly-sweep": "14-Day Catch-up",
+}
+
+
+def _artifact_index() -> dict:
+    """{artifact_name: [(created_dt, id), …] newest-first}. One API call."""
+    if not GITHUB_TOKEN:
+        return {}
+    url = (f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}"
+           f"/actions/artifacts?per_page=100")
+    try:
+        r = requests.get(url, headers=_github_headers(), timeout=15)
+        if r.status_code != 200:
+            return {}
+        idx: dict = {}
+        for a in r.json().get("artifacts", []):
+            nm = a.get("name")
+            if nm not in _ARTIFACT_LABEL or a.get("expired"):
+                continue
+            try:
+                created = datetime.fromisoformat(
+                    a.get("created_at", "").replace("Z", "+00:00"))
+            except Exception:
+                continue
+            idx.setdefault(nm, []).append((created, a.get("id")))
+        for nm in idx:
+            idx[nm].sort(key=lambda t: t[0], reverse=True)
+        return idx
+    except requests.RequestException:
+        return {}
+
+
+def _delete_report_artifacts() -> dict:
+    """Permanently delete every report artifact from GitHub (frees the
+    storage; nothing can reappear on refresh). Returns {deleted, failed}."""
+    if not GITHUB_TOKEN:
+        return {"deleted": 0, "failed": 0}
+    deleted = failed = 0
+    base = f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}"
+    try:
+        r = requests.get(f"{base}/actions/artifacts?per_page=100",
+                         headers=_github_headers(), timeout=15)
+        if r.status_code != 200:
+            return {"deleted": 0, "failed": 0}
+        for a in r.json().get("artifacts", []):
+            if a.get("name") not in _ARTIFACT_LABEL:
+                continue
+            try:
+                d = requests.delete(
+                    f"{base}/actions/artifacts/{a.get('id')}",
+                    headers=_github_headers(), timeout=15)
+                if d.status_code in (204, 200):
+                    deleted += 1
+                else:
+                    failed += 1
+            except requests.RequestException:
+                failed += 1
+    except requests.RequestException:
+        pass
+    return {"deleted": deleted, "failed": failed}
+
+
+def _recent_reports(hours: int = 48) -> list[dict]:
+    """Reports from the last `hours`. Merges the dispatch log (gives
+    Type/Company/Name) with the actual artifacts (so historical runs
+    with no log entry still show, just without Company/Name). A log
+    entry whose artifact hasn't appeared yet shows as 'generating'."""
+    from tool import report_log
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(hours=hours)
+    idx = _artifact_index()                       # {name: [(created,id)…]}
+    used: set = set()
+    out = []
+
+    # 1. Logged dispatches — richest rows (Type/Company/Name).
+    for e in report_log.recent(hours):
+        try:
+            ts = datetime.fromisoformat(e.get("ts", ""))
+        except Exception:
+            continue
+        if ts < cutoff:
+            continue
+        art = e.get("artifact", "")
+        aid = None
+        for created, _id in idx.get(art, []):
+            if _id in used:
+                continue
+            if created >= ts - timedelta(seconds=90):
+                aid, ts_eff = _id, created
+                used.add(_id)
+                break
+        out.append({
+            "type": e.get("type", ""), "company": e.get("company", ""),
+            "name": e.get("name", ""), "artifact": art,
+            "ts": e.get("ts", ""), "id": aid,
+        })
+
+    # 2. Artifacts with no matching log entry (pre-log / older runs).
+    for art, items in idx.items():
+        for created, _id in items:
+            if _id in used or created < cutoff:
+                continue
+            out.append({
+                "type": _ARTIFACT_LABEL.get(art, art), "company": "",
+                "name": "", "artifact": art,
+                "ts": created.isoformat(), "id": _id,
+            })
+
+    out.sort(key=lambda r: r.get("ts", ""), reverse=True)
+    return out
+
+
+def _find_output_artifact(name: str, since_iso: str) -> dict | None:
+    """Newest non-expired artifact called `name` created at/after
+    `since_iso` (the dispatch time). None while the run is still going
+    (the artifact only exists once the run finished and uploaded)."""
+    if not GITHUB_TOKEN:
+        return None
+    try:
+        since = datetime.fromisoformat(since_iso)
+    except Exception:
+        since = datetime.now(timezone.utc) - timedelta(minutes=30)
+    # Small slack so clock skew between us and GitHub can't hide a hit.
+    cutoff = since - timedelta(seconds=90)
+    url = (f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}"
+           f"/actions/artifacts?per_page=40")
+    try:
+        r = requests.get(url, headers=_github_headers(), timeout=15)
+        if r.status_code != 200:
+            return None
+        cands = []
+        for a in r.json().get("artifacts", []):
+            if a.get("name") != name or a.get("expired"):
+                continue
+            try:
+                created = datetime.fromisoformat(
+                    a.get("created_at", "").replace("Z", "+00:00"))
+            except Exception:
+                continue
+            if created >= cutoff:
+                cands.append((created, a))
+        if not cands:
+            return None
+        cands.sort(key=lambda t: t[0], reverse=True)
+        return cands[0][1]
+    except requests.RequestException:
+        return None
+
+
+def _artifact_html(artifact_id: int) -> str | None:
+    """Download an artifact zip by id and return its first .html file."""
+    if not GITHUB_TOKEN:
+        return None
+    url = (f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}"
+           f"/actions/artifacts/{artifact_id}/zip")
+    try:
+        r = requests.get(url, headers=_github_headers(), timeout=40)
+        if r.status_code != 200 or not r.content:
+            return None
+        with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
+            html_members = sorted(
+                m for m in zf.namelist() if m.lower().endswith(".html"))
+            if not html_members:
+                return None
+            return zf.read(html_members[0]).decode("utf-8", "replace")
+    except (requests.RequestException, zipfile.BadZipFile):
+        return None
+
+
+# A reader skin injected at serve time so every report (pitch pack,
+# reverse match, pre-meeting, sweep) looks on-brand without touching
+# the four generators. The generators emit bare <html><body style=…>;
+# we strip that inline body style and inject this.
+_REPORT_SKIN = (
+    '<link rel="preconnect" href="https://fonts.googleapis.com">'
+    '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800'
+    '&family=Crimson+Pro:wght@500;600&display=swap" rel="stylesheet">'
+    '<style>'
+    'html{background:#EDE7DA;-webkit-text-size-adjust:100%;}'
+    'body{font-family:"Inter",-apple-system,system-ui,sans-serif!important;'
+    'max-width:840px!important;margin:32px auto!important;padding:46px 56px!important;'
+    'background:#fff!important;color:#181613!important;font-size:14px!important;'
+    'line-height:1.62!important;border-radius:14px;position:relative;'
+    'box-shadow:0 6px 30px rgba(140,120,80,.14);}'
+    '.vma-brand{position:absolute;top:30px;right:52px;width:56px;'
+    'height:auto;line-height:0;}'
+    '.vma-brand svg{display:block;width:100%;height:auto;}'
+    'body>h1:first-of-type,body>h2:first-of-type{padding-right:92px;}'
+    'h1,h2,h3,h4{font-family:"Crimson Pro",Georgia,serif;color:#181613;'
+    'line-height:1.25;font-weight:600;}'
+    'body>h1:first-child,body>h2:first-child{font-size:26px;color:#A04E32;'
+    'margin:0 0 4px!important;}'
+    'h2{font-size:19px;margin:26px 0 8px;}h3{font-size:16px;margin:20px 0 6px;}'
+    'p{margin:0 0 12px;}ul,ol{margin:6px 0 14px;padding-left:22px;}li{margin:5px 0;}'
+    'a{color:#A04E32;}hr{border:none;border-top:1px solid rgba(140,120,80,.20);'
+    'margin:22px 0;}'
+    'table{border-collapse:collapse;width:100%;margin:10px 0 16px;font-size:13px;}'
+    'td,th{padding:8px 10px;border-bottom:1px solid rgba(140,120,80,.20);'
+    'text-align:left;}th{color:#7A7164;font-weight:600;}'
+    '</style>'
+)
+
+
+# Inline recreation of the VMA Group mark (steel-blue square, white
+# "VMA" / "GROUP"). Self-contained so the served report needs no hosted
+# asset. Swap for an <img> if the real logo file is added to the repo.
+_VMA_LOGO_SVG = (
+    '<svg viewBox="0 0 120 110" xmlns="http://www.w3.org/2000/svg" '
+    'role="img" aria-label="VMA Group">'
+    '<rect width="120" height="110" rx="3" fill="#3F5E83"/>'
+    '<text x="60" y="58" text-anchor="middle" '
+    'font-family="Arial,Helvetica,sans-serif" font-weight="800" '
+    'font-size="42" fill="#fff" letter-spacing="1">VMA</text>'
+    '<text x="60" y="88" text-anchor="middle" '
+    'font-family="Arial,Helvetica,sans-serif" font-weight="500" '
+    'font-size="22" fill="#fff" letter-spacing="3">GROUP</text></svg>'
+)
+_BRAND_DIV = '<body><div class="vma-brand">' + _VMA_LOGO_SVG + '</div>'
+
+
+def _skin_report_html(html: str) -> str:
+    """Strip the generator's inline body style and inject the reader
+    skin, so the served report is on-brand and readable."""
+    import re
+    html = re.sub(r"<body[^>]*>", lambda _m: _BRAND_DIV,
+                   html, count=1, flags=re.I)
+    if re.search(r"</head>", html, re.I):
+        return re.sub(r"</head>", _REPORT_SKIN + "</head>", html,
+                      count=1, flags=re.I)
+    m = re.search(r"<html[^>]*>", html, re.I)
+    if m:
+        return (html[:m.end()] + "<head>" + _REPORT_SKIN + "</head>"
+                + html[m.end():])
+    return _REPORT_SKIN + html
 
 
 def refresh_latest_brief_from_github() -> dict:
@@ -284,12 +538,19 @@ def load_latest_predictive() -> list[dict]:
                 data = []
 
     from tool.advisory import advisory_for
+    from tool import predictor_status
+    _ps_overlay = predictor_status.get_statuses()
     today = datetime.now(timezone.utc).date().isoformat()
     for p_item in data:
         first_seen = p_item.get("first_seen") or ""
         p_item["is_new"] = first_seen.startswith(today)
         p_item.setdefault("status", "active")
         p_item.setdefault("pid", predictor_pipeline._pid(p_item.get("company", "")))
+        # Durable triage overlay wins over the (ephemeral) pipeline
+        # status so followed-up/dismissed survive redeploys.
+        _ov = _ps_overlay.get(p_item["pid"])
+        if _ov:
+            p_item["status"] = _ov
         p_item["outreach"] = draft_outreach_for_predictor(p_item)
         p_item["linkedin"] = linkedin_search_for_predictor(p_item)
         evs = p_item.get("events") or []
@@ -326,39 +587,26 @@ def _display_role(title: str) -> str:
 
 
 def draft_outreach_for_lead(signal: dict) -> str:
-    """Personalised draft for ANY lead, off the uniform contact resolver
-    (signal['contact'])."""
+    """Outreach draft for a lead — fixed template with the contact's
+    first name, the advertised role, and the company filled in."""
     c = signal.get("contact") or {}
-    company = (signal.get("company") or "").strip()
-    if not company:
-        return _DEFAULT_OUTREACH
-    from tool.hiring_manager import is_job_like
+    company = (signal.get("company") or "").strip() or "[Company]"
     name = (c.get("name") or "").strip()
     first = name.split()[0] if name else ""
-    title = c.get("title") or "Head of Communications"
-    if c.get("basis") == "appointee":
-        body = (f"Congratulations on the move to {company} — I saw the "
-                "announcement. I'd love to introduce VMA Group as you "
-                "settle in and build out the team.")
-    elif is_job_like(signal):
-        role = _display_role(signal.get("title") or "")
-        what = f"for the {role} role" if role else "across its comms team"
-        body = (f"I saw {company} is hiring {what}. As {company}'s {title} "
-                "you're likely shaping that hire, so I'm reaching out "
-                "directly.")
-    else:
-        body = (f"I've been following developments at {company} — as its "
-                f"{title} you're the natural person to connect with.")
+    role = _display_role(signal.get("title") or "")
+    role_phrase = f"the {role}" if role else "the role you've advertised"
     return (
-        f"Hi {first or '(Name)'}, I'm Sara from VMA Group.\n\n"
-        "We specialise in executive search and recruitment across "
-        f"corporate communications, internal comms and marketing. {body}\n\n"
-        "I'd love to grab a coffee in the next couple of weeks to share "
-        "what we're seeing in the market. I've attached our brochure in "
-        "case it's useful.\n\n"
-        "Would be great to connect.\n\n"
+        f"Hi {first or '[Name]'},\n\n"
+        f"I noticed your recent ad for {role_phrase} and thought it might "
+        f"be worth reaching out. We work with companies like {company} to "
+        "support with talent solutions across communications, marketing, "
+        "digital, sales and change.\n\n"
+        "I'll attach our corporate brochure which includes some more "
+        "information. If you're open for a quick conversation, I'd love to "
+        "hear some more about the role and what you're looking for to see "
+        "if there's any way we could add value.\n\n"
         "Best,\n"
-        "Sara"
+        "[Your name]"
     )
 
 
@@ -508,6 +756,8 @@ def _boot_state_hydrate():
         github_state.hydrate([
             "tool/state/candidate_watch.json",
             "tool/state/lead_status.json",
+            "tool/state/report_log.json",
+            "tool/state/predictor_status.json",
         ])
     except Exception as e:
         log.warning("state hydrate skipped: %s", e)
@@ -541,6 +791,8 @@ def index():
         leads=leads,
         predictors=predictors,
         leads_active_count=sum(1 for s in leads if s.get("status", "active") == "active"),
+        leads_new_count=sum(1 for s in leads if s.get("is_new")
+                            and s.get("status", "active") == "active"),
         leads_followed_count=sum(1 for s in leads if s.get("status") == "followed_up"),
         leads_dismissed_count=sum(1 for s in leads if s.get("status") == "dismissed"),
         active_count=sum(1 for p in predictors if p.get("status") == "active"),
@@ -557,14 +809,16 @@ def index():
 @app.route("/api/predictor/<pid>/status", methods=["POST"])
 @_auth_required
 def api_predictor_status(pid: str):
-    from tool import predictor_pipeline
+    from tool import predictor_pipeline, predictor_status
     data = _safe_json_body()
     status = (data.get("status") or "").strip()
     if status not in ("active", "followed_up", "dismissed"):
         return jsonify({"ok": False, "detail": "invalid status"}), 400
-    ok = predictor_pipeline.set_status(pid, status)
-    if not ok:
-        return jsonify({"ok": False, "detail": "predictor not found"}), 404
+    # Durable overlay is authoritative + survives redeploys; the pipeline
+    # write is best-effort (keeps the in-session local file consistent,
+    # and may legitimately miss if the pipeline hasn't been refreshed yet).
+    predictor_status.set_status(pid, status)
+    predictor_pipeline.set_status(pid, status)
     return jsonify({"ok": True, "pid": pid, "status": status})
 
 
@@ -617,7 +871,13 @@ def api_pitch_pack():
             except ValueError:
                 return jsonify({"ok": False,
                                 "detail": f"{k} must be a whole number (e.g. 95000)"}), 400
-    return jsonify(trigger_workflow("pitch-pack.yml", inputs))
+    res = trigger_workflow("pitch-pack.yml", inputs)
+    res["artifact"] = _WORKFLOW_ARTIFACT["pitch-pack.yml"]
+    if res.get("ok"):
+        from tool import report_log
+        report_log.add("Pitch Pack", inputs["account_name"],
+                       "", res["artifact"])
+    return jsonify(res)
 
 
 @app.route("/api/dispatch/reverse-match", methods=["POST"])
@@ -634,7 +894,13 @@ def api_reverse_match():
                if not inputs[k]]
     if missing:
         return jsonify({"ok": False, "detail": f"Missing: {', '.join(missing)}"}), 400
-    return jsonify(trigger_workflow("reverse-match.yml", inputs))
+    res = trigger_workflow("reverse-match.yml", inputs)
+    res["artifact"] = _WORKFLOW_ARTIFACT["reverse-match.yml"]
+    if res.get("ok"):
+        from tool import report_log
+        report_log.add("Reverse Match", inputs["current_company"],
+                       inputs["candidate_name"], res["artifact"])
+    return jsonify(res)
 
 
 @app.route("/api/dispatch/pre-meeting", methods=["POST"])
@@ -649,7 +915,13 @@ def api_pre_meeting():
     }
     if not inputs["account_name"]:
         return jsonify({"ok": False, "detail": "Account name required"}), 400
-    return jsonify(trigger_workflow("pre-meeting-brief.yml", inputs))
+    res = trigger_workflow("pre-meeting-brief.yml", inputs)
+    res["artifact"] = _WORKFLOW_ARTIFACT["pre-meeting-brief.yml"]
+    if res.get("ok"):
+        from tool import report_log
+        report_log.add("Pre-meeting Brief", inputs["account_name"],
+                       inputs.get("contact_name", ""), res["artifact"])
+    return jsonify(res)
 
 
 @app.route("/api/dispatch/sweep", methods=["POST"])
@@ -660,7 +932,73 @@ def api_sweep():
         "window_days": str(data.get("window_days", "14")),
         "mode": data.get("mode", "send"),
     }
-    return jsonify(trigger_workflow("fortnightly-sweep.yml", inputs))
+    res = trigger_workflow("fortnightly-sweep.yml", inputs)
+    res["artifact"] = _WORKFLOW_ARTIFACT["fortnightly-sweep.yml"]
+    if res.get("ok"):
+        from tool import report_log
+        report_log.add("14-Day Catch-up", "", "", res["artifact"])
+    return jsonify(res)
+
+
+@app.route("/api/output/status", methods=["GET"])
+@_auth_required
+def api_output_status():
+    """Has the dispatched run produced its artifact yet? The browser
+    polls this after triggering a workflow."""
+    name = (request.args.get("artifact") or "").strip()
+    since = (request.args.get("since") or "").strip()
+    if not name or not since:
+        return jsonify({"ready": False, "detail": "missing artifact/since"}), 400
+    art = _find_output_artifact(name, since)
+    if art:
+        return jsonify({"ready": True, "id": art.get("id")})
+    return jsonify({"ready": False})
+
+
+@app.route("/api/output/view", methods=["GET"])
+@_auth_required
+def api_output_view():
+    """Serve the report HTML out of a finished run's artifact so the
+    browser tab can display it."""
+    try:
+        artifact_id = int(request.args.get("id") or 0)
+    except (TypeError, ValueError):
+        artifact_id = 0
+    if not artifact_id:
+        return Response("Invalid artifact id.", status=400,
+                        mimetype="text/plain")
+    html = _artifact_html(artifact_id)
+    if html is None:
+        return Response(
+            "Report not available (the run may have failed, or the "
+            "artifact expired). The emailed copy is the fallback.",
+            status=404, mimetype="text/plain")
+    skinned = _skin_report_html(html)
+    if request.args.get("download"):
+        art = (request.args.get("artifact") or "report").strip()
+        fname = f"{art}_{artifact_id}.html"
+        return Response(skinned, mimetype="text/html", headers={
+            "Content-Disposition": f'attachment; filename="{fname}"'})
+    return Response(skinned, mimetype="text/html")
+
+
+@app.route("/api/output/recent", methods=["GET"])
+@_auth_required
+def api_output_recent():
+    """Reports generated in the last 48h, for the Recent Reports panel."""
+    rows = _recent_reports(48)
+    return jsonify({"rows": rows, "total": len(rows)})
+
+
+@app.route("/api/output/clear", methods=["POST"])
+@_auth_required
+def api_output_clear():
+    """Permanently clear the panel: delete every report artifact from
+    GitHub (frees storage, can't reappear) and empty the dispatch log."""
+    from tool import report_log
+    res = _delete_report_artifacts()
+    report_log.clear_log()
+    return jsonify({"ok": True, **res})
 
 
 # ---------------------------------------------------------------------------
@@ -1069,6 +1407,34 @@ TEMPLATE = r"""
        this it sits in the left half of a 2-col grid with dead space
        beside it. */
     .row.row-full { grid-template-columns: 1fr; }
+    /* Recent Reports: breathing room below the action grid, and don't
+       stretch a short list across the full width. */
+    #recent-row { margin-top: 24px; }
+    #recent-row .panel-header { border-bottom: none; }
+    /* 16px container inset so the columns line up with the panel
+       title; top padding gives clear air below the panel-header rule
+       (otherwise the two hairlines look stacked/overlapping). */
+    #recent-reports { padding: 0 16px 14px; }
+    .rr-table { width: 100%; border-collapse: collapse; }
+    .rr-table th {
+      text-align: left; font-size: 10px; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--text-dim);
+      font-weight: 700; padding: 16px 0 9px; border-bottom: 1px solid var(--border);
+    }
+    .rr-table td {
+      padding: 12px 0; border-bottom: 1px solid var(--border);
+      font-size: 12.5px; vertical-align: middle;
+    }
+    .rr-table th:not(:first-child),
+    .rr-table td:not(:first-child) { padding-left: 22px; }
+    .rr-table tr:last-child td { border-bottom: none; }
+    .rr-table tr:hover td { background: var(--surface-elevated); }
+    .rr-type { font-weight: 600; white-space: nowrap; }
+    .rr-when { color: var(--text-muted); white-space: nowrap; font-size: 11.5px; }
+    .rr-muted { color: var(--text-dim); }
+    .rr-acts { text-align: right; white-space: nowrap; }
+    .rr-acts a { margin-left: 6px; }
+    .rr-gen { color: var(--text-muted); font-size: 11px; font-style: italic; }
     @media (max-width: 900px) {
       .row { grid-template-columns: 1fr; }
     }
@@ -1368,27 +1734,6 @@ TEMPLATE = r"""
     }
 
     /* PREDICTORS */
-    .predictor .stack-label {
-      display: inline-block;
-      font-size: 9px;
-      font-weight: 600;
-      padding: 2px 7px;
-      border-radius: 3px;
-      margin-left: 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      vertical-align: middle;
-    }
-    .stack-label.stacked {
-      background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
-      color: white;
-      box-shadow: 0 0 0 1px rgba(91, 166, 173, 0.2);
-    }
-    .stack-label.single {
-      background: var(--bg);
-      color: var(--teal-dark);
-      border: 1px solid var(--teal-soft);
-    }
     .window-badge {
       display: inline-block;
       font-size: 9.5px;
@@ -1609,12 +1954,20 @@ TEMPLATE = r"""
     .cw-pill.overdue{background:#F3D7CC;color:#8C3A1E;}
     .cw-pill.due{background:#E2EAD9;color:#4A6233;}
     .cw-pill.open{background:#EAE3D2;color:#6B5B33;cursor:help;}
-    .cw-right{display:flex;gap:4px;align-items:center;}
-    .cw-iconbtn{font:inherit;font-size:13px;cursor:pointer;border:none;
-      background:transparent;color:var(--text-dim);padding:4px 5px;border-radius:6px;
-      line-height:1;transition:.14s;}
-    .cw-iconbtn:hover{background:var(--bg-warm);color:var(--text);}
-    .cw-iconbtn.danger:hover{color:#A33A22;}
+    .cw-right{display:flex;gap:6px;align-items:center;}
+    /* Scoped to .action-card so it beats the big ".action-card button"
+       primary style (which otherwise turns these into huge orange
+       blocks). All three are identical small icon buttons. */
+    .action-card .cw-iconbtn{
+      width:auto;margin:0;padding:5px 8px;background:transparent;
+      color:var(--text-muted);border:1px solid var(--border);
+      border-radius:6px;box-shadow:none;letter-spacing:normal;
+      font:inherit;font-size:14px;line-height:1;cursor:pointer;transition:.14s;}
+    .action-card .cw-iconbtn:hover{
+      background:var(--bg-warm);color:var(--text);border-color:var(--teal);}
+    .action-card .cw-iconbtn.danger:hover{color:#A33A22;border-color:#A33A22;}
+    .action-card .cw-iconbtn.cw-tick{color:var(--green);}
+    .action-card .cw-iconbtn.cw-tick:hover{background:var(--bg-warm);color:var(--green);border-color:var(--green);}
     .inline-result {
       margin-top: 12px;
       max-height: 480px;
@@ -1664,9 +2017,10 @@ TEMPLATE = r"""
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .item.predictor .row-preview .more-count {
-      color: var(--teal-dark);
+    .item.predictor .row-preview .signal-sub {
+      color: var(--text-muted);
       font-weight: 600;
+      letter-spacing: 0.01em;
     }
     .item.predictor .row-details {
       display: none;
@@ -2010,6 +2364,7 @@ TEMPLATE = r"""
       </div>
       <div class="filter-bar">
         <button class="lead-filter-pill active" data-filter="active">Active <span class="pill-count" id="lead-pc-active">{{ leads_active_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="new">New today <span class="pill-count" id="lead-pc-new">{{ leads_new_count }}</span></button>
         <button class="lead-filter-pill" data-filter="followed_up">Followed up <span class="pill-count" id="lead-pc-followed_up">{{ leads_followed_count }}</span></button>
         <button class="lead-filter-pill" data-filter="dismissed">Dismissed <span class="pill-count" id="lead-pc-dismissed">{{ leads_dismissed_count }}</span></button>
         <button class="lead-filter-pill" data-filter="all">All</button>
@@ -2018,12 +2373,13 @@ TEMPLATE = r"""
         {% if leads %}
           <div id="leads-list">
           {% for s in leads %}
-            <div class="item lead" data-lead-id="{{ s.lead_id }}" data-status="{{ s.status }}">
+            <div class="item lead" data-lead-id="{{ s.lead_id }}" data-status="{{ s.status }}" data-new="{{ '1' if s.is_new else '0' }}">
               <span class="rank">{{ loop.index }}</span>
               <span class="title">
                 {% if s.url %}<a href="{{ s.url | safe_url }}" target="_blank">{{ s.title }}</a>
                 {% else %}{{ s.title }}{% endif %}
               </span>
+              {% if s.is_new %}<span class="new-badge">NEW</span>{% endif %}
               {% if s.status == 'followed_up' %}<span class="status-badge followed-up">✓ followed up</span>{% endif %}
               {% if s.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
               <div class="meta">
@@ -2084,14 +2440,13 @@ TEMPLATE = r"""
                   {% if p.probability %}<span class="prob-chip">{{ p.probability }}%</span>{% endif %}
                   {% if p.is_new %}<span class="new-badge">NEW</span>{% endif %}
                   {% if p.window_label %}<span class="window-badge">{{ p.window_label }}</span>{% endif %}
-                  {% if p.depth > 1 %}<span class="stack-label stacked">stacked × {{ p.depth }}</span>{% endif %}
                   {% if p.status == 'followed_up' %}<span class="status-badge followed-up">✓ followed up</span>{% endif %}
                   {% if p.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
                 </span>
                 <span class="expand-toggle">▾</span>
               </div>
               <div class="row-preview">
-                {% if p.events %}{{ p.events[0].trigger_label }}: {{ p.events[0].evidence[:140] }}{% if p.events|length > 1 %} <span class="more-count">+{{ p.events|length - 1 }} more</span>{% endif %}{% endif %}
+                {% if p.events %}<span class="signal-sub">{{ p.events[0].trigger_label }}</span>{% endif %}
               </div>
               <div class="row-details">
                 <div class="meta">
@@ -2105,8 +2460,6 @@ TEMPLATE = r"""
                 {% if p.advisory %}<div class="advisory-line">{{ p.advisory }}</div>{% endif %}
                 <pre class="outreach-text">{{ p.outreach }}</pre>
                 <div class="item-actions">
-                  <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                  <a class="btn-mini" href="{{ p.linkedin.url | safe_url }}" target="_blank" title="{{ p.linkedin.label }}">↗ {{ p.linkedin.label }}</a>
                   {% if p.status == 'active' %}
                     <button class="btn-mini status-action" data-status="followed_up" type="button">✓ Mark followed up</button>
                     <button class="btn-mini status-action ghost" data-status="dismissed" type="button">✕ Dismiss</button>
@@ -2209,7 +2562,7 @@ TEMPLATE = r"""
         <input id="pm-contact" name="contact_name" placeholder="e.g. Carla Sherry">
         <label for="pm-context">Meeting context (optional)</label>
         <input id="pm-context" name="meeting_context" placeholder="e.g. 10am Mon, Zoom">
-        <button type="submit">Run and send via email</button>
+        <button type="submit">Run</button>
         <div class="status" id="pm-status"></div>
       </form>
     </div>
@@ -2221,7 +2574,7 @@ TEMPLATE = r"""
       <form id="sweep-form" onsubmit="dispatch(event, 'sweep-form', '/api/dispatch/sweep')">
         <label for="sw-days">Window (days)</label>
         <input id="sw-days" name="window_days" type="number" min="1" max="60" value="14" required>
-        <button type="submit">Run and send via email</button>
+        <button type="submit">Run</button>
         <div class="status" id="sweep-status"></div>
       </form>
     </div>
@@ -2235,7 +2588,7 @@ TEMPLATE = r"""
         <input id="pp-account" name="account_name" placeholder="e.g. Unilever" required>
         <label for="pp-role">Role</label>
         <input id="pp-role" name="role" placeholder="e.g. Head of Internal Communications" required>
-        <button type="submit">Run and send via email</button>
+        <button type="submit">Run</button>
         <div class="status" id="pitch-status"></div>
       </form>
     </div>
@@ -2243,7 +2596,7 @@ TEMPLATE = r"""
     <!-- REVERSE MATCH -->
     <div class="panel action-card">
       <h3>Reverse Match</h3>
-      <div class="subhead">Get a ranked list of accounts where your candidate could be pitched. Unlike MPC Factory, this one goes out and searches the market fresh each time - casts a wider net.</div>
+      <div class="subhead">Take a candidate, search the market fresh, and give a ranked list of accounts to pitch them to.</div>
       <form id="rm-form" onsubmit="dispatch(event, 'rm-form', '/api/dispatch/reverse-match')">
         <label for="rm-name">Candidate name</label>
         <input id="rm-name" name="candidate_name" placeholder="e.g. Rebecca Torres" required>
@@ -2251,7 +2604,7 @@ TEMPLATE = r"""
         <input id="rm-company" name="current_company" placeholder="e.g. Vodafone" required>
         <label for="rm-title">Current title</label>
         <input id="rm-title" name="current_title" placeholder="e.g. Head of Internal Communications" required>
-        <button type="submit">Run and send via email</button>
+        <button type="submit">Run</button>
         <div class="status" id="rm-status"></div>
       </form>
     </div>
@@ -2259,7 +2612,7 @@ TEMPLATE = r"""
     <!-- CANDIDATE WATCH -->
     <div class="panel action-card">
       <h3>Candidate Watch</h3>
-      <div class="subhead">Keep a roster of warm candidates to stay in touch with. Overdue ones float to the top so relationships don't go cold. Note - the "restlessness" score only keyword-matches notes you type yourself, not live intelligence.</div>
+      <div class="subhead">Keep a roster of warm candidates to stay in touch with. Overdue ones float to the top so relationships don't go cold.</div>
       <div id="watch-list-wrap">
         <div class="status" id="watch-list-status">Loading…</div>
         <div id="watch-list"></div>
@@ -2273,9 +2626,7 @@ TEMPLATE = r"""
           <input id="wa-company" name="current_company">
           <label for="wa-title">Current title</label>
           <input id="wa-title" name="current_title">
-          <label for="wa-linkedin">LinkedIn URL</label>
-          <input id="wa-linkedin" name="linkedin_url" placeholder="https://linkedin.com/in/...">
-          <label for="wa-cadence">Touch cadence (days)</label>
+          <label for="wa-cadence">Remind me every (days)</label>
           <input id="wa-cadence" name="touch_cadence_days" type="number" value="30" min="7" max="180">
           <label for="wa-notes">Notes</label>
           <input id="wa-notes" name="notes">
@@ -2288,7 +2639,7 @@ TEMPLATE = r"""
     <!-- MPC OUTREACH FACTORY -->
     <div class="panel action-card">
       <h3>MPC Outreach Factory</h3>
-      <div class="subhead">Get a ranked list of target accounts for a candidate, each with a paste-ready outreach hook, woven from signals already gathered (a live trigger at that company, or a structural fit).</div>
+      <div class="subhead">Take a candidate, check against signals already gathered today, and match potential fits.</div>
       <form id="mpc-form" onsubmit="runMPC(event)">
         <label for="mpc-name">Candidate name</label>
         <input id="mpc-name" name="name" placeholder="e.g. James Carter" required>
@@ -2304,8 +2655,22 @@ TEMPLATE = r"""
 
   </div>
 
+  <div class="row row-full" id="recent-row">
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Recent Reports Generated</h2>
+        <span style="display:flex;align-items:center;gap:10px;">
+          <button type="button" class="btn-mini" onclick="clearRecentReports(this)">Clear</button>
+          <span class="count" id="recent-count">—</span>
+        </span>
+      </div>
+      <div class="panel-body" id="recent-reports">
+        <div class="empty compact">Loading…</div>
+      </div>
+    </div>
+  </div>
+
   <div class="footer">
-    Data refreshed from GitHub Actions artifacts.
     All sources are free public surfaces. No automation of LinkedIn account.
     <span style="opacity:0.5; margin-left:8px;">· build {{ build_stamp }} · rev {{ deploy_rev }}</span>
     <span class="dev-zone">
@@ -2329,28 +2694,98 @@ async function dispatch(event, formId, url) {
   const status = form.querySelector('.status');
   const data = {};
   new FormData(form).forEach((v, k) => { data[k] = v; });
-  data.mode = 'send';   // dashboard always fires live to Sara
+  data.mode = 'send';
+
+  // Open the result tab NOW, inside the click gesture, so the browser
+  // doesn't block it as a pop-up when it loads minutes later.
+  const win = window.open('', '_blank');
+  if (win) {
+    win.document.write(
+      '<!doctype html><meta charset="utf-8"><title>Preparing report…</title>' +
+      '<style>body{font-family:Inter,system-ui,sans-serif;background:#F5F0E8;' +
+      'color:#181613;display:flex;min-height:100vh;align-items:center;' +
+      'justify-content:center;margin:0}.b{text-align:center;padding:24px}' +
+      '.s{width:30px;height:30px;border:3px solid rgba(140,120,80,.25);' +
+      'border-top-color:#C96442;border-radius:50%;margin:0 auto 16px;' +
+      'animation:r .8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}' +
+      'p{font-size:13px;color:#7A7164;max-width:340px;line-height:1.55}</style>' +
+      '<div class="b"><div class="s"></div><h3>Preparing your report…</h3>' +
+      '<p>This can take a few minutes. Keep this tab open — it loads ' +
+      'automatically when ready.</p></div>');
+  }
 
   btn.disabled = true;
-  btn.textContent = 'Dispatching…';
+  btn.textContent = 'Running…';
   status.className = 'status';
-  status.style.display = 'none';
+  status.style.display = '';
+  status.textContent = 'Dispatching…';
 
+  let j;
   try {
     const r = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    const j = await r.json();
-    status.textContent = j.detail || (j.ok ? 'Dispatched.' : 'Failed.');
-    status.className = 'status ' + (j.ok ? 'ok' : 'err');
+    j = await r.json();
   } catch (e) {
+    if (win && !win.closed) win.close();
     status.textContent = 'Network error: ' + e.message;
     status.className = 'status err';
+    btn.disabled = false; btn.textContent = 'Run';
+    return;
   }
-  btn.disabled = false;
-  btn.textContent = 'Run and send via email';
+  if (!j.ok || !j.artifact || !j.dispatched_at) {
+    if (win && !win.closed) win.close();
+    status.textContent = j.detail || 'Failed.';
+    status.className = 'status err';
+    btn.disabled = false; btn.textContent = 'Run';
+    return;
+  }
+
+  status.textContent = 'Running… the report opens here when ready.';
+  status.className = 'status ok';
+  loadRecentReports();   // surface the new "generating…" row at once
+
+  const qs = 'artifact=' + encodeURIComponent(j.artifact) +
+             '&since=' + encodeURIComponent(j.dispatched_at);
+  const started = Date.now();
+  const MAX_MS = 25 * 60 * 1000;   // give up after ~25 min
+
+  const poll = async () => {
+    if (Date.now() - started > MAX_MS) {
+      if (win && !win.closed) win.close();
+      status.textContent = 'Still running after 25 min — the emailed copy will still arrive.';
+      status.className = 'status err';
+      btn.disabled = false; btn.textContent = 'Run';
+      return;
+    }
+    let s;
+    try {
+      const rr = await fetch('/api/output/status?' + qs);
+      s = await rr.json();
+    } catch (e) { s = { ready: false }; }
+    if (s.ready && s.id) {
+      const viewUrl = '/api/output/view?artifact=' +
+        encodeURIComponent(j.artifact) + '&id=' + encodeURIComponent(s.id);
+      if (win && !win.closed) {
+        win.location = viewUrl;
+        status.innerHTML = 'Report opened in a new tab · ' +
+          '<a href="' + viewUrl + '" target="_blank">open again ↗</a>';
+      } else {
+        status.innerHTML = 'Report ready · ' +
+          '<a href="' + viewUrl + '" target="_blank">open ↗</a>';
+      }
+      status.className = 'status ok';
+      btn.disabled = false; btn.textContent = 'Run';
+      loadRecentReports();   // flip the row from "generating…" to View/Download
+      return;
+    }
+    const mins = Math.floor((Date.now() - started) / 60000);
+    status.textContent = 'Running…' + (mins ? ' (' + mins + ' min)' : '');
+    setTimeout(poll, 12000);
+  };
+  setTimeout(poll, 12000);
 }
 
 // Pipeline filter pills: show only items matching the chosen filter.
@@ -2402,7 +2837,9 @@ function applyLeadFilter(name) {
   let visible = 0;
   document.querySelectorAll('#leads-list .item.lead').forEach(item => {
     const status = item.dataset.status || 'active';
+    const isNew = item.dataset.new === '1';
     const show = (name === 'all') ? true
+               : (name === 'new') ? (isNew && status === 'active')
                : (name === 'active') ? status === 'active'
                : status === name;
     item.style.display = show ? '' : 'none';
@@ -2418,15 +2855,15 @@ document.addEventListener('click', (event) => {
 });
 
 function recountLeads() {
-  let a = 0, f = 0, d = 0;
+  let a = 0, n = 0, f = 0, d = 0;
   document.querySelectorAll('#leads-list .item.lead').forEach(it => {
     const s = it.dataset.status || 'active';
-    if (s === 'active') a++;
+    if (s === 'active') { a++; if (it.dataset.new === '1') n++; }
     else if (s === 'followed_up') f++;
     else if (s === 'dismissed') d++;
   });
   const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-  set('leads-count', a); set('lead-pc-active', a);
+  set('leads-count', a); set('lead-pc-active', a); set('lead-pc-new', n);
   set('lead-pc-followed_up', f); set('lead-pc-dismissed', d);
   const ap = document.querySelector('.lead-filter-pill.active');
   applyLeadFilter(ap ? ap.dataset.filter : 'active');
@@ -2787,11 +3224,18 @@ async function loadPulses() {
         (p.advisory ? '<div class="advisory-line">' + esc(p.advisory) + '</div>' : '')
       );
     };
+    const CAL_PH = '<span class="cal-ph">Click a month with pips for the lead detail.</span>';
     const openMonth = m => {
       const ps = buckets[m] || [];
       if (!ps.length) return;
-      body.querySelectorAll('.cal-tile').forEach(t => t.classList.remove('sel'));
       const tile = body.querySelector('.cal-tile[data-m="' + m + '"]');
+      const alreadyOpen = tile && tile.classList.contains('sel');
+      body.querySelectorAll('.cal-tile').forEach(t => t.classList.remove('sel'));
+      if (alreadyOpen) {
+        // Second click on the open month → collapse back to placeholder.
+        document.getElementById('cal-card').innerHTML = CAL_PH;
+        return;
+      }
       if (tile) tile.classList.add('sel');
       document.getElementById('cal-card').innerHTML =
         ps.map(cardFor).join('<hr class="cal-dsep">');
@@ -3070,7 +3514,7 @@ async function loadWatchList() {
     const out = ['<div class="cw-list">'];
     for (const c of j.rows.slice(0, 10)) {
       const cadence = c.touch_cadence_days || 30;
-      const seen = c._days_since_touched;          // null === never contacted
+      const seen = c._days_since_touched;          // null === not yet contacted
       let duePill;
       if (c._overdue_days > 0) {
         duePill = '<span class="cw-pill overdue">overdue ' + esc(c._overdue_days) + 'd</span>';
@@ -3083,9 +3527,6 @@ async function loadWatchList() {
           ' phrase(s) in notes you typed suggest this person may be open to a move">' +
           'may be open ×' + esc(c._restlessness_hits) + '</span>'
         : '';
-      const stateTxt = (seen === null || seen === undefined)
-        ? 'never contacted'
-        : 'last contacted ' + esc(seen) + 'd ago';
       const sub = [c.current_title, c.current_company].filter(Boolean).map(esc).join(' · ');
       // Data attributes carry name/company so user-controlled text is never
       // injected into an onclick string.
@@ -3097,12 +3538,10 @@ async function loadWatchList() {
             '<div class="cw-nm">' + esc(c.name) + '</div>' +
             (sub ? '<div class="cw-sub">' + sub + '</div>' : '') +
             (c.last_signal ? '<div class="cw-state"><em>' + esc(c.last_signal) + '</em></div>' : '') +
-            '<div class="cw-state">' + stateTxt + '</div>' +
             '<div class="cw-tags">' + duePill + openPill + '</div>' +
           '</div>' +
           '<div class="cw-right">' +
-            '<button class="btn-mini watch-action" data-action="touch" data-name="' + dn + '" data-company="' + dc + '">Mark contacted</button>' +
-            '<button class="cw-iconbtn watch-action" data-action="snooze" data-name="' + dn + '" data-company="' + dc + '" title="Snooze 14 days">💤</button>' +
+            '<button class="cw-iconbtn cw-tick watch-action" data-action="touch" data-name="' + dn + '" data-company="' + dc + '" title="Mark contacted">✓</button>' +
             '<button class="cw-iconbtn danger watch-action" data-action="remove" data-name="' + dn + '" data-company="' + dc + '" title="Remove from watch list">🗑</button>' +
           '</div>' +
         '</div>'
@@ -3126,16 +3565,9 @@ document.addEventListener('click', async (event) => {
   const name    = btn.dataset.name    || '';
   const company = btn.dataset.company || '';
   if (action === 'touch') {
-    const signal = prompt('What did you observe? (optional restlessness notes; e.g. "updated profile, posting more")', '') || '';
     const r = await fetch('/api/candidates/watch/touch', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, current_company: company, signal }),
-    });
-    if (r.ok) loadWatchList();
-  } else if (action === 'snooze') {
-    const r = await fetch('/api/candidates/watch/snooze', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, current_company: company, days: 14 }),
+      body: JSON.stringify({ name, current_company: company, signal: '' }),
     });
     if (r.ok) loadWatchList();
   } else if (action === 'remove') {
@@ -3212,7 +3644,73 @@ document.addEventListener('DOMContentLoaded', () => {
   loadFunding();
   loadSpecialistSignals();
   loadWatchList();
+  loadRecentReports();
 });
+
+// ---------- Recent Reports Generated (last 48h) ----------
+async function clearRecentReports(btn) {
+  if (!confirm('Permanently delete all generated reports? This frees the storage and cannot be undone.')) return;
+  if (btn) { btn.disabled = true; btn.textContent = 'Clearing…'; }
+  try {
+    await fetch('/api/output/clear', { method: 'POST' });
+  } catch (e) { /* best-effort */ }
+  if (btn) { btn.disabled = false; btn.textContent = 'Clear'; }
+  loadRecentReports();
+}
+
+async function loadRecentReports() {
+  const row = document.getElementById('recent-row');
+  const body = document.getElementById('recent-reports');
+  const count = document.getElementById('recent-count');
+  try {
+    const r = await fetch('/api/output/recent');
+    const j = await r.json();
+    row.style.display = '';
+    if (!j.rows || !j.rows.length) {
+      count.textContent = '0';
+      body.innerHTML = '<div class="empty compact" style="padding:18px 16px;">' +
+        'No reports generated in the last 48 hours.</div>';
+      return;
+    }
+    count.textContent = j.total;
+    const now = Date.now();
+    const out = ['<table class="rr-table"><thead><tr>' +
+      '<th>Type</th><th>Company</th><th>Name</th><th>When</th>' +
+      '<th class="rr-acts">Report</th></tr></thead><tbody>'];
+    for (const x of j.rows.slice(0, 30)) {
+      const t = new Date(x.ts).getTime();
+      const mins = Math.max(0, Math.round((now - t) / 60000));
+      const ago = mins < 1 ? 'just now'
+                : mins < 60 ? mins + ' min ago'
+                : mins < 1440 ? Math.round(mins / 60) + 'h ago'
+                : Math.round(mins / 1440) + 'd ago';
+      let acts;
+      if (x.id) {
+        const base = '/api/output/view?artifact=' +
+          encodeURIComponent(x.artifact) + '&id=' + encodeURIComponent(x.id);
+        acts = '<a class="btn-mini" href="' + base +
+          '" target="_blank" rel="noopener noreferrer">↗ View</a>' +
+          '<a class="btn-mini" href="' + base + '&download=1">⬇ Download</a>';
+      } else {
+        acts = '<span class="rr-gen">generating…</span>';
+      }
+      out.push(
+        '<tr><td class="rr-type">' + esc(x.type) + '</td>' +
+        '<td>' + (x.company && x.company !== '—' ? esc(x.company) : '') + '</td>' +
+        '<td>' + (x.name ? esc(x.name) : '') + '</td>' +
+        '<td class="rr-when">' + esc(ago) + '</td>' +
+        '<td class="rr-acts">' + acts + '</td></tr>'
+      );
+    }
+    out.push('</tbody></table>');
+    body.innerHTML = out.join('');
+    row.style.display = '';
+  } catch (e) {
+    row.style.display = '';
+    body.innerHTML = '<div class="empty compact" style="padding:18px 16px;">' +
+      'Could not load recent reports.</div>';
+  }
+}
 </script>
 
 </body>

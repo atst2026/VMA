@@ -1,10 +1,11 @@
-"""Per-lead triage status (followed_up / dismissed), persisted across
-daily refreshes.
+"""Durable predictor triage overlay (followed_up / dismissed).
 
-Leads come from the morning-brief artifact (latest_signals.json) and
-have no pipeline of their own like predictors do, so the user's triage
-decision is stored here keyed by the lead's stable id. A dismissed or
-followed-up lead therefore stays that way after the next refresh.
+The predictor pipeline (predictor_pipeline.json) is rebuilt by the
+morning brief and is ephemeral on Render, so the user's followed-up /
+dismissed decisions made in the dashboard were lost on redeploy. This
+stores those decisions as a small {pid: status} overlay — the same
+durable pattern as lead_status — and load_latest_predictive applies it
+on top of whatever the pipeline produced.
 
 Only non-active statuses are stored; absence == active.
 """
@@ -18,7 +19,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 STATE_DIR = Path(__file__).resolve().parent / "state"
-STATUS_FILE = STATE_DIR / "lead_status.json"
+STATUS_FILE = STATE_DIR / "predictor_status.json"
 VALID = {"active", "followed_up", "dismissed"}
 
 try:
@@ -32,8 +33,7 @@ _LOCK = threading.Lock()
 
 @contextmanager
 def _locked():
-    """Serialise read-modify-write across threads and processes, the
-    same pattern candidate_watch uses (Render runs multi-process WSGI)."""
+    """Serialise read-modify-write across threads and processes."""
     STATE_DIR.mkdir(parents=True, exist_ok=True)
     lock_path = STATUS_FILE.with_suffix(".lock")
     with _LOCK:
@@ -59,15 +59,15 @@ def get_statuses() -> dict:
         return {}
 
 
-def set_status(lead_id: str, status: str) -> bool:
-    if status not in VALID or not lead_id:
+def set_status(pid: str, status: str) -> bool:
+    if status not in VALID or not pid:
         return False
     with _locked():
         data = get_statuses()
         if status == "active":
-            data.pop(lead_id, None)
+            data.pop(pid, None)
         else:
-            data[lead_id] = status
+            data[pid] = status
         payload = json.dumps(data, indent=2)
         STATE_DIR.mkdir(parents=True, exist_ok=True)
         tmp = tempfile.NamedTemporaryFile(
@@ -89,8 +89,8 @@ def set_status(lead_id: str, status: str) -> bool:
     # Persist to the repo (background; never blocks the request).
     try:
         from tool import github_state
-        github_state.push_async("tool/state/lead_status.json", payload,
-                                "state: update lead triage status")
+        github_state.push_async("tool/state/predictor_status.json", payload,
+                                "state: update predictor triage status")
     except Exception:
         pass
     return True
