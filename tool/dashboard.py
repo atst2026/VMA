@@ -1356,6 +1356,7 @@ TEMPLATE = r"""
        stretch a short list across the full width. */
     #recent-row { margin-top: 24px; }
     #recent-row .panel { max-width: 880px; }
+    #recent-row .panel-header { border-bottom: none; }
     /* 16px container inset so the columns line up with the panel
        title; top padding gives clear air below the panel-header rule
        (otherwise the two hairlines look stacked/overlapping). */
@@ -2685,6 +2686,7 @@ async function dispatch(event, formId, url) {
 
   status.textContent = 'Running… the report opens here when ready.';
   status.className = 'status ok';
+  loadRecentReports();   // surface the new "generating…" row at once
 
   const qs = 'artifact=' + encodeURIComponent(j.artifact) +
              '&since=' + encodeURIComponent(j.dispatched_at);
@@ -2717,6 +2719,7 @@ async function dispatch(event, formId, url) {
       }
       status.className = 'status ok';
       btn.disabled = false; btn.textContent = 'Run';
+      loadRecentReports();   // flip the row from "generating…" to View/Download
       return;
     }
     const mins = Math.floor((Date.now() - started) / 60000);
