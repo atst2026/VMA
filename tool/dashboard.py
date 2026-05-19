@@ -1578,26 +1578,26 @@ TEMPLATE = r"""
       --dead-bar:    #B7AC9A;
       --unclear-bar: #A89684;
     }
-    .overdue-pill {
-      display: inline-block;
-      font-size: 10.5px;
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 3px;
-      background: #FCD5C9;
-      color: #8C2A0E;
-      margin-right: 4px;
-    }
-    .restless-pill {
-      display: inline-block;
-      font-size: 10.5px;
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 3px;
-      background: #FCEED1;
-      color: #6B4A0B;
-      margin-right: 4px;
-    }
+    /* Candidate Watch — compact CRM row (Mockup A) */
+    .cw-row{display:grid;grid-template-columns:1fr auto;gap:4px 12px;
+      align-items:center;padding:9px 4px;border-bottom:1px solid var(--border);}
+    .cw-row:last-child{border-bottom:none;}
+    .cw-row:hover{background:var(--surface-elevated);}
+    .cw-nm{font-size:13px;font-weight:600;}
+    .cw-sub{font-size:11.5px;color:var(--text-muted);margin-top:1px;}
+    .cw-state{font-size:11px;color:var(--text-muted);margin-top:2px;}
+    .cw-tags{margin-top:4px;display:flex;gap:5px;flex-wrap:wrap;}
+    .cw-pill{display:inline-flex;align-items:center;font-size:10px;font-weight:700;
+      padding:2px 7px;border-radius:10px;letter-spacing:.02em;white-space:nowrap;}
+    .cw-pill.overdue{background:#F3D7CC;color:#8C3A1E;}
+    .cw-pill.due{background:#E2EAD9;color:#4A6233;}
+    .cw-pill.open{background:#EAE3D2;color:#6B5B33;cursor:help;}
+    .cw-right{display:flex;gap:4px;align-items:center;}
+    .cw-iconbtn{font:inherit;font-size:13px;cursor:pointer;border:none;
+      background:transparent;color:var(--text-dim);padding:4px 5px;border-radius:6px;
+      line-height:1;transition:.14s;}
+    .cw-iconbtn:hover{background:var(--bg-warm);color:var(--text);}
+    .cw-iconbtn.danger:hover{color:#A33A22;}
     .inline-result {
       margin-top: 12px;
       max-height: 480px;
@@ -3050,37 +3050,48 @@ async function loadWatchList() {
       return;
     }
     status.textContent = j.total + ' watched · sorted by call urgency';
-    const out = ['<ul style="margin:8px 0 0 0;padding:0;list-style:none;">'];
+    const out = ['<div class="cw-list">'];
     for (const c of j.rows.slice(0, 10)) {
-      const overdue = c._overdue_days > 0
-        ? '<span class="overdue-pill">overdue ' + esc(c._overdue_days) + 'd</span> '
+      const cadence = c.touch_cadence_days || 30;
+      const seen = c._days_since_touched;          // null === never contacted
+      let duePill;
+      if (c._overdue_days > 0) {
+        duePill = '<span class="cw-pill overdue">overdue ' + esc(c._overdue_days) + 'd</span>';
+      } else {
+        const left = Math.max(0, cadence - (seen || 0));
+        duePill = '<span class="cw-pill due">due in ' + esc(left) + 'd</span>';
+      }
+      const openPill = c._restlessness_hits > 0
+        ? '<span class="cw-pill open" title="' + esc(c._restlessness_hits) +
+          ' phrase(s) in notes you typed suggest this person may be open to a move">' +
+          'may be open ×' + esc(c._restlessness_hits) + '</span>'
         : '';
-      const restless = c._restlessness_hits > 0
-        ? '<span class="restless-pill">restless ×' + esc(c._restlessness_hits) + '</span> '
-        : '';
-      // Data attributes carry name/company so we never inject user-controlled
-      // text into onclick="..." (which HTML-decodes attribute values before
-      // JS parses — a name like O'Brien or '); alert(1); // would otherwise
-      // break or inject script).
+      const stateTxt = (seen === null || seen === undefined)
+        ? 'never contacted'
+        : 'last contacted ' + esc(seen) + 'd ago';
+      const sub = [c.current_title, c.current_company].filter(Boolean).map(esc).join(' · ');
+      // Data attributes carry name/company so user-controlled text is never
+      // injected into an onclick string.
       const dn = esc(c.name);
       const dc = esc(c.current_company || '');
       out.push(
-        '<li style="padding:8px 0;border-bottom:1px solid var(--border);">' +
-          overdue + restless +
-          '<strong>' + esc(c.name) + '</strong> ' +
-          '<span style="color:var(--text-muted);font-size:12px;">@ ' + esc(c.current_company || '?') + '</span>' +
-          (c.current_title ? '<div style="font-size:12px;color:#444;">' + esc(c.current_title) + '</div>' : '') +
-          (c.last_signal ? '<div style="font-size:12px;color:#555;"><em>' + esc(c.last_signal) + '</em></div>' : '') +
-          '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">' + esc(c._status_label) + '</div>' +
-          '<div style="margin-top:6px;">' +
-            '<button class="btn-mini watch-action" data-action="touch"  data-name="' + dn + '" data-company="' + dc + '">✓ Touched</button> ' +
-            '<button class="btn-mini watch-action" data-action="snooze" data-name="' + dn + '" data-company="' + dc + '">⏸ Snooze 14d</button> ' +
-            '<button class="btn-mini ghost watch-action" data-action="remove" data-name="' + dn + '" data-company="' + dc + '">✕</button>' +
+        '<div class="cw-row">' +
+          '<div>' +
+            '<div class="cw-nm">' + esc(c.name) + '</div>' +
+            (sub ? '<div class="cw-sub">' + sub + '</div>' : '') +
+            (c.last_signal ? '<div class="cw-state"><em>' + esc(c.last_signal) + '</em></div>' : '') +
+            '<div class="cw-state">' + stateTxt + '</div>' +
+            '<div class="cw-tags">' + duePill + openPill + '</div>' +
           '</div>' +
-        '</li>'
+          '<div class="cw-right">' +
+            '<button class="btn-mini watch-action" data-action="touch" data-name="' + dn + '" data-company="' + dc + '">Mark contacted</button>' +
+            '<button class="cw-iconbtn watch-action" data-action="snooze" data-name="' + dn + '" data-company="' + dc + '" title="Snooze 14 days">💤</button>' +
+            '<button class="cw-iconbtn danger watch-action" data-action="remove" data-name="' + dn + '" data-company="' + dc + '" title="Remove from watch list">🗑</button>' +
+          '</div>' +
+        '</div>'
       );
     }
-    out.push('</ul>');
+    out.push('</div>');
     wrap.innerHTML = out.join('');
   } catch (e) {
     status.textContent = 'Failed: ' + e.message;
