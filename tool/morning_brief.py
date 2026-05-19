@@ -139,6 +139,14 @@ def main() -> int:
     for _sig in ranked_all:
         _sig["is_new"] = _sig.get("id") in _fresh_ids
     ranked = rank(fresh)
+    # Same filter the dashboard applies: drop appointment news
+    # (the seat is filled, not open — the useful half feeds Mandates
+    # Worth Following separately) and signals with no parsed company
+    # (structurally unusable). Keeps the email aligned with the
+    # dashboard rather than spraying noise into Sara's inbox.
+    ranked = [s for s in ranked
+              if (s.get("kind") or "").strip().lower() != "leadership_change"
+              and (s.get("company") or "").strip()]
     log.info("Ranked %d fresh signals for the email body.", len(ranked))
 
     # ORDER MATTERS: run CH officer-change scan + auto-update BEFORE
