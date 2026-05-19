@@ -164,18 +164,17 @@ _ARTIFACT_LABEL = {
 }
 
 
-def _recent_artifacts(hours: int = 48) -> list[dict]:
-    """Report artifacts generated in the last `hours`, newest first."""
+def _artifact_index() -> dict:
+    """{artifact_name: [(created_dt, id), …] newest-first}. One API call."""
     if not GITHUB_TOKEN:
-        return []
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+        return {}
     url = (f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}"
            f"/actions/artifacts?per_page=100")
     try:
         r = requests.get(url, headers=_github_headers(), timeout=15)
         if r.status_code != 200:
-            return []
-        out = []
+            return {}
+        idx: dict = {}
         for a in r.json().get("artifacts", []):
             nm = a.get("name")
             if nm not in _ARTIFACT_LABEL or a.get("expired"):
@@ -185,18 +184,44 @@ def _recent_artifacts(hours: int = 48) -> list[dict]:
                     a.get("created_at", "").replace("Z", "+00:00"))
             except Exception:
                 continue
-            if created < cutoff:
-                continue
-            out.append({
-                "tool": _ARTIFACT_LABEL[nm],
-                "artifact": nm,
-                "id": a.get("id"),
-                "created_at": a.get("created_at"),
-            })
-        out.sort(key=lambda x: x["created_at"], reverse=True)
-        return out
+            idx.setdefault(nm, []).append((created, a.get("id")))
+        for nm in idx:
+            idx[nm].sort(key=lambda t: t[0], reverse=True)
+        return idx
     except requests.RequestException:
-        return []
+        return {}
+
+
+def _recent_reports(hours: int = 48) -> list[dict]:
+    """The logged reports from the last `hours`, each resolved to its
+    artifact id (the run that produced it) so View/Download work.
+    id is None while the run is still going."""
+    from tool import report_log
+    logged = report_log.recent(hours)
+    idx = _artifact_index()
+    out = []
+    for e in logged:
+        try:
+            ts = datetime.fromisoformat(e.get("ts", ""))
+        except Exception:
+            ts = None
+        art = e.get("artifact", "")
+        aid = None
+        if ts is not None:
+            cutoff = ts - timedelta(seconds=90)
+            for created, _id in idx.get(art, []):
+                if created >= cutoff:
+                    aid = _id
+                    break
+        out.append({
+            "type": e.get("type", ""),
+            "company": e.get("company", ""),
+            "name": e.get("name", ""),
+            "artifact": art,
+            "ts": e.get("ts", ""),
+            "id": aid,            # None => still generating
+        })
+    return out
 
 
 def _find_output_artifact(name: str, since_iso: str) -> dict | None:
@@ -271,10 +296,10 @@ _REPORT_SKIN = (
     'background:#fff!important;color:#181613!important;font-size:14px!important;'
     'line-height:1.62!important;border-radius:14px;position:relative;'
     'box-shadow:0 6px 30px rgba(140,120,80,.14);}'
-    '.vma-brand{position:absolute;top:34px;right:56px;'
-    'font-family:"Crimson Pro",Georgia,serif;font-size:20px;font-weight:600;'
-    'color:#A04E32;letter-spacing:.01em;}'
-    'body>h1:first-of-type,body>h2:first-of-type{padding-right:130px;}'
+    '.vma-brand{position:absolute;top:30px;right:52px;width:56px;'
+    'height:auto;line-height:0;}'
+    '.vma-brand svg{display:block;width:100%;height:auto;}'
+    'body>h1:first-of-type,body>h2:first-of-type{padding-right:92px;}'
     'h1,h2,h3,h4{font-family:"Crimson Pro",Georgia,serif;color:#181613;'
     'line-height:1.25;font-weight:600;}'
     'body>h1:first-child,body>h2:first-child{font-size:26px;color:#A04E32;'
@@ -290,12 +315,28 @@ _REPORT_SKIN = (
 )
 
 
+# Inline recreation of the VMA Group mark (steel-blue square, white
+# "VMA" / "GROUP"). Self-contained so the served report needs no hosted
+# asset. Swap for an <img> if the real logo file is added to the repo.
+_VMA_LOGO_SVG = (
+    '<svg viewBox="0 0 120 110" xmlns="http://www.w3.org/2000/svg" '
+    'role="img" aria-label="VMA Group">'
+    '<rect width="120" height="110" rx="3" fill="#3F5E83"/>'
+    '<text x="60" y="58" text-anchor="middle" '
+    'font-family="Arial,Helvetica,sans-serif" font-weight="800" '
+    'font-size="42" fill="#fff" letter-spacing="1">VMA</text>'
+    '<text x="60" y="88" text-anchor="middle" '
+    'font-family="Arial,Helvetica,sans-serif" font-weight="500" '
+    'font-size="22" fill="#fff" letter-spacing="3">GROUP</text></svg>'
+)
+_BRAND_DIV = '<body><div class="vma-brand">' + _VMA_LOGO_SVG + '</div>'
+
+
 def _skin_report_html(html: str) -> str:
     """Strip the generator's inline body style and inject the reader
     skin, so the served report is on-brand and readable."""
     import re
-    html = re.sub(r"<body[^>]*>",
-                   '<body><div class="vma-brand">VMA&nbsp;Group</div>',
+    html = re.sub(r"<body[^>]*>", lambda _m: _BRAND_DIV,
                    html, count=1, flags=re.I)
     if re.search(r"</head>", html, re.I):
         return re.sub(r"</head>", _REPORT_SKIN + "</head>", html,
@@ -660,6 +701,7 @@ def _boot_state_hydrate():
         github_state.hydrate([
             "tool/state/candidate_watch.json",
             "tool/state/lead_status.json",
+            "tool/state/report_log.json",
         ])
     except Exception as e:
         log.warning("state hydrate skipped: %s", e)
@@ -771,6 +813,10 @@ def api_pitch_pack():
                                 "detail": f"{k} must be a whole number (e.g. 95000)"}), 400
     res = trigger_workflow("pitch-pack.yml", inputs)
     res["artifact"] = _WORKFLOW_ARTIFACT["pitch-pack.yml"]
+    if res.get("ok"):
+        from tool import report_log
+        report_log.add("Pitch Pack", inputs["account_name"],
+                       inputs["role"], res["artifact"])
     return jsonify(res)
 
 
@@ -790,6 +836,10 @@ def api_reverse_match():
         return jsonify({"ok": False, "detail": f"Missing: {', '.join(missing)}"}), 400
     res = trigger_workflow("reverse-match.yml", inputs)
     res["artifact"] = _WORKFLOW_ARTIFACT["reverse-match.yml"]
+    if res.get("ok"):
+        from tool import report_log
+        report_log.add("Reverse Match", inputs["current_company"],
+                       inputs["candidate_name"], res["artifact"])
     return jsonify(res)
 
 
@@ -807,6 +857,10 @@ def api_pre_meeting():
         return jsonify({"ok": False, "detail": "Account name required"}), 400
     res = trigger_workflow("pre-meeting-brief.yml", inputs)
     res["artifact"] = _WORKFLOW_ARTIFACT["pre-meeting-brief.yml"]
+    if res.get("ok"):
+        from tool import report_log
+        report_log.add("Pre-meeting Brief", inputs["account_name"],
+                       inputs.get("contact_name", ""), res["artifact"])
     return jsonify(res)
 
 
@@ -820,6 +874,11 @@ def api_sweep():
     }
     res = trigger_workflow("fortnightly-sweep.yml", inputs)
     res["artifact"] = _WORKFLOW_ARTIFACT["fortnightly-sweep.yml"]
+    if res.get("ok"):
+        from tool import report_log
+        report_log.add("14-Day Catch-up", "—",
+                       f"market sweep · {inputs['window_days']}d",
+                       res["artifact"])
     return jsonify(res)
 
 
@@ -869,7 +928,7 @@ def api_output_view():
 @_auth_required
 def api_output_recent():
     """Reports generated in the last 48h, for the Recent Reports panel."""
-    rows = _recent_artifacts(48)
+    rows = _recent_reports(48)
     return jsonify({"rows": rows, "total": len(rows)})
 
 
@@ -1279,6 +1338,28 @@ TEMPLATE = r"""
        this it sits in the left half of a 2-col grid with dead space
        beside it. */
     .row.row-full { grid-template-columns: 1fr; }
+    /* Recent Reports: breathing room below the action grid, and don't
+       stretch a short list across the full width. */
+    #recent-row { margin-top: 24px; }
+    #recent-row .panel { max-width: 880px; }
+    .rr-table { width: 100%; border-collapse: collapse; }
+    .rr-table th {
+      text-align: left; font-size: 10px; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--text-dim);
+      font-weight: 700; padding: 0 12px 8px; border-bottom: 1px solid var(--border);
+    }
+    .rr-table td {
+      padding: 11px 12px; border-bottom: 1px solid var(--border);
+      font-size: 12.5px; vertical-align: middle;
+    }
+    .rr-table tr:last-child td { border-bottom: none; }
+    .rr-table tr:hover td { background: var(--surface-elevated); }
+    .rr-type { font-weight: 600; white-space: nowrap; }
+    .rr-when { color: var(--text-muted); white-space: nowrap; font-size: 11.5px; }
+    .rr-muted { color: var(--text-dim); }
+    .rr-acts { text-align: right; white-space: nowrap; }
+    .rr-acts a { margin-left: 6px; }
+    .rr-gen { color: var(--text-muted); font-size: 11px; font-style: italic; }
     @media (max-width: 900px) {
       .row { grid-template-columns: 1fr; }
     }
@@ -3493,27 +3574,37 @@ async function loadRecentReports() {
     if (!j.rows || !j.rows.length) { row.style.display = 'none'; return; }
     count.textContent = j.total;
     const now = Date.now();
-    const out = ['<div>'];
-    for (const x of j.rows.slice(0, 20)) {
-      const t = new Date(x.created_at).getTime();
+    const out = ['<table class="rr-table"><thead><tr>' +
+      '<th>Type</th><th>Company</th><th>Name</th><th>When</th>' +
+      '<th class="rr-acts">Report</th></tr></thead><tbody>'];
+    for (const x of j.rows.slice(0, 30)) {
+      const t = new Date(x.ts).getTime();
       const mins = Math.max(0, Math.round((now - t) / 60000));
-      const ago = mins < 60 ? mins + ' min ago'
+      const ago = mins < 1 ? 'just now'
+                : mins < 60 ? mins + ' min ago'
                 : mins < 1440 ? Math.round(mins / 60) + 'h ago'
                 : Math.round(mins / 1440) + 'd ago';
-      const base = '/api/output/view?artifact=' +
-        encodeURIComponent(x.artifact) + '&id=' + encodeURIComponent(x.id);
+      let acts;
+      if (x.id) {
+        const base = '/api/output/view?artifact=' +
+          encodeURIComponent(x.artifact) + '&id=' + encodeURIComponent(x.id);
+        acts = '<a class="btn-mini" href="' + base +
+          '" target="_blank" rel="noopener noreferrer">↗ View</a>' +
+          '<a class="btn-mini" href="' + base + '&download=1">⬇ Download</a>';
+      } else {
+        acts = '<span class="rr-gen">generating…</span>';
+      }
       out.push(
-        '<div class="cw-row">' +
-          '<div><div class="cw-nm">' + esc(x.tool) + '</div>' +
-            '<div class="cw-sub">' + esc(ago) + '</div></div>' +
-          '<div class="cw-right">' +
-            '<a class="btn-mini" href="' + base + '" target="_blank" rel="noopener noreferrer">↗ View</a>' +
-            '<a class="btn-mini" href="' + base + '&download=1">⬇ Download</a>' +
-          '</div>' +
-        '</div>'
+        '<tr><td class="rr-type">' + esc(x.type) + '</td>' +
+        '<td>' + (x.company && x.company !== '—'
+          ? esc(x.company) : '<span class="rr-muted">—</span>') + '</td>' +
+        '<td>' + (x.name
+          ? esc(x.name) : '<span class="rr-muted">—</span>') + '</td>' +
+        '<td class="rr-when">' + esc(ago) + '</td>' +
+        '<td class="rr-acts">' + acts + '</td></tr>'
       );
     }
-    out.push('</div>');
+    out.push('</tbody></table>');
     body.innerHTML = out.join('');
     row.style.display = '';
   } catch (e) {
