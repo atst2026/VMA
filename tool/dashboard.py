@@ -1615,6 +1615,8 @@ TEMPLATE = r"""
       line-height:1;transition:.14s;}
     .cw-iconbtn:hover{background:var(--bg-warm);color:var(--text);}
     .cw-iconbtn.danger:hover{color:#A33A22;}
+    .cw-iconbtn.cw-primary{color:var(--teal-dark);font-weight:700;}
+    .cw-iconbtn.cw-primary:hover{background:var(--bg-warm);color:var(--teal-dark);}
     .inline-result {
       margin-top: 12px;
       max-height: 480px;
@@ -2273,9 +2275,7 @@ TEMPLATE = r"""
           <input id="wa-company" name="current_company">
           <label for="wa-title">Current title</label>
           <input id="wa-title" name="current_title">
-          <label for="wa-linkedin">LinkedIn URL</label>
-          <input id="wa-linkedin" name="linkedin_url" placeholder="https://linkedin.com/in/...">
-          <label for="wa-cadence">Touch cadence (days)</label>
+          <label for="wa-cadence">Remind me every (days)</label>
           <input id="wa-cadence" name="touch_cadence_days" type="number" value="30" min="7" max="180">
           <label for="wa-notes">Notes</label>
           <input id="wa-notes" name="notes">
@@ -2787,11 +2787,18 @@ async function loadPulses() {
         (p.advisory ? '<div class="advisory-line">' + esc(p.advisory) + '</div>' : '')
       );
     };
+    const CAL_PH = '<span class="cal-ph">Click a month with pips for the lead detail.</span>';
     const openMonth = m => {
       const ps = buckets[m] || [];
       if (!ps.length) return;
-      body.querySelectorAll('.cal-tile').forEach(t => t.classList.remove('sel'));
       const tile = body.querySelector('.cal-tile[data-m="' + m + '"]');
+      const alreadyOpen = tile && tile.classList.contains('sel');
+      body.querySelectorAll('.cal-tile').forEach(t => t.classList.remove('sel'));
+      if (alreadyOpen) {
+        // Second click on the open month → collapse back to placeholder.
+        document.getElementById('cal-card').innerHTML = CAL_PH;
+        return;
+      }
       if (tile) tile.classList.add('sel');
       document.getElementById('cal-card').innerHTML =
         ps.map(cardFor).join('<hr class="cal-dsep">');
@@ -3101,7 +3108,7 @@ async function loadWatchList() {
             '<div class="cw-tags">' + duePill + openPill + '</div>' +
           '</div>' +
           '<div class="cw-right">' +
-            '<button class="btn-mini watch-action" data-action="touch" data-name="' + dn + '" data-company="' + dc + '">Mark contacted</button>' +
+            '<button class="cw-iconbtn cw-primary watch-action" data-action="touch" data-name="' + dn + '" data-company="' + dc + '">Mark contacted</button>' +
             '<button class="cw-iconbtn watch-action" data-action="snooze" data-name="' + dn + '" data-company="' + dc + '" title="Snooze 14 days">💤</button>' +
             '<button class="cw-iconbtn danger watch-action" data-action="remove" data-name="' + dn + '" data-company="' + dc + '" title="Remove from watch list">🗑</button>' +
           '</div>' +
