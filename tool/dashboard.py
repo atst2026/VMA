@@ -758,6 +758,7 @@ def _boot_state_hydrate():
             "tool/state/lead_status.json",
             "tool/state/report_log.json",
             "tool/state/predictor_status.json",
+            "tool/state/contact_flags.json",
         ])
     except Exception as e:
         log.warning("state hydrate skipped: %s", e)
@@ -999,6 +1000,22 @@ def api_output_clear():
     res = _delete_report_artifacts()
     report_log.clear_log()
     return jsonify({"ok": True, **res})
+
+
+@app.route("/api/contacts/flag", methods=["POST"])
+@_auth_required
+def api_contacts_flag():
+    """Sara hits a wrong contact -> flag it so the resolver skips it
+    until the underlying entry changes."""
+    from tool import contact_flags
+    data = _safe_json_body()
+    company = (data.get("company") or "").strip()
+    slot = (data.get("slot") or "").strip()
+    name = (data.get("name") or "").strip()
+    if not (company and slot and name):
+        return jsonify({"ok": False, "detail": "company, slot and name required"}), 400
+    ok = contact_flags.flag(company, slot, name)
+    return jsonify({"ok": ok})
 
 
 # ---------------------------------------------------------------------------
@@ -2392,7 +2409,17 @@ TEMPLATE = r"""
                 → Contact:
                 <strong style="color:#333;">{{ s.contact.name or s.contact.title }}</strong>{% if s.contact.name %} · {{ s.contact.title }}{% endif %}
                 · confidence {{ '%.0f' | format(s.contact.confidence * 100) }}%{% if s.contact.basis == 'jd_reporting_line' %} · from JD{% elif s.contact.basis == 'appointee' %} · named in headline{% endif %}
+                {% if s.contact.division %} · <span style="color:var(--teal-dark);font-weight:600;">{{ s.contact.division }}</span>{% endif %}
+                {% if s.contact.stale %} · <span style="color:#A04E32;" title="Roster entry hasn't been verified in 120+ days — confirm before outreach.">⚠ verify</span>{% endif %}
+                {% if s.contact.name %}
+                  · <a href="#" onclick="flagContact(event, this, '{{ s.company | e }}', '{{ s.contact.slot | e }}', '{{ s.contact.name | e }}')" style="color:var(--text-muted);text-decoration:underline;">wrong?</a>
+                {% endif %}
               </div>
+              {% if s.contact.divisional_uncertain and not s.contact.division %}
+              <div style="font-size:11px;color:#A04E32;margin:2px 0 4px;">
+                ⚠ Divisional role — verify the divisional comms leader before outreach (resolved to group-level).
+              </div>
+              {% endif %}
               {% endif %}
               <pre class="outreach-text">{{ s.outreach }}</pre>
               <div class="item-actions">
@@ -3648,6 +3675,30 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ---------- Recent Reports Generated (last 48h) ----------
+async function flagContact(e, link, company, slot, name) {
+  e.preventDefault();
+  if (!confirm('Flag ' + name + ' as the wrong contact at ' + company + '?\n' +
+               '(the resolver will skip them until the roster entry changes)')) return;
+  link.textContent = 'flagging…';
+  try {
+    const r = await fetch('/api/contacts/flag', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company, slot, name }),
+    });
+    const j = await r.json();
+    if (j.ok) {
+      link.textContent = 'flagged';
+      link.style.color = '#A04E32';
+    } else {
+      link.textContent = 'wrong?';
+      alert(j.detail || 'Could not flag.');
+    }
+  } catch (err) {
+    link.textContent = 'wrong?';
+    alert('Network error: ' + err.message);
+  }
+}
+
 async function clearRecentReports(btn) {
   if (!confirm('Permanently delete all generated reports? This frees the storage and cannot be undone.')) return;
   if (btn) { btn.disabled = true; btn.textContent = 'Clearing…'; }

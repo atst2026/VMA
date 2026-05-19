@@ -87,6 +87,13 @@ class ContactCard:
     company: str
     entries: dict[str, ContactEntry] = field(default_factory=dict)
     last_seeded_at: str = ""
+    # Optional per-company structure hint that reorders slot priority
+    # for comms vacancies. Suggested values: "" (default — CCO-led),
+    # "chro_led" (comms reports into HR), "corp_affairs_led"
+    # (Head of Corporate Affairs is the senior seat). Populated by hand
+    # for Tier-A; the resolver consults it before falling back to the
+    # generic seniority-up rule.
+    structure: str = ""
 
     def get(self, role_slot: str) -> ContactEntry | None:
         return self.entries.get(role_slot)
@@ -95,6 +102,7 @@ class ContactCard:
         return {
             "company": self.company,
             "last_seeded_at": self.last_seeded_at,
+            "structure": self.structure,
             "entries": {k: asdict(v) for k, v in self.entries.items()},
         }
 
@@ -107,6 +115,7 @@ class ContactCard:
             company=d.get("company", ""),
             entries=entries,
             last_seeded_at=d.get("last_seeded_at", ""),
+            structure=d.get("structure", ""),
         )
 
 
