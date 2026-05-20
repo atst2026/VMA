@@ -161,7 +161,7 @@ _ARTIFACT_LABEL = {
     "pitch-pack": "Pitch Pack",
     "reverse-match": "Reverse Match",
     "pre-meeting-brief": "Pre-meeting Brief",
-    "fortnightly-sweep": "14-Day Catch-up",
+    "fortnightly-sweep": "Manual Sweep",
 }
 
 
@@ -816,12 +816,11 @@ def landing():
 @app.route("/dashboard")
 @_auth_required
 def index():
-    from tool import cascade, top_three
+    from tool import cascade
     from tool.funding_round import load_funding
     predictors = load_latest_predictive()
     leads = load_latest_signals()
     cascade_events = cascade.list_active()
-    top_actions = top_three.compute_top()
     funding_events = load_funding(limit=30)
     return render_template_string(
         TEMPLATE,
@@ -829,7 +828,6 @@ def index():
         predictors=predictors,
         funding_events=funding_events,
         cascade_events=cascade_events,
-        top_actions=top_actions,
         leads_active_count=sum(1 for s in leads if s.get("status", "active") == "active"),
         leads_new_count=sum(1 for s in leads if s.get("is_new")
                             and s.get("status", "active") == "active"),
@@ -976,7 +974,7 @@ def api_sweep():
     res["artifact"] = _WORKFLOW_ARTIFACT["fortnightly-sweep.yml"]
     if res.get("ok"):
         from tool import report_log
-        report_log.add("14-Day Catch-up", "", "", res["artifact"])
+        report_log.add("Manual Sweep", "", "", res["artifact"])
     return jsonify(res)
 
 
@@ -2689,60 +2687,6 @@ TEMPLATE = r"""
     </div>
   </div>
 
-  <!-- TOP-3 ACTION SURFACE — forced-priority layer over every other
-       signal source (leads, predictors, candidates, trade-press,
-       cascades, funding). Sits above Today's Leads so it's the first
-       thing Sara sees after the daily refresh. -->
-  <div class="row row-full" id="top-three-row">
-    <div class="panel">
-      <div class="panel-header">
-        <h2>Top 3 Today</h2>
-        <span style="display:flex;align-items:center;gap:10px;">
-          <span class="refresh-sub" style="font-size:11px;">
-            Highest-leverage actions right now
-          </span>
-          <span class="count" id="top-three-count">{{ top_actions|length }}</span>
-        </span>
-      </div>
-      <div class="panel-body" id="top-three-body">
-        {% if top_actions|length == 0 %}
-          <div class="empty">
-            Nothing actionable surfaced right now. Click <strong>Daily Refresh</strong>
-            to pull this morning's brief, then check back — leads, predictors,
-            candidates, cascades, and funding signals all feed this list.
-          </div>
-        {% else %}
-          {% for a in top_actions %}
-            <div class="item top-three-item" data-action-id="{{ a.action_id }}">
-              <span class="rank">{{ loop.index }}</span>
-              <span class="title">{{ a.title }}</span>
-              <span class="badge">{{ a.type_badge }}</span>
-              {% if a.secondary %}<span class="badge">{{ a.secondary }}</span>{% endif %}
-              {% if a.why_now %}
-              <div style="font-size:12px;color:var(--text-muted);margin:4px 0 6px;">
-                {{ a.why_now }}
-              </div>
-              {% endif %}
-              {% if a.opener %}
-              <pre class="outreach-text">{{ a.opener }}</pre>
-              {% endif %}
-              <div class="item-actions">
-                {% if a.opener %}
-                <button class="btn-mini t3-copy" type="button">&#9993; Copy opener</button>
-                {% endif %}
-                {% if a.detail_url %}
-                <a class="btn-mini" href="{{ a.detail_url | safe_url }}" target="_blank">&#8599; Open detail</a>
-                {% endif %}
-                <button class="btn-mini t3-action" data-status="done" type="button">&#10003; Done</button>
-                <button class="btn-mini t3-action ghost" data-status="dismissed" type="button">&#10005; Skip</button>
-              </div>
-            </div>
-          {% endfor %}
-        {% endif %}
-      </div>
-    </div>
-  </div>
-
   <!-- LEADS + PREDICTORS -->
   <div class="row">
 
@@ -2818,7 +2762,7 @@ TEMPLATE = r"""
     <!-- PREDICTOR PIPELINE (rolling 90-day forward window, auto-populated) -->
     <div class="panel">
       <div class="panel-header">
-        <h2>Prediction Signals</h2>
+        <h2>Pre-Market Signals</h2>
         <span class="count" id="pred-count">{{ active_count }}</span>
       </div>
       <div class="filter-bar">
@@ -2918,7 +2862,7 @@ TEMPLATE = r"""
         <h2>Hire Watch</h2>
         <span style="display:flex;align-items:center;gap:10px;">
           <span class="refresh-sub" style="font-size:11px;">
-            Senior comms moves &middot; auto-parsed from morning brief
+            Dual-action any senior comms moves
           </span>
           <button type="button" class="btn-mini" id="cs-scour">Re-scan</button>
           <span class="count" id="cascade-count">{{ cascade_events|length }}</span>
@@ -2926,11 +2870,7 @@ TEMPLATE = r"""
       </div>
       <div class="panel-body" id="cascade-body">
         {% if cascade_events|length == 0 %}
-          <div class="empty">
-            No cascade-worthy moves detected in the latest brief. Senior
-            comms appointments (CCO / Director of Comms / Head of IC)
-            from today's news will surface here automatically.
-          </div>
+          <div class="empty">No moves detected in the latest brief.</div>
         {% else %}
           {% for c in cascade_events %}
             <div class="item cascade-item" data-event-id="{{ c.event_id }}">
@@ -3051,8 +2991,8 @@ TEMPLATE = r"""
 
     <!-- 14-DAY CATCH-UP -->
     <div class="panel action-card">
-      <h3>14-Day Catch-up</h3>
-      <div class="subhead">Sweep the last fortnight for any missed leads or predictors.</div>
+      <h3>Manual Sweep</h3>
+      <div class="subhead">Sweep for potential missed leads or pre-market signals.</div>
       <form id="sweep-form" onsubmit="dispatch(event, 'sweep-form', '/api/dispatch/sweep')">
         <label for="sw-days">Window (days)</label>
         <input id="sw-days" name="window_days" type="number" min="1" max="60" value="14" required>
@@ -3108,8 +3048,6 @@ TEMPLATE = r"""
           <input id="wa-company" name="current_company">
           <label for="wa-title">Current title</label>
           <input id="wa-title" name="current_title">
-          <label for="wa-tenure">Joined current role (YYYY-MM-DD, optional)</label>
-          <input id="wa-tenure" name="tenure_start" type="date" placeholder="2022-09-01">
           <label for="wa-cadence">Remind me every (days)</label>
           <input id="wa-cadence" name="touch_cadence_days" type="number" value="30" min="7" max="180">
           <label for="wa-notes">Notes</label>
@@ -4082,118 +4020,6 @@ document.addEventListener('DOMContentLoaded', () => {
   loadWatchList();
   loadRecentReports();
 });
-
-// ---------- Top-3 Action Surface ----------
-(function(){
-  const root = document.getElementById('top-three-body');
-  if (!root) return;
-
-  root.addEventListener('click', async (ev) => {
-    // Copy opener
-    const copyBtn = ev.target.closest('.t3-copy');
-    if (copyBtn) {
-      const item = copyBtn.closest('.top-three-item');
-      const txt = item && item.querySelector('.outreach-text');
-      if (txt) {
-        try {
-          await navigator.clipboard.writeText(txt.textContent);
-          const orig = copyBtn.textContent;
-          copyBtn.textContent = '✓ Copied';
-          setTimeout(() => { copyBtn.textContent = orig; }, 1200);
-        } catch (e) { /* clipboard blocked - silent */ }
-      }
-      return;
-    }
-
-    // Done / Skip — both clear the row and persist user state so the
-    // same action doesn't reappear after a Top-3 recompute.
-    const actBtn = ev.target.closest('.t3-action');
-    if (actBtn) {
-      const item = actBtn.closest('.top-three-item');
-      const id = item && item.getAttribute('data-action-id');
-      const status = actBtn.getAttribute('data-status');
-      if (!id || !status) return;
-      actBtn.disabled = true;
-      try {
-        const r = await fetch('/api/top-three/mark', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action_id: id, status: status }),
-        });
-        const j = await r.json();
-        if (j.ok) {
-          item.style.transition = 'opacity .2s ease';
-          item.style.opacity = '0';
-          setTimeout(() => {
-            item.remove();
-            // After actioning one, refresh the panel so the next-best
-            // action from the queue can rotate in — that's the whole
-            // point of the surface.
-            refreshTopThree();
-          }, 200);
-        } else {
-          actBtn.disabled = false;
-          alert(j.detail || 'Could not update.');
-        }
-      } catch (e) {
-        actBtn.disabled = false;
-        alert('Network error: ' + e.message);
-      }
-    }
-  });
-
-  async function refreshTopThree() {
-    try {
-      const r = await fetch('/api/top-three/list');
-      const j = await r.json();
-      const actions = j.actions || [];
-      const counter = document.getElementById('top-three-count');
-      if (counter) counter.textContent = actions.length;
-      if (actions.length === 0) {
-        root.innerHTML = '<div class="empty">Nothing actionable surfaced right now. Click <strong>Daily Refresh</strong> to pull this morning\'s brief, then check back.</div>';
-        return;
-      }
-      const html = ['<div>'];
-      actions.forEach((a, i) => {
-        const idAttr = a.action_id;
-        const sec = a.secondary
-          ? '<span class="badge">' + esc(a.secondary) + '</span>'
-          : '';
-        const why = a.why_now
-          ? '<div style="font-size:12px;color:var(--text-muted);margin:4px 0 6px;">' + esc(a.why_now) + '</div>'
-          : '';
-        const opener = a.opener
-          ? '<pre class="outreach-text">' + esc(a.opener) + '</pre>'
-          : '';
-        const copyBtn = a.opener
-          ? '<button class="btn-mini t3-copy" type="button">✉ Copy opener</button>'
-          : '';
-        const detail = a.detail_url
-          ? '<a class="btn-mini" href="' + esc(a.detail_url) + '" target="_blank">↗ Open detail</a>'
-          : '';
-        html.push(
-          '<div class="item top-three-item" data-action-id="' + esc(idAttr) + '">' +
-            '<span class="rank">' + (i + 1) + '</span>' +
-            '<span class="title">' + esc(a.title) + '</span>' +
-            '<span class="badge">' + esc(a.type_badge) + '</span>' +
-            sec +
-            why +
-            opener +
-            '<div class="item-actions">' +
-              copyBtn + detail +
-              '<button class="btn-mini t3-action" data-status="done" type="button">✓ Done</button>' +
-              '<button class="btn-mini t3-action ghost" data-status="dismissed" type="button">✕ Skip</button>' +
-            '</div>' +
-          '</div>'
-        );
-      });
-      html.push('</div>');
-      root.innerHTML = html.join('');
-    } catch (e) {
-      /* don't blow up the panel on a transient refresh failure */
-    }
-  }
-})();
 
 // ---------- Cascade-Hire Watch ----------
 (function(){
