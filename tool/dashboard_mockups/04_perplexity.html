@@ -1,0 +1,198 @@
+<!doctype html>
+<!-- MOCKUP 4 · PERPLEXITY
+     Dark navy background, teal accent, search-bar centered.
+     Today's brief presented as an "answer" with numbered citations,
+     follow-up suggestion chips, source pill grid. Modern AI-search
+     assistant feel. -->
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VMA — Perplexity style</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --bg:#191a1f; --bg-2:#1f2128; --bg-3:#252830;
+    --text:#f5f5f5; --muted:#9a9ba3; --dim:#6c6e78;
+    --border:rgba(255,255,255,.08); --accent:#20b8cd; --accent-soft:rgba(32,184,205,.14);
+  }
+  body{
+    font-family:"Inter",sans-serif;background:var(--bg);color:var(--text);
+    font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;
+  }
+
+  .layout{display:grid;grid-template-columns:220px 1fr;min-height:100vh;}
+
+  /* === Sidebar === */
+  .sidebar{background:var(--bg-2);border-right:1px solid var(--border);padding:20px 14px;display:flex;flex-direction:column;gap:4px;}
+  .brand{display:flex;align-items:center;gap:10px;padding:6px 8px;margin-bottom:18px;}
+  .brand .logo{
+    width:28px;height:28px;border-radius:8px;
+    background:linear-gradient(135deg,var(--accent),#1a8b9c);
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-weight:700;font-size:14px;
+  }
+  .brand-name{font-weight:600;font-size:15.5px;letter-spacing:-0.01em;}
+  .nav-item{
+    padding:8px 10px;border-radius:6px;font-size:13px;color:var(--muted);
+    cursor:pointer;display:flex;align-items:center;gap:9px;
+  }
+  .nav-item:hover{background:rgba(255,255,255,.04);color:var(--text);}
+  .nav-item.active{background:var(--accent-soft);color:var(--accent);}
+  .nav-item .ic{width:14px;text-align:center;}
+
+  /* === Main === */
+  .main{padding:32px 36px 60px;max-width:1100px;overflow-x:hidden;}
+  .crumb{font:500 11.5px/1 "IBM Plex Mono",monospace;letter-spacing:.06em;color:var(--dim);margin-bottom:18px;}
+
+  /* === Big "query" question at top === */
+  .query-block{margin-bottom:32px;}
+  .query{
+    font-size:28px;font-weight:500;letter-spacing:-0.01em;line-height:1.3;
+    color:var(--text);
+  }
+  .query .accent{color:var(--accent);}
+
+  /* === Answer card === */
+  .answer-card{
+    background:var(--bg-2);border:1px solid var(--border);border-radius:14px;
+    padding:26px 28px;margin-bottom:18px;
+  }
+  .answer-tab{
+    display:inline-flex;gap:6px;align-items:center;font:500 11px/1 "IBM Plex Mono",monospace;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:14px;
+  }
+  .answer-tab .pulse{
+    width:7px;height:7px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 8px var(--accent);
+  }
+  .answer p{margin-bottom:14px;font-size:15px;color:#e1e1e3;}
+  .cite{
+    display:inline-block;background:var(--bg-3);color:var(--accent);
+    font:500 11px/1 "IBM Plex Mono",monospace;padding:2px 7px;border-radius:6px;
+    border:1px solid var(--border);margin-left:2px;cursor:pointer;
+  }
+  .answer .lead-name{color:var(--accent);font-weight:600;}
+
+  /* === Source pills === */
+  .sources-head{
+    margin-top:10px;margin-bottom:10px;font:500 11px/1 "IBM Plex Mono",monospace;
+    letter-spacing:.14em;color:var(--muted);text-transform:uppercase;
+  }
+  .sources{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:8px;}
+  .source-card{
+    background:var(--bg-3);border:1px solid var(--border);border-radius:10px;padding:10px 12px;
+    font-size:11.5px;color:var(--muted);
+  }
+  .source-card .num{
+    display:inline-block;background:var(--bg-2);color:var(--accent);
+    font:500 11px/1 "IBM Plex Mono",monospace;padding:2px 7px;border-radius:5px;margin-right:6px;
+  }
+  .source-card .src{color:var(--text);font-size:12.5px;display:block;margin-top:4px;font-weight:500;}
+
+  /* === Follow-up chips === */
+  .followups{margin-top:24px;}
+  .followups-head{
+    font:500 11px/1 "IBM Plex Mono",monospace;letter-spacing:.14em;color:var(--muted);
+    text-transform:uppercase;margin-bottom:10px;
+  }
+  .followup-list{display:flex;flex-direction:column;gap:8px;max-width:560px;}
+  .followup{
+    background:var(--bg-2);border:1px solid var(--border);border-radius:10px;
+    padding:11px 14px;font-size:14px;color:var(--text);cursor:pointer;
+    display:flex;justify-content:space-between;align-items:center;
+    transition:border-color .12s,background .12s;
+  }
+  .followup:hover{border-color:var(--accent);background:rgba(32,184,205,.05);}
+  .followup .arr{color:var(--accent);}
+
+  /* === Search bar at bottom (Perplexity sticky) === */
+  .composer{position:sticky;bottom:24px;margin-top:32px;}
+  .composer-box{
+    background:var(--bg-2);border:1px solid var(--border);border-radius:14px;
+    padding:14px 18px;display:flex;align-items:center;gap:12px;
+  }
+  .composer-box input{
+    flex:1;border:none;background:transparent;font:400 14px/1 "Inter",sans-serif;
+    outline:none;color:var(--text);
+  }
+  .composer-box input::placeholder{color:var(--dim);}
+  .composer-box .send{
+    background:var(--accent);color:#0d161a;border:none;border-radius:9999px;
+    padding:8px 16px;font-weight:600;font-size:13px;cursor:pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <aside class="sidebar">
+    <div class="brand"><div class="logo">V</div><div class="brand-name">VMA Intel</div></div>
+    <div class="nav-item active"><span class="ic">●</span>Today's brief</div>
+    <div class="nav-item"><span class="ic">▤</span>Library</div>
+    <div class="nav-item"><span class="ic">⌕</span>Discover</div>
+    <div class="nav-item"><span class="ic">★</span>Candidate watch</div>
+    <div class="nav-item"><span class="ic">⚙</span>Sources</div>
+    <div style="margin-top:auto;font:500 10.5px/1 'IBM Plex Mono',monospace;color:var(--dim);padding:8px 10px;">
+      247 signals · 11 sources · 8m ago
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <div class="crumb">TODAY'S BRIEF / 20 MAY 2026</div>
+
+    <div class="query-block">
+      <div class="query">What three calls should I make <span class="accent">before lunch</span>?</div>
+    </div>
+
+    <div class="answer-card">
+      <div class="answer-tab"><span class="pulse"></span>Answer</div>
+      <div class="answer">
+        <p>
+          Three opportunities rose above today's <strong>247 signals</strong>, each in a different window of urgency.
+        </p>
+        <p>
+          <span class="lead-name">NatWest</span> is your first call. The Chief Communications Officer seat was vacated last night when Jane Smith announced her move to Lloyds<span class="cite">[1]</span>. Replacement-search briefs at this level move within 48 hours; if you wait until tomorrow, three competitors will already be in conversation with their HR Director and Chair<span class="cite">[2]</span>.
+        </p>
+        <p>
+          <span class="lead-name">Standard Chartered</span> is the pre-position play. Their Director of Corporate Communications has been in seat 26 months — historically, your sector's tenure cliff sits at 28–32 months<span class="cite">[3]</span>, and three peer firms have already moved their equivalent this year<span class="cite">[4]</span>. Don't pitch — build the relationship now; the brief lands Q3.
+        </p>
+        <p>
+          <span class="lead-name">Octopus Energy</span> closed a £140m Series F last week<span class="cite">[5]</span>. Scale-up funding rounds of this size are followed by a senior in-house comms hire ~6 months later on average<span class="cite">[6]</span>. You have a 5-month head start on every recruiter who only reacts when the job is advertised.
+        </p>
+      </div>
+
+      <div class="sources-head">Sources · 247 signals synthesised</div>
+      <div class="sources">
+        <div class="source-card"><span class="num">1</span>NatWest CCO departure<span class="src">sky.com · 1h ago</span></div>
+        <div class="source-card"><span class="num">2</span>UK comms-recruiter conversation patterns<span class="src">internal · placement data</span></div>
+        <div class="source-card"><span class="num">3</span>Sector tenure benchmark<span class="src">vma analysis · 2026</span></div>
+        <div class="source-card"><span class="num">4</span>FS sector cascade pattern<span class="src">internal · cascade detector</span></div>
+        <div class="source-card"><span class="num">5</span>Octopus Series F closes<span class="src">ft.com · 7d ago</span></div>
+        <div class="source-card"><span class="num">6</span>Funding → comms-hire window<span class="src">internal · funding model</span></div>
+      </div>
+    </div>
+
+    <div class="followups">
+      <div class="followups-head">Related</div>
+      <div class="followup-list">
+        <div class="followup"><span>Show me the prediction signals firing next quarter</span><span class="arr">→</span></div>
+        <div class="followup"><span>Which candidates on my watch list are overdue for a touch?</span><span class="arr">→</span></div>
+        <div class="followup"><span>What's coming up in the BD Calendar this month?</span><span class="arr">→</span></div>
+        <div class="followup"><span>Build a Pitch Pack for one of these accounts</span><span class="arr">→</span></div>
+      </div>
+    </div>
+
+    <div class="composer">
+      <div class="composer-box">
+        <input placeholder="Ask anything — 'Who's hitting tenure cliff in water utilities?', 'Pre-meeting for Severn Trent', '14-day catch-up'…">
+        <button class="send">Ask →</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

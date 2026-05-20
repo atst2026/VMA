@@ -1,0 +1,279 @@
+<!doctype html>
+<!-- MOCKUP 5 · LINEAR / RAYCAST
+     Dim dark background, glassmorphic panels with subtle gradient
+     borders, vibrant purple-pink accents, monospace command-style
+     shortcut chips, glow effects. The keyboard-first power-user
+     aesthetic of Linear, Cursor and Raycast applied to a recruitment
+     intelligence dashboard. -->
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VMA — Linear / Raycast style</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --bg:#08090a; --bg-2:#0f1011; --bg-3:#16181c;
+    --text:#f1f1f4; --muted:#8a8f98; --dim:#5a5e68;
+    --border:rgba(255,255,255,.06); --border-hi:rgba(255,255,255,.12);
+    --indigo:#5e6ad2; --pink:#ff7eb6; --cyan:#22d3ee;
+  }
+  body{
+    font-family:"Inter",sans-serif;background:var(--bg);color:var(--text);
+    font-size:13.5px;line-height:1.55;-webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(circle at 20% 0%, rgba(94,106,210,.10), transparent 40%),
+      radial-gradient(circle at 80% 20%, rgba(255,126,182,.07), transparent 35%),
+      radial-gradient(circle at 50% 80%, rgba(34,211,238,.05), transparent 40%);
+    background-attachment:fixed;
+  }
+
+  .layout{display:grid;grid-template-columns:230px 1fr;min-height:100vh;}
+
+  /* === Sidebar === */
+  .sidebar{
+    padding:18px 12px;border-right:1px solid var(--border);
+    background:rgba(15,16,17,.6);backdrop-filter:blur(20px);
+    display:flex;flex-direction:column;gap:2px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;padding:6px 8px;margin-bottom:14px;}
+  .brand .logo{
+    width:26px;height:26px;border-radius:7px;
+    background:linear-gradient(135deg,var(--indigo) 0%,var(--pink) 100%);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;
+    box-shadow:0 0 16px rgba(94,106,210,.4);
+  }
+  .brand-name{font-weight:600;font-size:14.5px;letter-spacing:-0.01em;}
+
+  .ws-pick{
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--bg-3);border:1px solid var(--border);border-radius:7px;
+    padding:7px 10px;font-size:12.5px;font-weight:500;color:var(--text);
+    margin-bottom:14px;cursor:pointer;
+  }
+  .ws-pick .arr{color:var(--muted);}
+  .nav-sec{
+    font:500 10.5px/1 "Inter",sans-serif;letter-spacing:.10em;text-transform:uppercase;
+    color:var(--dim);padding:8px 10px 4px;
+  }
+  .nav-item{
+    padding:6px 10px;border-radius:6px;font-size:13px;color:var(--muted);
+    cursor:pointer;display:flex;align-items:center;justify-content:space-between;
+  }
+  .nav-item:hover{background:rgba(255,255,255,.04);color:var(--text);}
+  .nav-item.active{background:rgba(94,106,210,.12);color:#bfc6ff;}
+  .nav-item .kb{
+    font:500 10.5px/1 "JetBrains Mono",monospace;color:var(--dim);
+    background:var(--bg-3);border:1px solid var(--border);border-radius:4px;padding:2px 5px;
+  }
+
+  /* === Main === */
+  .main{padding:0;display:flex;flex-direction:column;}
+
+  /* === Top bar with command-K bar === */
+  .topbar{
+    padding:14px 24px;border-bottom:1px solid var(--border);
+    background:rgba(8,9,10,.4);backdrop-filter:blur(12px);
+    display:flex;align-items:center;justify-content:space-between;gap:18px;
+    position:sticky;top:0;z-index:10;
+  }
+  .crumb{font:500 12px/1 "Inter",sans-serif;color:var(--muted);}
+  .crumb .here{color:var(--text);}
+  .cmdk{
+    flex:1;max-width:380px;background:var(--bg-3);border:1px solid var(--border);border-radius:8px;
+    padding:7px 12px;display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12.5px;cursor:pointer;
+  }
+  .cmdk:hover{border-color:var(--border-hi);}
+  .cmdk .kb{
+    font:500 10.5px/1 "JetBrains Mono",monospace;color:var(--muted);
+    background:rgba(255,255,255,.05);border:1px solid var(--border);
+    border-radius:4px;padding:2px 6px;margin-left:auto;
+  }
+  .live{
+    display:inline-flex;align-items:center;gap:7px;font:500 11px/1 "JetBrains Mono",monospace;
+    color:var(--muted);letter-spacing:.06em;text-transform:uppercase;
+  }
+  .live .pulse{
+    width:7px;height:7px;border-radius:50%;background:var(--cyan);
+    box-shadow:0 0 10px var(--cyan);
+  }
+
+  /* === Body === */
+  .body{padding:28px 28px 60px;max-width:1100px;}
+  h1.page{
+    font-size:22px;font-weight:600;letter-spacing:-0.01em;margin-bottom:4px;
+  }
+  .page-sub{color:var(--muted);font-size:13px;margin-bottom:24px;}
+
+  /* === Glassmorphic panels === */
+  .panel{
+    background:rgba(22,24,28,.6);backdrop-filter:blur(20px);
+    border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:14px;
+    position:relative;overflow:hidden;
+  }
+  .panel::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);
+  }
+  .panel h2{
+    font-size:11px;font-weight:600;letter-spacing:.12em;color:var(--muted);
+    text-transform:uppercase;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;
+  }
+  .panel h2 .count{
+    background:rgba(94,106,210,.15);color:#bfc6ff;font-weight:600;letter-spacing:0;
+    padding:2px 8px;border-radius:9999px;font-size:11px;text-transform:none;
+  }
+
+  /* === Top-3 glow hero === */
+  .top3{
+    background:linear-gradient(135deg,rgba(94,106,210,.10),rgba(255,126,182,.04));
+    border:1px solid rgba(94,106,210,.25);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 0 40px rgba(94,106,210,.10);
+  }
+  .top3 h2{color:#bfc6ff;}
+  .top3-list{display:flex;flex-direction:column;gap:8px;}
+  .t3-row{
+    display:grid;grid-template-columns:28px 1fr auto;gap:12px;align-items:center;
+    padding:10px 12px;border-radius:8px;cursor:pointer;
+    transition:background .12s;
+  }
+  .t3-row:hover{background:rgba(255,255,255,.03);}
+  .t3-row .num{
+    font:500 11px/1 "JetBrains Mono",monospace;color:var(--muted);
+    background:rgba(255,255,255,.04);border:1px solid var(--border);
+    border-radius:5px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;
+  }
+  .t3-row .who{font-weight:600;font-size:14px;}
+  .t3-row .why{color:var(--muted);font-size:12px;margin-top:2px;}
+  .t3-row .kb{
+    font:500 10.5px/1 "JetBrains Mono",monospace;color:var(--muted);
+    background:var(--bg-3);border:1px solid var(--border);border-radius:5px;padding:4px 7px;
+  }
+
+  /* === Generic rows === */
+  .item{padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;}
+  .item:last-child{border-bottom:none;}
+  .item strong{font-weight:600;}
+  .item .meta{color:var(--muted);font-size:11.5px;margin-top:2px;}
+  .chip{
+    display:inline-block;padding:2px 8px;font-size:10.5px;font-weight:500;border-radius:6px;
+    background:rgba(94,106,210,.15);color:#bfc6ff;
+    text-transform:uppercase;letter-spacing:.04em;
+  }
+  .chip.amber{background:rgba(232,156,74,.16);color:#f3c98a;}
+  .chip.cyan{background:rgba(34,211,238,.13);color:#7fdfee;}
+  .chip.pink{background:rgba(255,126,182,.15);color:#ffb0d2;}
+
+  .row-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">V</div><div class="brand-name">VMA Intel</div>
+    </div>
+
+    <div class="ws-pick">Sara's workspace <span class="arr">⌄</span></div>
+
+    <div class="nav-sec">Today</div>
+    <div class="nav-item active">● Brief <span class="kb">G T</span></div>
+    <div class="nav-item">Top 3 <span class="kb">G 3</span></div>
+    <div class="nav-item">Hire Watch <span class="kb">G H</span></div>
+
+    <div class="nav-sec">Pipeline</div>
+    <div class="nav-item">Leads <span class="kb">G L</span></div>
+    <div class="nav-item">Predictions <span class="kb">G P</span></div>
+    <div class="nav-item">BD Calendar <span class="kb">G C</span></div>
+
+    <div class="nav-sec">Candidates</div>
+    <div class="nav-item">Watch list <span class="kb">G W</span></div>
+    <div class="nav-item">Reverse Match <span class="kb">G R</span></div>
+
+    <div class="nav-sec">Tools</div>
+    <div class="nav-item">Pre-meeting Brief</div>
+    <div class="nav-item">Pitch Pack</div>
+    <div class="nav-item">14-Day Catch-up</div>
+
+    <div style="margin-top:auto;padding:10px;font:500 10.5px/1 'JetBrains Mono',monospace;color:var(--dim);">
+      build a4e80d0 · 247 signals
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <div class="topbar">
+      <div class="crumb">Sara · Workspace / <span class="here">Today's brief</span></div>
+      <div class="cmdk">⌕ Find anything, ask anything… <span class="kb">⌘ K</span></div>
+      <div class="live"><span class="pulse"></span>Refreshed 8m ago</div>
+    </div>
+
+    <div class="body">
+
+      <h1 class="page">Today</h1>
+      <div class="page-sub">Tuesday 20 May · 247 signals synthesised · 11 leads, 8 predictions, 3 cascades</div>
+
+      <div class="panel top3">
+        <h2>Top 3 actions <span class="count">3</span></h2>
+        <div class="top3-list">
+          <div class="t3-row">
+            <div class="num">1</div>
+            <div>
+              <div class="who">NatWest</div>
+              <div class="why">CCO seat just vacated · call HR + Chair today · est. fee £80–110k</div>
+            </div>
+            <div class="kb">↵ Open</div>
+          </div>
+          <div class="t3-row">
+            <div class="num">2</div>
+            <div>
+              <div class="who">Standard Chartered</div>
+              <div class="why">Director of Comms at 26mo cliff · pre-position now, brief lands Q3</div>
+            </div>
+            <div class="kb">↵ Open</div>
+          </div>
+          <div class="t3-row">
+            <div class="num">3</div>
+            <div>
+              <div class="who">Octopus Energy</div>
+              <div class="why">£140m Series F closed · 6mo window opens to senior comms hire</div>
+            </div>
+            <div class="kb">↵ Open</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="panel">
+          <h2>Today's Leads <span class="count">11</span></h2>
+          <div class="item"><div><strong>NatWest</strong> · CCO seat vacated<div class="meta">Sky News · 1h</div></div><span class="chip pink">new</span></div>
+          <div class="item"><div><strong>Severn Trent</strong> · Results miss<div class="meta">RNS · 3h</div></div><span class="chip">active</span></div>
+          <div class="item"><div><strong>BP</strong> · CFO change<div class="meta">Reuters · 5h</div></div><span class="chip">active</span></div>
+        </div>
+        <div class="panel">
+          <h2>Hire Watch <span class="count">3</span></h2>
+          <div class="item"><div><strong>Jane Smith</strong> · Lloyds → NatWest<div class="meta">CCO move · 2 follow-ups</div></div><span class="chip cyan">cascade</span></div>
+          <div class="item"><div><strong>Ravi Patel</strong> · Centrica<div class="meta">Director of Comms appointed</div></div><span class="chip cyan">cascade</span></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Prediction Signals <span class="count">8</span></h2>
+        <div class="item"><div><strong>Standard Chartered</strong> · Director of Corp Comms<div class="meta">26-month tenure cliff · sector cascade exposure</div></div><span class="chip">68%</span></div>
+        <div class="item"><div><strong>Octopus Energy</strong> · Head of External Comms<div class="meta">£140m Series F · 6mo forward window</div></div><span class="chip amber">funding</span></div>
+      </div>
+
+      <div class="panel">
+        <h2>BD Calendar <span class="count">6 + 8</span></h2>
+        <div class="item"><div><strong>FCA Consumer Duty</strong> · Apr–Jul<div class="meta">High confidence · 64d left in window</div></div><span class="chip">live</span></div>
+        <div class="item"><div><strong>PRWeek Awards UK</strong> · 22 Oct<div class="meta">London · in 155d · external comms</div></div><span class="chip amber">event</span></div>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

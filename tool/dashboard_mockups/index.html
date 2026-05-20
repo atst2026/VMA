@@ -2,68 +2,83 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VMA — Dashboard Layout Mockups</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+<title>VMA — Dashboard Mockups (AI-product directions)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:"Inter",sans-serif;background:#f7f9fc;color:#1F1F1F;font-size:14px;line-height:1.6;padding:48px 32px;}
-  .wrap{max-width:880px;margin:0 auto;}
-  h1{font-size:26px;font-weight:700;letter-spacing:-0.01em;margin-bottom:6px;}
-  .sub{color:#5F6368;font-size:13px;margin-bottom:28px;}
-  .card{background:#fff;border:1px solid #e6ebf2;border-radius:12px;padding:22px 24px;margin-bottom:14px;display:grid;grid-template-columns:36px 1fr auto;gap:18px;align-items:center;text-decoration:none;color:inherit;transition:transform .12s,border-color .12s;}
-  .card:hover{transform:translateY(-1px);border-color:#3A8FA4;}
-  .card .num{font-size:24px;font-weight:200;color:#ccd5df;}
-  .card h2{font-size:15px;font-weight:700;margin-bottom:3px;}
-  .card .why{color:#5F6368;font-size:12.5px;}
-  .card .arrow{color:#5F6368;font-size:20px;}
+  body{font-family:"Inter",sans-serif;background:#f7f9fc;color:#1F1F1F;font-size:14px;line-height:1.6;padding:48px 28px;}
+  .wrap{max-width:920px;margin:0 auto;}
+  h1{font-size:30px;font-weight:300;letter-spacing:-0.015em;margin-bottom:6px;}
+  h1 strong{font-weight:600;}
+  .sub{color:#5F6368;font-size:14px;margin-bottom:32px;max-width:640px;}
+
+  .card{
+    background:#fff;border:1px solid #e6ebf2;border-radius:14px;padding:24px 26px;margin-bottom:14px;
+    display:grid;grid-template-columns:44px 1fr auto;gap:20px;align-items:center;
+    text-decoration:none;color:inherit;transition:transform .12s,border-color .12s,box-shadow .12s;
+  }
+  .card:hover{transform:translateY(-2px);border-color:#3A8FA4;box-shadow:0 8px 20px rgba(31,55,124,.06);}
+  .card .num{font-size:22px;font-weight:200;color:#ccd5df;}
+  .card h2{font-size:16px;font-weight:600;margin-bottom:4px;}
+  .card .badge{
+    display:inline-block;font:500 10px/1 "JetBrains Mono",monospace;letter-spacing:.14em;
+    text-transform:uppercase;padding:2px 8px;border-radius:9999px;margin-right:8px;
+  }
+  .badge.light{background:#e8eff6;color:#3A8FA4;}
+  .badge.cream{background:#f5ede0;color:#a25a3a;}
+  .badge.green{background:#e7f3ee;color:#10a37f;}
+  .badge.dark{background:#1f2128;color:#7fdfee;}
+  .badge.indigo{background:#e8ebfa;color:#5e6ad2;}
+  .card .why{color:#5F6368;font-size:13px;}
+  .card .arrow{color:#5F6368;font-size:22px;}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Dashboard layout mockups</h1>
-  <div class="sub">Five different ways to arrange the same panels. Pick one, or take pieces of several. None are wired up — these are visualisation only.</div>
+  <h1>Dashboard layout mockups · <strong>AI-product directions</strong></h1>
+  <div class="sub">Five layouts modelled on real AI products — each is a self-contained HTML file showing how the VMA dashboard would feel in that aesthetic. None are wired up; these are visual exploration so you can pick a direction.</div>
 
-  <a class="card" href="01_sticky_sidebar.html">
+  <a class="card" href="01_gemini_3.5.html">
     <div class="num">1</div>
     <div>
-      <h2>Sticky Sidebar Workspace</h2>
-      <div class="why">Permanent left rail (260px) with section nav, mini Top-3 always visible, Daily Refresh pinned. Main column scrolls. Linear / Notion feel.</div>
+      <h2><span class="badge light">Gemini 3.5</span> The current direction, taken further</h2>
+      <div class="why">Pale-blue radial halo hero with the day's brief written as a single sentence ("you have three calls worth making before lunch"). Top-3 cards on the halo, clean white panels below. Pulse-green live dot, JetBrains Mono labels, generous whitespace.</div>
     </div>
     <div class="arrow">→</div>
   </a>
 
-  <a class="card" href="02_tabbed_sections.html">
+  <a class="card" href="02_claude_anthropic.html">
     <div class="num">2</div>
     <div>
-      <h2>Tabbed Sections</h2>
-      <div class="why">Five top tabs: Today / Pipeline / Candidates / Tools / Archive. Each shows only its 3–4 relevant panels. Big Top-3 pinned above every tab. Dramatically less on screen at once.</div>
+      <h2><span class="badge cream">Claude / Anthropic</span> Reading-led, narrative</h2>
+      <div class="why">Warm cream background, serif headings, document-like single-column reading layout. Each lead reads as a paragraph the AI has written for you, not a row in a table. Inline action buttons embedded in the prose.</div>
     </div>
     <div class="arrow">→</div>
   </a>
 
-  <a class="card" href="03_accordion_hierarchy.html">
+  <a class="card" href="03_chatgpt_openai.html">
     <div class="num">3</div>
     <div>
-      <h2>Accordion Hierarchy</h2>
-      <div class="why">Minimalist. Huge Top-3 hero at the top, everything else collapsed by default. Sara expands what she wants. Maximum focus, zero clutter. Apple Reminders / Things 3 feel.</div>
+      <h2><span class="badge green">ChatGPT / OpenAI</span> Conversation thread</h2>
+      <div class="why">Left sidebar of past briefs (chat-history style). Main column is a back-and-forth: Sara asks "what's worth my time today?" and the AI replies with numbered intel + action chips. Composer at the bottom for ad-hoc queries.</div>
     </div>
     <div class="arrow">→</div>
   </a>
 
-  <a class="card" href="04_bento_grid.html">
+  <a class="card" href="04_perplexity.html">
     <div class="num">4</div>
     <div>
-      <h2>Bento Grid</h2>
-      <div class="why">12-column asymmetric grid. Top-3 takes a wide hero block + two coloured stat tiles. Signal panels in equal-ish squares below. Action tools in a 4-card band at the bottom. Apple product-page energy.</div>
+      <h2><span class="badge dark">Perplexity</span> Dark search + cited answer</h2>
+      <div class="why">Dark navy background, cyan accents. Today's brief framed as a question ("what three calls before lunch?") with an answer card carrying numbered citations and a grid of source pills. Follow-up suggestion chips below; sticky search bar at the bottom.</div>
     </div>
     <div class="arrow">→</div>
   </a>
 
-  <a class="card" href="05_action_rail_feed.html">
+  <a class="card" href="05_linear_raycast.html">
     <div class="num">5</div>
     <div>
-      <h2>Action Rail + Scroll Feed</h2>
-      <div class="why">Right-side sticky rail (320px) with Top-3 + one-tap quick tools always pinned. Main column is a vertical scroll-feed of signal panels. Works exactly like a news feed.</div>
+      <h2><span class="badge indigo">Linear / Raycast</span> Dim, glassmorphic, keyboard-first</h2>
+      <div class="why">Near-black background with soft indigo/pink/cyan gradient glows. Glassmorphic frosted panels. Left sidebar with keyboard-shortcut chips (G T / G L / G P). ⌘K command bar across the top. Top-3 in a glowing indigo-tinted hero card.</div>
     </div>
     <div class="arrow">→</div>
   </a>
