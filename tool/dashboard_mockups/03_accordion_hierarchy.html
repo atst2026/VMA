@@ -1,0 +1,156 @@
+<!doctype html>
+<!-- MOCKUP 3: ACCORDION HIERARCHY
+     Minimalist. Top-3 huge at top, always visible. Everything below
+     collapsed by default — Sara expands what she wants to see.
+     Inspires: Apple Reminders, Things 3, focus apps. Maximum signal
+     density per screen-inch when collapsed; zero visual clutter. -->
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VMA — Mockup 3: Accordion</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --bg:#f7f9fc; --panel:#fff; --text:#1F1F1F; --muted:#5F6368;
+    --border:#e6ebf2; --accent:#3A8FA4; --green:#9FD181;
+  }
+  body{font-family:"Inter",sans-serif;background:var(--bg);color:var(--text);font-size:13.5px;line-height:1.5;}
+
+  .topbar{background:transparent;padding:24px 32px;display:flex;align-items:center;justify-content:space-between;max-width:1100px;margin:0 auto;}
+  .brand{display:flex;align-items:baseline;gap:4px;font-family:Arial;}
+  .brand .v{font-weight:800;font-size:22px;letter-spacing:.06em;}
+  .brand .g{font-weight:300;font-size:22px;letter-spacing:.30em;color:#444;}
+  .refresh-pill{background:#1F1F1F;color:#fff;border:none;border-radius:9999px;padding:10px 18px;font:600 11px/1 "JetBrains Mono",monospace;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;}
+
+  .container{max-width:1100px;margin:0 auto;padding:20px 32px 60px;}
+
+  /* TOP-3: huge, dominant, always open */
+  .top3{margin:30px 0 50px;}
+  .top3 .head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px;}
+  .top3 .head h1{font-size:28px;font-weight:700;letter-spacing:-0.02em;}
+  .top3 .head .sub{color:var(--muted);font-size:12.5px;}
+  .top3-list{display:flex;flex-direction:column;gap:14px;}
+  .top3-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:22px 24px;display:grid;grid-template-columns:48px 1fr auto;gap:18px;align-items:center;}
+  .top3-card .num{font-size:32px;font-weight:200;color:#ccd5df;line-height:1;}
+  .top3-card .who{font-size:18px;font-weight:700;margin-bottom:4px;}
+  .top3-card .why{color:var(--muted);font-size:13px;}
+  .top3-card .actions button{background:var(--accent);color:#fff;border:none;border-radius:9999px;padding:9px 18px;font-size:11.5px;font-weight:600;cursor:pointer;margin-left:6px;}
+  .top3-card .actions button.ghost{background:transparent;color:var(--muted);border:1px solid var(--border);}
+
+  /* Accordion sections */
+  details{background:#fff;border:1px solid var(--border);border-radius:12px;margin-bottom:10px;}
+  details > summary{padding:16px 22px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;font-size:13.5px;font-weight:600;}
+  details > summary::-webkit-details-marker{display:none;}
+  details > summary::after{content:"›";color:var(--muted);font-size:18px;transition:transform .2s;}
+  details[open] > summary::after{transform:rotate(90deg);}
+  details > summary .count{background:#eaf2f6;color:var(--accent);padding:2px 9px;border-radius:9999px;font-size:11px;font-weight:600;margin-right:auto;margin-left:12px;}
+  .det-body{padding:6px 22px 22px;}
+
+  /* Inside accordions */
+  .item-row{padding:10px 0;border-top:1px solid var(--border);font-size:12.5px;display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;}
+  .item-row:first-of-type{border-top:none;}
+  .item-row .rank{color:#aaa;font-weight:600;}
+  .item-row .meta{color:var(--muted);font-size:11px;margin-top:2px;}
+  .chip{display:inline-block;padding:2px 7px;font-size:10px;font-weight:600;border-radius:8px;background:#eaf2f6;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;}
+  .chip.amber{background:#fff4e0;color:#8a5a00;}
+  .chip.green{background:#eaf5dc;color:#3F5727;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="v">VMA</span><span class="g">GROUP</span></div>
+  <button class="refresh-pill">↻ Daily Refresh</button>
+</div>
+
+<main class="container">
+
+  <!-- TOP-3 always-on hero -->
+  <section class="top3">
+    <div class="head">
+      <h1>What to do today</h1>
+      <div class="sub">3 actions · highest leverage right now · refreshed 8m ago</div>
+    </div>
+    <div class="top3-list">
+      <div class="top3-card">
+        <div class="num">1</div>
+        <div>
+          <div class="who">NatWest</div>
+          <div class="why">CCO seat just vacated. Call HR + Chair today — replacement search opportunity worth £80–110k fee.</div>
+        </div>
+        <div class="actions"><button>Copy opener</button><button class="ghost">Done</button></div>
+      </div>
+      <div class="top3-card">
+        <div class="num">2</div>
+        <div>
+          <div class="who">Standard Chartered</div>
+          <div class="why">Director of Corporate Comms hitting 26-month tenure cliff. Pre-position now — brief likely lands Q3.</div>
+        </div>
+        <div class="actions"><button>Copy opener</button><button class="ghost">Done</button></div>
+      </div>
+      <div class="top3-card">
+        <div class="num">3</div>
+        <div>
+          <div class="who">Octopus Energy</div>
+          <div class="why">£140m Series F closed. ~6 month window to first senior in-house comms hire — get the brief before they advertise.</div>
+        </div>
+        <div class="actions"><button>Copy opener</button><button class="ghost">Done</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COLLAPSIBLE SECTIONS -->
+  <details>
+    <summary>Today's Leads <span class="count">11</span> <span class="chip green" style="margin-left:auto;">3 new</span></summary>
+    <div class="det-body">
+      <div class="item-row"><span class="rank">1</span><div><strong>NatWest</strong> · CCO seat vacated<div class="meta">Sky News · 1 hour ago</div></div><span class="chip green">new</span></div>
+      <div class="item-row"><span class="rank">2</span><div><strong>Severn Trent</strong> · Results miss<div class="meta">RNS · 3 hours ago</div></div><span class="chip">active</span></div>
+      <div class="item-row"><span class="rank">3</span><div><strong>BP</strong> · CFO change announced<div class="meta">Reuters · 5 hours ago</div></div><span class="chip">active</span></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Prediction Signals <span class="count">8</span></summary>
+    <div class="det-body">
+      <div class="item-row"><span class="rank">1</span><div><strong>Standard Chartered</strong> · Director of Corp Comms<div class="meta">Incumbent at 26mo · sector cascade exposure</div></div><span class="chip">68%</span></div>
+      <div class="item-row"><span class="rank">2</span><div><strong>Octopus Energy</strong> · Head of External Comms<div class="meta">Just closed £140m equity round</div></div><span class="chip amber">funding</span></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Hire Watch <span class="count">3</span></summary>
+    <div class="det-body">
+      <div class="item-row"><span class="rank">·</span><div><strong>Jane Smith</strong> · Lloyds → NatWest<div class="meta">CCO move · 2 follow-ups emitted (replacement + re-org)</div></div></div>
+      <div class="item-row"><span class="rank">·</span><div><strong>Ravi Patel</strong> · Centrica<div class="meta">Director of Comms appointed</div></div></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>BD Calendar <span class="count">6</span></summary>
+    <div class="det-body">
+      <div class="item-row"><span class="rank">·</span><div><strong>FCA Consumer Duty</strong> · Apr–Jul 2026<div class="meta">High confidence · annual board-report ramp · 64d left</div></div><span class="chip">live</span></div>
+      <div class="item-row"><span class="rank">·</span><div><strong>PRWeek Awards UK</strong> · 22 Oct 2026<div class="meta">External · London · in 155 days</div></div><span class="chip amber">event</span></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Candidate Watch <span class="count">12</span></summary>
+    <div class="det-body">
+      <div class="item-row"><span class="rank">·</span><div><strong>Molly Cutler</strong> · Head of Internal Comms<div class="meta">PA Consulting · due in 29 days</div></div></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Action tools · Pre-meeting Brief, Pitch Pack, Reverse Match, 14-Day Catch-up</summary>
+    <div class="det-body" style="color:var(--muted);font-size:12px;">Four on-demand tools collapse here. Expand to run.</div>
+  </details>
+
+  <details>
+    <summary>Recent reports <span class="count">0</span></summary>
+    <div class="det-body" style="color:var(--muted);font-size:12px;">No reports generated in the last 48 hours.</div>
+  </details>
+
+</main>
+</body>
+</html>

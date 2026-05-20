@@ -151,6 +151,8 @@ jobs:
             tool/state/latest_funding.json
             tool/state/predictor_pipeline.json
             tool/state/predictive_jobs.json
+            tool/state/cascade_events.json
+            tool/state/cascade_suppression.json
           if-no-files-found: warn
 
       # Auto-commit any hiring_contacts.json updates produced by the
