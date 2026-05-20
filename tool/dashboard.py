@@ -1329,7 +1329,7 @@ TEMPLATE = r"""
       --teal-dark: #1A3D7C;
       --teal-glow: rgba(66, 133, 244, 0.22);
       --teal-soft: rgba(66, 133, 244, 0.10);
-      --bg: #ECF1F9;
+      --bg: #f7f9fc;
       --bg-warm: #E3EAF5;
       --surface: #FFFFFF;
       --surface-elevated: #F4F7FC;
@@ -1355,9 +1355,9 @@ TEMPLATE = r"""
     body {
       font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
       background-color: var(--bg);
-      background-image:
-        radial-gradient(ellipse 700px 500px at 8% 12%, rgba(66, 133, 244, 0.06), transparent 60%),
-        radial-gradient(ellipse 600px 420px at 92% 92%, rgba(138, 92, 209, 0.05), transparent 60%);
+      /* No body radial overlays — keep the page a flat #f7f9fc so the
+         top-bar halo can fade into transparent and meet the body
+         seamlessly with no visible seam. */
       background-attachment: fixed;
       color: var(--text);
       line-height: 1.5;
@@ -1384,16 +1384,20 @@ TEMPLATE = r"""
       justify-content: center;
       gap: 11px;
       text-align: center;
-      /* Opus v2 halo — tight 48% ellipse, six-stop front-loaded fade */
-      background: radial-gradient(
-        ellipse 48% 55% at 50% 55%,
-        #a8c8e6 0%,
-        #bdd3e9 18%,
-        #d2e1ee 40%,
-        #e8eff6 65%,
-        #f5f8fb 85%,
-        #fbfcfd 100%
-      );
+      /* Opus v2 halo — tight 48% ellipse, six-stop front-loaded fade.
+         Final stop is the body bg colour at 0 alpha, so the halo
+         dissolves seamlessly into the dashboard body — no visible seam. */
+      background:
+        radial-gradient(
+          ellipse 48% 55% at 50% 55%,
+          #a8c8e6 0%,
+          #bdd3e9 18%,
+          #d2e1ee 40%,
+          #e8eff6 65%,
+          #f5f8fb 85%,
+          rgba(247, 249, 252, 0) 100%
+        ),
+        var(--bg);
     }
     .top-bar .brand-line-1 {
       font-family: Arial, Helvetica, sans-serif;
