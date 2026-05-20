@@ -2259,21 +2259,22 @@ TEMPLATE = r"""
       width: 100%;
       margin-top: 10px;
       padding: 9px 14px;
-      background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
-      color: white;
-      border-radius: 6px;
-      font-size: 11px;
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      border: 1px solid var(--btn-border);
+      border-radius: 999px;
+      font-size: 11.5px;
       font-weight: 600;
       text-align: center;
       cursor: pointer;
-      letter-spacing: 0.04em;
-      transition: all 0.18s ease;
-      box-shadow: 0 1px 2px rgba(31, 55, 124, 0.10);
+      letter-spacing: 0.02em;
+      transition: background 0.15s ease, transform 0.15s ease;
+      box-shadow: 0 1px 2px rgba(31, 55, 124, 0.06);
     }
     .action-card summary.add-toggle::-webkit-details-marker { display: none; }
     .action-card summary.add-toggle::marker { content: ""; }
     .action-card summary.add-toggle:hover {
-      box-shadow: 0 4px 16px var(--teal-glow), 0 0 0 1px var(--teal);
+      background: var(--btn-bg-hover);
       transform: translateY(-1px);
     }
     .funding-details > summary {
