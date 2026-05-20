@@ -895,7 +895,10 @@ def api_pitch_pack():
     inputs = {
         "account_name": (data.get("account_name") or "").strip(),
         "role": (data.get("role") or "Head of Internal Communications").strip(),
-        "mode": data.get("mode", "send"),
+        # Hard-coded to "preview" — emails for non-brief reports are
+        # disabled. HTML is still generated, uploaded as a workflow
+        # artifact, and surfaced via Recent Reports.
+        "mode": "preview",
         "salary_min": (data.get("salary_min") or "").strip(),
         "salary_max": (data.get("salary_max") or "").strip(),
     }
@@ -926,7 +929,8 @@ def api_reverse_match():
         "candidate_name": (data.get("candidate_name") or "").strip(),
         "current_company": (data.get("current_company") or "").strip(),
         "current_title": (data.get("current_title") or "").strip(),
-        "mode": data.get("mode", "send"),
+        # Hard-coded to "preview" — emails disabled for non-brief reports.
+        "mode": "preview",
     }
     missing = [k for k in ("candidate_name", "current_company", "current_title")
                if not inputs[k]]
@@ -949,7 +953,8 @@ def api_pre_meeting():
         "account_name": (data.get("account_name") or "").strip(),
         "contact_name": (data.get("contact_name") or "").strip(),
         "meeting_context": (data.get("meeting_context") or "").strip(),
-        "mode": data.get("mode", "send"),
+        # Hard-coded to "preview" — emails disabled for non-brief reports.
+        "mode": "preview",
     }
     if not inputs["account_name"]:
         return jsonify({"ok": False, "detail": "Account name required"}), 400
@@ -968,7 +973,8 @@ def api_sweep():
     data = _safe_json_body()
     inputs = {
         "window_days": str(data.get("window_days", "14")),
-        "mode": data.get("mode", "send"),
+        # Hard-coded to "preview" — emails disabled for non-brief reports.
+        "mode": "preview",
     }
     res = trigger_workflow("fortnightly-sweep.yml", inputs)
     res["artifact"] = _WORKFLOW_ARTIFACT["fortnightly-sweep.yml"]
