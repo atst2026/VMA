@@ -770,6 +770,12 @@ def _boot_state_hydrate():
             "tool/state/report_log.json",
             "tool/state/predictor_status.json",
             "tool/state/contact_flags.json",
+            "tool/state/trade_press_events.json",
+            "tool/state/trade_press_suppression.json",
+            "tool/state/trade_press_tracked.json",
+            "tool/state/cascade_events.json",
+            "tool/state/cascade_suppression.json",
+            "tool/state/top_three_state.json",
         ])
     except Exception as e:
         log.warning("state hydrate skipped: %s", e)
@@ -803,12 +809,21 @@ def landing():
 @app.route("/dashboard")
 @_auth_required
 def index():
+    from tool import trade_press, cascade, top_three
     predictors = load_latest_predictive()
     leads = load_latest_signals()
+    trade_press_events = trade_press.list_active()
+    tracked_count = len(trade_press.load_tracked())
+    cascade_events = cascade.list_active()
+    top_actions = top_three.compute_top()
     return render_template_string(
         TEMPLATE,
         leads=leads,
         predictors=predictors,
+        trade_press_events=trade_press_events,
+        trade_press_tracked_count=tracked_count,
+        cascade_events=cascade_events,
+        top_actions=top_actions,
         leads_active_count=sum(1 for s in leads if s.get("status", "active") == "active"),
         leads_new_count=sum(1 for s in leads if s.get("is_new")
                             and s.get("status", "active") == "active"),
@@ -1104,6 +1119,7 @@ def api_candidates_watch_add():
         sectors=sectors,
         notes=(data.get("notes") or "").strip(),
         touch_cadence_days=cadence,
+        tenure_start=(data.get("tenure_start") or "").strip(),
     )
     return jsonify({"ok": True, "candidate": rec})
 
@@ -1137,6 +1153,151 @@ def api_candidates_watch_remove():
     if not ok:
         return jsonify({"ok": False, "detail": "Candidate not found"}), 404
     return jsonify({"ok": True})
+
+
+# ---- Trade-Press Warm-Call Trigger ----
+@app.route("/api/trade-press/list", methods=["GET"])
+@_auth_required
+def api_trade_press_list():
+    """Active triggers for the dashboard panel."""
+    from tool import trade_press
+    return jsonify({"events": trade_press.list_active()})
+
+
+@app.route("/api/trade-press/mark", methods=["POST"])
+@_auth_required
+def api_trade_press_mark():
+    """Mark a trigger called/dismissed/active."""
+    from tool import trade_press
+    data = _safe_json_body()
+    event_id = (data.get("event_id") or "").strip()
+    status = (data.get("status") or "").strip()
+    if not (event_id and status):
+        return jsonify({"ok": False, "detail": "event_id and status required"}), 400
+    ok = trade_press.mark(event_id, status)
+    if not ok:
+        return jsonify({"ok": False, "detail": "event not found or invalid status"}), 404
+    return jsonify({"ok": True})
+
+
+@app.route("/api/trade-press/scour", methods=["POST"])
+@_auth_required
+def api_trade_press_scour():
+    """Run the scour on demand. Mostly a debug hook — production usage
+    runs it daily via the morning-brief workflow."""
+    from tool import trade_press
+    return jsonify({"ok": True, **trade_press.scour()})
+
+
+# ---- Cascade-Hire Watch ----
+@app.route("/api/cascade/list", methods=["GET"])
+@_auth_required
+def api_cascade_list():
+    """Active cascade events for the dashboard panel."""
+    from tool import cascade
+    return jsonify({"events": cascade.list_active()})
+
+
+@app.route("/api/cascade/mark", methods=["POST"])
+@_auth_required
+def api_cascade_mark():
+    """Mark one side (old_co / new_co) of a cascade event."""
+    from tool import cascade
+    data = _safe_json_body()
+    event_id = (data.get("event_id") or "").strip()
+    side = (data.get("side") or "").strip()
+    status = (data.get("status") or "").strip()
+    if not (event_id and side and status):
+        return jsonify({"ok": False,
+                        "detail": "event_id, side and status required"}), 400
+    ok = cascade.mark(event_id, side, status)
+    if not ok:
+        return jsonify({"ok": False,
+                        "detail": "event not found or invalid input"}), 404
+    return jsonify({"ok": True})
+
+
+@app.route("/api/cascade/scour", methods=["POST"])
+@_auth_required
+def api_cascade_scour():
+    """Re-parse latest_signals.json for cascade moves on demand."""
+    from tool import cascade
+    return jsonify({"ok": True, **cascade.scour()})
+
+
+# ---- Top-3 Action Surface ----
+@app.route("/api/top-three/list", methods=["GET"])
+@_auth_required
+def api_top_three_list():
+    """Re-compute fresh on every call — state overlay handles
+    suppression. Cheap (pure parse over already-fetched data)."""
+    from tool import top_three
+    return jsonify({"actions": top_three.compute_top()})
+
+
+@app.route("/api/top-three/mark", methods=["POST"])
+@_auth_required
+def api_top_three_mark():
+    """Per-action state mutation. status ∈ {active, done, dismissed}."""
+    from tool import top_three
+    data = _safe_json_body()
+    action_id = (data.get("action_id") or "").strip()
+    status = (data.get("status") or "").strip()
+    if not (action_id and status):
+        return jsonify({"ok": False,
+                        "detail": "action_id and status required"}), 400
+    ok = top_three.mark(action_id, status)
+    if not ok:
+        return jsonify({"ok": False,
+                        "detail": "invalid action_id or status"}), 400
+    return jsonify({"ok": True})
+
+
+@app.route("/api/trade-press/tracked", methods=["GET", "POST"])
+@_auth_required
+def api_trade_press_tracked():
+    """Read or replace the canonical tracked-contacts list.
+
+    POST body: {"contacts": [{id, name, company, aliases?}, ...]}.
+    Replaces the whole list (simpler than per-row edits at this stage)."""
+    from tool import trade_press
+    if request.method == "GET":
+        return jsonify({"contacts": trade_press.load_tracked()})
+    data = _safe_json_body()
+    contacts = data.get("contacts")
+    if not isinstance(contacts, list):
+        return jsonify({"ok": False, "detail": "contacts must be a list"}), 400
+    # Light validation — every row needs id + name; auto-id if missing.
+    import hashlib
+    cleaned = []
+    for c in contacts:
+        if not isinstance(c, dict):
+            continue
+        name = (c.get("name") or "").strip()
+        if not name:
+            continue
+        cid = (c.get("id") or "").strip()
+        if not cid:
+            cid = hashlib.sha1(name.lower().encode("utf-8")).hexdigest()[:12]
+        cleaned.append({
+            "id": cid,
+            "name": name,
+            "company": (c.get("company") or "").strip(),
+            "aliases": [a for a in (c.get("aliases") or []) if isinstance(a, str)],
+            "role": (c.get("role") or "").strip(),
+            "linkedin": (c.get("linkedin") or "").strip(),
+        })
+    payload = json.dumps(cleaned, indent=2)
+    trade_press.TRACKED_FILE.parent.mkdir(parents=True, exist_ok=True)
+    trade_press.TRACKED_FILE.write_text(payload)
+    try:
+        from tool import github_state
+        github_state.push_async(
+            "tool/state/trade_press_tracked.json", payload,
+            "state: update trade-press tracked contacts")
+    except Exception:
+        pass
+    return jsonify({"ok": True, "count": len(cleaned)})
 
 
 @app.route("/api/competitor-mandates", methods=["GET"])
@@ -2113,6 +2274,19 @@ TEMPLATE = r"""
     .cw-pill.overdue{background:#F3D7CC;color:#8C3A1E;}
     .cw-pill.due{background:#E2EAD9;color:#4A6233;}
     .cw-pill.open{background:#EAE3D2;color:#6B5B33;cursor:help;}
+    /* Drift-score pill — primary ordering signal on Candidate Watch.
+       Colour ramps by score: hot (≥60) = bright coral; warm (30-59) =
+       muted coral; low (<30) = neutral grey. Tooltip explains the
+       composite score. */
+    .cw-pill.drift{cursor:help;}
+    .cw-pill.drift.hot{background:rgba(201,100,66,.22);color:#A04E32;}
+    .cw-pill.drift.warm{background:rgba(201,100,66,.10);color:#A04E32;}
+    .cw-pill.drift.low{background:rgba(140,120,80,.10);color:#7A7164;}
+    /* Reason chips — explain WHY a candidate is high-ranked. Small,
+       lightweight, hover to see full reason text. */
+    .cw-pill.reason{background:#F4F2EC;color:#5F574A;font-weight:500;
+                    font-size:9.5px;letter-spacing:0;cursor:help;
+                    max-width:220px;overflow:hidden;text-overflow:ellipsis;}
     .cw-right{display:flex;gap:6px;align-items:center;}
     /* Scoped to .action-card so it beats the big ".action-card button"
        primary style (which otherwise turns these into huge orange
@@ -2517,6 +2691,60 @@ TEMPLATE = r"""
     </div>
   </div>
 
+  <!-- TOP-3 ACTION SURFACE — forced-priority layer over every other
+       signal source (leads, predictors, candidates, trade-press,
+       cascades, funding). Sits above Today's Leads so it's the first
+       thing Sara sees after the daily refresh. -->
+  <div class="row row-full" id="top-three-row">
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Top 3 Today</h2>
+        <span style="display:flex;align-items:center;gap:10px;">
+          <span class="refresh-sub" style="font-size:11px;">
+            Highest-leverage actions right now
+          </span>
+          <span class="count" id="top-three-count">{{ top_actions|length }}</span>
+        </span>
+      </div>
+      <div class="panel-body" id="top-three-body">
+        {% if top_actions|length == 0 %}
+          <div class="empty">
+            Nothing actionable surfaced right now. Click <strong>Daily Refresh</strong>
+            to pull this morning's brief, then check back — leads, predictors,
+            candidates, trade-press triggers, and cascades all feed this list.
+          </div>
+        {% else %}
+          {% for a in top_actions %}
+            <div class="item top-three-item" data-action-id="{{ a.action_id }}">
+              <span class="rank">{{ loop.index }}</span>
+              <span class="title">{{ a.title }}</span>
+              <span class="badge">{{ a.type_badge }}</span>
+              {% if a.secondary %}<span class="badge">{{ a.secondary }}</span>{% endif %}
+              {% if a.why_now %}
+              <div style="font-size:12px;color:var(--text-muted);margin:4px 0 6px;">
+                {{ a.why_now }}
+              </div>
+              {% endif %}
+              {% if a.opener %}
+              <pre class="outreach-text">{{ a.opener }}</pre>
+              {% endif %}
+              <div class="item-actions">
+                {% if a.opener %}
+                <button class="btn-mini t3-copy" type="button">&#9993; Copy opener</button>
+                {% endif %}
+                {% if a.detail_url %}
+                <a class="btn-mini" href="{{ a.detail_url | safe_url }}" target="_blank">&#8599; Open detail</a>
+                {% endif %}
+                <button class="btn-mini t3-action" data-status="done" type="button">&#10003; Done</button>
+                <button class="btn-mini t3-action ghost" data-status="dismissed" type="button">&#10005; Skip</button>
+              </div>
+            </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
   <!-- LEADS + PREDICTORS -->
   <div class="row">
 
@@ -2657,6 +2885,130 @@ TEMPLATE = r"""
        side-by-side at equal size (2-col grid; stacks under 900px).
        Both reliably fire; the rare detectors live in Specialist
        Signals below. -->
+
+  <!-- TRADE-PRESS WARM-CALL TRIGGERS — same-day calls referencing a
+       public mention of a tracked senior comms leader. Sits above the
+       BD Calendar so it's the first thing Sara sees after the daily
+       refresh. -->
+  <div class="row row-full" id="trade-press-row">
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Trade-Press Triggers</h2>
+        <span style="display:flex;align-items:center;gap:10px;">
+          <span class="refresh-sub" style="font-size:11px;">
+            {{ trade_press_tracked_count }} contacts tracked
+          </span>
+          <button type="button" class="btn-mini" id="tp-edit">Edit list</button>
+          <span class="count" id="trade-press-count">{{ trade_press_events|length }}</span>
+        </span>
+      </div>
+      <div class="panel-body" id="trade-press-body">
+        {% if trade_press_tracked_count == 0 %}
+          <div class="empty">
+            No tracked contacts yet. Click <strong>Edit list</strong> and paste in
+            the senior comms people you want to be alerted on when they appear
+            in PR Week / Provoke / CorpComms / Campaign.
+          </div>
+        {% elif trade_press_events|length == 0 %}
+          <div class="empty">
+            No trade-press mentions detected on your tracked contacts today.
+          </div>
+        {% else %}
+          {% for e in trade_press_events %}
+            <div class="item trade-press-item" data-event-id="{{ e.event_id }}">
+              <span class="title">{{ e.person_name }}</span>
+              {% if e.person_company %}<span class="badge">{{ e.person_company }}</span>{% endif %}
+              <span class="badge">{{ e.source_name }}</span>
+              <span class="badge">{{ e.hook_type }}</span>
+              <div style="font-size:12px;color:var(--text-muted);margin:4px 0 6px;">
+                <a href="{{ e.article_url | safe_url }}" target="_blank">{{ e.article_title }}</a>
+              </div>
+              {% if e.snippet %}
+              <div style="font-size:11.5px;color:var(--text-muted);font-style:italic;margin-bottom:6px;">"{{ e.snippet }}"</div>
+              {% endif %}
+              <pre class="outreach-text">{{ e.opener }}</pre>
+              <div class="item-actions">
+                <button class="btn-mini tp-copy" type="button">✉ Copy opener</button>
+                <button class="btn-mini tp-action" data-status="called" type="button">✓ Called</button>
+                <button class="btn-mini tp-action ghost" data-status="dismissed" type="button">✕ Dismiss</button>
+              </div>
+            </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- CASCADE-HIRE WATCH — senior comms moves in public news; each
+       move emits two derived BD actions (old company replacement
+       search; new company re-org/hiring pressure). -->
+  <div class="row row-full" id="cascade-row">
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Cascade-Hire Watch</h2>
+        <span style="display:flex;align-items:center;gap:10px;">
+          <span class="refresh-sub" style="font-size:11px;">
+            Senior comms moves &middot; auto-parsed from morning brief
+          </span>
+          <button type="button" class="btn-mini" id="cs-scour">Re-scan</button>
+          <span class="count" id="cascade-count">{{ cascade_events|length }}</span>
+        </span>
+      </div>
+      <div class="panel-body" id="cascade-body">
+        {% if cascade_events|length == 0 %}
+          <div class="empty">
+            No cascade-worthy moves detected in the latest brief. Senior
+            comms appointments (CCO / Director of Comms / Head of IC)
+            from today's news will surface here automatically.
+          </div>
+        {% else %}
+          {% for c in cascade_events %}
+            <div class="item cascade-item" data-event-id="{{ c.event_id }}">
+              <span class="title">{{ c.person_name }}</span>
+              <span class="badge">{{ c.role }}</span>
+              {% if c.old_company %}
+                <span class="badge">{{ c.old_company }} &rarr; {{ c.new_company }}</span>
+              {% else %}
+                <span class="badge">&rarr; {{ c.new_company }}</span>
+              {% endif %}
+              <div style="font-size:12px;color:var(--text-muted);margin:4px 0 8px;">
+                <a href="{{ c.article_url | safe_url }}" target="_blank">{{ c.article_title }}</a>
+              </div>
+
+              {% if c.old_co_status == 'active' and c.old_company %}
+              <div class="cs-side" data-side="old_co">
+                <div style="font-size:10.5px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--teal-dark);margin-bottom:4px;">
+                  &darr; Old company &middot; {{ c.old_company }} (replacement search)
+                </div>
+                <pre class="outreach-text">{{ c.old_co_opener }}</pre>
+                <div class="item-actions">
+                  <button class="btn-mini cs-copy" type="button">&#9993; Copy</button>
+                  <button class="btn-mini cs-action" data-side="old_co" data-status="called" type="button">&#10003; Called</button>
+                  <button class="btn-mini cs-action ghost" data-side="old_co" data-status="dismissed" type="button">&#10005; Dismiss</button>
+                </div>
+              </div>
+              {% endif %}
+
+              {% if c.new_co_status == 'active' %}
+              <div class="cs-side" data-side="new_co" style="margin-top:8px;">
+                <div style="font-size:10.5px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--teal-dark);margin-bottom:4px;">
+                  &darr; New company &middot; {{ c.new_company }} (re-org watch)
+                </div>
+                <pre class="outreach-text">{{ c.new_co_opener }}</pre>
+                <div class="item-actions">
+                  <button class="btn-mini cs-copy" type="button">&#9993; Copy</button>
+                  <button class="btn-mini cs-action" data-side="new_co" data-status="called" type="button">&#10003; Called</button>
+                  <button class="btn-mini cs-action ghost" data-side="new_co" data-status="dismissed" type="button">&#10005; Dismiss</button>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
   <div class="row" id="pulses-row">
     <div class="panel">
       <div class="panel-header">
@@ -2800,6 +3152,8 @@ TEMPLATE = r"""
           <input id="wa-company" name="current_company">
           <label for="wa-title">Current title</label>
           <input id="wa-title" name="current_title">
+          <label for="wa-tenure">Joined current role (YYYY-MM-DD, optional)</label>
+          <input id="wa-tenure" name="tenure_start" type="date" placeholder="2022-09-01">
           <label for="wa-cadence">Remind me every (days)</label>
           <input id="wa-cadence" name="touch_cadence_days" type="number" value="30" min="7" max="180">
           <label for="wa-notes">Notes</label>
@@ -3703,26 +4057,41 @@ async function loadWatchList() {
       wrap.innerHTML = '';
       return;
     }
-    status.textContent = j.total + ' watched · sorted by call urgency';
+    status.textContent = j.total + ' watched · sorted by liquidity score';
     const out = ['<div class="cw-list">'];
     for (const c of j.rows.slice(0, 10)) {
       const cadence = c.touch_cadence_days || 30;
       const seen = c._days_since_touched;          // null === not yet contacted
-      let duePill;
+      // Build the headline pill — drift score is the new primary
+      // ordering signal; overdue is shown as supporting detail.
+      const drift = c._drift_score != null ? c._drift_score : (c._urgency_score || 0);
+      let driftClass = 'low';
+      if (drift >= 60) driftClass = 'hot';
+      else if (drift >= 30) driftClass = 'warm';
+      const driftPill = '<span class="cw-pill drift ' + driftClass +
+        '" title="Liquidity score — combines tenure, cascade, news, trade-press, and cadence signals">' +
+        'score ' + esc(drift) + '</span>';
+
+      // Overdue / due indicator stays as a secondary pill.
+      let duePill = '';
       if (c._overdue_days > 0) {
         duePill = '<span class="cw-pill overdue">overdue ' + esc(c._overdue_days) + 'd</span>';
-      } else {
-        const left = Math.max(0, cadence - (seen || 0));
+      } else if (seen != null) {
+        const left = Math.max(0, cadence - seen);
         duePill = '<span class="cw-pill due">due in ' + esc(left) + 'd</span>';
+      } else {
+        duePill = '<span class="cw-pill overdue">never touched</span>';
       }
-      const openPill = c._restlessness_hits > 0
-        ? '<span class="cw-pill open" title="' + esc(c._restlessness_hits) +
-          ' phrase(s) in notes you typed suggest this person may be open to a move">' +
-          'may be open ×' + esc(c._restlessness_hits) + '</span>'
-        : '';
+
+      // Reason chips — each contributing signal becomes a small chip
+      // so Sara can see WHY the candidate is high-ranked. Lifted from
+      // the server-side compute_drift output.
+      const reasons = Array.isArray(c._drift_reasons) ? c._drift_reasons : [];
+      const reasonChips = reasons.slice(0, 3).map(r =>
+        '<span class="cw-pill reason" title="' + esc(r) + '">' + esc(r) + '</span>'
+      ).join('');
+
       const sub = [c.current_title, c.current_company].filter(Boolean).map(esc).join(' · ');
-      // Data attributes carry name/company so user-controlled text is never
-      // injected into an onclick string.
       const dn = esc(c.name);
       const dc = esc(c.current_company || '');
       out.push(
@@ -3731,7 +4100,7 @@ async function loadWatchList() {
             '<div class="cw-nm">' + esc(c.name) + '</div>' +
             (sub ? '<div class="cw-sub">' + sub + '</div>' : '') +
             (c.last_signal ? '<div class="cw-state"><em>' + esc(c.last_signal) + '</em></div>' : '') +
-            '<div class="cw-tags">' + duePill + openPill + '</div>' +
+            '<div class="cw-tags">' + driftPill + duePill + reasonChips + '</div>' +
           '</div>' +
           '<div class="cw-right">' +
             '<button class="cw-iconbtn cw-tick watch-action" data-action="touch" data-name="' + dn + '" data-company="' + dc + '" title="Mark contacted">✓</button>' +
@@ -3839,6 +4208,375 @@ document.addEventListener('DOMContentLoaded', () => {
   loadWatchList();
   loadRecentReports();
 });
+
+// ---------- Trade-Press Warm-Call Triggers ----------
+(function(){
+  const root = document.getElementById('trade-press-body');
+  if (!root) return;
+
+  root.addEventListener('click', async (ev) => {
+    // Copy opener button
+    const copyBtn = ev.target.closest('.tp-copy');
+    if (copyBtn) {
+      const item = copyBtn.closest('.trade-press-item');
+      const txt = item && item.querySelector('.outreach-text');
+      if (txt) {
+        try {
+          await navigator.clipboard.writeText(txt.textContent);
+          const orig = copyBtn.textContent;
+          copyBtn.textContent = '✓ Copied';
+          setTimeout(() => { copyBtn.textContent = orig; }, 1200);
+        } catch (e) { /* clipboard blocked - silent */ }
+      }
+      return;
+    }
+
+    // Called / Dismiss
+    const actBtn = ev.target.closest('.tp-action');
+    if (actBtn) {
+      const item = actBtn.closest('.trade-press-item');
+      const id = item && item.getAttribute('data-event-id');
+      const status = actBtn.getAttribute('data-status');
+      if (!id || !status) return;
+      actBtn.disabled = true;
+      try {
+        const r = await fetch('/api/trade-press/mark', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event_id: id, status: status }),
+        });
+        const j = await r.json();
+        if (j.ok) {
+          item.style.transition = 'opacity .2s ease';
+          item.style.opacity = '0';
+          setTimeout(() => { item.remove(); updateTradePressCount(); }, 200);
+        } else {
+          actBtn.disabled = false;
+          alert(j.detail || 'Could not update.');
+        }
+      } catch (e) {
+        actBtn.disabled = false;
+        alert('Network error: ' + e.message);
+      }
+    }
+  });
+
+  function updateTradePressCount() {
+    const remaining = root.querySelectorAll('.trade-press-item').length;
+    const counter = document.getElementById('trade-press-count');
+    if (counter) counter.textContent = remaining;
+    if (remaining === 0) {
+      root.innerHTML = '<div class="empty">No trade-press mentions detected on your tracked contacts today.</div>';
+    }
+  }
+
+  // Edit-list modal — a simple textarea editor over JSON, kept light
+  // because the tracked list is small (~30-150 names) and Sara will
+  // paste-edit it rarely.
+  const editBtn = document.getElementById('tp-edit');
+  if (editBtn) {
+    editBtn.addEventListener('click', async () => {
+      let current = [];
+      try {
+        const r = await fetch('/api/trade-press/tracked');
+        const j = await r.json();
+        current = j.contacts || [];
+      } catch (e) { /* ignore, start empty */ }
+
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,20,40,.42);z-index:9999;display:flex;align-items:center;justify-content:center;padding:32px;';
+      overlay.innerHTML = `
+        <div style="background:#fff;border-radius:14px;padding:22px;max-width:760px;width:100%;
+                    box-shadow:0 24px 60px rgba(31,55,124,.22);">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+            <h3 style="margin:0;font-size:16px;font-weight:700;">Tracked contacts for Trade-Press Triggers</h3>
+            <button class="btn-mini" id="tp-cancel" type="button">Close</button>
+          </div>
+          <p style="font-size:12px;color:var(--text-muted);margin:0 0 10px;">
+            One JSON object per row. Required fields: <code>name</code>. Optional: <code>company</code>,
+            <code>aliases</code> (alternative spellings), <code>role</code>, <code>linkedin</code>.
+          </p>
+          <textarea id="tp-textarea" style="width:100%;min-height:340px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;padding:10px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--text);"></textarea>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:10px;">
+            <span id="tp-save-status" style="font-size:11.5px;color:var(--text-muted);"></span>
+            <span style="display:flex;gap:8px;">
+              <button class="btn-mini" id="tp-scour" type="button">Scour now</button>
+              <button class="btn-mini" id="tp-save" type="button" style="font-weight:600;">Save</button>
+            </span>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+
+      const ta = overlay.querySelector('#tp-textarea');
+      ta.value = JSON.stringify(current, null, 2);
+
+      overlay.querySelector('#tp-cancel').addEventListener('click', () => overlay.remove());
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+      overlay.querySelector('#tp-save').addEventListener('click', async () => {
+        const statusEl = overlay.querySelector('#tp-save-status');
+        statusEl.textContent = 'Saving…';
+        let parsed;
+        try {
+          parsed = JSON.parse(ta.value);
+          if (!Array.isArray(parsed)) throw new Error('Top-level must be a JSON array.');
+        } catch (e) {
+          statusEl.textContent = 'JSON error: ' + e.message;
+          return;
+        }
+        try {
+          const r = await fetch('/api/trade-press/tracked', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contacts: parsed }),
+          });
+          const j = await r.json();
+          if (j.ok) {
+            statusEl.textContent = 'Saved ' + j.count + ' contacts.';
+            setTimeout(() => window.location.reload(), 700);
+          } else {
+            statusEl.textContent = j.detail || 'Save failed.';
+          }
+        } catch (e) {
+          statusEl.textContent = 'Network error: ' + e.message;
+        }
+      });
+
+      overlay.querySelector('#tp-scour').addEventListener('click', async () => {
+        const statusEl = overlay.querySelector('#tp-save-status');
+        statusEl.textContent = 'Scouring…';
+        try {
+          const r = await fetch('/api/trade-press/scour', { method: 'POST' });
+          const j = await r.json();
+          statusEl.textContent = j.ok
+            ? `Scoured ${j.sources_ok}/${j.sources_ok + j.sources_failed} sources, ` +
+              `${j.articles_seen} articles, ${j.events_new} new triggers.`
+            : (j.detail || 'Scour failed.');
+          if (j.events_new > 0) {
+            setTimeout(() => window.location.reload(), 1200);
+          }
+        } catch (e) {
+          statusEl.textContent = 'Network error: ' + e.message;
+        }
+      });
+    });
+  }
+})();
+
+// ---------- Top-3 Action Surface ----------
+(function(){
+  const root = document.getElementById('top-three-body');
+  if (!root) return;
+
+  root.addEventListener('click', async (ev) => {
+    // Copy opener
+    const copyBtn = ev.target.closest('.t3-copy');
+    if (copyBtn) {
+      const item = copyBtn.closest('.top-three-item');
+      const txt = item && item.querySelector('.outreach-text');
+      if (txt) {
+        try {
+          await navigator.clipboard.writeText(txt.textContent);
+          const orig = copyBtn.textContent;
+          copyBtn.textContent = '✓ Copied';
+          setTimeout(() => { copyBtn.textContent = orig; }, 1200);
+        } catch (e) { /* clipboard blocked - silent */ }
+      }
+      return;
+    }
+
+    // Done / Skip — both clear the row and persist user state so the
+    // same action doesn't reappear after a Top-3 recompute.
+    const actBtn = ev.target.closest('.t3-action');
+    if (actBtn) {
+      const item = actBtn.closest('.top-three-item');
+      const id = item && item.getAttribute('data-action-id');
+      const status = actBtn.getAttribute('data-status');
+      if (!id || !status) return;
+      actBtn.disabled = true;
+      try {
+        const r = await fetch('/api/top-three/mark', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action_id: id, status: status }),
+        });
+        const j = await r.json();
+        if (j.ok) {
+          item.style.transition = 'opacity .2s ease';
+          item.style.opacity = '0';
+          setTimeout(() => {
+            item.remove();
+            // After actioning one, refresh the panel so the next-best
+            // action from the queue can rotate in — that's the whole
+            // point of the surface.
+            refreshTopThree();
+          }, 200);
+        } else {
+          actBtn.disabled = false;
+          alert(j.detail || 'Could not update.');
+        }
+      } catch (e) {
+        actBtn.disabled = false;
+        alert('Network error: ' + e.message);
+      }
+    }
+  });
+
+  async function refreshTopThree() {
+    try {
+      const r = await fetch('/api/top-three/list');
+      const j = await r.json();
+      const actions = j.actions || [];
+      const counter = document.getElementById('top-three-count');
+      if (counter) counter.textContent = actions.length;
+      if (actions.length === 0) {
+        root.innerHTML = '<div class="empty">Nothing actionable surfaced right now. Click <strong>Daily Refresh</strong> to pull this morning\'s brief, then check back.</div>';
+        return;
+      }
+      const html = ['<div>'];
+      actions.forEach((a, i) => {
+        const idAttr = a.action_id;
+        const sec = a.secondary
+          ? '<span class="badge">' + esc(a.secondary) + '</span>'
+          : '';
+        const why = a.why_now
+          ? '<div style="font-size:12px;color:var(--text-muted);margin:4px 0 6px;">' + esc(a.why_now) + '</div>'
+          : '';
+        const opener = a.opener
+          ? '<pre class="outreach-text">' + esc(a.opener) + '</pre>'
+          : '';
+        const copyBtn = a.opener
+          ? '<button class="btn-mini t3-copy" type="button">✉ Copy opener</button>'
+          : '';
+        const detail = a.detail_url
+          ? '<a class="btn-mini" href="' + esc(a.detail_url) + '" target="_blank">↗ Open detail</a>'
+          : '';
+        html.push(
+          '<div class="item top-three-item" data-action-id="' + esc(idAttr) + '">' +
+            '<span class="rank">' + (i + 1) + '</span>' +
+            '<span class="title">' + esc(a.title) + '</span>' +
+            '<span class="badge">' + esc(a.type_badge) + '</span>' +
+            sec +
+            why +
+            opener +
+            '<div class="item-actions">' +
+              copyBtn + detail +
+              '<button class="btn-mini t3-action" data-status="done" type="button">✓ Done</button>' +
+              '<button class="btn-mini t3-action ghost" data-status="dismissed" type="button">✕ Skip</button>' +
+            '</div>' +
+          '</div>'
+        );
+      });
+      html.push('</div>');
+      root.innerHTML = html.join('');
+    } catch (e) {
+      /* don't blow up the panel on a transient refresh failure */
+    }
+  }
+})();
+
+// ---------- Cascade-Hire Watch ----------
+(function(){
+  const root = document.getElementById('cascade-body');
+  if (!root) return;
+
+  root.addEventListener('click', async (ev) => {
+    // Copy opener for a specific side (old_co / new_co)
+    const copyBtn = ev.target.closest('.cs-copy');
+    if (copyBtn) {
+      const side = copyBtn.closest('.cs-side');
+      const txt = side && side.querySelector('.outreach-text');
+      if (txt) {
+        try {
+          await navigator.clipboard.writeText(txt.textContent);
+          const orig = copyBtn.textContent;
+          copyBtn.textContent = '✓ Copied';
+          setTimeout(() => { copyBtn.textContent = orig; }, 1200);
+        } catch (e) { /* clipboard blocked - silent */ }
+      }
+      return;
+    }
+
+    // Called / Dismiss — per side
+    const actBtn = ev.target.closest('.cs-action');
+    if (actBtn) {
+      const item = actBtn.closest('.cascade-item');
+      const id = item && item.getAttribute('data-event-id');
+      const side = actBtn.getAttribute('data-side');
+      const status = actBtn.getAttribute('data-status');
+      if (!id || !side || !status) return;
+      actBtn.disabled = true;
+      try {
+        const r = await fetch('/api/cascade/mark', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event_id: id, side: side, status: status }),
+        });
+        const j = await r.json();
+        if (j.ok) {
+          // Hide just the side that was actioned. If both sides are now
+          // hidden, remove the whole item.
+          const sideEl = actBtn.closest('.cs-side');
+          if (sideEl) {
+            sideEl.style.transition = 'opacity .2s ease';
+            sideEl.style.opacity = '0';
+            setTimeout(() => {
+              sideEl.remove();
+              if (!item.querySelector('.cs-side')) {
+                item.style.transition = 'opacity .2s ease';
+                item.style.opacity = '0';
+                setTimeout(() => { item.remove(); updateCascadeCount(); }, 200);
+              }
+            }, 200);
+          }
+        } else {
+          actBtn.disabled = false;
+          alert(j.detail || 'Could not update.');
+        }
+      } catch (e) {
+        actBtn.disabled = false;
+        alert('Network error: ' + e.message);
+      }
+    }
+  });
+
+  function updateCascadeCount() {
+    const remaining = root.querySelectorAll('.cascade-item').length;
+    const counter = document.getElementById('cascade-count');
+    if (counter) counter.textContent = remaining;
+    if (remaining === 0) {
+      root.innerHTML = '<div class="empty">No cascade-worthy moves detected in the latest brief. Senior comms appointments (CCO / Director of Comms / Head of IC) from today\'s news will surface here automatically.</div>';
+    }
+  }
+
+  // Manual re-scan (parses the latest_signals.json again — useful if
+  // morning_brief ran but the cascade scour hadn't yet executed).
+  const scourBtn = document.getElementById('cs-scour');
+  if (scourBtn) {
+    scourBtn.addEventListener('click', async () => {
+      const orig = scourBtn.textContent;
+      scourBtn.textContent = 'Scanning…';
+      scourBtn.disabled = true;
+      try {
+        const r = await fetch('/api/cascade/scour', { method: 'POST' });
+        const j = await r.json();
+        scourBtn.textContent = j.ok
+          ? (j.events_new > 0
+              ? (j.events_new + ' new — reloading…')
+              : 'No new moves')
+          : 'Scan failed';
+        if (j.ok && j.events_new > 0) {
+          setTimeout(() => window.location.reload(), 800);
+        } else {
+          setTimeout(() => { scourBtn.textContent = orig; scourBtn.disabled = false; }, 1400);
+        }
+      } catch (e) {
+        scourBtn.textContent = 'Network error';
+        setTimeout(() => { scourBtn.textContent = orig; scourBtn.disabled = false; }, 1400);
+      }
+    });
+  }
+})();
 
 // ---------- Recent Reports Generated (last 48h) ----------
 async function flagContact(e, link, company, slot, name) {

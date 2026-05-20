@@ -41,6 +41,15 @@ tool/state/lead_status.json
 tool/state/contact_flags.json
 tool/state/report_log.json
 tool/state/predictor_status.json
+# Build A/B/C/E runtime state — managed via github_state pushes to the
+# dashboard-state branch, never committed to main (same pattern as
+# lead_status, predictor_status, candidate_watch above).
+tool/state/trade_press_events.json
+tool/state/trade_press_suppression.json
+tool/state/trade_press_tracked.json
+tool/state/cascade_events.json
+tool/state/cascade_suppression.json
+tool/state/top_three_state.json
 .DS_Store
 
 # Concurrency lock files (created by tool.candidate_watch._locked_state)
