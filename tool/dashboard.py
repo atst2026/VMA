@@ -774,6 +774,13 @@ def _boot_state_hydrate():
             "tool/state/cascade_events.json",
             "tool/state/cascade_suppression.json",
             "tool/state/top_three_state.json",
+            # Morning-brief outputs — pulled on cold-start so the
+            # dashboard shows leads + predictors + funding immediately
+            # on opening, not just after Daily Refresh.
+            "tool/state/latest_signals.json",
+            "tool/state/latest_predictive.json",
+            "tool/state/latest_funding.json",
+            "tool/state/predictor_pipeline.json",
         ])
     except Exception as e:
         log.warning("state hydrate skipped: %s", e)
