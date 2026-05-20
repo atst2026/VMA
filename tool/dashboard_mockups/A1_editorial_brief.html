@@ -1,0 +1,275 @@
+<!doctype html>
+<!-- MOCKUP A1 · ANTHROPIC EDITORIAL BRIEF
+     Claude / Anthropic warm cream background with narrative-led brief
+     that reads like an AI-written report, then the data panels below
+     in the same editorial restraint. Newsreader serif for headings,
+     Inter for body. -->
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VMA — Anthropic · Editorial Brief</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --bg:#faf9f5; --paper:#fffdf7; --text:#2c2825; --muted:#6b6259;
+    --dim:#a8a59e; --border:#e8e3d8; --border-hi:#d9d6cc;
+    --accent:#c96442; --accent-soft:#fae9e1;
+  }
+  body{font-family:"Inter",sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;}
+
+  .container{max-width:880px;margin:0 auto;padding:32px 28px 80px;}
+
+  /* Topbar */
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:48px;}
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand .logo{width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#d97757,var(--accent));}
+  .brand-name{font-weight:600;font-size:15px;letter-spacing:-0.01em;}
+  .brand-name .sub{font-weight:400;color:var(--muted);margin-left:6px;}
+  .top-right{display:flex;gap:14px;align-items:center;}
+  .live{display:inline-flex;align-items:center;gap:7px;font:500 11.5px/1 "JetBrains Mono",monospace;color:var(--muted);}
+  .live .pulse{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 rgba(201,100,66,.6);animation:pulse 2.4s infinite;}
+  @keyframes pulse{50%{box-shadow:0 0 0 8px rgba(201,100,66,0);}}
+  .refresh{background:var(--text);color:var(--bg);border:none;border-radius:6px;padding:9px 14px;font:500 13px/1 "Inter";cursor:pointer;}
+
+  /* Greeting */
+  .greeting{margin-bottom:36px;}
+  .greeting-tag{font:500 11px/1 "JetBrains Mono",monospace;letter-spacing:.16em;color:var(--accent);text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .greeting-tag .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);}
+  .greeting h1{font-family:"Newsreader",Georgia,serif;font-size:36px;font-weight:400;letter-spacing:-0.015em;line-height:1.25;}
+  .greeting h1 em{font-style:italic;color:var(--accent);}
+
+  /* Brief narrative */
+  .brief{background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:32px 36px;margin-bottom:36px;position:relative;}
+  .brief::before{content:"";position:absolute;left:0;top:24px;bottom:24px;width:3px;background:var(--accent);border-radius:2px;}
+  .brief .header{font:500 11px/1 "JetBrains Mono",monospace;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;margin-bottom:18px;}
+  .brief p{margin-bottom:18px;}
+  .brief p:last-child{margin-bottom:0;}
+  .brief .lead-name{font-weight:600;}
+  .brief .signal{font-family:"Newsreader",Georgia,serif;font-style:italic;color:var(--accent);}
+  .inline-actions{margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;}
+  .inline-actions button{background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font:500 12px/1 "Inter";color:var(--text);cursor:pointer;}
+  .inline-actions button.primary{background:var(--text);color:var(--bg);border-color:var(--text);}
+
+  /* Stat strip */
+  .stats{display:grid;grid-template-columns:repeat(5,1fr);background:var(--paper);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:36px;}
+  .stat{padding:18px 16px;border-right:1px solid var(--border);}
+  .stat:last-child{border-right:none;}
+  .stat .lbl{font:500 10.5px/1 "JetBrains Mono",monospace;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-bottom:6px;}
+  .stat .val{font-family:"Newsreader",Georgia,serif;font-size:26px;font-weight:500;letter-spacing:-0.01em;}
+  .stat .delta{color:var(--accent);font-size:11.5px;margin-top:3px;}
+
+  /* Sections */
+  .sec-h{font:500 11px/1 "JetBrains Mono",monospace;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;margin:32px 0 14px;display:flex;justify-content:space-between;align-items:center;}
+  .sec-h .count{color:var(--accent);}
+
+  .panel{background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:24px 28px;margin-bottom:14px;}
+  .panel h3{font-family:"Newsreader",Georgia,serif;font-size:18px;font-weight:500;letter-spacing:-0.01em;margin-bottom:14px;display:flex;justify-content:space-between;align-items:baseline;}
+  .panel h3 .count{font:400 13px/1 "JetBrains Mono",monospace;color:var(--muted);letter-spacing:.04em;}
+
+  .doc{padding:14px 0;border-bottom:1px solid var(--border);font-size:14.5px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start;}
+  .doc:last-child{border-bottom:none;}
+  .doc .name{font-weight:600;font-size:14.5px;margin-bottom:2px;}
+  .doc .signal{font-family:"Newsreader",Georgia,serif;font-style:italic;color:var(--accent);font-size:13.5px;margin-bottom:4px;}
+  .doc .meta{color:var(--muted);font-size:12.5px;}
+  .doc .meta .src{font:400 11px/1.5 "JetBrains Mono",monospace;color:var(--dim);text-transform:uppercase;letter-spacing:.04em;}
+  .chip{display:inline-block;padding:3px 9px;font:500 10.5px/1.4 "Inter";letter-spacing:.04em;border-radius:9999px;background:var(--bg);color:var(--muted);border:1px solid var(--border);}
+  .chip.new{background:var(--accent-soft);color:var(--accent);border-color:transparent;}
+  .chip.warn{background:#fef3d6;color:#7a5a00;border-color:transparent;}
+
+  .prob{display:flex;align-items:center;gap:10px;}
+  .prob .bar{width:70px;height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
+  .prob .bar i{display:block;height:100%;background:var(--accent);border-radius:3px;}
+  .prob .num{font:500 12px/1 "JetBrains Mono",monospace;color:var(--accent);}
+
+  /* Tools */
+  .tools{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:14px;}
+  .tool{background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:18px 20px;cursor:pointer;transition:all .15s;}
+  .tool:hover{border-color:var(--border-hi);box-shadow:0 4px 16px rgba(0,0,0,.04);}
+  .tool h4{font-family:"Newsreader",Georgia,serif;font-size:16px;font-weight:500;margin-bottom:4px;}
+  .tool p{color:var(--muted);font-size:13px;}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div class="brand-name">VMA Intelligence <span class="sub">· for Sara</span></div>
+    </div>
+    <div class="top-right">
+      <div class="live"><span class="pulse"></span>Live · 8m ago</div>
+      <button class="refresh">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div class="greeting">
+    <div class="greeting-tag"><span class="dot"></span>Tuesday 20 May · 247 signals synthesised</div>
+    <h1>Good morning Sara. I've read everything overnight. Here's what's worth your time, in order.</h1>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="lbl">Leads</div><div class="val">11</div><div class="delta">+3 new today</div></div>
+    <div class="stat"><div class="lbl">Predictions</div><div class="val">8</div><div class="delta">next 90 days</div></div>
+    <div class="stat"><div class="lbl">Hires</div><div class="val">3</div><div class="delta">6 follow-ups</div></div>
+    <div class="stat"><div class="lbl">Calendar</div><div class="val">14</div><div class="delta">6 statutory · 8 events</div></div>
+    <div class="stat"><div class="lbl">Watched</div><div class="val">12</div><div class="delta">1 overdue</div></div>
+  </div>
+
+  <div class="brief">
+    <div class="header">Three highest-leverage actions today</div>
+    <p>
+      <span class="lead-name">NatWest</span> needs you first. Jane Smith left for the CCO role at Lloyds last night — the seat is vacant. <span class="signal">Call the Chair and HR Director before lunch.</span> A replacement-search brief at this level commands £80–110k in fees, and three competitors will be in conversation by Wednesday morning.
+      <span class="inline-actions"><button class="primary">Copy opener</button><button>Mark done</button></span>
+    </p>
+    <p>
+      <span class="lead-name">Standard Chartered</span> is your pre-position play. Their Director of Corporate Communications hits a 26-month tenure cliff this quarter; three sector peers have already moved their equivalent this year. <span class="signal">Don't pitch yet — build the relationship.</span> The brief lands Q3 if it follows the pattern.
+      <span class="inline-actions"><button class="primary">Copy opener</button><button>Mark done</button></span>
+    </p>
+    <p>
+      <span class="lead-name">Octopus Energy</span> closed a £140m Series F last week. Scale-up rounds of this size are typically followed by a senior in-house comms hire six months later. <span class="signal">You have a five-month head start</span> on every recruiter who only reacts to job adverts.
+      <span class="inline-actions"><button class="primary">Copy opener</button><button>Mark done</button></span>
+    </p>
+  </div>
+
+  <div class="sec-h">Today's Leads <span class="count">11</span></div>
+  <div class="panel">
+    <div class="doc">
+      <div>
+        <div class="name">Severn Trent</div>
+        <div class="signal">FY trading update came in below consensus — comms restructure likely.</div>
+        <div class="meta"><span class="src">RNS</span> · 3 hours ago</div>
+      </div>
+      <span class="chip">active</span>
+    </div>
+    <div class="doc">
+      <div>
+        <div class="name">BP</div>
+        <div class="signal">CFO change announced — expect knock-on at Head of Investor Relations.</div>
+        <div class="meta"><span class="src">REUTERS</span> · 5 hours ago</div>
+      </div>
+      <span class="chip">active</span>
+    </div>
+    <div class="doc">
+      <div>
+        <div class="name">Unilever</div>
+        <div class="signal">Quarterly trading update; reorg flagged in management commentary.</div>
+        <div class="meta"><span class="src">RNS</span> · 6 hours ago</div>
+      </div>
+      <span class="chip new">new</span>
+    </div>
+  </div>
+
+  <div class="sec-h">Prediction Signals <span class="count">8 · next 90 days</span></div>
+  <div class="panel">
+    <div class="doc">
+      <div>
+        <div class="name">Aviva</div>
+        <div class="signal">Head of Internal Comms approaching 32-month tenure · 71% probability of opening in next 90 days.</div>
+        <div class="meta">Sector cascade exposure (3 peers moved 2025–2026)</div>
+      </div>
+      <div class="prob"><div class="bar"><i style="width:71%;"></i></div><span class="num">71%</span></div>
+    </div>
+    <div class="doc">
+      <div>
+        <div class="name">Centrica</div>
+        <div class="signal">New CCO Ravi Patel started 3 weeks ago — expect re-org hires across the function.</div>
+        <div class="meta">Hire Watch · new-co re-org follow-on</div>
+      </div>
+      <span class="chip">cascade</span>
+    </div>
+    <div class="doc">
+      <div>
+        <div class="name">Octopus Energy</div>
+        <div class="signal">£140m Series F closed last week — senior comms hire window opens ~Nov.</div>
+        <div class="meta">Funding signal · 6-month forward</div>
+      </div>
+      <span class="chip warn">funding</span>
+    </div>
+  </div>
+
+  <div class="sec-h">Hire Watch <span class="count">3 · auto-emits replacement + restructure actions</span></div>
+  <div class="panel">
+    <div class="doc">
+      <div>
+        <div class="name">Jane Smith — Lloyds → NatWest</div>
+        <div class="signal">CCO move. Old company replacement search + new company re-org watch both emitted.</div>
+        <div class="meta">2 follow-up actions</div>
+      </div>
+      <span class="chip">cascade</span>
+    </div>
+    <div class="doc">
+      <div>
+        <div class="name">Ravi Patel — Centrica</div>
+        <div class="signal">Director of Communications appointed three weeks ago. Re-org hires likely.</div>
+        <div class="meta">1 follow-up action</div>
+      </div>
+      <span class="chip">cascade</span>
+    </div>
+  </div>
+
+  <div class="sec-h">BD Calendar <span class="count">6 windows · 8 events</span></div>
+  <div class="panel">
+    <div class="doc">
+      <div>
+        <div class="name">FCA Consumer Duty board-report ramp</div>
+        <div class="signal">Statutory deadline 31 July — 64 days remain in the action window.</div>
+        <div class="meta">FS firms, retail-facing · permanent regulatory-comms seat</div>
+      </div>
+      <span class="chip">live</span>
+    </div>
+    <div class="doc">
+      <div>
+        <div class="name">PRWeek Awards UK · 22 October</div>
+        <div class="signal">Shortlists land ~6 weeks before. Finalists are visible mid-career external-comms candidates.</div>
+        <div class="meta">London · in 155 days · industry event</div>
+      </div>
+      <span class="chip warn">event</span>
+    </div>
+  </div>
+
+  <div class="sec-h">Candidate Watch <span class="count">12 · sorted by overdue</span></div>
+  <div class="panel">
+    <div class="doc">
+      <div>
+        <div class="name">James Carter · Director of Corp Comms · Barclays</div>
+        <div class="signal">Last touched 34 days ago, four days past cadence. He was quoted in PR Week last week — natural opener.</div>
+        <div class="meta">Cadence 30 days</div>
+      </div>
+      <span class="chip new">overdue 4d</span>
+    </div>
+    <div class="doc">
+      <div>
+        <div class="name">Molly Cutler · Head of Internal Comms · PA Consulting</div>
+        <div class="signal">Due for a touch in 29 days; nothing urgent right now.</div>
+        <div class="meta">Cadence 30 days</div>
+      </div>
+      <span class="chip">due</span>
+    </div>
+  </div>
+
+  <div class="sec-h">Tools <span class="count">on-demand</span></div>
+  <div class="tools">
+    <div class="tool"><h4>Pre-meeting Brief</h4><p>Walk into any client meeting prepped — no scrambling.</p></div>
+    <div class="tool"><h4>Pitch Pack</h4><p>Generate a sales-ready retained-conversion PDF.</p></div>
+    <div class="tool"><h4>Reverse Match</h4><p>Given a candidate, find ranked target accounts.</p></div>
+    <div class="tool"><h4>14-Day Catch-up</h4><p>Sweep the past fortnight for missed signals.</p></div>
+  </div>
+
+  <div class="sec-h">Recent Reports <span class="count">last 48 hours</span></div>
+  <div class="panel">
+    <div class="doc">
+      <div><div class="name">Pre-meeting Brief: Severn Trent</div><div class="meta">2 hours ago · open report</div></div>
+      <span class="chip">PDF</span>
+    </div>
+    <div class="doc">
+      <div><div class="name">Morning Brief: 20 May</div><div class="meta">8 hours ago · open report</div></div>
+      <span class="chip">HTML</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
