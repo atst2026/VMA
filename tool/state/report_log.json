@@ -1,5 +1,12 @@
 [
   {
+    "ts": "2026-05-20T01:39:04.853250+00:00",
+    "type": "Reverse Match",
+    "company": "Man Group",
+    "name": "Kim Mamtora",
+    "artifact": "reverse-match"
+  },
+  {
     "ts": "2026-05-20T01:38:50.010123+00:00",
     "type": "Pitch Pack",
     "company": "Unilever",
