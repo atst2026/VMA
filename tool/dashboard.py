@@ -338,27 +338,27 @@ _REPORT_SKIN = (
     '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800'
     '&family=Crimson+Pro:wght@500;600&display=swap" rel="stylesheet">'
     '<style>'
-    'html{background:#EDE7DA;-webkit-text-size-adjust:100%;}'
+    'html{background:#ECF1F9;-webkit-text-size-adjust:100%;}'
     'body{font-family:"Inter",-apple-system,system-ui,sans-serif!important;'
     'max-width:840px!important;margin:32px auto!important;padding:46px 56px!important;'
-    'background:#fff!important;color:#181613!important;font-size:14px!important;'
+    'background:#fff!important;color:#1F1F1F!important;font-size:14px!important;'
     'line-height:1.62!important;border-radius:14px;position:relative;'
-    'box-shadow:0 6px 30px rgba(140,120,80,.14);}'
+    'box-shadow:0 10px 28px rgba(31,55,124,.10),0 2px 6px rgba(31,55,124,.06);}'
     '.vma-brand{position:absolute;top:30px;right:52px;width:56px;'
     'height:auto;line-height:0;}'
     '.vma-brand svg{display:block;width:100%;height:auto;}'
     'body>h1:first-of-type,body>h2:first-of-type{padding-right:92px;}'
-    'h1,h2,h3,h4{font-family:"Crimson Pro",Georgia,serif;color:#181613;'
+    'h1,h2,h3,h4{font-family:"Crimson Pro",Georgia,serif;color:#1F1F1F;'
     'line-height:1.25;font-weight:600;}'
-    'body>h1:first-child,body>h2:first-child{font-size:26px;color:#A04E32;'
+    'body>h1:first-child,body>h2:first-child{font-size:26px;color:#1A3D7C;'
     'margin:0 0 4px!important;}'
     'h2{font-size:19px;margin:26px 0 8px;}h3{font-size:16px;margin:20px 0 6px;}'
     'p{margin:0 0 12px;}ul,ol{margin:6px 0 14px;padding-left:22px;}li{margin:5px 0;}'
-    'a{color:#A04E32;}hr{border:none;border-top:1px solid rgba(140,120,80,.20);'
+    'a{color:#1A3D7C;}hr{border:none;border-top:1px solid rgba(60,64,67,.14);'
     'margin:22px 0;}'
     'table{border-collapse:collapse;width:100%;margin:10px 0 16px;font-size:13px;}'
-    'td,th{padding:8px 10px;border-bottom:1px solid rgba(140,120,80,.20);'
-    'text-align:left;}th{color:#7A7164;font-weight:600;}'
+    'td,th{padding:8px 10px;border-bottom:1px solid rgba(60,64,67,.14);'
+    'text-align:left;}th{color:#5F6368;font-weight:600;}'
     '</style>'
 )
 
@@ -1505,7 +1505,7 @@ TEMPLATE = r"""
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: linear-gradient(180deg, rgba(91, 166, 173, 0.03) 0%, rgba(255, 255, 255, 0) 100%);
+      background: linear-gradient(180deg, rgba(66, 133, 244, 0.04) 0%, rgba(255, 255, 255, 0) 100%);
       flex-shrink: 0;
     }
     .panel-header h2 {
@@ -1654,7 +1654,7 @@ TEMPLATE = r"""
       border-bottom: 1px solid var(--border);
       transition: background 0.15s ease;
     }
-    .item:hover { background: rgba(91, 166, 173, 0.025); }
+    .item:hover { background: rgba(66, 133, 244, 0.03); }
     .item:last-child { border-bottom: 0; }
     .item .rank {
       display: inline-flex;
@@ -1663,7 +1663,7 @@ TEMPLATE = r"""
       width: 18px; height: 18px;
       background: var(--teal-soft);
       color: var(--teal-dark);
-      border: 1px solid rgba(91, 166, 173, 0.25);
+      border: 1px solid rgba(66, 133, 244, 0.25);
       border-radius: 4px;
       font-size: 10px;
       font-weight: 600;
@@ -1732,7 +1732,7 @@ TEMPLATE = r"""
       line-height: 1.2;
       background: white;
       color: var(--teal-dark);
-      border: 1px solid rgba(91, 166, 173, 0.3);
+      border: 1px solid rgba(66, 133, 244, 0.30);
     }
     .btn-mini:hover {
       background: var(--teal);
@@ -1848,9 +1848,9 @@ TEMPLATE = r"""
       text-transform: uppercase;
       letter-spacing: 0.1em;
       vertical-align: middle;
-      background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-      color: white;
-      box-shadow: 0 0 0 1px rgba(255, 107, 53, 0.2);
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      box-shadow: 0 0 0 1px var(--btn-border);
     }
     .status-badge {
       display: inline-block;
@@ -2032,7 +2032,7 @@ TEMPLATE = r"""
       transition: background 0.12s;
     }
     .panel-body.compact .item.predictor:hover {
-      background: rgba(91, 166, 173, 0.04);
+      background: rgba(66, 133, 244, 0.05);
     }
     .item.predictor .row-summary {
       display: flex;
@@ -2103,7 +2103,7 @@ TEMPLATE = r"""
       font-family: inherit;
       transition: background 0.15s;
     }
-    .show-more:hover { background: rgba(91, 166, 173, 0.06); }
+    .show-more:hover { background: rgba(66, 133, 244, 0.07); }
 
     .empty {
       padding: 28px 16px;
@@ -2268,7 +2268,7 @@ TEMPLATE = r"""
       cursor: pointer;
       letter-spacing: 0.04em;
       transition: all 0.18s ease;
-      box-shadow: 0 1px 2px rgba(91, 166, 173, 0.15);
+      box-shadow: 0 1px 2px rgba(31, 55, 124, 0.10);
     }
     .action-card summary.add-toggle::-webkit-details-marker { display: none; }
     .action-card summary.add-toggle::marker { content: ""; }
@@ -2444,13 +2444,13 @@ TEMPLATE = r"""
                 <strong style="color:#333;">{{ s.contact.name or s.contact.title }}</strong>{% if s.contact.name %} · {{ s.contact.title }}{% endif %}
                 · confidence {{ '%.0f' | format(s.contact.confidence * 100) }}%{% if s.contact.basis == 'jd_reporting_line' %} · from JD{% elif s.contact.basis == 'appointee' %} · named in headline{% endif %}
                 {% if s.contact.division %} · <span style="color:var(--teal-dark);font-weight:600;">{{ s.contact.division }}</span>{% endif %}
-                {% if s.contact.stale %} · <span style="color:#A04E32;" title="Roster entry hasn't been verified in 120+ days — confirm before outreach.">⚠ verify</span>{% endif %}
+                {% if s.contact.stale %} · <span style="color:#1A3D7C;" title="Roster entry hasn't been verified in 120+ days — confirm before outreach.">⚠ verify</span>{% endif %}
                 {% if s.contact.name %}
                   · <a href="#" onclick="flagContact(event, this, '{{ s.company | e }}', '{{ s.contact.slot | e }}', '{{ s.contact.name | e }}')" style="color:var(--text-muted);text-decoration:underline;">wrong?</a>
                 {% endif %}
               </div>
               {% if s.contact.divisional_uncertain and not s.contact.division %}
-              <div style="font-size:11px;color:#A04E32;margin:2px 0 4px;">
+              <div style="font-size:11px;color:#1A3D7C;margin:2px 0 4px;">
                 ⚠ Divisional role — verify the divisional comms leader before outreach (resolved to group-level).
               </div>
               {% endif %}
@@ -2763,13 +2763,13 @@ async function dispatch(event, formId, url) {
   if (win) {
     win.document.write(
       '<!doctype html><meta charset="utf-8"><title>Preparing report…</title>' +
-      '<style>body{font-family:Inter,system-ui,sans-serif;background:#F5F0E8;' +
-      'color:#181613;display:flex;min-height:100vh;align-items:center;' +
+      '<style>body{font-family:Inter,system-ui,sans-serif;background:#ECF1F9;' +
+      'color:#1F1F1F;display:flex;min-height:100vh;align-items:center;' +
       'justify-content:center;margin:0}.b{text-align:center;padding:24px}' +
-      '.s{width:30px;height:30px;border:3px solid rgba(140,120,80,.25);' +
-      'border-top-color:#C96442;border-radius:50%;margin:0 auto 16px;' +
+      '.s{width:30px;height:30px;border:3px solid rgba(66,133,244,.20);' +
+      'border-top-color:#4285F4;border-radius:50%;margin:0 auto 16px;' +
       'animation:r .8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}' +
-      'p{font-size:13px;color:#7A7164;max-width:340px;line-height:1.55}</style>' +
+      'p{font-size:13px;color:#5F6368;max-width:340px;line-height:1.55}</style>' +
       '<div class="b"><div class="s"></div><h3>Preparing your report…</h3>' +
       '<p>This can take a few minutes. Keep this tab open — it loads ' +
       'automatically when ready.</p></div>');
@@ -3722,7 +3722,7 @@ async function flagContact(e, link, company, slot, name) {
     const j = await r.json();
     if (j.ok) {
       link.textContent = 'flagged';
-      link.style.color = '#A04E32';
+      link.style.color = '#1A3D7C';
     } else {
       link.textContent = 'wrong?';
       alert(j.detail || 'Could not flag.');
