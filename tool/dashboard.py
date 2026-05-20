@@ -1301,14 +1301,12 @@ LANDING_TEMPLATE = r"""
       position:relative;overflow:hidden;
       display:flex;align-items:center;justify-content:center;
       background:radial-gradient(
-        ellipse 80% 88% at 50% 50%,
-        #b8d0e7 0%,
-        #bfd4ea 15%,
-        #c9d9ec 28%,
-        #d6e0ed 45%,
-        #e3ebf2 62%,
-        #ecf0f5 78%,
-        #f4f6fa 92%,
+        ellipse 48% 55% at 50% 55%,
+        #a8c8e6 0%,
+        #bdd3e9 18%,
+        #d2e1ee 40%,
+        #e8eff6 65%,
+        #f5f8fb 85%,
         #f7f9fc 100%
       );
     }
