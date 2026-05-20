@@ -1116,6 +1116,7 @@ def api_candidates_watch_add():
         sectors=sectors,
         notes=(data.get("notes") or "").strip(),
         touch_cadence_days=cadence,
+        tenure_start=(data.get("tenure_start") or "").strip(),
     )
     return jsonify({"ok": True, "candidate": rec})
 
@@ -2242,6 +2243,19 @@ TEMPLATE = r"""
     .cw-pill.overdue{background:#F3D7CC;color:#8C3A1E;}
     .cw-pill.due{background:#E2EAD9;color:#4A6233;}
     .cw-pill.open{background:#EAE3D2;color:#6B5B33;cursor:help;}
+    /* Drift-score pill — primary ordering signal on Candidate Watch.
+       Colour ramps by score: hot (≥60) = bright coral; warm (30-59) =
+       muted coral; low (<30) = neutral grey. Tooltip explains the
+       composite score. */
+    .cw-pill.drift{cursor:help;}
+    .cw-pill.drift.hot{background:rgba(201,100,66,.22);color:#A04E32;}
+    .cw-pill.drift.warm{background:rgba(201,100,66,.10);color:#A04E32;}
+    .cw-pill.drift.low{background:rgba(140,120,80,.10);color:#7A7164;}
+    /* Reason chips — explain WHY a candidate is high-ranked. Small,
+       lightweight, hover to see full reason text. */
+    .cw-pill.reason{background:#F4F2EC;color:#5F574A;font-weight:500;
+                    font-size:9.5px;letter-spacing:0;cursor:help;
+                    max-width:220px;overflow:hidden;text-overflow:ellipsis;}
     .cw-right{display:flex;gap:6px;align-items:center;}
     /* Scoped to .action-card so it beats the big ".action-card button"
        primary style (which otherwise turns these into huge orange
@@ -3053,6 +3067,8 @@ TEMPLATE = r"""
           <input id="wa-company" name="current_company">
           <label for="wa-title">Current title</label>
           <input id="wa-title" name="current_title">
+          <label for="wa-tenure">Joined current role (YYYY-MM-DD, optional)</label>
+          <input id="wa-tenure" name="tenure_start" type="date" placeholder="2022-09-01">
           <label for="wa-cadence">Remind me every (days)</label>
           <input id="wa-cadence" name="touch_cadence_days" type="number" value="30" min="7" max="180">
           <label for="wa-notes">Notes</label>
@@ -3956,26 +3972,41 @@ async function loadWatchList() {
       wrap.innerHTML = '';
       return;
     }
-    status.textContent = j.total + ' watched · sorted by call urgency';
+    status.textContent = j.total + ' watched · sorted by liquidity score';
     const out = ['<div class="cw-list">'];
     for (const c of j.rows.slice(0, 10)) {
       const cadence = c.touch_cadence_days || 30;
       const seen = c._days_since_touched;          // null === not yet contacted
-      let duePill;
+      // Build the headline pill — drift score is the new primary
+      // ordering signal; overdue is shown as supporting detail.
+      const drift = c._drift_score != null ? c._drift_score : (c._urgency_score || 0);
+      let driftClass = 'low';
+      if (drift >= 60) driftClass = 'hot';
+      else if (drift >= 30) driftClass = 'warm';
+      const driftPill = '<span class="cw-pill drift ' + driftClass +
+        '" title="Liquidity score — combines tenure, cascade, news, trade-press, and cadence signals">' +
+        'score ' + esc(drift) + '</span>';
+
+      // Overdue / due indicator stays as a secondary pill.
+      let duePill = '';
       if (c._overdue_days > 0) {
         duePill = '<span class="cw-pill overdue">overdue ' + esc(c._overdue_days) + 'd</span>';
-      } else {
-        const left = Math.max(0, cadence - (seen || 0));
+      } else if (seen != null) {
+        const left = Math.max(0, cadence - seen);
         duePill = '<span class="cw-pill due">due in ' + esc(left) + 'd</span>';
+      } else {
+        duePill = '<span class="cw-pill overdue">never touched</span>';
       }
-      const openPill = c._restlessness_hits > 0
-        ? '<span class="cw-pill open" title="' + esc(c._restlessness_hits) +
-          ' phrase(s) in notes you typed suggest this person may be open to a move">' +
-          'may be open ×' + esc(c._restlessness_hits) + '</span>'
-        : '';
+
+      // Reason chips — each contributing signal becomes a small chip
+      // so Sara can see WHY the candidate is high-ranked. Lifted from
+      // the server-side compute_drift output.
+      const reasons = Array.isArray(c._drift_reasons) ? c._drift_reasons : [];
+      const reasonChips = reasons.slice(0, 3).map(r =>
+        '<span class="cw-pill reason" title="' + esc(r) + '">' + esc(r) + '</span>'
+      ).join('');
+
       const sub = [c.current_title, c.current_company].filter(Boolean).map(esc).join(' · ');
-      // Data attributes carry name/company so user-controlled text is never
-      // injected into an onclick string.
       const dn = esc(c.name);
       const dc = esc(c.current_company || '');
       out.push(
@@ -3984,7 +4015,7 @@ async function loadWatchList() {
             '<div class="cw-nm">' + esc(c.name) + '</div>' +
             (sub ? '<div class="cw-sub">' + sub + '</div>' : '') +
             (c.last_signal ? '<div class="cw-state"><em>' + esc(c.last_signal) + '</em></div>' : '') +
-            '<div class="cw-tags">' + duePill + openPill + '</div>' +
+            '<div class="cw-tags">' + driftPill + duePill + reasonChips + '</div>' +
           '</div>' +
           '<div class="cw-right">' +
             '<button class="cw-iconbtn cw-tick watch-action" data-action="touch" data-name="' + dn + '" data-company="' + dc + '" title="Mark contacted">✓</button>' +

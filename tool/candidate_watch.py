@@ -104,6 +104,8 @@ class WatchedCandidate:
     touch_cadence_days: int = 30  # default: call every 30 days
     snoozed_until: str = ""       # ISO date, or empty
     notes: str = ""
+    tenure_start: str = ""        # ISO date when they joined current role
+                                  # — feeds the tenure-clock liquidity score
 
 
 def _today_iso() -> str:
@@ -150,34 +152,26 @@ def _days_since(iso: str) -> int | None:
 
 
 def list_watched() -> list[dict]:
-    """Return all watched candidates, scored and sorted by call urgency.
+    """Return all watched candidates, scored and sorted by liquidity.
 
-    Score = max(0, days_since_touched - cadence) + 10*restlessness_hits.
-    Higher score = call sooner. (Snooze used to filter rows out here; the
-    snooze UI was removed, so the filter was too — otherwise a legacy
-    snoozed_until value silently hides the candidate with no way to
-    unhide.)"""
+    Ordering used to be cadence-based ("X days overdue"). It's now
+    signal-drift-based — see tool.candidate_signal_drift for the inputs
+    that feed the score (tenure clock, cascade proximity of their
+    current employer, news mentions, trade-press hits, plus the legacy
+    cadence + manual restlessness signals at reduced weight).
+
+    Candidates re-rank automatically whenever an upstream signal lands
+    (next morning brief, cascade scour, trade-press scour) — Sara
+    never has to log anything for the ranking to update.
+    """
+    from tool.candidate_signal_drift import compute_drift
     rows = _load_all()
     out: list[dict] = []
     for c in rows:
-        days = _days_since(c.get("last_touched", ""))
-        cadence = int(c.get("touch_cadence_days") or 30)
-        if days is None:
-            overdue = max(cadence, 1)   # never touched → maximally overdue
-            label = "never touched"
-        else:
-            overdue = max(0, days - cadence)
-            label = f"touched {days}d ago (cadence {cadence}d)"
-        restlessness_hits = _restlessness_score(c.get("last_signal", ""))
-        score = overdue + (10 * restlessness_hits)
         decorated = dict(c)
-        decorated["_days_since_touched"] = days
-        decorated["_overdue_days"]       = overdue
-        decorated["_status_label"]       = label
-        decorated["_restlessness_hits"]  = restlessness_hits
-        decorated["_urgency_score"]      = score
+        decorated.update(compute_drift(c))
         out.append(decorated)
-    out.sort(key=lambda r: r["_urgency_score"], reverse=True)
+    out.sort(key=lambda r: r.get("_drift_score", 0), reverse=True)
     return out
 
 
@@ -210,7 +204,8 @@ def add_candidate(name: str,
                   linkedin_url: str = "",
                   sectors: list[str] | None = None,
                   notes: str = "",
-                  touch_cadence_days: int = 30) -> dict:
+                  touch_cadence_days: int = 30,
+                  tenure_start: str = "") -> dict:
     """Add a new candidate to the watch list. If a candidate with the
     same name+current_company already exists, it's updated rather
     than duplicated. Serialised so concurrent adds can't lose writes."""
@@ -227,6 +222,7 @@ def add_candidate(name: str,
                     "sectors":            sectors       or r.get("sectors", []),
                     "notes":              notes         or r.get("notes", ""),
                     "touch_cadence_days": touch_cadence_days,
+                    "tenure_start":       tenure_start  or r.get("tenure_start", ""),
                 })
                 _save_all(rows)
                 return r
@@ -238,6 +234,7 @@ def add_candidate(name: str,
             sectors=sectors or [],
             notes=notes.strip(),
             touch_cadence_days=touch_cadence_days,
+            tenure_start=tenure_start.strip(),
         ))
         rows.append(new)
         _save_all(rows)
