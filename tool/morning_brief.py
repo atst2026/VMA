@@ -337,9 +337,17 @@ def main() -> int:
     # Dashboard reads latest_signals.json — write the FULL ranked set
     # (not the email-fresh-only subset) so Sara sees every current
     # lead matching her criteria, regardless of when it first appeared.
-    (STATE_DIR / "latest_signals.json").write_text(
-        json.dumps(ranked_all, indent=2, default=str)
-    )
+    _signals_payload = json.dumps(ranked_all, indent=2, default=str)
+    (STATE_DIR / "latest_signals.json").write_text(_signals_payload)
+    # Push to the dashboard-state branch so the dashboard hydrates
+    # leads on cold-start instead of showing empty until Daily Refresh.
+    try:
+        from tool import github_state
+        github_state.push_async(
+            "tool/state/latest_signals.json", _signals_payload,
+            "state: morning-brief latest_signals.json")
+    except Exception as _e:
+        pass
 
     # Mandates Worth Following — vacated-seat / backfill detector. Runs
     # over the RAW scoured signals (like the predictor): when a senior
@@ -411,9 +419,15 @@ def main() -> int:
     try:
         from tool import funding_round as _fund
         funding_feed = _fund.detect_funding(signals)
-        (STATE_DIR / "latest_funding.json").write_text(
-            json.dumps(funding_feed, indent=2, default=str)
-        )
+        _funding_payload = json.dumps(funding_feed, indent=2, default=str)
+        (STATE_DIR / "latest_funding.json").write_text(_funding_payload)
+        try:
+            from tool import github_state
+            github_state.push_async(
+                "tool/state/latest_funding.json", _funding_payload,
+                "state: morning-brief latest_funding.json")
+        except Exception:
+            pass
         log.info("Funding-Round: %d record(s) from %d raw signals",
                  len(funding_feed), len(signals))
     except Exception as e:
@@ -437,9 +451,25 @@ def main() -> int:
         if p.get("status") != "dismissed"
     ]
     pipeline_view.sort(key=lambda p: -float(p.get("score") or 0))
-    (STATE_DIR / "latest_predictive.json").write_text(
-        json.dumps(pipeline_view, indent=2, default=str)
-    )
+    _predictive_payload = json.dumps(pipeline_view, indent=2, default=str)
+    (STATE_DIR / "latest_predictive.json").write_text(_predictive_payload)
+    # Same as latest_signals: push to dashboard-state so the Prediction
+    # Signals panel hydrates on cold-start.
+    try:
+        from tool import github_state
+        github_state.push_async(
+            "tool/state/latest_predictive.json", _predictive_payload,
+            "state: morning-brief latest_predictive.json")
+        # predictor_pipeline.json is the underlying durable pipeline the
+        # dashboard reads via predictor_pipeline.all_predictors(). Push
+        # if it exists.
+        _pp_path = STATE_DIR / "predictor_pipeline.json"
+        if _pp_path.exists():
+            github_state.push_async(
+                "tool/state/predictor_pipeline.json", _pp_path.read_text(),
+                "state: morning-brief predictor_pipeline.json")
+    except Exception as _e:
+        pass
 
     # Deliver
     if mode in ("send", "test"):
