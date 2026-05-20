@@ -1217,33 +1217,38 @@ TEMPLATE = r"""
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
   <style>
     :root {
-      /* Claude-warmth palette. Existing variable names preserved so the
-         rest of the dashboard CSS just inherits the new colours — only
-         the values change here. "navy" now maps to deep warm ink,
-         "teal" remaps to Anthropic coral. */
-      --navy: #181613;
-      --navy-deep: #0F0D0B;
-      --navy-soft: rgba(24, 22, 19, 0.06);
-      --navy-hairline: rgba(24, 22, 19, 0.10);
-      --teal: #C96442;
-      --teal-bright: #E6764E;
-      --teal-dark: #A04E32;
-      --teal-glow: rgba(201, 100, 66, 0.34);
-      --teal-soft: rgba(201, 100, 66, 0.09);
-      --bg: #F5F0E8;
-      --bg-warm: #EDE5D6;
+      /* Gemini-feel palette. Variable names preserved so the rest of the
+         dashboard CSS inherits the new colours — only the values change.
+         "navy" maps to Gemini text colour, "teal" maps to Gemini blue. */
+      --navy: #1F1F1F;
+      --navy-deep: #0F1A2E;
+      --navy-soft: rgba(31, 31, 31, 0.06);
+      --navy-hairline: rgba(31, 31, 31, 0.10);
+      --teal: #4285F4;
+      --teal-bright: #5B9BFF;
+      --teal-dark: #1A3D7C;
+      --teal-glow: rgba(66, 133, 244, 0.22);
+      --teal-soft: rgba(66, 133, 244, 0.10);
+      --bg: #ECF1F9;
+      --bg-warm: #E3EAF5;
       --surface: #FFFFFF;
-      --surface-elevated: #FBF7EF;
-      --border: rgba(140, 120, 80, 0.18);
-      --border-hover: rgba(201, 100, 66, 0.36);
-      --text: #181613;
-      --text-muted: #7A7164;
-      --text-dim: #B7AC9A;
+      --surface-elevated: #F4F7FC;
+      --border: rgba(60, 64, 67, 0.12);
+      --border-hover: rgba(66, 133, 244, 0.36);
+      --text: #1F1F1F;
+      --text-muted: #5F6368;
+      --text-dim: #9AA0A6;
       --gold: #C49A3B;
-      --green: #6B8C3B;
-      --shadow-sm: 0 1px 2px rgba(140, 120, 80, 0.06);
-      --shadow-md: 0 4px 14px rgba(140, 120, 80, 0.10), 0 1px 3px rgba(140, 120, 80, 0.06);
-      --shadow-lg: 0 10px 36px rgba(140, 120, 80, 0.14);
+      --green: #34A853;
+      /* Upgrade-pill palette — sampled from the attached Gemini button.
+         Used by .big-refresh, .action-card button, and active filter pills. */
+      --btn-bg: #C9DDF8;
+      --btn-bg-hover: #B8D0F2;
+      --btn-text: #1A3D7C;
+      --btn-border: rgba(26, 61, 124, 0.10);
+      --shadow-sm: 0 1px 2px rgba(60, 64, 67, 0.05);
+      --shadow-md: 0 6px 22px rgba(60, 64, 67, 0.08), 0 1px 3px rgba(60, 64, 67, 0.04);
+      --shadow-lg: 0 10px 28px rgba(31, 55, 124, 0.10), 0 2px 6px rgba(31, 55, 124, 0.06);
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
@@ -1251,8 +1256,8 @@ TEMPLATE = r"""
       font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
       background-color: var(--bg);
       background-image:
-        radial-gradient(ellipse 700px 500px at 8% 12%, rgba(201, 100, 66, 0.07), transparent 60%),
-        radial-gradient(ellipse 600px 420px at 92% 92%, rgba(196, 154, 59, 0.08), transparent 60%);
+        radial-gradient(ellipse 700px 500px at 8% 12%, rgba(66, 133, 244, 0.06), transparent 60%),
+        radial-gradient(ellipse 600px 420px at 92% 92%, rgba(138, 92, 209, 0.05), transparent 60%);
       background-attachment: fixed;
       color: var(--text);
       line-height: 1.5;
@@ -1264,103 +1269,72 @@ TEMPLATE = r"""
     }
     .serif { font-family: "Crimson Pro", Georgia, serif; }
 
-    /* TOP BAR — solid navy strip, sharp coral rule at the bottom edge.
-       VMA GROUP wordmark with tagline below it on the left; "Live
-       Intelligence" pill on the right with a pulsing green dot to
-       the left of the text. Subtle diagonal pink/coral wash adds a
-       little life to the navy without softening the edge. */
+    /* TOP BAR — Gemini-feel centered hero. Soft blue halo on the tinted
+       page bg; VMA GROUP wordmark centred; "Intelligence Platform · Live"
+       subtitle below with a pulsing green liveness dot to the left. No
+       hard rule at the bottom — halo bleeds gently into the dashboard. */
     .top-bar {
-      background: var(--navy);
-      border-bottom: 3px solid var(--teal);
       position: relative;
       overflow: hidden;
-    }
-    .top-bar::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      background: linear-gradient(120deg,
-        transparent 55%,
-        rgba(225, 138, 161, 0.10) 75%,
-        rgba(201, 100, 66, 0.16) 100%);
-    }
-    .top-bar .hero-row {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 16px 28px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 20px;
-      position: relative;
-      z-index: 2;
-    }
-    .top-bar .brand {
+      padding: 32px 30px 28px;
       display: flex;
       flex-direction: column;
-      gap: 7px;
+      align-items: center;
+      justify-content: center;
+      gap: 13px;
+      text-align: center;
+      background:
+        radial-gradient(ellipse 920px 260px at 50% 50%, rgba(66, 133, 244, 0.14), transparent 60%),
+        radial-gradient(ellipse 1200px 200px at 50% 100%, rgba(66, 133, 244, 0.05), transparent 70%),
+        var(--bg);
     }
     .top-bar .brand-line-1 {
-      color: #fff;
       font-family: Arial, Helvetica, sans-serif;
-      font-size: 22px;
-      line-height: 1;
+      color: var(--text);
       display: inline-flex;
       align-items: baseline;
+      line-height: 1;
     }
     .top-bar .bm-vma {
       font-weight: 800;
-      letter-spacing: 0.07em;
+      letter-spacing: 0.06em;
+      font-size: 40px;
     }
     .top-bar .bm-group {
-      font-weight: 400;
-      letter-spacing: 0.28em;
-      padding-left: 0.5em;
-    }
-    .top-bar .brand-tagline {
-      color: rgba(255, 255, 255, 0.72);
-      font-family: Arial, Helvetica, sans-serif;
-      font-size: 8.5px;
-      letter-spacing: 0.30em;
-      font-weight: 400;
-      line-height: 1;
-      text-transform: uppercase;
+      font-weight: 300;
+      letter-spacing: 0.32em;
+      font-size: 40px;
+      padding-left: 0.42em;
     }
     .top-bar .live-pill {
       display: inline-flex;
       align-items: center;
-      gap: 9px;
-      color: rgba(255, 255, 255, 0.92);
-      font-size: 10.5px;
-      letter-spacing: 0.18em;
+      gap: 11px;
+      font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+      color: var(--text-muted);
+      font-size: 11px;
+      letter-spacing: 0.26em;
       text-transform: uppercase;
-      font-weight: 500;
-      padding: 7px 14px;
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.04);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
+      font-weight: 400;
     }
     .top-bar .live-pill::before {
       content: "";
-      width: 7px;
-      height: 7px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: #9FD181;
+      flex-shrink: 0;
       animation: live-pulse 2.4s ease-in-out infinite;
     }
     @keyframes live-pulse {
-      0%   { box-shadow: 0 0 0 0 rgba(159, 209, 129, 0.75), 0 0 6px rgba(159, 209, 129, 0.6); }
-      70%  { box-shadow: 0 0 0 10px rgba(159, 209, 129, 0), 0 0 10px rgba(159, 209, 129, 0.85); }
-      100% { box-shadow: 0 0 0 0 rgba(159, 209, 129, 0),    0 0 6px rgba(159, 209, 129, 0.6); }
+      0%   { box-shadow: 0 0 0 0 rgba(159, 209, 129, 0.75), 0 0 7px rgba(159, 209, 129, 0.6); }
+      70%  { box-shadow: 0 0 0 10px rgba(159, 209, 129, 0), 0 0 12px rgba(159, 209, 129, 0.9); }
+      100% { box-shadow: 0 0 0 0 rgba(159, 209, 129, 0),    0 0 7px rgba(159, 209, 129, 0.6); }
     }
     @media (max-width: 720px) {
-      .top-bar .hero-row { padding: 13px 16px; }
-      .top-bar .brand-line-1 { font-size: 18px; }
-      .top-bar .brand-tagline { font-size: 7px; letter-spacing: 0.22em; }
-      .top-bar .live-pill { font-size: 9.5px; padding: 5px 10px; letter-spacing: 0.14em; }
+      .top-bar { padding: 22px 16px 18px; gap: 10px; }
+      .top-bar .bm-vma, .top-bar .bm-group { font-size: 28px; }
+      .top-bar .live-pill { font-size: 9.5px; letter-spacing: 0.18em; }
 
       /* Mobile predictor row: grid puts chips on their own dedicated
          row beneath the company name so 'Corporate Affairs Director'
@@ -1423,51 +1397,35 @@ TEMPLATE = r"""
       position: relative;
       overflow: hidden;
     }
-    .refresh-bar::before {
-      content: "";
-      position: absolute;
-      top: 0; left: 0; bottom: 0;
-      width: 4px;
-      background: linear-gradient(180deg, var(--teal-bright) 0%, var(--teal-dark) 100%);
-    }
+    /* No accent stripe — clean Gemini-feel refresh bar. */
     .big-refresh {
-      background: linear-gradient(135deg, var(--teal-bright) 0%, var(--teal) 55%, var(--teal-dark) 100%);
-      color: white;
-      border: 1px solid var(--teal-bright);
-      padding: 11px 22px;
-      border-radius: 7px;
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      border: 1px solid var(--btn-border);
+      padding: 10px 20px;
+      border-radius: 999px;
       font-family: inherit;
-      font-size: 13px;
+      font-size: 12.5px;
       font-weight: 600;
-      letter-spacing: 0.02em;
+      letter-spacing: 0.005em;
       cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow:
-        0 3px 12px var(--teal-glow),
-        0 0 0 1px rgba(91, 166, 173, 0.5),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-      text-shadow: 0 1px 1px rgba(0, 0, 0, 0.12);
+      transition: background 0.15s ease, transform 0.15s ease;
+      box-shadow: 0 1px 2px rgba(31, 55, 124, 0.06);
       white-space: nowrap;
-      margin-left: 6px;   /* clears the left accent stripe */
     }
     .big-refresh:hover {
+      background: var(--btn-bg-hover);
       transform: translateY(-1px);
-      box-shadow:
-        0 8px 24px var(--teal-glow),
-        0 0 0 1px var(--teal-bright),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-      filter: brightness(1.05);
     }
     .big-refresh:active {
       transform: translateY(0);
-      filter: brightness(0.96);
     }
     .big-refresh:disabled {
-      background: #B8C2CC;
+      background: #E5E8EE;
+      color: #9AA0A6;
       box-shadow: none;
       cursor: not-allowed;
       transform: none;
-      filter: none;
     }
     .refresh-meta {
       display: flex;
@@ -1949,22 +1907,23 @@ TEMPLATE = r"""
       color: var(--teal-dark);
     }
     .filter-pill.active, .lead-filter-pill.active {
-      background: var(--navy);
-      color: white;
-      border-color: var(--navy);
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      border-color: var(--btn-border);
     }
     .filter-pill .pill-count, .lead-filter-pill .pill-count {
       display: inline-block;
       font-size: 10px;
       padding: 1px 6px;
-      background: rgba(255,255,255,0.18);
+      background: rgba(66, 133, 244, 0.10);
+      color: var(--btn-text);
       border-radius: 10px;
       font-weight: 700;
     }
-    .filter-pill:not(.active) .pill-count,
-    .lead-filter-pill:not(.active) .pill-count {
-      background: rgba(14, 40, 69, 0.08);
-      color: var(--navy);
+    .filter-pill.active .pill-count,
+    .lead-filter-pill.active .pill-count {
+      background: rgba(26, 61, 124, 0.10);
+      color: var(--btn-text);
     }
     .btn-mini.ghost {
       background: transparent;
@@ -2271,24 +2230,25 @@ TEMPLATE = r"""
       width: 100%;
       margin-top: 14px;
       padding: 9px 14px;
-      background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 11px;
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      border: 1px solid var(--btn-border);
+      border-radius: 999px;
+      font-size: 11.5px;
       font-weight: 600;
       font-family: inherit;
       cursor: pointer;
-      transition: all 0.18s ease;
-      letter-spacing: 0.04em;
-      box-shadow: 0 1px 2px rgba(91, 166, 173, 0.15);
+      transition: background 0.15s ease, transform 0.15s ease;
+      letter-spacing: 0.02em;
+      box-shadow: 0 1px 2px rgba(31, 55, 124, 0.06);
     }
     .action-card button:hover {
-      box-shadow: 0 4px 16px var(--teal-glow), 0 0 0 1px var(--teal);
+      background: var(--btn-bg-hover);
       transform: translateY(-1px);
     }
     .action-card button:disabled {
-      background: #B8C2CC;
+      background: #E5E8EE;
+      color: #9AA0A6;
       cursor: not-allowed;
       box-shadow: none;
       transform: none;
@@ -2417,16 +2377,11 @@ TEMPLATE = r"""
 </head>
 <body>
 
-<header class="top-bar">
-  <div class="hero-row">
-    <div class="brand" aria-label="VMA Group">
-      <div class="brand-line-1">
-        <span class="bm-vma">VMA</span><span class="bm-group">GROUP</span>
-      </div>
-      <div class="brand-tagline">Recruitment · Executive Search · Advisory Services</div>
-    </div>
-    <div class="live-pill">Live Intelligence</div>
+<header class="top-bar" aria-label="VMA Group">
+  <div class="brand-line-1">
+    <span class="bm-vma">VMA</span><span class="bm-group">GROUP</span>
   </div>
+  <div class="live-pill">Intelligence Platform · Live</div>
 </header>
 
 {% if not has_token %}
