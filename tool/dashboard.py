@@ -800,10 +800,10 @@ def _safe_url_filter(u):
 @app.route("/")
 @_auth_required
 def landing():
-    """Wireframe-globe landing — world map + rotating meridian/parallel
-    mesh, VMA wordmark, click-pill into the dashboard. Previous Gemini-
-    halo variant preserved at tool/landing_mockups/gemini_halo_landing.html."""
-    return render_template_string(LANDING_TEMPLATE, map_png_b64=_LANDING_MAP_B64)
+    """Gemini-clone landing — verbatim ground-truth CSS captured from
+    gemini.google.com/app, ::before recentred for our viewport. VMA
+    wordmark + click-pill into the dashboard. No globe, no map."""
+    return render_template_string(LANDING_TEMPLATE)
 
 
 @app.route("/dashboard")
@@ -1261,182 +1261,174 @@ def api_contract_end():
     return jsonify({"rows": rows, "total": len(rows)})
 
 
-# Wireframe-Globe landing page — world map underneath with a slowly
-# rotating wireframe meridian/parallel mesh on top, over the Gemini
-# halo backdrop. Previous "Gemini Halo" minimal variant is preserved
-# at tool/landing_mockups/gemini_halo_landing.html for one-step revert.
-#
-# The world-map PNG (~350 KB) is loaded once at module import and
-# base64-encoded for inline embed; keeps the route handler fast and
-# avoids needing a Flask static_folder mount.
-_LANDING_ASSETS_DIR = Path(__file__).resolve().parent / "assets"
-try:
-    _LANDING_MAP_B64 = base64.b64encode(
-        (_LANDING_ASSETS_DIR / "world_map.png").read_bytes()
-    ).decode("ascii")
-except Exception as _e:
-    log.warning("landing: world_map.png not found (%s) — using transparent fallback", _e)
-    # 1x1 transparent PNG — safe degradation.
-    _LANDING_MAP_B64 = ("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAA"
-                        "C0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=")
-
+# Gemini-clone landing page — body fill + blurred ::before pseudo-
+# element. Ground-truth computed CSS captured from gemini.google.com/app
+# (light theme, zero-state). Three positioning values (top/left/transform
+# on the ::before) recentred for our blank-page viewport instead of
+# Gemini's app-shell context; everything else (size, border-radius,
+# radial gradient, blur, opacity, blend-mode) is verbatim from devtools.
 LANDING_TEMPLATE = r"""
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>VMA Group</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
-  <style>
-    *{box-sizing:border-box;}
-    html,body{margin:0;padding:0;height:100%;}
-    body{
-      font-family:"Inter",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
-      color:#1F1F1F;line-height:1.5;font-size:13.5px;
-      -webkit-font-smoothing:antialiased;
-      min-height:100vh;
-      position:relative;overflow:hidden;
-      display:flex;align-items:center;justify-content:center;
-      background:radial-gradient(
-        ellipse 80% 60% at center,
-        #b8d4f5 0%,
-        #cee0f5 25%,
-        #e2ecf6 50%,
-        #eef3f8 75%,
-        #f5f7fa 100%
-      );
-    }
-    /* World-map layer — the geography hint with location pins, sitting
-       over the halo. Mix-blend-mode:multiply keeps the brand pen-sketch
-       look. Soft outer-edge mask only — so the rectangular PNG crop
-       doesn't betray the seamless halo, but the map itself stays
-       clearly visible (pins included). */
-    .map-layer{
-      position:absolute;inset:0;z-index:2;
-      display:flex;align-items:center;justify-content:center;pointer-events:none;
-    }
-    .map-layer img{
-      width:auto;height:auto;
-      max-width:84vw;max-height:78vh;
-      opacity:.55;mix-blend-mode:multiply;
-      -webkit-mask-image:radial-gradient(
-        ellipse 60% 64% at 50% 50%,
-        rgba(0,0,0,1)   0%,
-        rgba(0,0,0,1)   55%,
-        rgba(0,0,0,.55) 78%,
-        rgba(0,0,0,0)   100%
-      );
-              mask-image:radial-gradient(
-        ellipse 60% 64% at 50% 50%,
-        rgba(0,0,0,1)   0%,
-        rgba(0,0,0,1)   55%,
-        rgba(0,0,0,.55) 78%,
-        rgba(0,0,0,0)   100%
-      );
-    }
-    /* Rotating wireframe globe — meridian/parallel ellipse mesh, slowly
-       rotating around the same centre as the map and the wordmark.
-       Fully visible (no opacity wrapper, no mask) so the rotation
-       reads. Strokes are slightly trimmed from the mockup to feel less
-       hard-edged against the halo. */
-    .mesh{
-      position:absolute;left:50%;top:50%;
-      transform:translate(-50%,-50%);
-      width:min(560px, 64vh);height:min(560px, 64vh);
-      z-index:3;pointer-events:none;
-    }
-    .mesh .meridian{fill:none;stroke:rgba(58,143,164,.55);stroke-width:1;}
-    .mesh .parallel{fill:none;stroke:rgba(58,143,164,.35);stroke-width:.8;}
-    .mesh .outline{fill:none;stroke:rgba(58,143,164,.75);stroke-width:1.3;}
-    .mesh-group{transform-origin:center;animation:globe-rot 22s linear infinite;}
-    @keyframes globe-rot{
-      0%  {transform:rotateZ(0deg);}
-      100%{transform:rotateZ(360deg);}
-    }
-    /* Stage — wordmark + click pill, sits above map + mesh. */
-    .stage{
-      position:relative;z-index:10;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;
-      padding:0 40px;gap:46px;text-align:center;
-    }
-    .wordmark{
-      font-family:Arial,Helvetica,sans-serif;color:#1F1F1F;
-      display:inline-flex;align-items:baseline;line-height:1;
-    }
-    .wordmark .v{font-weight:800;letter-spacing:.06em;font-size:64px;}
-    .wordmark .g{font-weight:300;letter-spacing:.32em;font-size:64px;padding-left:.42em;}
-    .enter-pill{
-      background:#fff;border-radius:9999px;padding:14px 22px;border:none;
-      display:flex;align-items:center;justify-content:center;gap:14px;
-      box-shadow:
-        0 1px 2px rgba(0,0,0,0.05),
-        0 4px 16px rgba(60,80,120,0.08);
-      cursor:pointer;font:inherit;color:#1F1F1F;
-      min-width:560px;max-width:88%;text-decoration:none;
-      transition:transform .15s ease, box-shadow .15s ease;
-    }
-    .enter-pill:hover{
-      transform:translateY(-2px);
-      box-shadow:
-        0 2px 4px rgba(0,0,0,0.06),
-        0 10px 28px rgba(60,80,120,0.12);
-    }
-    .enter-pill .pulse-dot{
-      width:9px;height:9px;border-radius:50%;background:#9FD181;
-      animation:pulse 2.4s ease-in-out infinite;flex-shrink:0;
-    }
-    @keyframes pulse{
-      0%  {box-shadow:0 0 0 0 rgba(159,209,129,.75),0 0 7px rgba(159,209,129,.6);}
-      70% {box-shadow:0 0 0 10px rgba(159,209,129,0),0 0 12px rgba(159,209,129,.9);}
-      100%{box-shadow:0 0 0 0 rgba(159,209,129,0),0 0 7px rgba(159,209,129,.6);}
-    }
-    .enter-pill .lbl{
-      font-family:"JetBrains Mono",ui-monospace,monospace;
-      font-size:13px;letter-spacing:.26em;text-transform:uppercase;font-weight:500;
-    }
-    .enter-pill .arrow{color:#5F6368;font-size:18px;line-height:1;margin-left:6px;}
-    @media (max-width:720px){
-      .stage{gap:32px;}
-      .wordmark .v,.wordmark .g{font-size:44px;}
-      .enter-pill{min-width:0;width:100%;padding:12px 16px;}
-      .enter-pill .lbl{font-size:11px;letter-spacing:.18em;}
-      .mesh{width:min(420px, 48vh);height:min(420px, 48vh);}
-    }
-    @media (prefers-reduced-motion: reduce){
-      .mesh-group{animation:none;}
-      .enter-pill .pulse-dot{animation:none;}
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VMA Group</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     Ground-truth Gemini CSS captured from gemini.google.com/app
+     (light theme, zero-state). Applied verbatim except for the
+     three positioning values on the ::before (top/left/transform)
+     which are recentred for our blank-page viewport context.
+     ============================================================ */
+  html {
+    background-color: rgba(0, 0, 0, 0);
+    background-image: none;
+  }
+  body {
+    background-color: rgb(253, 252, 252);
+    background-image: none;
+    margin: 0;
+    min-height: 100vh;
+  }
+  chat-window.center-input-layout.show-lm-background.lm-canvas-styling {
+    background: transparent;
+    overflow: hidden auto;
+    /* presentation: vertical centering, matching Gemini's zero-state */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 36px;
+    min-height: 100vh;
+    position: relative;
+  }
+  chat-window.show-lm-background::before {
+    content: "";
+    display: block;
+    position: absolute;
+    z-index: -1;
+    width: 792px;
+    height: 300px;
+    /* top/left/transform recentred for the viewport. Everything else
+       (size, border-radius, gradient, blur, opacity, blend-mode) is
+       verbatim from Gemini's captured CSS. */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 9999px;
+    background-image: radial-gradient(
+      100% 100% at 50% 8%,
+      rgb(253, 252, 252) 0px,
+      rgb(157, 210, 255) 50%
+    );
+    filter: blur(125px);
+    opacity: 1;
+    mix-blend-mode: normal;
+  }
+
+  /* Gemini display-medium heading — the slot the VMA wordmark sits in */
+  h1.gds-display-m {
+    font-family: "Google Sans Flex", "Google Sans", "Helvetica Neue", Arial, sans-serif;
+    font-size: 36px;
+    font-weight: 320;
+    line-height: 44px;
+    letter-spacing: normal;
+    color: rgb(31, 31, 31);
+    text-align: center;
+    margin: 0;
+  }
+  /* VMA wordmark — bold V + light tracked GROUP — inside the gds-display-m
+     slot so the brand survives while layout proportions match Gemini's. */
+  .wordmark {
+    font-family: Arial, Helvetica, sans-serif;
+    color: rgb(31, 31, 31);
+    display: inline-flex;
+    align-items: baseline;
+    line-height: 1;
+  }
+  .wordmark .v { font-weight: 800; letter-spacing: 0.06em; font-size: 64px; }
+  .wordmark .g { font-weight: 300; letter-spacing: 0.32em; font-size: 64px; padding-left: 0.42em; }
+
+  /* Gemini search-bar pill — repurposed as the enter-dashboard link */
+  input-area-v2.input-box-shadow.lm-input-redesign {
+    background-color: rgb(255, 255, 255);
+    border: none;
+    border-radius: 32px;
+    box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.16);
+    padding: 0;
+    width: 660px;
+    height: 64px;
+    max-width: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    text-decoration: none;
+    color: rgb(31, 31, 31);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  input-area-v2.input-box-shadow.lm-input-redesign:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px -2px rgba(0, 0, 0, 0.18);
+  }
+  .ql-editor.textarea.new-input-ui {
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0 15px 0 0;
+    font-family: "JetBrains Mono", "Google Sans Flex", "Google Sans", "Helvetica Neue", sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: rgb(31, 31, 31);
+  }
+  .pulse-dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #9FD181; flex-shrink: 0;
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%  { box-shadow: 0 0 0 0 rgba(159,209,129,.75), 0 0 7px rgba(159,209,129,.6); }
+    70% { box-shadow: 0 0 0 10px rgba(159,209,129,0), 0 0 12px rgba(159,209,129,.9); }
+    100%{ box-shadow: 0 0 0 0 rgba(159,209,129,0), 0 0 7px rgba(159,209,129,.6); }
+  }
+  .arrow { color: #5F6368; font-size: 18px; line-height: 1; }
+
+  @media (max-width: 720px) {
+    chat-window.center-input-layout.show-lm-background.lm-canvas-styling { gap: 24px; }
+    .wordmark .v, .wordmark .g { font-size: 44px; }
+    input-area-v2.input-box-shadow.lm-input-redesign { width: 90%; height: 56px; }
+    .ql-editor.textarea.new-input-ui { font-size: 11px; letter-spacing: 0.18em; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pulse-dot { animation: none; }
+  }
+</style>
 </head>
 <body>
-  <div class="map-layer"><img src="data:image/png;base64,{{ map_png_b64 }}" alt=""></div>
-  <div class="mesh">
-    <svg viewBox="0 0 560 560" class="mesh-group">
-      <circle class="outline" cx="280" cy="280" r="260"/>
-      <ellipse class="parallel" cx="280" cy="280" rx="260" ry="60"/>
-      <ellipse class="parallel" cx="280" cy="280" rx="260" ry="130"/>
-      <ellipse class="parallel" cx="280" cy="280" rx="260" ry="200"/>
-      <ellipse class="parallel" cx="280" cy="280" rx="260" ry="260"/>
-      <ellipse class="meridian" cx="280" cy="280" rx="60"  ry="260"/>
-      <ellipse class="meridian" cx="280" cy="280" rx="130" ry="260"/>
-      <ellipse class="meridian" cx="280" cy="280" rx="200" ry="260"/>
-      <ellipse class="meridian" cx="280" cy="280" rx="260" ry="260"/>
-    </svg>
-  </div>
-  <div class="stage">
-    <div class="wordmark"><span class="v">VMA</span><span class="g">GROUP</span></div>
-    <a class="enter-pill" href="/dashboard">
-      <span class="pulse-dot"></span>
-      <span class="lbl">Intelligence Platform &middot; Live</span>
-      <span class="arrow">&rarr;</span>
+  <chat-window class="center-input-layout show-lm-background lm-canvas-styling">
+    <h1 class="gds-display-m">
+      <span class="wordmark"><span class="v">VMA</span><span class="g">GROUP</span></span>
+    </h1>
+    <a href="/dashboard" style="text-decoration:none;">
+      <input-area-v2 class="input-box-shadow lm-input-redesign">
+        <span class="pulse-dot"></span>
+        <span class="ql-editor textarea new-input-ui">Intelligence Platform &middot; Live</span>
+        <span class="arrow">&rarr;</span>
+      </input-area-v2>
     </a>
-  </div>
+  </chat-window>
 </body>
 </html>
 """
+
 
 
 TEMPLATE = r"""
