@@ -1310,17 +1310,39 @@ LANDING_TEMPLATE = r"""
         #f7f9fc 100%
       );
     }
-    /* World-map layer — sits over the halo, under the mesh. */
+    /* World-map layer — sits over the halo, under the mesh.
+       A radial mask fades the map to transparent at the edges so it
+       blends seamlessly into the halo backdrop (no hard rectangular
+       crop). Centred on the same point as the mesh. */
     .map-layer{
-      position:absolute;inset:0;padding:40px 60px;z-index:2;
+      position:absolute;inset:0;z-index:2;
       display:flex;align-items:center;justify-content:center;pointer-events:none;
     }
     .map-layer img{
-      width:100%;height:auto;max-height:100%;
-      opacity:.62;mix-blend-mode:multiply;
+      width:auto;height:auto;
+      max-width:78vw;max-height:78vh;
+      opacity:.42;mix-blend-mode:multiply;
+      -webkit-mask-image:radial-gradient(
+        ellipse 52% 56% at 50% 50%,
+        rgba(0,0,0,1)   0%,
+        rgba(0,0,0,.95) 30%,
+        rgba(0,0,0,.55) 60%,
+        rgba(0,0,0,.18) 80%,
+        rgba(0,0,0,0)   100%
+      );
+              mask-image:radial-gradient(
+        ellipse 52% 56% at 50% 50%,
+        rgba(0,0,0,1)   0%,
+        rgba(0,0,0,.95) 30%,
+        rgba(0,0,0,.55) 60%,
+        rgba(0,0,0,.18) 80%,
+        rgba(0,0,0,0)   100%
+      );
     }
     /* Rotating wireframe globe — meridian/parallel ellipse mesh, slowly
-       rotating around centre. Scales fluidly off viewport height. */
+       rotating around centre. Locked to the exact same centre point as
+       the map layer + stage so wordmark, pill, mesh and map share one
+       vertical axis. */
     .mesh{
       position:absolute;left:50%;top:50%;
       transform:translate(-50%,-50%);
@@ -1775,12 +1797,16 @@ TEMPLATE = r"""
     }
     .panel-body::-webkit-scrollbar-thumb:hover { background: var(--navy-soft); }
 
-    /* ===== Calendar Pulses — year ribbon (Alternate A) ===== */
-    /* Fixed-size boxes (mockup parity, 400px). Anything taller scrolls
-       inside the body — the panel/section never grows. Scoped to this
-       row so other panels keep the global .panel-body sizing. */
-    #pulses-row .panel { height: 400px; }
-    #pulses-row .panel-body { max-height: none; flex: 1; min-height: 0; overflow-y: auto; }
+    /* ===== Calendar Pulses — year ribbon (Alternate A) =====
+       Hire Watch + BD Calendar sit side-by-side; both panels share
+       the same fixed 400px height for visual parity. Bodies scroll
+       internally. */
+    #hire-calendar-row .panel { height: 400px; display: flex; flex-direction: column; }
+    #hire-calendar-row .panel-body { max-height: none; flex: 1; min-height: 0; overflow-y: auto; }
+    @media (max-width: 900px) {
+      /* Stack vertically on mobile so neither panel is squashed. */
+      #hire-calendar-row { grid-template-columns: 1fr; }
+    }
     /* Funding-signal sub-section inside Predicted Briefs — visually
        set apart from the tenure-driven predictor rows above but using
        the same row template so the surface stays unified. */
@@ -1805,54 +1831,15 @@ TEMPLATE = r"""
     }
     .funding-row { opacity: .92; }
 
-    /* Industry events sub-section inside BD Calendar */
-    .events-subsection {
-      margin: 6px 16px 16px;
-      padding-top: 14px;
-      border-top: 1px dashed var(--border);
-    }
-    .events-subhead {
-      display: flex; align-items: center; gap: 8px;
-      font-size: 11.5px; color: var(--text-muted);
-      margin: 0 0 10px;
-    }
-    .events-chip {
+    /* Industry-event chip inside the BD Calendar detail card. */
+    .cal-eventchip {
       display: inline-block;
       padding: 2px 8px;
-      font-size: 10px; font-weight: 700; letter-spacing: .10em;
+      font-size: 10.5px; font-weight: 700; letter-spacing: .08em;
       text-transform: uppercase;
-      background: #fff4e0;
-      color: #8a5a00;
+      background: #fff4e0; color: #8a5a00;
       border-radius: 10px;
     }
-    .event-row {
-      display: grid;
-      grid-template-columns: 92px 1fr auto;
-      gap: 10px;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--border);
-      font-size: 12.5px;
-      align-items: start;
-    }
-    .event-row:last-child { border-bottom: none; }
-    .event-date {
-      font-weight: 600; color: var(--teal-dark, #1f377c);
-      font-size: 11.5px;
-    }
-    .event-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-    .event-why { font-size: 11.5px; color: #333; margin-top: 4px; }
-    .event-focus-chip {
-      display: inline-block;
-      padding: 1px 7px;
-      font-size: 10px; font-weight: 600; letter-spacing: .04em;
-      text-transform: uppercase;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-    }
-    .event-focus-chip.internal { background: #eaf3ff; color: #1d4d8a; border-color: #cfe1f5; }
-    .event-focus-chip.external { background: #fff0ea; color: #8a3a1d; border-color: #f5d0cf; }
-    .event-focus-chip.mixed    { background: #f1ecff; color: #4d2e8a; border-color: #ddd0f5; }
 
     .cal-wrap { padding: 14px 16px; }
     .cal-ribbon {
@@ -1883,8 +1870,9 @@ TEMPLATE = r"""
     .cal-right { display: flex; align-items: center; gap: 7px; }
     .cal-pips { display: flex; gap: 7px; }
     .cal-pip { width: 9px; height: 9px; border-radius: 50%; }
-    .cal-pip.high { background: var(--teal); }   /* high = coral */
-    .cal-pip.med  { background: var(--green); }   /* policy-firming = green (distinct) */
+    .cal-pip.high  { background: var(--teal); }   /* high = teal */
+    .cal-pip.med   { background: var(--green); }  /* policy-firming = green */
+    .cal-pip.event { background: #e89c4a; }       /* industry event = amber */
     /* NEW month: same reddening wash as a fresh finding row */
     .cal-tile.fresh {
       background: linear-gradient(90deg, var(--teal-soft), transparent 72%);
@@ -2932,11 +2920,11 @@ TEMPLATE = r"""
        year ribbon. Funding-Round signals are folded into Predicted
        Briefs above; rare detectors live in Specialist Signals below. -->
 
-  <!-- CASCADE-HIRE WATCH — senior comms moves in public news; each
-       move emits two derived BD actions (old company replacement
-       search; new company re-org/hiring pressure). -->
-  <div class="row row-full" id="cascade-row">
-    <div class="panel">
+  <!-- HIRE WATCH + BD CALENDAR side-by-side. Hire Watch (cascade
+       moves) on the left; BD Calendar (statutory pulses + UK/EU
+       industry events) on the right. Both stack under 900px. -->
+  <div class="row" id="hire-calendar-row">
+    <div class="panel" id="cascade-row">
       <div class="panel-header">
         <h2>Hire Watch</h2>
         <span style="display:flex;align-items:center;gap:10px;">
@@ -3000,10 +2988,8 @@ TEMPLATE = r"""
         {% endif %}
       </div>
     </div>
-  </div>
 
-  <div class="row row-full" id="pulses-row">
-    <div class="panel">
+    <div class="panel" id="pulses-row">
       <div class="panel-header">
         <h2>BD Calendar</h2>
         <div style="display:flex;align-items:center;gap:8px;">
@@ -3014,17 +3000,6 @@ TEMPLATE = r"""
       </div>
       <div class="panel-body" id="pulses-body">
         <div class="empty compact">Loading…</div>
-      </div>
-      <!-- UK + EU comms industry events (awards / conferences / summits)
-           for internal and external comms — distinct mechanic from
-           statutory pulses, so given its own sub-section. -->
-      <div class="events-subsection" id="events-subsection" style="display:none;">
-        <div class="events-subhead">
-          <span class="events-chip">INDUSTRY EVENTS</span>
-          <span>UK &amp; Europe · internal + external comms · next ~6 months</span>
-          <span class="count" id="events-count" style="margin-left:auto;">—</span>
-        </div>
-        <div id="events-body"></div>
       </div>
     </div>
   </div>
@@ -3657,10 +3632,31 @@ async function loadPulses() {
   const body = document.getElementById('pulses-body');
   const count = document.getElementById('pulses-count');
   try {
-    const r = await fetch('/api/pulses');
-    const j = await r.json();
-    count.textContent = j.total;
-    if (!j.rows || j.rows.length === 0) {
+    // Fetch statutory pulses AND industry events in parallel; both
+    // are rendered as pips on the same month ribbon. Events get a
+    // distinguishing pip colour + chip in the detail card.
+    const [pulseRes, eventRes] = await Promise.all([
+      fetch('/api/pulses'),
+      fetch('/api/industry-events'),
+    ]);
+    const j  = await pulseRes.json();
+    const je = await eventRes.json();
+    const pulseRows = (j.rows || []).map(r => Object.assign({}, r, { _kind: 'pulse' }));
+    const eventRows = (je.rows || []).map(r => Object.assign({}, r, {
+      _kind: 'event',
+      // unify the detail card's expected fields
+      seat:  r.focus === 'internal' ? 'Internal-comms event'
+           : r.focus === 'external' ? 'External-comms event'
+           : 'Comms event',
+      angle: r.why_now || '',
+      scope_note: (r.location || '') + (r.location ? ' · ' : '') +
+                  ((r.focus || 'mixed').replace(/^./, c => c.toUpperCase())),
+      confidence: 'event',          // drives pip colour
+      days_left:  r.days_to_event,
+    }));
+    const total = pulseRows.length + eventRows.length;
+    count.textContent = total;
+    if (total === 0) {
       body.innerHTML = '<div class="empty compact">No placement window open today. ' +
         'Pulses surface only inside a statutory/regulator run-up (FCA Consumer Duty ' +
         'board-report ramp, UK SRS first-cycle build-up, post-Spending-Review ' +
@@ -3669,7 +3665,7 @@ async function loadPulses() {
       return;
     }
     const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const rows = j.rows;
+    const rows = pulseRows.concat(eventRows);
 
     // act-by month/year per pulse (window-end month — the deadline the
     // run-up builds to). Fall back to the printed window if act_by absent.
@@ -3693,7 +3689,11 @@ async function loadPulses() {
     let freshMonth = -1;
     for (let m = 0; m < 12; m++) if (buckets[m].some(p => p.just_opened)) { freshMonth = m; break; }
 
-    const pipFor = p => '<span class="cal-pip ' + (p.confidence === 'high' ? 'high' : 'med') + '"></span>';
+    const pipFor = p => {
+      const cls = p._kind === 'event' ? 'event'
+                : p.confidence === 'high' ? 'high' : 'med';
+      return '<span class="cal-pip ' + cls + '"></span>';
+    };
     const out = ['<div class="cal-wrap"><div class="cal-ribbon">'];
     for (let m = 0; m < 12; m++) {
       const ps = buckets[m], has = ps.length > 0;
@@ -3721,28 +3721,43 @@ async function loadPulses() {
         '<div class="cal-legend">' +
           '<span><i style="background:var(--teal)"></i>high confidence</span>' +
           '<span><i style="background:var(--green)"></i>policy timeline firming</span>' +
+          '<span><i style="background:#e89c4a"></i>industry event</span>' +
         '</div>' +
       '</div></div>'  // .cal-detail .cal-wrap
     );
     body.innerHTML = out.join('');
 
     const cardFor = p => {
-      const conf = (p.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
+      const isEvent = p._kind === 'event';
+      const conf = isEvent ? 'cal-eventchip'
+                 : (p.confidence === 'high') ? 'mandate-age'
+                 : 'hook-badge generic_fit';
+      const confLabel = isEvent ? 'event' : (p.confidence || '');
       const far = (typeof p.days_left === 'number' && p.days_left > 150);
+      const daysLabel = isEvent
+        ? (typeof p.days_left === 'number'
+            ? (p.days_left === 0 ? 'today'
+               : p.days_left === 1 ? 'tomorrow'
+               : 'in ' + p.days_left + 'd') : '')
+        : (typeof p.days_left === 'number'
+            ? (p.days_left + 'd left') : '');
       const targets = (p.targets || []).map(t =>
         '<span class="hook-badge generic_fit" style="margin:2px 4px 2px 0;display:inline-block;">' +
         esc(t) + '</span>').join('');
       return (
-        '<span class="' + conf + '">' + esc(p.confidence || '') + '</span> ' +
+        '<span class="' + conf + '">' + esc(confLabel) + '</span> ' +
         '<span class="cal-c-name">' + esc(p.name || '') + '</span>' +
-        (typeof p.days_left === 'number'
-          ? '<span class="cal-days' + (far ? ' far' : '') + '">' +
-            esc(String(p.days_left)) + 'd left</span>' : '') +
+        (daysLabel
+          ? '<span class="cal-days' + (far ? ' far' : '') + '">' + esc(daysLabel) + '</span>'
+          : '') +
         '<div class="cal-seat">' + esc(p.seat || '') + '</div>' +
         '<div class="cal-angle">' + esc(p.angle || '') + '</div>' +
         (targets ? '<div style="margin-top:6px;">' + targets + '</div>' : '') +
         '<div class="cal-scope">' + esc(p.scope_note || '') +
-          (p.source ? ' &middot; ' + esc(p.source) : '') + '</div>' +
+          (p.source
+            ? ' &middot; <a href="' + safeUrl(p.source) + '" target="_blank" rel="noopener noreferrer" style="color:#0366d6;">source</a>'
+            : '') +
+        '</div>' +
         (p.advisory ? '<div class="advisory-line">' + esc(p.advisory) + '</div>' : '')
       );
     };
@@ -3778,64 +3793,6 @@ async function loadPulses() {
     // a month. The NEW badge / header chip entice the click instead.
   } catch (e) {
     body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
-  }
-}
-
-// ---------- Industry Events (UK + EU comms awards / conferences) ----------
-async function loadIndustryEvents() {
-  const section = document.getElementById('events-subsection');
-  const body = document.getElementById('events-body');
-  const countEl = document.getElementById('events-count');
-  if (!section || !body) return;
-  try {
-    const r = await fetch('/api/industry-events');
-    const j = await r.json();
-    if (!j.rows || j.rows.length === 0) {
-      section.style.display = 'none';
-      return;
-    }
-    section.style.display = 'block';
-    if (countEl) countEl.textContent = j.total;
-    const fmtDate = (iso) => {
-      try {
-        const d = new Date(iso);
-        return d.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
-      } catch (e) { return iso; }
-    };
-    const out = [];
-    for (const e of j.rows) {
-      const focusClass = (e.focus === 'internal' || e.focus === 'external')
-        ? e.focus : 'mixed';
-      const focusLabel = e.focus === 'internal' ? 'Internal'
-                       : e.focus === 'external' ? 'External' : 'Mixed';
-      const daysTo = e.days_to_event;
-      const daysLabel = daysTo === 0 ? 'today'
-                      : daysTo === 1 ? 'tomorrow'
-                      : daysTo < 0 ? Math.abs(daysTo) + 'd ago'
-                      : 'in ' + daysTo + 'd';
-      out.push(
-        '<div class="event-row">' +
-          '<div>' +
-            '<div class="event-date">' + esc(fmtDate(e.event_date)) + '</div>' +
-            '<div class="event-meta">' + esc(daysLabel) + '</div>' +
-          '</div>' +
-          '<div>' +
-            '<div><strong>' + esc(e.name) + '</strong>' +
-              (e.location ? ' &middot; <span style="color:var(--text-muted);">' + esc(e.location) + '</span>' : '') +
-            '</div>' +
-            (e.why_now ? '<div class="event-why">' + esc(e.why_now) + '</div>' : '') +
-            (e.source ? '<div class="event-meta"><a href="' + safeUrl(e.source) + '" target="_blank" rel="noopener noreferrer">↗ event page</a></div>' : '') +
-          '</div>' +
-          '<div>' +
-            '<span class="event-focus-chip ' + esc(focusClass) + '">' + esc(focusLabel) + '</span>' +
-          '</div>' +
-        '</div>'
-      );
-    }
-    body.innerHTML = out.join('');
-  } catch (e) {
-    section.style.display = 'block';
-    body.innerHTML = '<div class="empty compact">Failed to load events: ' + esc(e.message) + '</div>';
   }
 }
 
@@ -4122,7 +4079,6 @@ document.addEventListener('DOMContentLoaded', () => {
   applyFilter('active');
   applyLeadFilter('active');
   loadPulses();
-  loadIndustryEvents();
   loadSpecialistSignals();
   loadWatchList();
   loadRecentReports();
