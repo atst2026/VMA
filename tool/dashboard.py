@@ -1224,6 +1224,16 @@ def api_pulses():
     return jsonify({"rows": rows, "total": len(rows)})
 
 
+@app.route("/api/industry-events", methods=["GET"])
+@_auth_required
+def api_industry_events():
+    """UK + European comms industry events (awards, conferences,
+    summits) for the next ~6 months. Internal + external comms."""
+    from tool.calendar_pulses import load_events
+    rows = load_events(limit=24)
+    return jsonify({"rows": rows, "total": len(rows)})
+
+
 @app.route("/api/water-sar", methods=["GET"])
 @_auth_required
 def api_water_sar():
@@ -1727,6 +1737,55 @@ TEMPLATE = r"""
       border-radius: 10px;
     }
     .funding-row { opacity: .92; }
+
+    /* Industry events sub-section inside BD Calendar */
+    .events-subsection {
+      margin: 6px 16px 16px;
+      padding-top: 14px;
+      border-top: 1px dashed var(--border);
+    }
+    .events-subhead {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11.5px; color: var(--text-muted);
+      margin: 0 0 10px;
+    }
+    .events-chip {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 10px; font-weight: 700; letter-spacing: .10em;
+      text-transform: uppercase;
+      background: #fff4e0;
+      color: #8a5a00;
+      border-radius: 10px;
+    }
+    .event-row {
+      display: grid;
+      grid-template-columns: 92px 1fr auto;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 12.5px;
+      align-items: start;
+    }
+    .event-row:last-child { border-bottom: none; }
+    .event-date {
+      font-weight: 600; color: var(--teal-dark, #1f377c);
+      font-size: 11.5px;
+    }
+    .event-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .event-why { font-size: 11.5px; color: #333; margin-top: 4px; }
+    .event-focus-chip {
+      display: inline-block;
+      padding: 1px 7px;
+      font-size: 10px; font-weight: 600; letter-spacing: .04em;
+      text-transform: uppercase;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    .event-focus-chip.internal { background: #eaf3ff; color: #1d4d8a; border-color: #cfe1f5; }
+    .event-focus-chip.external { background: #fff0ea; color: #8a3a1d; border-color: #f5d0cf; }
+    .event-focus-chip.mixed    { background: #f1ecff; color: #4d2e8a; border-color: #ddd0f5; }
 
     .cal-wrap { padding: 14px 16px; }
     .cal-ribbon {
@@ -2715,7 +2774,7 @@ TEMPLATE = r"""
     <!-- PREDICTOR PIPELINE (rolling 90-day forward window, auto-populated) -->
     <div class="panel">
       <div class="panel-header">
-        <h2>Predicted Briefs <span class="window-sub">· next 90 days</span></h2>
+        <h2>Prediction Signals</h2>
         <span class="count" id="pred-count">{{ active_count }}</span>
       </div>
       <div class="filter-bar">
@@ -2812,7 +2871,7 @@ TEMPLATE = r"""
   <div class="row row-full" id="cascade-row">
     <div class="panel">
       <div class="panel-header">
-        <h2>Cascade-Hire Watch</h2>
+        <h2>Hire Watch</h2>
         <span style="display:flex;align-items:center;gap:10px;">
           <span class="refresh-sub" style="font-size:11px;">
             Senior comms moves &middot; auto-parsed from morning brief
@@ -2888,6 +2947,17 @@ TEMPLATE = r"""
       </div>
       <div class="panel-body" id="pulses-body">
         <div class="empty compact">Loading…</div>
+      </div>
+      <!-- UK + EU comms industry events (awards / conferences / summits)
+           for internal and external comms — distinct mechanic from
+           statutory pulses, so given its own sub-section. -->
+      <div class="events-subsection" id="events-subsection" style="display:none;">
+        <div class="events-subhead">
+          <span class="events-chip">INDUSTRY EVENTS</span>
+          <span>UK &amp; Europe · internal + external comms · next ~6 months</span>
+          <span class="count" id="events-count" style="margin-left:auto;">—</span>
+        </div>
+        <div id="events-body"></div>
       </div>
     </div>
   </div>
@@ -3024,7 +3094,7 @@ TEMPLATE = r"""
   <div class="row row-full" id="recent-row">
     <div class="panel">
       <div class="panel-header">
-        <h2>Recent Reports Generated</h2>
+        <h2>Recent Reports</h2>
         <span style="display:flex;align-items:center;gap:10px;">
           <button type="button" class="btn-mini" onclick="clearRecentReports(this)">Clear</button>
           <span class="count" id="recent-count">—</span>
@@ -3644,6 +3714,64 @@ async function loadPulses() {
   }
 }
 
+// ---------- Industry Events (UK + EU comms awards / conferences) ----------
+async function loadIndustryEvents() {
+  const section = document.getElementById('events-subsection');
+  const body = document.getElementById('events-body');
+  const countEl = document.getElementById('events-count');
+  if (!section || !body) return;
+  try {
+    const r = await fetch('/api/industry-events');
+    const j = await r.json();
+    if (!j.rows || j.rows.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = 'block';
+    if (countEl) countEl.textContent = j.total;
+    const fmtDate = (iso) => {
+      try {
+        const d = new Date(iso);
+        return d.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+      } catch (e) { return iso; }
+    };
+    const out = [];
+    for (const e of j.rows) {
+      const focusClass = (e.focus === 'internal' || e.focus === 'external')
+        ? e.focus : 'mixed';
+      const focusLabel = e.focus === 'internal' ? 'Internal'
+                       : e.focus === 'external' ? 'External' : 'Mixed';
+      const daysTo = e.days_to_event;
+      const daysLabel = daysTo === 0 ? 'today'
+                      : daysTo === 1 ? 'tomorrow'
+                      : daysTo < 0 ? Math.abs(daysTo) + 'd ago'
+                      : 'in ' + daysTo + 'd';
+      out.push(
+        '<div class="event-row">' +
+          '<div>' +
+            '<div class="event-date">' + esc(fmtDate(e.event_date)) + '</div>' +
+            '<div class="event-meta">' + esc(daysLabel) + '</div>' +
+          '</div>' +
+          '<div>' +
+            '<div><strong>' + esc(e.name) + '</strong>' +
+              (e.location ? ' &middot; <span style="color:var(--text-muted);">' + esc(e.location) + '</span>' : '') +
+            '</div>' +
+            (e.why_now ? '<div class="event-why">' + esc(e.why_now) + '</div>' : '') +
+            (e.source ? '<div class="event-meta"><a href="' + safeUrl(e.source) + '" target="_blank" rel="noopener noreferrer">↗ event page</a></div>' : '') +
+          '</div>' +
+          '<div>' +
+            '<span class="event-focus-chip ' + esc(focusClass) + '">' + esc(focusLabel) + '</span>' +
+          '</div>' +
+        '</div>'
+      );
+    }
+    body.innerHTML = out.join('');
+  } catch (e) {
+    section.style.display = 'block';
+    body.innerHTML = '<div class="empty compact">Failed to load events: ' + esc(e.message) + '</div>';
+  }
+}
+
 // ---------- Water Special-Administration Watch ----------
 async function loadWaterSar() {
   const body = document.getElementById('watersar-body');
@@ -3798,22 +3926,13 @@ async function loadWatchList() {
       wrap.innerHTML = '';
       return;
     }
-    status.textContent = j.total + ' watched · sorted by liquidity score';
+    status.textContent = j.total + ' watched · sorted by overdue';
     const out = ['<div class="cw-list">'];
     for (const c of j.rows.slice(0, 10)) {
       const cadence = c.touch_cadence_days || 30;
       const seen = c._days_since_touched;          // null === not yet contacted
-      // Build the headline pill — drift score is the new primary
-      // ordering signal; overdue is shown as supporting detail.
-      const drift = c._drift_score != null ? c._drift_score : (c._urgency_score || 0);
-      let driftClass = 'low';
-      if (drift >= 60) driftClass = 'hot';
-      else if (drift >= 30) driftClass = 'warm';
-      const driftPill = '<span class="cw-pill drift ' + driftClass +
-        '" title="Liquidity score — combines tenure, cascade, news, and cadence signals">' +
-        'score ' + esc(drift) + '</span>';
 
-      // Overdue / due indicator stays as a secondary pill.
+      // Overdue / due indicator — primary ordering signal.
       let duePill = '';
       if (c._overdue_days > 0) {
         duePill = '<span class="cw-pill overdue">overdue ' + esc(c._overdue_days) + 'd</span>';
@@ -3824,14 +3943,6 @@ async function loadWatchList() {
         duePill = '<span class="cw-pill overdue">never touched</span>';
       }
 
-      // Reason chips — each contributing signal becomes a small chip
-      // so Sara can see WHY the candidate is high-ranked. Lifted from
-      // the server-side compute_drift output.
-      const reasons = Array.isArray(c._drift_reasons) ? c._drift_reasons : [];
-      const reasonChips = reasons.slice(0, 3).map(r =>
-        '<span class="cw-pill reason" title="' + esc(r) + '">' + esc(r) + '</span>'
-      ).join('');
-
       const sub = [c.current_title, c.current_company].filter(Boolean).map(esc).join(' · ');
       const dn = esc(c.name);
       const dc = esc(c.current_company || '');
@@ -3841,7 +3952,7 @@ async function loadWatchList() {
             '<div class="cw-nm">' + esc(c.name) + '</div>' +
             (sub ? '<div class="cw-sub">' + sub + '</div>' : '') +
             (c.last_signal ? '<div class="cw-state"><em>' + esc(c.last_signal) + '</em></div>' : '') +
-            '<div class="cw-tags">' + driftPill + duePill + reasonChips + '</div>' +
+            '<div class="cw-tags">' + duePill + '</div>' +
           '</div>' +
           '<div class="cw-right">' +
             '<button class="cw-iconbtn cw-tick watch-action" data-action="touch" data-name="' + dn + '" data-company="' + dc + '" title="Mark contacted">✓</button>' +
@@ -3944,6 +4055,7 @@ document.addEventListener('DOMContentLoaded', () => {
   applyFilter('active');
   applyLeadFilter('active');
   loadPulses();
+  loadIndustryEvents();
   loadSpecialistSignals();
   loadWatchList();
   loadRecentReports();

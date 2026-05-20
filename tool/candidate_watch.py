@@ -152,17 +152,14 @@ def _days_since(iso: str) -> int | None:
 
 
 def list_watched() -> list[dict]:
-    """Return all watched candidates, scored and sorted by liquidity.
+    """Return all watched candidates, sorted by overdue.
 
-    Ordering used to be cadence-based ("X days overdue"). It's now
-    signal-drift-based — see tool.candidate_signal_drift for the inputs
-    that feed the score (tenure clock, cascade proximity of their
-    current employer, news mentions, trade-press hits, plus the legacy
-    cadence + manual restlessness signals at reduced weight).
-
-    Candidates re-rank automatically whenever an upstream signal lands
-    (next morning brief, cascade scour, trade-press scour) — Sara
-    never has to log anything for the ranking to update.
+    Drift/liquidity scoring is still computed in the background (it
+    feeds Top-3 ranking) but is not surfaced as a confidence number
+    on the dashboard, and is no longer the primary sort key. The
+    score relies on cross-source name matching that isn't reliable
+    enough to show as a confidence figure — overdue cadence is the
+    honest, deterministic ordering for the panel.
     """
     from tool.candidate_signal_drift import compute_drift
     rows = _load_all()
@@ -171,7 +168,12 @@ def list_watched() -> list[dict]:
         decorated = dict(c)
         decorated.update(compute_drift(c))
         out.append(decorated)
-    out.sort(key=lambda r: r.get("_drift_score", 0), reverse=True)
+    # Overdue-first ordering: most overdue at the top, then due-soon,
+    # then never-touched (which sorts as a large overdue value).
+    def _sort_key(r):
+        overdue = r.get("_overdue_days", 0) or 0
+        return -overdue
+    out.sort(key=_sort_key)
     return out
 
 

@@ -272,3 +272,201 @@ def load_pulses(limit: int = 10) -> list[dict]:
     date, so a 05:30-cron snapshot would be stale on days_left). No
     external calls, no signals needed."""
     return active_pulses()[:limit]
+
+
+# ---------------------------------------------------------------------------
+# UK & European comms industry events — awards, conferences, summits.
+# Distinct mechanic from statutory pulses: these surface NETWORKING and
+# CANDIDATE-VISIBILITY moments rather than statute-forced hiring windows.
+# Both internal-comms (IoIC, IABC) and external-comms (PRWeek, CIPR,
+# PRCA, SABRE, European Excellence) events are covered.
+#
+# Dates are pinned to confirmed or typical 2026 windows. Each event has
+# an ACTION window — typically the 4–8 weeks before the date when
+# shortlists land, panels are confirmed, and outreach to finalists or
+# attendees has the strongest hook.
+# ---------------------------------------------------------------------------
+INDUSTRY_EVENTS: list[dict] = [
+    {
+        "key": "prweek_awards_uk_2026",
+        "name": "PRWeek Awards UK",
+        "event_date": "2026-10-22",
+        "action_window": ("2026-08-15", "2026-10-22"),
+        "location": "London",
+        "focus": "external",
+        "why_now": "Shortlists land ~6 weeks before; finalists are visible "
+                   "mid-career external-comms candidates worth tracking. "
+                   "Winners get a hiring spotlight the week after.",
+        "source": "https://awards.prweek.com/uk",
+    },
+    {
+        "key": "cipr_excellence_2026",
+        "name": "CIPR Excellence Awards",
+        "event_date": "2026-06-18",
+        "action_window": ("2026-04-15", "2026-06-18"),
+        "location": "London",
+        "focus": "external",
+        "why_now": "UK PR practitioner gold standard; shortlists in April. "
+                   "Senior in-house comms judges = direct relationship route.",
+        "source": "https://www.cipr.co.uk/excellence",
+    },
+    {
+        "key": "prca_awards_2026",
+        "name": "PRCA Awards",
+        "event_date": "2026-04-23",
+        "action_window": ("2026-02-15", "2026-04-23"),
+        "location": "London",
+        "focus": "external",
+        "why_now": "UK consultancy + in-house team awards. Shortlists "
+                   "surface team leaders worth approaching for retainer pitch.",
+        "source": "https://www.prca.org.uk/awards",
+    },
+    {
+        "key": "sabre_emea_2026",
+        "name": "PRovoke SABRE Awards EMEA",
+        "event_date": "2026-05-19",
+        "action_window": ("2026-03-15", "2026-05-19"),
+        "location": "London",
+        "focus": "external",
+        "why_now": "Largest external-comms awards in the EMEA region. "
+                   "Senior CCOs from FTSE / CAC / DAX issuers attend in person.",
+        "source": "https://www.provokemedia.com/awards-events",
+    },
+    {
+        "key": "ioic_awards_2026",
+        "name": "IoIC Awards",
+        "event_date": "2026-06-25",
+        "action_window": ("2026-04-25", "2026-06-25"),
+        "location": "London",
+        "focus": "internal",
+        "why_now": "Premier UK internal-comms awards. Finalists = visible "
+                   "Heads of IC and IC Directors at large UK employers.",
+        "source": "https://www.ioic.org.uk/awards",
+    },
+    {
+        "key": "communicate_corp_engagement_2026",
+        "name": "Communicate Magazine Corporate Engagement Awards",
+        "event_date": "2026-11-12",
+        "action_window": ("2026-09-15", "2026-11-12"),
+        "location": "London",
+        "focus": "internal",
+        "why_now": "Corporate IC + employee engagement specialism. "
+                   "Shortlists surface Heads of Internal Comms at "
+                   "mid-to-large UK employers.",
+        "source": "https://www.communicatemagazine.com/awards",
+    },
+    {
+        "key": "european_excellence_2026",
+        "name": "European Excellence Awards",
+        "event_date": "2026-11-26",
+        "action_window": ("2026-09-15", "2026-11-26"),
+        "location": "Berlin",
+        "focus": "mixed",
+        "why_now": "Pan-EU comms awards. UK + EU CCO attendance; useful "
+                   "for European-headquartered briefs landing in London offices.",
+        "source": "https://www.excellence-awards.eu",
+    },
+    {
+        "key": "eacd_convention_2026",
+        "name": "EACD European Annual Convention",
+        "event_date": "2026-06-11",
+        "action_window": ("2026-04-15", "2026-06-11"),
+        "location": "Brussels",
+        "focus": "external",
+        "why_now": "European Association of Communication Directors annual "
+                   "convention. Attendee list = CCOs and Comms Directors "
+                   "across European firms.",
+        "source": "https://www.eacd-online.eu",
+    },
+    {
+        "key": "iabc_emena_gold_quill_2026",
+        "name": "IABC EMENA Gold Quill Awards",
+        "event_date": "2026-06-04",
+        "action_window": ("2026-04-10", "2026-06-04"),
+        "location": "London",
+        "focus": "internal",
+        "why_now": "International IC body's EMENA chapter — surfaces "
+                   "internal-comms leaders working on cross-border programmes.",
+        "source": "https://www.iabc.com/awards/gold-quill",
+    },
+    {
+        "key": "icco_global_summit_2026",
+        "name": "ICCO Global Summit",
+        "event_date": "2026-10-15",
+        "action_window": ("2026-08-15", "2026-10-15"),
+        "location": "Vienna",
+        "focus": "external",
+        "why_now": "International Communications Consultancy Organisation "
+                   "annual summit. Agency principals + senior in-house "
+                   "clients attend; relationship-building venue.",
+        "source": "https://iccopr.com/summit",
+    },
+    {
+        "key": "cipr_conference_2026",
+        "name": "CIPR Annual Conference",
+        "event_date": "2026-11-05",
+        "action_window": ("2026-09-15", "2026-11-05"),
+        "location": "London",
+        "focus": "external",
+        "why_now": "Speaker line-up is a tier-1 list of senior in-house "
+                   "comms leaders willing to do public-speaking. Pre-event "
+                   "outreach has a clear hook.",
+        "source": "https://www.cipr.co.uk/conference",
+    },
+    {
+        "key": "communicate_ic_conference_2026",
+        "name": "Communicate Magazine Internal Communications Conference",
+        "event_date": "2026-03-19",
+        "action_window": ("2026-01-20", "2026-03-19"),
+        "location": "London",
+        "focus": "internal",
+        "why_now": "Annual UK IC conference; speakers + delegates skew "
+                   "Head of IC / Director of IC at large UK employers.",
+        "source": "https://www.communicatemagazine.com/events",
+    },
+]
+
+
+def active_events(today: Optional[date] = None,
+                  lookahead_days: int = 180) -> list[dict]:
+    """Industry events whose ACTION window is open today OR whose event
+    date falls within the next `lookahead_days`. Sorted by event date
+    so the soonest event is at the top."""
+    if today is None:
+        today = date.today()
+    horizon = today.replace() if False else today
+    out: list[dict] = []
+    for e in INDUSTRY_EVENTS:
+        try:
+            ev_date = _parse(e["event_date"])
+            win_start, win_end = (_parse(e["action_window"][0]),
+                                  _parse(e["action_window"][1]))
+        except Exception as exc:
+            log.info("event %s skipped: %s", e.get("key"), exc)
+            continue
+        # Show if action window is open OR event is upcoming within horizon.
+        in_window = win_start <= today <= win_end
+        upcoming = today <= ev_date <= today.fromordinal(
+            today.toordinal() + lookahead_days)
+        if not (in_window or upcoming):
+            continue
+        out.append({
+            "key":           e["key"],
+            "name":          e["name"],
+            "event_date":    e["event_date"],
+            "act_by":        e["event_date"],          # ribbon-month bucketing
+            "days_to_event": (ev_date - today).days,
+            "location":      e.get("location", ""),
+            "focus":         e.get("focus", "mixed"),
+            "why_now":       e.get("why_now", ""),
+            "source":        e.get("source", ""),
+            "in_action_window": in_window,
+            "type":          "event",                  # distinguishes from pulse
+        })
+    out.sort(key=lambda r: r["days_to_event"])
+    return out
+
+
+def load_events(limit: int = 24) -> list[dict]:
+    """Dashboard accessor for industry events. Same pattern as load_pulses."""
+    return active_events()[:limit]
