@@ -1310,64 +1310,48 @@ LANDING_TEMPLATE = r"""
         #f7f9fc 100%
       );
     }
-    /* World-map layer — a faint atmospheric hint of geography sitting
-       over the halo. Heavy radial mask + low opacity = the gradient
-       halo stays dominant; the map is barely-there texture, not a
-       picture on a background. */
+    /* World-map layer — the geography hint with location pins, sitting
+       over the halo. Mix-blend-mode:multiply keeps the brand pen-sketch
+       look. Soft outer-edge mask only — so the rectangular PNG crop
+       doesn't betray the seamless halo, but the map itself stays
+       clearly visible (pins included). */
     .map-layer{
       position:absolute;inset:0;z-index:2;
       display:flex;align-items:center;justify-content:center;pointer-events:none;
     }
     .map-layer img{
       width:auto;height:auto;
-      max-width:72vw;max-height:72vh;
-      opacity:.14;
+      max-width:84vw;max-height:78vh;
+      opacity:.55;mix-blend-mode:multiply;
       -webkit-mask-image:radial-gradient(
-        ellipse 42% 46% at 50% 50%,
+        ellipse 60% 64% at 50% 50%,
         rgba(0,0,0,1)   0%,
-        rgba(0,0,0,.85) 25%,
-        rgba(0,0,0,.40) 55%,
-        rgba(0,0,0,.10) 75%,
+        rgba(0,0,0,1)   55%,
+        rgba(0,0,0,.55) 78%,
         rgba(0,0,0,0)   100%
       );
               mask-image:radial-gradient(
-        ellipse 42% 46% at 50% 50%,
+        ellipse 60% 64% at 50% 50%,
         rgba(0,0,0,1)   0%,
-        rgba(0,0,0,.85) 25%,
-        rgba(0,0,0,.40) 55%,
-        rgba(0,0,0,.10) 75%,
+        rgba(0,0,0,1)   55%,
+        rgba(0,0,0,.55) 78%,
         rgba(0,0,0,0)   100%
       );
     }
     /* Rotating wireframe globe — meridian/parallel ellipse mesh, slowly
-       rotating around centre. Locked to the exact same centre point as
-       the map layer + stage so wordmark, pill, mesh and map share one
-       vertical axis. Globe is wrapped in its own opacity + radial mask
-       so it fades out at the edges and doesn't fight the halo. */
+       rotating around the same centre as the map and the wordmark.
+       Fully visible (no opacity wrapper, no mask) so the rotation
+       reads. Strokes are slightly trimmed from the mockup to feel less
+       hard-edged against the halo. */
     .mesh{
       position:absolute;left:50%;top:50%;
       transform:translate(-50%,-50%);
-      width:min(560px, 56vh);height:min(560px, 56vh);
+      width:min(560px, 64vh);height:min(560px, 64vh);
       z-index:3;pointer-events:none;
-      opacity:.42;
-      -webkit-mask-image:radial-gradient(
-        ellipse 50% 50% at 50% 50%,
-        rgba(0,0,0,1) 0%,
-        rgba(0,0,0,.75) 45%,
-        rgba(0,0,0,.30) 75%,
-        rgba(0,0,0,0) 100%
-      );
-              mask-image:radial-gradient(
-        ellipse 50% 50% at 50% 50%,
-        rgba(0,0,0,1) 0%,
-        rgba(0,0,0,.75) 45%,
-        rgba(0,0,0,.30) 75%,
-        rgba(0,0,0,0) 100%
-      );
     }
-    .mesh .meridian{fill:none;stroke:rgba(58,143,164,.50);stroke-width:1;}
+    .mesh .meridian{fill:none;stroke:rgba(58,143,164,.55);stroke-width:1;}
     .mesh .parallel{fill:none;stroke:rgba(58,143,164,.35);stroke-width:.8;}
-    .mesh .outline{fill:none;stroke:rgba(58,143,164,.65);stroke-width:1.3;}
+    .mesh .outline{fill:none;stroke:rgba(58,143,164,.75);stroke-width:1.3;}
     .mesh-group{transform-origin:center;animation:globe-rot 22s linear infinite;}
     @keyframes globe-rot{
       0%  {transform:rotateZ(0deg);}
