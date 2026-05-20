@@ -1264,55 +1264,91 @@ TEMPLATE = r"""
     }
     .serif { font-family: "Crimson Pro", Georgia, serif; }
 
-    /* TOP BAR — single centred wordmark "VMA GROUP INTELLIGENCE PLATFORM"
-       with a pulsing green liveness dot. The navy area is the top
-       half of the header; the bottom half is the fade runway to the
-       dashboard cream. Equal vertical breathing room above and below
-       the wordmark inside the navy area. */
+    /* TOP BAR — solid navy strip, sharp coral rule at the bottom edge.
+       VMA GROUP wordmark with tagline below it on the left; "Live
+       Intelligence" pill on the right with a pulsing green dot to
+       the left of the text. Subtle diagonal pink/coral wash adds a
+       little life to the navy without softening the edge. */
     .top-bar {
+      background: var(--navy);
+      border-bottom: 3px solid var(--teal);
       position: relative;
       overflow: hidden;
-      background:
-        radial-gradient(ellipse 360px 60px at 88% 24%, rgba(201,100,66,.16), transparent 65%),
-        radial-gradient(ellipse 320px 60px at 12% 28%, rgba(127,183,200,.10), transparent 70%),
-        linear-gradient(180deg, var(--navy) 0%, var(--navy) 50%, var(--bg) 100%);
+    }
+    .top-bar::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(120deg,
+        transparent 55%,
+        rgba(225, 138, 161, 0.10) 75%,
+        rgba(201, 100, 66, 0.16) 100%);
     }
     .top-bar .hero-row {
       max-width: 1280px;
       margin: 0 auto;
-      height: 64px;                 /* the navy band; content centres in it */
+      padding: 16px 28px;
       display: flex;
-      align-items: center;          /* vertical centring in the navy band */
-      justify-content: center;      /* horizontal centring on the page */
-      padding: 0 30px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
       position: relative;
       z-index: 2;
     }
-    .top-bar .fade-strip { height: 64px; }
-    .top-bar .brand-line {
-      font-family: Arial, Helvetica, sans-serif;
+    .top-bar .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .top-bar .brand-line-1 {
       color: #fff;
-      font-size: 24px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 22px;
       line-height: 1;
       display: inline-flex;
-      align-items: center;
-      white-space: nowrap;
+      align-items: baseline;
     }
     .top-bar .bm-vma {
       font-weight: 800;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.07em;
     }
-    .top-bar .bm-rest {
+    .top-bar .bm-group {
       font-weight: 400;
       letter-spacing: 0.28em;
-      padding-left: 0.62em;         /* even visual gap after "VMA" */
+      padding-left: 0.5em;
     }
-    .top-bar .brand-dot {
-      width: 9px;
-      height: 9px;
+    .top-bar .brand-tagline {
+      color: rgba(255, 255, 255, 0.72);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 8.5px;
+      letter-spacing: 0.30em;
+      font-weight: 400;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+    .top-bar .live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: rgba(255, 255, 255, 0.92);
+      font-size: 10.5px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 500;
+      padding: 7px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+    .top-bar .live-pill::before {
+      content: "";
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       background: #9FD181;
-      margin-left: 16px;
       animation: live-pulse 2.4s ease-in-out infinite;
     }
     @keyframes live-pulse {
@@ -1321,11 +1357,10 @@ TEMPLATE = r"""
       100% { box-shadow: 0 0 0 0 rgba(159, 209, 129, 0),    0 0 6px rgba(159, 209, 129, 0.6); }
     }
     @media (max-width: 720px) {
-      .top-bar .hero-row { height: 52px; padding: 0 16px; }
-      .top-bar .fade-strip { height: 48px; }
-      .top-bar .brand-line { font-size: 16px; }
-      .top-bar .bm-rest { letter-spacing: 0.22em; padding-left: 0.5em; }
-      .top-bar .brand-dot { width: 7px; height: 7px; margin-left: 11px; }
+      .top-bar .hero-row { padding: 13px 16px; }
+      .top-bar .brand-line-1 { font-size: 18px; }
+      .top-bar .brand-tagline { font-size: 7px; letter-spacing: 0.22em; }
+      .top-bar .live-pill { font-size: 9.5px; padding: 5px 10px; letter-spacing: 0.14em; }
 
       /* Mobile predictor row: grid puts chips on their own dedicated
          row beneath the company name so 'Corporate Affairs Director'
@@ -2384,11 +2419,14 @@ TEMPLATE = r"""
 
 <header class="top-bar">
   <div class="hero-row">
-    <div class="brand-line" aria-label="VMA Group Intelligence Platform">
-      <span class="bm-vma">VMA</span><span class="bm-rest">GROUP INTELLIGENCE PLATFORM</span><span class="brand-dot" aria-hidden="true"></span>
+    <div class="brand" aria-label="VMA Group">
+      <div class="brand-line-1">
+        <span class="bm-vma">VMA</span><span class="bm-group">GROUP</span>
+      </div>
+      <div class="brand-tagline">Recruitment · Executive Search · Advisory Services</div>
     </div>
+    <div class="live-pill">Live Intelligence</div>
   </div>
-  <div class="fade-strip"></div>
 </header>
 
 {% if not has_token %}
