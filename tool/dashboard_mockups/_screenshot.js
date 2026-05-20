@@ -11,7 +11,20 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright/index.js')
   const ctx = await browser.newContext({ viewport: { width: w, height: h } });
   const page = await ctx.newPage();
   await page.goto(url, { waitUntil: 'networkidle' });
-  await page.waitForTimeout(900);
+  // Wait for any <img> elements to finish decoding so we don't screenshot
+  // a half-loaded page (the previous 900ms timeout was not enough for the
+  // index page with five embedded mockup previews).
+  await page.evaluate(async () => {
+    await Promise.all(
+      Array.from(document.images).map(img =>
+        img.complete ? Promise.resolve() : new Promise(res => {
+          img.addEventListener('load', res, { once: true });
+          img.addEventListener('error', res, { once: true });
+        })
+      )
+    );
+  });
+  await page.waitForTimeout(400);
   await page.screenshot({ path: out, fullPage: false });
   await browser.close();
   console.log(`saved ${out} (${w}x${h})`);
