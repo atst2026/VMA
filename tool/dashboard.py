@@ -795,6 +795,13 @@ def _safe_url_filter(u):
 
 @app.route("/")
 @_auth_required
+def landing():
+    """Gemini-style landing — VMA wordmark + click-pill into the dashboard."""
+    return render_template_string(LANDING_TEMPLATE)
+
+
+@app.route("/dashboard")
+@_auth_required
 def index():
     predictors = load_latest_predictive()
     leads = load_latest_signals()
@@ -1205,6 +1212,99 @@ def api_funding():
     return jsonify({"rows": rows, "total": len(rows)})
 
 
+# Gemini-style landing page — VMA wordmark + click-pill that enters the
+# dashboard. Halo uses the same Opus v2 recipe the dashboard hero uses.
+LANDING_TEMPLATE = r"""
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VMA Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;}
+    html,body{margin:0;padding:0;height:100%;}
+    body{
+      font-family:"Inter",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      color:#1F1F1F;line-height:1.5;font-size:13.5px;
+      -webkit-font-smoothing:antialiased;
+      min-height:100vh;
+      display:flex;align-items:center;justify-content:center;
+      background:radial-gradient(
+        ellipse 48% 55% at 50% 55%,
+        #a8c8e6 0%,
+        #bdd3e9 18%,
+        #d2e1ee 40%,
+        #e8eff6 65%,
+        #f5f8fb 85%,
+        #fbfcfd 100%
+      );
+    }
+    .stage{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      padding:0 40px;gap:46px;text-align:center;
+    }
+    .wordmark{
+      font-family:Arial,Helvetica,sans-serif;color:#1F1F1F;
+      display:inline-flex;align-items:baseline;line-height:1;
+    }
+    .wordmark .v{font-weight:800;letter-spacing:.06em;font-size:64px;}
+    .wordmark .g{font-weight:300;letter-spacing:.32em;font-size:64px;padding-left:.42em;}
+    .enter-pill{
+      background:#fff;border-radius:9999px;padding:14px 22px;border:none;
+      display:flex;align-items:center;justify-content:center;gap:14px;
+      box-shadow:
+        0 1px 2px rgba(0,0,0,0.05),
+        0 4px 16px rgba(60,80,120,0.08);
+      cursor:pointer;font:inherit;color:#1F1F1F;
+      min-width:560px;max-width:88%;text-decoration:none;
+      transition:transform .15s ease, box-shadow .15s ease;
+    }
+    .enter-pill:hover{
+      transform:translateY(-2px);
+      box-shadow:
+        0 2px 4px rgba(0,0,0,0.06),
+        0 10px 28px rgba(60,80,120,0.12);
+    }
+    .enter-pill .pulse-dot{
+      width:9px;height:9px;border-radius:50%;background:#9FD181;
+      animation:pulse 2.4s ease-in-out infinite;flex-shrink:0;
+    }
+    @keyframes pulse{
+      0%  {box-shadow:0 0 0 0 rgba(159,209,129,.75),0 0 7px rgba(159,209,129,.6);}
+      70% {box-shadow:0 0 0 10px rgba(159,209,129,0),0 0 12px rgba(159,209,129,.9);}
+      100%{box-shadow:0 0 0 0 rgba(159,209,129,0),0 0 7px rgba(159,209,129,.6);}
+    }
+    .enter-pill .lbl{
+      font-family:"JetBrains Mono",ui-monospace,monospace;
+      font-size:13px;letter-spacing:.26em;text-transform:uppercase;font-weight:500;
+    }
+    .enter-pill .arrow{color:#5F6368;font-size:18px;line-height:1;margin-left:6px;}
+    @media (max-width:720px){
+      .stage{gap:32px;}
+      .wordmark .v,.wordmark .g{font-size:44px;}
+      .enter-pill{min-width:0;width:100%;padding:12px 16px;}
+      .enter-pill .lbl{font-size:11px;letter-spacing:.18em;}
+    }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="wordmark"><span class="v">VMA</span><span class="g">GROUP</span></div>
+    <a class="enter-pill" href="/dashboard">
+      <span class="pulse-dot"></span>
+      <span class="lbl">Intelligence Platform &middot; Live</span>
+      <span class="arrow">&rarr;</span>
+    </a>
+  </div>
+</body>
+</html>
+"""
+
+
 TEMPLATE = r"""
 <!doctype html>
 <html lang="en">
@@ -1276,17 +1376,24 @@ TEMPLATE = r"""
     .top-bar {
       position: relative;
       overflow: hidden;
-      padding: 32px 30px 28px;
+      min-height: 170px;
+      padding: 36px 30px 32px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 13px;
+      gap: 11px;
       text-align: center;
-      background:
-        radial-gradient(ellipse 920px 260px at 50% 50%, rgba(66, 133, 244, 0.14), transparent 60%),
-        radial-gradient(ellipse 1200px 200px at 50% 100%, rgba(66, 133, 244, 0.05), transparent 70%),
-        var(--bg);
+      /* Opus v2 halo — tight 48% ellipse, six-stop front-loaded fade */
+      background: radial-gradient(
+        ellipse 48% 55% at 50% 55%,
+        #a8c8e6 0%,
+        #bdd3e9 18%,
+        #d2e1ee 40%,
+        #e8eff6 65%,
+        #f5f8fb 85%,
+        #fbfcfd 100%
+      );
     }
     .top-bar .brand-line-1 {
       font-family: Arial, Helvetica, sans-serif;
@@ -1298,26 +1405,27 @@ TEMPLATE = r"""
     .top-bar .bm-vma {
       font-weight: 800;
       letter-spacing: 0.06em;
-      font-size: 40px;
+      font-size: 34px;
     }
     .top-bar .bm-group {
       font-weight: 300;
       letter-spacing: 0.32em;
-      font-size: 40px;
+      font-size: 34px;
       padding-left: 0.42em;
     }
-    .top-bar .live-pill {
+    /* Floating caption under the wordmark — NOT a pill */
+    .top-bar .sub-cap {
       display: inline-flex;
       align-items: center;
-      gap: 11px;
+      gap: 10px;
       font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
       color: var(--text-muted);
-      font-size: 11px;
+      font-size: 10.5px;
       letter-spacing: 0.26em;
       text-transform: uppercase;
       font-weight: 400;
     }
-    .top-bar .live-pill::before {
+    .top-bar .sub-cap::before {
       content: "";
       width: 8px;
       height: 8px;
@@ -1332,9 +1440,9 @@ TEMPLATE = r"""
       100% { box-shadow: 0 0 0 0 rgba(159, 209, 129, 0),    0 0 7px rgba(159, 209, 129, 0.6); }
     }
     @media (max-width: 720px) {
-      .top-bar { padding: 22px 16px 18px; gap: 10px; }
-      .top-bar .bm-vma, .top-bar .bm-group { font-size: 28px; }
-      .top-bar .live-pill { font-size: 9.5px; letter-spacing: 0.18em; }
+      .top-bar { min-height: 130px; padding: 26px 16px 22px; gap: 9px; }
+      .top-bar .bm-vma, .top-bar .bm-group { font-size: 24px; }
+      .top-bar .sub-cap { font-size: 9.5px; letter-spacing: 0.18em; }
 
       /* Mobile predictor row: grid puts chips on their own dedicated
          row beneath the company name so 'Corporate Affairs Director'
@@ -2382,7 +2490,7 @@ TEMPLATE = r"""
   <div class="brand-line-1">
     <span class="bm-vma">VMA</span><span class="bm-group">GROUP</span>
   </div>
-  <div class="live-pill">Intelligence Platform · Live</div>
+  <div class="sub-cap">Intelligence Platform &middot; Live</div>
 </header>
 
 {% if not has_token %}
