@@ -770,9 +770,6 @@ def _boot_state_hydrate():
             "tool/state/report_log.json",
             "tool/state/predictor_status.json",
             "tool/state/contact_flags.json",
-            "tool/state/trade_press_events.json",
-            "tool/state/trade_press_suppression.json",
-            "tool/state/trade_press_tracked.json",
             "tool/state/cascade_events.json",
             "tool/state/cascade_suppression.json",
             "tool/state/top_three_state.json",
@@ -809,19 +806,18 @@ def landing():
 @app.route("/dashboard")
 @_auth_required
 def index():
-    from tool import trade_press, cascade, top_three
+    from tool import cascade, top_three
+    from tool.funding_round import load_funding
     predictors = load_latest_predictive()
     leads = load_latest_signals()
-    trade_press_events = trade_press.list_active()
-    tracked_count = len(trade_press.load_tracked())
     cascade_events = cascade.list_active()
     top_actions = top_three.compute_top()
+    funding_events = load_funding(limit=30)
     return render_template_string(
         TEMPLATE,
         leads=leads,
         predictors=predictors,
-        trade_press_events=trade_press_events,
-        trade_press_tracked_count=tracked_count,
+        funding_events=funding_events,
         cascade_events=cascade_events,
         top_actions=top_actions,
         leads_active_count=sum(1 for s in leads if s.get("status", "active") == "active"),
@@ -1059,35 +1055,6 @@ def api_contacts_flag():
 # triage, objection coach, candidate watch, competitor mandates.
 # ---------------------------------------------------------------------------
 
-@app.route("/api/mpc/build", methods=["POST"])
-@_auth_required
-def api_mpc_build():
-    """Build a per-account MPC outreach hit list for one pasted candidate."""
-    from tool.mpc_factory import MPCCandidate, build_hit_list, hit_list_to_json
-    data = _safe_json_body()
-    name = (data.get("name") or "").strip()
-    current_company = (data.get("current_company") or "").strip()
-    current_title = (data.get("current_title") or "").strip()
-    if not name or not current_company or not current_title:
-        return jsonify({"ok": False,
-                        "detail": "Missing: name, current_company, current_title required"}), 400
-    candidate = MPCCandidate(
-        name=name,
-        current_company=current_company,
-        current_title=current_title,
-        sectors=[s.strip() for s in (data.get("sectors") or "").split(",") if s.strip()],
-        specialism=(data.get("specialism") or "").strip(),
-        notes=(data.get("notes") or "").strip(),
-    )
-    try:
-        top_n = int(data.get("top_n") or 20)
-    except (TypeError, ValueError):
-        top_n = 20
-    top_n = max(1, min(top_n, 50))   # clamp so negative / huge values can't break the slice
-    hits = build_hit_list(candidate, top_n=top_n)
-    return jsonify({"ok": True, "hits": hit_list_to_json(hits), "count": len(hits)})
-
-
 @app.route("/api/candidates/watch", methods=["GET"])
 @_auth_required
 def api_candidates_watch_list():
@@ -1155,40 +1122,6 @@ def api_candidates_watch_remove():
     return jsonify({"ok": True})
 
 
-# ---- Trade-Press Warm-Call Trigger ----
-@app.route("/api/trade-press/list", methods=["GET"])
-@_auth_required
-def api_trade_press_list():
-    """Active triggers for the dashboard panel."""
-    from tool import trade_press
-    return jsonify({"events": trade_press.list_active()})
-
-
-@app.route("/api/trade-press/mark", methods=["POST"])
-@_auth_required
-def api_trade_press_mark():
-    """Mark a trigger called/dismissed/active."""
-    from tool import trade_press
-    data = _safe_json_body()
-    event_id = (data.get("event_id") or "").strip()
-    status = (data.get("status") or "").strip()
-    if not (event_id and status):
-        return jsonify({"ok": False, "detail": "event_id and status required"}), 400
-    ok = trade_press.mark(event_id, status)
-    if not ok:
-        return jsonify({"ok": False, "detail": "event not found or invalid status"}), 404
-    return jsonify({"ok": True})
-
-
-@app.route("/api/trade-press/scour", methods=["POST"])
-@_auth_required
-def api_trade_press_scour():
-    """Run the scour on demand. Mostly a debug hook — production usage
-    runs it daily via the morning-brief workflow."""
-    from tool import trade_press
-    return jsonify({"ok": True, **trade_press.scour()})
-
-
 # ---- Cascade-Hire Watch ----
 @app.route("/api/cascade/list", methods=["GET"])
 @_auth_required
@@ -1253,53 +1186,6 @@ def api_top_three_mark():
     return jsonify({"ok": True})
 
 
-@app.route("/api/trade-press/tracked", methods=["GET", "POST"])
-@_auth_required
-def api_trade_press_tracked():
-    """Read or replace the canonical tracked-contacts list.
-
-    POST body: {"contacts": [{id, name, company, aliases?}, ...]}.
-    Replaces the whole list (simpler than per-row edits at this stage)."""
-    from tool import trade_press
-    if request.method == "GET":
-        return jsonify({"contacts": trade_press.load_tracked()})
-    data = _safe_json_body()
-    contacts = data.get("contacts")
-    if not isinstance(contacts, list):
-        return jsonify({"ok": False, "detail": "contacts must be a list"}), 400
-    # Light validation — every row needs id + name; auto-id if missing.
-    import hashlib
-    cleaned = []
-    for c in contacts:
-        if not isinstance(c, dict):
-            continue
-        name = (c.get("name") or "").strip()
-        if not name:
-            continue
-        cid = (c.get("id") or "").strip()
-        if not cid:
-            cid = hashlib.sha1(name.lower().encode("utf-8")).hexdigest()[:12]
-        cleaned.append({
-            "id": cid,
-            "name": name,
-            "company": (c.get("company") or "").strip(),
-            "aliases": [a for a in (c.get("aliases") or []) if isinstance(a, str)],
-            "role": (c.get("role") or "").strip(),
-            "linkedin": (c.get("linkedin") or "").strip(),
-        })
-    payload = json.dumps(cleaned, indent=2)
-    trade_press.TRACKED_FILE.parent.mkdir(parents=True, exist_ok=True)
-    trade_press.TRACKED_FILE.write_text(payload)
-    try:
-        from tool import github_state
-        github_state.push_async(
-            "tool/state/trade_press_tracked.json", payload,
-            "state: update trade-press tracked contacts")
-    except Exception:
-        pass
-    return jsonify({"ok": True, "count": len(cleaned)})
-
-
 @app.route("/api/competitor-mandates", methods=["GET"])
 @_auth_required
 def api_competitor_mandates():
@@ -1359,17 +1245,6 @@ def api_contract_end():
     in that window, months before any contract-loss RNS."""
     from tool.contract_end import load_contract_end
     rows = load_contract_end(limit=30)
-    return jsonify({"rows": rows, "total": len(rows)})
-
-
-@app.route("/api/funding", methods=["GET"])
-@_auth_required
-def api_funding():
-    """Funding-Round detector — a scaling private firm closed a >=£20m
-    growth round; a step-change senior in-house comms hire typically
-    follows ~6 months later, months after the round is public."""
-    from tool.funding_round import load_funding
-    rows = load_funding(limit=30)
     return jsonify({"rows": rows, "total": len(rows)})
 
 
@@ -1829,9 +1704,29 @@ TEMPLATE = r"""
        row so other panels keep the global .panel-body sizing. */
     #pulses-row .panel { height: 400px; }
     #pulses-row .panel-body { max-height: none; flex: 1; min-height: 0; overflow-y: auto; }
-    /* Match the 16px horizontal inset every other section's .item uses
-       so funding rows aren't jammed against the panel edge. */
-    #funding-body { padding: 8px 16px 12px; }
+    /* Funding-signal sub-section inside Predicted Briefs — visually
+       set apart from the tenure-driven predictor rows above but using
+       the same row template so the surface stays unified. */
+    .funding-subsection {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px dashed var(--border);
+    }
+    .funding-subhead {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11.5px; color: var(--text-muted);
+      margin: 0 0 8px;
+    }
+    .funding-chip {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 10px; font-weight: 700; letter-spacing: .10em;
+      text-transform: uppercase;
+      background: var(--teal-bg, #e8eff6);
+      color: var(--teal-dark, #1f377c);
+      border-radius: 10px;
+    }
+    .funding-row { opacity: .92; }
 
     .cal-wrap { padding: 14px 16px; }
     .cal-ribbon {
@@ -2711,7 +2606,7 @@ TEMPLATE = r"""
           <div class="empty">
             Nothing actionable surfaced right now. Click <strong>Daily Refresh</strong>
             to pull this morning's brief, then check back — leads, predictors,
-            candidates, trade-press triggers, and cascades all feed this list.
+            candidates, cascades, and funding signals all feed this list.
           </div>
         {% else %}
           {% for a in top_actions %}
@@ -2875,69 +2770,41 @@ TEMPLATE = r"""
         {% else %}
           <div class="empty compact">No predictors loaded yet. Click Daily Refresh.</div>
         {% endif %}
+        {% if funding_events %}
+          <div class="funding-subsection">
+            <div class="funding-subhead">
+              <span class="funding-chip">FUNDING SIGNAL</span>
+              <span>Closed equity rounds · senior-comms hire window now → ~6 months</span>
+            </div>
+            {% for f in funding_events %}
+              <div class="item predictor funding-row">
+                <div class="row-summary">
+                  <span class="rank">·</span>
+                  <span class="title">{{ f.company }}</span>
+                  <span class="chips">
+                    <span class="role-chip">{{ f.amount }} {{ f.round }}</span>
+                    {% if f.confidence == 'high' %}<span class="prob-chip">high</span>{% endif %}
+                    <span class="window-badge">{{ f.window }}</span>
+                  </span>
+                </div>
+                {% if f.evidence %}
+                <div class="row-preview">
+                  <span class="signal-sub">{{ f.evidence[:160] }}</span>
+                  {% if f.url %} · <a href="{{ f.url | safe_url }}" target="_blank">source</a>{% endif %}
+                </div>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
       </div>
     </div>
 
   </div>
 
   <!-- DETERMINISTIC, DATE-DRIVEN PLACEMENT WINDOWS — Calendar Pulses
-       (year ribbon) and the Funding-Round pre-hire window sit
-       side-by-side at equal size (2-col grid; stacks under 900px).
-       Both reliably fire; the rare detectors live in Specialist
-       Signals below. -->
-
-  <!-- TRADE-PRESS WARM-CALL TRIGGERS — same-day calls referencing a
-       public mention of a tracked senior comms leader. Sits above the
-       BD Calendar so it's the first thing Sara sees after the daily
-       refresh. -->
-  <div class="row row-full" id="trade-press-row">
-    <div class="panel">
-      <div class="panel-header">
-        <h2>Trade-Press Triggers</h2>
-        <span style="display:flex;align-items:center;gap:10px;">
-          <span class="refresh-sub" style="font-size:11px;">
-            {{ trade_press_tracked_count }} contacts tracked
-          </span>
-          <button type="button" class="btn-mini" id="tp-edit">Edit list</button>
-          <span class="count" id="trade-press-count">{{ trade_press_events|length }}</span>
-        </span>
-      </div>
-      <div class="panel-body" id="trade-press-body">
-        {% if trade_press_tracked_count == 0 %}
-          <div class="empty">
-            No tracked contacts yet. Click <strong>Edit list</strong> and paste in
-            the senior comms people you want to be alerted on when they appear
-            in PR Week / Provoke / CorpComms / Campaign.
-          </div>
-        {% elif trade_press_events|length == 0 %}
-          <div class="empty">
-            No trade-press mentions detected on your tracked contacts today.
-          </div>
-        {% else %}
-          {% for e in trade_press_events %}
-            <div class="item trade-press-item" data-event-id="{{ e.event_id }}">
-              <span class="title">{{ e.person_name }}</span>
-              {% if e.person_company %}<span class="badge">{{ e.person_company }}</span>{% endif %}
-              <span class="badge">{{ e.source_name }}</span>
-              <span class="badge">{{ e.hook_type }}</span>
-              <div style="font-size:12px;color:var(--text-muted);margin:4px 0 6px;">
-                <a href="{{ e.article_url | safe_url }}" target="_blank">{{ e.article_title }}</a>
-              </div>
-              {% if e.snippet %}
-              <div style="font-size:11.5px;color:var(--text-muted);font-style:italic;margin-bottom:6px;">"{{ e.snippet }}"</div>
-              {% endif %}
-              <pre class="outreach-text">{{ e.opener }}</pre>
-              <div class="item-actions">
-                <button class="btn-mini tp-copy" type="button">✉ Copy opener</button>
-                <button class="btn-mini tp-action" data-status="called" type="button">✓ Called</button>
-                <button class="btn-mini tp-action ghost" data-status="dismissed" type="button">✕ Dismiss</button>
-              </div>
-            </div>
-          {% endfor %}
-        {% endif %}
-      </div>
-    </div>
-  </div>
+       year ribbon. Funding-Round signals are folded into Predicted
+       Briefs above; rare detectors live in Specialist Signals below. -->
 
   <!-- CASCADE-HIRE WATCH — senior comms moves in public news; each
        move emits two derived BD actions (old company replacement
@@ -3009,7 +2876,7 @@ TEMPLATE = r"""
     </div>
   </div>
 
-  <div class="row" id="pulses-row">
+  <div class="row row-full" id="pulses-row">
     <div class="panel">
       <div class="panel-header">
         <h2>BD Calendar</h2>
@@ -3023,18 +2890,6 @@ TEMPLATE = r"""
         <div class="empty compact">Loading…</div>
       </div>
     </div>
-
-    <!-- FUNDING-ROUND PRE-HIRE WINDOW (>=£20m -> ~6-month comms hire) -->
-    <div class="panel">
-      <div class="panel-header">
-        <h2>Funding-Round Pre-Hire Window</h2>
-        <span class="count" id="funding-count">—</span>
-      </div>
-      <div class="panel-body" id="funding-body">
-        <div class="empty compact">Loading…</div>
-      </div>
-    </div>
-
   </div>
 
   <!-- SPECIALIST SIGNALS — Mandates Worth Following / Water SAR /
@@ -3162,23 +3017,6 @@ TEMPLATE = r"""
           <div class="status" id="watch-add-status"></div>
         </form>
       </details>
-    </div>
-
-    <!-- MPC OUTREACH FACTORY -->
-    <div class="panel action-card">
-      <h3>MPC Outreach Factory</h3>
-      <div class="subhead">Take a candidate, check against signals already gathered today, and match potential fits.</div>
-      <form id="mpc-form" onsubmit="runMPC(event)">
-        <label for="mpc-name">Candidate name</label>
-        <input id="mpc-name" name="name" placeholder="e.g. James Carter" required>
-        <label for="mpc-company">Current company</label>
-        <input id="mpc-company" name="current_company" placeholder="e.g. Barclays" required>
-        <label for="mpc-title">Current title</label>
-        <input id="mpc-title" name="current_title" placeholder="e.g. Director of Corporate Comms" required>
-        <button type="submit">Build hit list</button>
-        <div class="status" id="mpc-status"></div>
-        <div id="mpc-result" class="inline-result"></div>
-      </form>
     </div>
 
   </div>
@@ -3885,56 +3723,6 @@ async function loadContractEnd() {
   }
 }
 
-// ---------- Funding-Round Pre-Hire Window ----------
-async function loadFunding() {
-  const body = document.getElementById('funding-body');
-  const count = document.getElementById('funding-count');
-  try {
-    const r = await fetch('/api/funding');
-    const j = await r.json();
-    count.textContent = j.total;
-    if (!j.rows || j.rows.length === 0) {
-      body.innerHTML = '<div class="empty compact">No qualifying funding round ' +
-        '(&ge;£20m growth/Series round) detected yet. Click daily refresh. ' +
-        'This fires when a scaling private firm closes a material equity round: ' +
-        'a step-change senior in-house comms hire typically follows ~6 months ' +
-        'later, months after the round is public. Debt/refinancing is excluded ' +
-        'by design.</div>';
-      return;
-    }
-    // Each round is its own compact clickable row, stacked. The summary
-    // line is the at-a-glance view; clicking a row opens its evidence.
-    const out = [];
-    for (const f of j.rows.slice(0, 16)) {
-      const conf = (f.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
-      const summary =
-        '<span class="' + conf + '">' + esc(f.confidence || '') + '</span> ' +
-        (f.sector ? esc(f.sector) + ' ' : '') +
-        '<strong>' + esc(f.company || '(unknown)') + '</strong> &middot; ' +
-        esc(f.amount || '') + ' ' + esc(f.round || 'funding round');
-      const detail =
-        '<div style="color:var(--text-muted);font-size:12px;margin-top:6px;">' +
-          (f.url
-            ? '<a href="' + safeUrl(f.url) + '" target="_blank" rel="noopener noreferrer" style="color:#0366d6;">' + esc(f.evidence || 'source') + '</a>'
-            : esc(f.evidence || '')) +
-          (f.window ? ' &middot; ' + esc(f.window) : '') +
-          (f.source ? ' &middot; ' + esc(f.source) : '') +
-          (f.sector ? ' &middot; ' + esc(f.sector) : '') +
-        '</div>' +
-        (f.advisory ? '<div class="advisory-line">' + esc(f.advisory) + '</div>' : '');
-      out.push(
-        '<details class="funding-details" style="margin-bottom:8px;">' +
-          '<summary>' + summary + '</summary>' +
-          detail +
-        '</details>'
-      );
-    }
-    body.innerHTML = out.join('');
-  } catch (e) {
-    body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
-  }
-}
-
 // ---------- Mandates Worth Following (vacated-seat detector) ----------
 async function loadFollowing() {
   const body = document.getElementById('following-body');
@@ -3998,53 +3786,6 @@ async function loadSpecialistSignals() {
   }
 }
 
-// ---------- MPC Outreach Factory ----------
-async function runMPC(event) {
-  event.preventDefault();
-  const form = document.getElementById('mpc-form');
-  const btn = form.querySelector('button[type=submit]');
-  const status = document.getElementById('mpc-status');
-  const result = document.getElementById('mpc-result');
-  const data = {};
-  new FormData(form).forEach((v, k) => { data[k] = v; });
-  btn.disabled = true; btn.textContent = 'Building…';
-  status.textContent = ''; status.className = 'status';
-  result.innerHTML = '';
-  try {
-    const r = await fetch('/api/mpc/build', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    const j = await r.json();
-    if (!j.ok) {
-      status.textContent = j.detail || 'Failed.'; status.className = 'status err';
-    } else {
-      status.textContent = 'Built ' + j.count + ' hooks.'; status.className = 'status ok';
-      const out = ['<ol style="margin:10px 0 0 0;padding-left:20px;">'];
-      for (const h of j.hits) {
-        const evHref = safeUrl(h.evidence_url);
-        out.push(
-          '<li style="margin-bottom:12px;">' +
-            '<div><strong>' + esc(h.account) + '</strong> ' +
-              '<span class="hook-badge ' + esc(h.hook_kind) + '">' + esc(h.hook_kind.replace(/_/g, ' ')) + '</span>' +
-              ' <span style="color:var(--text-muted);font-size:11px;">score ' + esc(h.score) + '</span>' +
-            '</div>' +
-            '<div style="color:#333;margin-top:4px;">' + esc(h.hook) + '</div>' +
-            (evHref !== '#' ? '<a href="' + evHref +
-              '" target="_blank" rel="noopener noreferrer" style="font-size:11px;">↗ evidence</a>' : '') +
-          '</li>'
-        );
-      }
-      out.push('</ol>');
-      result.innerHTML = out.join('');
-    }
-  } catch (e) {
-    status.textContent = 'Network error: ' + e.message; status.className = 'status err';
-  }
-  btn.disabled = false; btn.textContent = 'Build hit list';
-}
-
 // ---------- Candidate Watch ----------
 async function loadWatchList() {
   const wrap = document.getElementById('watch-list');
@@ -4069,7 +3810,7 @@ async function loadWatchList() {
       if (drift >= 60) driftClass = 'hot';
       else if (drift >= 30) driftClass = 'warm';
       const driftPill = '<span class="cw-pill drift ' + driftClass +
-        '" title="Liquidity score — combines tenure, cascade, news, trade-press, and cadence signals">' +
+        '" title="Liquidity score — combines tenure, cascade, news, and cadence signals">' +
         'score ' + esc(drift) + '</span>';
 
       // Overdue / due indicator stays as a secondary pill.
@@ -4203,165 +3944,10 @@ document.addEventListener('DOMContentLoaded', () => {
   applyFilter('active');
   applyLeadFilter('active');
   loadPulses();
-  loadFunding();
   loadSpecialistSignals();
   loadWatchList();
   loadRecentReports();
 });
-
-// ---------- Trade-Press Warm-Call Triggers ----------
-(function(){
-  const root = document.getElementById('trade-press-body');
-  if (!root) return;
-
-  root.addEventListener('click', async (ev) => {
-    // Copy opener button
-    const copyBtn = ev.target.closest('.tp-copy');
-    if (copyBtn) {
-      const item = copyBtn.closest('.trade-press-item');
-      const txt = item && item.querySelector('.outreach-text');
-      if (txt) {
-        try {
-          await navigator.clipboard.writeText(txt.textContent);
-          const orig = copyBtn.textContent;
-          copyBtn.textContent = '✓ Copied';
-          setTimeout(() => { copyBtn.textContent = orig; }, 1200);
-        } catch (e) { /* clipboard blocked - silent */ }
-      }
-      return;
-    }
-
-    // Called / Dismiss
-    const actBtn = ev.target.closest('.tp-action');
-    if (actBtn) {
-      const item = actBtn.closest('.trade-press-item');
-      const id = item && item.getAttribute('data-event-id');
-      const status = actBtn.getAttribute('data-status');
-      if (!id || !status) return;
-      actBtn.disabled = true;
-      try {
-        const r = await fetch('/api/trade-press/mark', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ event_id: id, status: status }),
-        });
-        const j = await r.json();
-        if (j.ok) {
-          item.style.transition = 'opacity .2s ease';
-          item.style.opacity = '0';
-          setTimeout(() => { item.remove(); updateTradePressCount(); }, 200);
-        } else {
-          actBtn.disabled = false;
-          alert(j.detail || 'Could not update.');
-        }
-      } catch (e) {
-        actBtn.disabled = false;
-        alert('Network error: ' + e.message);
-      }
-    }
-  });
-
-  function updateTradePressCount() {
-    const remaining = root.querySelectorAll('.trade-press-item').length;
-    const counter = document.getElementById('trade-press-count');
-    if (counter) counter.textContent = remaining;
-    if (remaining === 0) {
-      root.innerHTML = '<div class="empty">No trade-press mentions detected on your tracked contacts today.</div>';
-    }
-  }
-
-  // Edit-list modal — a simple textarea editor over JSON, kept light
-  // because the tracked list is small (~30-150 names) and Sara will
-  // paste-edit it rarely.
-  const editBtn = document.getElementById('tp-edit');
-  if (editBtn) {
-    editBtn.addEventListener('click', async () => {
-      let current = [];
-      try {
-        const r = await fetch('/api/trade-press/tracked');
-        const j = await r.json();
-        current = j.contacts || [];
-      } catch (e) { /* ignore, start empty */ }
-
-      const overlay = document.createElement('div');
-      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,20,40,.42);z-index:9999;display:flex;align-items:center;justify-content:center;padding:32px;';
-      overlay.innerHTML = `
-        <div style="background:#fff;border-radius:14px;padding:22px;max-width:760px;width:100%;
-                    box-shadow:0 24px 60px rgba(31,55,124,.22);">
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
-            <h3 style="margin:0;font-size:16px;font-weight:700;">Tracked contacts for Trade-Press Triggers</h3>
-            <button class="btn-mini" id="tp-cancel" type="button">Close</button>
-          </div>
-          <p style="font-size:12px;color:var(--text-muted);margin:0 0 10px;">
-            One JSON object per row. Required fields: <code>name</code>. Optional: <code>company</code>,
-            <code>aliases</code> (alternative spellings), <code>role</code>, <code>linkedin</code>.
-          </p>
-          <textarea id="tp-textarea" style="width:100%;min-height:340px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;padding:10px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--text);"></textarea>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:10px;">
-            <span id="tp-save-status" style="font-size:11.5px;color:var(--text-muted);"></span>
-            <span style="display:flex;gap:8px;">
-              <button class="btn-mini" id="tp-scour" type="button">Scour now</button>
-              <button class="btn-mini" id="tp-save" type="button" style="font-weight:600;">Save</button>
-            </span>
-          </div>
-        </div>`;
-      document.body.appendChild(overlay);
-
-      const ta = overlay.querySelector('#tp-textarea');
-      ta.value = JSON.stringify(current, null, 2);
-
-      overlay.querySelector('#tp-cancel').addEventListener('click', () => overlay.remove());
-      overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
-
-      overlay.querySelector('#tp-save').addEventListener('click', async () => {
-        const statusEl = overlay.querySelector('#tp-save-status');
-        statusEl.textContent = 'Saving…';
-        let parsed;
-        try {
-          parsed = JSON.parse(ta.value);
-          if (!Array.isArray(parsed)) throw new Error('Top-level must be a JSON array.');
-        } catch (e) {
-          statusEl.textContent = 'JSON error: ' + e.message;
-          return;
-        }
-        try {
-          const r = await fetch('/api/trade-press/tracked', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contacts: parsed }),
-          });
-          const j = await r.json();
-          if (j.ok) {
-            statusEl.textContent = 'Saved ' + j.count + ' contacts.';
-            setTimeout(() => window.location.reload(), 700);
-          } else {
-            statusEl.textContent = j.detail || 'Save failed.';
-          }
-        } catch (e) {
-          statusEl.textContent = 'Network error: ' + e.message;
-        }
-      });
-
-      overlay.querySelector('#tp-scour').addEventListener('click', async () => {
-        const statusEl = overlay.querySelector('#tp-save-status');
-        statusEl.textContent = 'Scouring…';
-        try {
-          const r = await fetch('/api/trade-press/scour', { method: 'POST' });
-          const j = await r.json();
-          statusEl.textContent = j.ok
-            ? `Scoured ${j.sources_ok}/${j.sources_ok + j.sources_failed} sources, ` +
-              `${j.articles_seen} articles, ${j.events_new} new triggers.`
-            : (j.detail || 'Scour failed.');
-          if (j.events_new > 0) {
-            setTimeout(() => window.location.reload(), 1200);
-          }
-        } catch (e) {
-          statusEl.textContent = 'Network error: ' + e.message;
-        }
-      });
-    });
-  }
-})();
 
 // ---------- Top-3 Action Surface ----------
 (function(){

@@ -122,17 +122,6 @@ jobs:
               python -m tool.morning_brief "$MODE"
           fi
 
-      - name: Scour trade press for warm-call triggers
-        # Independent of the main brief: even if morning_brief fails,
-        # the trade-press scour can still produce events. Never blocks
-        # the workflow.
-        if: always()
-        continue-on-error: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          python -m tool.trade_press || echo "trade_press scour failed (non-fatal)"
-
       - name: Scan for cascade-hire moves
         # Parses morning_brief's latest_signals.json for senior-comms
         # appointments and emits cascade events (old-co replacement +
