@@ -1,0 +1,185 @@
+<!doctype html>
+<!-- MOCKUP G3 · GEMINI COMPACT PRO
+     Information-dense Gemini layout for a pro who works the dashboard
+     all day. Halo only behind the Top-3 hero; the rest is tight grid.
+     More data per screen, fewer scrolls. -->
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VMA — Gemini · Compact Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --bg:#f7f9fc; --panel:#fff; --text:#1F1F1F; --muted:#5F6368;
+    --border:#e6ebf2; --accent:#3A8FA4; --accent-soft:#e8f0f4; --pulse:#9FD181;
+  }
+  body{font-family:"Inter",sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+
+  /* === Topbar with stats === */
+  .topbar{max-width:1400px;margin:0 auto;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:#fff;}
+  .brand-block{display:flex;align-items:center;gap:18px;}
+  .brand{display:flex;align-items:baseline;gap:4px;font-family:Arial;}
+  .brand .v{font-weight:800;font-size:20px;letter-spacing:.06em;}
+  .brand .g{font-weight:300;font-size:20px;letter-spacing:.30em;color:#444;}
+  .topbar-stats{display:flex;gap:18px;font:500 11px/1 "JetBrains Mono",monospace;color:var(--muted);letter-spacing:.06em;}
+  .topbar-stats strong{color:var(--text);font-weight:600;font-size:14px;}
+  .topbar-stats .sep{color:#ccc;}
+  .top-right{display:flex;gap:10px;align-items:center;}
+  .live{display:inline-flex;align-items:center;gap:6px;font:500 10.5px/1 "JetBrains Mono",monospace;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;}
+  .live .dot{width:7px;height:7px;border-radius:50%;background:var(--pulse);animation:pulse 2.4s infinite;}
+  @keyframes pulse{50%{box-shadow:0 0 0 7px rgba(159,209,129,0);}}
+  .refresh{background:#1F1F1F;color:#fff;border:none;border-radius:9999px;padding:8px 14px;font:600 10.5px/1 "JetBrains Mono",monospace;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;}
+
+  .container{max-width:1400px;margin:0 auto;padding:24px 28px 50px;}
+
+  /* === Top-3 hero with halo === */
+  .top3-section{background:radial-gradient(ellipse 70% 110% at 50% 0%,#b8d0e7 0%,#c9d9ec 22%,#dde6ee 45%,#ecf0f5 68%,var(--bg) 92%);border-radius:18px;padding:24px 26px 24px;margin-bottom:24px;border:1px solid var(--border);}
+  .t3-head{font:500 11px/1 "JetBrains Mono",monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .t3-head .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);}
+  .top3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  .top3 .card{background:rgba(255,255,255,.78);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.6);border-radius:12px;padding:18px;cursor:pointer;transition:all .15s;}
+  .top3 .card:hover{background:#fff;transform:translateY(-2px);box-shadow:0 10px 24px rgba(31,55,124,.08);}
+  .top3 .num{font:500 10.5px/1 "JetBrains Mono",monospace;letter-spacing:.16em;color:var(--accent);text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between;}
+  .top3 .who{font-size:17px;font-weight:600;margin-bottom:4px;}
+  .top3 .why{color:#444;font-size:12.5px;margin-bottom:12px;}
+  .top3 .acts{display:flex;gap:6px;}
+  .top3 .acts button{background:transparent;color:var(--accent);border:1px solid #c8dde6;border-radius:9999px;padding:5px 11px;font:500 11px/1 "Inter";cursor:pointer;}
+  .top3 .acts button.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+  /* === 3-col panel grid === */
+  .row-3{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:12px;margin-bottom:12px;}
+  .row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+  .panel{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px 20px;}
+  .panel h2{font:500 11px/1 "JetBrains Mono",monospace;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
+  .panel h2 .count{color:var(--accent);}
+
+  .item{padding:9px 0;border-bottom:1px solid var(--border);font-size:12.5px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;}
+  .item:last-child{border-bottom:none;}
+  .item strong{font-weight:600;}
+  .item .meta{color:var(--muted);font-size:11px;margin-top:2px;}
+  .meta .src{font:500 10.5px/1 "JetBrains Mono",monospace;color:#aaa;letter-spacing:.04em;text-transform:uppercase;}
+  .chip{display:inline-block;padding:2px 7px;font:500 9.5px/1.4 "Inter";letter-spacing:.04em;border-radius:6px;background:var(--accent-soft);color:var(--accent);text-transform:uppercase;}
+  .chip.green{background:#eaf5dc;color:#3F5727;}
+  .chip.amber{background:#fff4e0;color:#8a5a00;}
+  .chip.pink{background:#fde8e3;color:#7a3a22;}
+
+  .prob{display:flex;align-items:center;gap:6px;}
+  .prob .bar{width:48px;height:4px;background:#eaf0f6;border-radius:2px;overflow:hidden;}
+  .prob .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#a8c8e6);}
+  .prob .num{font:500 10.5px/1 "JetBrains Mono",monospace;color:var(--accent);}
+
+  /* Tools as compact pills */
+  .tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+  .tool-pill{background:#fff;border:1px solid var(--border);border-radius:9999px;padding:8px 14px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all .15s;}
+  .tool-pill:hover{border-color:var(--accent);transform:translateY(-1px);}
+  .tool-pill .ic{width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#a8c8e6,var(--accent));color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand-block">
+    <div class="brand"><span class="v">VMA</span><span class="g">GROUP</span></div>
+    <div class="topbar-stats">
+      <span><strong>11</strong> leads</span><span class="sep">·</span>
+      <span><strong>8</strong> predictions</span><span class="sep">·</span>
+      <span><strong>3</strong> moves</span><span class="sep">·</span>
+      <span><strong>14</strong> calendar</span><span class="sep">·</span>
+      <span><strong>12</strong> watched</span>
+    </div>
+  </div>
+  <div class="top-right">
+    <div class="live"><span class="dot"></span>Live · 8m ago</div>
+    <button class="refresh">↻ Refresh</button>
+  </div>
+</div>
+
+<main class="container">
+
+  <!-- TOP-3 hero with halo -->
+  <section class="top3-section">
+    <div class="t3-head"><span class="dot"></span>Top 3 actions today · highest leverage now</div>
+    <div class="top3">
+      <div class="card">
+        <div class="num"><span>01 · urgent</span><span style="color:var(--pulse);">●</span></div>
+        <div class="who">NatWest</div>
+        <div class="why">CCO seat just vacated. Call HR + Chair today — three competing firms by Wed.</div>
+        <div class="acts"><button class="primary">Copy opener</button><button>Done</button></div>
+      </div>
+      <div class="card">
+        <div class="num"><span>02 · pre-position</span></div>
+        <div class="who">Standard Chartered</div>
+        <div class="why">Director of Comms at 26mo tenure. Pre-position; brief lands Q3.</div>
+        <div class="acts"><button class="primary">Copy opener</button><button>Done</button></div>
+      </div>
+      <div class="card">
+        <div class="num"><span>03 · 6mo window</span></div>
+        <div class="who">Octopus Energy</div>
+        <div class="why">£140m Series F. Senior comms hire follows ~6mo. 5mo head start.</div>
+        <div class="acts"><button class="primary">Copy opener</button><button>Done</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3-col main grid -->
+  <div class="row-3">
+    <div class="panel">
+      <h2>Today's Leads <span class="count">11</span></h2>
+      <div class="item"><div><strong>NatWest</strong><div class="meta">CCO vacated · <span class="src">SKY</span> · 1h</div></div><span class="chip green">new</span></div>
+      <div class="item"><div><strong>Severn Trent</strong><div class="meta">Results miss · <span class="src">RNS</span> · 3h</div></div><span class="chip">active</span></div>
+      <div class="item"><div><strong>BP</strong><div class="meta">CFO change · <span class="src">REUTERS</span> · 5h</div></div><span class="chip">active</span></div>
+      <div class="item"><div><strong>Lloyds</strong><div class="meta">Jane joins as CCO · <span class="src">SKY</span> · 1h</div></div><span class="chip green">new</span></div>
+      <div class="item"><div><strong>Unilever</strong><div class="meta">Trading update · <span class="src">RNS</span> · 6h</div></div><span class="chip">active</span></div>
+    </div>
+    <div class="panel">
+      <h2>Hire Watch <span class="count">3</span></h2>
+      <div class="item"><div><strong>Jane Smith</strong><div class="meta">Lloyds → NatWest · CCO</div></div><span class="chip">cascade</span></div>
+      <div class="item"><div><strong>Ravi Patel</strong><div class="meta">Centrica · Dir of Comms</div></div><span class="chip">cascade</span></div>
+      <div class="item"><div><strong>Maya Chen</strong><div class="meta">Aviva → BT · Head of External</div></div><span class="chip">cascade</span></div>
+    </div>
+    <div class="panel">
+      <h2>Predictions <span class="count">8</span></h2>
+      <div class="item"><div><strong>Std Chartered</strong><div class="meta">26mo tenure · cascade</div></div><div class="prob"><div class="bar"><i style="width:68%;"></i></div><span class="num">68</span></div></div>
+      <div class="item"><div><strong>Octopus Energy</strong><div class="meta">£140m Series F</div></div><span class="chip amber">funding</span></div>
+      <div class="item"><div><strong>Aviva</strong><div class="meta">32mo · 3 peer moves</div></div><div class="prob"><div class="bar"><i style="width:71%;"></i></div><span class="num">71</span></div></div>
+    </div>
+  </div>
+
+  <div class="row-2">
+    <div class="panel">
+      <h2>BD Calendar <span class="count">6 + 8 events</span></h2>
+      <div class="item"><div><strong>FCA Consumer Duty</strong> · Apr–Jul<div class="meta">High confidence · 64d left in window</div></div><span class="chip">live</span></div>
+      <div class="item"><div><strong>UK SRS first cycle</strong> · 2026 full<div class="meta">Sustainability-reporting comms</div></div><span class="chip">live</span></div>
+      <div class="item"><div><strong>PRWeek Awards UK</strong> · 22 Oct<div class="meta">London · external · in 155d</div></div><span class="chip amber">event</span></div>
+      <div class="item"><div><strong>IoIC Awards</strong> · 25 Jun<div class="meta">London · internal · in 36d</div></div><span class="chip amber">event</span></div>
+    </div>
+    <div class="panel">
+      <h2>Candidate Watch <span class="count">12 · overdue first</span></h2>
+      <div class="item"><div><strong>James Carter</strong><div class="meta">Dir of Corp Comms · Barclays · last 34d</div></div><span class="chip pink">overdue 4d</span></div>
+      <div class="item"><div><strong>Molly Cutler</strong><div class="meta">Head of IC · PA Consulting</div></div><span class="chip">due 29d</span></div>
+      <div class="item"><div><strong>Daniel Kwofie</strong><div class="meta">Head of External · Drax</div></div><span class="chip">due 22d</span></div>
+      <div class="item"><div><strong>Aisha Mehta</strong><div class="meta">CCO · BUPA</div></div><span class="chip">due 18d</span></div>
+    </div>
+  </div>
+
+  <h2 style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin:18px 0 10px;">Tools · one click to run</h2>
+  <div class="tools">
+    <div class="tool-pill"><div class="ic">◐</div><span><strong>Pre-meeting Brief</strong></span></div>
+    <div class="tool-pill"><div class="ic">◇</div><span><strong>Pitch Pack</strong></span></div>
+    <div class="tool-pill"><div class="ic">↺</div><span><strong>Reverse Match</strong></span></div>
+    <div class="tool-pill"><div class="ic">⇆</div><span><strong>14-Day Catch-up</strong></span></div>
+    <div class="tool-pill"><div class="ic">+</div><span>Add to candidate watch</span></div>
+    <div class="tool-pill"><div class="ic">⌕</div><span>Find by name</span></div>
+  </div>
+
+  <div class="panel">
+    <h2>Recent Reports <span class="count">last 48h</span></h2>
+    <div class="item"><div><strong>Pre-meeting Brief: Severn Trent</strong><div class="meta">2h ago</div></div><span class="chip">PDF</span></div>
+    <div class="item"><div><strong>Morning Brief: 20 May</strong><div class="meta">8h ago</div></div><span class="chip">HTML</span></div>
+    <div class="item"><div><strong>Pitch Pack: Unilever IC Head</strong><div class="meta">yesterday</div></div><span class="chip">PDF</span></div>
+  </div>
+
+</main>
+</body>
+</html>
