@@ -2894,17 +2894,36 @@ async function dispatch(event, formId, url) {
   status.style.display = '';
   status.textContent = 'Dispatching…';
 
+  // Render's free tier spins down on idle and the first request after
+  // that can hang past the proxy timeout (Safari surfaces it as
+  // 'Load failed'). Retry up to 3 times with 2s backoff — the server
+  // is warm by the second attempt.
   let j;
-  try {
-    const r = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    j = await r.json();
-  } catch (e) {
+  let attempt = 0;
+  let lastErr = null;
+  while (attempt < 3) {
+    attempt++;
+    if (attempt > 1) {
+      status.textContent = 'Dispatching… retrying (' + attempt + '/3)';
+      await new Promise(res => setTimeout(res, 2000));
+    }
+    try {
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      j = await r.json();
+      lastErr = null;
+      break;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  if (lastErr) {
     if (win && !win.closed) win.close();
-    status.textContent = 'Network error: ' + e.message;
+    status.textContent = 'Network error after 3 attempts: ' + lastErr.message
+      + ' (the server may have been spinning up — please try once more)';
     status.className = 'status err';
     btn.disabled = false; btn.textContent = 'Run';
     return;
