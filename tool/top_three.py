@@ -517,7 +517,6 @@ def _candidates_from_funding() -> list[Action]:
 _SOURCE_FUNCS = [
     _candidates_from_leads,
     _candidates_from_predictors,
-    _candidates_from_trade_press,
     _candidates_from_cascade,
     _candidates_from_candidate_watch,
     _candidates_from_funding,
