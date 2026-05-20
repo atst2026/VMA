@@ -17,6 +17,7 @@ Required env (set in .env):
     DASHBOARD_PORT        — defaults to 8765
 """
 from __future__ import annotations
+import base64
 import functools
 import json
 import logging
@@ -799,8 +800,10 @@ def _safe_url_filter(u):
 @app.route("/")
 @_auth_required
 def landing():
-    """Gemini-style landing — VMA wordmark + click-pill into the dashboard."""
-    return render_template_string(LANDING_TEMPLATE)
+    """Wireframe-globe landing — world map + rotating meridian/parallel
+    mesh, VMA wordmark, click-pill into the dashboard. Previous Gemini-
+    halo variant preserved at tool/landing_mockups/gemini_halo_landing.html."""
+    return render_template_string(LANDING_TEMPLATE, map_png_b64=_LANDING_MAP_B64)
 
 
 @app.route("/dashboard")
@@ -1224,6 +1227,16 @@ def api_pulses():
     return jsonify({"rows": rows, "total": len(rows)})
 
 
+@app.route("/api/industry-events", methods=["GET"])
+@_auth_required
+def api_industry_events():
+    """UK + European comms industry events (awards, conferences,
+    summits) for the next ~6 months. Internal + external comms."""
+    from tool.calendar_pulses import load_events
+    rows = load_events(limit=24)
+    return jsonify({"rows": rows, "total": len(rows)})
+
+
 @app.route("/api/water-sar", methods=["GET"])
 @_auth_required
 def api_water_sar():
@@ -1248,8 +1261,25 @@ def api_contract_end():
     return jsonify({"rows": rows, "total": len(rows)})
 
 
-# Gemini-style landing page — VMA wordmark + click-pill that enters the
-# dashboard. Halo uses the same Opus v2 recipe the dashboard hero uses.
+# Wireframe-Globe landing page — world map underneath with a slowly
+# rotating wireframe meridian/parallel mesh on top, over the Gemini
+# halo backdrop. Previous "Gemini Halo" minimal variant is preserved
+# at tool/landing_mockups/gemini_halo_landing.html for one-step revert.
+#
+# The world-map PNG (~350 KB) is loaded once at module import and
+# base64-encoded for inline embed; keeps the route handler fast and
+# avoids needing a Flask static_folder mount.
+_LANDING_ASSETS_DIR = Path(__file__).resolve().parent / "assets"
+try:
+    _LANDING_MAP_B64 = base64.b64encode(
+        (_LANDING_ASSETS_DIR / "world_map.png").read_bytes()
+    ).decode("ascii")
+except Exception as _e:
+    log.warning("landing: world_map.png not found (%s) — using transparent fallback", _e)
+    # 1x1 transparent PNG — safe degradation.
+    _LANDING_MAP_B64 = ("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAA"
+                        "C0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=")
+
 LANDING_TEMPLATE = r"""
 <!doctype html>
 <html lang="en">
@@ -1268,6 +1298,7 @@ LANDING_TEMPLATE = r"""
       color:#1F1F1F;line-height:1.5;font-size:13.5px;
       -webkit-font-smoothing:antialiased;
       min-height:100vh;
+      position:relative;overflow:hidden;
       display:flex;align-items:center;justify-content:center;
       background:radial-gradient(
         ellipse 48% 55% at 50% 55%,
@@ -1279,7 +1310,34 @@ LANDING_TEMPLATE = r"""
         #f7f9fc 100%
       );
     }
+    /* World-map layer — sits over the halo, under the mesh. */
+    .map-layer{
+      position:absolute;inset:0;padding:40px 60px;z-index:2;
+      display:flex;align-items:center;justify-content:center;pointer-events:none;
+    }
+    .map-layer img{
+      width:100%;height:auto;max-height:100%;
+      opacity:.62;mix-blend-mode:multiply;
+    }
+    /* Rotating wireframe globe — meridian/parallel ellipse mesh, slowly
+       rotating around centre. Scales fluidly off viewport height. */
+    .mesh{
+      position:absolute;left:50%;top:50%;
+      transform:translate(-50%,-50%);
+      width:min(640px, 62vh);height:min(640px, 62vh);
+      z-index:3;pointer-events:none;
+    }
+    .mesh .meridian{fill:none;stroke:rgba(58,143,164,.55);stroke-width:1;}
+    .mesh .parallel{fill:none;stroke:rgba(58,143,164,.35);stroke-width:.8;}
+    .mesh .outline{fill:none;stroke:rgba(58,143,164,.75);stroke-width:1.4;}
+    .mesh-group{transform-origin:center;animation:globe-rot 22s linear infinite;}
+    @keyframes globe-rot{
+      0%  {transform:rotateZ(0deg);}
+      100%{transform:rotateZ(360deg);}
+    }
+    /* Stage — wordmark + click pill, sits above map + mesh. */
     .stage{
+      position:relative;z-index:10;
       display:flex;flex-direction:column;align-items:center;justify-content:center;
       padding:0 40px;gap:46px;text-align:center;
     }
@@ -1324,10 +1382,29 @@ LANDING_TEMPLATE = r"""
       .wordmark .v,.wordmark .g{font-size:44px;}
       .enter-pill{min-width:0;width:100%;padding:12px 16px;}
       .enter-pill .lbl{font-size:11px;letter-spacing:.18em;}
+      .mesh{width:min(420px, 48vh);height:min(420px, 48vh);}
+    }
+    @media (prefers-reduced-motion: reduce){
+      .mesh-group{animation:none;}
+      .enter-pill .pulse-dot{animation:none;}
     }
   </style>
 </head>
 <body>
+  <div class="map-layer"><img src="data:image/png;base64,{{ map_png_b64 }}" alt=""></div>
+  <div class="mesh">
+    <svg viewBox="0 0 560 560" class="mesh-group">
+      <circle class="outline" cx="280" cy="280" r="260"/>
+      <ellipse class="parallel" cx="280" cy="280" rx="260" ry="60"/>
+      <ellipse class="parallel" cx="280" cy="280" rx="260" ry="130"/>
+      <ellipse class="parallel" cx="280" cy="280" rx="260" ry="200"/>
+      <ellipse class="parallel" cx="280" cy="280" rx="260" ry="260"/>
+      <ellipse class="meridian" cx="280" cy="280" rx="60"  ry="260"/>
+      <ellipse class="meridian" cx="280" cy="280" rx="130" ry="260"/>
+      <ellipse class="meridian" cx="280" cy="280" rx="200" ry="260"/>
+      <ellipse class="meridian" cx="280" cy="280" rx="260" ry="260"/>
+    </svg>
+  </div>
   <div class="stage">
     <div class="wordmark"><span class="v">VMA</span><span class="g">GROUP</span></div>
     <a class="enter-pill" href="/dashboard">
@@ -1727,6 +1804,55 @@ TEMPLATE = r"""
       border-radius: 10px;
     }
     .funding-row { opacity: .92; }
+
+    /* Industry events sub-section inside BD Calendar */
+    .events-subsection {
+      margin: 6px 16px 16px;
+      padding-top: 14px;
+      border-top: 1px dashed var(--border);
+    }
+    .events-subhead {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11.5px; color: var(--text-muted);
+      margin: 0 0 10px;
+    }
+    .events-chip {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 10px; font-weight: 700; letter-spacing: .10em;
+      text-transform: uppercase;
+      background: #fff4e0;
+      color: #8a5a00;
+      border-radius: 10px;
+    }
+    .event-row {
+      display: grid;
+      grid-template-columns: 92px 1fr auto;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 12.5px;
+      align-items: start;
+    }
+    .event-row:last-child { border-bottom: none; }
+    .event-date {
+      font-weight: 600; color: var(--teal-dark, #1f377c);
+      font-size: 11.5px;
+    }
+    .event-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .event-why { font-size: 11.5px; color: #333; margin-top: 4px; }
+    .event-focus-chip {
+      display: inline-block;
+      padding: 1px 7px;
+      font-size: 10px; font-weight: 600; letter-spacing: .04em;
+      text-transform: uppercase;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    .event-focus-chip.internal { background: #eaf3ff; color: #1d4d8a; border-color: #cfe1f5; }
+    .event-focus-chip.external { background: #fff0ea; color: #8a3a1d; border-color: #f5d0cf; }
+    .event-focus-chip.mixed    { background: #f1ecff; color: #4d2e8a; border-color: #ddd0f5; }
 
     .cal-wrap { padding: 14px 16px; }
     .cal-ribbon {
@@ -2715,7 +2841,7 @@ TEMPLATE = r"""
     <!-- PREDICTOR PIPELINE (rolling 90-day forward window, auto-populated) -->
     <div class="panel">
       <div class="panel-header">
-        <h2>Predicted Briefs <span class="window-sub">· next 90 days</span></h2>
+        <h2>Prediction Signals</h2>
         <span class="count" id="pred-count">{{ active_count }}</span>
       </div>
       <div class="filter-bar">
@@ -2812,7 +2938,7 @@ TEMPLATE = r"""
   <div class="row row-full" id="cascade-row">
     <div class="panel">
       <div class="panel-header">
-        <h2>Cascade-Hire Watch</h2>
+        <h2>Hire Watch</h2>
         <span style="display:flex;align-items:center;gap:10px;">
           <span class="refresh-sub" style="font-size:11px;">
             Senior comms moves &middot; auto-parsed from morning brief
@@ -2888,6 +3014,17 @@ TEMPLATE = r"""
       </div>
       <div class="panel-body" id="pulses-body">
         <div class="empty compact">Loading…</div>
+      </div>
+      <!-- UK + EU comms industry events (awards / conferences / summits)
+           for internal and external comms — distinct mechanic from
+           statutory pulses, so given its own sub-section. -->
+      <div class="events-subsection" id="events-subsection" style="display:none;">
+        <div class="events-subhead">
+          <span class="events-chip">INDUSTRY EVENTS</span>
+          <span>UK &amp; Europe · internal + external comms · next ~6 months</span>
+          <span class="count" id="events-count" style="margin-left:auto;">—</span>
+        </div>
+        <div id="events-body"></div>
       </div>
     </div>
   </div>
@@ -3024,7 +3161,7 @@ TEMPLATE = r"""
   <div class="row row-full" id="recent-row">
     <div class="panel">
       <div class="panel-header">
-        <h2>Recent Reports Generated</h2>
+        <h2>Recent Reports</h2>
         <span style="display:flex;align-items:center;gap:10px;">
           <button type="button" class="btn-mini" onclick="clearRecentReports(this)">Clear</button>
           <span class="count" id="recent-count">—</span>
@@ -3644,6 +3781,64 @@ async function loadPulses() {
   }
 }
 
+// ---------- Industry Events (UK + EU comms awards / conferences) ----------
+async function loadIndustryEvents() {
+  const section = document.getElementById('events-subsection');
+  const body = document.getElementById('events-body');
+  const countEl = document.getElementById('events-count');
+  if (!section || !body) return;
+  try {
+    const r = await fetch('/api/industry-events');
+    const j = await r.json();
+    if (!j.rows || j.rows.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = 'block';
+    if (countEl) countEl.textContent = j.total;
+    const fmtDate = (iso) => {
+      try {
+        const d = new Date(iso);
+        return d.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+      } catch (e) { return iso; }
+    };
+    const out = [];
+    for (const e of j.rows) {
+      const focusClass = (e.focus === 'internal' || e.focus === 'external')
+        ? e.focus : 'mixed';
+      const focusLabel = e.focus === 'internal' ? 'Internal'
+                       : e.focus === 'external' ? 'External' : 'Mixed';
+      const daysTo = e.days_to_event;
+      const daysLabel = daysTo === 0 ? 'today'
+                      : daysTo === 1 ? 'tomorrow'
+                      : daysTo < 0 ? Math.abs(daysTo) + 'd ago'
+                      : 'in ' + daysTo + 'd';
+      out.push(
+        '<div class="event-row">' +
+          '<div>' +
+            '<div class="event-date">' + esc(fmtDate(e.event_date)) + '</div>' +
+            '<div class="event-meta">' + esc(daysLabel) + '</div>' +
+          '</div>' +
+          '<div>' +
+            '<div><strong>' + esc(e.name) + '</strong>' +
+              (e.location ? ' &middot; <span style="color:var(--text-muted);">' + esc(e.location) + '</span>' : '') +
+            '</div>' +
+            (e.why_now ? '<div class="event-why">' + esc(e.why_now) + '</div>' : '') +
+            (e.source ? '<div class="event-meta"><a href="' + safeUrl(e.source) + '" target="_blank" rel="noopener noreferrer">↗ event page</a></div>' : '') +
+          '</div>' +
+          '<div>' +
+            '<span class="event-focus-chip ' + esc(focusClass) + '">' + esc(focusLabel) + '</span>' +
+          '</div>' +
+        '</div>'
+      );
+    }
+    body.innerHTML = out.join('');
+  } catch (e) {
+    section.style.display = 'block';
+    body.innerHTML = '<div class="empty compact">Failed to load events: ' + esc(e.message) + '</div>';
+  }
+}
+
 // ---------- Water Special-Administration Watch ----------
 async function loadWaterSar() {
   const body = document.getElementById('watersar-body');
@@ -3798,22 +3993,13 @@ async function loadWatchList() {
       wrap.innerHTML = '';
       return;
     }
-    status.textContent = j.total + ' watched · sorted by liquidity score';
+    status.textContent = j.total + ' watched · sorted by overdue';
     const out = ['<div class="cw-list">'];
     for (const c of j.rows.slice(0, 10)) {
       const cadence = c.touch_cadence_days || 30;
       const seen = c._days_since_touched;          // null === not yet contacted
-      // Build the headline pill — drift score is the new primary
-      // ordering signal; overdue is shown as supporting detail.
-      const drift = c._drift_score != null ? c._drift_score : (c._urgency_score || 0);
-      let driftClass = 'low';
-      if (drift >= 60) driftClass = 'hot';
-      else if (drift >= 30) driftClass = 'warm';
-      const driftPill = '<span class="cw-pill drift ' + driftClass +
-        '" title="Liquidity score — combines tenure, cascade, news, and cadence signals">' +
-        'score ' + esc(drift) + '</span>';
 
-      // Overdue / due indicator stays as a secondary pill.
+      // Overdue / due indicator — primary ordering signal.
       let duePill = '';
       if (c._overdue_days > 0) {
         duePill = '<span class="cw-pill overdue">overdue ' + esc(c._overdue_days) + 'd</span>';
@@ -3824,14 +4010,6 @@ async function loadWatchList() {
         duePill = '<span class="cw-pill overdue">never touched</span>';
       }
 
-      // Reason chips — each contributing signal becomes a small chip
-      // so Sara can see WHY the candidate is high-ranked. Lifted from
-      // the server-side compute_drift output.
-      const reasons = Array.isArray(c._drift_reasons) ? c._drift_reasons : [];
-      const reasonChips = reasons.slice(0, 3).map(r =>
-        '<span class="cw-pill reason" title="' + esc(r) + '">' + esc(r) + '</span>'
-      ).join('');
-
       const sub = [c.current_title, c.current_company].filter(Boolean).map(esc).join(' · ');
       const dn = esc(c.name);
       const dc = esc(c.current_company || '');
@@ -3841,7 +4019,7 @@ async function loadWatchList() {
             '<div class="cw-nm">' + esc(c.name) + '</div>' +
             (sub ? '<div class="cw-sub">' + sub + '</div>' : '') +
             (c.last_signal ? '<div class="cw-state"><em>' + esc(c.last_signal) + '</em></div>' : '') +
-            '<div class="cw-tags">' + driftPill + duePill + reasonChips + '</div>' +
+            '<div class="cw-tags">' + duePill + '</div>' +
           '</div>' +
           '<div class="cw-right">' +
             '<button class="cw-iconbtn cw-tick watch-action" data-action="touch" data-name="' + dn + '" data-company="' + dc + '" title="Mark contacted">✓</button>' +
@@ -3944,6 +4122,7 @@ document.addEventListener('DOMContentLoaded', () => {
   applyFilter('active');
   applyLeadFilter('active');
   loadPulses();
+  loadIndustryEvents();
   loadSpecialistSignals();
   loadWatchList();
   loadRecentReports();
