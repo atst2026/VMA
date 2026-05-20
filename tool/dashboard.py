@@ -338,7 +338,7 @@ _REPORT_SKIN = (
     '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800'
     '&family=Crimson+Pro:wght@500;600&display=swap" rel="stylesheet">'
     '<style>'
-    'html{background:#ECF1F9;-webkit-text-size-adjust:100%;}'
+    'html{background:#f7f9fc;-webkit-text-size-adjust:100%;}'
     'body{font-family:"Inter",-apple-system,system-ui,sans-serif!important;'
     'max-width:840px!important;margin:32px auto!important;padding:46px 56px!important;'
     'background:#fff!important;color:#1F1F1F!important;font-size:14px!important;'
@@ -1240,7 +1240,7 @@ LANDING_TEMPLATE = r"""
         #d2e1ee 40%,
         #e8eff6 65%,
         #f5f8fb 85%,
-        #fbfcfd 100%
+        #f7f9fc 100%
       );
     }
     .stage{
@@ -2876,7 +2876,7 @@ async function dispatch(event, formId, url) {
   if (win) {
     win.document.write(
       '<!doctype html><meta charset="utf-8"><title>Preparing report…</title>' +
-      '<style>body{font-family:Inter,system-ui,sans-serif;background:#ECF1F9;' +
+      '<style>body{font-family:Inter,system-ui,sans-serif;background:#f7f9fc;' +
       'color:#1F1F1F;display:flex;min-height:100vh;align-items:center;' +
       'justify-content:center;margin:0}.b{text-align:center;padding:24px}' +
       '.s{width:30px;height:30px;border:3px solid rgba(66,133,244,.20);' +
