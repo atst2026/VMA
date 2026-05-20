@@ -498,7 +498,9 @@ def mark(event_id: str, side: str, status: str) -> bool:
     status ∈ {active, called, dismissed, n/a}."""
     if side not in {"old_co", "new_co"}:
         return False
-    if status not in {"active", "called", "dismissed", "n/a"}:
+    # "called" kept as legacy alias for "followed_up" so old records
+    # (and any in-flight requests) still validate.
+    if status not in {"active", "called", "followed_up", "dismissed", "n/a"}:
         return False
     field_name = f"{side}_status"
     with _locked(EVENTS_FILE):

@@ -515,6 +515,14 @@ def load_latest_signals() -> list[dict]:
     data = [s for s in data
             if (s.get("kind") or "").strip().lower() != "leadership_change"
             and (s.get("company") or "").strip()]
+    # Compute stable ids up-front so we can drive 7-day retention.
+    # Any lead first seen >7d ago is dropped here — Today's Leads
+    # naturally clears without Sara having to triage stale items.
+    from tool import lead_first_seen
+    pre_filter = [{**s, "lead_id": _lead_id(s)} for s in data]
+    kept_ids = lead_first_seen.record_and_filter(
+        [s["lead_id"] for s in pre_filter])
+    data = [s for s in pre_filter if s["lead_id"] in kept_ids]
     # The uniform sequence, identical for every lead regardless of kind:
     # resolve best-available contact (+ confidence) -> personalised draft
     # -> one precise LinkedIn click.
@@ -527,7 +535,7 @@ def load_latest_signals() -> list[dict]:
         _cc = {}
     _lstat = lead_status.get_statuses()
     for s in data:
-        s["lead_id"] = _lead_id(s)
+        # lead_id already set during retention filter above
         s["status"] = _lstat.get(s["lead_id"], "active")
         s["contact"] = resolve_lead_contact(s, contacts=_cc)
         s["outreach"] = draft_outreach_for_lead(s)
@@ -768,6 +776,8 @@ def _boot_state_hydrate():
         github_state.hydrate([
             "tool/state/candidate_watch.json",
             "tool/state/lead_status.json",
+            "tool/state/lead_first_seen.json",
+            "tool/state/funding_status.json",
             "tool/state/report_log.json",
             "tool/state/predictor_status.json",
             "tool/state/contact_flags.json",
@@ -820,14 +830,46 @@ def index():
     from tool.funding_round import load_funding
     predictors = load_latest_predictive()
     leads = load_latest_signals()
-    cascade_events = cascade.list_active()
+    # Hire Watch shows ALL events (not just active) so the filter pills
+    # can switch between Active / Followed up / Dismissed in-browser.
+    # Each event gets an aggregate "cs_bucket" based on its sides.
+    raw_cascade = cascade.list_all()
+    def _bucket(e):
+        sides = [e.get("old_co_status", "active"),
+                 e.get("new_co_status", "active")]
+        sides = [s for s in sides if s != "n/a"]
+        if any(s == "active" for s in sides):
+            return "active"
+        if any(s in ("called", "followed_up") for s in sides):
+            return "followed_up"
+        if sides and all(s == "dismissed" for s in sides):
+            return "dismissed"
+        return "active"
+    cascade_events = [{**e, "cs_bucket": _bucket(e)} for e in raw_cascade]
+    cs_counts = {
+        "active":      sum(1 for e in cascade_events if e["cs_bucket"] == "active"),
+        "followed_up": sum(1 for e in cascade_events if e["cs_bucket"] == "followed_up"),
+        "dismissed":   sum(1 for e in cascade_events if e["cs_bucket"] == "dismissed"),
+    }
     funding_events = load_funding(limit=30)
+    # Decorate with stable id + persisted triage status so the
+    # Followed-up / Dismissed buttons can survive a refresh.
+    from tool import funding_status as _fs
+    _fst = _fs.get_statuses()
+    funding_events = [
+        {**f, "fid": _fs.funding_id(f),
+              "status": _fst.get(_fs.funding_id(f), "active")}
+        for f in funding_events
+    ]
     return render_template_string(
         TEMPLATE,
         leads=leads,
         predictors=predictors,
         funding_events=funding_events,
         cascade_events=cascade_events,
+        cs_active_count=cs_counts["active"],
+        cs_followed_count=cs_counts["followed_up"],
+        cs_dismissed_count=cs_counts["dismissed"],
         leads_active_count=sum(1 for s in leads if s.get("status", "active") == "active"),
         leads_new_count=sum(1 for s in leads if s.get("is_new")
                             and s.get("status", "active") == "active"),
@@ -1170,6 +1212,24 @@ def api_cascade_scour():
     """Re-parse latest_signals.json for cascade moves on demand."""
     from tool import cascade
     return jsonify({"ok": True, **cascade.scour()})
+
+
+@app.route("/api/funding/mark", methods=["POST"])
+@_auth_required
+def api_funding_mark():
+    """Mark a funding-signal row followed_up / dismissed / active.
+    Persists across daily refreshes via funding_status.json."""
+    from tool import funding_status
+    data = _safe_json_body()
+    fid = (data.get("fid") or "").strip()
+    status = (data.get("status") or "").strip()
+    if not fid or not status:
+        return jsonify({"ok": False, "detail": "fid and status required"}), 400
+    ok = funding_status.set_status(fid, status)
+    if not ok:
+        return jsonify({"ok": False,
+                        "detail": "invalid fid or status"}), 400
+    return jsonify({"ok": True})
 
 
 # ---- Top-3 Action Surface ----
@@ -2830,7 +2890,7 @@ TEMPLATE = r"""
               <span>Closed equity rounds · senior-comms hire window now → ~6 months</span>
             </div>
             {% for f in funding_events %}
-              <div class="item predictor funding-row">
+              <div class="item predictor funding-row" data-fid="{{ f.fid }}" data-status="{{ f.status }}">
                 <div class="row-summary">
                   <span class="rank">·</span>
                   <span class="title">{{ f.company }}</span>
@@ -2838,6 +2898,8 @@ TEMPLATE = r"""
                     <span class="role-chip">{{ f.amount }} {{ f.round }}</span>
                     {% if f.confidence == 'high' %}<span class="prob-chip">high</span>{% endif %}
                     <span class="window-badge">{{ f.window }}</span>
+                    {% if f.status == 'followed_up' %}<span class="status-badge followed-up">&#10003; followed up</span>{% endif %}
+                    {% if f.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
                   </span>
                 </div>
                 {% if f.evidence %}
@@ -2846,6 +2908,14 @@ TEMPLATE = r"""
                   {% if f.url %} · <a href="{{ f.url | safe_url }}" target="_blank">source</a>{% endif %}
                 </div>
                 {% endif %}
+                <div class="item-actions" style="margin-top:6px;">
+                  {% if f.status == 'active' %}
+                    <button class="btn-mini funding-action" data-status="followed_up" type="button">&#10003; Mark followed up</button>
+                    <button class="btn-mini funding-action ghost" data-status="dismissed" type="button">&#10005; Dismiss</button>
+                  {% else %}
+                    <button class="btn-mini funding-action" data-status="active" type="button">&#8634; Restore</button>
+                  {% endif %}
+                </div>
               </div>
             {% endfor %}
           </div>
@@ -2874,12 +2944,22 @@ TEMPLATE = r"""
           <span class="count" id="cascade-count">{{ cascade_events|length }}</span>
         </span>
       </div>
+      <div class="filter-bar" id="cs-filter-bar">
+        <button class="lead-filter-pill active" data-filter="active">Active <span class="pill-count" id="cs-pc-active">{{ cs_active_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="followed_up">Followed up <span class="pill-count" id="cs-pc-followed_up">{{ cs_followed_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="dismissed">Dismissed <span class="pill-count" id="cs-pc-dismissed">{{ cs_dismissed_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="all">All</button>
+      </div>
       <div class="panel-body" id="cascade-body">
         {% if cascade_events|length == 0 %}
           <div class="empty">No moves detected in the latest brief.</div>
         {% else %}
           {% for c in cascade_events %}
-            <div class="item cascade-item" data-event-id="{{ c.event_id }}">
+            {% set old_st = c.old_co_status|default('active') %}
+            {% set new_st = c.new_co_status|default('active') %}
+            {% set _old_followed = old_st in ('called','followed_up') %}
+            {% set _new_followed = new_st in ('called','followed_up') %}
+            <div class="item cascade-item" data-event-id="{{ c.event_id }}" data-cs-bucket="{{ c.cs_bucket }}">
               <span class="title">{{ c.person_name }}</span>
               <span class="badge">{{ c.role }}</span>
               {% if c.old_company %}
@@ -2887,34 +2967,48 @@ TEMPLATE = r"""
               {% else %}
                 <span class="badge">&rarr; {{ c.new_company }}</span>
               {% endif %}
+              {% if c.cs_bucket == 'followed_up' %}<span class="status-badge followed-up">&#10003; followed up</span>{% endif %}
+              {% if c.cs_bucket == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
               <div style="font-size:12px;color:var(--text-muted);margin:4px 0 8px;">
                 <a href="{{ c.article_url | safe_url }}" target="_blank">{{ c.article_title }}</a>
               </div>
 
-              {% if c.old_co_status == 'active' and c.old_company %}
-              <div class="cs-side" data-side="old_co">
+              {% if c.old_company and old_st != 'n/a' %}
+              <div class="cs-side" data-side="old_co" data-side-status="{{ old_st }}">
                 <div style="font-size:10.5px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--teal-dark);margin-bottom:4px;">
                   &darr; Old company &middot; {{ c.old_company }} (replacement search)
+                  {% if _old_followed %}&middot; <span style="color:var(--green-dark,#3F5727);">followed up</span>{% endif %}
+                  {% if old_st == 'dismissed' %}&middot; <span style="color:var(--text-muted);">dismissed</span>{% endif %}
                 </div>
                 <pre class="outreach-text">{{ c.old_co_opener }}</pre>
                 <div class="item-actions">
                   <button class="btn-mini cs-copy" type="button">&#9993; Copy</button>
-                  <button class="btn-mini cs-action" data-side="old_co" data-status="called" type="button">&#10003; Called</button>
-                  <button class="btn-mini cs-action ghost" data-side="old_co" data-status="dismissed" type="button">&#10005; Dismiss</button>
+                  {% if old_st == 'active' %}
+                    <button class="btn-mini cs-action" data-side="old_co" data-status="followed_up" type="button">&#10003; Mark followed up</button>
+                    <button class="btn-mini cs-action ghost" data-side="old_co" data-status="dismissed" type="button">&#10005; Dismiss</button>
+                  {% else %}
+                    <button class="btn-mini cs-action" data-side="old_co" data-status="active" type="button">&#8634; Restore</button>
+                  {% endif %}
                 </div>
               </div>
               {% endif %}
 
-              {% if c.new_co_status == 'active' %}
-              <div class="cs-side" data-side="new_co" style="margin-top:8px;">
+              {% if new_st != 'n/a' %}
+              <div class="cs-side" data-side="new_co" data-side-status="{{ new_st }}" style="margin-top:8px;">
                 <div style="font-size:10.5px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--teal-dark);margin-bottom:4px;">
                   &darr; New company &middot; {{ c.new_company }} (re-org watch)
+                  {% if _new_followed %}&middot; <span style="color:var(--green-dark,#3F5727);">followed up</span>{% endif %}
+                  {% if new_st == 'dismissed' %}&middot; <span style="color:var(--text-muted);">dismissed</span>{% endif %}
                 </div>
                 <pre class="outreach-text">{{ c.new_co_opener }}</pre>
                 <div class="item-actions">
                   <button class="btn-mini cs-copy" type="button">&#9993; Copy</button>
-                  <button class="btn-mini cs-action" data-side="new_co" data-status="called" type="button">&#10003; Called</button>
-                  <button class="btn-mini cs-action ghost" data-side="new_co" data-status="dismissed" type="button">&#10005; Dismiss</button>
+                  {% if new_st == 'active' %}
+                    <button class="btn-mini cs-action" data-side="new_co" data-status="followed_up" type="button">&#10003; Mark followed up</button>
+                    <button class="btn-mini cs-action ghost" data-side="new_co" data-status="dismissed" type="button">&#10005; Dismiss</button>
+                  {% else %}
+                    <button class="btn-mini cs-action" data-side="new_co" data-status="active" type="button">&#8634; Restore</button>
+                  {% endif %}
                 </div>
               </div>
               {% endif %}
@@ -2982,7 +3076,7 @@ TEMPLATE = r"""
     <!-- PRE-MEETING BRIEF -->
     <div class="panel action-card">
       <h3>Pre-meeting Brief</h3>
-      <div class="subhead">Walk into any client meeting with prep no competitor matches.</div>
+      <div class="subhead">Walk into any client meeting with up-to-date prep.</div>
       <form id="pm-form" onsubmit="dispatch(event, 'pm-form', '/api/dispatch/pre-meeting')">
         <label for="pm-account">Account name</label>
         <input id="pm-account" name="account_name" placeholder="e.g. Severn Trent" required>
@@ -2995,22 +3089,10 @@ TEMPLATE = r"""
       </form>
     </div>
 
-    <!-- 14-DAY CATCH-UP -->
-    <div class="panel action-card">
-      <h3>Manual Sweep</h3>
-      <div class="subhead">Sweep for potential missed leads or pre-market signals.</div>
-      <form id="sweep-form" onsubmit="dispatch(event, 'sweep-form', '/api/dispatch/sweep')">
-        <label for="sw-days">Window (days)</label>
-        <input id="sw-days" name="window_days" type="number" min="1" max="60" value="14" required>
-        <button type="submit">Run</button>
-        <div class="status" id="sweep-status"></div>
-      </form>
-    </div>
-
     <!-- PITCH PACK -->
     <div class="panel action-card">
       <h3>Pitch Pack</h3>
-      <div class="subhead">Bespoke proposal to flip a contingent brief to retained.</div>
+      <div class="subhead">Generate a tailored proposal to upgrade a client's job vacancy into an exclusive, retained search.</div>
       <form id="pitch-form" onsubmit="dispatch(event, 'pitch-form', '/api/dispatch/pitch-pack')">
         <label for="pp-account">Account name</label>
         <input id="pp-account" name="account_name" placeholder="e.g. Unilever" required>
@@ -3062,6 +3144,18 @@ TEMPLATE = r"""
           <div class="status" id="watch-add-status"></div>
         </form>
       </details>
+    </div>
+
+    <!-- MANUAL SWEEP -->
+    <div class="panel action-card">
+      <h3>Manual Sweep</h3>
+      <div class="subhead">Sweep for potential missed leads or pre-market signals.</div>
+      <form id="sweep-form" onsubmit="dispatch(event, 'sweep-form', '/api/dispatch/sweep')">
+        <label for="sw-days">Window (days)</label>
+        <input id="sw-days" name="window_days" type="number" min="1" max="60" value="14" required>
+        <button type="submit">Run</button>
+        <div class="status" id="sweep-status"></div>
+      </form>
     </div>
 
   </div>
@@ -4027,13 +4121,32 @@ document.addEventListener('DOMContentLoaded', () => {
   loadRecentReports();
 });
 
-// ---------- Cascade-Hire Watch ----------
+// ---------- Hire Watch (cascade events) ----------
 (function(){
   const root = document.getElementById('cascade-body');
   if (!root) return;
 
+  // ----- Filter pills (Active / Followed up / Dismissed / All) -----
+  const bar = document.getElementById('cs-filter-bar');
+  function applyCsFilter(filter) {
+    root.querySelectorAll('.cascade-item').forEach(item => {
+      const bucket = item.getAttribute('data-cs-bucket') || 'active';
+      item.style.display = (filter === 'all' || bucket === filter) ? '' : 'none';
+    });
+  }
+  if (bar) {
+    bar.addEventListener('click', (ev) => {
+      const pill = ev.target.closest('.lead-filter-pill');
+      if (!pill) return;
+      bar.querySelectorAll('.lead-filter-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      applyCsFilter(pill.getAttribute('data-filter') || 'active');
+    });
+    applyCsFilter('active');
+  }
+
+  // ----- Click handlers (copy opener, mark followed up / dismissed / restore) -----
   root.addEventListener('click', async (ev) => {
-    // Copy opener for a specific side (old_co / new_co)
     const copyBtn = ev.target.closest('.cs-copy');
     if (copyBtn) {
       const side = copyBtn.closest('.cs-side');
@@ -4049,7 +4162,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Called / Dismiss — per side
     const actBtn = ev.target.closest('.cs-action');
     if (actBtn) {
       const item = actBtn.closest('.cascade-item');
@@ -4066,21 +4178,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         const j = await r.json();
         if (j.ok) {
-          // Hide just the side that was actioned. If both sides are now
-          // hidden, remove the whole item.
-          const sideEl = actBtn.closest('.cs-side');
-          if (sideEl) {
-            sideEl.style.transition = 'opacity .2s ease';
-            sideEl.style.opacity = '0';
-            setTimeout(() => {
-              sideEl.remove();
-              if (!item.querySelector('.cs-side')) {
-                item.style.transition = 'opacity .2s ease';
-                item.style.opacity = '0';
-                setTimeout(() => { item.remove(); updateCascadeCount(); }, 200);
-              }
-            }, 200);
-          }
+          // Reload to rebuild the per-event cs_bucket, the pill counts,
+          // and the active filter — single source of truth on the server.
+          setTimeout(() => window.location.reload(), 200);
         } else {
           actBtn.disabled = false;
           alert(j.detail || 'Could not update.');
@@ -4091,15 +4191,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   });
-
-  function updateCascadeCount() {
-    const remaining = root.querySelectorAll('.cascade-item').length;
-    const counter = document.getElementById('cascade-count');
-    if (counter) counter.textContent = remaining;
-    if (remaining === 0) {
-      root.innerHTML = '<div class="empty">No cascade-worthy moves detected in the latest brief. Senior comms appointments (CCO / Director of Comms / Head of IC) from today\'s news will surface here automatically.</div>';
-    }
-  }
 
   // Manual re-scan (parses the latest_signals.json again — useful if
   // morning_brief ran but the cascade scour hadn't yet executed).
@@ -4128,6 +4219,40 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+})();
+
+// ---------- Funding signals (followed_up / dismissed / restore) ----------
+// Delegated handler on the predictor list — funding-action buttons can
+// live anywhere inside the Pre-Market Signals panel.
+(function(){
+  const host = document.getElementById('predictor-list');
+  if (!host) return;
+  host.addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('.funding-action');
+    if (!btn) return;
+    const row = btn.closest('.funding-row');
+    const fid = row && row.getAttribute('data-fid');
+    const status = btn.getAttribute('data-status');
+    if (!fid || !status) return;
+    btn.disabled = true;
+    try {
+      const r = await fetch('/api/funding/mark', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fid: fid, status: status }),
+      });
+      const j = await r.json();
+      if (j.ok) {
+        setTimeout(() => window.location.reload(), 200);
+      } else {
+        btn.disabled = false;
+        alert(j.detail || 'Could not update.');
+      }
+    } catch (e) {
+      btn.disabled = false;
+      alert('Network error: ' + e.message);
+    }
+  });
 })();
 
 // ---------- Recent Reports Generated (last 48h) ----------
