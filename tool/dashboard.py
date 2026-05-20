@@ -1301,13 +1301,12 @@ LANDING_TEMPLATE = r"""
       position:relative;overflow:hidden;
       display:flex;align-items:center;justify-content:center;
       background:radial-gradient(
-        ellipse 75% 80% at 50% 50%,
-        #a8c8e6 0%,
-        #bdd3e9 18%,
-        #d2e1ee 40%,
-        #e8eff6 65%,
-        #f5f8fb 85%,
-        #f7f9fc 100%
+        ellipse 80% 60% at center,
+        #b8d4f5 0%,
+        #cee0f5 25%,
+        #e2ecf6 50%,
+        #eef3f8 75%,
+        #f5f7fa 100%
       );
     }
     /* World-map layer — the geography hint with location pins, sitting
@@ -1322,7 +1321,7 @@ LANDING_TEMPLATE = r"""
     .map-layer img{
       width:auto;height:auto;
       max-width:84vw;max-height:78vh;
-      opacity:.55;mix-blend-mode:multiply;
+      opacity:.12;mix-blend-mode:multiply;
       -webkit-mask-image:radial-gradient(
         ellipse 60% 64% at 50% 50%,
         rgba(0,0,0,1)   0%,
@@ -1348,6 +1347,7 @@ LANDING_TEMPLATE = r"""
       transform:translate(-50%,-50%);
       width:min(560px, 64vh);height:min(560px, 64vh);
       z-index:3;pointer-events:none;
+      opacity:.22;
     }
     .mesh .meridian{fill:none;stroke:rgba(58,143,164,.55);stroke-width:1;}
     .mesh .parallel{fill:none;stroke:rgba(58,143,164,.35);stroke-width:.8;}
