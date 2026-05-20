@@ -1283,155 +1283,146 @@ LANDING_TEMPLATE = r"""
 <title>VMA Group</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   /* ============================================================
-     Ground-truth Gemini CSS captured from gemini.google.com/app
-     (light theme, zero-state). Applied verbatim except for the
-     three positioning values on the ::before (top/left/transform)
-     which are recentred for our blank-page viewport context.
+     L1 Ethena-style globe over Gemini ground-truth halo.
+     Gemini ::before values untouched (only top/left/transform
+     recentred). Wireframe globe overlay + live-pulse dot.
      ============================================================ */
-  html {
-    background-color: rgba(0, 0, 0, 0);
-    background-image: none;
-  }
-  body {
-    background-color: rgb(253, 252, 252);
-    background-image: none;
-    margin: 0;
-    min-height: 100vh;
-  }
-  chat-window.center-input-layout.show-lm-background.lm-canvas-styling {
-    background: transparent;
-    overflow: hidden auto;
-    /* presentation: vertical centering, matching Gemini's zero-state */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 36px;
-    min-height: 100vh;
-    position: relative;
-  }
-  chat-window.show-lm-background::before {
-    content: "";
-    display: block;
-    position: absolute;
-    z-index: -1;
-    width: 792px;
-    height: 300px;
-    /* top/left/transform recentred for the viewport. Everything else
-       (size, border-radius, gradient, blur, opacity, blend-mode) is
-       verbatim from Gemini's captured CSS. */
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    border-radius: 9999px;
-    background-image: radial-gradient(
-      100% 100% at 50% 8%,
-      rgb(253, 252, 252) 0px,
-      rgb(157, 210, 255) 50%
-    );
-    filter: blur(125px);
-    opacity: 1;
-    mix-blend-mode: normal;
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  html{background-color:rgba(0,0,0,0);background-image:none;}
+  body{
+    background-color:rgb(253,252,252);
+    background-image:none;
+    min-height:100vh;
+    position:relative;overflow:hidden;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:36px;
   }
 
-  /* Gemini display-medium heading — the slot the VMA wordmark sits in */
-  h1.gds-display-m {
-    font-family: "Google Sans Flex", "Google Sans", "Helvetica Neue", Arial, sans-serif;
-    font-size: 36px;
-    font-weight: 320;
-    line-height: 44px;
-    letter-spacing: normal;
-    color: rgb(31, 31, 31);
-    text-align: center;
-    margin: 0;
+  /* Gemini halo — verbatim, recentred */
+  body::before{
+    content:"";position:absolute;z-index:-1;
+    width:792px;height:300px;top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    border-radius:9999px;
+    background-image:radial-gradient(100% 100% at 50% 8%,rgb(253,252,252) 0px,rgb(157,210,255) 50%);
+    filter:blur(125px);opacity:1;mix-blend-mode:normal;
   }
-  /* VMA wordmark — bold V + light tracked GROUP — inside the gds-display-m
-     slot so the brand survives while layout proportions match Gemini's. */
-  .wordmark {
-    font-family: Arial, Helvetica, sans-serif;
-    color: rgb(31, 31, 31);
-    display: inline-flex;
-    align-items: baseline;
-    line-height: 1;
-  }
-  .wordmark .v { font-weight: 800; letter-spacing: 0.06em; font-size: 64px; }
-  .wordmark .g { font-weight: 300; letter-spacing: 0.32em; font-size: 64px; padding-left: 0.42em; }
 
-  /* Gemini search-bar pill — repurposed as the enter-dashboard link */
-  input-area-v2.input-box-shadow.lm-input-redesign {
-    background-color: rgb(255, 255, 255);
-    border: none;
-    border-radius: 32px;
-    box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.16);
-    padding: 0;
-    width: 660px;
-    height: 64px;
-    max-width: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    text-decoration: none;
-    color: rgb(31, 31, 31);
-    cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  /* Wireframe globe with intelligence-point pulse nodes */
+  .globe{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:min(720px,76vh);height:min(720px,76vh);
+    z-index:0;pointer-events:none;
   }
-  input-area-v2.input-box-shadow.lm-input-redesign:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px -2px rgba(0, 0, 0, 0.18);
+  .globe .ring{fill:none;stroke:rgba(58,143,164,.42);stroke-width:1;}
+  .globe .ring.bold{stroke:rgba(58,143,164,.68);stroke-width:1.3;}
+  .globe .spin{transform-origin:center;animation:spin 32s linear infinite;}
+  @keyframes spin{from{transform:rotateZ(0deg);}to{transform:rotateZ(360deg);}}
+  .node{
+    fill:rgb(157,210,255);
+    filter:drop-shadow(0 0 6px rgb(157,210,255));
+    animation:nodepulse 3.2s ease-in-out infinite;
   }
-  .ql-editor.textarea.new-input-ui {
-    background-color: transparent;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
-    padding: 0 15px 0 0;
-    font-family: "JetBrains Mono", "Google Sans Flex", "Google Sans", "Helvetica Neue", sans-serif;
-    font-size: 13px;
-    letter-spacing: 0.26em;
-    text-transform: uppercase;
-    font-weight: 500;
-    color: rgb(31, 31, 31);
+  @keyframes nodepulse{
+    0%,100%{r:3;opacity:.75;}
+    50%{r:6;opacity:1;}
   }
-  .pulse-dot {
-    width: 9px; height: 9px; border-radius: 50%;
-    background: #9FD181; flex-shrink: 0;
-    animation: pulse 2.4s ease-in-out infinite;
-  }
-  @keyframes pulse {
-    0%  { box-shadow: 0 0 0 0 rgba(159,209,129,.75), 0 0 7px rgba(159,209,129,.6); }
-    70% { box-shadow: 0 0 0 10px rgba(159,209,129,0), 0 0 12px rgba(159,209,129,.9); }
-    100%{ box-shadow: 0 0 0 0 rgba(159,209,129,0), 0 0 7px rgba(159,209,129,.6); }
-  }
-  .arrow { color: #5F6368; font-size: 18px; line-height: 1; }
+  .node.b{animation-delay:.7s;}.node.c{animation-delay:1.4s;}.node.d{animation-delay:2.1s;}
 
-  @media (max-width: 720px) {
-    chat-window.center-input-layout.show-lm-background.lm-canvas-styling { gap: 24px; }
-    .wordmark .v, .wordmark .g { font-size: 44px; }
-    input-area-v2.input-box-shadow.lm-input-redesign { width: 90%; height: 56px; }
-    .ql-editor.textarea.new-input-ui { font-size: 11px; letter-spacing: 0.18em; }
+  /* Content */
+  .stage{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:32px;text-align:center;}
+  .wordmark{font-family:Arial,Helvetica,sans-serif;color:#1F1F1F;display:inline-flex;align-items:baseline;line-height:1;}
+  .wordmark .v{font-weight:800;letter-spacing:.06em;font-size:64px;}
+  .wordmark .g{font-weight:300;letter-spacing:.32em;font-size:64px;padding-left:.42em;}
+
+  .pill{
+    background:rgb(255,255,255);border:none;border-radius:32px;
+    box-shadow:0 2px 8px -2px rgba(0,0,0,0.16);
+    padding:0 22px;width:660px;height:64px;max-width:none;
+    display:flex;align-items:center;justify-content:center;gap:14px;
+    text-decoration:none;color:rgb(31,31,31);cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease;
   }
-  @media (prefers-reduced-motion: reduce) {
-    .pulse-dot { animation: none; }
+  .pill:hover{transform:translateY(-1px);box-shadow:0 6px 16px -2px rgba(0,0,0,.18);}
+
+  /* Live pulse dot — actively vibrating + glowing.
+     The dot itself throbs (scale + brightness) while a ::before
+     pseudo-element radiates an expanding ring outward. */
+  .dot{
+    position:relative;
+    width:11px;height:11px;border-radius:50%;
+    background:#9FD181;flex-shrink:0;
+    box-shadow:
+      0 0 10px rgba(159,209,129,.85),
+      inset 0 0 3px rgba(255,255,255,.4);
+    animation:dot-throb 1.8s ease-in-out infinite;
+  }
+  .dot::before{
+    content:"";position:absolute;
+    inset:-3px;border-radius:50%;
+    background:rgba(159,209,129,.55);
+    animation:dot-ring 1.8s ease-out infinite;
+  }
+  .dot::after{
+    content:"";position:absolute;
+    inset:-6px;border-radius:50%;
+    background:rgba(159,209,129,.30);
+    animation:dot-ring 1.8s ease-out infinite;
+    animation-delay:.6s;
+  }
+  @keyframes dot-throb{
+    0%,100%{transform:scale(1);box-shadow:0 0 8px rgba(159,209,129,.7),inset 0 0 3px rgba(255,255,255,.4);}
+    50%    {transform:scale(1.22);box-shadow:0 0 18px rgba(159,209,129,1),inset 0 0 4px rgba(255,255,255,.6);}
+  }
+  @keyframes dot-ring{
+    0%  {transform:scale(1);opacity:.7;}
+    100%{transform:scale(3.4);opacity:0;}
+  }
+
+  .lbl{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;letter-spacing:.26em;text-transform:uppercase;font-weight:500;}
+  .arrow{color:#5F6368;font-size:18px;line-height:1;margin-left:6px;}
+
+  @media (max-width:720px){
+    .stage{gap:24px;}
+    .wordmark .v,.wordmark .g{font-size:44px;}
+    .pill{width:90%;height:56px;}
+    .lbl{font-size:11px;letter-spacing:.18em;}
+    .globe{width:min(420px,48vh);height:min(420px,48vh);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .globe .spin,.node,.dot,.dot::before,.dot::after{animation:none;}
   }
 </style>
 </head>
 <body>
-  <chat-window class="center-input-layout show-lm-background lm-canvas-styling">
-    <h1 class="gds-display-m">
-      <span class="wordmark"><span class="v">VMA</span><span class="g">GROUP</span></span>
-    </h1>
-    <a href="/dashboard" style="text-decoration:none;">
-      <input-area-v2 class="input-box-shadow lm-input-redesign">
-        <span class="pulse-dot"></span>
-        <span class="ql-editor textarea new-input-ui">Intelligence Platform &middot; Live</span>
-        <span class="arrow">&rarr;</span>
-      </input-area-v2>
+  <svg class="globe" viewBox="0 0 720 720">
+    <g class="spin">
+      <circle class="ring bold" cx="360" cy="360" r="340"/>
+      <ellipse class="ring" cx="360" cy="360" rx="340" ry="80"/>
+      <ellipse class="ring" cx="360" cy="360" rx="340" ry="160"/>
+      <ellipse class="ring" cx="360" cy="360" rx="340" ry="240"/>
+      <ellipse class="ring" cx="360" cy="360" rx="340" ry="340"/>
+      <ellipse class="ring" cx="360" cy="360" rx="80"  ry="340"/>
+      <ellipse class="ring" cx="360" cy="360" rx="160" ry="340"/>
+      <ellipse class="ring" cx="360" cy="360" rx="240" ry="340"/>
+      <ellipse class="ring" cx="360" cy="360" rx="340" ry="340"/>
+      <circle class="node"   cx="320" cy="240" r="4"/>
+      <circle class="node b" cx="180" cy="320" r="4"/>
+      <circle class="node c" cx="360" cy="260" r="4"/>
+      <circle class="node d" cx="540" cy="380" r="4"/>
+    </g>
+  </svg>
+  <div class="stage">
+    <div class="wordmark"><span class="v">VMA</span><span class="g">GROUP</span></div>
+    <a class="pill" href="/dashboard">
+      <span class="dot"></span>
+      <span class="lbl">Intelligence Platform &middot; Live</span>
+      <span class="arrow">&rarr;</span>
     </a>
-  </chat-window>
+  </div>
 </body>
 </html>
 """
