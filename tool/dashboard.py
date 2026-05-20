@@ -773,6 +773,8 @@ def _boot_state_hydrate():
             "tool/state/trade_press_events.json",
             "tool/state/trade_press_suppression.json",
             "tool/state/trade_press_tracked.json",
+            "tool/state/cascade_events.json",
+            "tool/state/cascade_suppression.json",
         ])
     except Exception as e:
         log.warning("state hydrate skipped: %s", e)
@@ -806,17 +808,19 @@ def landing():
 @app.route("/dashboard")
 @_auth_required
 def index():
-    from tool import trade_press
+    from tool import trade_press, cascade
     predictors = load_latest_predictive()
     leads = load_latest_signals()
     trade_press_events = trade_press.list_active()
     tracked_count = len(trade_press.load_tracked())
+    cascade_events = cascade.list_active()
     return render_template_string(
         TEMPLATE,
         leads=leads,
         predictors=predictors,
         trade_press_events=trade_press_events,
         trade_press_tracked_count=tracked_count,
+        cascade_events=cascade_events,
         leads_active_count=sum(1 for s in leads if s.get("status", "active") == "active"),
         leads_new_count=sum(1 for s in leads if s.get("is_new")
                             and s.get("status", "active") == "active"),
@@ -1179,6 +1183,42 @@ def api_trade_press_scour():
     runs it daily via the morning-brief workflow."""
     from tool import trade_press
     return jsonify({"ok": True, **trade_press.scour()})
+
+
+# ---- Cascade-Hire Watch ----
+@app.route("/api/cascade/list", methods=["GET"])
+@_auth_required
+def api_cascade_list():
+    """Active cascade events for the dashboard panel."""
+    from tool import cascade
+    return jsonify({"events": cascade.list_active()})
+
+
+@app.route("/api/cascade/mark", methods=["POST"])
+@_auth_required
+def api_cascade_mark():
+    """Mark one side (old_co / new_co) of a cascade event."""
+    from tool import cascade
+    data = _safe_json_body()
+    event_id = (data.get("event_id") or "").strip()
+    side = (data.get("side") or "").strip()
+    status = (data.get("status") or "").strip()
+    if not (event_id and side and status):
+        return jsonify({"ok": False,
+                        "detail": "event_id, side and status required"}), 400
+    ok = cascade.mark(event_id, side, status)
+    if not ok:
+        return jsonify({"ok": False,
+                        "detail": "event not found or invalid input"}), 404
+    return jsonify({"ok": True})
+
+
+@app.route("/api/cascade/scour", methods=["POST"])
+@_auth_required
+def api_cascade_scour():
+    """Re-parse latest_signals.json for cascade moves on demand."""
+    from tool import cascade
+    return jsonify({"ok": True, **cascade.scour()})
 
 
 @app.route("/api/trade-press/tracked", methods=["GET", "POST"])
@@ -2800,6 +2840,76 @@ TEMPLATE = r"""
     </div>
   </div>
 
+  <!-- CASCADE-HIRE WATCH — senior comms moves in public news; each
+       move emits two derived BD actions (old company replacement
+       search; new company re-org/hiring pressure). -->
+  <div class="row row-full" id="cascade-row">
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Cascade-Hire Watch</h2>
+        <span style="display:flex;align-items:center;gap:10px;">
+          <span class="refresh-sub" style="font-size:11px;">
+            Senior comms moves &middot; auto-parsed from morning brief
+          </span>
+          <button type="button" class="btn-mini" id="cs-scour">Re-scan</button>
+          <span class="count" id="cascade-count">{{ cascade_events|length }}</span>
+        </span>
+      </div>
+      <div class="panel-body" id="cascade-body">
+        {% if cascade_events|length == 0 %}
+          <div class="empty">
+            No cascade-worthy moves detected in the latest brief. Senior
+            comms appointments (CCO / Director of Comms / Head of IC)
+            from today's news will surface here automatically.
+          </div>
+        {% else %}
+          {% for c in cascade_events %}
+            <div class="item cascade-item" data-event-id="{{ c.event_id }}">
+              <span class="title">{{ c.person_name }}</span>
+              <span class="badge">{{ c.role }}</span>
+              {% if c.old_company %}
+                <span class="badge">{{ c.old_company }} &rarr; {{ c.new_company }}</span>
+              {% else %}
+                <span class="badge">&rarr; {{ c.new_company }}</span>
+              {% endif %}
+              <div style="font-size:12px;color:var(--text-muted);margin:4px 0 8px;">
+                <a href="{{ c.article_url | safe_url }}" target="_blank">{{ c.article_title }}</a>
+              </div>
+
+              {% if c.old_co_status == 'active' and c.old_company %}
+              <div class="cs-side" data-side="old_co">
+                <div style="font-size:10.5px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--teal-dark);margin-bottom:4px;">
+                  &darr; Old company &middot; {{ c.old_company }} (replacement search)
+                </div>
+                <pre class="outreach-text">{{ c.old_co_opener }}</pre>
+                <div class="item-actions">
+                  <button class="btn-mini cs-copy" type="button">&#9993; Copy</button>
+                  <button class="btn-mini cs-action" data-side="old_co" data-status="called" type="button">&#10003; Called</button>
+                  <button class="btn-mini cs-action ghost" data-side="old_co" data-status="dismissed" type="button">&#10005; Dismiss</button>
+                </div>
+              </div>
+              {% endif %}
+
+              {% if c.new_co_status == 'active' %}
+              <div class="cs-side" data-side="new_co" style="margin-top:8px;">
+                <div style="font-size:10.5px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--teal-dark);margin-bottom:4px;">
+                  &darr; New company &middot; {{ c.new_company }} (re-org watch)
+                </div>
+                <pre class="outreach-text">{{ c.new_co_opener }}</pre>
+                <div class="item-actions">
+                  <button class="btn-mini cs-copy" type="button">&#9993; Copy</button>
+                  <button class="btn-mini cs-action" data-side="new_co" data-status="called" type="button">&#10003; Called</button>
+                  <button class="btn-mini cs-action ghost" data-side="new_co" data-status="dismissed" type="button">&#10005; Dismiss</button>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
   <div class="row" id="pulses-row">
     <div class="panel">
       <div class="panel-header">
@@ -4133,6 +4243,109 @@ document.addEventListener('DOMContentLoaded', () => {
           statusEl.textContent = 'Network error: ' + e.message;
         }
       });
+    });
+  }
+})();
+
+// ---------- Cascade-Hire Watch ----------
+(function(){
+  const root = document.getElementById('cascade-body');
+  if (!root) return;
+
+  root.addEventListener('click', async (ev) => {
+    // Copy opener for a specific side (old_co / new_co)
+    const copyBtn = ev.target.closest('.cs-copy');
+    if (copyBtn) {
+      const side = copyBtn.closest('.cs-side');
+      const txt = side && side.querySelector('.outreach-text');
+      if (txt) {
+        try {
+          await navigator.clipboard.writeText(txt.textContent);
+          const orig = copyBtn.textContent;
+          copyBtn.textContent = '✓ Copied';
+          setTimeout(() => { copyBtn.textContent = orig; }, 1200);
+        } catch (e) { /* clipboard blocked - silent */ }
+      }
+      return;
+    }
+
+    // Called / Dismiss — per side
+    const actBtn = ev.target.closest('.cs-action');
+    if (actBtn) {
+      const item = actBtn.closest('.cascade-item');
+      const id = item && item.getAttribute('data-event-id');
+      const side = actBtn.getAttribute('data-side');
+      const status = actBtn.getAttribute('data-status');
+      if (!id || !side || !status) return;
+      actBtn.disabled = true;
+      try {
+        const r = await fetch('/api/cascade/mark', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event_id: id, side: side, status: status }),
+        });
+        const j = await r.json();
+        if (j.ok) {
+          // Hide just the side that was actioned. If both sides are now
+          // hidden, remove the whole item.
+          const sideEl = actBtn.closest('.cs-side');
+          if (sideEl) {
+            sideEl.style.transition = 'opacity .2s ease';
+            sideEl.style.opacity = '0';
+            setTimeout(() => {
+              sideEl.remove();
+              if (!item.querySelector('.cs-side')) {
+                item.style.transition = 'opacity .2s ease';
+                item.style.opacity = '0';
+                setTimeout(() => { item.remove(); updateCascadeCount(); }, 200);
+              }
+            }, 200);
+          }
+        } else {
+          actBtn.disabled = false;
+          alert(j.detail || 'Could not update.');
+        }
+      } catch (e) {
+        actBtn.disabled = false;
+        alert('Network error: ' + e.message);
+      }
+    }
+  });
+
+  function updateCascadeCount() {
+    const remaining = root.querySelectorAll('.cascade-item').length;
+    const counter = document.getElementById('cascade-count');
+    if (counter) counter.textContent = remaining;
+    if (remaining === 0) {
+      root.innerHTML = '<div class="empty">No cascade-worthy moves detected in the latest brief. Senior comms appointments (CCO / Director of Comms / Head of IC) from today\'s news will surface here automatically.</div>';
+    }
+  }
+
+  // Manual re-scan (parses the latest_signals.json again — useful if
+  // morning_brief ran but the cascade scour hadn't yet executed).
+  const scourBtn = document.getElementById('cs-scour');
+  if (scourBtn) {
+    scourBtn.addEventListener('click', async () => {
+      const orig = scourBtn.textContent;
+      scourBtn.textContent = 'Scanning…';
+      scourBtn.disabled = true;
+      try {
+        const r = await fetch('/api/cascade/scour', { method: 'POST' });
+        const j = await r.json();
+        scourBtn.textContent = j.ok
+          ? (j.events_new > 0
+              ? (j.events_new + ' new — reloading…')
+              : 'No new moves')
+          : 'Scan failed';
+        if (j.ok && j.events_new > 0) {
+          setTimeout(() => window.location.reload(), 800);
+        } else {
+          setTimeout(() => { scourBtn.textContent = orig; scourBtn.disabled = false; }, 1400);
+        }
+      } catch (e) {
+        scourBtn.textContent = 'Network error';
+        setTimeout(() => { scourBtn.textContent = orig; scourBtn.disabled = false; }, 1400);
+      }
     });
   }
 })();

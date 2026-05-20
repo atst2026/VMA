@@ -133,6 +133,18 @@ jobs:
         run: |
           python -m tool.trade_press || echo "trade_press scour failed (non-fatal)"
 
+      - name: Scan for cascade-hire moves
+        # Parses morning_brief's latest_signals.json for senior-comms
+        # appointments and emits cascade events (old-co replacement +
+        # new-co re-org). Cheap (no HTTP); runs after the main brief
+        # so it sees today's freshly-scoured signals.
+        if: always()
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python -m tool.cascade || echo "cascade scan failed (non-fatal)"
+
       - name: Upload brief artefacts
         if: always()
         uses: actions/upload-artifact@v4
