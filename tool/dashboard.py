@@ -1321,7 +1321,7 @@ LANDING_TEMPLATE = r"""
     .map-layer img{
       width:auto;height:auto;
       max-width:84vw;max-height:78vh;
-      opacity:.12;mix-blend-mode:multiply;
+      opacity:.55;mix-blend-mode:multiply;
       -webkit-mask-image:radial-gradient(
         ellipse 60% 64% at 50% 50%,
         rgba(0,0,0,1)   0%,
@@ -1347,7 +1347,6 @@ LANDING_TEMPLATE = r"""
       transform:translate(-50%,-50%);
       width:min(560px, 64vh);height:min(560px, 64vh);
       z-index:3;pointer-events:none;
-      opacity:.22;
     }
     .mesh .meridian{fill:none;stroke:rgba(58,143,164,.55);stroke-width:1;}
     .mesh .parallel{fill:none;stroke:rgba(58,143,164,.35);stroke-width:.8;}
