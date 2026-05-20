@@ -125,6 +125,13 @@ TEST_RECIPIENT = "franc.laude1994@gmail.com"   # practice-run inbox (Gmail for r
 SEND_AT = "08:55"                         # Europe/London
 SEND_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"]  # Monday sweeps Sat+Sun too
 
+# Only the morning brief auto-emails Sara. All other report-generators
+# (Pitch Pack, Reverse Match, Pre-meeting Brief, Manual Sweep) save
+# HTML to disk and upload via GitHub Actions artifact, but do NOT send
+# email — Sara picks them up from the dashboard's Recent Reports panel.
+# Flip this to True to re-enable per-report email sends.
+NON_BRIEF_EMAIL_ENABLED = False
+
 # --- API keys (set via env, never commit secrets) ---
 COMPANIES_HOUSE_KEY = os.environ.get("COMPANIES_HOUSE_KEY") or ""
 BRIGHT_DATA_KEY = os.environ.get("BRIGHT_DATA_KEY") or ""

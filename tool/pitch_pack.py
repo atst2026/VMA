@@ -424,7 +424,7 @@ def main() -> int:
     (STATE_DIR / f"pitch_pack_{safe}_{stamp}.html").write_text(html_out)
     (STATE_DIR / f"pitch_pack_{safe}_{stamp}.txt").write_text(text_out)
 
-    if mode in ("send", "test"):
+    if mode in ("send", "test") and getattr(config, "NON_BRIEF_EMAIL_ENABLED", False):
         to = config.TEST_RECIPIENT if mode == "test" else config.RECIPIENT
         subject = f"[Pitch Pack] {target} - {role}"
         if mode == "test":

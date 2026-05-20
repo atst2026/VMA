@@ -658,7 +658,9 @@ def main(argv: list[str] | None = None) -> int:
     (STATE_DIR / f"pre_meeting_{safe}_{stamp}.html").write_text(html_out)
     (STATE_DIR / f"pre_meeting_{safe}_{stamp}.txt").write_text(text_out)
 
-    if mode == "preview":
+    if mode == "preview" or not getattr(config, "NON_BRIEF_EMAIL_ENABLED", False):
+        # Either explicit preview, or non-brief emails disabled globally —
+        # save to disk and exit; no email is sent.
         print(text_out)
         return 0
 

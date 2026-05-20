@@ -161,7 +161,7 @@ def main() -> int:
         json.dumps(ranked_live, indent=2, default=str)
     )
 
-    if mode in ("send", "test"):
+    if mode in ("send", "test") and getattr(config, "NON_BRIEF_EMAIL_ENABLED", False):
         to = config.TEST_RECIPIENT if mode == "test" else config.RECIPIENT
         subject = f"[{days}-DAY SWEEP] Sara's Catch-up Brief — {now.strftime('%a %d %b')}"
         log.info("Sending to %s …", to)
