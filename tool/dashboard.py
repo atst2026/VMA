@@ -17,6 +17,7 @@ Required env (set in .env):
     DASHBOARD_PORT        — defaults to 8765
 """
 from __future__ import annotations
+import base64
 import functools
 import json
 import logging
@@ -799,8 +800,10 @@ def _safe_url_filter(u):
 @app.route("/")
 @_auth_required
 def landing():
-    """Gemini-style landing — VMA wordmark + click-pill into the dashboard."""
-    return render_template_string(LANDING_TEMPLATE)
+    """Wireframe-globe landing — world map + rotating meridian/parallel
+    mesh, VMA wordmark, click-pill into the dashboard. Previous Gemini-
+    halo variant preserved at tool/landing_mockups/gemini_halo_landing.html."""
+    return render_template_string(LANDING_TEMPLATE, map_png_b64=_LANDING_MAP_B64)
 
 
 @app.route("/dashboard")
@@ -1258,8 +1261,25 @@ def api_contract_end():
     return jsonify({"rows": rows, "total": len(rows)})
 
 
-# Gemini-style landing page — VMA wordmark + click-pill that enters the
-# dashboard. Halo uses the same Opus v2 recipe the dashboard hero uses.
+# Wireframe-Globe landing page — world map underneath with a slowly
+# rotating wireframe meridian/parallel mesh on top, over the Gemini
+# halo backdrop. Previous "Gemini Halo" minimal variant is preserved
+# at tool/landing_mockups/gemini_halo_landing.html for one-step revert.
+#
+# The world-map PNG (~350 KB) is loaded once at module import and
+# base64-encoded for inline embed; keeps the route handler fast and
+# avoids needing a Flask static_folder mount.
+_LANDING_ASSETS_DIR = Path(__file__).resolve().parent / "assets"
+try:
+    _LANDING_MAP_B64 = base64.b64encode(
+        (_LANDING_ASSETS_DIR / "world_map.png").read_bytes()
+    ).decode("ascii")
+except Exception as _e:
+    log.warning("landing: world_map.png not found (%s) — using transparent fallback", _e)
+    # 1x1 transparent PNG — safe degradation.
+    _LANDING_MAP_B64 = ("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAA"
+                        "C0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=")
+
 LANDING_TEMPLATE = r"""
 <!doctype html>
 <html lang="en">
@@ -1278,6 +1298,7 @@ LANDING_TEMPLATE = r"""
       color:#1F1F1F;line-height:1.5;font-size:13.5px;
       -webkit-font-smoothing:antialiased;
       min-height:100vh;
+      position:relative;overflow:hidden;
       display:flex;align-items:center;justify-content:center;
       background:radial-gradient(
         ellipse 48% 55% at 50% 55%,
@@ -1289,7 +1310,34 @@ LANDING_TEMPLATE = r"""
         #f7f9fc 100%
       );
     }
+    /* World-map layer — sits over the halo, under the mesh. */
+    .map-layer{
+      position:absolute;inset:0;padding:40px 60px;z-index:2;
+      display:flex;align-items:center;justify-content:center;pointer-events:none;
+    }
+    .map-layer img{
+      width:100%;height:auto;max-height:100%;
+      opacity:.62;mix-blend-mode:multiply;
+    }
+    /* Rotating wireframe globe — meridian/parallel ellipse mesh, slowly
+       rotating around centre. Scales fluidly off viewport height. */
+    .mesh{
+      position:absolute;left:50%;top:50%;
+      transform:translate(-50%,-50%);
+      width:min(640px, 62vh);height:min(640px, 62vh);
+      z-index:3;pointer-events:none;
+    }
+    .mesh .meridian{fill:none;stroke:rgba(58,143,164,.55);stroke-width:1;}
+    .mesh .parallel{fill:none;stroke:rgba(58,143,164,.35);stroke-width:.8;}
+    .mesh .outline{fill:none;stroke:rgba(58,143,164,.75);stroke-width:1.4;}
+    .mesh-group{transform-origin:center;animation:globe-rot 22s linear infinite;}
+    @keyframes globe-rot{
+      0%  {transform:rotateZ(0deg);}
+      100%{transform:rotateZ(360deg);}
+    }
+    /* Stage — wordmark + click pill, sits above map + mesh. */
     .stage{
+      position:relative;z-index:10;
       display:flex;flex-direction:column;align-items:center;justify-content:center;
       padding:0 40px;gap:46px;text-align:center;
     }
@@ -1334,10 +1382,29 @@ LANDING_TEMPLATE = r"""
       .wordmark .v,.wordmark .g{font-size:44px;}
       .enter-pill{min-width:0;width:100%;padding:12px 16px;}
       .enter-pill .lbl{font-size:11px;letter-spacing:.18em;}
+      .mesh{width:min(420px, 48vh);height:min(420px, 48vh);}
+    }
+    @media (prefers-reduced-motion: reduce){
+      .mesh-group{animation:none;}
+      .enter-pill .pulse-dot{animation:none;}
     }
   </style>
 </head>
 <body>
+  <div class="map-layer"><img src="data:image/png;base64,{{ map_png_b64 }}" alt=""></div>
+  <div class="mesh">
+    <svg viewBox="0 0 560 560" class="mesh-group">
+      <circle class="outline" cx="280" cy="280" r="260"/>
+      <ellipse class="parallel" cx="280" cy="280" rx="260" ry="60"/>
+      <ellipse class="parallel" cx="280" cy="280" rx="260" ry="130"/>
+      <ellipse class="parallel" cx="280" cy="280" rx="260" ry="200"/>
+      <ellipse class="parallel" cx="280" cy="280" rx="260" ry="260"/>
+      <ellipse class="meridian" cx="280" cy="280" rx="60"  ry="260"/>
+      <ellipse class="meridian" cx="280" cy="280" rx="130" ry="260"/>
+      <ellipse class="meridian" cx="280" cy="280" rx="200" ry="260"/>
+      <ellipse class="meridian" cx="280" cy="280" rx="260" ry="260"/>
+    </svg>
+  </div>
   <div class="stage">
     <div class="wordmark"><span class="v">VMA</span><span class="g">GROUP</span></div>
     <a class="enter-pill" href="/dashboard">
