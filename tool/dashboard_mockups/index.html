@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VMA — Dashboard Layout Mockups</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:"Inter",sans-serif;background:#f7f9fc;color:#1F1F1F;font-size:14px;line-height:1.6;padding:48px 32px;}
+  .wrap{max-width:880px;margin:0 auto;}
+  h1{font-size:26px;font-weight:700;letter-spacing:-0.01em;margin-bottom:6px;}
+  .sub{color:#5F6368;font-size:13px;margin-bottom:28px;}
+  .card{background:#fff;border:1px solid #e6ebf2;border-radius:12px;padding:22px 24px;margin-bottom:14px;display:grid;grid-template-columns:36px 1fr auto;gap:18px;align-items:center;text-decoration:none;color:inherit;transition:transform .12s,border-color .12s;}
+  .card:hover{transform:translateY(-1px);border-color:#3A8FA4;}
+  .card .num{font-size:24px;font-weight:200;color:#ccd5df;}
+  .card h2{font-size:15px;font-weight:700;margin-bottom:3px;}
+  .card .why{color:#5F6368;font-size:12.5px;}
+  .card .arrow{color:#5F6368;font-size:20px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Dashboard layout mockups</h1>
+  <div class="sub">Five different ways to arrange the same panels. Pick one, or take pieces of several. None are wired up — these are visualisation only.</div>
+
+  <a class="card" href="01_sticky_sidebar.html">
+    <div class="num">1</div>
+    <div>
+      <h2>Sticky Sidebar Workspace</h2>
+      <div class="why">Permanent left rail (260px) with section nav, mini Top-3 always visible, Daily Refresh pinned. Main column scrolls. Linear / Notion feel.</div>
+    </div>
+    <div class="arrow">→</div>
+  </a>
+
+  <a class="card" href="02_tabbed_sections.html">
+    <div class="num">2</div>
+    <div>
+      <h2>Tabbed Sections</h2>
+      <div class="why">Five top tabs: Today / Pipeline / Candidates / Tools / Archive. Each shows only its 3–4 relevant panels. Big Top-3 pinned above every tab. Dramatically less on screen at once.</div>
+    </div>
+    <div class="arrow">→</div>
+  </a>
+
+  <a class="card" href="03_accordion_hierarchy.html">
+    <div class="num">3</div>
+    <div>
+      <h2>Accordion Hierarchy</h2>
+      <div class="why">Minimalist. Huge Top-3 hero at the top, everything else collapsed by default. Sara expands what she wants. Maximum focus, zero clutter. Apple Reminders / Things 3 feel.</div>
+    </div>
+    <div class="arrow">→</div>
+  </a>
+
+  <a class="card" href="04_bento_grid.html">
+    <div class="num">4</div>
+    <div>
+      <h2>Bento Grid</h2>
+      <div class="why">12-column asymmetric grid. Top-3 takes a wide hero block + two coloured stat tiles. Signal panels in equal-ish squares below. Action tools in a 4-card band at the bottom. Apple product-page energy.</div>
+    </div>
+    <div class="arrow">→</div>
+  </a>
+
+  <a class="card" href="05_action_rail_feed.html">
+    <div class="num">5</div>
+    <div>
+      <h2>Action Rail + Scroll Feed</h2>
+      <div class="why">Right-side sticky rail (320px) with Top-3 + one-tap quick tools always pinned. Main column is a vertical scroll-feed of signal panels. Works exactly like a news feed.</div>
+    </div>
+    <div class="arrow">→</div>
+  </a>
+
+</div>
+</body>
+</html>

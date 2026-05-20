@@ -1310,48 +1310,64 @@ LANDING_TEMPLATE = r"""
         #f7f9fc 100%
       );
     }
-    /* World-map layer — sits over the halo, under the mesh.
-       A radial mask fades the map to transparent at the edges so it
-       blends seamlessly into the halo backdrop (no hard rectangular
-       crop). Centred on the same point as the mesh. */
+    /* World-map layer — a faint atmospheric hint of geography sitting
+       over the halo. Heavy radial mask + low opacity = the gradient
+       halo stays dominant; the map is barely-there texture, not a
+       picture on a background. */
     .map-layer{
       position:absolute;inset:0;z-index:2;
       display:flex;align-items:center;justify-content:center;pointer-events:none;
     }
     .map-layer img{
       width:auto;height:auto;
-      max-width:78vw;max-height:78vh;
-      opacity:.42;mix-blend-mode:multiply;
+      max-width:72vw;max-height:72vh;
+      opacity:.14;
       -webkit-mask-image:radial-gradient(
-        ellipse 52% 56% at 50% 50%,
+        ellipse 42% 46% at 50% 50%,
         rgba(0,0,0,1)   0%,
-        rgba(0,0,0,.95) 30%,
-        rgba(0,0,0,.55) 60%,
-        rgba(0,0,0,.18) 80%,
+        rgba(0,0,0,.85) 25%,
+        rgba(0,0,0,.40) 55%,
+        rgba(0,0,0,.10) 75%,
         rgba(0,0,0,0)   100%
       );
               mask-image:radial-gradient(
-        ellipse 52% 56% at 50% 50%,
+        ellipse 42% 46% at 50% 50%,
         rgba(0,0,0,1)   0%,
-        rgba(0,0,0,.95) 30%,
-        rgba(0,0,0,.55) 60%,
-        rgba(0,0,0,.18) 80%,
+        rgba(0,0,0,.85) 25%,
+        rgba(0,0,0,.40) 55%,
+        rgba(0,0,0,.10) 75%,
         rgba(0,0,0,0)   100%
       );
     }
     /* Rotating wireframe globe — meridian/parallel ellipse mesh, slowly
        rotating around centre. Locked to the exact same centre point as
        the map layer + stage so wordmark, pill, mesh and map share one
-       vertical axis. */
+       vertical axis. Globe is wrapped in its own opacity + radial mask
+       so it fades out at the edges and doesn't fight the halo. */
     .mesh{
       position:absolute;left:50%;top:50%;
       transform:translate(-50%,-50%);
-      width:min(640px, 62vh);height:min(640px, 62vh);
+      width:min(560px, 56vh);height:min(560px, 56vh);
       z-index:3;pointer-events:none;
+      opacity:.42;
+      -webkit-mask-image:radial-gradient(
+        ellipse 50% 50% at 50% 50%,
+        rgba(0,0,0,1) 0%,
+        rgba(0,0,0,.75) 45%,
+        rgba(0,0,0,.30) 75%,
+        rgba(0,0,0,0) 100%
+      );
+              mask-image:radial-gradient(
+        ellipse 50% 50% at 50% 50%,
+        rgba(0,0,0,1) 0%,
+        rgba(0,0,0,.75) 45%,
+        rgba(0,0,0,.30) 75%,
+        rgba(0,0,0,0) 100%
+      );
     }
-    .mesh .meridian{fill:none;stroke:rgba(58,143,164,.55);stroke-width:1;}
+    .mesh .meridian{fill:none;stroke:rgba(58,143,164,.50);stroke-width:1;}
     .mesh .parallel{fill:none;stroke:rgba(58,143,164,.35);stroke-width:.8;}
-    .mesh .outline{fill:none;stroke:rgba(58,143,164,.75);stroke-width:1.4;}
+    .mesh .outline{fill:none;stroke:rgba(58,143,164,.65);stroke-width:1.3;}
     .mesh-group{transform-origin:center;animation:globe-rot 22s linear infinite;}
     @keyframes globe-rot{
       0%  {transform:rotateZ(0deg);}
@@ -3526,6 +3542,10 @@ document.addEventListener('click', async (event) => {
 // it. Simple, fast (~5s). Surfaces the exact result in a banner so the
 // user can see WHY the dashboard is empty if it is — too-old artifact,
 // missing file, or genuinely zero results from today's brief.
+//
+// After the brief lands, also re-parses the fresh latest_signals.json
+// for cascade moves so Hire Watch picks up any senior comms
+// appointments in today's news without Sara having to click Re-scan.
 async function refreshBrief() {
   const btn = document.getElementById('refresh-btn');
   const originalLabel = btn.textContent;
@@ -3535,8 +3555,14 @@ async function refreshBrief() {
     const r = await fetch('/api/refresh', { method: 'POST' });
     const j = await r.json();
     if (j.ok && (j.leads > 0 || j.predictors > 0)) {
-      // Normal success: just reload. No banner — the data speaks for itself.
-      setTimeout(() => window.location.reload(), 600);
+      // Brief landed — re-parse signals for cascade moves before
+      // reloading so the Hire Watch panel reflects today's data.
+      // Non-blocking: cascade failure must not stop the reload.
+      btn.textContent = 'Scanning hires…';
+      try {
+        await fetch('/api/cascade/scour', { method: 'POST' });
+      } catch (e) { /* non-fatal — log only */ }
+      setTimeout(() => window.location.reload(), 400);
     } else {
       // Only surface a banner when something is actually wrong (refresh
       // failed, or it succeeded but found nothing — both carry a warning).

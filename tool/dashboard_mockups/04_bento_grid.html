@@ -1,0 +1,172 @@
+<!doctype html>
+<!-- MOCKUP 4: BENTO GRID
+     Inspiration: Apple product pages, Things 3 launcher, modern
+     SaaS dashboards. 12-col responsive grid with asymmetric card
+     sizes — Top-3 takes a wide block, signal panels are smaller
+     equal squares, action tools live in their own band. Visually
+     interesting; gives each panel a "size = importance" cue. -->
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VMA — Mockup 4: Bento</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --bg:#f7f9fc; --panel:#fff; --text:#1F1F1F; --muted:#5F6368;
+    --border:#e6ebf2; --accent:#3A8FA4; --green:#9FD181;
+  }
+  body{font-family:"Inter",sans-serif;background:var(--bg);color:var(--text);font-size:13.5px;line-height:1.5;}
+
+  .topbar{background:transparent;padding:24px 36px;display:flex;align-items:center;justify-content:space-between;max-width:1400px;margin:0 auto;}
+  .brand{display:flex;align-items:baseline;gap:4px;font-family:Arial;}
+  .brand .v{font-weight:800;font-size:22px;letter-spacing:.06em;}
+  .brand .g{font-weight:300;font-size:22px;letter-spacing:.30em;color:#444;}
+  .refresh-pill{background:#1F1F1F;color:#fff;border:none;border-radius:9999px;padding:10px 18px;font:600 11px/1 "JetBrains Mono",monospace;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;}
+
+  .container{max-width:1400px;margin:0 auto;padding:8px 36px 60px;}
+
+  /* 12-col bento grid */
+  .bento{display:grid;grid-template-columns:repeat(12,1fr);grid-auto-rows:minmax(120px,auto);gap:16px;}
+  .card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;}
+  .card h2{font-size:13px;font-weight:700;letter-spacing:.03em;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
+  .card h2 .count{background:#eaf2f6;color:var(--accent);padding:2px 9px;border-radius:9999px;font-size:11px;font-weight:600;}
+
+  /* TOP-3 hero: span 8 cols, 2 rows */
+  .top3{grid-column:span 8;grid-row:span 2;background:linear-gradient(135deg,#fff 0%,#fafbfd 100%);padding:22px;}
+  .top3 h2{font-size:14px;font-weight:700;letter-spacing:.10em;color:var(--accent);text-transform:uppercase;margin-bottom:18px;}
+  .top3-row{display:flex;flex-direction:column;gap:12px;}
+  .top3-item{display:grid;grid-template-columns:36px 1fr auto;gap:14px;align-items:center;padding:12px;border:1px solid var(--border);border-radius:10px;background:#fff;}
+  .top3-item .num{font-size:24px;font-weight:200;color:#ccd5df;}
+  .top3-item .who{font-weight:700;font-size:14px;}
+  .top3-item .why{color:var(--muted);font-size:11.5px;margin-top:2px;}
+  .top3-item button{background:var(--accent);color:#fff;border:none;border-radius:9999px;padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;}
+
+  /* Right column stack: leads count + key stats */
+  .stat-card{grid-column:span 4;background:linear-gradient(135deg,#3A8FA4 0%,#2c7388 100%);color:#fff;padding:20px;}
+  .stat-card h3{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;opacity:.85;margin-bottom:6px;}
+  .stat-card .big{font-size:42px;font-weight:300;line-height:1;}
+  .stat-card .sub{font-size:11px;opacity:.85;margin-top:6px;}
+
+  /* Medium tiles row */
+  .leads{grid-column:span 4;}
+  .predictions{grid-column:span 4;}
+  .hire{grid-column:span 4;}
+  .calendar{grid-column:span 6;}
+  .candidates{grid-column:span 6;}
+  .actions-band{grid-column:span 12;background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px 20px;}
+
+  /* Inside cards */
+  .mini-row{padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;}
+  .mini-row:last-child{border-bottom:none;}
+  .mini-row .meta{color:var(--muted);font-size:10.5px;margin-top:2px;}
+  .chip{display:inline-block;padding:2px 6px;font-size:9.5px;font-weight:600;border-radius:7px;background:#eaf2f6;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;}
+  .chip.amber{background:#fff4e0;color:#8a5a00;}
+  .chip.green{background:#eaf5dc;color:#3F5727;}
+
+  .action-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  .action-card{padding:14px;border:1px solid var(--border);border-radius:10px;background:#fafbfd;cursor:pointer;transition:transform .12s,border-color .12s;}
+  .action-card:hover{transform:translateY(-2px);border-color:var(--accent);}
+  .action-card h3{font-size:12px;font-weight:700;margin-bottom:4px;}
+  .action-card p{font-size:10.5px;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="v">VMA</span><span class="g">GROUP</span></div>
+  <button class="refresh-pill">↻ Daily Refresh</button>
+</div>
+
+<main class="container">
+
+  <div class="bento">
+
+    <!-- TOP-3 hero, 8 wide × 2 tall -->
+    <div class="card top3">
+      <h2>● Top 3 actions today</h2>
+      <div class="top3-row">
+        <div class="top3-item">
+          <div class="num">1</div>
+          <div><div class="who">NatWest</div><div class="why">CCO seat just vacated · call HR + Chair today</div></div>
+          <button>Copy opener</button>
+        </div>
+        <div class="top3-item">
+          <div class="num">2</div>
+          <div><div class="who">Standard Chartered</div><div class="why">Director of Comms at 26mo tenure · pre-position</div></div>
+          <button>Copy opener</button>
+        </div>
+        <div class="top3-item">
+          <div class="num">3</div>
+          <div><div class="who">Octopus Energy</div><div class="why">£140m Series F · 6mo window to senior comms hire</div></div>
+          <button>Copy opener</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stat tile, 4 wide -->
+    <div class="card stat-card">
+      <h3>Today's intel</h3>
+      <div class="big">11</div>
+      <div class="sub">live leads · 8 predictions · 3 cascades · 2 funding</div>
+    </div>
+
+    <!-- Stat tile 2 -->
+    <div class="card stat-card" style="background:linear-gradient(135deg,#9FD181 0%,#7eb868 100%);">
+      <h3>Pipeline value</h3>
+      <div class="big">£420k</div>
+      <div class="sub">est. fee value across active leads · this quarter</div>
+    </div>
+
+    <!-- Leads -->
+    <div class="card leads">
+      <h2>Today's Leads <span class="count">11</span></h2>
+      <div class="mini-row"><strong>NatWest</strong> <span class="chip green">new</span><div class="meta">CCO seat vacated · Sky News · 1h ago</div></div>
+      <div class="mini-row"><strong>Severn Trent</strong> <span class="chip">active</span><div class="meta">Results miss · RNS · 3h ago</div></div>
+      <div class="mini-row"><strong>BP</strong> <span class="chip">active</span><div class="meta">CFO change · Reuters · 5h ago</div></div>
+    </div>
+
+    <!-- Predictions -->
+    <div class="card predictions">
+      <h2>Prediction Signals <span class="count">8</span></h2>
+      <div class="mini-row"><strong>Standard Chartered</strong> <span class="chip">68%</span><div class="meta">Director of Comms · 26mo tenure cliff</div></div>
+      <div class="mini-row"><strong>Octopus Energy</strong> <span class="chip amber">funding</span><div class="meta">£140m Series F · 6mo window</div></div>
+    </div>
+
+    <!-- Hire Watch -->
+    <div class="card hire">
+      <h2>Hire Watch <span class="count">3</span></h2>
+      <div class="mini-row"><strong>Jane Smith</strong><div class="meta">Lloyds → NatWest · CCO · 2 follow-ups emitted</div></div>
+      <div class="mini-row"><strong>Ravi Patel</strong><div class="meta">Centrica · Director of Comms appointed</div></div>
+    </div>
+
+    <!-- BD Calendar -->
+    <div class="card calendar">
+      <h2>BD Calendar <span class="count">6 active + 8 events</span></h2>
+      <div class="mini-row"><strong>FCA Consumer Duty</strong> <span class="chip">live</span><div class="meta">Apr–Jul · annual board-report ramp · 64d left</div></div>
+      <div class="mini-row"><strong>PRWeek Awards UK</strong> <span class="chip amber">event</span><div class="meta">22 Oct · external · in 155 days</div></div>
+      <div class="mini-row"><strong>UK SRS first cycle</strong> <span class="chip">live</span><div class="meta">Full 2026 · sustainability-reporting comms</div></div>
+    </div>
+
+    <!-- Candidate Watch -->
+    <div class="card candidates">
+      <h2>Candidate Watch <span class="count">12</span></h2>
+      <div class="mini-row"><strong>Molly Cutler</strong><div class="meta">Head of IC · PA Consulting · due in 29d</div></div>
+      <div class="mini-row"><strong>James Carter</strong><div class="meta">Director of Corp Comms · Barclays · overdue 4d</div></div>
+    </div>
+
+    <!-- Action tools band -->
+    <div class="card actions-band">
+      <h2>Tools <span class="count">4</span></h2>
+      <div class="action-row">
+        <div class="action-card"><h3>Pre-meeting Brief</h3><p>Walk into a meeting prepped.</p></div>
+        <div class="action-card"><h3>Pitch Pack</h3><p>Retained-conversion PDF for an account.</p></div>
+        <div class="action-card"><h3>Reverse Match</h3><p>Candidate → ranked target accounts.</p></div>
+        <div class="action-card"><h3>14-Day Catch-up</h3><p>Sweep past fortnight for missed signals.</p></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+</body>
+</html>
