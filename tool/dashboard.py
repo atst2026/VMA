@@ -775,6 +775,7 @@ def _boot_state_hydrate():
             "tool/state/trade_press_tracked.json",
             "tool/state/cascade_events.json",
             "tool/state/cascade_suppression.json",
+            "tool/state/top_three_state.json",
         ])
     except Exception as e:
         log.warning("state hydrate skipped: %s", e)
@@ -808,12 +809,13 @@ def landing():
 @app.route("/dashboard")
 @_auth_required
 def index():
-    from tool import trade_press, cascade
+    from tool import trade_press, cascade, top_three
     predictors = load_latest_predictive()
     leads = load_latest_signals()
     trade_press_events = trade_press.list_active()
     tracked_count = len(trade_press.load_tracked())
     cascade_events = cascade.list_active()
+    top_actions = top_three.compute_top()
     return render_template_string(
         TEMPLATE,
         leads=leads,
@@ -821,6 +823,7 @@ def index():
         trade_press_events=trade_press_events,
         trade_press_tracked_count=tracked_count,
         cascade_events=cascade_events,
+        top_actions=top_actions,
         leads_active_count=sum(1 for s in leads if s.get("status", "active") == "active"),
         leads_new_count=sum(1 for s in leads if s.get("is_new")
                             and s.get("status", "active") == "active"),
@@ -1220,6 +1223,34 @@ def api_cascade_scour():
     """Re-parse latest_signals.json for cascade moves on demand."""
     from tool import cascade
     return jsonify({"ok": True, **cascade.scour()})
+
+
+# ---- Top-3 Action Surface ----
+@app.route("/api/top-three/list", methods=["GET"])
+@_auth_required
+def api_top_three_list():
+    """Re-compute fresh on every call — state overlay handles
+    suppression. Cheap (pure parse over already-fetched data)."""
+    from tool import top_three
+    return jsonify({"actions": top_three.compute_top()})
+
+
+@app.route("/api/top-three/mark", methods=["POST"])
+@_auth_required
+def api_top_three_mark():
+    """Per-action state mutation. status ∈ {active, done, dismissed}."""
+    from tool import top_three
+    data = _safe_json_body()
+    action_id = (data.get("action_id") or "").strip()
+    status = (data.get("status") or "").strip()
+    if not (action_id and status):
+        return jsonify({"ok": False,
+                        "detail": "action_id and status required"}), 400
+    ok = top_three.mark(action_id, status)
+    if not ok:
+        return jsonify({"ok": False,
+                        "detail": "invalid action_id or status"}), 400
+    return jsonify({"ok": True})
 
 
 @app.route("/api/trade-press/tracked", methods=["GET", "POST"])
@@ -2657,6 +2688,60 @@ TEMPLATE = r"""
     <div class="refresh-meta">
       <span class="refresh-label">Pull today's freshly-generated brief</span>
       <span class="refresh-sub">Last refreshed: {{ last_updated }}</span>
+    </div>
+  </div>
+
+  <!-- TOP-3 ACTION SURFACE — forced-priority layer over every other
+       signal source (leads, predictors, candidates, trade-press,
+       cascades, funding). Sits above Today's Leads so it's the first
+       thing Sara sees after the daily refresh. -->
+  <div class="row row-full" id="top-three-row">
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Top 3 Today</h2>
+        <span style="display:flex;align-items:center;gap:10px;">
+          <span class="refresh-sub" style="font-size:11px;">
+            Highest-leverage actions right now
+          </span>
+          <span class="count" id="top-three-count">{{ top_actions|length }}</span>
+        </span>
+      </div>
+      <div class="panel-body" id="top-three-body">
+        {% if top_actions|length == 0 %}
+          <div class="empty">
+            Nothing actionable surfaced right now. Click <strong>Daily Refresh</strong>
+            to pull this morning's brief, then check back — leads, predictors,
+            candidates, trade-press triggers, and cascades all feed this list.
+          </div>
+        {% else %}
+          {% for a in top_actions %}
+            <div class="item top-three-item" data-action-id="{{ a.action_id }}">
+              <span class="rank">{{ loop.index }}</span>
+              <span class="title">{{ a.title }}</span>
+              <span class="badge">{{ a.type_badge }}</span>
+              {% if a.secondary %}<span class="badge">{{ a.secondary }}</span>{% endif %}
+              {% if a.why_now %}
+              <div style="font-size:12px;color:var(--text-muted);margin:4px 0 6px;">
+                {{ a.why_now }}
+              </div>
+              {% endif %}
+              {% if a.opener %}
+              <pre class="outreach-text">{{ a.opener }}</pre>
+              {% endif %}
+              <div class="item-actions">
+                {% if a.opener %}
+                <button class="btn-mini t3-copy" type="button">&#9993; Copy opener</button>
+                {% endif %}
+                {% if a.detail_url %}
+                <a class="btn-mini" href="{{ a.detail_url | safe_url }}" target="_blank">&#8599; Open detail</a>
+                {% endif %}
+                <button class="btn-mini t3-action" data-status="done" type="button">&#10003; Done</button>
+                <button class="btn-mini t3-action ghost" data-status="dismissed" type="button">&#10005; Skip</button>
+              </div>
+            </div>
+          {% endfor %}
+        {% endif %}
+      </div>
     </div>
   </div>
 
@@ -4275,6 +4360,118 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     });
+  }
+})();
+
+// ---------- Top-3 Action Surface ----------
+(function(){
+  const root = document.getElementById('top-three-body');
+  if (!root) return;
+
+  root.addEventListener('click', async (ev) => {
+    // Copy opener
+    const copyBtn = ev.target.closest('.t3-copy');
+    if (copyBtn) {
+      const item = copyBtn.closest('.top-three-item');
+      const txt = item && item.querySelector('.outreach-text');
+      if (txt) {
+        try {
+          await navigator.clipboard.writeText(txt.textContent);
+          const orig = copyBtn.textContent;
+          copyBtn.textContent = '✓ Copied';
+          setTimeout(() => { copyBtn.textContent = orig; }, 1200);
+        } catch (e) { /* clipboard blocked - silent */ }
+      }
+      return;
+    }
+
+    // Done / Skip — both clear the row and persist user state so the
+    // same action doesn't reappear after a Top-3 recompute.
+    const actBtn = ev.target.closest('.t3-action');
+    if (actBtn) {
+      const item = actBtn.closest('.top-three-item');
+      const id = item && item.getAttribute('data-action-id');
+      const status = actBtn.getAttribute('data-status');
+      if (!id || !status) return;
+      actBtn.disabled = true;
+      try {
+        const r = await fetch('/api/top-three/mark', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action_id: id, status: status }),
+        });
+        const j = await r.json();
+        if (j.ok) {
+          item.style.transition = 'opacity .2s ease';
+          item.style.opacity = '0';
+          setTimeout(() => {
+            item.remove();
+            // After actioning one, refresh the panel so the next-best
+            // action from the queue can rotate in — that's the whole
+            // point of the surface.
+            refreshTopThree();
+          }, 200);
+        } else {
+          actBtn.disabled = false;
+          alert(j.detail || 'Could not update.');
+        }
+      } catch (e) {
+        actBtn.disabled = false;
+        alert('Network error: ' + e.message);
+      }
+    }
+  });
+
+  async function refreshTopThree() {
+    try {
+      const r = await fetch('/api/top-three/list');
+      const j = await r.json();
+      const actions = j.actions || [];
+      const counter = document.getElementById('top-three-count');
+      if (counter) counter.textContent = actions.length;
+      if (actions.length === 0) {
+        root.innerHTML = '<div class="empty">Nothing actionable surfaced right now. Click <strong>Daily Refresh</strong> to pull this morning\'s brief, then check back.</div>';
+        return;
+      }
+      const html = ['<div>'];
+      actions.forEach((a, i) => {
+        const idAttr = a.action_id;
+        const sec = a.secondary
+          ? '<span class="badge">' + esc(a.secondary) + '</span>'
+          : '';
+        const why = a.why_now
+          ? '<div style="font-size:12px;color:var(--text-muted);margin:4px 0 6px;">' + esc(a.why_now) + '</div>'
+          : '';
+        const opener = a.opener
+          ? '<pre class="outreach-text">' + esc(a.opener) + '</pre>'
+          : '';
+        const copyBtn = a.opener
+          ? '<button class="btn-mini t3-copy" type="button">✉ Copy opener</button>'
+          : '';
+        const detail = a.detail_url
+          ? '<a class="btn-mini" href="' + esc(a.detail_url) + '" target="_blank">↗ Open detail</a>'
+          : '';
+        html.push(
+          '<div class="item top-three-item" data-action-id="' + esc(idAttr) + '">' +
+            '<span class="rank">' + (i + 1) + '</span>' +
+            '<span class="title">' + esc(a.title) + '</span>' +
+            '<span class="badge">' + esc(a.type_badge) + '</span>' +
+            sec +
+            why +
+            opener +
+            '<div class="item-actions">' +
+              copyBtn + detail +
+              '<button class="btn-mini t3-action" data-status="done" type="button">✓ Done</button>' +
+              '<button class="btn-mini t3-action ghost" data-status="dismissed" type="button">✕ Skip</button>' +
+            '</div>' +
+          '</div>'
+        );
+      });
+      html.push('</div>');
+      root.innerHTML = html.join('');
+    } catch (e) {
+      /* don't blow up the panel on a transient refresh failure */
+    }
   }
 })();
 
