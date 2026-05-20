@@ -1301,7 +1301,7 @@ LANDING_TEMPLATE = r"""
       position:relative;overflow:hidden;
       display:flex;align-items:center;justify-content:center;
       background:radial-gradient(
-        ellipse 48% 55% at 50% 55%,
+        ellipse 75% 80% at 50% 50%,
         #a8c8e6 0%,
         #bdd3e9 18%,
         #d2e1ee 40%,
