@@ -76,6 +76,24 @@ PREDICTIVE_TRIGGER_QUERIES = [
     '"chief communications officer" (departs OR resigns OR "stepping down")',
     '"head of internal communications" (departs OR resigns OR "stepping down")',
     '"PR director" (departs OR "stepping down" OR resigns)',
+
+    # Activist stake / shareholder pressure (3–6mo reputation-defence window)
+    '"activist investor" OR "builds stake" OR "increased its stake"',
+    '"calls for" (board OR "strategic review" OR breakup) shareholder',
+    '"requisition" "general meeting" OR "EGM"',
+
+    # PE acquisition completion / take-private (60–120 day window)
+    '"take-private" OR "taken private" OR "completes acquisition of"',
+    '"private equity" (buyout OR "completes acquisition" OR "agreed to acquire")',
+
+    # Personal-brand velocity (senior comms restlessness, 6–12mo)
+    '"director of communications" ("to speak at" OR shortlisted OR "judging panel")',
+    '"PRWeek Awards" OR "Corporate Communications Awards" shortlist OR finalist',
+    'communications ("CIPR Council" OR PRCA OR IoIC) (appointed OR elected OR joins)',
+
+    # NED / trustee appointment (12–18mo exit signal, strongest soft trigger)
+    '"director of communications" ("appointed trustee" OR "non-executive director" OR "board of trustees")',
+    '"head of communications" ("appointed trustee" OR "non-executive director")',
 ]
 
 

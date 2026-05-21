@@ -200,6 +200,15 @@ def detect_events(signals: Iterable[dict]) -> list[TriggerEvent]:
                 if detect_sector(company) is None:
                     log.info("drop (ic_platform_rfp at small employer): %s", company)
                     continue
+            if trigger.key in ("personal_brand_velocity", "ned_trustee_appointment"):
+                # Person-centric soft signals: only fire when the item names a
+                # comms / corporate-affairs role, so we're tracking a comms
+                # leader's restlessness (and the resolved company is their
+                # employer), not a generic board/charity appointment.
+                if not P.COMMS_ROLE_RX.search(body):
+                    log.info("drop (no comms-role context): %s — %r",
+                             trigger.key, title[:90])
+                    continue
             if trigger.key == "contract_loss":
                 # Filter false positives: a contract loss only counts if it's
                 # (a) reported via RNS (legally material by definition) or
