@@ -36,8 +36,9 @@ REFRESH_LEAD_MONTHS = 9
 
 # Each framework:
 #   key            stable id
-#   ref            framework reference number / lot
-#   name           human label
+#   title          AD-facing headline: recognisable owner + framework name
+#                  (NOT the procurement code — that goes in `code`)
+#   code           framework reference (e.g. RM6394); "" if none / not a code
 #   buyer          contracting authority / alliance
 #   scope          one-line scope (comms relevance)
 #   comms_relevant whether senior-comms exec search sits in scope
@@ -50,8 +51,8 @@ REFRESH_LEAD_MONTHS = 9
 FRAMEWORKS: list[dict] = [
     {
         "key": "ccs_rm6394_exec_search_3",
-        "ref": "RM6394",
-        "name": "Executive Search 3",
+        "title": "Crown Commercial Service — Executive Search 3",
+        "code": "RM6394",
         "buyer": "Crown Commercial Service",
         "scope": "Executive search & permanent recruitment for senior public-sector roles (incl. comms/corporate-affairs leadership).",
         "comms_relevant": True,
@@ -63,8 +64,8 @@ FRAMEWORKS: list[dict] = [
     },
     {
         "key": "nhs_rm6380_workforce_alliance",
-        "ref": "RM6380",
-        "name": "NHS Workforce Alliance — Executive Search & Interim",
+        "title": "NHS Workforce Alliance — Exec Search & Interim",
+        "code": "RM6380",
         "buyer": "NHS Workforce Alliance (via CCS)",
         "scope": "Executive search & interim for NHS / health-sector senior leadership, including comms & corporate affairs.",
         "comms_relevant": True,
@@ -76,8 +77,8 @@ FRAMEWORKS: list[dict] = [
     },
     {
         "key": "nda_shared_services_lot6",
-        "ref": "NDA Shared Services Alliance — Lot 6",
-        "name": "NDA Shared Services Alliance (Lot 6)",
+        "title": "Nuclear Decommissioning Authority — Shared Services (Lot 6)",
+        "code": "",
         "buyer": "Nuclear Decommissioning Authority Shared Services Alliance",
         "scope": "Recruitment / executive search for NDA group bodies; Lot 6 covers senior / specialist roles.",
         "comms_relevant": True,
@@ -89,8 +90,8 @@ FRAMEWORKS: list[dict] = [
     },
     {
         "key": "devolved_gov_exec_search",
-        "ref": "Devolved-government search frameworks",
-        "name": "Devolved-government executive search",
+        "title": "Devolved Government — Executive Search",
+        "code": "",
         "buyer": "Scottish Government / Welsh Government / NI bodies",
         "scope": "Executive search frameworks run by the devolved administrations for senior public-appointment & comms roles.",
         "comms_relevant": True,
