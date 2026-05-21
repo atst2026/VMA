@@ -73,6 +73,8 @@ def _predicted_role_for(stk: Stack) -> str:
         ("ic_platform_rfp",        "Head of Internal Communications"),
         ("ipo_listing",            "Corporate Affairs Director"),
         ("ceo_change",             "Head of Communications"),
+        ("pe_acquisition",         "Corporate Affairs Director (new ownership)"),
+        ("activist_stake",         "Crisis / Corporate Affairs Director"),
         ("mna",                    "Corporate Affairs Director"),
         ("regulator_action",       "Crisis / Head of Comms"),
         ("regulator_probe_early",  "Crisis / Head of Comms"),
@@ -85,6 +87,8 @@ def _predicted_role_for(stk: Stack) -> str:
         ("chro_change",            "Head of Internal Communications"),
         ("restructure",            "Head of Internal Communications"),
         ("press_velocity_spike",   "Head of Communications"),
+        ("ned_trustee_appointment","Head of Communications (succession watch)"),
+        ("personal_brand_velocity","Head of Communications (succession watch)"),
         ("job_ad_cluster",         "Head of Internal Communications"),
     ]
     for key, role in role_map:

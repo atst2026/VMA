@@ -117,16 +117,20 @@ CHRO_CHANGE = TriggerType(
 )
 
 
-# ---- M&A -- acquisition / merger / takeover ----------------------------
+# ---- M&A -- generic merger / takeover (integration window) -------------
+# Split into three sub-types: a completed PE acquisition and an activist
+# stake disclosure each carry a distinct (faster) hiring window and a
+# different downstream comms brief, so they get their own triggers below.
+# This generic MNA covers the residual "agreed merger / takeover" case.
 MNA = TriggerType(
     key="mna",
-    label="M&A announcement",
+    label="M&A (integration)",
     weight=0.9,
-    lead_time_weeks=(12, 36),
+    lead_time_weeks=(26, 52),
     who_to_call="CCO of acquirer; Corp Affairs Director at both sides",
     implication=(
-        "Major M&A at {company}. Post-close comms integration or rebrand "
-        "hire typical within 3–12 months."
+        "Agreed M&A at {company}. Post-close integration / rebrand comms "
+        "hire is typical across a 6–12 month integration window."
     ),
     patterns=_rx(
         r"recommended cash offer",
@@ -137,9 +141,70 @@ MNA = TriggerType(
         r"acquisition of",
         r"agreed to buy",
         r"merger with",
+        r"all-share merger",
         r"\btakeover\b",
         r"agreed acquisition",
         r"offer for.{0,40}(plc|limited|ltd|group)",
+    ),
+)
+
+
+# ---- Activist stake / shareholder pressure -----------------------------
+# UK 3%+ major-holding (TR-1) disclosures and activist campaigns. Distinct
+# from generic M&A: a 3–6 month senior-comms window opens for reputation
+# defence and EGM/shareholder messaging.
+ACTIVIST_STAKE = TriggerType(
+    key="activist_stake",
+    label="Activist stake / shareholder pressure",
+    weight=0.9,
+    lead_time_weeks=(12, 26),
+    who_to_call="CCO / Corporate Affairs Director — reputation defence + EGM/shareholder messaging",
+    implication=(
+        "Activist stake-building / shareholder pressure at {company}. "
+        "Reputation defence and EGM messaging drive a senior corporate-"
+        "affairs / comms hire within ~3–6 months — open the retained "
+        "search now, ahead of any board fight."
+    ),
+    patterns=_rx(
+        r"activist (?:investor|fund|hedge fund|shareholder)",
+        r"builds? a? ?stake",
+        r"increased its (?:stake|holding)",
+        r"discloses? a.{0,20}stake",
+        r"\d+(?:\.\d+)?% stake",
+        r"calls for.{0,30}(?:board|chair|chief executive|strategic review|break-?up|sale|spin-?off)",
+        r"requisition(?:s|ed)?.{0,20}(?:general meeting|egm)",
+        r"\bTR-1\b",
+        r"notification of major (?:holdings|interest)",
+        r"building a position in",
+    ),
+)
+
+
+# ---- PE acquisition completion (take-private) --------------------------
+# Completed UK mid-cap private-equity buyouts. The fastest window: a new-
+# ownership narrative + frequent CFO/CCO churn open a 60–120 day senior
+# comms hiring window.
+PE_ACQUISITION = TriggerType(
+    key="pe_acquisition",
+    label="PE acquisition / take-private (completed)",
+    weight=0.95,
+    lead_time_weeks=(8, 17),
+    who_to_call="Incoming CFO/CCO under new ownership; Corporate Affairs Director",
+    implication=(
+        "PE acquisition / take-private at {company}. New-ownership narrative "
+        "and frequent CFO/CCO churn drive a senior comms hire within ~60–120 "
+        "days — the fastest of the M&A sub-windows."
+    ),
+    patterns=_rx(
+        r"take[- ]private",
+        r"to be taken private",
+        r"taken private",
+        r"completes? (?:the )?acquisition of",
+        r"completion of the acquisition",
+        r"(?:backed by|owned by).{0,30}private equity",
+        r"private equity.{0,30}(?:acquire|acquisition|buyout|takes? control)",
+        r"\bbuyout\b",
+        r"(?:KKR|Blackstone|Carlyle|Apollo|CVC|EQT|Permira|Cinven|Bain Capital|TPG|Advent|Hg Capital|Bridgepoint|Apax|Thoma Bravo)\b.{0,40}(?:acquire|acquisition|takeover|to buy|take control)",
     ),
 )
 
@@ -541,6 +606,66 @@ CONTRACT_LOSS = TriggerType(
 # company's press output triples vs its 90-day rolling baseline.
 # Registered here so render.py + linkedin_resolver + dashboard wiring
 # treat it as a known trigger key.
+# ---- Personal-brand velocity (senior restlessness, 6–12mo) -------------
+# Conference speaking, award shortlists/judging, and trade-body committee
+# seats for a named senior comms leader. A soft, leading indicator: rising
+# external visibility empirically precedes a move 6–12 months out. Gated in
+# the detector to items that name a comms / corporate-affairs role, so the
+# peer-scan keys the predictor on the leader's *current employer* (the
+# account at risk of losing them).
+PERSONAL_BRAND_VELOCITY = TriggerType(
+    key="personal_brand_velocity",
+    label="Personal-brand velocity (speaking / awards / committee)",
+    weight=0.45,
+    lead_time_weeks=(26, 52),
+    who_to_call="The individual directly — soft approach; map their next move 6–12 months out",
+    implication=(
+        "External-visibility spike (conference speaking / awards shortlist / "
+        "trade-body committee seat) for a senior comms leader linked to "
+        "{company}. Personal-brand velocity empirically precedes a move "
+        "within 6–12 months — track as both a backfill brief and a candidate."
+    ),
+    patterns=_rx(
+        r"to speak at.{0,30}(?:cipr|prca|ioic|prweek|pr week|internal communications conference|corporate communications)",
+        r"(?:keynote|panellist|panelist|speaker).{0,30}(?:cipr|prca|ioic|prweek|internal communications conference)",
+        r"shortlisted for.{0,40}(?:prweek|pr week|corp comms|corporate communications|internal communications|ic) awards",
+        r"(?:named (?:a )?finalist|finalist).{0,40}(?:prweek|pr week|corp comms|corporate communications|ic) awards",
+        r"(?:judging panel|awards judge|to judge).{0,30}(?:prweek|cipr|prca|corp comms|corporate communications)",
+        r"(?:joins|appointed to|elected to).{0,20}(?:cipr council|prca|ioic)",
+    ),
+)
+
+
+# ---- NED / trustee / charity-board appointment (12–18mo) ---------------
+# The strongest of the soft restlessness signals: a senior comms leader
+# taking a non-exec / trustee seat elsewhere empirically precedes a 12–18
+# month exit from the operating role. Gated to comms-role items as above.
+NED_TRUSTEE_APPOINTMENT = TriggerType(
+    key="ned_trustee_appointment",
+    label="NED / trustee appointment (restlessness)",
+    weight=0.55,
+    lead_time_weeks=(52, 78),
+    who_to_call="The individual directly — NED/trustee seats often precede a 12–18 month exit from the operating role",
+    implication=(
+        "A senior comms leader linked to {company} has taken a NED / charity-"
+        "trustee / external board seat. Non-exec appointments empirically "
+        "precede a 12–18 month exit from the operating comms role — the "
+        "strongest soft restlessness signal. Open the relationship early and "
+        "line up a backfill brief."
+    ),
+    patterns=_rx(
+        r"appointed.{0,20}(?:a |as a )?trustee",
+        r"named.{0,20}(?:a )?trustee",
+        r"joins.{0,20}board of trustees",
+        r"board of trustees",
+        r"joins the board of.{0,30}(?:charity|foundation|trust)",
+        r"appointed.{0,20}non-?executive director",
+        r"joins.{0,20}as a? ?non-?executive",
+        r"non-?executive (?:director )?appointment",
+    ),
+)
+
+
 PRESS_VELOCITY_SPIKE = TriggerType(
     key="press_velocity_spike",
     label="Press release velocity spike",
@@ -559,10 +684,27 @@ PRESS_VELOCITY_SPIKE = TriggerType(
 
 TRIGGERS = [CEO_CHANGE, CHAIR_CHANGE, CHRO_CHANGE, CFO_CHANGE,
             IR_DIRECTOR_CHANGE, COMMS_LEADER_DEPARTURE,
-            MNA, REGULATOR_ACTION, REGULATOR_PROBE_EARLY, CRISIS_EVENT,
+            MNA, ACTIVIST_STAKE, PE_ACQUISITION,
+            REGULATOR_ACTION, REGULATOR_PROBE_EARLY, CRISIS_EVENT,
             PROFIT_WARNING, RESTRUCTURE, IC_PLATFORM_RFP,
-            IPO_LISTING, CONTRACT_LOSS, PRESS_VELOCITY_SPIKE]
+            IPO_LISTING, CONTRACT_LOSS, PRESS_VELOCITY_SPIKE,
+            PERSONAL_BRAND_VELOCITY, NED_TRUSTEE_APPOINTMENT]
 BY_KEY = {t.key: t for t in TRIGGERS}
+
+# Comms / corporate-affairs role context. The detector requires one of
+# these to be present before firing the person-centric soft triggers
+# (personal_brand_velocity, ned_trustee_appointment) — so they only fire
+# on items genuinely about a comms leader, and the peer-scan keys the
+# predictor on that leader's current employer.
+COMMS_ROLE_RX = re.compile(
+    r"\b(director of communications|head of communications|"
+    r"chief communications officer|communications director|comms director|"
+    r"corporate affairs director|director of corporate affairs|"
+    r"head of corporate affairs|head of internal communications|"
+    r"director of internal communications|head of (?:external|media|public) "
+    r"(?:communications|relations|affairs)|head of public affairs)\b",
+    re.IGNORECASE,
+)
 
 
 def match_triggers(text: str) -> list[TriggerType]:

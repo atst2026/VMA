@@ -62,6 +62,12 @@ _TRIGGER_QUERIES = [
     '"head of communications" (departs OR "steps down" OR resigns OR appointed)',
     '"corporate affairs director" (departs OR resigns OR appointed)',
     '"chief communications officer" (departs OR resigns OR appointed)',
+    # Activist stake / PE completion (split M&A sub-types)
+    '"activist investor" OR "builds stake" OR "increased its stake" OR "calls for board"',
+    '"taken private" OR "completes acquisition" OR "private equity" buyout',
+    # Personal-brand velocity + NED/trustee restlessness (senior comms)
+    '"director of communications" ("to speak at" OR shortlisted OR "judging panel" OR "appointed trustee" OR "non-executive director")',
+    '"PRWeek Awards" OR "Corporate Communications Awards" shortlist',
 ]
 
 
