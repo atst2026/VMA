@@ -33,6 +33,8 @@ RSS_SOURCES = [
     ("civil_service_jobs","Civil Service Jobs",  "job", "UK", 0.9, 150),
     ("corpcomms",       "CorpComms Magazine",    "trade_press", "UK", 1.0),
     ("ragan",           "Ragan",                 "trade_press", "US", 0.6),
+    ("prmoment",        "PRmoment",              "trade_press", "UK", 1.0),
+    ("cipr_influence",  "CIPR Influence",        "trade_press", "UK", 1.0),
     # Phase 3.9 — sector trade feeds (hot-sector depth). trade_press
     # kind means ranking.py only lets actual BD news through
     # (appoint/hire/depart/restructure/etc.) — editorial is dropped by
