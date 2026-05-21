@@ -3294,14 +3294,13 @@ TEMPLATE = r"""
   </div>
 
   <div class="footer">
-    All sources are free public surfaces. No automation of LinkedIn account.
-    <span style="opacity:0.5; margin-left:8px;">· build {{ build_stamp }} · rev {{ deploy_rev }}</span>
+    Recruitment · Executive Search · Advisory Services
     <span class="dev-zone">
-      <span class="dev-zone-label">dev / tech only — not a user feature:</span>
+      <span class="dev-zone-label">For dev only - not a user feature:</span>
       <button type="button" id="dev-run-brief" class="dev-btn"
               onclick="devTriggerBrief()"
               title="Maintenance: triggers a fresh morning-brief workflow run. Not for day-to-day use — Daily Refresh is the user control.">
-        trigger fresh scour
+        trigger fresh data
       </button>
       <span class="dev-status" id="dev-run-status"></span>
     </span>
