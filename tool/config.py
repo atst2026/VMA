@@ -169,6 +169,16 @@ SOURCES = {
     # Trade press (only the feeds that still publish RSS in 2026)
     "corpcomms": "https://www.corpcommsmagazine.co.uk/feed",
     "ragan": "https://www.ragan.com/feed/",
+    # PR-industry trade titles. PRWeek / Campaign (Haymarket) and Provoke
+    # killed their public RSS (see the removed-sources note above) — they're
+    # only reachable via fragile HTML scraping, so we don't; GDELT + Google
+    # News pick their stories up secondhand. PRmoment and CIPR Influence
+    # still publish standard WordPress RSS — the fastest first-party lane for
+    # UK senior-comms appointments / moves (feeds Today's Leads, the cascade
+    # Hire Watch, and the personal-brand-velocity predictor). Graceful-skip
+    # if a path moves; live reachability is verified in GitHub Actions.
+    "prmoment": "https://www.prmoment.com/feed",
+    "cipr_influence": "https://influenceonline.co.uk/feed/",
     # Phase 3.9 — sector trade feeds. These deepen coverage of the
     # hot sectors (housing/real-estate, pharma, utilities) so the
     # predictor + following/contract-end detectors see sector moves

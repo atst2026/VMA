@@ -270,6 +270,39 @@ def render_html(target: str, role: str, ch_snapshot: dict,
         peer_html += f"<li>{_esc(p)}</li>"
     peer_html += "</ol>"
 
+    # Dead-market reframe — handles the "there's no one out there" objection
+    # with the data we already compute (the named universe + cost of vacancy).
+    reframe_html = (
+        "<div style='font-size:12.5px;color:#444;background:rgba(61,90,130,0.05);"
+        "border-left:3px solid #3D5A82;padding:8px 12px;border-radius:4px;margin-bottom:10px;'>"
+        f"If the read on this brief is that the market's quiet — it isn't scarce, it's "
+        f"<em>placed</em>. The {len(peers)} named employers below are where a "
+        f"{_esc(matched)} sits today; the constraint is reaching them before a competitor "
+        f"does, which is exactly what a retained search buys. See the cost of vacancy above "
+        f"for what waiting carries."
+        "</div>"
+    )
+
+    # Recent relevant placements (anonymised social proof). Renders only when
+    # the curated registry has entries matching this target — never fabricated.
+    from tool import placements as _pl
+    _rel = _pl.relevant_placements(sector, role)
+    if _rel:
+        _pi = "".join(
+            "<li style='margin-bottom:6px;'>"
+            f"<strong>{_esc(p.get('role',''))}</strong> &mdash; {_esc(p.get('descriptor',''))}"
+            + (f". <span style='color:#555;'>{_esc(p.get('outcome',''))}</span>" if p.get('outcome') else "")
+            + "</li>"
+            for p in _rel
+        )
+        placements_html = (
+            "<h3 style='margin:18px 0 6px 0;'>4b. Recent relevant placements</h3>"
+            "<div style='font-size:13px;color:#555;margin-bottom:6px;'>Anonymised, sector-relevant track record:</div>"
+            f"<ul style='padding-left:18px;font-size:13px;'>{_pi}</ul>"
+        )
+    else:
+        placements_html = ""
+
     # COV breakdown
     cov_html = "<table style='border-collapse:collapse;font-size:13px;'>"
     for k, v in cov.items():
@@ -316,10 +349,12 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 {cov_html}
 
 <h3 style="margin:18px 0 6px 0;">4. Talent universe ({_esc(sector_label)})</h3>
+{reframe_html}
 <div style='font-size:13px;color:#555;margin-bottom:6px;'>
   Where the candidate pool sits. These 15 named employers represent the realistic move-from set for a {_esc(matched)}-level hire in this sector.
 </div>
 {peer_html}
+{placements_html}
 
 <h3 style="margin:18px 0 6px 0;">5. Salary benchmark</h3>
 <div style='font-size:13px;'>
@@ -406,9 +441,19 @@ def render_text(target: str, role: str, ch_snapshot: dict,
     for k, v in cov.items():
         lines.append(f"   {k:<42}  £{v:>10,}")
     sector_label = sector.replace("_", " ").title() if sector else "Generic FTSE"
-    lines += ["", f"4. TALENT UNIVERSE ({sector_label})"]
+    lines += ["", f"4. TALENT UNIVERSE ({sector_label})",
+              f"   If the brief reads as a quiet market: the profile isn't scarce, it's placed.",
+              f"   The {len(peers)} named employers below are where a {matched} sits today —",
+              f"   reaching them before a competitor does is what a retained search buys."]
     for i, p in enumerate(peers, 1):
         lines.append(f"   {i:>2}. {p}")
+    from tool import placements as _pl
+    _rel = _pl.relevant_placements(sector, role)
+    if _rel:
+        lines += ["", "4b. RECENT RELEVANT PLACEMENTS (anonymised)"]
+        for p in _rel:
+            tail = f" — {p['outcome']}" if p.get("outcome") else ""
+            lines.append(f"   - {p.get('role','')} · {p.get('descriptor','')}{tail}")
     lines += ["", "5. SALARY BENCHMARK",
               f"   UK April 2026 range for {matched}: £{low:,}–£{high:,} base + 10–25% bonus/LTIP",
               "", "6. 6-WEEK METHODOLOGY",
