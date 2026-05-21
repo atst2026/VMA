@@ -3078,15 +3078,16 @@ TEMPLATE = r"""
           <div class="item predictor framework-row" data-status="active" data-fw="{{ fw.key }}">
             <div class="row-summary">
               <span class="rank">·</span>
-              <span class="title">{{ fw.ref }} — {{ fw.name }}</span>
+              <span class="title">{{ fw.title }}</span>
               <span class="chips">
                 <span class="role-chip framework-chip-inline">Framework</span>
+                {% if fw.code %}<span class="role-chip">{{ fw.code }}</span>{% endif %}
                 {% if fw.status == 'refresh_window' %}<span class="prob-chip">refresh window</span>{% endif %}
               </span>
               <span class="expand-toggle">&#9662;</span>
             </div>
             <div class="row-preview">
-              <span class="signal-sub">{{ fw.buyer }} · {{ fw.window_label }}</span>
+              <span class="signal-sub">{{ fw.window_label }}</span>
             </div>
             <div class="row-details">
               <div class="meta">
