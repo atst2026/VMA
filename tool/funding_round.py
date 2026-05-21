@@ -105,6 +105,16 @@ _LEAD_DESCRIPTORS = {
     "startup", "start-up", "fintech", "healthtech", "biotech", "the",
 }
 
+# Category nouns that follow a descriptor and precede the real proper name,
+# e.g. "onboarding startup Prelude" / "AI firm Monzo" / "payments platform X".
+_CATEGORY_NOUNS = {
+    "startup", "start-up", "scaleup", "scale-up", "firm", "company",
+    "platform", "provider", "business", "group", "app", "maker",
+    "specialist", "venture", "brand", "retailer", "lender", "insurer",
+    "developer", "operator", "unicorn", "challenger", "disruptor",
+    "player", "vendor", "service", "marketplace", "tool",
+}
+
 
 def _to_gbp_m(currency: str, num: str, mag: str) -> float | None:
     try:
@@ -123,9 +133,23 @@ def _is_gbp(currency: str) -> bool:
 
 
 def _clean_company(span: str) -> str:
+    """Strip descriptor prefixes so a headline fragment resolves to the real
+    proper name: 'onboarding startup Prelude' -> 'Prelude',
+    'AI firm Monzo' -> 'Monzo', 'London-based fintech Acme' -> 'Acme'."""
     span = (span or "").strip(" .,'-\"")
     words = span.split()
+    # 1) Known leading descriptors (uk / british / fintech / the / ...).
     while words and words[0].lower() in _LEAD_DESCRIPTORS:
+        words.pop(0)
+    # 2) "<desc...> <category-noun> <ProperName>": drop everything up to and
+    #    including the category noun, keeping the capitalised name onward.
+    for i, w in enumerate(words[:-1]):
+        if w.lower().strip(",.") in _CATEGORY_NOUNS and words[i + 1][:1].isupper():
+            words = words[i + 1:]
+            break
+    # 3) Drop any remaining leading all-lowercase descriptor tokens, but never
+    #    wipe a genuinely lowercase single-token brand (keep >=1 word).
+    while len(words) > 1 and words[0].islower():
         words.pop(0)
     return " ".join(words).strip(" .,'-\"")
 
@@ -188,10 +212,22 @@ def detect_funding(signals: Iterable[dict]) -> list[dict]:
                     break
                 company = None
         if not company:
-            fallback = (s.get("company") or "").strip()
+            fallback = _clean_company((s.get("company") or "").strip())
             company = fallback if len(fallback) >= 2 else None
         if not company:
             continue
+
+        # Lead investor (kept short for the crystallised subtitle) —
+        # "led by X" or "X leads/backs". Allows a digit-leading name (20VC).
+        investor = ""
+        mi = re.search(
+            r"\bled by\s+([A-Z0-9][\w&.\-' ]{1,30}?)"
+            r"(?=[,.;:)]|\s+(?:and|with|in|to|as|after|—|–|alongside)|$)", text)
+        if not mi:
+            mi = re.search(
+                r"\b([A-Z0-9][\w&.\-' ]{1,30}?)\s+(?:leads|led|backs|backed)\b", text)
+        if mi:
+            investor = _clean_company(mi.group(1))
 
         rnd = _round_label(text)
         key = (company.lower(), rnd.lower())
@@ -213,10 +249,11 @@ def detect_funding(signals: Iterable[dict]) -> list[dict]:
             "amount":     amount_disp,
             "_gbp_m":     gbp_m,
             "evidence":   (title[:200] or summary[:200]),
+            "investor":   investor,
             "url":        s.get("url", ""),
             "source":     s.get("source", ""),
             "sector":     detect_sector(company) or "",
-            "window":     "senior-comms hire window: now → ~6 months",
+            "window":     "Senior-comms window ~6 mo",
             "advisory":   advisory_for("funding"),
             "confidence": "high" if (is_gbp and gbp_m >= MIN_GBP_M) else "medium",
         })

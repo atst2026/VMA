@@ -3052,7 +3052,7 @@ TEMPLATE = r"""
               <span class="expand-toggle">▾</span>
             </div>
             <div class="row-preview">
-              <span class="signal-sub">{{ f.window }}{% if f.evidence %} · {{ f.evidence[:120] }}{% endif %}</span>
+              <span class="signal-sub">{{ f.window }}{% if f.investor %} · led by {{ f.investor }}{% endif %}</span>
             </div>
             <div class="row-details">
               {% if f.evidence %}
