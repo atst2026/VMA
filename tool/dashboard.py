@@ -2934,7 +2934,7 @@ TEMPLATE = r"""
         <h2>Today's Leads</h2>
         <span class="count" id="leads-count">{{ leads_active_count }}</span>
       </div>
-      <div class="filter-bar">
+      <div class="filter-bar" id="leads-filter-bar">
         <button class="lead-filter-pill active" data-filter="active">Active <span class="pill-count" id="lead-pc-active">{{ leads_active_count }}</span></button>
         <button class="lead-filter-pill" data-filter="new">New today <span class="pill-count" id="lead-pc-new">{{ leads_new_count }}</span></button>
         <button class="lead-filter-pill" data-filter="followed_up">Followed up <span class="pill-count" id="lead-pc-followed_up">{{ leads_followed_count }}</span></button>
@@ -3529,7 +3529,10 @@ function recountPredictors() {
 // Leads filter — same model as predictors, scoped to the leads list so
 // the two panels' pills never cross-fire.
 function applyLeadFilter(name) {
-  document.querySelectorAll('.lead-filter-pill').forEach(p => {
+  // Scoped to the leads filter bar only — Hire Watch reuses the
+  // .lead-filter-pill class, so an unscoped selector would cross-fire
+  // and switch both panels' tabs together.
+  document.querySelectorAll('#leads-filter-bar .lead-filter-pill').forEach(p => {
     p.classList.toggle('active', p.dataset.filter === name);
   });
   let visible = 0;
@@ -3547,7 +3550,9 @@ function applyLeadFilter(name) {
   if (empty) empty.style.display = visible ? 'none' : '';
 }
 document.addEventListener('click', (event) => {
-  const pill = event.target.closest('.lead-filter-pill');
+  // Only react to pills inside the leads bar — Hire Watch's pills share
+  // the class but are handled by their own scoped listener.
+  const pill = event.target.closest('#leads-filter-bar .lead-filter-pill');
   if (!pill) return;
   applyLeadFilter(pill.dataset.filter);
 });
@@ -3563,7 +3568,7 @@ function recountLeads() {
   const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
   set('leads-count', a); set('lead-pc-active', a); set('lead-pc-new', n);
   set('lead-pc-followed_up', f); set('lead-pc-dismissed', d);
-  const ap = document.querySelector('.lead-filter-pill.active');
+  const ap = document.querySelector('#leads-filter-bar .lead-filter-pill.active');
   applyLeadFilter(ap ? ap.dataset.filter : 'active');
 }
 
