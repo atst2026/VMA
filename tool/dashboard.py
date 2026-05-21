@@ -1753,14 +1753,6 @@ TEMPLATE = r"""
        this it sits in the left half of a 2-col grid with dead space
        beside it. */
     .row.row-full { grid-template-columns: 1fr; }
-    /* Recent Reports: breathing room below the action grid, and don't
-       stretch a short list across the full width. */
-    #recent-row { margin-top: 24px; }
-    #recent-row .panel-header { border-bottom: none; }
-    /* 16px container inset so the columns line up with the panel
-       title; top padding gives clear air below the panel-header rule
-       (otherwise the two hairlines look stacked/overlapping). */
-    #recent-reports { padding: 0 16px 14px; }
     .rr-table { width: 100%; border-collapse: collapse; }
     .rr-table th {
       text-align: left; font-size: 10px; letter-spacing: 0.06em;
@@ -2516,6 +2508,66 @@ TEMPLATE = r"""
       font-weight: 400;
       line-height: 1.5;
     }
+
+    /* Recent Reports as the 6th action-card. Single-line-per-report,
+       colour dot encodes the report type, one download icon button. */
+    .recent-card .head-row {
+      display: flex; align-items: baseline; justify-content: space-between;
+    }
+    .recent-card .head-row h3 { margin: 0; }
+    .recent-card .head-row .count {
+      background: var(--bg-warm, #EDE5D2); color: var(--navy, #1F1F1F);
+      font: 600 10.5px/1 "JetBrains Mono", monospace;
+      letter-spacing: .04em; padding: 3px 8px; border-radius: 9999px;
+    }
+    .recent-card .subhead { margin-left: 0; }
+    .recent-card #recent-reports { display: flex; flex-direction: column; }
+    .rr2 {
+      display: grid;
+      grid-template-columns: 10px 1fr auto auto;
+      gap: 9px; align-items: center;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 12.5px;
+    }
+    .rr2:last-child { border-bottom: none; }
+    .rr2-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+    /* Per-report-type colour code. Keep palette in sync with the
+       morning brief / hire watch / sweep accents elsewhere. */
+    .rr2-dot.pm { background: #3A8FA4; }   /* Pre-meeting Brief — teal */
+    .rr2-dot.pp { background: #C2965A; }   /* Pitch Pack — warm tan */
+    .rr2-dot.rm { background: #9FD181; }   /* Reverse Match — pulse-green */
+    .rr2-dot.ms { background: #A38FC8; }   /* Manual Sweep — purple */
+    .rr2-dot.mb { background: #5F6368; }   /* Morning Brief — slate */
+    .rr2-name {
+      color: var(--navy, #1F1F1F);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      min-width: 0;
+    }
+    .rr2-name strong { font-weight: 600; }
+    .rr2-name .rr2-type {
+      color: var(--text-muted); font-weight: 400;
+    }
+    .rr2-age {
+      color: var(--text-muted);
+      font: 500 11px/1 "JetBrains Mono", monospace;
+    }
+    .rr2-icon {
+      width: 26px; height: 26px; border-radius: 6px;
+      border: 1px solid var(--border); background: var(--surface, #fff);
+      color: var(--navy, #1F1F1F); text-decoration: none;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      transition: border-color .12s, background .12s;
+    }
+    .rr2-icon:hover { border-color: var(--accent, #3A8FA4); }
+    .rr2-gen {
+      color: var(--text-muted); font-size: 10.5px;
+      font-style: italic;
+    }
+
     .action-card label {
       display: block;
       font-size: 9.5px;
@@ -3073,19 +3125,19 @@ TEMPLATE = r"""
   <!-- ACTION BOXES -->
   <div class="actions">
 
-    <!-- PRE-MEETING BRIEF -->
+    <!-- REVERSE MATCH -->
     <div class="panel action-card">
-      <h3>Pre-meeting Brief</h3>
-      <div class="subhead">Walk into any client meeting with up-to-date prep.</div>
-      <form id="pm-form" onsubmit="dispatch(event, 'pm-form', '/api/dispatch/pre-meeting')">
-        <label for="pm-account">Account name</label>
-        <input id="pm-account" name="account_name" placeholder="e.g. Severn Trent" required>
-        <label for="pm-contact">Contact (optional)</label>
-        <input id="pm-contact" name="contact_name" placeholder="e.g. Carla Sherry">
-        <label for="pm-context">Meeting context (optional)</label>
-        <input id="pm-context" name="meeting_context" placeholder="e.g. 10am Mon, Zoom">
+      <h3>Reverse Match</h3>
+      <div class="subhead">Take a candidate, search the market fresh, and give a ranked list of accounts to pitch them to.</div>
+      <form id="rm-form" onsubmit="dispatch(event, 'rm-form', '/api/dispatch/reverse-match')">
+        <label for="rm-name">Candidate name</label>
+        <input id="rm-name" name="candidate_name" placeholder="e.g. Rebecca Torres" required>
+        <label for="rm-company">Current company</label>
+        <input id="rm-company" name="current_company" placeholder="e.g. Vodafone" required>
+        <label for="rm-title">Current title</label>
+        <input id="rm-title" name="current_title" placeholder="e.g. Head of Internal Communications" required>
         <button type="submit">Run</button>
-        <div class="status" id="pm-status"></div>
+        <div class="status" id="rm-status"></div>
       </form>
     </div>
 
@@ -3103,19 +3155,19 @@ TEMPLATE = r"""
       </form>
     </div>
 
-    <!-- REVERSE MATCH -->
+    <!-- PRE-MEETING BRIEF -->
     <div class="panel action-card">
-      <h3>Reverse Match</h3>
-      <div class="subhead">Take a candidate, search the market fresh, and give a ranked list of accounts to pitch them to.</div>
-      <form id="rm-form" onsubmit="dispatch(event, 'rm-form', '/api/dispatch/reverse-match')">
-        <label for="rm-name">Candidate name</label>
-        <input id="rm-name" name="candidate_name" placeholder="e.g. Rebecca Torres" required>
-        <label for="rm-company">Current company</label>
-        <input id="rm-company" name="current_company" placeholder="e.g. Vodafone" required>
-        <label for="rm-title">Current title</label>
-        <input id="rm-title" name="current_title" placeholder="e.g. Head of Internal Communications" required>
+      <h3>Pre-meeting Brief</h3>
+      <div class="subhead">Walk into any client meeting with up-to-date prep.</div>
+      <form id="pm-form" onsubmit="dispatch(event, 'pm-form', '/api/dispatch/pre-meeting')">
+        <label for="pm-account">Account name</label>
+        <input id="pm-account" name="account_name" placeholder="e.g. Severn Trent" required>
+        <label for="pm-contact">Contact (optional)</label>
+        <input id="pm-contact" name="contact_name" placeholder="e.g. Carla Sherry">
+        <label for="pm-context">Meeting context (optional)</label>
+        <input id="pm-context" name="meeting_context" placeholder="e.g. 10am Mon, Zoom">
         <button type="submit">Run</button>
-        <div class="status" id="rm-status"></div>
+        <div class="status" id="pm-status"></div>
       </form>
     </div>
 
@@ -3158,21 +3210,21 @@ TEMPLATE = r"""
       </form>
     </div>
 
-  </div>
-
-  <div class="row row-full" id="recent-row">
-    <div class="panel">
-      <div class="panel-header">
-        <h2>Recent Reports</h2>
-        <span style="display:flex;align-items:center;gap:10px;">
+    <!-- RECENT REPORTS (6th action-card slot — fits the 3x2 grid) -->
+    <div class="panel action-card recent-card">
+      <div class="head-row">
+        <h3>Recent Reports</h3>
+        <span style="display:flex;align-items:center;gap:8px;">
           <button type="button" class="btn-mini" onclick="clearRecentReports(this)">Clear</button>
           <span class="count" id="recent-count">—</span>
         </span>
       </div>
-      <div class="panel-body" id="recent-reports">
+      <div class="subhead">Last 48 hours. Coloured by type.</div>
+      <div id="recent-reports">
         <div class="empty compact">Loading…</div>
       </div>
     </div>
+
   </div>
 
   <div class="footer">
@@ -3758,7 +3810,7 @@ async function loadPulses() {
         '<div class="cal-legend">' +
           '<span><i style="background:var(--teal)"></i>high confidence</span>' +
           '<span><i style="background:var(--green)"></i>policy timeline firming</span>' +
-          '<span><i style="background:#e89c4a"></i>industry event</span>' +
+          '<span><i style="background:#e89c4a"></i>comms event</span>' +
         '</div>' +
       '</div></div>'  // .cal-detail .cal-wrap
     );
@@ -4291,56 +4343,69 @@ async function clearRecentReports(btn) {
 }
 
 async function loadRecentReports() {
-  const row = document.getElementById('recent-row');
   const body = document.getElementById('recent-reports');
   const count = document.getElementById('recent-count');
+  if (!body) return;
+  // Map a report type label to the colour-dot class used in the card.
+  // Any unknown type falls back to the morning-brief slate dot.
+  const dotClass = (type) => {
+    const t = String(type || '').toLowerCase();
+    if (t.includes('pre-meeting')) return 'pm';
+    if (t.includes('pitch pack')) return 'pp';
+    if (t.includes('reverse match')) return 'rm';
+    if (t.includes('manual sweep') || t.includes('sweep') || t.includes('catch-up')) return 'ms';
+    return 'mb';   // morning brief / fallback
+  };
+  // Inline label form: "{type} {detail}". Detail is the company or
+  // candidate name when we have it.
+  const inlineDetail = (x) => {
+    const parts = [];
+    if (x.company && x.company !== '—') parts.push(x.company);
+    if (x.name) parts.push(x.name);
+    return parts.join(' · ');
+  };
   try {
     const r = await fetch('/api/output/recent');
     const j = await r.json();
-    row.style.display = '';
     if (!j.rows || !j.rows.length) {
-      count.textContent = '0';
-      body.innerHTML = '<div class="empty compact" style="padding:18px 16px;">' +
-        'No reports generated in the last 48 hours.</div>';
+      if (count) count.textContent = '0';
+      body.innerHTML = '<div class="empty compact">No reports generated in the last 48 hours.</div>';
       return;
     }
-    count.textContent = j.total;
+    if (count) count.textContent = j.total;
     const now = Date.now();
-    const out = ['<table class="rr-table"><thead><tr>' +
-      '<th>Type</th><th>Company</th><th>Name</th><th>When</th>' +
-      '<th class="rr-acts">Report</th></tr></thead><tbody>'];
+    const out = [];
     for (const x of j.rows.slice(0, 30)) {
       const t = new Date(x.ts).getTime();
       const mins = Math.max(0, Math.round((now - t) / 60000));
-      const ago = mins < 1 ? 'just now'
-                : mins < 60 ? mins + ' min ago'
-                : mins < 1440 ? Math.round(mins / 60) + 'h ago'
-                : Math.round(mins / 1440) + 'd ago';
-      let acts;
+      const ago = mins < 1 ? 'now'
+                : mins < 60 ? mins + 'm'
+                : mins < 1440 ? Math.round(mins / 60) + 'h'
+                : Math.round(mins / 1440) + 'd';
+      const detail = inlineDetail(x);
+      const namePart = detail
+        ? '<strong>' + esc(detail) + '</strong> · <span class="rr2-type">' + esc(x.type) + '</span>'
+        : '<strong>' + esc(x.type) + '</strong>';
+      let action;
       if (x.id) {
-        const base = '/api/output/view?artifact=' +
-          encodeURIComponent(x.artifact) + '&id=' + encodeURIComponent(x.id);
-        acts = '<a class="btn-mini" href="' + base +
-          '" target="_blank" rel="noopener noreferrer">↗ View</a>' +
-          '<a class="btn-mini" href="' + base + '&download=1">⬇ Download</a>';
+        const dl = '/api/output/view?artifact=' +
+          encodeURIComponent(x.artifact) + '&id=' + encodeURIComponent(x.id) + '&download=1';
+        action = '<a class="rr2-icon" href="' + dl + '" title="Download">⬇</a>';
       } else {
-        acts = '<span class="rr-gen">generating…</span>';
+        action = '<span class="rr2-gen">generating…</span>';
       }
       out.push(
-        '<tr><td class="rr-type">' + esc(x.type) + '</td>' +
-        '<td>' + (x.company && x.company !== '—' ? esc(x.company) : '') + '</td>' +
-        '<td>' + (x.name ? esc(x.name) : '') + '</td>' +
-        '<td class="rr-when">' + esc(ago) + '</td>' +
-        '<td class="rr-acts">' + acts + '</td></tr>'
+        '<div class="rr2">' +
+          '<span class="rr2-dot ' + dotClass(x.type) + '"></span>' +
+          '<span class="rr2-name">' + namePart + '</span>' +
+          '<span class="rr2-age">' + esc(ago) + '</span>' +
+          action +
+        '</div>'
       );
     }
-    out.push('</tbody></table>');
     body.innerHTML = out.join('');
-    row.style.display = '';
   } catch (e) {
-    row.style.display = '';
-    body.innerHTML = '<div class="empty compact" style="padding:18px 16px;">' +
-      'Could not load recent reports.</div>';
+    body.innerHTML = '<div class="empty compact">Could not load recent reports.</div>';
   }
 }
 </script>
