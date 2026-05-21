@@ -4274,7 +4274,44 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSpecialistSignals();
   loadWatchList();
   loadRecentReports();
+  maybeAutoRefresh();
 });
+
+// Consistency guard: if the dashboard opens with BOTH leads and
+// predictors empty (i.e. the dashboard-state hydrate hasn't populated
+// them yet), auto-pull today's brief once — the same action as the
+// Daily Refresh button — so the user never sees a half-populated
+// dashboard (BD Calendar / Hire Watch showing while Leads / Pre-Market
+// sit empty). Guarded by sessionStorage so it fires at most once per
+// tab session and can never loop. Self-disables the moment the
+// state-branch hydrate works (leads won't be empty, so it won't fire).
+async function maybeAutoRefresh() {
+  try {
+    const leadsN = parseInt((document.getElementById('leads-count') || {}).textContent || '0', 10);
+    const predsN = parseInt((document.getElementById('pred-count') || {}).textContent || '0', 10);
+    if (leadsN > 0 || predsN > 0) return;            // already populated
+    if (sessionStorage.getItem('vma_autorefresh')) return;  // already tried this session
+    sessionStorage.setItem('vma_autorefresh', '1');
+
+    const btn = document.getElementById('refresh-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Loading today’s brief…'; }
+    const r = await fetch('/api/refresh', { method: 'POST' });
+    const j = await r.json();
+    if (j.ok && (j.leads > 0 || j.predictors > 0)) {
+      // Re-parse cascade moves off the fresh signals, then reload so
+      // every panel reflects today's data together.
+      try { await fetch('/api/cascade/scour', { method: 'POST' }); } catch (e) {}
+      window.location.reload();
+    } else if (btn) {
+      // Genuinely nothing to pull (no token / no artifact / 0 results).
+      // Leave the panels empty and restore the button silently.
+      btn.disabled = false; btn.textContent = '↻ Daily Refresh';
+    }
+  } catch (e) {
+    const btn = document.getElementById('refresh-btn');
+    if (btn) { btn.disabled = false; btn.textContent = '↻ Daily Refresh'; }
+  }
+}
 
 // ---------- Hire Watch (cascade events) ----------
 (function(){
