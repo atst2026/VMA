@@ -3073,19 +3073,19 @@ TEMPLATE = r"""
   <!-- ACTION BOXES -->
   <div class="actions">
 
-    <!-- PRE-MEETING BRIEF -->
+    <!-- REVERSE MATCH -->
     <div class="panel action-card">
-      <h3>Pre-meeting Brief</h3>
-      <div class="subhead">Walk into any client meeting with up-to-date prep.</div>
-      <form id="pm-form" onsubmit="dispatch(event, 'pm-form', '/api/dispatch/pre-meeting')">
-        <label for="pm-account">Account name</label>
-        <input id="pm-account" name="account_name" placeholder="e.g. Severn Trent" required>
-        <label for="pm-contact">Contact (optional)</label>
-        <input id="pm-contact" name="contact_name" placeholder="e.g. Carla Sherry">
-        <label for="pm-context">Meeting context (optional)</label>
-        <input id="pm-context" name="meeting_context" placeholder="e.g. 10am Mon, Zoom">
+      <h3>Reverse Match</h3>
+      <div class="subhead">Take a candidate, search the market fresh, and give a ranked list of accounts to pitch them to.</div>
+      <form id="rm-form" onsubmit="dispatch(event, 'rm-form', '/api/dispatch/reverse-match')">
+        <label for="rm-name">Candidate name</label>
+        <input id="rm-name" name="candidate_name" placeholder="e.g. Rebecca Torres" required>
+        <label for="rm-company">Current company</label>
+        <input id="rm-company" name="current_company" placeholder="e.g. Vodafone" required>
+        <label for="rm-title">Current title</label>
+        <input id="rm-title" name="current_title" placeholder="e.g. Head of Internal Communications" required>
         <button type="submit">Run</button>
-        <div class="status" id="pm-status"></div>
+        <div class="status" id="rm-status"></div>
       </form>
     </div>
 
@@ -3103,19 +3103,19 @@ TEMPLATE = r"""
       </form>
     </div>
 
-    <!-- REVERSE MATCH -->
+    <!-- PRE-MEETING BRIEF -->
     <div class="panel action-card">
-      <h3>Reverse Match</h3>
-      <div class="subhead">Take a candidate, search the market fresh, and give a ranked list of accounts to pitch them to.</div>
-      <form id="rm-form" onsubmit="dispatch(event, 'rm-form', '/api/dispatch/reverse-match')">
-        <label for="rm-name">Candidate name</label>
-        <input id="rm-name" name="candidate_name" placeholder="e.g. Rebecca Torres" required>
-        <label for="rm-company">Current company</label>
-        <input id="rm-company" name="current_company" placeholder="e.g. Vodafone" required>
-        <label for="rm-title">Current title</label>
-        <input id="rm-title" name="current_title" placeholder="e.g. Head of Internal Communications" required>
+      <h3>Pre-meeting Brief</h3>
+      <div class="subhead">Walk into any client meeting with up-to-date prep.</div>
+      <form id="pm-form" onsubmit="dispatch(event, 'pm-form', '/api/dispatch/pre-meeting')">
+        <label for="pm-account">Account name</label>
+        <input id="pm-account" name="account_name" placeholder="e.g. Severn Trent" required>
+        <label for="pm-contact">Contact (optional)</label>
+        <input id="pm-contact" name="contact_name" placeholder="e.g. Carla Sherry">
+        <label for="pm-context">Meeting context (optional)</label>
+        <input id="pm-context" name="meeting_context" placeholder="e.g. 10am Mon, Zoom">
         <button type="submit">Run</button>
-        <div class="status" id="rm-status"></div>
+        <div class="status" id="pm-status"></div>
       </form>
     </div>
 
