@@ -348,7 +348,8 @@ _REPORT_SKIN = (
     '.vma-brand{position:absolute;top:30px;right:52px;width:56px;'
     'height:auto;line-height:0;}'
     '.vma-brand svg{display:block;width:100%;height:auto;}'
-    'body>h1:first-of-type,body>h2:first-of-type{padding-right:92px;}'
+    'body>h1:first-of-type,body>h2:first-of-type,'
+    'body>h1:first-of-type+div,body>h2:first-of-type+div{padding-right:92px;}'
     'h1,h2,h3,h4{font-family:"Crimson Pro",Georgia,serif;color:#1F1F1F;'
     'line-height:1.25;font-weight:600;}'
     'body>h1:first-child,body>h2:first-child{font-size:26px;color:#1A3D7C;'
@@ -880,7 +881,8 @@ def index():
         leads_followed_count=sum(1 for s in leads if s.get("status") == "followed_up"),
         leads_dismissed_count=sum(1 for s in leads if s.get("status") == "dismissed"),
         active_count=sum(1 for p in predictors if p.get("status") == "active"),
-        new_count=sum(1 for p in predictors if p.get("is_new")),
+        new_count=sum(1 for p in predictors if p.get("is_new")
+                      and p.get("status", "active") == "active"),
         followed_up_count=sum(1 for p in predictors if p.get("status") == "followed_up"),
         dismissed_count=sum(1 for p in predictors if p.get("status") == "dismissed"),
         last_updated=last_updated(),
@@ -1690,11 +1692,9 @@ TEMPLATE = r"""
       .item.predictor .row-preview { margin-left: 0; }
     }
 
-    /* Desktop chips container — inline-flex so it stays on the same
-       row as title; only the mobile grid breaks them onto their own
-       line. */
     .item.predictor .row-summary .chips {
-      display: inline-flex;
+      grid-area: chips;
+      display: flex;
       flex-wrap: wrap;
       gap: 6px;
       align-items: center;
@@ -2441,16 +2441,28 @@ TEMPLATE = r"""
     .panel-body.compact .item.predictor:hover {
       background: rgba(66, 133, 244, 0.05);
     }
+    /* Title on its own row, chips wrapped on the row beneath — so a long
+       company name (e.g. "Close Brothers Group") always shows in full and
+       can never be squeezed to an ellipsis by, or overlap with, the chips. */
     .item.predictor .row-summary {
-      display: flex;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      grid-template-areas:
+        "rank title toggle"
+        "chips chips chips";
       align-items: center;
-      flex-wrap: wrap;
-      gap: 6px;
+      column-gap: 8px;
+      row-gap: 6px;
     }
+    .item.predictor .row-summary .rank { grid-area: rank; }
     .item.predictor .row-summary .title {
-      flex: 1;
+      grid-area: title;
       min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
+    .item.predictor .row-summary .expand-toggle { grid-area: toggle; }
     .item.predictor .expand-toggle {
       color: var(--text-muted);
       font-size: 14px;
@@ -2818,14 +2830,15 @@ TEMPLATE = r"""
       letter-spacing: 0;
       font-weight: 400;
     }
-    /* Brand tagline — matched to the VMA Group logo lockup:
-       uppercase, wide tracking, bullet separators. */
+    /* Brand tagline — same treatment as the top-bar "Intelligence
+       Platform · Live" sub-cap (JetBrains Mono, uppercase, wide tracking). */
     .footer .brand-tag {
       display: inline-block;
+      font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
       text-transform: uppercase;
-      letter-spacing: 0.22em;
-      font-size: 9.5px;
-      font-weight: 600;
+      letter-spacing: 0.26em;
+      font-size: 10.5px;
+      font-weight: 400;
       color: var(--text-muted);
     }
     .footer .brand-tag .sep { margin: 0 0.5em; color: var(--text-dim); }
@@ -2988,9 +3001,9 @@ TEMPLATE = r"""
                 <span class="rank">{{ loop.index }}</span>
                 <span class="title">{{ p.company }}</span>
                 <span class="chips">
+                  {% if p.is_new %}<span class="new-badge">NEW</span>{% endif %}
                   {% if p.predicted_role %}<span class="role-chip">{{ p.predicted_role }}</span>{% endif %}
                   {% if p.probability %}<span class="prob-chip">{{ p.probability }}%</span>{% endif %}
-                  {% if p.is_new %}<span class="new-badge">NEW</span>{% endif %}
                   {% if p.window_label %}<span class="window-badge">{{ p.window_label }}</span>{% endif %}
                   {% if p.status == 'followed_up' %}<span class="status-badge followed-up">✓ followed up</span>{% endif %}
                   {% if p.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
@@ -3033,7 +3046,6 @@ TEMPLATE = r"""
               <span class="chips">
                 <span class="role-chip funding-chip-inline">Funding</span>
                 <span class="role-chip">{{ f.amount }} {{ f.round }}</span>
-                {% if f.confidence == 'high' %}<span class="prob-chip">high</span>{% endif %}
                 {% if f.status == 'followed_up' %}<span class="status-badge followed-up">&#10003; followed up</span>{% endif %}
                 {% if f.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
               </span>
@@ -3070,7 +3082,6 @@ TEMPLATE = r"""
               <span class="chips">
                 <span class="role-chip framework-chip-inline">Framework</span>
                 {% if fw.status == 'refresh_window' %}<span class="prob-chip">refresh window</span>{% endif %}
-                {% if fw.is_estimate %}<span class="role-chip">est.</span>{% endif %}
               </span>
               <span class="expand-toggle">&#9662;</span>
             </div>
@@ -3502,7 +3513,7 @@ document.addEventListener('click', (event) => {
 // followed-up/dismissed item drops out of the active view.
 function recountPredictors() {
   let a = 0, n = 0, f = 0, d = 0;
-  document.querySelectorAll('#predictor-list .item.predictor').forEach(it => {
+  document.querySelectorAll('#predictor-list .item.predictor:not(.funding-row):not(.framework-row)').forEach(it => {
     const s = it.dataset.status || 'active';
     if (s === 'active') { a++; if (it.dataset.new === '1') n++; }
     else if (s === 'followed_up') f++;
