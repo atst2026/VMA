@@ -778,6 +778,7 @@ def _boot_state_hydrate():
             "tool/state/lead_status.json",
             "tool/state/lead_first_seen.json",
             "tool/state/funding_status.json",
+            "tool/state/pulse_dismissed.json",
             "tool/state/report_log.json",
             "tool/state/predictor_status.json",
             "tool/state/contact_flags.json",
@@ -1294,8 +1295,10 @@ def api_pulses():
     forces a comms-capacity build-up in a named watchlist cohort; get
     the retained brief before it's advertised."""
     from tool.calendar_pulses import load_pulses
-    rows = load_pulses(limit=10)
-    return jsonify({"rows": rows, "total": len(rows)})
+    from tool import pulse_dismiss
+    dismissed = pulse_dismiss.get_dismissed()
+    rows = [r for r in load_pulses(limit=20) if r.get("key") not in dismissed]
+    return jsonify({"rows": rows[:10], "total": len(rows[:10])})
 
 
 @app.route("/api/industry-events", methods=["GET"])
@@ -1304,8 +1307,25 @@ def api_industry_events():
     """UK + European comms industry events (awards, conferences,
     summits) for the next ~6 months. Internal + external comms."""
     from tool.calendar_pulses import load_events
-    rows = load_events(limit=24)
-    return jsonify({"rows": rows, "total": len(rows)})
+    from tool import pulse_dismiss
+    dismissed = pulse_dismiss.get_dismissed()
+    rows = [r for r in load_events(limit=40) if r.get("key") not in dismissed]
+    return jsonify({"rows": rows[:24], "total": len(rows[:24])})
+
+
+@app.route("/api/pulses/dismiss", methods=["POST"])
+@_auth_required
+def api_pulses_dismiss():
+    """Remove (or restore) a BD-Calendar finding by its stable key.
+    body: {"key": "...", "dismissed": true|false}."""
+    from tool import pulse_dismiss
+    data = _safe_json_body()
+    key = (data.get("key") or "").strip()
+    dismissed = bool(data.get("dismissed", True))
+    if not key:
+        return jsonify({"ok": False, "detail": "key required"}), 400
+    ok = pulse_dismiss.set_dismissed(key, dismissed)
+    return jsonify({"ok": ok})
 
 
 @app.route("/api/water-sar", methods=["GET"])
@@ -1853,28 +1873,13 @@ TEMPLATE = r"""
       #hire-calendar-row { grid-template-columns: 1fr; }
     }
     /* Funding-signal sub-section inside Predicted Briefs — visually
-       set apart from the tenure-driven predictor rows above but using
-       the same row template so the surface stays unified. */
-    .funding-subsection {
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px dashed var(--border);
+       same row template so funding rows sit inline among the
+       tenure-driven predictors. */
+    .funding-chip-inline {
+      background: var(--teal-bg, #e8eff6) !important;
+      color: var(--teal-dark, #1f377c) !important;
+      font-weight: 700; letter-spacing: .04em;
     }
-    .funding-subhead {
-      display: flex; align-items: center; gap: 8px;
-      font-size: 11.5px; color: var(--text-muted);
-      margin: 0 0 8px;
-    }
-    .funding-chip {
-      display: inline-block;
-      padding: 2px 8px;
-      font-size: 10px; font-weight: 700; letter-spacing: .10em;
-      text-transform: uppercase;
-      background: var(--teal-bg, #e8eff6);
-      color: var(--teal-dark, #1f377c);
-      border-radius: 10px;
-    }
-    .funding-row { opacity: .92; }
 
     /* Industry-event chip inside the BD Calendar detail card. */
     .cal-eventchip {
@@ -1913,7 +1918,13 @@ TEMPLATE = r"""
     .cal-mlab { font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; }
     .cal-tile.past .cal-mlab { color: var(--text-muted); }
     .cal-right { display: flex; align-items: center; gap: 7px; }
-    .cal-pips { display: flex; gap: 7px; }
+    /* Pips wrap into mini-rows when a month has many findings, instead
+       of overflowing a single line. row-gap keeps the rows tight. */
+    .cal-pips {
+      display: flex; gap: 5px; row-gap: 4px;
+      flex-wrap: wrap; justify-content: flex-end;
+      max-width: 70px;
+    }
     .cal-pip { width: 9px; height: 9px; border-radius: 50%; }
     .cal-pip.high  { background: var(--teal); }   /* high = teal */
     .cal-pip.med   { background: var(--green); }  /* policy-firming = green */
@@ -1925,6 +1936,43 @@ TEMPLATE = r"""
       border-left: 3px solid var(--teal);
     }
     .cal-tile.fresh .cal-mlab { color: var(--teal-dark); }
+
+    /* New-finding notifier: a bright segment "shoots" around the month
+       tile's outline. Implemented with an animated conic gradient
+       masked to a 2px ring (a @property-driven angle so it animates
+       smoothly). Sits above the tile fill but below its content. */
+    @property --cal-shoot-angle {
+      syntax: '<angle>';
+      initial-value: 0deg;
+      inherits: false;
+    }
+    .cal-tile.fresh::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 2px;
+      pointer-events: none;
+      background: conic-gradient(
+        from var(--cal-shoot-angle),
+        transparent 0deg,
+        transparent 250deg,
+        rgba(58,143,164,.35) 300deg,
+        #2fa8d8 340deg,
+        #cdeaff 352deg,
+        #ffffff 358deg,
+        transparent 360deg);
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+              mask-composite: exclude;
+      animation: cal-shoot 2.4s linear infinite;
+    }
+    @keyframes cal-shoot { to { --cal-shoot-angle: 360deg; } }
+    @media (prefers-reduced-motion: reduce) {
+      .cal-tile.fresh::after { animation: none; opacity: 0; }
+    }
     .cal-nbadge {
       display: inline-flex; align-items: center;
       font-size: 9px; font-weight: 800; letter-spacing: .05em;
@@ -1968,6 +2016,17 @@ TEMPLATE = r"""
       padding: 2px 8px; margin-left: 6px;
     }
     .cal-days.far { color: var(--text-dim); background: transparent; border: 1px solid var(--border); }
+    .cal-card-head { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+    .cal-rm {
+      margin-left: auto;
+      background: transparent; color: var(--text-muted);
+      border: 1px solid var(--border); border-radius: 4px;
+      padding: 2px 7px;
+      font: 500 10px/1.4 "Inter", sans-serif;
+      cursor: pointer;
+      transition: border-color .12s, color .12s;
+    }
+    .cal-rm:hover { border-color: #A33A22; color: #A33A22; }
     .cal-seat { font-size: 12px; color: var(--text); margin-top: 6px; }
     .cal-angle { font-size: 11.5px; color: var(--text-muted); margin-top: 4px; }
     .cal-scope { font-size: 11px; color: var(--text-dim); margin-top: 6px; }
@@ -2868,23 +2927,6 @@ TEMPLATE = r"""
                 <span class="badge">{{ s.source }}</span>
                 <span class="badge">{{ s.geo }}</span>
               </div>
-              {% if s.contact %}
-              <div style="font-size:11px;color:var(--text-muted);margin:2px 0 4px;">
-                → Contact:
-                <strong style="color:#333;">{{ s.contact.name or s.contact.title }}</strong>{% if s.contact.name %} · {{ s.contact.title }}{% endif %}
-                · confidence {{ '%.0f' | format(s.contact.confidence * 100) }}%{% if s.contact.basis == 'jd_reporting_line' %} · from JD{% elif s.contact.basis == 'appointee' %} · named in headline{% endif %}
-                {% if s.contact.division %} · <span style="color:var(--teal-dark);font-weight:600;">{{ s.contact.division }}</span>{% endif %}
-                {% if s.contact.stale %} · <span style="color:#1A3D7C;" title="Roster entry hasn't been verified in 120+ days — confirm before outreach.">⚠ verify</span>{% endif %}
-                {% if s.contact.name %}
-                  · <a href="#" onclick="flagContact(event, this, '{{ s.company | e }}', '{{ s.contact.slot | e }}', '{{ s.contact.name | e }}')" style="color:var(--text-muted);text-decoration:underline;">wrong?</a>
-                {% endif %}
-              </div>
-              {% if s.contact.divisional_uncertain and not s.contact.division %}
-              <div style="font-size:11px;color:#1A3D7C;margin:2px 0 4px;">
-                ⚠ Divisional role — verify the divisional comms leader before outreach (resolved to group-level).
-              </div>
-              {% endif %}
-              {% endif %}
               <pre class="outreach-text">{{ s.outreach }}</pre>
               <div class="item-actions">
                 <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
@@ -2964,43 +3006,43 @@ TEMPLATE = r"""
         {% else %}
           <div class="empty compact">No predictors loaded yet. Click Daily Refresh.</div>
         {% endif %}
-        {% if funding_events %}
-          <div class="funding-subsection">
-            <div class="funding-subhead">
-              <span class="funding-chip">FUNDING SIGNAL</span>
-              <span>Closed equity rounds · senior-comms hire window now → ~6 months</span>
+        {% for f in funding_events %}
+          <div class="item predictor funding-row" data-fid="{{ f.fid }}" data-status="{{ f.status }}">
+            <div class="row-summary">
+              <span class="rank">·</span>
+              <span class="title">{{ f.company }}</span>
+              <span class="chips">
+                <span class="role-chip funding-chip-inline">Funding</span>
+                <span class="role-chip">{{ f.amount }} {{ f.round }}</span>
+                {% if f.confidence == 'high' %}<span class="prob-chip">high</span>{% endif %}
+                {% if f.status == 'followed_up' %}<span class="status-badge followed-up">&#10003; followed up</span>{% endif %}
+                {% if f.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
+              </span>
+              <span class="expand-toggle">▾</span>
             </div>
-            {% for f in funding_events %}
-              <div class="item predictor funding-row" data-fid="{{ f.fid }}" data-status="{{ f.status }}">
-                <div class="row-summary">
-                  <span class="rank">·</span>
-                  <span class="title">{{ f.company }}</span>
-                  <span class="chips">
-                    <span class="role-chip">{{ f.amount }} {{ f.round }}</span>
-                    {% if f.confidence == 'high' %}<span class="prob-chip">high</span>{% endif %}
-                    <span class="window-badge">{{ f.window }}</span>
-                    {% if f.status == 'followed_up' %}<span class="status-badge followed-up">&#10003; followed up</span>{% endif %}
-                    {% if f.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
-                  </span>
-                </div>
-                {% if f.evidence %}
-                <div class="row-preview">
-                  <span class="signal-sub">{{ f.evidence[:160] }}</span>
+            <div class="row-preview">
+              <span class="signal-sub">{{ f.window }}{% if f.evidence %} · {{ f.evidence[:120] }}{% endif %}</span>
+            </div>
+            <div class="row-details">
+              {% if f.evidence %}
+              <div class="meta">
+                <div class="evidence">
+                  <strong>Funding round:</strong> {{ f.evidence[:200] }}
                   {% if f.url %} · <a href="{{ f.url | safe_url }}" target="_blank">source</a>{% endif %}
                 </div>
-                {% endif %}
-                <div class="item-actions" style="margin-top:6px;">
-                  {% if f.status == 'active' %}
-                    <button class="btn-mini funding-action" data-status="followed_up" type="button">&#10003; Mark followed up</button>
-                    <button class="btn-mini funding-action ghost" data-status="dismissed" type="button">&#10005; Dismiss</button>
-                  {% else %}
-                    <button class="btn-mini funding-action" data-status="active" type="button">&#8634; Restore</button>
-                  {% endif %}
-                </div>
               </div>
-            {% endfor %}
+              {% endif %}
+              <div class="item-actions">
+                {% if f.status == 'active' %}
+                  <button class="btn-mini funding-action" data-status="followed_up" type="button">&#10003; Mark followed up</button>
+                  <button class="btn-mini funding-action ghost" data-status="dismissed" type="button">&#10005; Dismiss</button>
+                {% else %}
+                  <button class="btn-mini funding-action" data-status="active" type="button">&#8634; Restore</button>
+                {% endif %}
+              </div>
+            </div>
           </div>
-        {% endif %}
+        {% endfor %}
       </div>
     </div>
 
@@ -3857,12 +3899,18 @@ async function loadPulses() {
       const targets = (p.targets || []).map(t =>
         '<span class="hook-badge generic_fit" style="margin:2px 4px 2px 0;display:inline-block;">' +
         esc(t) + '</span>').join('');
+      const rm = p.key
+        ? '<button class="cal-rm" data-key="' + esc(p.key) + '" title="Remove this finding">✕ Remove</button>'
+        : '';
       return (
-        '<span class="' + conf + '">' + esc(confLabel) + '</span> ' +
-        '<span class="cal-c-name">' + esc(p.name || '') + '</span>' +
-        (daysLabel
-          ? '<span class="cal-days' + (far ? ' far' : '') + '">' + esc(daysLabel) + '</span>'
-          : '') +
+        '<div class="cal-card-head">' +
+          '<span class="' + conf + '">' + esc(confLabel) + '</span> ' +
+          '<span class="cal-c-name">' + esc(p.name || '') + '</span>' +
+          (daysLabel
+            ? '<span class="cal-days' + (far ? ' far' : '') + '">' + esc(daysLabel) + '</span>'
+            : '') +
+          rm +
+        '</div>' +
         '<div class="cal-seat">' + esc(p.seat || '') + '</div>' +
         '<div class="cal-angle">' + esc(p.angle || '') + '</div>' +
         (targets ? '<div style="margin-top:6px;">' + targets + '</div>' : '') +
@@ -3892,6 +3940,37 @@ async function loadPulses() {
     };
     body.querySelectorAll('.cal-tile.has').forEach(t =>
       t.addEventListener('click', () => openMonth(parseInt(t.dataset.m, 10))));
+
+    // Remove-a-finding: delegated click on the cal-card. Persists the
+    // dismissal then re-renders the whole calendar so pip counts and
+    // month buckets stay correct.
+    const calCard = document.getElementById('cal-card');
+    if (calCard) {
+      calCard.addEventListener('click', async (ev) => {
+        const rmBtn = ev.target.closest('.cal-rm');
+        if (!rmBtn) return;
+        const key = rmBtn.getAttribute('data-key');
+        if (!key) return;
+        rmBtn.disabled = true;
+        try {
+          const r = await fetch('/api/pulses/dismiss', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: key, dismissed: true }),
+          });
+          const j = await r.json();
+          if (j.ok) {
+            loadPulses();   // re-render with the finding removed
+          } else {
+            rmBtn.disabled = false;
+            alert(j.detail || 'Could not remove.');
+          }
+        } catch (e) {
+          rmBtn.disabled = false;
+          alert('Network error: ' + e.message);
+        }
+      });
+    }
 
     const nb = document.getElementById('pulses-new');
     if (newCount > 0 && freshMonth >= 0) {
