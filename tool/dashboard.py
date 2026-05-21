@@ -2510,17 +2510,35 @@ TEMPLATE = r"""
     }
 
     /* Recent Reports as the 6th action-card. Single-line-per-report,
-       colour dot encodes the report type, one download icon button. */
-    .recent-card .head-row {
-      display: flex; align-items: baseline; justify-content: space-between;
+       colour dot encodes the report type, one download icon button.
+       h3 stays identical to the other action cards (same flex baseline
+       and the brand-dot ::before pseudo) so it lines up across the
+       3x2 grid; the Clear button is absolutely positioned in the
+       top-right corner so it doesn't disturb h3 alignment. */
+    .recent-card { position: relative; }
+    /* Scoped to .action-card so this beats the broader
+       ".action-card button" rule that paints Run buttons as full-width
+       blue pills. Without that scoping the Clear control inherits the
+       Run-button styling. */
+    .action-card .rr-clear {
+      position: absolute; top: 16px; right: 18px;
+      width: auto;
+      margin: 0;
+      background: transparent; color: var(--text-muted);
+      border: 1px solid var(--border); border-radius: 4px;
+      padding: 2px 7px;
+      font: 500 10px/1.4 "Inter", sans-serif;
+      letter-spacing: 0;
+      cursor: pointer;
+      box-shadow: none;
+      transition: border-color .12s, color .12s, transform .12s;
     }
-    .recent-card .head-row h3 { margin: 0; }
-    .recent-card .head-row .count {
-      background: var(--bg-warm, #EDE5D2); color: var(--navy, #1F1F1F);
-      font: 600 10.5px/1 "JetBrains Mono", monospace;
-      letter-spacing: .04em; padding: 3px 8px; border-radius: 9999px;
+    .action-card .rr-clear:hover {
+      background: transparent;
+      transform: none;
+      border-color: var(--accent, #3A8FA4);
+      color: var(--navy, #1F1F1F);
     }
-    .recent-card .subhead { margin-left: 0; }
     .recent-card #recent-reports { display: flex; flex-direction: column; }
     .rr2 {
       display: grid;
@@ -2545,8 +2563,11 @@ TEMPLATE = r"""
       color: var(--navy, #1F1F1F);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       min-width: 0;
+      /* Match the body weight of the field labels inside the other
+         action cards — clearly lower than the h3 "Recent Reports". */
+      font-weight: 500;
     }
-    .rr2-name strong { font-weight: 600; }
+    .rr2-name .rr2-primary { font-weight: 500; }
     .rr2-name .rr2-type {
       color: var(--text-muted); font-weight: 400;
     }
@@ -3212,14 +3233,9 @@ TEMPLATE = r"""
 
     <!-- RECENT REPORTS (6th action-card slot — fits the 3x2 grid) -->
     <div class="panel action-card recent-card">
-      <div class="head-row">
-        <h3>Recent Reports</h3>
-        <span style="display:flex;align-items:center;gap:8px;">
-          <button type="button" class="btn-mini" onclick="clearRecentReports(this)">Clear</button>
-          <span class="count" id="recent-count">—</span>
-        </span>
-      </div>
+      <h3>Recent Reports</h3>
       <div class="subhead">Last 48 hours. Coloured by type.</div>
+      <button type="button" class="rr-clear" onclick="clearRecentReports(this)">Clear</button>
       <div id="recent-reports">
         <div class="empty compact">Loading…</div>
       </div>
@@ -4344,7 +4360,6 @@ async function clearRecentReports(btn) {
 
 async function loadRecentReports() {
   const body = document.getElementById('recent-reports');
-  const count = document.getElementById('recent-count');
   if (!body) return;
   // Map a report type label to the colour-dot class used in the card.
   // Any unknown type falls back to the morning-brief slate dot.
@@ -4356,8 +4371,9 @@ async function loadRecentReports() {
     if (t.includes('manual sweep') || t.includes('sweep') || t.includes('catch-up')) return 'ms';
     return 'mb';   // morning brief / fallback
   };
-  // Inline label form: "{type} {detail}". Detail is the company or
-  // candidate name when we have it.
+  // Detail = company / candidate name when we have it, else the
+  // report's own type label as the primary line. Either way we render
+  // at weight 500 so it doesn't compete with the h3.
   const inlineDetail = (x) => {
     const parts = [];
     if (x.company && x.company !== '—') parts.push(x.company);
@@ -4368,11 +4384,9 @@ async function loadRecentReports() {
     const r = await fetch('/api/output/recent');
     const j = await r.json();
     if (!j.rows || !j.rows.length) {
-      if (count) count.textContent = '0';
       body.innerHTML = '<div class="empty compact">No reports generated in the last 48 hours.</div>';
       return;
     }
-    if (count) count.textContent = j.total;
     const now = Date.now();
     const out = [];
     for (const x of j.rows.slice(0, 30)) {
@@ -4383,9 +4397,10 @@ async function loadRecentReports() {
                 : mins < 1440 ? Math.round(mins / 60) + 'h'
                 : Math.round(mins / 1440) + 'd';
       const detail = inlineDetail(x);
+      // No <strong> wrap — CSS .rr2-name gives the right weight.
       const namePart = detail
-        ? '<strong>' + esc(detail) + '</strong> · <span class="rr2-type">' + esc(x.type) + '</span>'
-        : '<strong>' + esc(x.type) + '</strong>';
+        ? '<span class="rr2-primary">' + esc(detail) + '</span> · <span class="rr2-type">' + esc(x.type) + '</span>'
+        : '<span class="rr2-primary">' + esc(x.type) + '</span>';
       let action;
       if (x.id) {
         const dl = '/api/output/view?artifact=' +
