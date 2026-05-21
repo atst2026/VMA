@@ -3275,7 +3275,7 @@ TEMPLATE = r"""
       <div class="subhead">Sweep for potential missed leads or pre-market signals.</div>
       <form id="sweep-form" onsubmit="dispatch(event, 'sweep-form', '/api/dispatch/sweep')">
         <label for="sw-days">Window (days)</label>
-        <input id="sw-days" name="window_days" type="number" min="1" max="60" value="14" required>
+        <input id="sw-days" name="window_days" type="number" min="1" max="60" placeholder="e.g. 14" required>
         <button type="submit">Run</button>
         <div class="status" id="sweep-status"></div>
       </form>
