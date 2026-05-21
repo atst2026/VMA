@@ -853,6 +853,8 @@ def index():
         "dismissed":   sum(1 for e in cascade_events if e["cs_bucket"] == "dismissed"),
     }
     funding_events = load_funding(limit=30)
+    from tool.framework_watch import load_frameworks
+    framework_events = load_frameworks()
     # Decorate with stable id + persisted triage status so the
     # Followed-up / Dismissed buttons can survive a refresh.
     from tool import funding_status as _fs
@@ -867,6 +869,7 @@ def index():
         leads=leads,
         predictors=predictors,
         funding_events=funding_events,
+        framework_events=framework_events,
         cascade_events=cascade_events,
         cs_active_count=cs_counts["active"],
         cs_followed_count=cs_counts["followed_up"],
@@ -1878,6 +1881,11 @@ TEMPLATE = r"""
     .funding-chip-inline {
       background: var(--teal-bg, #e8eff6) !important;
       color: var(--teal-dark, #1f377c) !important;
+      font-weight: 700; letter-spacing: .04em;
+    }
+    .framework-chip-inline {
+      background: #ece9f7 !important;
+      color: #4a3d82 !important;
       font-weight: 700; letter-spacing: .04em;
     }
 
@@ -3050,6 +3058,33 @@ TEMPLATE = r"""
                 {% else %}
                   <button class="btn-mini funding-action" data-status="active" type="button">&#8634; Restore</button>
                 {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+        {% for fw in framework_events %}
+          <div class="item predictor framework-row" data-status="active" data-fw="{{ fw.key }}">
+            <div class="row-summary">
+              <span class="rank">·</span>
+              <span class="title">{{ fw.ref }} — {{ fw.name }}</span>
+              <span class="chips">
+                <span class="role-chip framework-chip-inline">Framework</span>
+                {% if fw.status == 'refresh_window' %}<span class="prob-chip">refresh window</span>{% endif %}
+                {% if fw.is_estimate %}<span class="role-chip">est.</span>{% endif %}
+              </span>
+              <span class="expand-toggle">&#9662;</span>
+            </div>
+            <div class="row-preview">
+              <span class="signal-sub">{{ fw.buyer }} · {{ fw.window_label }}</span>
+            </div>
+            <div class="row-details">
+              <div class="meta">
+                <div class="evidence">{{ fw.scope }}</div>
+                <div class="evidence" style="margin-top:4px;"><strong>Holders:</strong> {{ fw.holders_label }}</div>
+                <div class="evidence" style="margin-top:4px;">
+                  <a href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify on portal &rarr;</a>
+                  <span style="color:#888;"> · {{ fw.notes }}</span>
+                </div>
               </div>
             </div>
           </div>

@@ -208,6 +208,32 @@ def render_html(target: str, role: str, ch_snapshot: dict,
         section2_heading = "2. Recent market context"
         news_html = "<div style='color:#888;'>No strategic-report quotes available and no GDELT coverage - check trade press manually.</div>"
 
+    # ---- Client-language mirroring (drop-in vocabulary) ----------------
+    # Mine the client's own public-comms phrasing (annual-report quotes +
+    # recent press) and surface the recurring lines for Sara to echo.
+    from tool import client_language as _cl
+    _corpus = [q.text for q in annual_report.quotes] if (annual_report and annual_report.quotes) else []
+    _corpus += [a.get("title", "") for a in (news or [])[:30]]
+    _mirror = _cl.mirror_phrases(_corpus, top_n=8)
+    if _mirror:
+        _mi = "".join(
+            "<li style='margin-bottom:8px;'>"
+            f"<span style='font-weight:600;color:#1A3D7C;'>{_esc(m['phrase'])}</span>"
+            f"<div style='font-size:11px;color:#777;margin-top:2px;'>e.g. &ldquo;{_esc(m['example'])}&rdquo;</div>"
+            "</li>"
+            for m in _mirror
+        )
+        client_lang_html = (
+            "<div style='font-size:13px;color:#555;margin-bottom:8px;'>"
+            "Echo the client&rsquo;s own framing &mdash; the same methodology in their "
+            "language converts materially better than generic search vocabulary. "
+            "Lift these recurring phrases into your cover note and outreach:"
+            "</div>"
+            f"<ul style='padding-left:18px;font-size:13px;'>{_mi}</ul>"
+        )
+    else:
+        client_lang_html = ""
+
     # Peer market map
     sector_label = sector.replace("_", " ").title() if sector else "Detected sector unclear - generic FTSE list"
     peer_html = "<ol style='padding-left:18px;font-size:13px;'>"
@@ -252,6 +278,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 
 <h3 style="margin:18px 0 6px 0;">{section2_heading}</h3>
 {news_html}
+{('<h3 style="margin:18px 0 6px 0;">2b. Client language to mirror</h3>' + client_lang_html) if client_lang_html else ''}
 
 <h3 style="margin:18px 0 6px 0;">3. Cost of vacancy</h3>
 <div style='font-size:13px;color:#444;margin-bottom:6px;'>
@@ -327,6 +354,18 @@ def render_text(target: str, role: str, ch_snapshot: dict,
     else:
         lines += ["", "2. RECENT MARKET CONTEXT"]
         lines.append("   No annual report quotes or press coverage surfaced.")
+
+    from tool import client_language as _cl
+    _corpus = [q.text for q in annual_report.quotes] if (annual_report and annual_report.quotes) else []
+    _corpus += [a.get("title", "") for a in (news or [])[:30]]
+    _mirror = _cl.mirror_phrases(_corpus, top_n=8)
+    if _mirror:
+        lines += ["", "2b. CLIENT LANGUAGE TO MIRROR",
+                  "   Echo the client's own framing — converts better than generic search vocab."]
+        for m in _mirror:
+            lines.append(f"   - {m['phrase']}")
+            lines.append(f"     e.g. \"{m['example']}\"")
+
     lines += ["", "3. COST OF VACANCY", f"   Mid-salary assumed: £{mid:,}"]
     for k, v in cov.items():
         lines.append(f"   {k:<42}  £{v:>10,}")
