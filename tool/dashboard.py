@@ -2559,17 +2559,25 @@ TEMPLATE = r"""
     .rr2-dot.rm { background: #9FD181; }   /* Reverse Match — pulse-green */
     .rr2-dot.ms { background: #A38FC8; }   /* Manual Sweep — purple */
     .rr2-dot.mb { background: #5F6368; }   /* Morning Brief — slate */
+    /* Row name styled to MATCH the field-label typography used across
+       the other action cards (e.g. "WINDOW (DAYS)", "CANDIDATE NAME"
+       in Manual Sweep / Reverse Match): 9.5px, weight 600, uppercase,
+       0.1em tracking, navy. That puts the row entries at the same
+       visual hierarchy as form-field labels — distinctly subordinate
+       to the h3 "Recent Reports" heading. */
     .rr2-name {
       color: var(--navy, #1F1F1F);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       min-width: 0;
-      /* Match the body weight of the field labels inside the other
-         action cards — clearly lower than the h3 "Recent Reports". */
-      font-weight: 500;
+      font-size: 9.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
     }
-    .rr2-name .rr2-primary { font-weight: 500; }
+    .rr2-name .rr2-primary { /* inherits everything from .rr2-name */ }
     .rr2-name .rr2-type {
-      color: var(--text-muted); font-weight: 400;
+      color: var(--text-muted);
+      font-weight: 600;     /* same weight, just muted to differentiate */
     }
     .rr2-age {
       color: var(--text-muted);
