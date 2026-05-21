@@ -1,0 +1,99 @@
+<!doctype html><html><head><meta charset="utf-8">
+<title>BD Calendar — V5 Radial Dial</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#f7f9fc;--surface:#fff;--surface-2:#F4F7FC;
+    --border:rgba(60,64,67,.12);--border-hov:rgba(66,133,244,.36);
+    --text:#1F1F1F;--muted:#5F6368;--dim:#9AA0A6;
+    --blue:#4285F4;--blue-soft:rgba(66,133,244,.10);--blue-dark:#1A3D7C;
+    --green:#34A853;--amber:#e89c4a;--shadow-md:0 6px 22px rgba(60,64,67,.08),0 1px 3px rgba(60,64,67,.04);}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);font-family:Inter,system-ui,sans-serif;color:var(--text);display:flex;justify-content:center;padding:30px;}
+  .panel{width:600px;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-md);overflow:hidden;}
+  .ph{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid var(--border);}
+  .ph h3{margin:0;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;}
+  .cnt{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue-dark);background:var(--blue-soft);border-radius:8px;padding:2px 9px;}
+  .pb{padding:8px 16px 16px;display:flex;flex-direction:column;align-items:center;}
+  svg{display:block;}
+  .mlbl{font-family:'JetBrains Mono',monospace;font-size:11px;fill:var(--muted);cursor:pointer;}
+  .mlbl.now{fill:var(--blue-dark);font-weight:600;}
+  .mlbl.past{fill:var(--dim);opacity:.55;}
+  .mlbl.fresh{fill:var(--blue);font-weight:600;}
+  .spoke{stroke:var(--border);stroke-width:1;}
+  .pip{cursor:pointer;}
+  .ctr-mon{font-size:24px;font-weight:800;fill:var(--text);}
+  .ctr-sub{font-family:'JetBrains Mono',monospace;font-size:10px;fill:var(--dim);letter-spacing:.06em;}
+  .ctr-cnt{font-size:13px;font-weight:600;fill:var(--blue-dark);}
+  .legend{display:flex;gap:16px;font-size:10px;color:var(--dim);margin-top:10px;padding-top:12px;border-top:1px solid var(--border);width:100%;justify-content:center;}
+  .legend i{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle;}
+  @keyframes pulse{0%,100%{r:5;opacity:1;}50%{r:7;opacity:.6;}}
+  .nowdot{animation:pulse 1.6s ease-in-out infinite;}
+</style></head>
+<body><div class="panel">
+  <div class="ph"><h3>BD Calendar</h3><span class="cnt" id="cnt">—</span></div>
+  <div class="pb">
+    <svg id="dial" width="360" height="360" viewBox="0 0 360 360"></svg>
+    <div class="legend"><span><i style="background:#4285F4"></i>high confidence</span><span><i style="background:#34A853"></i>policy firming</span><span><i style="background:#e89c4a"></i>comms event</span></div>
+  </div>
+</div>
+<script>
+  const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const FULL=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const COL={high:'#4285F4',med:'#34A853',event:'#e89c4a'};
+  const TODAY_M=4,FRESH_M=5;
+  const DATA=[['high','med'],['med'],['high','med','event'],['high','med'],
+    ['high','high','med','event'],['high','med','event','high','med','event'],
+    ['med','event','high'],['high','med','event','high','med'],['med','event'],
+    ['high','med','event','high','med','event','high'],['event'],['high','med','event','high']];
+  const total=DATA.reduce((a,p)=>a+p.length,0);
+  document.getElementById('cnt').textContent=total;
+  const cx=180,cy=180,labelR=158,pip0=70,pipStep=13,MAXP=5;
+  const NS='http://www.w3.org/2000/svg';
+  const svg=document.getElementById('dial');
+  function el(n,a){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;}
+  // guide rings
+  svg.appendChild(el('circle',{cx,cy,r:150,fill:'none',stroke:'rgba(60,64,67,.08)','stroke-width':1}));
+  svg.appendChild(el('circle',{cx,cy,r:60,fill:'#fff',stroke:'var(--border)','stroke-width':1}));
+  // halo behind center
+  const halo=el('circle',{cx,cy,r:60,fill:'rgba(66,133,244,.06)'});svg.appendChild(halo);
+  function pos(deg,r){const t=(deg-90)*Math.PI/180;return [cx+r*Math.cos(t),cy+r*Math.sin(t)];}
+  function renderCenter(m){
+    [...svg.querySelectorAll('.ctr')].forEach(n=>n.remove());
+    const g=el('g',{class:'ctr'});
+    const t1=el('text',{x:cx,y:cy-6,'text-anchor':'middle',class:'ctr-mon'});t1.textContent=MON[m];
+    const t2=el('text',{x:cx,y:cy+11,'text-anchor':'middle',class:'ctr-sub'});t2.textContent='2026';
+    const t3=el('text',{x:cx,y:cy+28,'text-anchor':'middle',class:'ctr-cnt'});t3.textContent=DATA[m].length+(DATA[m].length===1?' window':' windows');
+    g.appendChild(t1);g.appendChild(t2);g.appendChild(t3);svg.appendChild(g);
+  }
+  for(let m=0;m<12;m++){
+    const deg=m*30,ps=DATA[m];
+    // spoke guide
+    const[a,b]=pos(deg,pip0-8);const[c,d]=pos(deg,pip0+pipStep*Math.min(ps.length,MAXP));
+    if(ps.length)svg.appendChild(el('line',{x1:a,y1:b,x2:c,y2:d,class:'spoke'}));
+    // pips
+    ps.slice(0,MAXP).forEach((t,i)=>{
+      const[px,py]=pos(deg,pip0+i*pipStep);
+      const p=el('circle',{cx:px,cy:py,r:5,fill:COL[t],class:'pip'});
+      if(t==='high')p.setAttribute('filter','drop-shadow(0 0 3px rgba(66,133,244,.5))');
+      svg.appendChild(p);
+    });
+    if(ps.length>MAXP){const[px,py]=pos(deg,pip0+MAXP*pipStep);
+      const tx=el('text',{x:px,y:py+3,'text-anchor':'middle','font-size':8,fill:'var(--dim)','font-family':'JetBrains Mono,monospace'});
+      tx.textContent='+'+(ps.length-MAXP);svg.appendChild(tx);}
+    // label
+    const[lx,ly]=pos(deg,labelR);
+    const lab=el('text',{x:lx,y:ly+4,'text-anchor':'middle',
+      class:'mlbl'+(m===TODAY_M?' now':'')+(m<TODAY_M?' past':'')+(m===FRESH_M?' fresh':'')});
+    lab.textContent=MON[m];
+    lab.addEventListener('click',()=>renderCenter(m));
+    svg.appendChild(lab);
+    // now pulse tick
+    if(m===TODAY_M){const[nx,ny]=pos(deg,labelR-20);svg.appendChild(el('circle',{cx:nx,cy:ny,r:5,fill:'var(--blue)',class:'nowdot'}));}
+    // fresh: small NEW marker
+    if(m===FRESH_M){const[fx,fy]=pos(deg,labelR-18);
+      const badge=el('text',{x:fx,y:fy+3,'text-anchor':'middle','font-size':7.5,'font-weight':800,fill:'var(--blue)','font-family':'Inter,sans-serif'});
+      badge.textContent='NEW';svg.appendChild(badge);}
+  }
+  renderCenter(TODAY_M);
+</script>
+</body></html>
