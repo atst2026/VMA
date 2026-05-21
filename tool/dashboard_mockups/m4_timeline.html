@@ -1,0 +1,82 @@
+<!doctype html><html><head><meta charset="utf-8">
+<title>BD Calendar — M4 Timeline</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f7f9fc;--surface:#fff;--ink:#1F1F1F;--muted:#5F6368;--dim:#9AA0A6;
+    --line:rgba(60,64,67,.10);--line2:rgba(60,64,67,.05);
+    --blue:#4285F4;--blue-dark:#1A3D7C;--blue-soft:rgba(66,133,244,.10);
+    --reg:#3D5A82;--pol:#5E8B73;--evt:#B5824E;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);font-family:Inter,system-ui,sans-serif;color:var(--ink);display:flex;justify-content:center;padding:28px;}
+  .panel{width:584px;height:400px;background:var(--surface);border:1px solid var(--line);border-radius:16px;
+    box-shadow:0 10px 30px rgba(31,55,124,.07),0 1px 3px rgba(60,64,67,.05);display:flex;flex-direction:column;overflow:hidden;}
+  .ph{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 4px;}
+  .ph h3{margin:0;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;}
+  .tot{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);}
+  .track{position:relative;height:74px;margin:8px 22px 0;}
+  .line{position:absolute;left:0;right:0;top:30px;height:2px;border-radius:2px;
+    background:linear-gradient(90deg,rgba(66,133,244,.12),rgba(66,133,244,.45),rgba(66,133,244,.12));}
+  .nodes{position:absolute;inset:0;display:grid;grid-template-columns:repeat(12,1fr);}
+  .node{position:relative;display:flex;flex-direction:column;align-items:center;cursor:default;}
+  .node.has{cursor:pointer;}
+  .cnt{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);height:14px;}
+  .dot{width:8px;height:8px;border-radius:50%;background:#d6dce4;margin-top:8px;transition:.15s;}
+  .node.has .dot{background:#9aa6b8;}
+  .node.sel .dot{background:var(--blue);box-shadow:0 0 0 5px var(--blue-soft);width:10px;height:10px;margin-top:7px;}
+  .node.sel .cnt{color:var(--blue-dark);font-weight:600;}
+  .lab{font-size:10px;color:var(--muted);margin-top:9px;}
+  .node.sel .lab{color:var(--blue-dark);font-weight:700;}
+  .node.empty .lab{color:var(--dim);}
+  .nw{position:absolute;top:4px;font-family:'JetBrains Mono',monospace;font-size:7px;letter-spacing:.08em;color:var(--blue);}
+  .hr{height:1px;background:var(--line2);margin:2px 20px 0;}
+  /* detail */
+  .detail{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;padding:11px 20px 14px;}
+  .d-cap{display:flex;align-items:baseline;gap:8px;}
+  .d-cap .mm{font-size:15px;font-weight:600;} .d-cap .sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);}
+  .scroll{position:relative;flex:1;min-height:0;overflow-y:auto;margin-top:6px;}
+  .scroll::-webkit-scrollbar{width:5px;} .scroll::-webkit-scrollbar-thumb{background:rgba(66,133,244,.25);border-radius:5px;}
+  .grp{margin-top:12px;} .grp:first-child{margin-top:2px;}
+  .grp-h{display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);}
+  .grp-h .gd{width:6px;height:6px;border-radius:50%;}
+  .grp-h.reg .gd{background:var(--reg);} .grp-h.pol .gd{background:var(--pol);} .grp-h.evt .gd{background:var(--evt);}
+  .grp-h .gc{margin-left:auto;color:var(--dim);}
+  .li{padding:8px 0 9px;border-bottom:1px solid var(--line2);margin-left:13px;}
+  .li-top{display:flex;align-items:baseline;gap:8px;}
+  .li-name{font-size:12.5px;font-weight:600;}
+  .li-when{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--blue-dark);background:var(--blue-soft);border-radius:999px;padding:2px 8px;white-space:nowrap;}
+  .li-seat{font-size:11.5px;color:var(--muted);margin-top:3px;}
+  .li-angle{font-size:11px;line-height:1.45;color:var(--dim);margin-top:3px;}
+</style></head>
+<body><div class="panel">
+  <div class="ph"><h3>BD Calendar</h3><span class="tot" id="tot"></span></div>
+  <div class="track"><div class="line"></div><div class="nodes" id="nodes"></div></div>
+  <div class="hr"></div>
+  <div class="detail">
+    <div class="d-cap"><span class="mm" id="mm"></span><span class="sub" id="sub"></span></div>
+    <div class="scroll" id="scroll"></div>
+  </div>
+</div>
+<script src="cal_data3.js"></script>
+<script>
+  const nodes=document.getElementById('nodes');let tot=0;
+  DATA.forEach((ps,m)=>{
+    tot+=ps.length;const has=ps.length>0;
+    const n=document.createElement('div');
+    n.className='node'+(has?' has':' empty')+(m===NOW?' sel':'');n.dataset.m=m;
+    n.innerHTML=(m===FRESH?'<span class="nw">NEW</span>':'')+
+      '<span class="cnt">'+(has?ps.length:'')+'</span><span class="dot"></span><span class="lab">'+MON[m]+'</span>';
+    if(has)n.addEventListener('click',()=>sel(m));
+    nodes.appendChild(n);
+  });
+  document.getElementById('tot').textContent=tot+' windows · FY2026';
+  function sel(m){
+    document.querySelectorAll('.node').forEach(n=>n.classList.toggle('sel',+n.dataset.m===m));
+    document.getElementById('mm').textContent=FULL[m];
+    document.getElementById('sub').textContent=DATA[m].length+' windows';
+    document.getElementById('scroll').innerHTML=groupedHTML(m);
+  }
+  sel(NOW);
+</script>
+</body></html>

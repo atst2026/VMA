@@ -1,0 +1,83 @@
+<!doctype html><html><head><meta charset="utf-8">
+<title>BD Calendar — M2 Spotlight</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f7f9fc;--surface:#fff;--ink:#1F1F1F;--muted:#5F6368;--dim:#9AA0A6;
+    --line:rgba(60,64,67,.10);--line2:rgba(60,64,67,.05);
+    --blue:#4285F4;--blue-dark:#1A3D7C;--blue-soft:rgba(66,133,244,.10);
+    --reg:#3D5A82;--pol:#5E8B73;--evt:#B5824E;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);font-family:Inter,system-ui,sans-serif;color:var(--ink);display:flex;justify-content:center;padding:28px;}
+  .panel{position:relative;width:584px;height:400px;background:var(--surface);border:1px solid var(--line);border-radius:16px;
+    box-shadow:0 10px 30px rgba(31,55,124,.07),0 1px 3px rgba(60,64,67,.05);display:flex;flex-direction:column;overflow:hidden;}
+  /* soft halo top, gemini */
+  .panel::before{content:"";position:absolute;left:0;right:0;top:0;height:150px;pointer-events:none;
+    background:radial-gradient(80% 100% at 22% 0%,rgba(66,133,244,.10),transparent 70%);}
+  .ph{position:relative;display:flex;align-items:center;justify-content:space-between;padding:16px 20px 0;}
+  .ph h3{margin:0;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;}
+  .tot{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);}
+  /* month selector — slim, minimal */
+  .strip{position:relative;display:grid;grid-template-columns:repeat(12,1fr);gap:2px;padding:12px 18px 0;}
+  .mt{position:relative;text-align:center;padding:7px 0 9px;border-radius:8px;cursor:default;}
+  .mt.has{cursor:pointer;} .mt.has:hover{background:#f4f7fc;}
+  .mt .l{font-size:10px;font-weight:500;color:var(--muted);}
+  .mt.empty .l{color:var(--dim);}
+  .mt .d{font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--dim);margin-top:2px;height:11px;}
+  .mt.sel{background:rgba(66,133,244,.08);}
+  .mt.sel .l{color:var(--blue-dark);font-weight:700;}
+  .mt.sel::after{content:"";position:absolute;left:50%;bottom:2px;transform:translateX(-50%);width:14px;height:2px;border-radius:2px;background:var(--blue);}
+  .mt .nw{position:absolute;top:-1px;right:6px;width:5px;height:5px;border-radius:50%;background:var(--blue);}
+  .hr{height:1px;background:var(--line2);margin:12px 18px 0;}
+  /* hero detail */
+  .hero{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 20px 14px;}
+  .h-top{display:flex;align-items:baseline;gap:11px;}
+  .h-mon{font-size:24px;font-weight:700;letter-spacing:-.01em;}
+  .h-yr{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);}
+  .h-sum{margin-left:auto;font-size:11px;color:var(--muted);}
+  .scroll{position:relative;flex:1;min-height:0;overflow-y:auto;margin-top:8px;padding-right:2px;}
+  .scroll::-webkit-scrollbar{width:5px;} .scroll::-webkit-scrollbar-thumb{background:rgba(66,133,244,.25);border-radius:5px;}
+  .grp{margin-top:13px;} .grp:first-child{margin-top:0;}
+  .grp-h{display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);}
+  .grp-h .gd{width:6px;height:6px;border-radius:50%;}
+  .grp-h.reg .gd{background:var(--reg);} .grp-h.pol .gd{background:var(--pol);} .grp-h.evt .gd{background:var(--evt);}
+  .grp-h .gc{margin-left:auto;color:var(--dim);}
+  .li{padding:8px 0 9px;border-bottom:1px solid var(--line2);margin-left:13px;}
+  .li-top{display:flex;align-items:baseline;gap:8px;}
+  .li-name{font-size:12.5px;font-weight:600;}
+  .li-when{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--blue-dark);background:var(--blue-soft);border-radius:999px;padding:2px 8px;white-space:nowrap;}
+  .li-seat{font-size:11.5px;color:var(--muted);margin-top:3px;}
+  .li-angle{font-size:11px;line-height:1.45;color:var(--dim);margin-top:3px;}
+</style></head>
+<body><div class="panel">
+  <div class="ph"><h3>BD Calendar</h3><span class="tot" id="tot"></span></div>
+  <div class="strip" id="strip"></div>
+  <div class="hr"></div>
+  <div class="hero">
+    <div class="h-top"><span class="h-mon" id="hm"></span><span class="h-yr">2026</span><span class="h-sum" id="hs"></span></div>
+    <div class="scroll" id="scroll"></div>
+  </div>
+</div>
+<script src="cal_data3.js"></script>
+<script>
+  const strip=document.getElementById('strip');let tot=0;
+  DATA.forEach((ps,m)=>{
+    tot+=ps.length;const has=ps.length>0;
+    const d=document.createElement('div');
+    d.className='mt'+(has?' has':' empty')+(m===NOW?' sel':'');d.dataset.m=m;
+    d.innerHTML=(m===FRESH?'<span class="nw"></span>':'')+'<div class="l">'+MON[m]+'</div>'+
+      '<div class="d">'+(has?ps.length:'')+'</div>';
+    if(has)d.addEventListener('click',()=>sel(m));
+    strip.appendChild(d);
+  });
+  document.getElementById('tot').textContent=tot+' windows · FY2026';
+  function sel(m){
+    document.querySelectorAll('.mt').forEach(d=>d.classList.toggle('sel',+d.dataset.m===m));
+    document.getElementById('hm').textContent=FULL[m];
+    document.getElementById('hs').textContent=DATA[m].length+' placement windows';
+    document.getElementById('scroll').innerHTML=groupedHTML(m);
+  }
+  sel(NOW);
+</script>
+</body></html>
