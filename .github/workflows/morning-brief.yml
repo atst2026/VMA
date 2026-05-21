@@ -91,6 +91,13 @@ jobs:
 
       - name: Run the brief
         env:
+          # Needed so morning_brief.py can push latest_signals /
+          # latest_predictive / latest_funding / predictor_pipeline to
+          # the dashboard-state branch (github_state._enabled() checks
+          # GITHUB_TOKEN). Without this the pushes silently no-op and
+          # the dashboard boots with empty leads/predictors until a
+          # manual Daily Refresh.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMPANIES_HOUSE_KEY: ${{ secrets.COMPANIES_HOUSE_KEY }}
           BRIGHT_DATA_KEY: ${{ secrets.BRIGHT_DATA_KEY }}
           BRIGHT_DATA_ZONE: ${{ secrets.BRIGHT_DATA_ZONE }}
