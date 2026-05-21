@@ -245,7 +245,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 <div style="color:#666;font-size:13px;margin-bottom:18px;">
   Role: {_esc(role)} · Generated {_esc(datetime.now().strftime('%a %d %b %Y · %H:%M'))} · For Sara Tehrani, VMA Group
 </div>
-<hr style="border:none;border-top:2px solid #C96442;margin:14px 0 24px;">
+<hr style="border:none;border-top:2px solid #3D5A82;margin:14px 0 24px;">
 
 <h3 style="margin:18px 0 6px 0;">1. Account snapshot</h3>
 {ch_html}

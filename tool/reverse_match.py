@@ -272,7 +272,7 @@ def render_html(candidate_name: str, candidate_company: str, candidate_title: st
   Currently {_esc(candidate_title)} at {_esc(candidate_company)} ({_esc(sector_label)}) ·
   Generated {_esc(datetime.now().strftime('%a %d %b %Y · %H:%M'))}
 </div>
-<hr style="border:none;border-top:2px solid #C96442;margin:14px 0 24px;">
+<hr style="border:none;border-top:2px solid #3D5A82;margin:14px 0 24px;">
 <div style="font-size:13px;margin-bottom:18px;">
   {len(targets_with_rationale)} target employers · {priority_summary}
 </div>

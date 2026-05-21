@@ -541,7 +541,7 @@ def render_html(brief: PrepBrief) -> str:
 <div style="color:#666;font-size:13px;margin-bottom:18px;">
   {contact_line or 'On-demand prep pack generated from the dashboard.'}
 </div>
-<hr style="border:none;border-top:2px solid #C96442;margin:14px 0 24px;">
+<hr style="border:none;border-top:2px solid #3D5A82;margin:14px 0 24px;">
 
 <div style="margin-top:14px;font-size:14px;">
   <h3 style="margin:14px 0 4px 0;">1. Leadership context</h3>
