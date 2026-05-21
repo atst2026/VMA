@@ -1,0 +1,105 @@
+<!doctype html><html><head><meta charset="utf-8">
+<title>BD Calendar — A · Editorial Grid</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#fbfcfd;--surface:#fff;--ink:#1c2530;--muted:#6b7480;--faint:#9aa3ad;
+    --line:rgba(28,37,48,.10);--line2:rgba(28,37,48,.055);
+    --reg:#3D5A82;--pol:#5E8B73;--evt:#B5824E;
+    --reg-soft:rgba(61,90,130,.09);--reg-tint:rgba(61,90,130,.05);
+    --shadow:0 1px 2px rgba(28,37,48,.04);--shadow-lg:0 10px 30px rgba(28,37,48,.07),0 2px 6px rgba(28,37,48,.04);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);font-family:Inter,system-ui,sans-serif;color:var(--ink);display:flex;justify-content:center;padding:28px;}
+  .panel{width:604px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-lg);overflow:hidden;}
+  .ph{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line2);}
+  .ph-l{display:flex;align-items:baseline;gap:11px;}
+  .ph h3{margin:0;font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);}
+  .ph .yr{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--faint);letter-spacing:.08em;}
+  .ph .tot{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);}
+  .pb{padding:16px 20px 20px;}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line2);border:1px solid var(--line2);border-radius:10px;overflow:hidden;}
+  .cell{background:var(--surface);padding:11px 12px 12px;min-height:74px;display:flex;flex-direction:column;gap:9px;cursor:default;transition:background .14s;}
+  .cell.has{cursor:pointer;}
+  .cell.has:hover{background:#f7f9fb;}
+  .cell.past{opacity:.5;}
+  .c-top{display:flex;align-items:baseline;justify-content:space-between;}
+  .c-m{font-size:12px;font-weight:600;letter-spacing:.01em;color:var(--ink);}
+  .cell.past .c-m{color:var(--muted);font-weight:500;}
+  .c-n{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--faint);}
+  .ticks{display:flex;flex-wrap:wrap;gap:3px;align-content:flex-start;min-height:8px;}
+  .tk{width:14px;height:5px;border-radius:2px;}
+  .tk.reg{background:var(--reg);}.tk.pol{background:var(--pol);}.tk.evt{background:var(--evt);}
+  .cell.sel{background:var(--reg-tint);box-shadow:inset 0 0 0 1.5px var(--reg);}
+  .cell.sel .c-m{color:var(--reg);}
+  .newtag{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.12em;color:var(--reg);display:inline-flex;align-items:center;gap:4px;}
+  .newtag::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--reg);animation:bd-pulse 2s ease-in-out infinite;}
+  @keyframes bd-pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 var(--reg-soft);}50%{opacity:.5;box-shadow:0 0 0 4px rgba(61,90,130,0);}}
+  /* DETAIL */
+  .detail{margin-top:16px;border-top:1px solid var(--line2);padding-top:15px;}
+  .d-cap{display:flex;align-items:baseline;gap:9px;margin-bottom:11px;}
+  .d-cap .mm{font-family:'Newsreader',Georgia,serif;font-size:19px;font-weight:500;color:var(--ink);}
+  .d-cap .sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--faint);letter-spacing:.04em;}
+  .d-item{padding:13px 0;border-top:1px solid var(--line2);}
+  .d-item:first-of-type{border-top:none;}
+  .d-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+  .chip{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.07em;text-transform:uppercase;
+        padding:3px 8px 3px 6px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;font-weight:500;}
+  .chip::before{content:"";width:7px;height:7px;border-radius:2px;}
+  .chip.reg{color:var(--reg);background:var(--reg-soft);}.chip.reg::before{background:var(--reg);}
+  .chip.pol{color:#3f6151;background:rgba(94,139,115,.12);}.chip.pol::before{background:var(--pol);}
+  .chip.evt{color:#8a5f33;background:rgba(181,130,78,.13);}.chip.evt::before{background:var(--evt);}
+  .d-name{font-size:13.5px;font-weight:600;color:var(--ink);}
+  .d-when{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--reg);
+          border:1px solid var(--reg-soft);border-radius:999px;padding:2px 9px;}
+  .d-rm{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--faint);background:none;border:1px solid var(--line);
+        border-radius:5px;padding:3px 8px;cursor:pointer;}
+  .d-rm:hover{color:#a3402a;border-color:#a3402a;}
+  .d-seat{font-size:12.5px;color:var(--ink);margin-top:7px;}
+  .d-angle{font-size:12px;line-height:1.5;color:var(--muted);margin-top:5px;}
+  .d-tg{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;}
+  .d-tg span{font-size:10.5px;color:var(--muted);background:#f4f6f8;border:1px solid var(--line2);border-radius:6px;padding:2px 8px;}
+  .d-foot{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--faint);margin-top:9px;letter-spacing:.02em;}
+  .d-foot a{color:var(--reg);text-decoration:none;}
+  .legend{display:flex;gap:18px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--faint);letter-spacing:.04em;margin-top:16px;padding-top:13px;border-top:1px solid var(--line2);}
+  .legend i{width:13px;height:5px;border-radius:2px;display:inline-block;margin-right:7px;vertical-align:middle;}
+</style></head>
+<body><div class="panel">
+  <div class="ph"><div class="ph-l"><h3>BD Calendar</h3><span class="yr">FY2026</span></div><span class="tot" id="tot"></span></div>
+  <div class="pb">
+    <div class="grid" id="grid"></div>
+    <div class="detail" id="detail"></div>
+    <div class="legend">
+      <span><i style="background:#3D5A82"></i>Regulatory deadline</span>
+      <span><i style="background:#5E8B73"></i>Policy timeline</span>
+      <span><i style="background:#B5824E"></i>Comms event</span>
+    </div>
+  </div>
+</div>
+<script src="cal_data.js"></script>
+<script>
+  const g=document.getElementById('grid');let tot=0;
+  DATA.forEach((ps,m)=>{
+    tot+=ps.length;const has=ps.length>0,past=m<NOW,sel=m===NOW,fresh=m===FRESH;
+    const d=document.createElement('div');
+    d.className='cell'+(has?' has':'')+(past?' past':'')+(sel?' sel':'');
+    d.innerHTML='<div class="c-top"><span class="c-m">'+MON[m]+'</span>'+
+      (fresh?'<span class="newtag">NEW</span>':(has?'<span class="c-n">'+ps.length+'</span>':''))+'</div>'+
+      '<div class="ticks">'+ps.map(t=>'<span class="tk '+t.type+'"></span>').join('')+'</div>';
+    if(has)d.addEventListener('click',()=>sel_m(m));
+    g.appendChild(d);
+  });
+  document.getElementById('tot').textContent=tot+' windows';
+  function sel_m(m){
+    document.querySelectorAll('.cell').forEach((c,i)=>c.classList.toggle('sel',i===m));
+    renderDetail(m);
+  }
+  function renderDetail(m){
+    const ps=DATA[m];
+    document.getElementById('detail').innerHTML=
+      '<div class="d-cap"><span class="mm">'+FULL[m]+'</span><span class="sub">'+ps.length+' placement window'+(ps.length!==1?'s':'')+' · click a finding to work it</span></div>'+
+      ps.map(itemHTML).join('');
+  }
+  sel_m(NOW);
+</script>
+</body></html>

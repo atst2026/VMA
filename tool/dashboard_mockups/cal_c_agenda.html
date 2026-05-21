@@ -1,0 +1,96 @@
+<!doctype html><html><head><meta charset="utf-8">
+<title>BD Calendar — C · Agenda Rail</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#fbfcfd;--surface:#fff;--ink:#1c2530;--muted:#6b7480;--faint:#9aa3ad;
+    --line:rgba(28,37,48,.10);--line2:rgba(28,37,48,.055);
+    --reg:#3D5A82;--pol:#5E8B73;--evt:#B5824E;--reg-soft:rgba(61,90,130,.09);--reg-tint:rgba(61,90,130,.06);
+    --shadow-lg:0 10px 30px rgba(28,37,48,.07),0 2px 6px rgba(28,37,48,.04);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);font-family:Inter,system-ui,sans-serif;color:var(--ink);display:flex;justify-content:center;padding:28px;}
+  .panel{width:604px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-lg);overflow:hidden;}
+  .ph{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line2);}
+  .ph-l{display:flex;align-items:baseline;gap:11px;}
+  .ph h3{margin:0;font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;}
+  .ph .yr{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--faint);letter-spacing:.08em;}
+  .ph .tot{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);}
+  .body{display:grid;grid-template-columns:128px 1fr;min-height:330px;}
+  /* RAIL */
+  .rail{border-right:1px solid var(--line2);padding:10px 0;}
+  .r-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 16px;cursor:default;position:relative;}
+  .r-row.has{cursor:pointer;}
+  .r-row.has:hover{background:#f7f9fb;}
+  .r-row.past{opacity:.5;}
+  .r-row.sel{background:var(--reg-tint);}
+  .r-row.sel::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:2.5px;background:var(--reg);border-radius:2px;}
+  .r-m{font-size:12px;font-weight:500;}
+  .r-row.sel .r-m{color:var(--reg);font-weight:600;}
+  .r-dots{display:flex;gap:3px;align-items:center;}
+  .rd{width:6px;height:6px;border-radius:2px;}
+  .rd.reg{background:var(--reg);}.rd.pol{background:var(--pol);}.rd.evt{background:var(--evt);}
+  .r-n{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--faint);min-width:10px;text-align:right;}
+  .r-new{font-family:'JetBrains Mono',monospace;font-size:7.5px;letter-spacing:.1em;color:var(--reg);}
+  /* AGENDA */
+  .agenda{padding:15px 18px 18px;}
+  .d-cap{display:flex;align-items:baseline;gap:9px;margin-bottom:6px;}
+  .d-cap .mm{font-family:'Newsreader',Georgia,serif;font-size:20px;font-weight:500;}
+  .d-cap .sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--faint);}
+  .d-item{padding:13px 0;border-top:1px solid var(--line2);}.d-item:first-of-type{border-top:none;margin-top:4px;}
+  .d-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+  .chip{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.07em;text-transform:uppercase;padding:3px 8px 3px 6px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;font-weight:500;}
+  .chip::before{content:"";width:7px;height:7px;border-radius:2px;}
+  .chip.reg{color:var(--reg);background:var(--reg-soft);}.chip.reg::before{background:var(--reg);}
+  .chip.pol{color:#3f6151;background:rgba(94,139,115,.12);}.chip.pol::before{background:var(--pol);}
+  .chip.evt{color:#8a5f33;background:rgba(181,130,78,.13);}.chip.evt::before{background:var(--evt);}
+  .d-name{font-size:13px;font-weight:600;}
+  .d-when{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--reg);border:1px solid var(--reg-soft);border-radius:999px;padding:2px 9px;}
+  .d-rm{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--faint);background:none;border:1px solid var(--line);border-radius:5px;padding:3px 8px;cursor:pointer;}
+  .d-rm:hover{color:#a3402a;border-color:#a3402a;}
+  .d-seat{font-size:12.5px;margin-top:7px;}
+  .d-angle{font-size:12px;line-height:1.5;color:var(--muted);margin-top:5px;}
+  .d-tg{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;}
+  .d-tg span{font-size:10.5px;color:var(--muted);background:#f4f6f8;border:1px solid var(--line2);border-radius:6px;padding:2px 8px;}
+  .d-foot{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--faint);margin-top:9px;}.d-foot a{color:var(--reg);text-decoration:none;}
+  .legend{display:flex;gap:16px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--faint);letter-spacing:.03em;padding:11px 20px;border-top:1px solid var(--line2);}
+  .legend i{width:11px;height:6px;border-radius:2px;display:inline-block;margin-right:6px;vertical-align:middle;}
+</style></head>
+<body><div class="panel">
+  <div class="ph"><div class="ph-l"><h3>BD Calendar</h3><span class="yr">FY2026</span></div><span class="tot" id="tot"></span></div>
+  <div class="body">
+    <div class="rail" id="rail"></div>
+    <div class="agenda" id="agenda"></div>
+  </div>
+  <div class="legend">
+    <span><i style="background:#3D5A82"></i>Regulatory deadline</span>
+    <span><i style="background:#5E8B73"></i>Policy timeline</span>
+    <span><i style="background:#B5824E"></i>Comms event</span>
+  </div>
+</div>
+<script src="cal_data.js"></script>
+<script>
+  const rail=document.getElementById('rail');let tot=0;
+  DATA.forEach((ps,m)=>{
+    tot+=ps.length;const has=ps.length>0,past=m<NOW;
+    const types=[...new Set(ps.map(p=>p.type))];
+    const row=document.createElement('div');
+    row.className='r-row'+(has?' has':'')+(past?' past':'')+(m===NOW?' sel':'');row.dataset.m=m;
+    row.innerHTML='<span class="r-m">'+MON[m]+'</span>'+
+      '<span class="r-dots">'+types.map(t=>'<span class="rd '+t+'"></span>').join('')+
+      (m===FRESH?'<span class="r-new">NEW</span>':'')+'</span>'+
+      '<span class="r-n">'+(has?ps.length:'')+'</span>';
+    if(has)row.addEventListener('click',()=>sel_m(m));
+    rail.appendChild(row);
+  });
+  document.getElementById('tot').textContent=tot+' windows';
+  function sel_m(m){
+    document.querySelectorAll('.r-row').forEach(r=>r.classList.toggle('sel',+r.dataset.m===m));
+    const ps=DATA[m];
+    document.getElementById('agenda').innerHTML=
+      '<div class="d-cap"><span class="mm">'+FULL[m]+' 2026</span><span class="sub">'+ps.length+' window'+(ps.length!==1?'s':'')+'</span></div>'+
+      ps.map(itemHTML).join('');
+  }
+  sel_m(NOW);
+</script>
+</body></html>
