@@ -2810,6 +2810,17 @@ TEMPLATE = r"""
       letter-spacing: 0;
       font-weight: 400;
     }
+    /* Brand tagline — matched to the VMA Group logo lockup:
+       uppercase, wide tracking, bullet separators. */
+    .footer .brand-tag {
+      display: inline-block;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      font-size: 9.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .footer .brand-tag .sep { margin: 0 0.5em; color: var(--text-dim); }
 
     /* Developer-only maintenance control. Deliberately drab and set
        apart from the user-facing footer text so it reads as "not for
@@ -3294,7 +3305,7 @@ TEMPLATE = r"""
   </div>
 
   <div class="footer">
-    Recruitment · Executive Search · Advisory Services
+    <span class="brand-tag">Recruitment<span class="sep">•</span>Executive Search<span class="sep">•</span>Advisory Services</span>
     <span class="dev-zone">
       <span class="dev-zone-label">For dev only - not a user feature:</span>
       <button type="button" id="dev-run-brief" class="dev-btn"
@@ -3873,9 +3884,9 @@ async function loadPulses() {
           '<span class="cal-ph">Click a month with pips for the lead detail.</span>' +
         '</div>' +
         '<div class="cal-legend">' +
-          '<span><i style="background:var(--teal)"></i>high confidence</span>' +
-          '<span><i style="background:var(--green)"></i>policy timeline firming</span>' +
-          '<span><i style="background:#e89c4a"></i>comms event</span>' +
+          '<span><i style="background:var(--teal)"></i>Regulatory deadline</span>' +
+          '<span><i style="background:var(--green)"></i>Policy timeline</span>' +
+          '<span><i style="background:#e89c4a"></i>Comms event</span>' +
         '</div>' +
       '</div></div>'  // .cal-detail .cal-wrap
     );
@@ -3886,7 +3897,9 @@ async function loadPulses() {
       const conf = isEvent ? 'cal-eventchip'
                  : (p.confidence === 'high') ? 'mandate-age'
                  : 'hook-badge generic_fit';
-      const confLabel = isEvent ? 'event' : (p.confidence || '');
+      const confLabel = isEvent ? 'Comms event'
+                 : (p.confidence === 'high') ? 'Regulatory deadline'
+                 : 'Policy timeline';
       const far = (typeof p.days_left === 'number' && p.days_left > 150);
       const daysLabel = isEvent
         ? (typeof p.days_left === 'number'
