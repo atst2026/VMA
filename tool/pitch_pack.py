@@ -106,31 +106,46 @@ def cost_of_vacancy(role: str, salary_midpoint: int) -> dict:
 
 
 # ---- Recent news lookups ---------------------------------------------
-def recent_news_for(target: str, hours_back: int = 24 * 90) -> list[dict]:
-    """Last 90 days of news mentioning the target. Best-effort via GDELT
-    (no auth needed). Returns list of article dicts."""
+def _core_name(target: str) -> str:
+    """Strip common public-company suffixes so 'HSBC UK' / 'Tesco PLC' query
+    GDELT on the entity the press actually names ('HSBC' / 'Tesco')."""
+    t = (target or "").strip()
+    for suf in (" holdings plc", " group plc", " uk plc", " bank plc",
+                " plc", " group", " holdings", " uk", " bank",
+                " ltd", " limited"):
+        if t.lower().endswith(suf):
+            return t[: -len(suf)].strip()
+    return t
+
+
+def _gdelt_articles(query: str, hours_back: int) -> list[dict]:
     from tool.config import SOURCES
     r = get(SOURCES["gdelt_doc"], params={
-        "query": f'"{target}"',
-        "mode": "ArtList",
-        "format": "json",
-        "timespan": f"{hours_back}h",
-        "maxrecords": 10,
-        "sort": "datedesc",
+        "query": query, "mode": "ArtList", "format": "json",
+        "timespan": f"{hours_back}h", "maxrecords": 10, "sort": "datedesc",
     })
-    if not r:
-        log.warning("GDELT %r: no HTTP response", target)
-        return []
-    if r.status_code != 200:
-        log.warning("GDELT %r: HTTP %s body=%s",
-                    target, r.status_code, (r.text or "")[:200])
+    if not r or r.status_code != 200:
+        log.warning("GDELT %s: %s", query,
+                    "no response" if not r else f"HTTP {r.status_code}")
         return []
     try:
-        articles = (r.json().get("articles") or [])[:10]
+        return (r.json().get("articles") or [])[:10]
     except Exception as e:
-        log.warning("GDELT %r: JSON parse failed (%s); raw=%s",
-                    target, e, (r.text or "")[:200])
+        log.warning("GDELT %s: JSON parse failed (%s)", query, e)
         return []
+
+
+def recent_news_for(target: str, hours_back: int = 24 * 90) -> list[dict]:
+    """Last 90 days of news mentioning the target. Best-effort via GDELT
+    (no auth needed). Queries the exact name first; if that returns nothing,
+    retries on the core name (suffix stripped) so subsidiary-style names
+    like 'HSBC UK' still surface coverage."""
+    articles = _gdelt_articles(f'"{target}"', hours_back)
+    if not articles:
+        core = _core_name(target)
+        if core and core.lower() != target.strip().lower():
+            log.info("GDELT %r empty — retrying core name %r", target, core)
+            articles = _gdelt_articles(f'"{core}"', hours_back)
     log.info("GDELT %r: %d articles", target, len(articles))
     return articles
 
@@ -148,7 +163,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
                 news: list[dict], peers: list[str], sector: str | None,
                 salary_band: tuple[int, int, str],
                 cov: dict, mode: str,
-                annual_report=None) -> str:
+                annual_report=None, curated_priorities: list[str] | None = None) -> str:
     low, high, matched = salary_band
     mid = (low + high) // 2
 
@@ -192,6 +207,18 @@ def render_html(target: str, role: str, ch_snapshot: dict,
             + "".join(quote_items)
             + "</ul>"
         )
+    elif curated_priorities:
+        section2_heading = "2. Why this matters now"
+        news_html = (
+            "<div style='font-size:13px;color:#555;margin-bottom:8px;'>"
+            f"Publicly stated strategic priorities for {_esc(target)} (curated from their "
+            "latest public reporting — live annual-report extraction unavailable for this "
+            "entity). Pick the one that best matches the brief:"
+            "</div>"
+            "<ul style='padding-left:18px;font-size:13px;'>"
+            + "".join(f"<li style='margin-bottom:8px;'>{_esc(p)}</li>" for p in curated_priorities)
+            + "</ul>"
+        )
     elif news:
         section2_heading = "2. Recent market context"
         news_html = (
@@ -213,6 +240,8 @@ def render_html(target: str, role: str, ch_snapshot: dict,
     # recent press) and surface the recurring lines for Sara to echo.
     from tool import client_language as _cl
     _corpus = [q.text for q in annual_report.quotes] if (annual_report and annual_report.quotes) else []
+    if not _corpus and curated_priorities:
+        _corpus += list(curated_priorities)
     _corpus += [a.get("title", "") for a in (news or [])[:30]]
     _mirror = _cl.mirror_phrases(_corpus, top_n=8)
     if _mirror:
@@ -324,7 +353,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 def render_text(target: str, role: str, ch_snapshot: dict,
                 news: list[dict], peers: list[str], sector: str | None,
                 salary_band: tuple[int, int, str], cov: dict,
-                annual_report=None) -> str:
+                annual_report=None, curated_priorities: list[str] | None = None) -> str:
     low, high, matched = salary_band
     mid = (low + high) // 2
     lines = [
@@ -346,6 +375,11 @@ def render_text(target: str, role: str, ch_snapshot: dict,
         for q in annual_report.quotes:
             lines.append(f"   - \"{q.text}\"")
             lines.append(f"     [{q.heading}, p.{q.page}]")
+    elif curated_priorities:
+        lines += ["", f"2. WHY THIS MATTERS NOW (publicly stated priorities for {target})"]
+        lines.append("   Curated from their latest public reporting (live annual-report extraction unavailable).")
+        for p in curated_priorities:
+            lines.append(f"   - {p}")
     elif news:
         lines += ["", "2. RECENT MARKET CONTEXT (generic, no annual report quotes available)"]
         for a in news[:5]:
@@ -357,6 +391,8 @@ def render_text(target: str, role: str, ch_snapshot: dict,
 
     from tool import client_language as _cl
     _corpus = [q.text for q in annual_report.quotes] if (annual_report and annual_report.quotes) else []
+    if not _corpus and curated_priorities:
+        _corpus += list(curated_priorities)
     _corpus += [a.get("title", "") for a in (news or [])[:30]]
     _mirror = _cl.mirror_phrases(_corpus, top_n=8)
     if _mirror:
@@ -453,10 +489,22 @@ def main() -> int:
     mid = (sal[0] + sal[1]) // 2
     cov = cost_of_vacancy(role, mid)
 
+    # Curated-priorities fallback: if the live annual-report extraction came
+    # back empty (subsidiary filings carry no strategic narrative, scanned
+    # PDFs, non-UK entities), fall back to the hand-curated tier-A priorities
+    # so Section 2 + the client-language layer still fire for known accounts.
+    curated_priorities: list[str] = []
+    if not (annual_rep and annual_rep.quotes):
+        try:
+            from tool.pre_meeting import _load_curated_priorities
+            curated_priorities = _load_curated_priorities(target)
+        except Exception as e:
+            log.info("curated-priorities fallback failed: %s", e)
+
     html_out = render_html(target, role, ch, news, peers, sector, sal, cov, mode,
-                            annual_report=annual_rep)
+                            annual_report=annual_rep, curated_priorities=curated_priorities)
     text_out = render_text(target, role, ch, news, peers, sector, sal, cov,
-                            annual_report=annual_rep)
+                            annual_report=annual_rep, curated_priorities=curated_priorities)
 
     safe = "".join(c if c.isalnum() else "_" for c in target.lower())[:40]
     stamp = datetime.now().strftime("%Y%m%d_%H%M")
