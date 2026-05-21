@@ -3092,7 +3092,6 @@ TEMPLATE = r"""
             <div class="row-details">
               <div class="meta">
                 <div class="evidence">{{ fw.scope }}</div>
-                <div class="evidence" style="margin-top:4px;"><strong>Holders:</strong> {{ fw.holders_label }}</div>
                 <div class="evidence" style="margin-top:4px;">
                   <a href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify on portal &rarr;</a>
                   <span style="color:#888;"> · {{ fw.notes }}</span>

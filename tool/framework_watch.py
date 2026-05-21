@@ -2,25 +2,20 @@
 
 Routed into Pre-Market Signals as a "framework refresh window" signal
 (the same way funding rounds are folded in): it surfaces the named
-exec-search frameworks Sara could compete on, when each is up for
-re-procurement (the window to get appointed), and which firms currently
-hold it (competitor intelligence — where she can and can't compete on
-public-sector comms searches).
+exec-search frameworks Sara could compete on and when each is up for
+re-procurement (the window to get appointed) — fully automatic, no manual
+upkeep.
 
 Deterministic + public. A curated registry of framework metadata
-(reference, buyer, scope, dates, incumbent suppliers, portal) drives a
-refresh-window engine off today's date — no restricted integrations, no
-external calls. Mirrors calendar_pulses' hand-curated model.
+(buyer, scope, dates, portal) drives a refresh-window engine off today's
+date — no restricted integrations, no external calls. Mirrors
+calendar_pulses' hand-curated model.
 
-HONESTY NOTE — what is seeded vs what must be verified:
-  * reference / buyer / scope / portal  → stable, seeded.
-  * expiry_date                         → ESTIMATE unless date_confidence
-                                          == "verified"; UI labels it "(est.)".
-  * holders                             → curated competitor intelligence;
-                                          seeded EMPTY (we do not fabricate
-                                          supplier rosters). Populate from the
-                                          framework's published supplier list.
-Editing the registry below is the whole maintenance surface.
+HONESTY NOTE: expiry_date is an ESTIMATE unless date_confidence ==
+"verified" (the UI labels it "(est.)"). A per-framework supplier/holder
+list was deliberately NOT included — it would require ongoing manual data
+entry to stay useful, which won't happen; the portal link is the pointer
+for anyone who wants to check current suppliers.
 """
 from __future__ import annotations
 
@@ -45,7 +40,6 @@ REFRESH_LEAD_MONTHS = 9
 #   expiry_date    ISO date the current agreement ends (estimate unless
 #                  date_confidence == "verified")
 #   date_confidence "verified" | "estimate"
-#   holders        incumbent suppliers (curated competitor intel; [] = unknown)
 #   portal         authoritative source to verify suppliers + dates
 #   notes          GP-impact / context
 FRAMEWORKS: list[dict] = [
@@ -58,7 +52,6 @@ FRAMEWORKS: list[dict] = [
         "comms_relevant": True,
         "expiry_date": "2028-05-31",
         "date_confidence": "estimate",
-        "holders": [],
         "portal": "https://www.crowncommercial.gov.uk",
         "notes": "GP impact modest (£5–20k/search) but defines where VMA can compete on central-gov exec search.",
     },
@@ -71,7 +64,6 @@ FRAMEWORKS: list[dict] = [
         "comms_relevant": True,
         "expiry_date": "2026-12-31",
         "date_confidence": "estimate",
-        "holders": [],
         "portal": "https://www.crowncommercial.gov.uk",
         "notes": "Health-sector comms-leadership searches; verify lot coverage for comms roles.",
     },
@@ -84,7 +76,6 @@ FRAMEWORKS: list[dict] = [
         "comms_relevant": True,
         "expiry_date": "2027-03-31",
         "date_confidence": "estimate",
-        "holders": [],
         "portal": "https://www.gov.uk/government/organisations/nuclear-decommissioning-authority",
         "notes": "Niche but high-value; confirm Lot 6 scope covers comms/corporate-affairs leadership.",
     },
@@ -97,7 +88,6 @@ FRAMEWORKS: list[dict] = [
         "comms_relevant": True,
         "expiry_date": "2027-09-30",
         "date_confidence": "estimate",
-        "holders": [],
         "portal": "https://www.publiccontractsscotland.gov.uk",
         "notes": "Track each administration's own portal; references vary by nation.",
     },
@@ -148,8 +138,6 @@ def load_frameworks(today: date | None = None) -> list[dict]:
             "window_label": window_label,
             "days_to_expiry": days_to_expiry,
             "is_estimate": est,
-            "holders_label": (", ".join(fw["holders"]) if fw.get("holders")
-                              else "See portal — supplier list not yet recorded"),
         })
 
     rank = {"refresh_window": 0, "live": 1, "unknown": 2, "expired": 3}

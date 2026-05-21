@@ -283,26 +283,6 @@ def render_html(target: str, role: str, ch_snapshot: dict,
         "</div>"
     )
 
-    # Recent relevant placements (anonymised social proof). Renders only when
-    # the curated registry has entries matching this target — never fabricated.
-    from tool import placements as _pl
-    _rel = _pl.relevant_placements(sector, role)
-    if _rel:
-        _pi = "".join(
-            "<li style='margin-bottom:6px;'>"
-            f"<strong>{_esc(p.get('role',''))}</strong> &mdash; {_esc(p.get('descriptor',''))}"
-            + (f". <span style='color:#555;'>{_esc(p.get('outcome',''))}</span>" if p.get('outcome') else "")
-            + "</li>"
-            for p in _rel
-        )
-        placements_html = (
-            "<h3 style='margin:18px 0 6px 0;'>4b. Recent relevant placements</h3>"
-            "<div style='font-size:13px;color:#555;margin-bottom:6px;'>Anonymised, sector-relevant track record:</div>"
-            f"<ul style='padding-left:18px;font-size:13px;'>{_pi}</ul>"
-        )
-    else:
-        placements_html = ""
-
     # COV breakdown
     cov_html = "<table style='border-collapse:collapse;font-size:13px;'>"
     for k, v in cov.items():
@@ -354,7 +334,6 @@ def render_html(target: str, role: str, ch_snapshot: dict,
   Where the candidate pool sits. These 15 named employers represent the realistic move-from set for a {_esc(matched)}-level hire in this sector.
 </div>
 {peer_html}
-{placements_html}
 
 <h3 style="margin:18px 0 6px 0;">5. Salary benchmark</h3>
 <div style='font-size:13px;'>
@@ -447,13 +426,6 @@ def render_text(target: str, role: str, ch_snapshot: dict,
               f"   reaching them before a competitor does is what a retained search buys."]
     for i, p in enumerate(peers, 1):
         lines.append(f"   {i:>2}. {p}")
-    from tool import placements as _pl
-    _rel = _pl.relevant_placements(sector, role)
-    if _rel:
-        lines += ["", "4b. RECENT RELEVANT PLACEMENTS (anonymised)"]
-        for p in _rel:
-            tail = f" — {p['outcome']}" if p.get("outcome") else ""
-            lines.append(f"   - {p.get('role','')} · {p.get('descriptor','')}{tail}")
     lines += ["", "5. SALARY BENCHMARK",
               f"   UK April 2026 range for {matched}: £{low:,}–£{high:,} base + 10–25% bonus/LTIP",
               "", "6. 6-WEEK METHODOLOGY",
