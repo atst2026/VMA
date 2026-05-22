@@ -1977,6 +1977,7 @@ TEMPLATE = r"""
     .ipill { font: 600 9.5px/1.4 "Inter", sans-serif; padding: 2px 7px; border-radius: 10px; white-space: nowrap; letter-spacing: .02em; }
     .ipill.s { background: #e7f3ec; color: #2e7d50; }
     .ipill.w { background: var(--teal-soft); color: var(--teal-dark); }
+    .ipill.mut { background: #eef0f3; color: #80868b; }   /* not open to bid yet */
     /* Leading type badge (replaces the bullet dot), slightly enlarged. */
     .typ { font: 800 11px/1 "Inter", sans-serif; padding: 5px 7px; border-radius: 5px; letter-spacing: .06em; flex: none; }
     .typ.hw { background: #e7f3ec; color: #2e7d50; }
@@ -3277,7 +3278,7 @@ TEMPLATE = r"""
               <span class="typ fw">FW</span>
               <span class="row2-title">{{ fw.ad_title or fw.title }}</span>
               <span class="row2-tags">
-                <span class="ipill w">{{ fw.window_pill }}</span>
+                <span class="ipill {{ 'w' if fw.status == 'refresh_window' else 'mut' }}">{{ fw.window_pill }}</span>
                 {% if fw.triage == 'followed_up' %}<span class="status-badge followed-up">&#10003;</span>{% elif fw.triage == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
               </span>
               <span class="row2-chev">&rsaquo;</span>
