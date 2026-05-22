@@ -1964,30 +1964,36 @@ TEMPLATE = r"""
     #hire-calendar-row > .panel { min-width: 0; }
     #hire-calendar-row .panel { height: 400px; display: flex; flex-direction: column; }
     #hire-calendar-row .panel-body { max-height: none; flex: 1; min-height: 0; overflow-y: auto; }
-    /* "Framework windows" divider inside the combined panel. */
-    .fw-subhead { font: 700 10px/1.4 "Inter", sans-serif; text-transform: uppercase;
-                  letter-spacing: .09em; color: var(--text-muted);
-                  padding: 12px 2px 4px; margin-top: 8px; border-top: 1px solid var(--border); }
-
-    /* ===== Option-1 rail cards (Hire Watch dual-action + Framework windows) ===== */
-    .hw-card, .fw-card { display: flex; gap: 11px; padding: 12px 2px; border-bottom: 1px solid var(--border); }
-    .hw-card:last-child, .fw-card:last-child { border-bottom: none; }
-    .hw-rail { width: 3px; border-radius: 3px; background: #2e7d50; flex: none; }
-    .fw-rail { width: 3px; border-radius: 3px; background: #4a3d82; flex: none; }
-    .hw-main, .fw-main { flex: 1; min-width: 0; }
-    .hw-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-    .hw-title, .fw-title { font-weight: 600; font-size: 13.5px; color: var(--navy); }
-    .hw-src { color: var(--text-muted); font-size: 11px; text-decoration: none; white-space: nowrap; }
-    .hw-sub, .fw-desc { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
-    .plays { margin-top: 9px; display: flex; flex-direction: column; gap: 8px; }
-    .play { border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px; background: #fbfcfe; }
+    /* ===== Unified findings list (Hire Watch moves + Framework windows) =====
+       One clean row per finding; click the head to expand its detail. A small
+       HW/FW tag on the right names the type. */
+    .row2 { border-bottom: 1px solid var(--border); }
+    .row2:last-child { border-bottom: none; }
+    .row2-head { display: flex; align-items: center; gap: 10px; padding: 11px 4px; cursor: pointer; }
+    .row2-head:hover { background: #f7f9fc; }
+    .row2-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+    .row2-dot.hw { background: #2e7d50; }
+    .row2-dot.fw { background: #5b4ea6; }
+    .row2-title { flex: 1; min-width: 0; font-weight: 600; font-size: 12.5px; color: var(--navy);
+                  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row2-tags { display: flex; align-items: center; gap: 6px; flex: none; }
+    .ipill { font: 600 9.5px/1.4 "Inter", sans-serif; padding: 2px 7px; border-radius: 10px; white-space: nowrap; letter-spacing: .02em; }
+    .ipill.s { background: #e7f3ec; color: #2e7d50; }
+    .ipill.w { background: var(--teal-soft); color: var(--teal-dark); }
+    .typ { font: 700 8.5px/1 "Inter", sans-serif; padding: 3px 5px; border-radius: 4px; letter-spacing: .06em; }
+    .typ.hw { background: #e7f3ec; color: #2e7d50; }
+    .typ.fw { background: #ece9f7; color: #5b4ea6; }
+    .row2-chev { color: #9aa0a6; font-size: 14px; flex: none; transition: transform .15s; }
+    .row2.open .row2-chev { transform: rotate(90deg); }
+    .row2-detail { display: none; padding: 0 4px 12px 25px; }
+    .row2.open .row2-detail { display: block; }
+    .row2-sub { font-size: 11.5px; color: var(--text-muted); margin: 0 0 8px; }
+    .plays { display: flex; flex-direction: column; gap: 8px; }
+    .play { border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px; background: #fbfcfe; margin-top: 8px; }
     .play-lab { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--teal-dark); }
     .play.search .play-lab { color: #2e7d50; }
-    .play-desc { font-size: 12.5px; color: var(--navy); margin-top: 3px; }
-    .play .item-actions, .fw-card .item-actions { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
-    .fw-meta { margin-top: 7px; display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-    .fw-pill { display: inline-block; font: 600 10px/1.4 "Inter", sans-serif; padding: 2px 8px; border-radius: 10px; background: var(--teal-soft); color: var(--teal-dark); }
-    .fw-ref { color: #80868b; font-size: 11px; }
+    .play-desc { font-size: 12px; color: var(--navy); margin-top: 3px; }
+    .play .item-actions { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
     @media (max-width: 900px) {
       /* Stack vertically on mobile so neither panel is squashed. */
       #hire-calendar-row { grid-template-columns: 1fr; }
@@ -3195,9 +3201,6 @@ TEMPLATE = r"""
       <div class="panel-header">
         <h2>Hire Watch &amp; Framework Windows</h2>
         <span style="display:flex;align-items:center;gap:10px;">
-          <span class="refresh-sub" style="font-size:11px;">
-            Senior comms moves + public-sector frameworks
-          </span>
           <button type="button" class="btn-mini" id="cs-scour">Re-scan</button>
           <span class="count" id="cascade-count">{{ cascade_events|length + framework_events|length }}</span>
         </span>
@@ -3209,93 +3212,97 @@ TEMPLATE = r"""
         <button class="lead-filter-pill" data-filter="all">All</button>
       </div>
       <div class="panel-body" id="cascade-body">
-        {% if cascade_events|length == 0 %}
-          <div class="empty">No moves detected in the latest brief.</div>
-        {% else %}
-          {% for c in cascade_events %}
-            {% set old_st = c.old_co_status|default('active') %}
-            {% set new_st = c.new_co_status|default('active') %}
-            {% set _old_followed = old_st in ('called','followed_up') %}
-            {% set _new_followed = new_st in ('called','followed_up') %}
-            <div class="hw-card cascade-item" data-event-id="{{ c.event_id }}" data-cs-bucket="{{ c.cs_bucket }}">
-              <div class="hw-rail"></div>
-              <div class="hw-main">
-                <div class="hw-top">
-                  <span class="hw-title">{{ c.person_name }}{% if c.role %} &rarr; {{ c.role }}{% endif %}</span>
-                  {% if c.article_url %}<a class="hw-src" href="{{ c.article_url | safe_url }}" target="_blank" rel="noopener noreferrer" title="{{ c.article_title }}">source &rsaquo;</a>{% endif %}
-                </div>
-                <div class="hw-sub">{% if c.old_company %}{{ c.old_company }} &rarr; {{ c.new_company }}{% else %}&rarr; {{ c.new_company }}{% endif %} · senior comms move</div>
-
-                <div class="plays">
-                  {% if c.old_company and old_st != 'n/a' %}
-                  <div class="play search cs-side" data-side="old_co" data-side-status="{{ old_st }}">
-                    <div class="play-lab">&#9654; Replacement search · {{ c.old_company }}{% if _old_followed %} · followed up{% elif old_st == 'dismissed' %} · dismissed{% endif %}</div>
-                    <div class="play-desc">Seat just vacated — pitch VMA to run the replacement search.</div>
-                    <pre class="outreach-text" hidden>{{ c.old_co_opener }}</pre>
-                    <div class="item-actions">
-                      <button class="btn-mini cs-copy" type="button">&#9993; Copy opener</button>
-                      {% if old_st == 'active' %}
-                        <button class="btn-mini cs-action" data-side="old_co" data-status="followed_up" type="button">&#10003; Mark followed up</button>
-                        <button class="btn-mini cs-action ghost" data-side="old_co" data-status="dismissed" type="button">&#10005; Dismiss</button>
-                      {% else %}
-                        <button class="btn-mini cs-action" data-side="old_co" data-status="active" type="button">&#8634; Restore</button>
-                      {% endif %}
-                    </div>
-                  </div>
-                  {% endif %}
-                  {% if new_st != 'n/a' %}
-                  <div class="play cs-side" data-side="new_co" data-side-status="{{ new_st }}">
-                    <div class="play-lab">&#9654; Re-org watch · {{ c.new_company }}{% if _new_followed %} · followed up{% elif new_st == 'dismissed' %} · dismissed{% endif %}</div>
-                    <div class="play-desc">New comms leader landed — watch for team build-out and new briefs.</div>
-                    <pre class="outreach-text" hidden>{{ c.new_co_opener }}</pre>
-                    <div class="item-actions">
-                      <button class="btn-mini cs-copy" type="button">&#9993; Copy opener</button>
-                      {% if new_st == 'active' %}
-                        <button class="btn-mini cs-action" data-side="new_co" data-status="followed_up" type="button">&#10003; Mark followed up</button>
-                        <button class="btn-mini cs-action ghost" data-side="new_co" data-status="dismissed" type="button">&#10005; Dismiss</button>
-                      {% else %}
-                        <button class="btn-mini cs-action" data-side="new_co" data-status="active" type="button">&#8634; Restore</button>
-                      {% endif %}
-                    </div>
-                  </div>
-                  {% endif %}
-                </div>
-              </div>
-            </div>
-          {% endfor %}
+        {% if cascade_events|length == 0 and framework_events|length == 0 %}
+          <div class="empty compact">Nothing in the latest brief.</div>
         {% endif %}
 
-        <div class="fw-subhead" id="fw-subhead">Framework windows</div>
-        {% if framework_events %}
-        <div id="framework-rows" class="compact">
-          {% for fw in framework_events %}
-          <div class="fw-card framework-row" data-status="{{ fw.triage }}" data-new="0" data-fwid="{{ fw.key }}">
-            <div class="fw-rail"></div>
-            <div class="fw-main">
-              <div class="fw-title">{{ fw.ad_title or fw.title }}
-                {% if fw.triage == 'followed_up' %}<span class="status-badge followed-up">&#10003; followed up</span>{% endif %}
-                {% if fw.triage == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
-              </div>
-              <div class="fw-desc">{{ fw.ad_desc or fw.scope }}</div>
-              <div class="fw-meta">
-                <span class="fw-pill">{{ fw.window_label }}</span>
-                <span class="fw-ref" title="{{ fw.notes }}">{{ fw.title }} · <a class="lnk" href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify on portal &rsaquo;</a></span>
-              </div>
-              <div class="item-actions">
-                {% if fw.triage == 'active' %}
-                  <button class="btn-mini framework-action" data-status="followed_up" type="button">&#10003; Mark followed up</button>
-                  <button class="btn-mini framework-action ghost" data-status="dismissed" type="button">&#10005; Dismiss</button>
-                {% else %}
-                  <button class="btn-mini framework-action" data-status="active" type="button">&#8634; Restore</button>
+        {% for c in cascade_events %}
+          {% set old_st = c.old_co_status|default('active') %}
+          {% set new_st = c.new_co_status|default('active') %}
+          {% set _old_followed = old_st in ('called','followed_up') %}
+          {% set _new_followed = new_st in ('called','followed_up') %}
+          {% set _old_on = c.old_company and old_st != 'n/a' %}
+          {% set _new_on = new_st != 'n/a' %}
+          <div class="row2 cascade-item" data-event-id="{{ c.event_id }}" data-cs-bucket="{{ c.cs_bucket }}">
+            <div class="row2-head">
+              <span class="row2-dot hw"></span>
+              <span class="row2-title">{{ c.person_name }}{% if c.role %} &rarr; {{ c.role }}{% endif %}</span>
+              <span class="row2-tags">
+                {% if _old_on %}<span class="ipill s">Search</span>{% endif %}
+                {% if _new_on %}<span class="ipill w">Watch</span>{% endif %}
+                <span class="typ hw">HW</span>
+              </span>
+              <span class="row2-chev">&rsaquo;</span>
+            </div>
+            <div class="row2-detail">
+              <div class="row2-sub">{% if c.old_company %}{{ c.old_company }} &rarr; {{ c.new_company }}{% else %}&rarr; {{ c.new_company }}{% endif %} · senior comms move{% if c.article_url %} · <a class="lnk" href="{{ c.article_url | safe_url }}" target="_blank" rel="noopener noreferrer">source &rsaquo;</a>{% endif %}</div>
+              <div class="plays">
+                {% if _old_on %}
+                <div class="play search cs-side" data-side="old_co" data-side-status="{{ old_st }}">
+                  <div class="play-lab">&#9654; Replacement search · {{ c.old_company }}{% if _old_followed %} · followed up{% elif old_st == 'dismissed' %} · dismissed{% endif %}</div>
+                  <div class="play-desc">Seat just vacated — pitch VMA to run the replacement search.</div>
+                  <pre class="outreach-text" hidden>{{ c.old_co_opener }}</pre>
+                  <div class="item-actions">
+                    <button class="btn-mini cs-copy" type="button">&#9993; Copy opener</button>
+                    {% if old_st == 'active' %}
+                      <button class="btn-mini cs-action" data-side="old_co" data-status="followed_up" type="button">&#10003; Mark followed up</button>
+                      <button class="btn-mini cs-action ghost" data-side="old_co" data-status="dismissed" type="button">&#10005; Dismiss</button>
+                    {% else %}
+                      <button class="btn-mini cs-action" data-side="old_co" data-status="active" type="button">&#8634; Restore</button>
+                    {% endif %}
+                  </div>
+                </div>
+                {% endif %}
+                {% if _new_on %}
+                <div class="play cs-side" data-side="new_co" data-side-status="{{ new_st }}">
+                  <div class="play-lab">&#9654; Re-org watch · {{ c.new_company }}{% if _new_followed %} · followed up{% elif new_st == 'dismissed' %} · dismissed{% endif %}</div>
+                  <div class="play-desc">New comms leader landed — watch for team build-out and new briefs.</div>
+                  <pre class="outreach-text" hidden>{{ c.new_co_opener }}</pre>
+                  <div class="item-actions">
+                    <button class="btn-mini cs-copy" type="button">&#9993; Copy opener</button>
+                    {% if new_st == 'active' %}
+                      <button class="btn-mini cs-action" data-side="new_co" data-status="followed_up" type="button">&#10003; Mark followed up</button>
+                      <button class="btn-mini cs-action ghost" data-side="new_co" data-status="dismissed" type="button">&#10005; Dismiss</button>
+                    {% else %}
+                      <button class="btn-mini cs-action" data-side="new_co" data-status="active" type="button">&#8634; Restore</button>
+                    {% endif %}
+                  </div>
+                </div>
                 {% endif %}
               </div>
             </div>
           </div>
-          {% endfor %}
-        </div>
-        {% else %}
-        <div class="empty compact">No framework refresh windows open right now.</div>
-        {% endif %}
+        {% endfor %}
+
+        {% for fw in framework_events %}
+          <div class="row2 framework-row" data-status="{{ fw.triage }}" data-new="0" data-fwid="{{ fw.key }}">
+            <div class="row2-head">
+              <span class="row2-dot fw"></span>
+              <span class="row2-title">{{ fw.ad_title or fw.title }}</span>
+              <span class="row2-tags">
+                <span class="ipill w">{{ fw.window_pill }}</span>
+                {% if fw.triage == 'followed_up' %}<span class="status-badge followed-up">&#10003;</span>{% elif fw.triage == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
+                <span class="typ fw">FW</span>
+              </span>
+              <span class="row2-chev">&rsaquo;</span>
+            </div>
+            <div class="row2-detail">
+              <div class="row2-sub">{{ fw.ad_desc or fw.scope }}</div>
+              <div class="play">
+                <div class="play-lab">&#9654; {{ fw.window_label }}</div>
+                <div class="play-desc" title="{{ fw.notes }}">{{ fw.title }} · <a class="lnk" href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify on portal &rsaquo;</a></div>
+                <div class="item-actions">
+                  {% if fw.triage == 'active' %}
+                    <button class="btn-mini framework-action" data-status="followed_up" type="button">&#10003; Mark followed up</button>
+                    <button class="btn-mini framework-action ghost" data-status="dismissed" type="button">&#10005; Dismiss</button>
+                  {% else %}
+                    <button class="btn-mini framework-action" data-status="active" type="button">&#8634; Restore</button>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
       </div>
     </div>
 
@@ -3684,6 +3691,16 @@ document.addEventListener('click', (event) => {
   const item = summary.closest('.item.predictor');
   if (!item) return;
   item.classList.toggle('expanded');
+});
+
+// Expand / collapse unified Hire Watch / Framework rows on head click.
+// Clicks on buttons or links inside the head don't toggle.
+document.addEventListener('click', (event) => {
+  const head = event.target.closest('.row2-head');
+  if (!head) return;
+  if (event.target.closest('button, a')) return;
+  const row = head.closest('.row2');
+  if (row) row.classList.toggle('open');
 });
 
 // Predictor status actions: mark followed up / dismiss / restore.
@@ -4490,16 +4507,11 @@ async function maybeAutoRefresh() {
       const bucket = item.getAttribute('data-cs-bucket') || 'active';
       item.style.display = (filter === 'all' || bucket === filter) ? '' : 'none';
     });
-    // Framework windows share this panel — filter them by their triage too.
-    let fwVisible = 0;
+    // Framework windows share this list — filter them by their triage too.
     root.querySelectorAll('.framework-row').forEach(item => {
       const st = item.getAttribute('data-status') || 'active';
-      const show = (filter === 'all' || st === filter);
-      item.style.display = show ? '' : 'none';
-      if (show) fwVisible++;
+      item.style.display = (filter === 'all' || st === filter) ? '' : 'none';
     });
-    const sub = document.getElementById('fw-subhead');
-    if (sub) sub.style.display = fwVisible ? '' : 'none';
   }
   if (bar) {
     bar.addEventListener('click', (ev) => {
@@ -4623,9 +4635,9 @@ async function maybeAutoRefresh() {
 })();
 
 // Framework-signal triage — mirrors the funding-action handler. Frameworks
-// share the Hire Watch panel; their rows live in #framework-rows.
+// share the combined Hire Watch list (#cascade-body).
 (function(){
-  const host = document.getElementById('framework-rows');
+  const host = document.getElementById('cascade-body');
   if (!host) return;
   host.addEventListener('click', async (ev) => {
     const btn = ev.target.closest('.framework-action');
