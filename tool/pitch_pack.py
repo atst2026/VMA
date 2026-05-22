@@ -135,18 +135,37 @@ def _gdelt_articles(query: str, hours_back: int) -> list[dict]:
         return []
 
 
+def _is_relevant_english(article: dict, core: str) -> bool:
+    """Keep only English-language coverage that actually names the company.
+    GDELT otherwise returns multilingual global noise (Spanish banking,
+    Chinese exchange filings, etc.) that has nothing to do with the target —
+    which must never reach a client-facing pack or the client-language miner."""
+    title = article.get("title") or ""
+    if not title:
+        return False
+    lang = (article.get("language") or "").strip().lower()
+    if lang:
+        if lang not in ("english", "eng", "en"):
+            return False
+    else:
+        # No language field: require a predominantly ASCII (Latin) title.
+        if sum(1 for ch in title if ord(ch) < 128) / len(title) < 0.9:
+            return False
+    return (core or "").lower() in title.lower()
+
+
 def recent_news_for(target: str, hours_back: int = 24 * 90) -> list[dict]:
-    """Last 90 days of news mentioning the target. Best-effort via GDELT
-    (no auth needed). Queries the exact name first; if that returns nothing,
-    retries on the core name (suffix stripped) so subsidiary-style names
-    like 'HSBC UK' still surface coverage."""
-    articles = _gdelt_articles(f'"{target}"', hours_back)
-    if not articles:
-        core = _core_name(target)
-        if core and core.lower() != target.strip().lower():
-            log.info("GDELT %r empty — retrying core name %r", target, core)
-            articles = _gdelt_articles(f'"{core}"', hours_back)
-    log.info("GDELT %r: %d articles", target, len(articles))
+    """Last 90 days of English news that actually names the target. Best-effort
+    via GDELT (no auth). Queries the exact name first, then the core name;
+    results are then filtered to English-language articles whose title mentions
+    the company, so a pack never shows irrelevant foreign coverage."""
+    core = _core_name(target) or (target or "").strip()
+    raw = _gdelt_articles(f'"{target}"', hours_back)
+    if not raw and core.lower() != (target or "").strip().lower():
+        log.info("GDELT %r empty — retrying core name %r", target, core)
+        raw = _gdelt_articles(f'"{core}"', hours_back)
+    articles = [a for a in raw if _is_relevant_english(a, core)]
+    log.info("GDELT %r: %d raw, %d English & on-topic", target, len(raw), len(articles))
     return articles
 
 
@@ -323,7 +342,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
         "<span style='color:#888;font-size:11px;'>(28–33% of base; more with bonus/LTIP)</span></div>"
         + (("<div><span style='color:#888;'>Cost of an empty seat</span><br>"
             f"<strong>{_fmt_gbp(cov_total)}</strong> "
-            "<span style='color:#888;font-size:11px;'>(see §3)</span></div>") if cov_total else "")
+            "<span style='color:#888;font-size:11px;'>(see Section 3)</span></div>") if cov_total else "")
         + "</div>"
         "<div style='font-size:13px;color:#444;'>"
         "<span style='color:#888;'>Pipeline:</span> a senior comms placement typically opens "
