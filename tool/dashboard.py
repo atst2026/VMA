@@ -4492,6 +4492,57 @@ async function maybeAutoRefresh() {
   }
 }
 
+// ---- In-place triage for the Hire Watch & Framework list (no reload) ----
+// Recompute the combined pill counts from the DOM and re-apply the active
+// filter, so marking a row updates instantly without a full page reload.
+function hwfwRefresh() {
+  const bar = document.getElementById('cs-filter-bar');
+  const root = document.getElementById('cascade-body');
+  if (!bar || !root) return;
+  const counts = { active: 0, followed_up: 0, dismissed: 0 };
+  root.querySelectorAll('.cascade-item').forEach(it => {
+    const b = it.getAttribute('data-cs-bucket') || 'active';
+    if (b in counts) counts[b]++;
+  });
+  root.querySelectorAll('.framework-row').forEach(it => {
+    const s = it.getAttribute('data-status') || 'active';
+    if (s in counts) counts[s]++;
+  });
+  const set = (id, n) => { const e = document.getElementById(id); if (e) e.textContent = n; };
+  set('cs-pc-active', counts.active);
+  set('cs-pc-followed_up', counts.followed_up);
+  set('cs-pc-dismissed', counts.dismissed);
+  const ap = bar.querySelector('.lead-filter-pill.active');
+  const f = ap ? (ap.getAttribute('data-filter') || 'active') : 'active';
+  root.querySelectorAll('.cascade-item').forEach(it => {
+    const b = it.getAttribute('data-cs-bucket') || 'active';
+    it.style.display = (f === 'all' || b === f) ? '' : 'none';
+  });
+  root.querySelectorAll('.framework-row').forEach(it => {
+    const s = it.getAttribute('data-status') || 'active';
+    it.style.display = (f === 'all' || s === f) ? '' : 'none';
+  });
+}
+
+function hwCsButtons(side, status) {
+  let h = '<button class="btn-mini cs-copy" type="button">&#9993; Copy opener</button>';
+  if (status === 'active') {
+    h += '<button class="btn-mini cs-action" data-side="' + side + '" data-status="followed_up" type="button">&#10003; Mark followed up</button>'
+       + '<button class="btn-mini cs-action ghost" data-side="' + side + '" data-status="dismissed" type="button">&#10005; Dismiss</button>';
+  } else {
+    h += '<button class="btn-mini cs-action" data-side="' + side + '" data-status="active" type="button">&#8634; Restore</button>';
+  }
+  return h;
+}
+
+function fwButtons(status) {
+  if (status === 'active') {
+    return '<button class="btn-mini framework-action" data-status="followed_up" type="button">&#10003; Mark followed up</button>'
+         + '<button class="btn-mini framework-action ghost" data-status="dismissed" type="button">&#10005; Dismiss</button>';
+  }
+  return '<button class="btn-mini framework-action" data-status="active" type="button">&#8634; Restore</button>';
+}
+
 // ---------- Hire Watch (cascade events) ----------
 (function(){
   const root = document.getElementById('cascade-body');
@@ -4554,9 +4605,23 @@ async function maybeAutoRefresh() {
         });
         const j = await r.json();
         if (j.ok) {
-          // Reload to rebuild the per-event cs_bucket, the pill counts,
-          // and the active filter — single source of truth on the server.
-          setTimeout(() => window.location.reload(), 200);
+          // Update the marked side in place, recompute the row's aggregate
+          // bucket, and refresh the filter/counts — no full-page reload.
+          const sideEl = actBtn.closest('.cs-side');
+          if (sideEl) {
+            sideEl.setAttribute('data-side-status', status);
+            const actions = sideEl.querySelector('.item-actions');
+            if (actions) actions.innerHTML = hwCsButtons(side, status);
+          }
+          const sides = Array.from(item.querySelectorAll('.cs-side'))
+            .map(s => s.getAttribute('data-side-status') || 'active')
+            .filter(s => s !== 'n/a');
+          let bucket = 'active';
+          if (sides.some(s => s === 'active')) bucket = 'active';
+          else if (sides.some(s => s === 'called' || s === 'followed_up')) bucket = 'followed_up';
+          else if (sides.length && sides.every(s => s === 'dismissed')) bucket = 'dismissed';
+          item.setAttribute('data-cs-bucket', bucket);
+          hwfwRefresh();
         } else {
           actBtn.disabled = false;
           alert(j.detail || 'Could not update.');
@@ -4652,7 +4717,17 @@ async function maybeAutoRefresh() {
       });
       const j = await r.json();
       if (j.ok) {
-        setTimeout(() => window.location.reload(), 200);
+        // In-place: swap the row's buttons + status badge, refresh filter.
+        row.setAttribute('data-status', status);
+        const actions = row.querySelector('.item-actions');
+        if (actions) actions.innerHTML = fwButtons(status);
+        const tags = row.querySelector('.row2-tags');
+        if (tags) {
+          tags.querySelectorAll('.status-badge').forEach(b => b.remove());
+          if (status === 'followed_up') tags.insertAdjacentHTML('beforeend', '<span class="status-badge followed-up">&#10003;</span>');
+          else if (status === 'dismissed') tags.insertAdjacentHTML('beforeend', '<span class="status-badge dismissed">dismissed</span>');
+        }
+        hwfwRefresh();
       } else {
         btn.disabled = false;
         alert(j.detail || 'Could not update.');
@@ -4715,7 +4790,7 @@ async function loadRecentReports() {
     const r = await fetch('/api/output/recent');
     const j = await r.json();
     if (!j.rows || !j.rows.length) {
-      body.innerHTML = '<div class="empty compact">No reports generated in the last 48 hours.</div>';
+      body.innerHTML = '';
       return;
     }
     const now = Date.now();
