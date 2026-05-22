@@ -1966,7 +1966,30 @@ TEMPLATE = r"""
     #hire-calendar-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     #hire-calendar-row > .hc-left, #hire-calendar-row > .panel { min-width: 0; }
     #hire-calendar-row .hc-left { display: flex; flex-direction: column; gap: 16px; min-height: 0; min-width: 0; }
-    #hire-calendar-row .hc-left .panel { height: 192px; }
+    /* Hire Watch gets the larger share (richer dual-action cards); Framework
+       Windows the smaller. Both scroll internally. */
+    #hire-calendar-row .hc-left #cascade-row { height: 224px; }
+    #hire-calendar-row .hc-left #framework-panel { height: 160px; }
+
+    /* ===== Option-1 rail cards (Hire Watch dual-action + Framework windows) ===== */
+    .hw-card, .fw-card { display: flex; gap: 11px; padding: 12px 2px; border-bottom: 1px solid var(--border); }
+    .hw-card:last-child, .fw-card:last-child { border-bottom: none; }
+    .hw-rail { width: 3px; border-radius: 3px; background: #2e7d50; flex: none; }
+    .fw-rail { width: 3px; border-radius: 3px; background: #4a3d82; flex: none; }
+    .hw-main, .fw-main { flex: 1; min-width: 0; }
+    .hw-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+    .hw-title, .fw-title { font-weight: 600; font-size: 13.5px; color: var(--navy); }
+    .hw-src { color: var(--text-muted); font-size: 11px; text-decoration: none; white-space: nowrap; }
+    .hw-sub, .fw-desc { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+    .plays { margin-top: 9px; display: flex; flex-direction: column; gap: 8px; }
+    .play { border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px; background: #fbfcfe; }
+    .play-lab { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--teal-dark); }
+    .play.search .play-lab { color: #2e7d50; }
+    .play-desc { font-size: 12.5px; color: var(--navy); margin-top: 3px; }
+    .play .item-actions, .fw-card .item-actions { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+    .fw-meta { margin-top: 7px; display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .fw-pill { display: inline-block; font: 600 10px/1.4 "Inter", sans-serif; padding: 2px 8px; border-radius: 10px; background: var(--teal-soft); color: var(--teal-dark); }
+    .fw-ref { color: #80868b; font-size: 11px; }
     @media (max-width: 900px) {
       /* Stack vertically on mobile so neither panel is squashed. */
       #hire-calendar-row { grid-template-columns: 1fr; }
@@ -3197,59 +3220,50 @@ TEMPLATE = r"""
             {% set new_st = c.new_co_status|default('active') %}
             {% set _old_followed = old_st in ('called','followed_up') %}
             {% set _new_followed = new_st in ('called','followed_up') %}
-            <div class="item cascade-item" data-event-id="{{ c.event_id }}" data-cs-bucket="{{ c.cs_bucket }}">
-              <span class="title">{{ c.person_name }}</span>
-              <span class="badge">{{ c.role }}</span>
-              {% if c.old_company %}
-                <span class="badge">{{ c.old_company }} &rarr; {{ c.new_company }}</span>
-              {% else %}
-                <span class="badge">&rarr; {{ c.new_company }}</span>
-              {% endif %}
-              {% if c.cs_bucket == 'followed_up' %}<span class="status-badge followed-up">&#10003; followed up</span>{% endif %}
-              {% if c.cs_bucket == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
-              <div style="font-size:12px;color:var(--text-muted);margin:4px 0 8px;">
-                <a href="{{ c.article_url | safe_url }}" target="_blank">{{ c.article_title }}</a>
-              </div>
-
-              {% if c.old_company and old_st != 'n/a' %}
-              <div class="cs-side" data-side="old_co" data-side-status="{{ old_st }}">
-                <div style="font-size:10.5px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--teal-dark);margin-bottom:4px;">
-                  &darr; Old company &middot; {{ c.old_company }} (replacement search)
-                  {% if _old_followed %}&middot; <span style="color:var(--green-dark,#3F5727);">followed up</span>{% endif %}
-                  {% if old_st == 'dismissed' %}&middot; <span style="color:var(--text-muted);">dismissed</span>{% endif %}
+            <div class="hw-card cascade-item" data-event-id="{{ c.event_id }}" data-cs-bucket="{{ c.cs_bucket }}">
+              <div class="hw-rail"></div>
+              <div class="hw-main">
+                <div class="hw-top">
+                  <span class="hw-title">{{ c.person_name }}{% if c.role %} &rarr; {{ c.role }}{% endif %}</span>
+                  {% if c.article_url %}<a class="hw-src" href="{{ c.article_url | safe_url }}" target="_blank" rel="noopener noreferrer" title="{{ c.article_title }}">source &rsaquo;</a>{% endif %}
                 </div>
-                <pre class="outreach-text">{{ c.old_co_opener }}</pre>
-                <div class="item-actions">
-                  <button class="btn-mini cs-copy" type="button">&#9993; Copy</button>
-                  {% if old_st == 'active' %}
-                    <button class="btn-mini cs-action" data-side="old_co" data-status="followed_up" type="button">&#10003; Mark followed up</button>
-                    <button class="btn-mini cs-action ghost" data-side="old_co" data-status="dismissed" type="button">&#10005; Dismiss</button>
-                  {% else %}
-                    <button class="btn-mini cs-action" data-side="old_co" data-status="active" type="button">&#8634; Restore</button>
+                <div class="hw-sub">{% if c.old_company %}{{ c.old_company }} &rarr; {{ c.new_company }}{% else %}&rarr; {{ c.new_company }}{% endif %} · senior comms move</div>
+
+                <div class="plays">
+                  {% if c.old_company and old_st != 'n/a' %}
+                  <div class="play search cs-side" data-side="old_co" data-side-status="{{ old_st }}">
+                    <div class="play-lab">&#9654; Replacement search · {{ c.old_company }}{% if _old_followed %} · followed up{% elif old_st == 'dismissed' %} · dismissed{% endif %}</div>
+                    <div class="play-desc">Seat just vacated — pitch VMA to run the replacement search.</div>
+                    <pre class="outreach-text" hidden>{{ c.old_co_opener }}</pre>
+                    <div class="item-actions">
+                      <button class="btn-mini cs-copy" type="button">&#9993; Copy opener</button>
+                      {% if old_st == 'active' %}
+                        <button class="btn-mini cs-action" data-side="old_co" data-status="followed_up" type="button">&#10003; Mark followed up</button>
+                        <button class="btn-mini cs-action ghost" data-side="old_co" data-status="dismissed" type="button">&#10005; Dismiss</button>
+                      {% else %}
+                        <button class="btn-mini cs-action" data-side="old_co" data-status="active" type="button">&#8634; Restore</button>
+                      {% endif %}
+                    </div>
+                  </div>
+                  {% endif %}
+                  {% if new_st != 'n/a' %}
+                  <div class="play cs-side" data-side="new_co" data-side-status="{{ new_st }}">
+                    <div class="play-lab">&#9654; Re-org watch · {{ c.new_company }}{% if _new_followed %} · followed up{% elif new_st == 'dismissed' %} · dismissed{% endif %}</div>
+                    <div class="play-desc">New comms leader landed — watch for team build-out and new briefs.</div>
+                    <pre class="outreach-text" hidden>{{ c.new_co_opener }}</pre>
+                    <div class="item-actions">
+                      <button class="btn-mini cs-copy" type="button">&#9993; Copy opener</button>
+                      {% if new_st == 'active' %}
+                        <button class="btn-mini cs-action" data-side="new_co" data-status="followed_up" type="button">&#10003; Mark followed up</button>
+                        <button class="btn-mini cs-action ghost" data-side="new_co" data-status="dismissed" type="button">&#10005; Dismiss</button>
+                      {% else %}
+                        <button class="btn-mini cs-action" data-side="new_co" data-status="active" type="button">&#8634; Restore</button>
+                      {% endif %}
+                    </div>
+                  </div>
                   {% endif %}
                 </div>
               </div>
-              {% endif %}
-
-              {% if new_st != 'n/a' %}
-              <div class="cs-side" data-side="new_co" data-side-status="{{ new_st }}" style="margin-top:8px;">
-                <div style="font-size:10.5px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--teal-dark);margin-bottom:4px;">
-                  &darr; New company &middot; {{ c.new_company }} (re-org watch)
-                  {% if _new_followed %}&middot; <span style="color:var(--green-dark,#3F5727);">followed up</span>{% endif %}
-                  {% if new_st == 'dismissed' %}&middot; <span style="color:var(--text-muted);">dismissed</span>{% endif %}
-                </div>
-                <pre class="outreach-text">{{ c.new_co_opener }}</pre>
-                <div class="item-actions">
-                  <button class="btn-mini cs-copy" type="button">&#9993; Copy</button>
-                  {% if new_st == 'active' %}
-                    <button class="btn-mini cs-action" data-side="new_co" data-status="followed_up" type="button">&#10003; Mark followed up</button>
-                    <button class="btn-mini cs-action ghost" data-side="new_co" data-status="dismissed" type="button">&#10005; Dismiss</button>
-                  {% else %}
-                    <button class="btn-mini cs-action" data-side="new_co" data-status="active" type="button">&#8634; Restore</button>
-                  {% endif %}
-                </div>
-              </div>
-              {% endif %}
             </div>
           {% endfor %}
         {% endif %}
@@ -3270,28 +3284,17 @@ TEMPLATE = r"""
         {% if framework_events %}
         <div id="framework-rows" class="compact">
           {% for fw in framework_events %}
-          <div class="item predictor framework-row" data-status="{{ fw.triage }}" data-new="0" data-fwid="{{ fw.key }}">
-            <div class="row-summary">
-              <span class="rank">{{ loop.index }}</span>
-              <span class="title">{{ fw.title }}</span>
-              <span class="chips">
-                <span class="role-chip framework-chip-inline" title="A public-sector buying framework: VMA must be an appointed supplier to bid for this work.">Procurement framework</span>
-                {% if fw.status == 'refresh_window' %}<span class="prob-chip">refresh window open</span>{% endif %}
-                {% if fw.code %}<span class="role-chip" style="opacity:.6;">{{ fw.code }}</span>{% endif %}
+          <div class="fw-card framework-row" data-status="{{ fw.triage }}" data-new="0" data-fwid="{{ fw.key }}">
+            <div class="fw-rail"></div>
+            <div class="fw-main">
+              <div class="fw-title">{{ fw.ad_title or fw.title }}
                 {% if fw.triage == 'followed_up' %}<span class="status-badge followed-up">&#10003; followed up</span>{% endif %}
                 {% if fw.triage == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
-              </span>
-            </div>
-            <div class="row-preview">
-              <span class="signal-sub">Get VMA appointed to the supplier list to bid for this buyer&rsquo;s senior-comms search. {{ fw.window_label }}</span>
-            </div>
-            <div class="row-details">
-              <div class="meta">
-                <div class="evidence"><strong>What this is:</strong> {{ fw.scope }}</div>
-                <div class="evidence" style="margin-top:4px;">
-                  <a href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify on portal &rarr;</a>
-                  <span style="color:#888;"> · {{ fw.notes }}</span>
-                </div>
+              </div>
+              <div class="fw-desc">{{ fw.ad_desc or fw.scope }}</div>
+              <div class="fw-meta">
+                <span class="fw-pill">{{ fw.window_label }}</span>
+                <span class="fw-ref" title="{{ fw.notes }}">{{ fw.title }} · <a class="lnk" href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify on portal &rsaquo;</a></span>
               </div>
               <div class="item-actions">
                 {% if fw.triage == 'active' %}
