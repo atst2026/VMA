@@ -167,18 +167,23 @@ def render_html(target: str, role: str, ch_snapshot: dict,
     low, high, matched = salary_band
     mid = (low + high) // 2
 
-    # CH snapshot
+    # CH is demoted to a small audit footnote — the company number and street
+    # address aren't useful to an AD pitching. The AD-useful snapshot (sector /
+    # fee / cost-of-vacancy / pipeline) is assembled below as snapshot_html.
     if ch_snapshot.get("found"):
         resolved = ch_snapshot.get("resolved") or {}
         co_num = _esc(resolved.get("company_number", ""))
-        co_addr = _esc(resolved.get("address_snippet", ""))
         co_status = _esc(resolved.get("company_status", ""))
-        ch_html = f"""
-        <div><strong>Companies House:</strong> {co_num} · {co_status}</div>
-        <div style='color:#555;font-size:13px;'>{co_addr}</div>
-        """
+        ch_footer = (
+            "<div style='color:#999;font-size:11px;margin-top:8px;'>"
+            f"Companies House: {co_num} · {co_status} "
+            "<span style='color:#bbb;'>— confirm this is the right entity before sending</span></div>"
+        )
     else:
-        ch_html = "<div style='color:#888;'>Companies House: not resolved (likely non-UK-registered or trading-name only).</div>"
+        ch_footer = (
+            "<div style='color:#999;font-size:11px;margin-top:8px;'>"
+            "UK entity not resolved (non-UK-registered or trading-name only).</div>"
+        )
 
     # Section 2 dual mode:
     #   (a) Bespoke — quotes from the target's most recent annual report
@@ -302,6 +307,31 @@ def render_html(target: str, role: str, ch_snapshot: dict,
     </table>
     """
 
+    # ---- Account snapshot (§1): what they are, what the mandate is worth,
+    # the urgency, and the downstream pipeline — built from data we already
+    # compute, replacing the bare CH number/address. ----
+    sector_disp = sector_label if sector else "Sector unclear — confirm before pitching"
+    fee_low = int(round(0.28 * mid, -2))
+    fee_high = int(round(0.33 * mid, -2))
+    cov_total = next((v for k, v in cov.items()
+                      if "leaving the seat empty" in k.lower() or k.lower().startswith("total")), None)
+    snapshot_html = (
+        "<div style='display:flex;flex-wrap:wrap;gap:14px 30px;font-size:13px;margin-bottom:10px;'>"
+        f"<div><span style='color:#888;'>Sector</span><br><strong>{_esc(sector_disp)}</strong></div>"
+        "<div><span style='color:#888;'>Indicative retained fee</span><br>"
+        f"<strong>{_fmt_gbp(fee_low)}–{_fmt_gbp(fee_high)}</strong> "
+        "<span style='color:#888;font-size:11px;'>(28–33% of base; more with bonus/LTIP)</span></div>"
+        + (("<div><span style='color:#888;'>Cost of an empty seat</span><br>"
+            f"<strong>{_fmt_gbp(cov_total)}</strong> "
+            "<span style='color:#888;font-size:11px;'>(see §3)</span></div>") if cov_total else "")
+        + "</div>"
+        "<div style='font-size:13px;color:#444;'>"
+        "<span style='color:#888;'>Pipeline:</span> a senior comms placement typically opens "
+        "<strong>2–4 follow-on hires</strong> over 12–18 months — a retained engagement positions "
+        "VMA for the full pipeline, not just the headline role.</div>"
+        f"{ch_footer}"
+    )
+
     note_banner = ""
     if mode == "test":
         note_banner = "<div style='background:#fff3cd;border:1px solid #ffeaa7;padding:8px;margin-bottom:16px;font-size:13px;'>⚠️ TEST PACK - generated for Amir's review. Do not send to client.</div>"
@@ -316,7 +346,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 <hr style="border:none;border-top:2px solid #3D5A82;margin:14px 0 24px;">
 
 <h3 style="margin:18px 0 6px 0;">1. Account snapshot</h3>
-{ch_html}
+{snapshot_html}
 
 <h3 style="margin:18px 0 6px 0;">{section2_heading}</h3>
 {news_html}
@@ -376,12 +406,23 @@ def render_text(target: str, role: str, ch_snapshot: dict,
         "=" * 60, "",
         "1. ACCOUNT SNAPSHOT",
     ]
+    _sector_disp = (sector.replace("_", " ").title() if sector
+                    else "Sector unclear — confirm before pitching")
+    _fee_low = int(round(0.28 * mid, -2))
+    _fee_high = int(round(0.33 * mid, -2))
+    _cov_total = next((v for k, v in cov.items()
+                       if "leaving the seat empty" in k.lower() or k.lower().startswith("total")), None)
+    lines.append(f"   Sector: {_sector_disp}")
+    lines.append(f"   Indicative retained fee: £{_fee_low:,}–£{_fee_high:,} (28–33% of base; more with bonus/LTIP)")
+    if _cov_total:
+        lines.append(f"   Cost of an empty seat: £{_cov_total:,} (see section 3)")
+    lines.append("   Pipeline: a senior comms placement typically opens 2–4 follow-on hires over 12–18 months.")
     if ch_snapshot.get("found"):
         resolved = ch_snapshot.get("resolved") or {}
-        lines.append(f"   Companies House: {resolved.get('company_number','?')} · {resolved.get('company_status','?')}")
-        lines.append(f"   {resolved.get('address_snippet','')}")
+        lines.append(f"   Companies House: {resolved.get('company_number','?')} · {resolved.get('company_status','?')} "
+                     "— confirm this is the right entity before sending")
     else:
-        lines.append("   Companies House: not resolved.")
+        lines.append("   UK entity not resolved (non-UK-registered or trading-name only).")
 
     if annual_report and annual_report.quotes:
         lines += ["", f"2. WHY THIS MATTERS NOW (annual report filed {annual_report.filing_date})"]
