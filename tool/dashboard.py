@@ -1971,16 +1971,14 @@ TEMPLATE = r"""
     .row2:last-child { border-bottom: none; }
     .row2-head { display: flex; align-items: center; gap: 10px; padding: 11px 4px; cursor: pointer; }
     .row2-head:hover { background: #f7f9fc; }
-    .row2-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
-    .row2-dot.hw { background: #2e7d50; }
-    .row2-dot.fw { background: #5b4ea6; }
     .row2-title { flex: 1; min-width: 0; font-weight: 600; font-size: 12.5px; color: var(--navy);
                   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .row2-tags { display: flex; align-items: center; gap: 6px; flex: none; }
     .ipill { font: 600 9.5px/1.4 "Inter", sans-serif; padding: 2px 7px; border-radius: 10px; white-space: nowrap; letter-spacing: .02em; }
     .ipill.s { background: #e7f3ec; color: #2e7d50; }
     .ipill.w { background: var(--teal-soft); color: var(--teal-dark); }
-    .typ { font: 700 8.5px/1 "Inter", sans-serif; padding: 3px 5px; border-radius: 4px; letter-spacing: .06em; }
+    /* Leading type badge (replaces the bullet dot), slightly enlarged. */
+    .typ { font: 800 11px/1 "Inter", sans-serif; padding: 5px 7px; border-radius: 5px; letter-spacing: .06em; flex: none; }
     .typ.hw { background: #e7f3ec; color: #2e7d50; }
     .typ.fw { background: #ece9f7; color: #5b4ea6; }
     .row2-chev { color: #9aa0a6; font-size: 14px; flex: none; transition: transform .15s; }
@@ -3225,12 +3223,11 @@ TEMPLATE = r"""
           {% set _new_on = new_st != 'n/a' %}
           <div class="row2 cascade-item" data-event-id="{{ c.event_id }}" data-cs-bucket="{{ c.cs_bucket }}">
             <div class="row2-head">
-              <span class="row2-dot hw"></span>
+              <span class="typ hw">HW</span>
               <span class="row2-title">{{ c.person_name }}{% if c.role %} &rarr; {{ c.role }}{% endif %}</span>
               <span class="row2-tags">
                 {% if _old_on %}<span class="ipill s">Search</span>{% endif %}
                 {% if _new_on %}<span class="ipill w">Watch</span>{% endif %}
-                <span class="typ hw">HW</span>
               </span>
               <span class="row2-chev">&rsaquo;</span>
             </div>
@@ -3277,12 +3274,11 @@ TEMPLATE = r"""
         {% for fw in framework_events %}
           <div class="row2 framework-row" data-status="{{ fw.triage }}" data-new="0" data-fwid="{{ fw.key }}">
             <div class="row2-head">
-              <span class="row2-dot fw"></span>
+              <span class="typ fw">FW</span>
               <span class="row2-title">{{ fw.ad_title or fw.title }}</span>
               <span class="row2-tags">
                 <span class="ipill w">{{ fw.window_pill }}</span>
                 {% if fw.triage == 'followed_up' %}<span class="status-badge followed-up">&#10003;</span>{% elif fw.triage == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
-                <span class="typ fw">FW</span>
               </span>
               <span class="row2-chev">&rsaquo;</span>
             </div>
