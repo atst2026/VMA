@@ -925,14 +925,20 @@ def index():
         for fw in framework_events
     ]
     # Pre-Market pills roll up predictors + funding only. Framework windows
-    # now live in the BD Calendar panel (their triage is tracked there).
+    # live in their own panel with their own triage filter.
     _extra_triage = [f["status"] for f in funding_events]
+    _fw_counts = {"active": 0, "followed_up": 0, "dismissed": 0}
+    for fw in framework_events:
+        _fw_counts[fw.get("triage", "active")] = _fw_counts.get(fw.get("triage", "active"), 0) + 1
     return render_template_string(
         TEMPLATE,
         leads=leads,
         predictors=predictors,
         funding_events=funding_events,
         framework_events=framework_events,
+        fw_active_count=_fw_counts["active"],
+        fw_followed_count=_fw_counts["followed_up"],
+        fw_dismissed_count=_fw_counts["dismissed"],
         cascade_events=cascade_events,
         cs_active_count=cs_counts["active"],
         cs_followed_count=cs_counts["followed_up"],
@@ -1954,8 +1960,12 @@ TEMPLATE = r"""
     #hire-calendar-row .panel-body { max-height: none; flex: 1; min-height: 0; overflow-y: auto; }
     /* Left column stacks two half-height panels (Hire Watch + Framework
        Windows) so the under-used Hire Watch no longer wastes a full half;
-       BD Calendar keeps the full 400px on the right. */
-    #hire-calendar-row .hc-left { display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+       BD Calendar keeps the full 400px on the right. minmax(0,1fr) + min-width:0
+       keep the split a true 50/50 — without them the long framework text
+       widens the left column past half. */
+    #hire-calendar-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    #hire-calendar-row > .hc-left, #hire-calendar-row > .panel { min-width: 0; }
+    #hire-calendar-row .hc-left { display: flex; flex-direction: column; gap: 16px; min-height: 0; min-width: 0; }
     #hire-calendar-row .hc-left .panel { height: 192px; }
     @media (max-width: 900px) {
       /* Stack vertically on mobile so neither panel is squashed. */
@@ -3249,6 +3259,12 @@ TEMPLATE = r"""
       <div class="panel-header">
         <h2>Framework Windows</h2>
         <span class="count">{{ framework_events|length }}</span>
+      </div>
+      <div class="filter-bar" id="fw-filter-bar">
+        <button class="lead-filter-pill active" data-filter="active">Active <span class="pill-count" id="fw-pc-active">{{ fw_active_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="followed_up">Followed up <span class="pill-count" id="fw-pc-followed_up">{{ fw_followed_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="dismissed">Dismissed <span class="pill-count" id="fw-pc-dismissed">{{ fw_dismissed_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="all">All</button>
       </div>
       <div class="panel-body">
         {% if framework_events %}
@@ -4609,8 +4625,30 @@ async function maybeAutoRefresh() {
   });
 })();
 
+// Framework Windows filter pills (Active / Followed up / Dismissed / All) —
+// mirrors the Hire Watch filter.
+(function(){
+  const bar = document.getElementById('fw-filter-bar');
+  const root = document.getElementById('framework-rows');
+  if (!bar || !root) return;
+  function applyFwFilter(filter) {
+    root.querySelectorAll('.framework-row').forEach(item => {
+      const st = item.getAttribute('data-status') || 'active';
+      item.style.display = (filter === 'all' || st === filter) ? '' : 'none';
+    });
+  }
+  bar.addEventListener('click', (ev) => {
+    const pill = ev.target.closest('.lead-filter-pill');
+    if (!pill) return;
+    bar.querySelectorAll('.lead-filter-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    applyFwFilter(pill.getAttribute('data-filter') || 'active');
+  });
+  applyFwFilter('active');
+})();
+
 // Framework-signal triage — mirrors the funding-action handler. Frameworks
-// now live in the BD Calendar panel (#framework-rows), not Pre-Market.
+// live in their own Framework Windows panel (#framework-rows).
 (function(){
   const host = document.getElementById('framework-rows');
   if (!host) return;
