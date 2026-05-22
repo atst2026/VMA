@@ -536,7 +536,7 @@ def render_html(brief: PrepBrief) -> str:
     ) + "</ol>"
 
     return f"""<!doctype html>
-<html><body style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px;color:#111;">
+<html><head><meta charset="utf-8"></head><body style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px;color:#111;">
 <h2 style="margin:0 0 4px 0;">Pre-meeting prep &middot; {_esc(brief.account)}</h2>
 <div style="color:#666;font-size:13px;margin-bottom:18px;">
   {contact_line or 'On-demand prep pack generated from the dashboard.'}
