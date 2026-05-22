@@ -924,10 +924,9 @@ def index():
         {**fw, "triage": _fwst.get(fw["key"], "active")}
         for fw in framework_events
     ]
-    # Pre-Market pills roll up predictors + funding + framework. Funding's
-    # triage lives in `status`; framework's in `triage`.
-    _extra_triage = ([f["status"] for f in funding_events]
-                     + [fw["triage"] for fw in framework_events])
+    # Pre-Market pills roll up predictors + funding only. Framework windows
+    # now live in the BD Calendar panel (their triage is tracked there).
+    _extra_triage = [f["status"] for f in funding_events]
     return render_template_string(
         TEMPLATE,
         leads=leads,
@@ -3143,41 +3142,6 @@ TEMPLATE = r"""
             </div>
           </div>
         {% endfor %}
-        {% for fw in framework_events %}
-          <div class="item predictor framework-row" data-status="{{ fw.triage }}" data-new="0" data-fwid="{{ fw.key }}">
-            <div class="row-summary">
-              <span class="rank">{{ loop.index + predictors|length + funding_events|length }}</span>
-              <span class="title">{{ fw.title }}</span>
-              <span class="chips">
-                <span class="role-chip framework-chip-inline">Framework</span>
-                {% if fw.code %}<span class="role-chip">{{ fw.code }}</span>{% endif %}
-                {% if fw.status == 'refresh_window' %}<span class="prob-chip">refresh window</span>{% endif %}
-                {% if fw.triage == 'followed_up' %}<span class="status-badge followed-up">&#10003; followed up</span>{% endif %}
-                {% if fw.triage == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
-              </span>
-            </div>
-            <div class="row-preview">
-              <span class="signal-sub">{{ fw.window_label }}</span>
-            </div>
-            <div class="row-details">
-              <div class="meta">
-                <div class="evidence">{{ fw.scope }}</div>
-                <div class="evidence" style="margin-top:4px;">
-                  <a href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify on portal &rarr;</a>
-                  <span style="color:#888;"> · {{ fw.notes }}</span>
-                </div>
-              </div>
-              <div class="item-actions">
-                {% if fw.triage == 'active' %}
-                  <button class="btn-mini framework-action" data-status="followed_up" type="button">&#10003; Mark followed up</button>
-                  <button class="btn-mini framework-action ghost" data-status="dismissed" type="button">&#10005; Dismiss</button>
-                {% else %}
-                  <button class="btn-mini framework-action" data-status="active" type="button">&#8634; Restore</button>
-                {% endif %}
-              </div>
-            </div>
-          </div>
-        {% endfor %}
       </div>
     </div>
 
@@ -3285,8 +3249,50 @@ TEMPLATE = r"""
           <span class="count" id="pulses-count">—</span>
         </div>
       </div>
-      <div class="panel-body" id="pulses-body">
-        <div class="empty compact">Loading…</div>
+      <div class="panel-body">
+        {% if framework_events %}
+        <div id="framework-rows" class="compact">
+          <div style="font:600 10.5px/1.4 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.08em;color:#5F6368;margin:2px 0 8px;">Framework windows</div>
+          {% for fw in framework_events %}
+          <div class="item predictor framework-row" data-status="{{ fw.triage }}" data-new="0" data-fwid="{{ fw.key }}">
+            <div class="row-summary">
+              <span class="rank">{{ loop.index }}</span>
+              <span class="title">{{ fw.title }}</span>
+              <span class="chips">
+                <span class="role-chip framework-chip-inline" title="A public-sector buying framework: VMA must be an appointed supplier to bid for this work.">Procurement framework</span>
+                {% if fw.status == 'refresh_window' %}<span class="prob-chip">refresh window open</span>{% endif %}
+                {% if fw.code %}<span class="role-chip" style="opacity:.6;">{{ fw.code }}</span>{% endif %}
+                {% if fw.triage == 'followed_up' %}<span class="status-badge followed-up">&#10003; followed up</span>{% endif %}
+                {% if fw.triage == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
+              </span>
+            </div>
+            <div class="row-preview">
+              <span class="signal-sub">Get VMA appointed to the supplier list to bid for this buyer&rsquo;s senior-comms search. {{ fw.window_label }}</span>
+            </div>
+            <div class="row-details">
+              <div class="meta">
+                <div class="evidence"><strong>What this is:</strong> {{ fw.scope }}</div>
+                <div class="evidence" style="margin-top:4px;">
+                  <a href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify on portal &rarr;</a>
+                  <span style="color:#888;"> · {{ fw.notes }}</span>
+                </div>
+              </div>
+              <div class="item-actions">
+                {% if fw.triage == 'active' %}
+                  <button class="btn-mini framework-action" data-status="followed_up" type="button">&#10003; Mark followed up</button>
+                  <button class="btn-mini framework-action ghost" data-status="dismissed" type="button">&#10005; Dismiss</button>
+                {% else %}
+                  <button class="btn-mini framework-action" data-status="active" type="button">&#8634; Restore</button>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <div id="pulses-body">
+          <div class="empty compact">Loading…</div>
+        </div>
       </div>
     </div>
   </div>
@@ -4589,9 +4595,10 @@ async function maybeAutoRefresh() {
   });
 })();
 
-// Framework-signal triage — mirrors the funding-action handler.
+// Framework-signal triage — mirrors the funding-action handler. Frameworks
+// now live in the BD Calendar panel (#framework-rows), not Pre-Market.
 (function(){
-  const host = document.getElementById('predictor-list');
+  const host = document.getElementById('framework-rows');
   if (!host) return;
   host.addEventListener('click', async (ev) => {
     const btn = ev.target.closest('.framework-action');

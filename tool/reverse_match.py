@@ -143,7 +143,7 @@ def _build_rationale(target: str, candidate_company: str, candidate_title: str,
         role_title = top.get("title", "a senior comms role")
         return {
             "priority": "HOT",
-            "label": "Live brief",
+            "label": "A live lead",
             "detail": (f"{target} has '{role_title}' posted right now. "
                        f"Immediate fit - call today before competitors do."),
             "trigger_hint": "open role",
@@ -160,7 +160,7 @@ def _build_rationale(target: str, candidate_company: str, candidate_title: str,
             prob_str = f" ({probability}% likely)" if probability else ""
             return {
                 "priority": "WARM",
-                "label": "Predictor active",
+                "label": "Pre-Market signal",
                 "detail": (f"{trigger_label.capitalize()} at {target}{prob_str} - "
                            f"comms hire forecast{window_str}. "
                            f"Candidate fits the brief about to land."),
