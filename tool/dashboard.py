@@ -802,6 +802,40 @@ def _boot_state_hydrate():
 _boot_state_hydrate()
 
 
+_LAST_STATE_REFRESH = None  # datetime of the last stale re-hydrate attempt
+
+
+def _brief_is_today() -> bool:
+    """Proxy for 'we already hold this morning's brief': is the predictor
+    pipeline's updated_at from today (UTC)?"""
+    try:
+        from tool import predictor_pipeline
+        ua = (predictor_pipeline.load_pipeline() or {}).get("updated_at") or ""
+        return ua[:10] == datetime.now(timezone.utc).date().isoformat()
+    except Exception:
+        return False
+
+
+def _refresh_state_if_stale() -> None:
+    """The dashboard process is long-running and only hydrates at boot, so
+    after the morning brief pushes a fresh set to the dashboard-state branch
+    it keeps serving boot-time data (e.g. 7 predictors) until a restart or a
+    manual Daily Refresh — exactly the "7 until I refreshed, then 51" we saw.
+
+    Re-pull dashboard-state whenever our data isn't from today, bounded to
+    once per 10 minutes so a pre-brief window never hammers the API. This
+    refreshes ALL hydrated sections together (leads, predictors, funding,
+    cascade, candidate watch, ...), not just one panel."""
+    global _LAST_STATE_REFRESH
+    if _brief_is_today():
+        return
+    now = datetime.now(timezone.utc)
+    if _LAST_STATE_REFRESH and (now - _LAST_STATE_REFRESH) < timedelta(minutes=10):
+        return
+    _LAST_STATE_REFRESH = now
+    _boot_state_hydrate()
+
+
 @app.template_filter("safe_url")
 def _safe_url_filter(u):
     """Jinja-side counterpart of the JS safeUrl(): rewrite URLs to '#'
@@ -829,6 +863,10 @@ def landing():
 @app.route("/dashboard")
 @_auth_required
 def index():
+    # Keep a long-running process in sync with the morning brief: pull the
+    # latest dashboard-state when our data isn't from today (bounded), so we
+    # never serve boot-time-stale data until a manual refresh.
+    _refresh_state_if_stale()
     from tool import cascade
     from tool.funding_round import load_funding
     predictors = load_latest_predictive()
