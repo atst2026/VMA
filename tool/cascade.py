@@ -210,7 +210,25 @@ def _looks_like_real_company(co: str) -> bool:
         return False
     if len(co_clean) == 2 and not co_clean.isupper():
         return False
+    # A purely-numeric token ("District 163", "Dist 63") means we grabbed a
+    # local-government / school-district headline, not a corporate name.
+    if any(tok.isdigit() for tok in co_clean.split()):
+        return False
     return True
+
+
+# Function / verb / marker words that never sit inside a real person name.
+# Their presence means the regex captured a sentence fragment, not a name
+# (e.g. "To Replace Retiring Spector Bishop As Dist").
+_NON_NAME_WORDS = {
+    "to", "the", "a", "an", "as", "of", "and", "or", "for", "at", "in",
+    "on", "by", "with", "from", "new", "replace", "replaces", "replacing",
+    "retiring", "retire", "retires", "hired", "hire", "hires", "joins",
+    "join", "joined", "appointed", "appoints", "named", "names", "after",
+    "amid", "following", "who", "will", "has", "have", "been", "is", "was",
+    "up", "takes", "steps", "becomes", "moves", "welcomes", "promoted",
+    "promotes", "dist", "district", "school", "county", "board",
+}
 
 
 def _looks_like_real_person(name: str) -> bool:
@@ -220,6 +238,15 @@ def _looks_like_real_person(name: str) -> bool:
     # Avoid common titles being captured as names.
     bad_starts = ("New ", "The ", "Group ", "Chief ", "Senior ")
     if name.startswith(bad_starts):
+        return False
+    toks = name.split()
+    # A real name is 2-4 capitalised tokens, no digits, no function/verb
+    # words — anything else is a mis-parsed headline fragment.
+    if len(toks) > 4:
+        return False
+    if any(ch.isdigit() for ch in name):
+        return False
+    if any(t.lower().strip(".,'\"") in _NON_NAME_WORDS for t in toks):
         return False
     return True
 

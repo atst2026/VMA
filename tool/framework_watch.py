@@ -141,9 +141,13 @@ def load_frameworks(today: date | None = None) -> list[dict]:
             window_pill = f"OPEN → {exp:%b}".upper() + f" ’{exp:%y}"
         else:
             status = "live"
-            window_label = (f"Live · refresh ~{exp:%b %Y}"
+            # The re-procurement window opens REFRESH_LEAD_MONTHS before expiry —
+            # that's the date an AD should watch for. You can't bid until then.
+            total = (exp.year * 12 + exp.month - 1) - REFRESH_LEAD_MONTHS
+            wo = date(total // 12, total % 12 + 1, 1)
+            window_label = (f"Re-procurement window opens ~{wo:%b %Y} — not open to bid yet"
                             + (" (est.)" if est else ""))
-            window_pill = f"LIVE → {exp:%b}".upper() + f" ’{exp:%y}"
+            window_pill = f"OPENS ~{wo:%b}".upper() + f" ’{wo:%y}"
         out.append({
             **fw,
             "status": status,
