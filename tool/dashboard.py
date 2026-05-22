@@ -1952,6 +1952,11 @@ TEMPLATE = r"""
        internally. */
     #hire-calendar-row .panel { height: 400px; display: flex; flex-direction: column; }
     #hire-calendar-row .panel-body { max-height: none; flex: 1; min-height: 0; overflow-y: auto; }
+    /* Left column stacks two half-height panels (Hire Watch + Framework
+       Windows) so the under-used Hire Watch no longer wastes a full half;
+       BD Calendar keeps the full 400px on the right. */
+    #hire-calendar-row .hc-left { display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+    #hire-calendar-row .hc-left .panel { height: 192px; }
     @media (max-width: 900px) {
       /* Stack vertically on mobile so neither panel is squashed. */
       #hire-calendar-row { grid-template-columns: 1fr; }
@@ -3155,6 +3160,7 @@ TEMPLATE = r"""
        moves) on the left; BD Calendar (statutory pulses + UK/EU
        industry events) on the right. Both stack under 900px. -->
   <div class="row" id="hire-calendar-row">
+    <div class="hc-left">
     <div class="panel" id="cascade-row">
       <div class="panel-header">
         <h2>Hire Watch</h2>
@@ -3239,20 +3245,14 @@ TEMPLATE = r"""
         {% endif %}
       </div>
     </div>
-
-    <div class="panel" id="pulses-row">
+    <div class="panel" id="framework-panel">
       <div class="panel-header">
-        <h2>BD Calendar</h2>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <button class="cal-headnew" id="pulses-new" type="button" style="display:none;">
-            <span class="cal-nd"></span><span id="pulses-new-n">0</span>&nbsp;new</button>
-          <span class="count" id="pulses-count">—</span>
-        </div>
+        <h2>Framework Windows</h2>
+        <span class="count">{{ framework_events|length }}</span>
       </div>
       <div class="panel-body">
         {% if framework_events %}
         <div id="framework-rows" class="compact">
-          <div style="font:600 10.5px/1.4 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.08em;color:#5F6368;margin:2px 0 8px;">Framework windows</div>
           {% for fw in framework_events %}
           <div class="item predictor framework-row" data-status="{{ fw.triage }}" data-new="0" data-fwid="{{ fw.key }}">
             <div class="row-summary">
@@ -3289,10 +3289,24 @@ TEMPLATE = r"""
           </div>
           {% endfor %}
         </div>
+        {% else %}
+        <div class="empty compact">No framework refresh windows open right now.</div>
         {% endif %}
-        <div id="pulses-body">
-          <div class="empty compact">Loading…</div>
+      </div>
+    </div>
+    </div>
+
+    <div class="panel" id="pulses-row">
+      <div class="panel-header">
+        <h2>BD Calendar</h2>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button class="cal-headnew" id="pulses-new" type="button" style="display:none;">
+            <span class="cal-nd"></span><span id="pulses-new-n">0</span>&nbsp;new</button>
+          <span class="count" id="pulses-count">—</span>
         </div>
+      </div>
+      <div class="panel-body" id="pulses-body">
+        <div class="empty compact">Loading…</div>
       </div>
     </div>
   </div>
