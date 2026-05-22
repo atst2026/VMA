@@ -195,7 +195,11 @@ def _open_role_fit(candidate_title: str, role_title: str) -> tuple[bool, str]:
     if cf == rf or cf == "unknown" or rf == "unknown":
         disc_ok = True
     elif {cf, rf} == {"ic", "corporate"}:
-        disc_ok = min(ct, rt) <= 3
+        # IC <-> corporate/external only converge when the CANDIDATE is a
+        # senior generalist (Head-of level or above). A manager-level IC
+        # specialist is NOT a fit for a corporate-comms role, regardless of
+        # how senior that role is.
+        disc_ok = ct <= 3
     else:
         disc_ok = False
     delta = ct - rt                      # >0 => role is more senior
