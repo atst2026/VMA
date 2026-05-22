@@ -806,26 +806,31 @@ _LAST_STATE_REFRESH = None  # datetime of the last stale re-hydrate attempt
 
 
 def _brief_is_today() -> bool:
-    """Proxy for 'we already hold this morning's brief': is the predictor
-    pipeline's updated_at from today (UTC)?"""
+    """We hold today's brief only if the predictor pipeline is from today
+    (UTC) AND actually contains predictors. Requiring non-empty predictors
+    means an empty/0 pipeline always triggers the artifact pull below, even
+    if its timestamp happens to look current."""
     try:
         from tool import predictor_pipeline
-        ua = (predictor_pipeline.load_pipeline() or {}).get("updated_at") or ""
-        return ua[:10] == datetime.now(timezone.utc).date().isoformat()
+        pl = predictor_pipeline.load_pipeline() or {}
+        ua = pl.get("updated_at") or ""
+        is_today = ua[:10] == datetime.now(timezone.utc).date().isoformat()
+        return is_today and bool(pl.get("predictors"))
     except Exception:
         return False
 
 
 def _refresh_state_if_stale() -> None:
     """The dashboard process is long-running and only hydrates at boot, so
-    after the morning brief pushes a fresh set to the dashboard-state branch
-    it keeps serving boot-time data (e.g. 7 predictors) until a restart or a
-    manual Daily Refresh — exactly the "7 until I refreshed, then 51" we saw.
+    after the morning brief lands it keeps serving boot-time data (e.g. 7
+    predictors, or none) until a restart or a manual Daily Refresh — the
+    "7 until I refreshed, then 51" / "no predictors until refresh" we saw.
 
-    Re-pull dashboard-state whenever our data isn't from today, bounded to
-    once per 10 minutes so a pre-brief window never hammers the API. This
-    refreshes ALL hydrated sections together (leads, predictors, funding,
-    cascade, candidate watch, ...), not just one panel."""
+    On a stale load, pull the SAME authoritative source the Daily Refresh
+    button uses: the latest GitHub Actions brief artifact (not the
+    dashboard-state branch, whose pipeline copy can lag the artifact).
+    Bounded to once / 10 minutes so a pre-brief window never hammers the
+    API. Restores leads + predictors + funding together."""
     global _LAST_STATE_REFRESH
     if _brief_is_today():
         return
@@ -833,7 +838,14 @@ def _refresh_state_if_stale() -> None:
     if _LAST_STATE_REFRESH and (now - _LAST_STATE_REFRESH) < timedelta(minutes=10):
         return
     _LAST_STATE_REFRESH = now
-    _boot_state_hydrate()
+    try:
+        if GITHUB_TOKEN:
+            res = refresh_latest_brief_from_github()
+            log.info("auto stale-refresh: %s", res.get("detail", res))
+        else:
+            _boot_state_hydrate()
+    except Exception as e:
+        log.warning("auto stale-refresh failed: %s", e)
 
 
 @app.template_filter("safe_url")
