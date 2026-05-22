@@ -321,13 +321,25 @@ def render_html(candidate_name: str, candidate_company: str, candidate_title: st
     sector_label = sector.replace("_", " ").title() if sector else "Sector unclear (defaulted to FTSE 100 mix)"
     contact = _recommended_contact(candidate_title)
 
-    rows = []
+    # HOT / WARM get full cards (target-specific, actionable). Plain COLD
+    # sector-peers collapse into one compact name list — eleven identical
+    # "playbook transfers cleanly" cards add no value. COLD targets carrying
+    # a mismatch heads-up keep that line, since it's real intel.
+    cards, cold_plain, cold_noted = [], [], []
     for i, (target, rationale) in enumerate(targets_with_rationale, 1):
+        priority = rationale.get("priority", "COLD")
+        detail = rationale.get("detail", "")
+        if priority == "COLD":
+            if "Heads-up:" in detail:
+                note = detail.split("Heads-up:", 1)[1].strip()
+                cold_noted.append((i, target, note))
+            else:
+                cold_plain.append((i, target))
+            continue
         opener = _build_opener(candidate_name, candidate_title, candidate_company,
                                 target, rationale)
-        priority = rationale.get("priority", "COLD")
         priority_color = _PRIORITY_COLOR.get(priority, "#7A7164")
-        rows.append(f"""
+        cards.append(f"""
         <div style="padding:14px 0;border-bottom:1px solid #e5e5e5;">
           <div style="display:flex;align-items:baseline;gap:10px;">
             <div style="font-weight:600;font-size:15px;">{i}. {_esc(target)}</div>
@@ -338,8 +350,8 @@ def render_html(candidate_name: str, candidate_company: str, candidate_title: st
             </span>
             <span style="font-size:11px;color:#666;">{_esc(rationale.get('label', ''))}</span>
           </div>
-          <div style="font-size:13px;color:#333;margin-top:6px;">{_esc(rationale.get('detail', ''))}</div>
-          <div style="font-size:13px;margin-top:6px;"><strong>Call:</strong> {_esc(contact)} (look up named person in Recruiter)</div>
+          <div style="font-size:13px;color:#333;margin-top:6px;">{_esc(detail)}</div>
+          <div style="font-size:13px;margin-top:6px;"><strong>Call:</strong> {_esc(contact)}</div>
           <div style="font-size:13px;color:#222;margin-top:8px;font-style:italic;
                       background:rgba(201, 100, 66, 0.05);padding:8px 10px;border-radius:4px;
                       border-left:3px solid {priority_color};">
@@ -347,6 +359,22 @@ def render_html(candidate_name: str, candidate_company: str, candidate_title: st
           </div>
         </div>
         """)
+
+    cold_html = ""
+    if cold_plain or cold_noted:
+        block = ['<div style="padding:14px 0;border-top:1px solid #e5e5e5;">',
+                 '<div style="font-weight:600;font-size:14px;margin-bottom:4px;">Sector peers — no live signal</div>',
+                 f'<div style="font-size:13px;color:#444;margin-bottom:6px;">{_esc(candidate_title)} '
+                 f'playbook transfers cleanly. Call {_esc(contact)} at each.</div>']
+        for i, t, note in cold_noted:
+            block.append(f'<div style="font-size:13px;color:#333;margin-top:6px;">'
+                         f'{i}. {_esc(t)} — {_esc(note)}</div>')
+        if cold_plain:
+            names = " · ".join(f"{i}. {_esc(t)}" for i, t in cold_plain)
+            block.append(f'<div style="font-size:13px;color:#333;margin-top:6px;">{names}</div>')
+        block.append('</div>')
+        cold_html = "".join(block)
+    rows = ["".join(cards), cold_html]
 
     banner = ""
     if mode == "test":
@@ -404,14 +432,23 @@ def render_text(candidate_name: str, candidate_company: str, candidate_title: st
         f"{len(targets_with_rationale)} targets · {counts['HOT']} HOT · {counts['WARM']} WARM · {counts['COLD']} COLD",
         f"Recommended contact at each: {contact}", "",
     ]
+    cold_plain = []
     for i, (target, rationale) in enumerate(targets_with_rationale, 1):
         priority = rationale.get("priority", "COLD")
+        detail = rationale.get("detail", "")
+        if priority == "COLD" and "Heads-up:" not in detail:
+            cold_plain.append(f"{i}. {target}")
+            continue
         opener = _build_opener(candidate_name, candidate_title, candidate_company,
                                 target, rationale)
         lines.append(f"{i:>2}. [{priority}] {target} - {rationale.get('label', '')}")
-        lines.append(f"    {rationale.get('detail', '')}")
+        lines.append(f"    {detail}")
         lines.append(f"    Opener: {opener}")
         lines.append("")
+    if cold_plain:
+        lines.append("Sector peers — no live signal (playbook transfers; call "
+                     f"{contact} at each):")
+        lines.append("    " + " · ".join(cold_plain))
     return "\n".join(lines)
 
 
