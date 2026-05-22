@@ -1,5 +1,12 @@
 [
   {
+    "ts": "2026-05-22T17:39:28.537651+00:00",
+    "type": "Reverse Match",
+    "company": "Man Group",
+    "name": "Kim Mamtora",
+    "artifact": "reverse-match"
+  },
+  {
     "ts": "2026-05-22T17:39:16.798261+00:00",
     "type": "Pre-meeting Brief",
     "company": "HSBC UK",
