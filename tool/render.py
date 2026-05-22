@@ -54,7 +54,7 @@ def render_html(ranked: list[dict], source_report: dict, now_str: str,
     )
 
     return f"""<!doctype html>
-<html><body style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:720px;margin:0 auto;padding:20px;color:#111;">
+<html><head><meta charset="utf-8"></head><body style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:720px;margin:0 auto;padding:20px;color:#111;">
 <h2 style="margin:0 0 4px 0;">Sara's Morning Brief · {_esc(now_str)}</h2>
 <div style="color:#666;font-size:13px;margin-bottom:18px;">
   Coverage: {_esc(covered_days)}. Ranked by fee-value × signal strength. UK primary.

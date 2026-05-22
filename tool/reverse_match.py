@@ -395,7 +395,7 @@ def render_html(candidate_name: str, candidate_company: str, candidate_title: st
     )
 
     return f"""<!doctype html>
-<html><body style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px;color:#111;">
+<html><head><meta charset="utf-8"></head><body style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px;color:#111;">
 {banner}
 <h2 style="margin:0 0 4px 0;">Reverse-match: {_esc(candidate_name)}</h2>
 <div style="color:#666;font-size:13px;margin-bottom:8px;">
