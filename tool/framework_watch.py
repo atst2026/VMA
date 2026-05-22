@@ -130,20 +130,25 @@ def load_frameworks(today: date | None = None) -> list[dict]:
         days_to_expiry = (exp - today).days if exp else None
         if exp is None:
             status, window_label = "unknown", "Expiry not set — verify on portal"
+            window_pill = "CHECK PORTAL"
         elif today > exp:
             status, window_label = "expired", "Agreement expired — verify re-let"
+            window_pill = "EXPIRED"
         elif _months_between(today, exp) <= REFRESH_LEAD_MONTHS:
             status = "refresh_window"
             window_label = (f"Refresh window open · expiry ~{exp:%b %Y}"
                             + (" (est.)" if est else ""))
+            window_pill = f"OPEN → {exp:%b}".upper() + f" ’{exp:%y}"
         else:
             status = "live"
             window_label = (f"Live · refresh ~{exp:%b %Y}"
                             + (" (est.)" if est else ""))
+            window_pill = f"LIVE → {exp:%b}".upper() + f" ’{exp:%y}"
         out.append({
             **fw,
             "status": status,
             "window_label": window_label,
+            "window_pill": window_pill,
             "days_to_expiry": days_to_expiry,
             "is_estimate": est,
         })
