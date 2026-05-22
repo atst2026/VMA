@@ -2657,7 +2657,8 @@ TEMPLATE = r"""
     }
 
     /* Recent Reports as the 6th action-card. Single-line-per-report,
-       colour dot encodes the report type, one download icon button.
+       a numbered blue square (matching the signals/leads rank badge)
+       indexes each report, one download icon button.
        h3 stays identical to the other action cards (same flex baseline
        and the brand-dot ::before pseudo) so it lines up across the
        3x2 grid; the Clear button is absolutely positioned in the
@@ -2689,23 +2690,27 @@ TEMPLATE = r"""
     .recent-card #recent-reports { display: flex; flex-direction: column; }
     .rr2 {
       display: grid;
-      grid-template-columns: 10px 1fr auto auto;
+      grid-template-columns: 18px 1fr auto auto;
       gap: 9px; align-items: center;
       padding: 9px 0;
       border-bottom: 1px solid var(--border);
       font-size: 12.5px;
     }
     .rr2:last-child { border-bottom: none; }
-    .rr2-dot {
-      width: 8px; height: 8px; border-radius: 50%;
+    /* Numbered blue square — mirrors the signals/leads .rank badge so
+       reports index 1,2,3… in the same visual language. */
+    .rr2-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px; height: 18px;
+      background: var(--teal-soft);
+      color: var(--teal-dark);
+      border: 1px solid rgba(66, 133, 244, 0.25);
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
     }
-    /* Per-report-type colour code. Keep palette in sync with the
-       morning brief / hire watch / sweep accents elsewhere. */
-    .rr2-dot.pm { background: #3A8FA4; }   /* Pre-meeting Brief — teal */
-    .rr2-dot.pp { background: #C2965A; }   /* Pitch Pack — warm tan */
-    .rr2-dot.rm { background: #9FD181; }   /* Reverse Match — pulse-green */
-    .rr2-dot.ms { background: #A38FC8; }   /* Manual Sweep — purple */
-    .rr2-dot.mb { background: #5F6368; }   /* Morning Brief — slate */
     /* Row name styled to MATCH the field-label typography used across
        the other action cards (e.g. "WINDOW (DAYS)", "CANDIDATE NAME"
        in Manual Sweep / Reverse Match): 9.5px, weight 600, uppercase,
@@ -2732,13 +2737,13 @@ TEMPLATE = r"""
     }
     .rr2-icon {
       width: 26px; height: 26px; border-radius: 6px;
-      border: 1px solid var(--border); background: var(--surface, #fff);
-      color: var(--navy, #1F1F1F); text-decoration: none;
+      border: 1px solid rgba(66, 133, 244, 0.25); background: var(--teal-soft);
+      color: var(--teal, #4285F4); text-decoration: none;
       display: inline-flex; align-items: center; justify-content: center;
       font-size: 13px;
       transition: border-color .12s, background .12s;
     }
-    .rr2-icon:hover { border-color: var(--accent, #3A8FA4); }
+    .rr2-icon:hover { border-color: var(--teal, #4285F4); background: rgba(66, 133, 244, 0.16); }
     .rr2-gen {
       color: var(--text-muted); font-size: 10.5px;
       font-style: italic;
@@ -3414,7 +3419,7 @@ TEMPLATE = r"""
     <!-- RECENT REPORTS (6th action-card slot — fits the 3x2 grid) -->
     <div class="panel action-card recent-card">
       <h3>Recent Reports</h3>
-      <div class="subhead">Last 48 hours. Coloured by type.</div>
+      <div class="subhead">Generated within the last 48 hours.</div>
       <button type="button" class="rr-clear" onclick="clearRecentReports(this)">Clear</button>
       <div id="recent-reports">
         <div class="empty compact">Loading…</div>
@@ -4654,16 +4659,6 @@ async function clearRecentReports(btn) {
 async function loadRecentReports() {
   const body = document.getElementById('recent-reports');
   if (!body) return;
-  // Map a report type label to the colour-dot class used in the card.
-  // Any unknown type falls back to the morning-brief slate dot.
-  const dotClass = (type) => {
-    const t = String(type || '').toLowerCase();
-    if (t.includes('pre-meeting')) return 'pm';
-    if (t.includes('pitch pack')) return 'pp';
-    if (t.includes('reverse match')) return 'rm';
-    if (t.includes('manual sweep') || t.includes('sweep') || t.includes('catch-up')) return 'ms';
-    return 'mb';   // morning brief / fallback
-  };
   // Detail = company / candidate name when we have it, else the
   // report's own type label as the primary line. Either way we render
   // at weight 500 so it doesn't compete with the h3.
@@ -4682,7 +4677,9 @@ async function loadRecentReports() {
     }
     const now = Date.now();
     const out = [];
-    for (const x of j.rows.slice(0, 30)) {
+    const rows = j.rows.slice(0, 30);
+    for (let i = 0; i < rows.length; i++) {
+      const x = rows[i];
       const t = new Date(x.ts).getTime();
       const mins = Math.max(0, Math.round((now - t) / 60000));
       const ago = mins < 1 ? 'now'
@@ -4704,7 +4701,7 @@ async function loadRecentReports() {
       }
       out.push(
         '<div class="rr2">' +
-          '<span class="rr2-dot ' + dotClass(x.type) + '"></span>' +
+          '<span class="rr2-num">' + (i + 1) + '</span>' +
           '<span class="rr2-name">' + namePart + '</span>' +
           '<span class="rr2-age">' + esc(ago) + '</span>' +
           action +
