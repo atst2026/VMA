@@ -1513,7 +1513,7 @@ LANDING_TEMPLATE = r"""
   .stage{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:32px;text-align:center;}
   .wordmark{font-family:Arial,Helvetica,sans-serif;color:#1F1F1F;display:inline-flex;align-items:baseline;line-height:1;}
   .wordmark .v{font-weight:800;letter-spacing:.06em;font-size:64px;}
-  .wordmark .g{font-weight:300;letter-spacing:.32em;font-size:64px;padding-left:.42em;}
+  .wordmark .g{font-weight:300;letter-spacing:.32em;font-size:64px;padding-left:.42em;margin-right:-.32em;}
 
   .pill{
     background:rgb(255,255,255);border:none;border-radius:32px;
@@ -1717,26 +1717,35 @@ TEMPLATE = r"""
       letter-spacing: 0.32em;
       font-size: 34px;
       padding-left: 0.42em;
+      /* letter-spacing adds trailing space after the final "P"; cancel it
+         so the wordmark sits truly centred rather than ~11px to the left. */
+      margin-right: -0.32em;
     }
-    /* Floating caption under the wordmark — NOT a pill */
+    /* Floating caption under the wordmark — NOT a pill. The liveness dot is
+       absolutely positioned so it doesn't push the TEXT off-centre; the text
+       itself centres under the wordmark, with the dot hanging to its left. */
     .top-bar .sub-cap {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
+      position: relative;
+      display: inline-block;
       font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
       color: var(--text-muted);
       font-size: 10.5px;
       letter-spacing: 0.26em;
       text-transform: uppercase;
       font-weight: 400;
+      padding-right: 0.26em;   /* balance the trailing letter-spacing */
     }
     .top-bar .sub-cap::before {
       content: "";
+      position: absolute;
+      right: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      margin-right: 10px;
       width: 8px;
       height: 8px;
       border-radius: 50%;
       background: #9FD181;
-      flex-shrink: 0;
       animation: live-pulse 2.4s ease-in-out infinite;
     }
     @keyframes live-pulse {
