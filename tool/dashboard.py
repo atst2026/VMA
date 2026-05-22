@@ -806,12 +806,16 @@ _LAST_STATE_REFRESH = None  # datetime of the last stale re-hydrate attempt
 
 
 def _brief_is_today() -> bool:
-    """Proxy for 'we already hold this morning's brief': is the predictor
-    pipeline's updated_at from today (UTC)?"""
+    """We hold today's brief only if the predictor pipeline is from today
+    (UTC) AND actually contains predictors. Requiring non-empty predictors
+    means an empty/0 pipeline always triggers the artifact pull below, even
+    if its timestamp happens to look current."""
     try:
         from tool import predictor_pipeline
-        ua = (predictor_pipeline.load_pipeline() or {}).get("updated_at") or ""
-        return ua[:10] == datetime.now(timezone.utc).date().isoformat()
+        pl = predictor_pipeline.load_pipeline() or {}
+        ua = pl.get("updated_at") or ""
+        is_today = ua[:10] == datetime.now(timezone.utc).date().isoformat()
+        return is_today and bool(pl.get("predictors"))
     except Exception:
         return False
 
