@@ -2264,20 +2264,6 @@ TEMPLATE = r"""
     }
 
     /* PIPELINE — NEW badge, status badges, filter pills */
-    .new-badge {
-      display: inline-block;
-      font-size: 9px;
-      font-weight: 700;
-      padding: 2px 7px;
-      border-radius: 3px;
-      margin-left: 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      vertical-align: middle;
-      background: var(--btn-bg);
-      color: var(--btn-text);
-      box-shadow: 0 0 0 1px var(--btn-border);
-    }
     .status-badge {
       display: inline-block;
       font-size: 9px;
@@ -2983,7 +2969,6 @@ TEMPLATE = r"""
                 {% if s.url %}<a href="{{ s.url | safe_url }}" target="_blank">{{ s.title }}</a>
                 {% else %}{{ s.title }}{% endif %}
               </span>
-              {% if s.is_new %}<span class="new-badge">NEW</span>{% endif %}
               {% if s.status == 'followed_up' %}<span class="status-badge followed-up">✓ followed up</span>{% endif %}
               {% if s.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
               <div class="meta">
@@ -3033,14 +3018,12 @@ TEMPLATE = r"""
                 <span class="rank">{{ loop.index }}</span>
                 <span class="title">{{ p.company }}</span>
                 <span class="chips">
-                  {% if p.is_new %}<span class="new-badge">NEW</span>{% endif %}
                   {% if p.predicted_role %}<span class="role-chip">{{ p.predicted_role }}</span>{% endif %}
                   {% if p.probability %}<span class="prob-chip">{{ p.probability }}%</span>{% endif %}
                   {% if p.window_label %}<span class="window-badge">{{ p.window_label }}</span>{% endif %}
                   {% if p.status == 'followed_up' %}<span class="status-badge followed-up">✓ followed up</span>{% endif %}
                   {% if p.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
                 </span>
-                <span class="expand-toggle">▾</span>
               </div>
               <div class="row-preview">
                 {% if p.events %}<span class="signal-sub">{{ p.events[0].trigger_label }}</span>{% endif %}
@@ -3081,7 +3064,6 @@ TEMPLATE = r"""
                 {% if f.status == 'followed_up' %}<span class="status-badge followed-up">&#10003; followed up</span>{% endif %}
                 {% if f.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
               </span>
-              <span class="expand-toggle">▾</span>
             </div>
             <div class="row-preview">
               <span class="signal-sub">{{ f.window }}{% if f.investor %} · led by {{ f.investor }}{% endif %}</span>
@@ -3118,7 +3100,6 @@ TEMPLATE = r"""
                 {% if fw.triage == 'followed_up' %}<span class="status-badge followed-up">&#10003; followed up</span>{% endif %}
                 {% if fw.triage == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
               </span>
-              <span class="expand-toggle">&#9662;</span>
             </div>
             <div class="row-preview">
               <span class="signal-sub">{{ fw.window_label }}</span>
