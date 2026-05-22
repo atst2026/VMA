@@ -779,6 +779,7 @@ def _boot_state_hydrate():
             "tool/state/lead_status.json",
             "tool/state/lead_first_seen.json",
             "tool/state/funding_status.json",
+            "tool/state/framework_status.json",
             "tool/state/pulse_dismissed.json",
             "tool/state/report_log.json",
             "tool/state/predictor_status.json",
@@ -865,6 +866,18 @@ def index():
               "status": _fst.get(_fs.funding_id(f), "active")}
         for f in funding_events
     ]
+    from tool import framework_status as _fws
+    _fwst = _fws.get_statuses()
+    # `status` already holds the refresh-window state (refresh_window/live);
+    # triage (active/followed_up/dismissed) goes in a separate `triage` field.
+    framework_events = [
+        {**fw, "triage": _fwst.get(fw["key"], "active")}
+        for fw in framework_events
+    ]
+    # Pre-Market pills roll up predictors + funding + framework. Funding's
+    # triage lives in `status`; framework's in `triage`.
+    _extra_triage = ([f["status"] for f in funding_events]
+                     + [fw["triage"] for fw in framework_events])
     return render_template_string(
         TEMPLATE,
         leads=leads,
@@ -880,11 +893,14 @@ def index():
                             and s.get("status", "active") == "active"),
         leads_followed_count=sum(1 for s in leads if s.get("status") == "followed_up"),
         leads_dismissed_count=sum(1 for s in leads if s.get("status") == "dismissed"),
-        active_count=sum(1 for p in predictors if p.get("status") == "active"),
+        active_count=sum(1 for p in predictors if p.get("status") == "active")
+                     + sum(1 for s in _extra_triage if s == "active"),
         new_count=sum(1 for p in predictors if p.get("is_new")
                       and p.get("status", "active") == "active"),
-        followed_up_count=sum(1 for p in predictors if p.get("status") == "followed_up"),
-        dismissed_count=sum(1 for p in predictors if p.get("status") == "dismissed"),
+        followed_up_count=sum(1 for p in predictors if p.get("status") == "followed_up")
+                          + sum(1 for s in _extra_triage if s == "followed_up"),
+        dismissed_count=sum(1 for p in predictors if p.get("status") == "dismissed")
+                        + sum(1 for s in _extra_triage if s == "dismissed"),
         last_updated=last_updated(),
         has_token=bool(GITHUB_TOKEN),
         build_stamp=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
@@ -1235,6 +1251,22 @@ def api_funding_mark():
     if not ok:
         return jsonify({"ok": False,
                         "detail": "invalid fid or status"}), 400
+    return jsonify({"ok": True})
+
+
+@app.route("/api/framework/mark", methods=["POST"])
+@_auth_required
+def api_framework_mark():
+    """Mark a framework-signal row followed_up / dismissed / active.
+    Persists across daily refreshes via framework_status.json."""
+    from tool import framework_status
+    data = _safe_json_body()
+    key = (data.get("key") or "").strip()
+    status = (data.get("status") or "").strip()
+    if not key or not status:
+        return jsonify({"ok": False, "detail": "key and status required"}), 400
+    if not framework_status.set_status(key, status):
+        return jsonify({"ok": False, "detail": "invalid key or status"}), 400
     return jsonify({"ok": True})
 
 
@@ -3039,9 +3071,9 @@ TEMPLATE = r"""
           <div class="empty compact">No predictors loaded yet. Click Daily Refresh.</div>
         {% endif %}
         {% for f in funding_events %}
-          <div class="item predictor funding-row" data-fid="{{ f.fid }}" data-status="{{ f.status }}">
+          <div class="item predictor funding-row" data-fid="{{ f.fid }}" data-status="{{ f.status }}" data-new="0">
             <div class="row-summary">
-              <span class="rank">·</span>
+              <span class="rank">{{ loop.index + predictors|length }}</span>
               <span class="title">{{ f.company }}</span>
               <span class="chips">
                 <span class="role-chip funding-chip-inline">Funding</span>
@@ -3075,14 +3107,16 @@ TEMPLATE = r"""
           </div>
         {% endfor %}
         {% for fw in framework_events %}
-          <div class="item predictor framework-row" data-status="active" data-fw="{{ fw.key }}">
+          <div class="item predictor framework-row" data-status="{{ fw.triage }}" data-new="0" data-fwid="{{ fw.key }}">
             <div class="row-summary">
-              <span class="rank">·</span>
+              <span class="rank">{{ loop.index + predictors|length + funding_events|length }}</span>
               <span class="title">{{ fw.title }}</span>
               <span class="chips">
                 <span class="role-chip framework-chip-inline">Framework</span>
                 {% if fw.code %}<span class="role-chip">{{ fw.code }}</span>{% endif %}
                 {% if fw.status == 'refresh_window' %}<span class="prob-chip">refresh window</span>{% endif %}
+                {% if fw.triage == 'followed_up' %}<span class="status-badge followed-up">&#10003; followed up</span>{% endif %}
+                {% if fw.triage == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
               </span>
               <span class="expand-toggle">&#9662;</span>
             </div>
@@ -3096,6 +3130,14 @@ TEMPLATE = r"""
                   <a href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify on portal &rarr;</a>
                   <span style="color:#888;"> · {{ fw.notes }}</span>
                 </div>
+              </div>
+              <div class="item-actions">
+                {% if fw.triage == 'active' %}
+                  <button class="btn-mini framework-action" data-status="followed_up" type="button">&#10003; Mark followed up</button>
+                  <button class="btn-mini framework-action ghost" data-status="dismissed" type="button">&#10005; Dismiss</button>
+                {% else %}
+                  <button class="btn-mini framework-action" data-status="active" type="button">&#8634; Restore</button>
+                {% endif %}
               </div>
             </div>
           </div>
@@ -3256,7 +3298,7 @@ TEMPLATE = r"""
     <!-- REVERSE MATCH -->
     <div class="panel action-card">
       <h3>Reverse Match</h3>
-      <div class="subhead">Take a candidate, search the market fresh, and give a ranked list of accounts to pitch them to.</div>
+      <div class="subhead">Take a candidate, search the market fresh, and give a ranked list of accounts to match them to.</div>
       <form id="rm-form" onsubmit="dispatch(event, 'rm-form', '/api/dispatch/reverse-match')">
         <label for="rm-name">Candidate name</label>
         <input id="rm-name" name="candidate_name" placeholder="e.g. Rebecca Torres" required>
@@ -3513,7 +3555,8 @@ document.addEventListener('click', (event) => {
 // followed-up/dismissed item drops out of the active view.
 function recountPredictors() {
   let a = 0, n = 0, f = 0, d = 0;
-  document.querySelectorAll('#predictor-list .item.predictor:not(.funding-row):not(.framework-row)').forEach(it => {
+  // Counts roll up predictors + funding + framework rows (all .item.predictor).
+  document.querySelectorAll('#predictor-list .item.predictor').forEach(it => {
     const s = it.dataset.status || 'active';
     if (s === 'active') { a++; if (it.dataset.new === '1') n++; }
     else if (s === 'followed_up') f++;
@@ -4495,6 +4538,38 @@ async function maybeAutoRefresh() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fid: fid, status: status }),
+      });
+      const j = await r.json();
+      if (j.ok) {
+        setTimeout(() => window.location.reload(), 200);
+      } else {
+        btn.disabled = false;
+        alert(j.detail || 'Could not update.');
+      }
+    } catch (e) {
+      btn.disabled = false;
+      alert('Network error: ' + e.message);
+    }
+  });
+})();
+
+// Framework-signal triage — mirrors the funding-action handler.
+(function(){
+  const host = document.getElementById('predictor-list');
+  if (!host) return;
+  host.addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('.framework-action');
+    if (!btn) return;
+    const row = btn.closest('.framework-row');
+    const key = row && row.getAttribute('data-fwid');
+    const status = btn.getAttribute('data-status');
+    if (!key || !status) return;
+    btn.disabled = true;
+    try {
+      const r = await fetch('/api/framework/mark', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: key, status: status }),
       });
       const j = await r.json();
       if (j.ok) {
