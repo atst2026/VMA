@@ -120,6 +120,96 @@ def _recommended_contact(candidate_title: str) -> str:
     return "CHRO / CPO"
 
 
+# ---- Candidate <-> open-role fit (discipline + seniority) ------------
+# A live open role is only a HOT "call today" if it actually fits the
+# candidate. Comms is not one interchangeable craft: an Internal Comms
+# Manager is not a drop-in for a Corporate Comms Director (different
+# discipline AND two levels up). Without this check the reverse-match
+# flags any open senior-comms role as an immediate fit — which has sent
+# an AD chasing a role the candidate was then rejected for.
+
+_FAMILY_DISP = {
+    "ic": "internal comms", "corporate": "corporate/external comms",
+    "pr": "PR/media", "public_affairs": "public affairs",
+    "marketing": "marketing/brand", "ir": "investor relations",
+    "unknown": "comms",
+}
+
+
+def _comms_family(title: str) -> str:
+    """Bucket a comms title into a discipline family."""
+    t = (title or "").lower()
+    if any(k in t for k in ("internal comm", "employee comm", "colleague comm",
+                            "change comm", "head of ic", "ic manager")):
+        return "ic"
+    if any(k in t for k in ("investor relation", "ir director")):
+        return "ir"
+    if any(k in t for k in ("public affairs", "government relation",
+                            "external affairs", "public policy")):
+        return "public_affairs"
+    if any(k in t for k in ("media relation", "press office", "public relation",
+                            "pr manager", "pr director", "head of pr", "head of media")):
+        return "pr"
+    if any(k in t for k in ("marketing comm", "marcomm", "brand", "content",
+                            "integrated marketing")):
+        return "marketing"
+    if any(k in t for k in ("corporate comm", "corporate affairs", "external comm",
+                            "communications director", "director of comm",
+                            "head of comm", "head of corporate", "head of external",
+                            "group comm", "chief communications", "cco")):
+        return "corporate"
+    if "comm" in t:
+        return "corporate"   # generic "communications" -> senior generalist
+    return "unknown"
+
+
+def _seniority_tier(title: str) -> int:
+    """Coarse seniority tier (1 = C-suite … 6 = coordinator), mirroring the
+    comms title taxonomy."""
+    t = (title or "").lower()
+    if any(k in t for k in ("chief ", "cco", "cmo", "cpo", "chro", "svp", "evp")):
+        return 1
+    if "director" in t or "vice president" in t or re.search(r"\bvp\b", t):
+        return 2
+    if "head of" in t or re.match(r"\s*head\b", t):
+        return 3
+    if any(k in t for k in ("manager", "lead", "principal")):
+        return 4
+    if any(k in t for k in ("specialist", "officer", "executive", "partner", "advisor", "adviser")):
+        return 5
+    if any(k in t for k in ("coordinator", "co-ordinator", "assistant", "administrator")):
+        return 6
+    return 4
+
+
+def _open_role_fit(candidate_title: str, role_title: str) -> tuple[bool, str]:
+    """Does an open role fit the candidate on BOTH discipline and seniority?
+    Returns (is_fit, reason_if_not). Rules, set through a comms-AD lens:
+      • Same discipline family fits. IC<->corporate only converge at Head-of
+        level or above (senior generalists span both); below that they're
+        distinct crafts. Other cross-family pairs don't fit.
+      • Seniority: lateral, one step up, or one step down is a credible move;
+        a two-tier jump (e.g. Manager -> Director) is not."""
+    cf, rf = _comms_family(candidate_title), _comms_family(role_title)
+    ct, rt = _seniority_tier(candidate_title), _seniority_tier(role_title)
+    if cf == rf or cf == "unknown" or rf == "unknown":
+        disc_ok = True
+    elif {cf, rf} == {"ic", "corporate"}:
+        disc_ok = min(ct, rt) <= 3
+    else:
+        disc_ok = False
+    delta = ct - rt                      # >0 => role is more senior
+    sen_ok = abs(delta) <= 1
+    reasons = []
+    if not disc_ok:
+        reasons.append(f"a {_FAMILY_DISP[rf]} role, not {_FAMILY_DISP[cf]}")
+    if not sen_ok:
+        n = abs(delta)
+        reasons.append(f"{n} level{'s' if n > 1 else ''} "
+                       f"{'more senior' if delta > 0 else 'more junior'}")
+    return (disc_ok and sen_ok), " and ".join(reasons)
+
+
 # ---- Per-target rationale (NEW: uses cross-references) --------------
 def _build_rationale(target: str, candidate_company: str, candidate_title: str,
                      predictor: dict | None, leads: list[dict],
@@ -137,17 +227,25 @@ def _build_rationale(target: str, candidate_company: str, candidate_title: str,
     """
     sector_label = sector.replace("_", " ") if sector else "the same sector"
 
-    # Tier 1 — Live brief at target
+    # Tier 1 — live lead at target, but HOT only if it actually fits the
+    # candidate on discipline AND seniority. A mismatched open role is still
+    # real intel (they're hiring comms), so we carry it down as a note rather
+    # than either over-claiming HOT or hiding it.
+    mismatch_note = ""
     if leads:
         top = sorted(leads, key=lambda l: -float(l.get("score") or 0))[0]
         role_title = top.get("title", "a senior comms role")
-        return {
-            "priority": "HOT",
-            "label": "A live lead",
-            "detail": (f"{target} has '{role_title}' posted right now. "
-                       f"Immediate fit - call today before competitors do."),
-            "trigger_hint": "open role",
-        }
+        is_fit, reason = _open_role_fit(candidate_title, role_title)
+        if is_fit:
+            return {
+                "priority": "HOT",
+                "label": "A live lead",
+                "detail": (f"{target} has '{role_title}' open right now — a direct fit. "
+                           f"Call today before competitors do."),
+                "trigger_hint": "open role",
+            }
+        mismatch_note = (f" Heads-up: {target} has '{role_title}' open, but it's "
+                         f"{reason} — not a direct fit, so not flagged hot.")
 
     # Tier 2 — Active predictor at target
     if predictor:
@@ -163,7 +261,7 @@ def _build_rationale(target: str, candidate_company: str, candidate_title: str,
                 "label": "Pre-Market signal",
                 "detail": (f"{trigger_label.capitalize()} at {target}{prob_str} - "
                            f"comms hire forecast{window_str}. "
-                           f"Candidate fits the brief about to land."),
+                           f"Candidate fits the brief about to land.{mismatch_note}"),
                 "trigger_hint": trigger_label,
             }
 
@@ -172,7 +270,7 @@ def _build_rationale(target: str, candidate_company: str, candidate_title: str,
         "priority": "COLD",
         "label": "Sector peer",
         "detail": (f"Direct sector peer of {candidate_company} ({sector_label}). "
-                   f"Candidate's {candidate_title} playbook transfers cleanly."),
+                   f"Candidate's {candidate_title} playbook transfers cleanly.{mismatch_note}"),
         "trigger_hint": "sector peer",
     }
 
