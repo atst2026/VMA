@@ -1957,20 +1957,17 @@ TEMPLATE = r"""
        Hire Watch + BD Calendar sit side-by-side; both panels share
        the same fixed 400px height for visual parity. Bodies scroll
        internally. */
-    /* Panels size to their content so cards aren't clipped into a thin
-       scroll strip; align-items:start lets the two columns take independent
-       heights, and the generous max-height only bites on a freak-volume day. */
-    #hire-calendar-row { align-items: start; }
-    #hire-calendar-row .panel { display: flex; flex-direction: column; }
-    #hire-calendar-row .panel-body { max-height: 700px; overflow-y: auto; }
-    /* Left column stacks two half-height panels (Hire Watch + Framework
-       Windows) so the under-used Hire Watch no longer wastes a full half;
-       BD Calendar keeps the full 400px on the right. minmax(0,1fr) + min-width:0
-       keep the split a true 50/50 — without them the long framework text
-       widens the left column past half. */
+    /* Two full-height (400px) sections side by side: the combined
+       Hire Watch & Framework Windows panel, and BD Calendar. Bodies scroll
+       internally. minmax(0,1fr) + min-width:0 keep the split a true 50/50. */
     #hire-calendar-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-    #hire-calendar-row > .hc-left, #hire-calendar-row > .panel { min-width: 0; }
-    #hire-calendar-row .hc-left { display: flex; flex-direction: column; gap: 16px; min-height: 0; min-width: 0; }
+    #hire-calendar-row > .panel { min-width: 0; }
+    #hire-calendar-row .panel { height: 400px; display: flex; flex-direction: column; }
+    #hire-calendar-row .panel-body { max-height: none; flex: 1; min-height: 0; overflow-y: auto; }
+    /* "Framework windows" divider inside the combined panel. */
+    .fw-subhead { font: 700 10px/1.4 "Inter", sans-serif; text-transform: uppercase;
+                  letter-spacing: .09em; color: var(--text-muted);
+                  padding: 12px 2px 4px; margin-top: 8px; border-top: 1px solid var(--border); }
 
     /* ===== Option-1 rail cards (Hire Watch dual-action + Framework windows) ===== */
     .hw-card, .fw-card { display: flex; gap: 11px; padding: 12px 2px; border-bottom: 1px solid var(--border); }
@@ -3194,22 +3191,21 @@ TEMPLATE = r"""
        moves) on the left; BD Calendar (statutory pulses + UK/EU
        industry events) on the right. Both stack under 900px. -->
   <div class="row" id="hire-calendar-row">
-    <div class="hc-left">
     <div class="panel" id="cascade-row">
       <div class="panel-header">
-        <h2>Hire Watch</h2>
+        <h2>Hire Watch &amp; Framework Windows</h2>
         <span style="display:flex;align-items:center;gap:10px;">
           <span class="refresh-sub" style="font-size:11px;">
-            Dual-action any senior comms moves
+            Senior comms moves + public-sector frameworks
           </span>
           <button type="button" class="btn-mini" id="cs-scour">Re-scan</button>
-          <span class="count" id="cascade-count">{{ cascade_events|length }}</span>
+          <span class="count" id="cascade-count">{{ cascade_events|length + framework_events|length }}</span>
         </span>
       </div>
       <div class="filter-bar" id="cs-filter-bar">
-        <button class="lead-filter-pill active" data-filter="active">Active <span class="pill-count" id="cs-pc-active">{{ cs_active_count }}</span></button>
-        <button class="lead-filter-pill" data-filter="followed_up">Followed up <span class="pill-count" id="cs-pc-followed_up">{{ cs_followed_count }}</span></button>
-        <button class="lead-filter-pill" data-filter="dismissed">Dismissed <span class="pill-count" id="cs-pc-dismissed">{{ cs_dismissed_count }}</span></button>
+        <button class="lead-filter-pill active" data-filter="active">Active <span class="pill-count" id="cs-pc-active">{{ cs_active_count + fw_active_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="followed_up">Followed up <span class="pill-count" id="cs-pc-followed_up">{{ cs_followed_count + fw_followed_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="dismissed">Dismissed <span class="pill-count" id="cs-pc-dismissed">{{ cs_dismissed_count + fw_dismissed_count }}</span></button>
         <button class="lead-filter-pill" data-filter="all">All</button>
       </div>
       <div class="panel-body" id="cascade-body">
@@ -3268,20 +3264,8 @@ TEMPLATE = r"""
             </div>
           {% endfor %}
         {% endif %}
-      </div>
-    </div>
-    <div class="panel" id="framework-panel">
-      <div class="panel-header">
-        <h2>Framework Windows</h2>
-        <span class="count">{{ framework_events|length }}</span>
-      </div>
-      <div class="filter-bar" id="fw-filter-bar">
-        <button class="lead-filter-pill active" data-filter="active">Active <span class="pill-count" id="fw-pc-active">{{ fw_active_count }}</span></button>
-        <button class="lead-filter-pill" data-filter="followed_up">Followed up <span class="pill-count" id="fw-pc-followed_up">{{ fw_followed_count }}</span></button>
-        <button class="lead-filter-pill" data-filter="dismissed">Dismissed <span class="pill-count" id="fw-pc-dismissed">{{ fw_dismissed_count }}</span></button>
-        <button class="lead-filter-pill" data-filter="all">All</button>
-      </div>
-      <div class="panel-body">
+
+        <div class="fw-subhead" id="fw-subhead">Framework windows</div>
         {% if framework_events %}
         <div id="framework-rows" class="compact">
           {% for fw in framework_events %}
@@ -3313,7 +3297,6 @@ TEMPLATE = r"""
         <div class="empty compact">No framework refresh windows open right now.</div>
         {% endif %}
       </div>
-    </div>
     </div>
 
     <div class="panel" id="pulses-row">
@@ -4507,6 +4490,16 @@ async function maybeAutoRefresh() {
       const bucket = item.getAttribute('data-cs-bucket') || 'active';
       item.style.display = (filter === 'all' || bucket === filter) ? '' : 'none';
     });
+    // Framework windows share this panel — filter them by their triage too.
+    let fwVisible = 0;
+    root.querySelectorAll('.framework-row').forEach(item => {
+      const st = item.getAttribute('data-status') || 'active';
+      const show = (filter === 'all' || st === filter);
+      item.style.display = show ? '' : 'none';
+      if (show) fwVisible++;
+    });
+    const sub = document.getElementById('fw-subhead');
+    if (sub) sub.style.display = fwVisible ? '' : 'none';
   }
   if (bar) {
     bar.addEventListener('click', (ev) => {
@@ -4629,30 +4622,8 @@ async function maybeAutoRefresh() {
   });
 })();
 
-// Framework Windows filter pills (Active / Followed up / Dismissed / All) —
-// mirrors the Hire Watch filter.
-(function(){
-  const bar = document.getElementById('fw-filter-bar');
-  const root = document.getElementById('framework-rows');
-  if (!bar || !root) return;
-  function applyFwFilter(filter) {
-    root.querySelectorAll('.framework-row').forEach(item => {
-      const st = item.getAttribute('data-status') || 'active';
-      item.style.display = (filter === 'all' || st === filter) ? '' : 'none';
-    });
-  }
-  bar.addEventListener('click', (ev) => {
-    const pill = ev.target.closest('.lead-filter-pill');
-    if (!pill) return;
-    bar.querySelectorAll('.lead-filter-pill').forEach(p => p.classList.remove('active'));
-    pill.classList.add('active');
-    applyFwFilter(pill.getAttribute('data-filter') || 'active');
-  });
-  applyFwFilter('active');
-})();
-
 // Framework-signal triage — mirrors the funding-action handler. Frameworks
-// live in their own Framework Windows panel (#framework-rows).
+// share the Hire Watch panel; their rows live in #framework-rows.
 (function(){
   const host = document.getElementById('framework-rows');
   if (!host) return;
