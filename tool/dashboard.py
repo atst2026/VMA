@@ -1722,30 +1722,26 @@ TEMPLATE = r"""
       margin-right: -0.32em;
     }
     /* Floating caption under the wordmark — NOT a pill. The liveness dot is
-       absolutely positioned so it doesn't push the TEXT off-centre; the text
-       itself centres under the wordmark, with the dot hanging to its left. */
+       part of the line, so the whole dot+text unit is centred (which sits the
+       text slightly right of the wordmark centre, balancing the dot). */
     .top-bar .sub-cap {
-      position: relative;
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
       font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
       color: var(--text-muted);
       font-size: 10.5px;
       letter-spacing: 0.26em;
       text-transform: uppercase;
       font-weight: 400;
-      padding-right: 0.26em;   /* balance the trailing letter-spacing */
     }
     .top-bar .sub-cap::before {
       content: "";
-      position: absolute;
-      right: 100%;
-      top: 50%;
-      transform: translateY(-50%);
-      margin-right: 10px;
       width: 8px;
       height: 8px;
       border-radius: 50%;
       background: #9FD181;
+      flex-shrink: 0;
       animation: live-pulse 2.4s ease-in-out infinite;
     }
     @keyframes live-pulse {
