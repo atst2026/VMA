@@ -335,6 +335,7 @@ def _artifact_html(artifact_id: int) -> str | None:
 # the four generators. The generators emit bare <html><body style=…>;
 # we strip that inline body style and inject this.
 _REPORT_SKIN = (
+    '<meta charset="utf-8">'
     '<link rel="preconnect" href="https://fonts.googleapis.com">'
     '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800'
     '&family=Crimson+Pro:wght@500;600&display=swap" rel="stylesheet">'
@@ -1956,8 +1957,12 @@ TEMPLATE = r"""
        Hire Watch + BD Calendar sit side-by-side; both panels share
        the same fixed 400px height for visual parity. Bodies scroll
        internally. */
-    #hire-calendar-row .panel { height: 400px; display: flex; flex-direction: column; }
-    #hire-calendar-row .panel-body { max-height: none; flex: 1; min-height: 0; overflow-y: auto; }
+    /* Panels size to their content so cards aren't clipped into a thin
+       scroll strip; align-items:start lets the two columns take independent
+       heights, and the generous max-height only bites on a freak-volume day. */
+    #hire-calendar-row { align-items: start; }
+    #hire-calendar-row .panel { display: flex; flex-direction: column; }
+    #hire-calendar-row .panel-body { max-height: 700px; overflow-y: auto; }
     /* Left column stacks two half-height panels (Hire Watch + Framework
        Windows) so the under-used Hire Watch no longer wastes a full half;
        BD Calendar keeps the full 400px on the right. minmax(0,1fr) + min-width:0
@@ -1966,10 +1971,6 @@ TEMPLATE = r"""
     #hire-calendar-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     #hire-calendar-row > .hc-left, #hire-calendar-row > .panel { min-width: 0; }
     #hire-calendar-row .hc-left { display: flex; flex-direction: column; gap: 16px; min-height: 0; min-width: 0; }
-    /* Hire Watch gets the larger share (richer dual-action cards); Framework
-       Windows the smaller. Both scroll internally. */
-    #hire-calendar-row .hc-left #cascade-row { height: 224px; }
-    #hire-calendar-row .hc-left #framework-panel { height: 160px; }
 
     /* ===== Option-1 rail cards (Hire Watch dual-action + Framework windows) ===== */
     .hw-card, .fw-card { display: flex; gap: 11px; padding: 12px 2px; border-bottom: 1px solid var(--border); }
