@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "ts": "2026-05-22T17:17:54.206919+00:00",
+    "type": "Reverse Match",
+    "company": "Man Group",
+    "name": "Kim Mamtora",
+    "artifact": "reverse-match"
+  }
+]
