@@ -9,6 +9,7 @@ Files (all under tool/state/):
 from __future__ import annotations
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -50,14 +51,37 @@ def _normalise_company(name: str) -> str:
     return (name or "").strip().lower()
 
 
+# Legal / region suffixes stripped only for the fallback match below, so a
+# lookup for "HSBC UK" still finds the "HSBC" card. Kept deliberately narrow
+# (legal forms + region words) to avoid collapsing genuinely different names.
+_LEGAL_SUFFIX_RX = re.compile(
+    r"\b(plc|p\.l\.c\.|limited|ltd|group|holdings|holding|inc|llp|llc|corp|"
+    r"corporation|ag|s\.a\.|sa|n\.v\.|nv|gmbh|b\.v\.|bv|spa|oy|uk|gb)\b\.?",
+    re.IGNORECASE,
+)
+
+
+def _core_company(name: str) -> str:
+    s = _normalise_company(name)
+    s = _LEGAL_SUFFIX_RX.sub("", s)
+    s = re.sub(r"[^a-z0-9 &]", " ", s)
+    return re.sub(r"\s+", " ", s).strip()
+
+
 def get_contact(contacts: dict[str, ContactCard], company: str) -> ContactCard | None:
-    """Case-insensitive lookup."""
+    """Case-insensitive lookup. Exact (normalised) match wins; if none, fall
+    back to a core-name match so e.g. "HSBC UK" resolves to the "HSBC" card."""
     if not company:
         return None
     target = _normalise_company(company)
     for k, v in contacts.items():
         if _normalise_company(k) == target:
             return v
+    core = _core_company(company)
+    if len(core) >= 3:
+        for k, v in contacts.items():
+            if _core_company(k) == core:
+                return v
     return None
 
 
