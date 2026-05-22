@@ -46,6 +46,8 @@ FRAMEWORKS: list[dict] = [
     {
         "key": "ccs_rm6394_exec_search_3",
         "title": "Crown Commercial Service — Executive Search 3",
+        "ad_title": "Central government — comms search framework",
+        "ad_desc": "The route to bid for senior comms roles across government departments & arm's-length bodies.",
         "code": "RM6394",
         "buyer": "Crown Commercial Service",
         "scope": "Executive search & permanent recruitment for senior public-sector roles (incl. comms/corporate-affairs leadership).",
@@ -58,6 +60,8 @@ FRAMEWORKS: list[dict] = [
     {
         "key": "nhs_rm6380_workforce_alliance",
         "title": "NHS Workforce Alliance — Exec Search & Interim",
+        "ad_title": "NHS & health sector — comms search framework",
+        "ad_desc": "Get VMA appointed to bid for senior NHS comms-leadership roles.",
         "code": "RM6380",
         "buyer": "NHS Workforce Alliance (via CCS)",
         "scope": "Executive search & interim for NHS / health-sector senior leadership, including comms & corporate affairs.",
@@ -70,6 +74,8 @@ FRAMEWORKS: list[dict] = [
     {
         "key": "nda_shared_services_lot6",
         "title": "Nuclear Decommissioning Authority — Shared Services (Lot 6)",
+        "ad_title": "Nuclear & energy — comms search framework",
+        "ad_desc": "Senior comms & corporate-affairs search for NDA group bodies.",
         "code": "",
         "buyer": "Nuclear Decommissioning Authority Shared Services Alliance",
         "scope": "Recruitment / executive search for NDA group bodies; Lot 6 covers senior / specialist roles.",
@@ -82,6 +88,8 @@ FRAMEWORKS: list[dict] = [
     {
         "key": "devolved_gov_exec_search",
         "title": "Devolved Government — Executive Search",
+        "ad_title": "Devolved government — comms search framework",
+        "ad_desc": "Senior comms search for Scottish, Welsh & NI public bodies.",
         "code": "",
         "buyer": "Scottish Government / Welsh Government / NI bodies",
         "scope": "Executive search frameworks run by the devolved administrations for senior public-appointment & comms roles.",
