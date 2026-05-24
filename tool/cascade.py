@@ -55,6 +55,10 @@ SUPPRESS_FILE = STATE_DIR / "cascade_suppression.json"
 
 SUPPRESS_DAYS = 90
 MAX_EVENTS_KEEP = 200
+# Once Sara has triaged an event (followed-up or dismissed on every
+# active side), keep it on the board this long as a record, then drop
+# it. Active / untriaged events are never auto-removed.
+TRIAGED_RETENTION_DAYS = 30
 
 # Senior comms titles that count as cascade-worthy moves. Lower-cased,
 # substring-matched against the article title. Order doesn't matter;
@@ -503,6 +507,61 @@ def _is_suppressed(person: str, new_co: str, suppression: dict) -> bool:
     return (datetime.now(timezone.utc) - last) < timedelta(days=SUPPRESS_DAYS)
 
 
+def _event_settled_at(e: dict) -> datetime | None:
+    """When an event became fully triaged — every real side (status !=
+    'n/a') is followed-up / called / dismissed and none is still
+    'active'. Returns the LATEST per-side triage stamp (the moment it
+    fully settled), or None if any side is still active. Falls back to
+    detected_at for events triaged before stamps were recorded."""
+    sides: list[str] = []
+    for side in ("old_co", "new_co"):
+        st = e.get(f"{side}_status", "active")
+        if st == "n/a":
+            continue
+        if st == "active":
+            return None  # still actionable on this side
+        sides.append(side)
+    if not sides:
+        return None  # both sides n/a (shouldn't happen) — leave it
+    stamps: list[datetime] = []
+    for side in sides:
+        iso = e.get(f"{side}_status_at")
+        if not iso:
+            continue
+        try:
+            stamps.append(datetime.fromisoformat(iso))
+        except ValueError:
+            pass
+    if stamps:
+        return max(stamps)
+    # Pre-retention-feature record: no per-side stamp. Fall back to
+    # detected_at so it still ages out rather than lingering forever.
+    iso = e.get("detected_at")
+    if iso:
+        try:
+            return datetime.fromisoformat(iso)
+        except ValueError:
+            return None
+    return None
+
+
+def purge_triaged(events: list[dict],
+                  days: int = TRIAGED_RETENTION_DAYS) -> tuple[list[dict], int]:
+    """Drop events fully triaged (followed-up / dismissed on every active
+    side) more than `days` ago. Active events are always kept. Returns
+    (kept_events, removed_count)."""
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    kept: list[dict] = []
+    removed = 0
+    for e in events:
+        settled = _event_settled_at(e)
+        if settled is not None and settled < cutoff:
+            removed += 1
+            continue
+        kept.append(e)
+    return kept, removed
+
+
 # ----- public API -----------------------------------------------------
 def list_active() -> list[dict]:
     """Events where at least one side (old-co or new-co) still has an
@@ -517,7 +576,11 @@ def list_active() -> list[dict]:
 
 
 def list_all() -> list[dict]:
-    return _load_events()
+    # Hide events triaged > TRIAGED_RETENTION_DAYS ago immediately on the
+    # read path (the daily scour persists the actual removal). Mirrors
+    # predictor_pipeline.all_predictors' in-memory filtering.
+    kept, _ = purge_triaged(_load_events())
+    return kept
 
 
 def mark(event_id: str, side: str, status: str) -> bool:
@@ -530,12 +593,20 @@ def mark(event_id: str, side: str, status: str) -> bool:
     if status not in {"active", "called", "followed_up", "dismissed", "n/a"}:
         return False
     field_name = f"{side}_status"
+    ts_field = f"{side}_status_at"
     with _locked(EVENTS_FILE):
         events = _load_events()
         hit = False
         for e in events:
             if e.get("event_id") == event_id:
                 e[field_name] = status
+                # Stamp when this side was triaged so the post-triage
+                # retention clock has a start point; clear it if the side
+                # reverts to active / n-a (no longer settled).
+                if status in {"called", "followed_up", "dismissed"}:
+                    e[ts_field] = _now_iso()
+                else:
+                    e.pop(ts_field, None)
                 hit = True
                 break
         if not hit:
@@ -630,14 +701,17 @@ def scour() -> dict:
                 = _now_iso()
             new_count += 1
 
-        if new_count:
+        events, purged = purge_triaged(events)
+        if new_count or purged:
             _save_events(events)
+        if new_count:
             _save_suppression(suppression)
 
         return {"signals_seen": len(raw),
                 "candidates": len(candidates),
                 "moves_detected": moves_detected,
-                "events_new": new_count}
+                "events_new": new_count,
+                "purged_triaged": purged}
 
 
 # ----- CLI ------------------------------------------------------------

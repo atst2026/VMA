@@ -28,6 +28,11 @@ log = logging.getLogger("brief.frameworks")
 # point at which it's worth Sara positioning to get appointed next round.
 REFRESH_LEAD_MONTHS = 9
 
+# Keep an expired framework on the board for this grace period (so the
+# "EXPIRED — verify re-let" prompt is seen), then drop it from the
+# dashboard entirely rather than leaving a stale row.
+EXPIRED_GRACE_DAYS = 7
+
 
 # Each framework:
 #   key            stable id
@@ -126,6 +131,10 @@ def load_frameworks(today: date | None = None) -> list[dict]:
     out: list[dict] = []
     for fw in FRAMEWORKS:
         exp = _parse(fw.get("expiry_date"))
+        # Drop from the dashboard once it's been expired beyond the grace
+        # window — a stale "EXPIRED" row is just noise after that.
+        if exp is not None and (today - exp).days > EXPIRED_GRACE_DAYS:
+            continue
         est = fw.get("date_confidence") != "verified"
         days_to_expiry = (exp - today).days if exp else None
         if exp is None:
