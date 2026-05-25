@@ -3079,7 +3079,6 @@ TEMPLATE = r"""
               <pre class="outreach-text">{{ s.outreach }}</pre>
               <div class="item-actions">
                 <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
-                <a class="btn-mini" href="{{ s.linkedin.url | safe_url }}" target="_blank" title="{{ s.linkedin.label }}">↗ {{ s.linkedin.label }}</a>
                 {% if s.status == 'active' %}
                   <button class="btn-mini lead-status-action" data-status="followed_up" type="button">✓ Mark followed up</button>
                   <button class="btn-mini lead-status-action ghost" data-status="dismissed" type="button">✕ Dismiss</button>
