@@ -140,6 +140,7 @@ def fetch_all() -> list[dict]:
         except Exception as e:
             log.info("parse %s failed: %s", label, e)
             continue
+        n_job = n_co = 0
         for it in items[:cap]:
             title = it.get("title", "")
             if not title:
@@ -152,6 +153,9 @@ def fetch_all() -> list[dict]:
             if kind == "job":
                 company = _extract_job_employer(
                     title, it.get("summary", ""), it.get("author", ""))
+                n_job += 1
+                if company:
+                    n_co += 1
             out.append({
                 "id": signal_id(key, it.get("guid") or it.get("link") or title),
                 "source": label,
@@ -164,4 +168,9 @@ def fetch_all() -> list[dict]:
                 "summary": (it.get("summary") or "")[:1200],
                 "weight": weight,
             })
+        # Per-job-feed diagnostic so a run's log shows whether the recovered
+        # lanes actually return comms ads AND whether the employer parses.
+        if kind == "job":
+            log.info("job feed %s: %d items, %d with extracted employer",
+                     label, n_job, n_co)
     return out
