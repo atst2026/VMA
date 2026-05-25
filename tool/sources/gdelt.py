@@ -7,6 +7,14 @@ from tool.sources._http import get, signal_id
 
 log = logging.getLogger("brief.gdelt")
 
+# Circuit-breaker: GDELT is frequently unreachable from CI runners, and
+# with ~42 predictive queries each retrying at 20s timeouts a full outage
+# used to stall the brief for ~an hour. After this many CONSECUTIVE
+# failures we treat GDELT as down and skip the rest of the lane (the
+# Google News predictive lane covers the same triggers). Scattered blips
+# still get retried — only a sustained outage trips the breaker.
+GDELT_CIRCUIT_BREAK = 3
+
 # Comms-relevant terms that, combined with an executive-move or corporate-event
 # term, are high-signal. GDELT's query language uses quotes for phrases and OR.
 QUERY_TERMS = [
@@ -117,6 +125,7 @@ def fetch_predictive_signals(hours_back: int | None = None) -> list[dict]:
     out: list[dict] = []
     seen_urls: set[str] = set()
     failed = 0
+    consecutive_fails = 0
     for i, query in enumerate(PREDICTIVE_TRIGGER_QUERIES):
         if i > 0:
             time.sleep(0.6)
@@ -135,9 +144,18 @@ def fetch_predictive_signals(hours_back: int | None = None) -> list[dict]:
             r = get(SOURCES["gdelt_doc"], params=params, timeout=20)
         if not r or r.status_code != 200:
             failed += 1
+            consecutive_fails += 1
             log.info("GDELT predictive query failed after retry (%s): %s",
                      r.status_code if r else "no-resp", query[:60])
+            if consecutive_fails >= GDELT_CIRCUIT_BREAK:
+                log.warning("GDELT unreachable (%d consecutive failures) — "
+                            "skipping remaining %d predictive queries; the "
+                            "Google News lane covers these triggers.",
+                            consecutive_fails,
+                            len(PREDICTIVE_TRIGGER_QUERIES) - i - 1)
+                break
             continue
+        consecutive_fails = 0
         try:
             articles = r.json().get("articles", []) or []
         except Exception:
@@ -171,6 +189,7 @@ def fetch_all(hours_back: int | None = None) -> list[dict]:
     if hours_back is None:
         hours_back = max(48, 24 * sweep_days())
     out: list[dict] = []
+    consecutive_fails = 0
     for term in QUERY_TERMS:
         r = get(SOURCES["gdelt_doc"], params={
             "query": f'{term} (appointed OR "new role" OR joins OR departs OR "stepping down" OR resigns OR promoted)',
@@ -181,7 +200,14 @@ def fetch_all(hours_back: int | None = None) -> list[dict]:
             "sort": "datedesc",
         })
         if not r or r.status_code != 200:
+            consecutive_fails += 1
+            if consecutive_fails >= GDELT_CIRCUIT_BREAK:
+                log.warning("GDELT unreachable (%d consecutive failures) — "
+                            "skipping remaining direct-move queries.",
+                            consecutive_fails)
+                break
             continue
+        consecutive_fails = 0
         try:
             articles = r.json().get("articles", []) or []
         except Exception:
