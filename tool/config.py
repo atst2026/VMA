@@ -118,6 +118,20 @@ COMPANY_EXCLUDE = [
     # ("Michael Page" as a substring also covers "Michael Page Marketing".)
     "Michael Page", "NFP People", "Not For Profit People", "SF Partners",
 ]
+
+# Job-board / aggregator names that sometimes surface as the "company"
+# instead of the hiring employer (onlyFE, Architecture Social, Guardian
+# Jobs ...). NOT excluded outright — Sara keeps board-sourced leads. Used
+# by ranking.dedup to collapse a board's COPY of a role into the same role
+# listed under its real employer, so we don't show the job twice (once as
+# the board, once as the employer). Board-only leads with no employer twin
+# are left untouched. Matched on the exact normalised name (no substring),
+# so "Reed" never trips "Reed Smith".
+JOB_BOARD_COMPANIES = [
+    "onlyFE", "Architecture Social", "Guardian Jobs", "Totaljobs",
+    "CV-Library", "Jobsite", "CharityJob", "Fish4jobs", "jobs.ac.uk",
+    "Escape the City", "Milkround", "Reed", "Indeed", "Jora", "Monster",
+]
 # --- Geography ---
 # UK primary; international secondary. Primary markets are boosted in ranking.
 GEO_PRIMARY = {"UK", "United Kingdom", "Britain", "England", "Scotland", "Wales", "Northern Ireland", "GB"}

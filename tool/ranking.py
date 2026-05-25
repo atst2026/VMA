@@ -11,6 +11,7 @@ Rank score = base_weight × geo_weight × role_strength × kind_multiplier × fr
 from __future__ import annotations
 import logging
 import re
+from collections import defaultdict
 from datetime import datetime, timezone
 from functools import lru_cache
 from typing import Iterable
@@ -18,7 +19,8 @@ from typing import Iterable
 from dateutil import parser as dateparse
 
 from tool.config import (
-    COMPANY_EXCLUDE, EXCLUDE_TITLE_TERMS, GEO_PRIMARY, GEO_SECONDARY_WEIGHT, ROLE_KEYWORDS,
+    COMPANY_EXCLUDE, EXCLUDE_TITLE_TERMS, GEO_PRIMARY, GEO_SECONDARY_WEIGHT,
+    JOB_BOARD_COMPANIES, ROLE_KEYWORDS,
 )
 
 
@@ -255,6 +257,16 @@ def _title_key(t: str) -> str:
     return " ".join(t.split())
 
 
+_JOB_BOARD_NORMS = frozenset(_norm_company(b) for b in JOB_BOARD_COMPANIES)
+
+
+def _is_job_board(company: str) -> bool:
+    """True if the 'company' is actually a job board, not the employer.
+    Exact normalised match (no substring) so e.g. 'Reed' can't trip
+    'Reed Smith'."""
+    return _norm_company(company) in _JOB_BOARD_NORMS
+
+
 def _acronym(name: str) -> str:
     parts = name.split()
     return "".join(p[0] for p in parts) if len(parts) >= 2 else ""
@@ -321,7 +333,36 @@ def dedup(signals: list[dict]) -> list[dict]:
         out.append(s)
         if tk:
             by_title.setdefault(tk, []).append((nc, len(out) - 1))
-    return out
+    return _collapse_board_dupes(out)
+
+
+def _collapse_board_dupes(out: list[dict]) -> list[dict]:
+    """Drop a job board's COPY of a role (company is a board name, e.g.
+    'onlyFE') when the SAME role — identical normalised title — also
+    appears under exactly one real employer; that employer row is the
+    keeper. Board-only leads with no employer twin, and titles split
+    across several distinct employers, are left untouched — so unique
+    board-sourced leads survive and a generic title never wrongly
+    collapses a board listing into an unrelated employer."""
+    groups: dict[str, list[int]] = defaultdict(list)
+    for i, s in enumerate(out):
+        tk = _title_key(s.get("title", ""))
+        if tk:
+            groups[tk].append(i)
+    drop: set[int] = set()
+    for idxs in groups.values():
+        if len(idxs) < 2:
+            continue
+        boards = [i for i in idxs if _is_job_board(out[i].get("company", ""))]
+        employers = {
+            _norm_company(out[i].get("company", ""))
+            for i in idxs
+            if not _is_job_board(out[i].get("company", ""))
+            and _norm_company(out[i].get("company", ""))
+        }
+        if boards and len(employers) == 1:
+            drop.update(boards)
+    return [s for i, s in enumerate(out) if i not in drop]
 
 
 def rank(signals: list[dict]) -> list[dict]:
