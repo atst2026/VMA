@@ -1,5 +1,19 @@
 [
   {
+    "id": "a439d75c342ff00e",
+    "source": "LinkedIn Jobs (public)",
+    "kind": "job",
+    "title": "Head of Communications",
+    "url": "https://uk.linkedin.com/jobs/view/head-of-communications-at-east-sussex-healthcare-nhs-trust-4410002250",
+    "published": "2026-05-25T18:27:26.548265+00:00",
+    "company": "East Sussex Healthcare NHS Trust",
+    "geo": "UK",
+    "summary": "Eastbourne, England, United Kingdom",
+    "weight": 1.1,
+    "score": 3.083,
+    "is_new": false
+  },
+  {
     "id": "2a918e5176464895",
     "source": "Adzuna (Indeed + aggregators)",
     "kind": "job",
@@ -11,7 +25,7 @@
     "summary": "Director of Communications Full time / Part time Salary: \u00a3 91,276 - \u00a3 104,513 pa, with potential for further progression to \u00a3 117,748 pa with our pay progression scheme. Location: Hybrid Contracted to our Wilmslow or London office, we will be relocating to Manchester city centre from 28 September 2026. Once the move takes place your contracted office will be Circle Square, Manchester. Through hybrid working we offer flexible home and office-based working opportunities and there will be times wh\u2026",
     "weight": 1.0,
     "score": 2.73,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "f82f8d42cdf0a946",
@@ -25,7 +39,7 @@
     "summary": "At Highland Spring Group, everything starts with nature. Our natural source water is drawn from protected organic land in Scotland\u2019s Ochil Hills, where we are proud guardians of 2,500 acres of natural, untouched landscape. We care deeply about our hills, our environment, our people and the communities around us. As the UK\u2019s leading natural source water producer, we are proud of our brand, our product and the role we play in helping people enjoy healthy hydration every day. We are also operating\u2026",
     "weight": 1.0,
     "score": 2.548,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "4aa313cf1203a097",
@@ -33,22 +47,8 @@
     "kind": "job",
     "title": "Head of Communications & Corporate Affairs",
     "url": "https://uk.linkedin.com/jobs/view/head-of-communications-corporate-affairs-at-guardian-jobs-4416994906",
-    "published": "2026-05-25T17:46:09.907110+00:00",
+    "published": "2026-05-25T18:27:26.548265+00:00",
     "company": "",
-    "geo": "UK",
-    "summary": "London, England, United Kingdom",
-    "weight": 1.1,
-    "score": 2.541,
-    "is_new": false
-  },
-  {
-    "id": "49924a64e8fa2118",
-    "source": "LinkedIn Jobs (public)",
-    "kind": "job",
-    "title": "Global Corporate Communications Director",
-    "url": "https://uk.linkedin.com/jobs/view/global-corporate-communications-director-at-boston-consulting-group-bcg-4415760353",
-    "published": "2026-05-25T17:46:09.907110+00:00",
-    "company": "Boston Consulting Group (BCG)",
     "geo": "UK",
     "summary": "London, England, United Kingdom",
     "weight": 1.1,
@@ -67,18 +67,18 @@
     "summary": "The Colleague Communications Director is a senior leader responsible for shaping and delivering Sage's colleague communications strategy across a complex, global FTSE 100 organisation. Working in close partnership with the CEO, Executive Leadership Team and EVP Corporate Affairs, this role ensures clarity, alignment and engagement across Sage - enabling strategy execution, organisational performance and cultural cohesion. The role plays a critical part in supporting periods of transformation, c\u2026",
     "weight": 1.0,
     "score": 2.464,
-    "is_new": true
+    "is_new": false
   },
   {
-    "id": "7c18e93de81fb989",
+    "id": "bd0d4a401d98a926",
     "source": "LinkedIn Jobs (public)",
     "kind": "job",
-    "title": "Director, Corporate Communications, UK Business",
-    "url": "https://uk.linkedin.com/jobs/view/director-corporate-communications-uk-business-at-barclays-4413645593",
-    "published": "2026-05-25T17:46:09.907110+00:00",
-    "company": "Barclays",
+    "title": "Director of Communications",
+    "url": "https://uk.linkedin.com/jobs/view/director-of-communications-at-manchester-digital-4416155802",
+    "published": "2026-05-25T18:27:26.548265+00:00",
+    "company": "Manchester Digital",
     "geo": "UK",
-    "summary": "London, England, United Kingdom",
+    "summary": "Manchester, England, United Kingdom",
     "weight": 1.1,
     "score": 2.422,
     "is_new": false
@@ -88,25 +88,25 @@
     "source": "Adzuna (Indeed + aggregators)",
     "kind": "job",
     "title": "Chief Communications Officer",
-    "url": "https://www.adzuna.co.uk/jobs/land/ad/5738646198?se=0NHKlWFY8RGWQvEe2bTbLw&utm_medium=api&utm_source=2317bb5a&v=448775EA1D221DEEED9D175BB52449072CEF6280",
+    "url": "https://www.adzuna.co.uk/jobs/land/ad/5738646198?se=SipLW2dY8RGvjPD20Sc1wQ&utm_medium=api&utm_source=2317bb5a&v=448775EA1D221DEEED9D175BB52449072CEF6280",
     "published": "2026-05-23T10:34:00Z",
     "company": "Police Scotland",
     "geo": "UK",
     "summary": "Police Scotland is seeking a Chief Communications Officer (CCO) to provide strategic leadership for the service's corporate communications function. This is a rare and exciting opportunity to lead a multidisciplinary team of professionals across media relations, internal and external communications, digital engagement, and public affairs at a national scale. As a key member of the Senior Management Team within the Strategy & Analysis Directorate, you will set direction, strengthen operational d\u2026",
     "weight": 1.0,
     "score": 2.38,
-    "is_new": true
+    "is_new": false
   },
   {
-    "id": "b48b35c5a6c272ce",
+    "id": "3b471975fc751e39",
     "source": "LinkedIn Jobs (public)",
     "kind": "job",
-    "title": "Head of Communications",
-    "url": "https://uk.linkedin.com/jobs/view/head-of-communications-at-infected-blood-compensation-authority-4413563856",
-    "published": "2026-05-25T17:46:09.907110+00:00",
-    "company": "Infected Blood Compensation Authority",
+    "title": "Head of Communications, Global Commercial Organization",
+    "url": "https://uk.linkedin.com/jobs/view/head-of-communications-global-commercial-organization-at-logitech-4409172788",
+    "published": "2026-05-25T18:27:26.548265+00:00",
+    "company": "Logitech",
     "geo": "UK",
-    "summary": "Newcastle Upon Tyne, England, United Kingdom",
+    "summary": "London, England, United Kingdom",
     "weight": 1.1,
     "score": 2.372,
     "is_new": false
@@ -117,50 +117,8 @@
     "kind": "job",
     "title": "Branding & Communications \u2013 International Communications Director",
     "url": "https://uk.linkedin.com/jobs/view/branding-communications-%E2%80%93-international-communications-director-at-millennium-4143420813",
-    "published": "2026-05-25T17:46:09.907110+00:00",
+    "published": "2026-05-25T18:27:26.548265+00:00",
     "company": "Millennium",
-    "geo": "UK",
-    "summary": "London, England, United Kingdom",
-    "weight": 1.1,
-    "score": 2.372,
-    "is_new": false
-  },
-  {
-    "id": "afb8e466590eb9c8",
-    "source": "LinkedIn Jobs (public)",
-    "kind": "job",
-    "title": "Head of Corporate Communications",
-    "url": "https://uk.linkedin.com/jobs/view/head-of-corporate-communications-at-ukroed-4406732081",
-    "published": "2026-05-25T17:46:09.907110+00:00",
-    "company": "UKROEd",
-    "geo": "UK",
-    "summary": "Manchester Area, United Kingdom",
-    "weight": 1.1,
-    "score": 2.372,
-    "is_new": false
-  },
-  {
-    "id": "ab902f52254bd6da",
-    "source": "LinkedIn Jobs (public)",
-    "kind": "job",
-    "title": "Head of Communications & Visitor Economy",
-    "url": "https://uk.linkedin.com/jobs/view/head-of-communications-visitor-economy-at-chorley-council-4413451783",
-    "published": "2026-05-25T17:46:09.907110+00:00",
-    "company": "Chorley Council",
-    "geo": "UK",
-    "summary": "Chorley, England, United Kingdom",
-    "weight": 1.1,
-    "score": 2.372,
-    "is_new": false
-  },
-  {
-    "id": "3b471975fc751e39",
-    "source": "LinkedIn Jobs (public)",
-    "kind": "job",
-    "title": "Head of Communications, Global Commercial Organization",
-    "url": "https://uk.linkedin.com/jobs/view/head-of-communications-global-commercial-organization-at-logitech-4409172788",
-    "published": "2026-05-25T17:46:09.907110+00:00",
-    "company": "Logitech",
     "geo": "UK",
     "summary": "London, England, United Kingdom",
     "weight": 1.1,
@@ -173,7 +131,7 @@
     "kind": "job",
     "title": "Global Communications Director",
     "url": "https://uk.linkedin.com/jobs/view/global-communications-director-at-comma-partners-4418116893",
-    "published": "2026-05-25T17:46:09.907110+00:00",
+    "published": "2026-05-25T18:27:26.548265+00:00",
     "company": "Comma Partners",
     "geo": "UK",
     "summary": "London Area, United Kingdom",
@@ -182,13 +140,55 @@
     "is_new": false
   },
   {
-    "id": "50c5b9afb8eaddfa",
+    "id": "c852d48b4694742d",
     "source": "LinkedIn Jobs (public)",
     "kind": "job",
-    "title": "EMEA Communications Director",
-    "url": "https://uk.linkedin.com/jobs/view/emea-communications-director-at-gibson-dunn-4414365949",
-    "published": "2026-05-25T17:46:09.907110+00:00",
-    "company": "Gibson Dunn",
+    "title": "Head of Communications",
+    "url": "https://uk.linkedin.com/jobs/view/head-of-communications-at-infected-blood-compensation-authority-4413571587",
+    "published": "2026-05-25T18:27:26.548265+00:00",
+    "company": "Infected Blood Compensation Authority",
+    "geo": "UK",
+    "summary": "Glasgow, Scotland, United Kingdom",
+    "weight": 1.1,
+    "score": 2.372,
+    "is_new": false
+  },
+  {
+    "id": "95301be4cee976ab",
+    "source": "LinkedIn Jobs (public)",
+    "kind": "job",
+    "title": "Head of Communications",
+    "url": "https://uk.linkedin.com/jobs/view/head-of-communications-at-the-british-irish-lions-4415361065",
+    "published": "2026-05-25T18:27:26.548265+00:00",
+    "company": "The British & Irish Lions",
+    "geo": "UK",
+    "summary": "London Area, United Kingdom",
+    "weight": 1.1,
+    "score": 2.372,
+    "is_new": false
+  },
+  {
+    "id": "afb8e466590eb9c8",
+    "source": "LinkedIn Jobs (public)",
+    "kind": "job",
+    "title": "Head of Corporate Communications",
+    "url": "https://uk.linkedin.com/jobs/view/head-of-corporate-communications-at-ukroed-4406732081",
+    "published": "2026-05-25T18:27:26.548265+00:00",
+    "company": "UKROEd",
+    "geo": "UK",
+    "summary": "Manchester Area, United Kingdom",
+    "weight": 1.1,
+    "score": 2.372,
+    "is_new": false
+  },
+  {
+    "id": "dbaf4f8ccb3b085e",
+    "source": "LinkedIn Jobs (public)",
+    "kind": "job",
+    "title": "Managing Director, Global Head of Communications Corporate Banking",
+    "url": "https://uk.linkedin.com/jobs/view/managing-director-global-head-of-communications-corporate-banking-at-citi-4416185598",
+    "published": "2026-05-25T18:27:26.548265+00:00",
+    "company": "Citi",
     "geo": "UK",
     "summary": "London, England, United Kingdom",
     "weight": 1.1,
@@ -207,20 +207,6 @@
     "summary": "Our vision is to give everyone the belief they can make their move. We aim to make moving simpler, by giving everyone the best place to turn to and return to for access to the tools, expertise, trust, and belief to make it happen. We\u2019re home to the UK\u2019s largest choice of properties and are the go-to destination for millions of people planning their next move, reading the latest industry news, or just browsing what\u2019s on the market. The role We\u2019re looking for an experienced PR professional to joi\u2026",
     "weight": 1.0,
     "score": 2.293,
-    "is_new": true
-  },
-  {
-    "id": "94bca409c0f71504",
-    "source": "LinkedIn Jobs (public)",
-    "kind": "job",
-    "title": "Associate Director - Corporate Affairs",
-    "url": "https://uk.linkedin.com/jobs/view/associate-director-corporate-affairs-at-portland-4417095683",
-    "published": "2026-05-25T17:46:09.907110+00:00",
-    "company": "Portland",
-    "geo": "UK",
-    "summary": "London Area, United Kingdom",
-    "weight": 1.1,
-    "score": 2.143,
     "is_new": false
   },
   {
@@ -235,35 +221,21 @@
     "summary": "Are you ready to shape the voice of our growing organisation? As STEF Langdons continues to grow and evolve, we are looking for an experienced and dynamic Head of Communications to help shape the next chapter of our journey. Location: Bridgwater - Head Office Salary: \u00a374,500.00 per annum Hours: Monday to Friday, 37.5 hours This is a strategic leadership role responsible for leading and shaping both internal and external communications across STEF Langdons, strengthening our brand, supporting ou\u2026",
     "weight": 1.0,
     "score": 2.1,
-    "is_new": true
-  },
-  {
-    "id": "6f0aaee08925cca9",
-    "source": "Adzuna (Indeed + aggregators)",
-    "kind": "job",
-    "title": "Head of Communications and Brand",
-    "url": "https://www.adzuna.co.uk/jobs/land/ad/5736379994?se=0EwDl2FY8RGWQvEe2bTbLw&utm_medium=api&utm_source=2317bb5a&v=D12914059B6ED936BFAC8DF83A910B8817E8544B",
-    "published": "2026-05-21T13:14:09Z",
-    "company": "Harris Federation Head Office",
-    "geo": "UK",
-    "summary": "MAIN AREAS OF RESPONSIBILITY Your responsibilities will include: Strategic Leadership & Executive Advisory Develop and lead the Federation\u2019s external communications and brand strategy at the highest level, ensuring coherence across all academies and central services. Act as an adviser to the CEO and executive team on internal and external communications. Brand Leadership Own and embed the Federation\u2019s brand identity, values, and visual standards across all academies and external channels. Own a\u2026",
-    "weight": 1.0,
-    "score": 2.1,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "90f8ddaf2e9fbe16",
     "source": "Adzuna (Indeed + aggregators)",
     "kind": "job",
     "title": "Head of Communications & Corporate Affairs",
-    "url": "https://www.adzuna.co.uk/jobs/land/ad/5734855433?se=Pgx2l2FY8RGTDdJK-7cL6w&utm_medium=api&utm_source=2317bb5a&v=CB0489C46447CCB38ED19D8364C55E4B4C7C1A36",
+    "url": "https://www.adzuna.co.uk/jobs/land/ad/5734855433?se=dk7WXGdY8RGfo9Gk-LYc5Q&utm_medium=api&utm_source=2317bb5a&v=CB0489C46447CCB38ED19D8364C55E4B4C7C1A36",
     "published": "2026-05-20T06:46:59Z",
     "company": "London Borough of Hounslow",
     "geo": "UK",
     "summary": "Hounslow is one of London\u2019s most dynamic and diverse boroughs. A place of global connections, thriving communities and bold ambition, the borough is undergoing significant change and investment, from Heathrow and west London\u2019s economic corridor to town centres and neighbourhoods across Hounslow. We are looking for an exceptional communications leader to help shape that story. As our new Head of Communications and Corporate Affairs, you will lead a high-performing, multi-disciplinary communicati\u2026",
     "weight": 1.0,
     "score": 2.1,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "9a6bd932c8072dae",
@@ -277,7 +249,7 @@
     "summary": ". Director, Corporate Communications, UK Business As Director, Corporate Communications, UK Business, you will lead the development and execution of an integrated communications strategy that supports the growth of Barclays Corporate and Business Banking in the UK. This is a pivotal, high-impact role at the heart of Barclays' UK-focused strategy, shaping how our business connects with external stakeholders, corporate and small business clients, communities and colleagues. You will translate com\u2026",
     "weight": 1.0,
     "score": 2.002,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "eb72c3ce9a70af0a",
@@ -291,35 +263,35 @@
     "summary": "Virgin Unite is looking for a strategic and hands-on communications leader to tell the story of who we are, what we stand for and the impact we\u2019re creating around the world. From bold campaigns and thought leadership to brand evolution and reputation management, this is a role for someone who\u2019s just as comfortable shaping strategy as they are writing a brilliant OpEd or rolling up their sleeves to create content for Instagram. This is an opportunity to join a small, ambitious team working on so\u2026",
     "weight": 1.0,
     "score": 2.002,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "eaef6d31c80a8992",
     "source": "Adzuna (Indeed + aggregators)",
     "kind": "job",
     "title": "Managing Director, Global Head of Communications Corporate Banking - Citi",
-    "url": "https://www.adzuna.co.uk/jobs/land/ad/5737722076?se=1sQNlmFY8RGWQvEe2bTbLw&utm_medium=api&utm_source=2317bb5a&v=91FD2B8CA5C89EC8225BF61C3FD6A164334DB602",
+    "url": "https://www.adzuna.co.uk/jobs/land/ad/5737722076?se=5GKRW2dY8RGfo9Gk-LYc5Q&utm_medium=api&utm_source=2317bb5a&v=91FD2B8CA5C89EC8225BF61C3FD6A164334DB602",
     "published": "2026-05-22T16:04:46Z",
     "company": "Citi",
     "geo": "UK",
     "summary": "Discover your future at Citi Working at Citi is far more than just a job. A career with us means joining a team of more than 230,000 dedicated people from around the globe. At Citi, you'll have the opportunity to grow your career, give back to your community and make a real impact. Job Overview We are currently seeking a highly skilled and experienced individual to join our team as the Global Head of Communications Corporate Banking. We are considering candidates located in New York, San Franci\u2026",
     "weight": 1.0,
     "score": 1.96,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "85c82616a0f397ca",
     "source": "Adzuna (Indeed + aggregators)",
     "kind": "job",
     "title": "Head of Communications and Brand",
-    "url": "https://www.adzuna.co.uk/jobs/land/ad/5737360244?se=0EwDl2FY8RGWQvEe2bTbLw&utm_medium=api&utm_source=2317bb5a&v=337489AD05C2F4B8D87BE34141FF084BCBD463B1",
+    "url": "https://www.adzuna.co.uk/jobs/land/ad/5737360244?se=vDByXGdY8RGfo9Gk-LYc5Q&utm_medium=api&utm_source=2317bb5a&v=337489AD05C2F4B8D87BE34141FF084BCBD463B1",
     "published": "2026-05-22T07:11:45Z",
-    "company": "HARRIS FEDERATION",
+    "company": "The Harris Federation",
     "geo": "UK",
     "summary": "\u200b WORKING WITH US The founder and sponsor of the Harris Federation, Lord Harris of Peckham, opened our first school in 1990. We have, over the past thirty years, implemented ideas and initiatives that have transformed the opportunities of pupils from working class and disadvantaged backgrounds. Harris academies are widely recognised as a force for social mobility. We are immensely proud of the role that our alumni are now beginning to play in the world and of what we believe our current generat\u2026",
     "weight": 1.0,
     "score": 1.96,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "ec37e3318e01023b",
@@ -333,21 +305,7 @@
     "summary": "We are currently seeking a highly skilled and experienced individual to join our team as the Global Head of Communications Corporate Banking. We are considering candidates located in New York, San Francisco and London. In this role, you will be responsible for developing and maintaining relationships with our Communications clients, ensuring their financial needs are met and identifying opportunities for growth. We are looking for a driven and dynamic professional with a strong background in Co\u2026",
     "weight": 1.0,
     "score": 1.96,
-    "is_new": true
-  },
-  {
-    "id": "01df75b363dc17ac",
-    "source": "Adzuna (Indeed + aggregators)",
-    "kind": "job",
-    "title": "Head of Communications and Brand",
-    "url": "https://www.adzuna.co.uk/jobs/details/5736649848?utm_medium=api&utm_source=2317bb5a",
-    "published": "2026-05-21T18:36:22Z",
-    "company": "The Harris Federation",
-    "geo": "UK",
-    "summary": "? WORKING WITH US The founder and sponsor of the Harris Federation, Lord Harris of Peckham, opened our first school in 1990. We have, over the past thirty years, implemented ideas and initiativesthat have transformed the opportunities of pupils from working class and disadvantaged backgrounds. Harris academies are widely recognised as a force for social mobility. We are immensely proud of the role that our alumni are now beginning to play in the world and of what we believe our current generati\u2026",
-    "weight": 1.0,
-    "score": 1.96,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "a9e0d568948cd91b",
@@ -361,32 +319,60 @@
     "summary": "As CFC continues to scale, we have a new opportunity for a Head of Corporate Communications to lead and shape a high-impact communications strategy. This role calls for deep subject-matter expertise, alongside the ability to set clear direction while staying close to execution, ensuring our messaging lands with clarity and intent. The successful candidate will play a pivotal role in strengthening CFC\u2019s reputation across our markets through proactive media engagement, effective issues management\u2026",
     "weight": 1.0,
     "score": 1.96,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "07c9cca0b3ae862a",
     "source": "Adzuna (Indeed + aggregators)",
     "kind": "job",
     "title": "Head of Communications & PR",
-    "url": "https://www.adzuna.co.uk/jobs/land/ad/5736366578?se=br5FmmFY8RGTDdJK-7cL6w&utm_medium=api&utm_source=2317bb5a&v=32341DB4D8D6ADB6A77B8F506FA4AB10A67008A5",
+    "url": "https://www.adzuna.co.uk/jobs/land/ad/5736366578?se=vDByXGdY8RGfo9Gk-LYc5Q&utm_medium=api&utm_source=2317bb5a&v=32341DB4D8D6ADB6A77B8F506FA4AB10A67008A5",
     "published": "2026-05-21T12:59:53Z",
     "company": "Architecture Social",
     "geo": "UK",
     "summary": "A large, internationally focused architecture practice with a strong design culture is seeking a new Head of Communications and PR to join their team in a new role. The studio operates across multiple global locations and brings together diverse perspectives to deliver work that responds to climate, culture and long\u2011term use. Collaboration is partner\u2011led, with communications viewed as a strategic function that supports the practice\u2019s reputation, positioning and future direction. The environment\u2026",
     "weight": 1.0,
     "score": 1.96,
-    "is_new": true
+    "is_new": false
   },
   {
-    "id": "94a4939f0f0ebbfd",
+    "id": "28bfbe072b8370e6",
     "source": "LinkedIn Jobs (public)",
     "kind": "job",
-    "title": "Director of Communications, Brand and Public Affairs",
-    "url": "https://uk.linkedin.com/jobs/view/director-of-communications-brand-and-public-affairs-at-guardian-jobs-4415599085",
-    "published": "2026-05-25T17:46:09.907110+00:00",
-    "company": "Brand and Public Affairs",
+    "title": "Director of Communications, DET UK",
+    "url": "https://uk.linkedin.com/jobs/view/director-of-communications-det-uk-at-duolingo-4390664460",
+    "published": "2026-05-25T18:27:26.548265+00:00",
+    "company": "Duolingo",
     "geo": "UK",
-    "summary": "Bristol, England, United Kingdom",
+    "summary": "London, England, United Kingdom",
+    "weight": 1.1,
+    "score": 1.863,
+    "is_new": false
+  },
+  {
+    "id": "939a826e7b9a2892",
+    "source": "LinkedIn Jobs (public)",
+    "kind": "job",
+    "title": "Director of Communications & PR",
+    "url": "https://uk.linkedin.com/jobs/view/director-of-communications-pr-at-the-dorchester-4411635965",
+    "published": "2026-05-25T18:27:26.548265+00:00",
+    "company": "The Dorchester",
+    "geo": "UK",
+    "summary": "London Area, United Kingdom",
+    "weight": 1.1,
+    "score": 1.863,
+    "is_new": false
+  },
+  {
+    "id": "4421e718a7b5cb72",
+    "source": "LinkedIn Jobs (public)",
+    "kind": "job",
+    "title": "Director of Communications",
+    "url": "https://uk.linkedin.com/jobs/view/director-of-communications-at-the-royal-college-of-surgeons-of-england-4408865890",
+    "published": "2026-05-25T18:27:26.548265+00:00",
+    "company": "The Royal College of Surgeons of England",
+    "geo": "UK",
+    "summary": "London Area, United Kingdom",
     "weight": 1.1,
     "score": 1.863,
     "is_new": false
@@ -397,36 +383,8 @@
     "kind": "job",
     "title": "Head of Global External Communications",
     "url": "https://uk.linkedin.com/jobs/view/head-of-global-external-communications-at-arup-4414212456",
-    "published": "2026-05-25T17:46:09.907110+00:00",
+    "published": "2026-05-25T18:27:26.548265+00:00",
     "company": "Arup",
-    "geo": "UK",
-    "summary": "London, England, United Kingdom",
-    "weight": 1.1,
-    "score": 1.863,
-    "is_new": false
-  },
-  {
-    "id": "28bfbe072b8370e6",
-    "source": "LinkedIn Jobs (public)",
-    "kind": "job",
-    "title": "Director of Communications, DET UK",
-    "url": "https://uk.linkedin.com/jobs/view/director-of-communications-det-uk-at-duolingo-4390664460",
-    "published": "2026-05-25T17:46:09.907110+00:00",
-    "company": "Duolingo",
-    "geo": "UK",
-    "summary": "London, England, United Kingdom",
-    "weight": 1.1,
-    "score": 1.863,
-    "is_new": false
-  },
-  {
-    "id": "25f5a5c1769060d6",
-    "source": "LinkedIn Jobs (public)",
-    "kind": "job",
-    "title": "Director of External Communications",
-    "url": "https://uk.linkedin.com/jobs/view/director-of-external-communications-at-preply-4393026891",
-    "published": "2026-05-25T17:46:09.907110+00:00",
-    "company": "Preply",
     "geo": "UK",
     "summary": "London, England, United Kingdom",
     "weight": 1.1,
@@ -439,7 +397,7 @@
     "kind": "job",
     "title": "Director of Communications, Europe (R4496)",
     "url": "https://uk.linkedin.com/jobs/view/director-of-communications-europe-r4496-at-shield-ai-4375469480",
-    "published": "2026-05-25T17:46:09.907110+00:00",
+    "published": "2026-05-25T18:27:26.548265+00:00",
     "company": "Shield AI",
     "geo": "UK",
     "summary": "London, England, United Kingdom",
@@ -448,32 +406,18 @@
     "is_new": false
   },
   {
-    "id": "ce452fc3f3874b94",
-    "source": "Adzuna (Indeed + aggregators)",
+    "id": "1aa2395879d53b99",
+    "source": "LinkedIn Jobs (public)",
     "kind": "job",
-    "title": "Head of Communications",
-    "url": "https://www.adzuna.co.uk/jobs/land/ad/5731139460?se=Li9_mWFY8RGvjPD20Sc1wQ&utm_medium=api&utm_source=2317bb5a&v=0A20C5AFBF587180B7643D1B57E1C12C3EF8AFE4",
-    "published": "2026-05-16T07:08:45Z",
-    "company": "NFP People",
+    "title": "VP, Corporate Communications Manager",
+    "url": "https://uk.linkedin.com/jobs/view/vp-corporate-communications-manager-at-pimco-4393467084",
+    "published": "2026-05-25T18:27:26.548265+00:00",
+    "company": "PIMCO",
     "geo": "UK",
-    "summary": "Head of Communications Are you a confident and experienced communications professional ready to make a real impact? We are looking for a Head of Communications to lead the communications and marketing activities for a brand-new locally run youth charity. As an equal opportunities employer, we welcome applications from under-represented groups; in particular from Black, Asian, Mixed Race & other ethnically diverse individuals, people with disabilities, and members of LGBTQ communities. Position:\u2026",
-    "weight": 1.0,
-    "score": 1.764,
-    "is_new": true
-  },
-  {
-    "id": "fd4f2a8c92c0e6b4",
-    "source": "Adzuna (Indeed + aggregators)",
-    "kind": "job",
-    "title": "Head of Communications",
-    "url": "https://www.adzuna.co.uk/jobs/land/ad/5730474324?se=Li9_mWFY8RGvjPD20Sc1wQ&utm_medium=api&utm_source=2317bb5a&v=F94340CE95914FC1201B9C50B6EEBFD2D8114BEC",
-    "published": "2026-05-15T18:41:09Z",
-    "company": "Not For Profit People",
-    "geo": "UK",
-    "summary": "Head of Communications Are you a confident and experienced communications professional ready to make a real impact? We are looking for a Head of Communications to lead the communications and marketing activities for a brand-new locally run youth charity. As an equal opportunities employer, we welcome applications from under-represented groups; in particular from Black, Asian, Mixed Race & other ethnically diverse individuals, people with disabilities, and members of LGBTQ communities. Position:\u2026",
-    "weight": 1.0,
-    "score": 1.764,
-    "is_new": true
+    "summary": "London, England, United Kingdom",
+    "weight": 1.1,
+    "score": 1.863,
+    "is_new": false
   },
   {
     "id": "5c46bc16ea0c7cba",
@@ -487,7 +431,7 @@
     "summary": "Head of Communications Are you a confident and experienced communications professional ready to make a real impact We are looking for a Head of Communications to lead the communications and marketing activities for a brand-new locally run youth charity. As an equal opportunities employer, we welcome applications from under-represented groups; in particular from Black, Asian, Mixed Race & other ethnically diverse individuals, people with disabilities, and members of LGBTQ communities. Position: \u2026",
     "weight": 1.0,
     "score": 1.764,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "d5d1d46b4900de67",
@@ -501,7 +445,7 @@
     "summary": "R0001528 External Communications & Content Manager (Open) We\u2019re Nadara. We work harmoniously with the power of nature and the communities around us to power lifetimes to come. We call our approach \u2018living energy\u2019. We don\u2019t just produce renewable energy, we live it \u2013 recognising our relationship with the people touched by our business and supporting social, educational, cultural, and environmental initiatives that contribute to the development of the communities we work alongside. Discover more \u2026",
     "weight": 1.0,
     "score": 1.54,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "e9ee80a478f50d11",
@@ -515,105 +459,35 @@
     "summary": "PURPOSE & IMPACT: This role is known for \u2026 Leading and shaping Nomad Foods\u2019 public affairs and media strategy, driving initiatives that strengthen corporate reputation and influence policy across multiple markets. This role provides strategic counsel to senior leadership, oversees complex advocacy and communications projects, and ensures alignment of corporate affairs priorities with business objectives. We need someone who\u2026. will act as a trusted advisor, manage high-level stakeholder and agen\u2026",
     "weight": 1.0,
     "score": 1.54,
-    "is_new": true
-  },
-  {
-    "id": "74f2464e3ed816fd",
-    "source": "Adzuna (Indeed + aggregators)",
-    "kind": "job",
-    "title": "Head of PR & Corporate Communications",
-    "url": "https://www.adzuna.co.uk/jobs/land/ad/5729360181?se=Pgx2l2FY8RGTDdJK-7cL6w&utm_medium=api&utm_source=2317bb5a&v=461395C710F7197CD00F36096710DA1AF92CF306",
-    "published": "2026-05-14T16:55:31Z",
-    "company": "SF Partners",
-    "geo": "UK",
-    "summary": "Head of PR & Corporate Communications Location: West Midlands (Hybrid - 3 days onsite) Salary: Up to \u00a360,000 About the Opportunity We're partnering with a well-established, market-leading organisation within the engineering and consumer technology sector to appoint a Head of PR & Corporate Communications. This is a newly created role, reflecting the organisation's increased focus on reputation, corporate narrative, and strategic communications. It offers a unique opportunity to shape the functi\u2026",
-    "weight": 1.0,
-    "score": 1.512,
-    "is_new": true
-  },
-  {
-    "id": "056f8ff3ff835ac6",
-    "source": "Adzuna (Indeed + aggregators)",
-    "kind": "job",
-    "title": "Head of Internal Communications & Engagement",
-    "url": "https://www.adzuna.co.uk/jobs/details/5714638888?utm_medium=api&utm_source=2317bb5a",
-    "published": "2026-04-30T19:10:04Z",
-    "company": "Michael Page",
-    "geo": "UK",
-    "summary": "The Head of Internal Communications & Engagement will lead and deliver effective communication strategies to enhance employee engagement within the organisation. This role is ideal for a strategic thinker with expertise in internal communications, looking to make a meaningful impact in the not-for-profit sector. Client Details This is a well-established not-for-profit organisation operating in Merseyside. With a strong focus on creating positive change, the organisation prioritises effective co\u2026",
-    "weight": 1.0,
-    "score": 1.47,
-    "is_new": true
-  },
-  {
-    "id": "f2fcf351ec0469a4",
-    "source": "Adzuna (Indeed + aggregators)",
-    "kind": "job",
-    "title": "Head of Communications & External Affairs",
-    "url": "https://www.adzuna.co.uk/jobs/details/5714528536?utm_medium=api&utm_source=2317bb5a",
-    "published": "2026-04-30T14:46:26Z",
-    "company": "Michael Page Marketing",
-    "geo": "UK",
-    "summary": "The Head of Communications & External Affairs will lead and manage all communication strategies and external relations for a not-for-profit organisation. This role requires a skilled professional to enhance the organisation's profile and ensure effective stakeholder engagement. Client Details This not-for-profit organisation operates within the public service sector, providing essential services and initiatives to benefit communities across the UK. As a medium-sized entity, it is committed to d\u2026",
-    "weight": 1.0,
-    "score": 1.47,
-    "is_new": true
-  },
-  {
-    "id": "4850bd26f81d2b0b",
-    "source": "Adzuna (Indeed + aggregators)",
-    "kind": "job",
-    "title": "Head of Communications & External Affairs",
-    "url": "https://www.adzuna.co.uk/jobs/details/5714526247?utm_medium=api&utm_source=2317bb5a",
-    "published": "2026-04-30T14:30:38Z",
-    "company": "Michael Page",
-    "geo": "UK",
-    "summary": "The Head of Communications & External Affairs will lead and manage all communication strategies and external relations for a not-for-profit organisation. This role requires a skilled professional to enhance the organisation's profile and ensure effective stakeholder engagement. Client Details This not-for-profit organisation operates within the public service sector, providing essential services and initiatives to benefit communities across the UK. As a medium-sized entity, it is committed to d\u2026",
-    "weight": 1.0,
-    "score": 1.47,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "f3e4d8bdc84f5f99",
     "source": "Adzuna (Indeed + aggregators)",
     "kind": "job",
     "title": "Director of Communications, Brand and Public Affairs",
-    "url": "https://www.adzuna.co.uk/jobs/land/ad/5732240677?se=nC2gmGFY8RGvjPD20Sc1wQ&utm_medium=api&utm_source=2317bb5a&v=EE5DCA3945B565ADECEA168219312261DC3DAE7C",
+    "url": "https://www.adzuna.co.uk/jobs/land/ad/5732240677?se=kC_pXWdY8RGWQvEe2bTbLw&utm_medium=api&utm_source=2317bb5a&v=EE5DCA3945B565ADECEA168219312261DC3DAE7C",
     "published": "2026-05-17T08:30:28Z",
-    "company": "SOUTH GLOUCESTERSHIRE & STROUD COLLEGE",
+    "company": "South Gloucestershire and Stroud College",
     "geo": "UK",
     "summary": "Director of Communications, Brand and Public Affairs Role Information: Reference: REQ001436 Location: Based at any campus but travel required between Stroud and Bristol campuses FTE Salary: circa \u00a362,000 (Salary is dependent on qualifications and experience) Contract Type: Permanent, Full-Time (Flexible working can be considered) Team: College Leadership Team Reporting To: Chief Strategy Officer Are you ready to lead and shape how we communicate, strengthen our brand and engage learners, employ\u2026",
     "weight": 1.0,
     "score": 1.386,
-    "is_new": true
-  },
-  {
-    "id": "fbd391b122d2316a",
-    "source": "Adzuna (Indeed + aggregators)",
-    "kind": "job",
-    "title": "Director of Communications, Brand and Public Affairs",
-    "url": "https://www.adzuna.co.uk/jobs/details/5730999429?utm_medium=api&utm_source=2317bb5a",
-    "published": "2026-05-16T03:35:49Z",
-    "company": "South Gloucestershire and Stroud College",
-    "geo": "UK",
-    "summary": "SGS College is seeking an exceptional leader to become our Director of Communications, Brand and Public Affairs, it's your opportunity to help SGS shape the voice, brand and reputation of one of the South West's most ambitious and forward-thinking colleges. Download Job Description Download Candidate Pack Apply Now Careers at SGS: Overview Life at SGS Benefits Available Roles Become a Governor Careers at SGS: Overview Life at SGS Benefits Available Roles Become a Governor Back to all vacancies \u2026",
-    "weight": 1.0,
-    "score": 1.386,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "cebe43062906e2b9",
     "source": "Adzuna (Indeed + aggregators)",
     "kind": "job",
     "title": "Director of Communications & PR",
-    "url": "https://www.adzuna.co.uk/jobs/land/ad/5726648797?se=Li9_mWFY8RGvjPD20Sc1wQ&utm_medium=api&utm_source=2317bb5a&v=DD3018162B1846595EE8DFF8D981B00F32ADDD80",
+    "url": "https://www.adzuna.co.uk/jobs/land/ad/5726648797?se=WLt2XmdY8RGfo9Gk-LYc5Q&utm_medium=api&utm_source=2317bb5a&v=DD3018162B1846595EE8DFF8D981B00F32ADDD80",
     "published": "2026-05-12T10:19:48Z",
     "company": "FEA",
     "geo": "UK",
     "summary": "Our client is seeking an exceptional communications leader to join them as their first Director of Communications & PR. This is a pivotal opportunity to shape and deliver a bold, inclusive and transparent communications strategy that will drive engagement, strengthen our client\u2019s reputation and support their ambition to be exceptional. Reporting directly to the Principal and Chief Executive, you will be the College\u2019s senior professional lead for communications, reputation and stakeholder engage\u2026",
     "weight": 1.0,
     "score": 1.386,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "340c393f3c3647e8",
@@ -627,21 +501,21 @@
     "summary": "About the role:Click on Job Description on the right to download the full candidate pack This is a pivotal leadership role in shaping and amplifying Elevare's civic voice, public influence and reputation across education, skills and place-based reform. You will lead integrated policy, public affairs and communications strategies-positioning Elevare as a trusted thought and system leader locally, regionally and nationally. The role combines strategic policy leadership, external affairs, reputati\u2026",
     "weight": 1.0,
     "score": 1.386,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "e0f4ed69d62710e8",
     "source": "Adzuna (Indeed + aggregators)",
     "kind": "job",
     "title": "Group Head of PR, Policy & External Affairs",
-    "url": "https://www.adzuna.co.uk/jobs/land/ad/5732240761?se=br5FmmFY8RGTDdJK-7cL6w&utm_medium=api&utm_source=2317bb5a&v=07E02DB5508E1AE0F767DFF5C7D924B92A754EA3",
+    "url": "https://www.adzuna.co.uk/jobs/land/ad/5732240761?se=6EbTXmdY8RGvjPD20Sc1wQ&utm_medium=api&utm_source=2317bb5a&v=07E02DB5508E1AE0F767DFF5C7D924B92A754EA3",
     "published": "2026-05-17T08:30:32Z",
     "company": "Elevare Civic Education Group",
     "geo": "UK",
     "summary": "About the role: This is a pivotal leadership role in shaping and amplifying Elevare\u2019s civic voice, public influence and reputation across education, skills and place-based reform. You will lead integrated policy, public affairs and communications strategies\u2014positioning Elevare as a trusted thought and system leader locally, regionally and nationally. The role combines strategic policy leadership, external affairs, reputation and risk management, and high-impact communications and stakeholder en\u2026",
     "weight": 1.0,
     "score": 1.386,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "08ebda796fdc7a17",
@@ -655,7 +529,7 @@
     "summary": "Click on Job Description on the right to download the full candidate pack This is a pivotal leadership role in shaping and amplifying Elevare\u2019s civic voice, public influence and reputation across education, skills and place-based reform. You will lead integrated policy, public affairs and communications strategies\u2014positioning Elevare as a trusted thought and system leader locally, regionally and nationally. The role combines strategic policy leadership, external affairs, reputation and risk man\u2026",
     "weight": 1.0,
     "score": 1.386,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "b0ed85f4d0b24b81",
@@ -683,7 +557,7 @@
     "summary": "Osborne Clarke has recently expanded our Communications and Brand team and are now hiring for a Senior Corporate Communications Manager to be based in London. This is a key and transformative role, supporting the firm's strategic objectives by promoting and protecting the firm's reputation through a comprehensive communication strategy with a strong focus on media relations and integrated communications including digital content and internal comms. Osborne Clarke Osborne Clarke is a future-focu\u2026",
     "weight": 1.0,
     "score": 1.092,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "829c051ed2b0e12e",
@@ -697,21 +571,21 @@
     "summary": "About us Hanover is an award-winning communications consultancy that advises enterprises, institutions, and individuals on building recognition and enhancing reputation. From our offices across Europe and the Middle East, we adopt an integrated approach that connects the dots across channels, audiences and issues. Our collective of smart, curious people think differently and live by a shared mission, purpose, vision, and values. These shape how we work, not just with our colleagues, but with cl\u2026",
     "weight": 1.0,
     "score": 1.063,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "5050367f0ae53707",
     "source": "Adzuna (Indeed + aggregators)",
     "kind": "job",
     "title": "Head of Media Relations",
-    "url": "https://www.adzuna.co.uk/jobs/land/ad/5722871311?se=ktwJmWFY8RGWQvEe2bTbLw&utm_medium=api&utm_source=2317bb5a&v=6CD8D6914A1847D931AE53896D8C1BA64A487629",
+    "url": "https://www.adzuna.co.uk/jobs/land/ad/5722871311?se=mp0lXmdY8RGfo9Gk-LYc5Q&utm_medium=api&utm_source=2317bb5a&v=6CD8D6914A1847D931AE53896D8C1BA64A487629",
     "published": "2026-05-08T11:47:40Z",
     "company": "The Wildlife Trust",
     "geo": "UK",
     "summary": "Head of Media Relations Up to \u00a355,000 per annum Homebased with easy access to our Newark Office Full time: 35 hours per week Permanent contract This role is predominantly home-based with regular travel to locations across the UK. Office facilities are available at our Newark office (Tuesdays to Thursdays) for those within easy travelling distance. There is a requirement to attend in-person the monthly team meeting at the Newark office. Closing date for applications: 31st May 2026 First intervie\u2026",
     "weight": 1.0,
     "score": 1.008,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "db51ad20fd470ba2",
@@ -725,7 +599,7 @@
     "summary": "Full time: 35 hours per week This role is predominantly home-based with regular travel to locations across the UK. Office facilities are available at our Newark office (Tuesdays to Thursdays) for those within easy travelling distance. There is a requirement to attend in-person the monthly team meeting at the Newark office. About Us The Wildlife Trusts are a grassroots movement of people from a wide range of backgrounds and all walks of life, who believe that we need nature and nature needs us. \u2026",
     "weight": 1.0,
     "score": 1.008,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "e5c86983d0f23313",
@@ -739,7 +613,7 @@
     "summary": "About Us We are DS Smith, together with International Paper, we are a global leader in sustainable packaging solutions and other fibre-based products. We believe a better, more sustainable tomorrow is possible with the right people, who challenge and support one another to enact positive change. We employ more than 65,000 colleagues in North America and Europe, Middle East and Africa (EMEA), who are experts in innovation, manufacturing, design, sales, sustainability, supply chain, and much more\u2026",
     "weight": 1.0,
     "score": 0.924,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "bf211bf69985d402",
@@ -753,7 +627,7 @@
     "summary": "Job Title: Brand & PR Manager / Head of Brand & Communications Company: DCBL & DCB Legal Ltd Reporting To: New Business Director Location : Runcorn, WA7 (Manor Park) Salary: \u00a365,000 per annum. Hours : Monday \u2013 Thursday 9am\u20135pm, Friday 9am\u20134pm (36.5 hours) About Us We are part of the Direct Group , one of the UK\u2019s leading providers of debt recovery and legal enforcement services . Through DCBL and DCB Legal , we deliver a fully integrated service \u2014 from pre-legal collections through to litigatio\u2026",
     "weight": 1.0,
     "score": 0.924,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "f1d3b31738a921ee",
@@ -767,21 +641,7 @@
     "summary": "About us: Linklaters is a global law firm, providing legal services in 20 countries and through 30 offices. Linklaters is a people business. Being best in class in the eyes of our clients means that our people must be exceptional. We look not only for brilliant minds, but for people who will thrive in our environment: people who love working collaboratively and demonstrate the innovative, efficient, agile, entrepreneurial, and responsible mind-set we aim to bring to every interaction. Ours is a\u2026",
     "weight": 1.0,
     "score": 0.924,
-    "is_new": true
-  },
-  {
-    "id": "c6c9f79b7e89d0e6",
-    "source": "Adzuna (Indeed + aggregators)",
-    "kind": "job",
-    "title": "Change Communications Lead",
-    "url": "https://www.adzuna.co.uk/jobs/details/5711957597?utm_medium=api&utm_source=2317bb5a",
-    "published": "2026-04-27T21:11:42Z",
-    "company": "LINKLATERS LLP",
-    "geo": "UK",
-    "summary": "About us: Linklaters is a global law firm, providing legal services in 20 countries and through 30 offices. Linklaters is a people business. Being best in class in the eyes of our clients means that our people must be exceptional. We look not only for brilliant minds, but for people who will thrive in our environment: people who love working collaboratively and demonstrate the innovative, efficient, agile, entrepreneurial, and responsible mind-set we aim to bring to every interaction. Ours is a\u2026",
-    "weight": 1.0,
-    "score": 0.924,
-    "is_new": true
+    "is_new": false
   },
   {
     "id": "dba3a3ba6ca79a1c",
