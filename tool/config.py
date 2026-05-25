@@ -240,35 +240,29 @@ SOURCES = {
 #   greenhouse: wise, revolut, deliveroo, octopusenergy, starlingbank
 #   lever:      gousto, multiverse, reddit
 # Slugs are runtime-verified: each morning brief logs which boards return
-# jobs vs 404 (a wrong/retired slug is skipped, never fatal), so this list
-# can be pruned from the logs after a run. Additions below are best-effort
-# UK employers known to post on each platform — weighted toward Sara's
-# market (charities / corporates), not only tech scale-ups.
+# jobs vs 404 (a wrong/retired slug is skipped, never fatal). Pruned May
+# 2026 against a live run's log to ONLY the slugs that returned 200 — the
+# speculative additions and a batch of retired originals all 404'd and
+# were just dead requests. A 404 from these ATS APIs means "no such board"
+# (not a transient outage), so pruning on 404 is safe.
 ATS_SEEDS = {
     "greenhouse": [
         "monzo", "gocardless", "cloudflare", "stripe",
-        "trustpilot", "depop", "onfido", "snyk", "improbable",
-        "thetrainline", "moonpig", "secretescapes", "bulb",
-        "marshmallow", "zego", "tide", "cleo",
-        # Added May 2026 — further UK comms-active employers.
-        "checkout", "thoughtmachine", "freetrade", "quantexa",
-        "wayve", "darktrace",
+        "trustpilot", "tide", "cleo",
     ],
     "lever": [
-        "plaid", "netflix", "palantir", "brewdog", "elvie",
-        "gymshark",
+        "plaid", "netflix", "palantir",
     ],
     "ashby": [
         "posthog", "linear", "ramp", "synthesia", "pleo",
-        "11x",
     ],
-    "workable": [
-        # UK charities / NGOs / mid-size orgs commonly use Workable — the
-        # closest public-ATS fit for Sara's public-sector / third-sector
-        # comms market.
-        "comicrelief", "shelter", "scope", "mind",
-        "britishredcross", "wateraid", "barnardos", "crisis", "samaritans",
-    ],
+    # Workable lane parked: the public endpoint
+    # (apply.workable.com/api/v3/accounts/{slug}/jobs) 404'd for every
+    # account tried, including long-standing seeds — so the endpoint
+    # format is wrong and/or these orgs aren't on Workable. fetch_workable
+    # stays wired (no-op on an empty list); re-add slugs only once a
+    # working endpoint + real Workable-using orgs are confirmed live.
+    "workable": [],
 }
 
 # A real-browser User-Agent. The previous custom string
