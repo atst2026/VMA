@@ -132,6 +132,17 @@ JOB_BOARD_COMPANIES = [
     "CV-Library", "Jobsite", "CharityJob", "Fish4jobs", "jobs.ac.uk",
     "Escape the City", "Milkround", "Reed", "Indeed", "Jora", "Monster",
 ]
+
+# Known employer aliases / rebrands with NO shared text or acronym, so the
+# fuzzy company matcher in ranking can't link them automatically — they must
+# be declared. Maps a variant -> the canonical name it deduplicates under.
+# Seeded with London South East Colleges, which rebranded to "Elevare Civic
+# Education Group": Adzuna returns the SAME role under both names (identical
+# job description), and they share no token/acronym so nothing else catches
+# the duplicate. Matched on the normalised name.
+COMPANY_ALIASES = {
+    "Elevare Civic Education Group": "London South East Colleges",
+}
 # --- Geography ---
 # UK primary; international secondary. Primary markets are boosted in ranking.
 GEO_PRIMARY = {"UK", "United Kingdom", "Britain", "England", "Scotland", "Wales", "Northern Ireland", "GB"}
