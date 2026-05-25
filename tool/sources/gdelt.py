@@ -1,19 +1,25 @@
 """GDELT DOC 2.0 API — global news event graph. Free, 15-min latency."""
 from __future__ import annotations
 import logging
+import time
 
 from tool.config import ROLE_KEYWORDS, SOURCES
 from tool.sources._http import get, signal_id
 
 log = logging.getLogger("brief.gdelt")
 
-# Circuit-breaker: GDELT is frequently unreachable from CI runners, and
-# with ~42 predictive queries each retrying at 20s timeouts a full outage
-# used to stall the brief for ~an hour. After this many CONSECUTIVE
-# failures we treat GDELT as down and skip the rest of the lane (the
-# Google News predictive lane covers the same triggers). Scattered blips
-# still get retried — only a sustained outage trips the breaker.
+# GDELT is frequently slow-or-unreachable from CI runners. Three guards so
+# it can never stall the brief (the Google News predictive lane is the
+# backup for anything skipped):
+#   * short per-call timeout + no retry  — fast-fail a dead/slow host
+#   * consecutive-failure breaker        — bail fast on a total outage
+#   * hard wall-clock budget per lane    — bound the slow-but-not-dead
+#     case the breaker misses (intermittent timeouts that never hit
+#     N-in-a-row, which is what kept stalling the brief).
+GDELT_TIMEOUT_S = 8
 GDELT_CIRCUIT_BREAK = 3
+GDELT_PREDICTIVE_BUDGET_S = 150
+GDELT_FETCHALL_BUDGET_S = 40
 
 # Comms-relevant terms that, combined with an executive-move or corporate-event
 # term, are high-signal. GDELT's query language uses quotes for phrases and OR.
@@ -118,7 +124,6 @@ def fetch_predictive_signals(hours_back: int | None = None) -> list[dict]:
     to recover from GDELT rate-limit blips. Today's run lost 12 of 24
     queries to 'no-resp'; pacing should recover most.
     """
-    import time
     from tool.config import sweep_days
     if hours_back is None:
         hours_back = max(48, 24 * sweep_days())
@@ -126,7 +131,14 @@ def fetch_predictive_signals(hours_back: int | None = None) -> list[dict]:
     seen_urls: set[str] = set()
     failed = 0
     consecutive_fails = 0
+    start = time.monotonic()
     for i, query in enumerate(PREDICTIVE_TRIGGER_QUERIES):
+        if time.monotonic() - start > GDELT_PREDICTIVE_BUDGET_S:
+            log.warning("GDELT predictive budget (%ds) spent — stopping at "
+                        "query %d/%d; Google News lane covers the rest.",
+                        GDELT_PREDICTIVE_BUDGET_S, i,
+                        len(PREDICTIVE_TRIGGER_QUERIES))
+            break
         if i > 0:
             time.sleep(0.6)
         params = {
@@ -137,15 +149,12 @@ def fetch_predictive_signals(hours_back: int | None = None) -> list[dict]:
             "maxrecords": 75,
             "sort": "datedesc",
         }
-        r = get(SOURCES["gdelt_doc"], params=params, timeout=20)
-        if not r or r.status_code != 200:
-            # Retry once after a short pause
-            time.sleep(1.5)
-            r = get(SOURCES["gdelt_doc"], params=params, timeout=20)
+        r = get(SOURCES["gdelt_doc"], params=params,
+                timeout=GDELT_TIMEOUT_S, tries=1)
         if not r or r.status_code != 200:
             failed += 1
             consecutive_fails += 1
-            log.info("GDELT predictive query failed after retry (%s): %s",
+            log.info("GDELT predictive query failed (%s): %s",
                      r.status_code if r else "no-resp", query[:60])
             if consecutive_fails >= GDELT_CIRCUIT_BREAK:
                 log.warning("GDELT unreachable (%d consecutive failures) — "
@@ -190,7 +199,12 @@ def fetch_all(hours_back: int | None = None) -> list[dict]:
         hours_back = max(48, 24 * sweep_days())
     out: list[dict] = []
     consecutive_fails = 0
+    start = time.monotonic()
     for term in QUERY_TERMS:
+        if time.monotonic() - start > GDELT_FETCHALL_BUDGET_S:
+            log.warning("GDELT fetch_all budget (%ds) spent — stopping early.",
+                        GDELT_FETCHALL_BUDGET_S)
+            break
         r = get(SOURCES["gdelt_doc"], params={
             "query": f'{term} (appointed OR "new role" OR joins OR departs OR "stepping down" OR resigns OR promoted)',
             "mode": "ArtList",
@@ -198,7 +212,7 @@ def fetch_all(hours_back: int | None = None) -> list[dict]:
             "timespan": f"{hours_back}h",
             "maxrecords": 50,
             "sort": "datedesc",
-        })
+        }, timeout=GDELT_TIMEOUT_S, tries=1)
         if not r or r.status_code != 200:
             consecutive_fails += 1
             if consecutive_fails >= GDELT_CIRCUIT_BREAK:
