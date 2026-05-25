@@ -1,0 +1,28 @@
+[
+  {
+    "company": "Pivot",
+    "round": "funding round",
+    "amount": "$40m",
+    "evidence": "Pivot raises $40M to expand AI-powered enterprise procurement platform",
+    "investor": "Forestay Capital",
+    "url": "https://tech.eu/2026/05/21/pivot-raises-40m-to-expand-ai-powered-enterprise-procurement-platform/",
+    "source": "Tech.eu",
+    "sector": "",
+    "window": "Senior-comms window ~6 mo",
+    "advisory": "Advisory: comms-function design-for-scale + benchmarking; build the senior-comms market map ahead of the ~6-month hire.",
+    "confidence": "medium"
+  },
+  {
+    "company": "REPS",
+    "round": "funding round",
+    "amount": "$23.6m",
+    "evidence": "REPS raises $23.6M to turn roads into power plants by harvesting energy from traffic",
+    "investor": "",
+    "url": "https://tech.eu/2026/05/22/reps-raises-236m-to-turn-roads-into-power-plants-by-harvesting-energy-from-traffic/",
+    "source": "Tech.eu",
+    "sector": "",
+    "window": "Senior-comms window ~6 mo",
+    "advisory": "Advisory: comms-function design-for-scale + benchmarking; build the senior-comms market map ahead of the ~6-month hire.",
+    "confidence": "medium"
+  }
+]
