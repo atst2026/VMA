@@ -237,6 +237,51 @@ def fetch_ashby() -> list[dict]:
     return out
 
 
+def fetch_workable() -> list[dict]:
+    """Workable public job-board API. UK charities / NGOs / mid-size orgs
+    (Comic Relief, Shelter, Scope, Mind, …) commonly post comms roles here.
+    Defensive on shape: jobs live under `results` (v3) or `jobs`."""
+    out: list[dict] = []
+    for slug in ATS_SEEDS.get("workable", []):
+        url = SOURCES["workable"].format(slug=slug)
+        r = get(url)
+        if not r or r.status_code != 200:
+            continue
+        try:
+            data = r.json()
+        except Exception:
+            continue
+        jobs = data.get("results") or data.get("jobs") or []
+        for j in jobs:
+            if not isinstance(j, dict):
+                continue
+            title = j.get("title", "")
+            if not _has_role_match(title):
+                continue
+            loc_obj = j.get("location") or {}
+            if isinstance(loc_obj, dict):
+                loc = (loc_obj.get("location_str") or loc_obj.get("city")
+                       or loc_obj.get("country") or "")
+            else:
+                loc = str(loc_obj)
+            url_j = (j.get("url") or j.get("application_url")
+                     or j.get("shortlink") or "")
+            jid = j.get("id") or j.get("shortcode") or url_j or title
+            out.append({
+                "id": signal_id("workable", str(jid)),
+                "source": f"Workable ({slug})",
+                "kind": "job",
+                "title": title,
+                "url": url_j,
+                "published": j.get("created_at", "") or j.get("published_on", ""),
+                "company": slug,
+                "geo": "UK" if _is_uk(loc) else "INT",
+                "summary": loc,
+                "weight": 1.0,
+            })
+    return out
+
+
 def fetch_linkedin_jobs_public() -> list[dict]:
     """Logged-off LinkedIn Jobs via public guest-view HTML.
     LinkedIn rate-limits aggressively; one query per morning is the sustainable rhythm.
@@ -329,7 +374,8 @@ def fetch_linkedin_jobs_public() -> list[dict]:
 
 def fetch_all() -> list[dict]:
     out: list[dict] = []
-    for fn in (fetch_adzuna, fetch_greenhouse, fetch_lever, fetch_ashby, fetch_linkedin_jobs_public):
+    for fn in (fetch_adzuna, fetch_greenhouse, fetch_lever, fetch_ashby,
+               fetch_workable, fetch_linkedin_jobs_public):
         try:
             out.extend(fn())
         except Exception as e:

@@ -239,22 +239,35 @@ SOURCES = {
 #   Slugs removed May 2026 (moved off-platform, 404):
 #   greenhouse: wise, revolut, deliveroo, octopusenergy, starlingbank
 #   lever:      gousto, multiverse, reddit
+# Slugs are runtime-verified: each morning brief logs which boards return
+# jobs vs 404 (a wrong/retired slug is skipped, never fatal), so this list
+# can be pruned from the logs after a run. Additions below are best-effort
+# UK employers known to post on each platform — weighted toward Sara's
+# market (charities / corporates), not only tech scale-ups.
 ATS_SEEDS = {
     "greenhouse": [
         "monzo", "gocardless", "cloudflare", "stripe",
         "trustpilot", "depop", "onfido", "snyk", "improbable",
         "thetrainline", "moonpig", "secretescapes", "bulb",
         "marshmallow", "zego", "tide", "cleo",
+        # Added May 2026 — further UK comms-active employers.
+        "checkout", "thoughtmachine", "freetrade", "quantexa",
+        "wayve", "darktrace",
     ],
     "lever": [
         "plaid", "netflix", "palantir", "brewdog", "elvie",
+        "gymshark",
     ],
     "ashby": [
         "posthog", "linear", "ramp", "synthesia", "pleo",
+        "11x",
     ],
     "workable": [
-        # UK charities / NGOs / mid-size orgs commonly use Workable.
+        # UK charities / NGOs / mid-size orgs commonly use Workable — the
+        # closest public-ATS fit for Sara's public-sector / third-sector
+        # comms market.
         "comicrelief", "shelter", "scope", "mind",
+        "britishredcross", "wateraid", "barnardos", "crisis", "samaritans",
     ],
 }
 

@@ -1,6 +1,8 @@
 """All RSS-based sources: RNS (Investegate), UK regulators, trade press."""
 from __future__ import annotations
 import logging
+import re
+from html import unescape
 from typing import Iterable
 
 from tool.config import SOURCES
@@ -10,6 +12,71 @@ log = logging.getLogger("brief.rss")
 
 
 DEFAULT_ITEM_CAP = 60
+
+# Words that are never a usable employer name on a job feed — locations,
+# salary/contract noise, and the feeds' own boilerplate. An extracted
+# candidate matching one of these is rejected so the lead falls back to
+# "no company" (dropped) rather than showing a wrong employer.
+_NON_EMPLOYER_TOKENS = {
+    "jobs", "careers", "vacancies", "vacancy", "job", "various",
+    "competitive", "negotiable", "n/a", "tbc", "tba", "confidential",
+    "the guardian", "guardian jobs", "guardian", "civil service",
+    "civil service jobs", "jobs.ac.uk", "home based", "home-based",
+    "remote", "hybrid", "uk", "united kingdom", "england", "scotland",
+    "wales", "northern ireland", "london", "manchester", "birmingham",
+    "leeds", "bristol", "edinburgh", "glasgow", "cardiff", "belfast",
+    "liverpool", "sheffield", "newcastle", "nationwide",
+}
+_HTML_TAG_RX = re.compile(r"<[^>]+>")
+_MONEY_RX = re.compile(r"£|\$|€|\bper annum\b|\bpa\b|\bsalary\b|\bp\.a\.", re.I)
+
+
+def _looks_like_employer(s: str) -> bool:
+    """A candidate is a usable employer only if it reads like a proper-noun
+    organisation, not a location / salary / boilerplate fragment."""
+    s = (s or "").strip().strip(".,;:|-–— ")
+    if not (2 <= len(s) <= 60):
+        return False
+    if s.lower() in _NON_EMPLOYER_TOKENS:
+        return False
+    if not any(c.isupper() for c in s):
+        return False
+    if _MONEY_RX.search(s):
+        return False
+    if any(ch.isdigit() for ch in s):
+        return False
+    return True
+
+
+def _extract_job_employer(title: str, summary: str, author: str) -> str:
+    """Best-effort employer for an RSS job item, precision-first. Tries the
+    structured author/creator field, then explicit 'Employer: …' labels in
+    the body, then a conservative 'Role at Employer' title split. Returns
+    "" when nothing resolves confidently — the lead is then dropped by the
+    dashboard's empty-company filter rather than shown with a wrong name."""
+    cand = (author or "").strip()
+    if _looks_like_employer(cand):
+        return cand
+
+    body = unescape(_HTML_TAG_RX.sub(" ", summary or ""))
+    m = re.search(
+        r"\b(?:employer|recruiter|organisation|organization|hiring organisation|"
+        r"company|department|trust|council|university|college|school)\s*[:\-]\s*"
+        r"([A-Z][\w&.,'\- ]{1,60}?)(?:\.|\||\n|\s{2,}|$)",
+        body, re.I)
+    if m:
+        cand = m.group(1).strip().rstrip(".,")
+        if _looks_like_employer(cand):
+            return cand
+
+    # "Head of Communications at University of Leeds" — 'at' is far safer
+    # than '-'/',' (which usually precede a location on job titles).
+    parts = re.split(r"\s+at\s+", (title or "").strip(), maxsplit=1)
+    if len(parts) == 2:
+        tail = re.split(r"\s+[-–—|]\s+|,\s+", parts[1].strip(), maxsplit=1)[0]
+        if _looks_like_employer(tail):
+            return tail.strip()
+    return ""
 
 RSS_SOURCES = [
     # (key_in_config, source_label, kind, geo, weight[, item_cap])
@@ -77,6 +144,14 @@ def fetch_all() -> list[dict]:
             title = it.get("title", "")
             if not title:
                 continue
+            # Job feeds (Civil Service / jobs.ac.uk / Guardian Jobs) are
+            # direct-employer ads but parse_rss can't know the employer
+            # field is meaningful here — extract it so these leads aren't
+            # silently dropped by the dashboard's empty-company filter.
+            company = ""
+            if kind == "job":
+                company = _extract_job_employer(
+                    title, it.get("summary", ""), it.get("author", ""))
             out.append({
                 "id": signal_id(key, it.get("guid") or it.get("link") or title),
                 "source": label,
@@ -84,7 +159,7 @@ def fetch_all() -> list[dict]:
                 "title": title,
                 "url": it.get("link", ""),
                 "published": it.get("published", ""),
-                "company": "",
+                "company": company,
                 "geo": geo,
                 "summary": (it.get("summary") or "")[:1200],
                 "weight": weight,
