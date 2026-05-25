@@ -38,6 +38,16 @@ JOB_AGGREGATORS = (
 )
 
 
+# A title tail that contains one of these is a ROLE fragment, not an
+# employer (e.g. "Director of Communications, Brand and Public Affairs" —
+# the bit after the comma is more of the title). Reject it so we never
+# show a comms phrase as the company name.
+_ROLE_FRAGMENT_RX = re.compile(
+    r"\b(?:communications?|comms|public affairs|corporate affairs|brand|"
+    r"marketing|media relations|press office|engagement|reputation|"
+    r"external affairs)\b", re.I)
+
+
 def _resolve_company(raw_company: str, title: str) -> str:
     """If LinkedIn's company field is an aggregator, try to extract the real
     employer from the end of the title (after the last comma or dash).
@@ -51,8 +61,11 @@ def _resolve_company(raw_company: str, title: str) -> str:
     for sep in (", ", " - ", " — ", " – ", " | "):
         if sep in t:
             tail = t.rsplit(sep, 1)[-1].strip()
-            # Keep only if it looks like a proper-noun organisation
-            if tail and 2 <= len(tail.split()) <= 8 and any(ch.isupper() for ch in tail):
+            # Keep only if it looks like a proper-noun organisation AND
+            # isn't just more of the job title (a comms/role phrase).
+            if (tail and 2 <= len(tail.split()) <= 8
+                    and any(ch.isupper() for ch in tail)
+                    and not _ROLE_FRAGMENT_RX.search(tail)):
                 return tail
     # No extraction possible — mark explicitly rather than show the aggregator
     return ""

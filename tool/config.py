@@ -113,6 +113,10 @@ COMPANY_EXCLUDE = [
     # catches the "...Recruitment/Search/Resourcing/Staffing/Talent
     # Solutions..." long tail; these two are brand names it can't infer.
     "EquiTalent", "Harris Hill",
+    # Generalist / sector recruiters confirmed leaking via Adzuna's
+    # aggregator feed — they post client mandates, not their own roles.
+    # ("Michael Page" as a substring also covers "Michael Page Marketing".)
+    "Michael Page", "NFP People", "Not For Profit People", "SF Partners",
 ]
 # --- Geography ---
 # UK primary; international secondary. Primary markets are boosted in ranking.
