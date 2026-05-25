@@ -41,6 +41,24 @@ STATE_DIR = Path(__file__).resolve().parent / "state"
 STATE_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def _persist_state(repo_path: str, payload: str, message: str) -> None:
+    """Persist a brief output to the dashboard-state branch SYNCHRONOUSLY.
+
+    The brief is a short-lived CI process: the dashboard's fire-and-forget
+    push_async runs on a daemon thread that the interpreter kills on exit,
+    so whichever push wins the race lands and the rest (notably
+    latest_signals.json) silently don't — which is why the state branch
+    kept going stale. A blocking push guarantees the write lands before
+    the process exits; sequential calls to distinct paths can't conflict.
+    """
+    try:
+        from tool import github_state
+        ok = github_state.push(repo_path, payload, message)
+        log.info("state persist %s -> %s", repo_path, "ok" if ok else "FAILED")
+    except Exception as e:
+        log.warning("state persist %s errored: %s", repo_path, e)
+
+
 def covered_window() -> str:
     """Human-readable description of the window this brief covers.
     Monday = Sat + Sun + Mon-to-now. Other weekdays = prior business day to now.
@@ -339,15 +357,10 @@ def main() -> int:
     # lead matching her criteria, regardless of when it first appeared.
     _signals_payload = json.dumps(ranked_all, indent=2, default=str)
     (STATE_DIR / "latest_signals.json").write_text(_signals_payload)
-    # Push to the dashboard-state branch so the dashboard hydrates
-    # leads on cold-start instead of showing empty until Daily Refresh.
-    try:
-        from tool import github_state
-        github_state.push_async(
-            "tool/state/latest_signals.json", _signals_payload,
-            "state: morning-brief latest_signals.json")
-    except Exception as _e:
-        pass
+    # Persist to the dashboard-state branch so the dashboard hydrates
+    # leads on cold-start instead of showing stale data until Daily Refresh.
+    _persist_state("tool/state/latest_signals.json", _signals_payload,
+                   "state: morning-brief latest_signals.json")
 
     # Mandates Worth Following — vacated-seat / backfill detector. Runs
     # over the RAW scoured signals (like the predictor): when a senior
@@ -421,13 +434,8 @@ def main() -> int:
         funding_feed = _fund.detect_funding(signals)
         _funding_payload = json.dumps(funding_feed, indent=2, default=str)
         (STATE_DIR / "latest_funding.json").write_text(_funding_payload)
-        try:
-            from tool import github_state
-            github_state.push_async(
-                "tool/state/latest_funding.json", _funding_payload,
-                "state: morning-brief latest_funding.json")
-        except Exception:
-            pass
+        _persist_state("tool/state/latest_funding.json", _funding_payload,
+                       "state: morning-brief latest_funding.json")
         log.info("Funding-Round: %d record(s) from %d raw signals",
                  len(funding_feed), len(signals))
     except Exception as e:
@@ -453,23 +461,17 @@ def main() -> int:
     pipeline_view.sort(key=lambda p: -float(p.get("score") or 0))
     _predictive_payload = json.dumps(pipeline_view, indent=2, default=str)
     (STATE_DIR / "latest_predictive.json").write_text(_predictive_payload)
-    # Same as latest_signals: push to dashboard-state so the Prediction
+    # Same as latest_signals: persist to dashboard-state so the Prediction
     # Signals panel hydrates on cold-start.
-    try:
-        from tool import github_state
-        github_state.push_async(
-            "tool/state/latest_predictive.json", _predictive_payload,
-            "state: morning-brief latest_predictive.json")
-        # predictor_pipeline.json is the underlying durable pipeline the
-        # dashboard reads via predictor_pipeline.all_predictors(). Push
-        # if it exists.
-        _pp_path = STATE_DIR / "predictor_pipeline.json"
-        if _pp_path.exists():
-            github_state.push_async(
-                "tool/state/predictor_pipeline.json", _pp_path.read_text(),
-                "state: morning-brief predictor_pipeline.json")
-    except Exception as _e:
-        pass
+    _persist_state("tool/state/latest_predictive.json", _predictive_payload,
+                   "state: morning-brief latest_predictive.json")
+    # predictor_pipeline.json is the underlying durable pipeline the
+    # dashboard reads via predictor_pipeline.all_predictors().
+    _pp_path = STATE_DIR / "predictor_pipeline.json"
+    if _pp_path.exists():
+        _persist_state("tool/state/predictor_pipeline.json",
+                       _pp_path.read_text(),
+                       "state: morning-brief predictor_pipeline.json")
 
     # Deliver
     if mode in ("send", "test"):
