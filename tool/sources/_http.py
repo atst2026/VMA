@@ -64,6 +64,9 @@ def parse_rss(content: bytes) -> list[dict]:
             "published": _text(it.find("pubDate")) or _text(it.find("dc:date", ns)),
             "summary": _text(it.find("description")) or _text(it.find("content:encoded", ns)),
             "guid": _text(it.find("guid")),
+            # Job feeds (Guardian Jobs / jobs.ac.uk) carry the employer or
+            # recruiter here; harmless extra field for the news feeds.
+            "author": _text(it.find("author")) or _text(it.find("dc:creator", ns)),
         })
     # Atom
     for it in root.findall("atom:entry", ns):
@@ -75,6 +78,7 @@ def parse_rss(content: bytes) -> list[dict]:
             "published": _text(it.find("atom:updated", ns)) or _text(it.find("atom:published", ns)),
             "summary": _text(it.find("atom:summary", ns)) or _text(it.find("atom:content", ns)),
             "guid": _text(it.find("atom:id", ns)),
+            "author": _text(it.find("atom:author/atom:name", ns)),
         })
     return items
 
