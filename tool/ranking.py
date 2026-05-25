@@ -19,8 +19,8 @@ from typing import Iterable
 from dateutil import parser as dateparse
 
 from tool.config import (
-    COMPANY_EXCLUDE, EXCLUDE_TITLE_TERMS, GEO_PRIMARY, GEO_SECONDARY_WEIGHT,
-    JOB_BOARD_COMPANIES, ROLE_KEYWORDS,
+    COMPANY_ALIASES, COMPANY_EXCLUDE, EXCLUDE_TITLE_TERMS, GEO_PRIMARY,
+    GEO_SECONDARY_WEIGHT, JOB_BOARD_COMPANIES, ROLE_KEYWORDS,
 )
 
 
@@ -235,7 +235,7 @@ _COMPANY_SUFFIX_RX = re.compile(
     r"head\s+office|hq|careers|uk|gb)\b", re.I)
 
 
-def _norm_company(c: str) -> str:
+def _norm_company_base(c: str) -> str:
     c = (c or "").lower().strip()
     if not c:
         return ""
@@ -244,6 +244,19 @@ def _norm_company(c: str) -> str:
     c = re.sub(r"^the\s+", "", c)
     c = _COMPANY_SUFFIX_RX.sub(" ", c)
     return " ".join(c.split())
+
+
+# Pre-normalise both sides of the declared alias map once, so a rebrand with
+# no shared text (London South East Colleges <-> Elevare Civic Education
+# Group) still deduplicates.
+_COMPANY_ALIAS_MAP = {
+    _norm_company_base(k): _norm_company_base(v) for k, v in COMPANY_ALIASES.items()
+}
+
+
+def _norm_company(c: str) -> str:
+    n = _norm_company_base(c)
+    return _COMPANY_ALIAS_MAP.get(n, n)
 
 
 def _title_key(t: str) -> str:
