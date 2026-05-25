@@ -365,12 +365,60 @@ def _collapse_board_dupes(out: list[dict]) -> list[dict]:
     return [s for i, s in enumerate(out) if i not in drop]
 
 
+# Trailing tokens that are careers-page / location / legal-form artifacts,
+# never part of how Sara would say the employer's name out loud. Stripped
+# from the DISPLAYED company ("Rightmove Careers" -> "Rightmove", "Harris
+# Federation Head Office" -> "Harris Federation", "Acme Ltd" -> "Acme").
+# Deliberately NOT 'Group'/'Holdings'/'UK' — those are genuinely part of
+# names (Highland Spring Group, Boston Consulting Group, Barclays UK).
+_DISPLAY_SUFFIX_RX = re.compile(
+    r"[\s,]*(?:[-|/–—]\s*)?\b(?:careers|head\s+office|hq|"
+    r"ltd|limited|llp|plc|inc|incorporated)\b\.?\s*$", re.I)
+
+_TITLE_BLEED_SEPS = (" - ", " — ", " – ", " | ", " / ", ", ")
+
+
+def _tidy_company(c: str) -> str:
+    c = (c or "").strip()
+    while True:
+        nc = _DISPLAY_SUFFIX_RX.sub("", c).strip(" ,-|–—/")
+        if nc == c or not nc:
+            return c
+        c = nc
+
+
+def _strip_title_bleed(title: str, company: str) -> str:
+    """Some feeds append the employer to the role ('...Corporate Banking -
+    Citi'). Strip a trailing copy of the company off the title."""
+    t = (title or "").strip()
+    cl = (company or "").strip().lower()
+    if not t or not cl:
+        return t
+    for sep in _TITLE_BLEED_SEPS:
+        suf = sep + cl
+        if t.lower().endswith(suf):
+            return t[: len(t) - len(suf)].strip(" -—–|/,")
+    return t
+
+
+def _tidy_display(s: dict) -> dict:
+    """Clean the title + company strings shown in the brief / outreach.
+    Idempotent and applied only to surviving leads, so it never affects
+    dedup keys or the stable lead id (which drive new/dismissed state)."""
+    raw_co = (s.get("company") or "").strip()
+    if raw_co:
+        s["title"] = _strip_title_bleed(s.get("title", ""), raw_co)
+        s["company"] = _tidy_company(raw_co)
+    return s
+
+
 def rank(signals: list[dict]) -> list[dict]:
     deduped = dedup(signals)
     scored = []
     for s in deduped:
         s["score"] = score(s)
         if s["score"] > 0:
+            _tidy_display(s)
             scored.append(s)
     scored.sort(key=lambda x: x["score"], reverse=True)
     return scored
