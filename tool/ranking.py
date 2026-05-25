@@ -224,24 +224,53 @@ def _norm_title(t: str) -> str:
     return t.strip(" -,·")
 
 
+# Legal/structural suffixes + descriptors that vary between aggregator
+# feeds for the SAME employer ("Linklaters" vs "LINKLATERS LLP", "Harris
+# Federation" vs "Harris Federation Head Office"). Stripping them lets the
+# dedup collapse the same job that Adzuna returns from several boards.
+_COMPANY_SUFFIX_RX = re.compile(
+    r"\b(?:ltd|limited|llp|plc|inc|incorporated|group|holdings|"
+    r"head\s+office|hq|careers|uk|gb)\b", re.I)
+
+
+def _norm_company(c: str) -> str:
+    c = (c or "").lower().strip()
+    if not c:
+        return ""
+    c = c.replace("&", " and ")
+    c = re.sub(r"[^a-z0-9 ]", " ", c)
+    c = re.sub(r"^the\s+", "", c)
+    c = _COMPANY_SUFFIX_RX.sub(" ", c)
+    return " ".join(c.split())
+
+
 def dedup(signals: list[dict]) -> list[dict]:
-    """Dedup by signal ID (same source+guid) AND by normalised title+company
-    (catches LinkedIn returning the same job across multiple queries)."""
+    """Dedup by signal ID (same source+guid) AND by normalised
+    title+company. The company is normalised (suffixes/case/`&` stripped)
+    so the SAME job that Adzuna returns from multiple boards under
+    slightly different employer strings collapses to one — while two
+    genuinely different employers with the same generic title stay
+    separate. When merging, upgrade an ALL-CAPS display name to a
+    nicer-cased variant."""
     seen_ids = set()
-    seen_title_company = set()
+    seen: dict[tuple, int] = {}   # (norm_title, norm_company) -> index in out
     out = []
     for s in signals:
         sid = s.get("id") or (s.get("source", "") + "|" + s.get("title", ""))
-        key2 = (_norm_title(s.get("title", "")),
-                (s.get("company") or "").strip().lower())
         if sid in seen_ids:
             continue
-        if key2[0] and key2 in seen_title_company:
+        nt = _norm_title(s.get("title", ""))
+        key2 = (nt, _norm_company(s.get("company", "")))
+        if nt and key2 in seen:
+            kept = out[seen[key2]]
+            cur = (s.get("company") or "").strip()
+            if (kept.get("company") or "").strip().isupper() and cur and not cur.isupper():
+                kept["company"] = cur
             continue
         seen_ids.add(sid)
-        if key2[0]:
-            seen_title_company.add(key2)
         out.append(s)
+        if nt:
+            seen[key2] = len(out) - 1
     return out
 
 
