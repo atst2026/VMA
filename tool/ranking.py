@@ -244,33 +244,83 @@ def _norm_company(c: str) -> str:
     return " ".join(c.split())
 
 
+def _title_key(t: str) -> str:
+    """Aggressive title normaliser used only for the dedup key: on top of
+    `_norm_title` it folds `&`->`and` and drops all punctuation so comma /
+    dash variants of the same role collapse. Does NOT strip the
+    company-suffix tokens `_norm_company` does (we don't want 'Group Head'
+    and 'Head' to merge)."""
+    t = _norm_title(t).replace("&", " and ")
+    t = re.sub(r"[^a-z0-9 ]", " ", t)
+    return " ".join(t.split())
+
+
+def _acronym(name: str) -> str:
+    parts = name.split()
+    return "".join(p[0] for p in parts) if len(parts) >= 2 else ""
+
+
+def _companies_related(a: str, b: str) -> bool:
+    """True if two NORMALISED employer names are near-certainly the same
+    organisation: identical, one a prefix/substring of the other, or one
+    the acronym of the other. Catches 'Citi'/'Citigroup', 'Wildlife
+    Trust'/'Wildlife Trusts', 'LSEC'/'London South East Colleges'. Only
+    ever consulted when the role title is already identical, so it cannot
+    merge two unrelated employers that happen to share a generic title."""
+    if not a or not b:
+        return False
+    if a == b:
+        return True
+    x, y = a.replace(" ", ""), b.replace(" ", "")
+    short, lng = (x, y) if len(x) <= len(y) else (y, x)
+    if len(short) >= 4 and lng.startswith(short):
+        return True
+    if len(short) >= 5 and short in lng:
+        return True
+    if len(y) >= 3 and _acronym(a) == y:
+        return True
+    if len(x) >= 3 and _acronym(b) == x:
+        return True
+    return False
+
+
 def dedup(signals: list[dict]) -> list[dict]:
-    """Dedup by signal ID (same source+guid) AND by normalised
-    title+company. The company is normalised (suffixes/case/`&` stripped)
-    so the SAME job that Adzuna returns from multiple boards under
-    slightly different employer strings collapses to one — while two
-    genuinely different employers with the same generic title stay
-    separate. When merging, upgrade an ALL-CAPS display name to a
-    nicer-cased variant."""
+    """Dedup by signal ID (same source+guid) AND by role title + employer.
+    Within an identical normalised title, employers are matched leniently
+    (`_companies_related`) so the SAME job that Adzuna returns from several
+    boards under prefix / plural / acronym / suffix variants of the
+    employer name collapses to one — while two genuinely different
+    employers with the same generic title stay separate. When merging,
+    upgrade an ALL-CAPS display name to a nicer-cased variant."""
     seen_ids = set()
-    seen: dict[tuple, int] = {}   # (norm_title, norm_company) -> index in out
+    by_title: dict[str, list[tuple[str, int]]] = {}  # title_key -> [(norm_company, out_idx)]
     out = []
     for s in signals:
         sid = s.get("id") or (s.get("source", "") + "|" + s.get("title", ""))
         if sid in seen_ids:
             continue
-        nt = _norm_title(s.get("title", ""))
-        key2 = (nt, _norm_company(s.get("company", "")))
-        if nt and key2 in seen:
-            kept = out[seen[key2]]
+        tk = _title_key(s.get("title", ""))
+        nc = _norm_company(s.get("company", ""))
+        # Some feeds append " - <Employer>" to the role; strip a trailing
+        # copy of THIS row's own employer so it matches the clean variant.
+        if tk and nc and tk.endswith(" " + nc):
+            tk = tk[: -(len(nc) + 1)].strip()
+        dup_idx = None
+        if tk:
+            for knc, idx in by_title.get(tk, []):
+                if knc == nc or _companies_related(knc, nc):
+                    dup_idx = idx
+                    break
+        if dup_idx is not None:
+            kept = out[dup_idx]
             cur = (s.get("company") or "").strip()
             if (kept.get("company") or "").strip().isupper() and cur and not cur.isupper():
                 kept["company"] = cur
             continue
         seen_ids.add(sid)
         out.append(s)
-        if nt:
-            seen[key2] = len(out) - 1
+        if tk:
+            by_title.setdefault(tk, []).append((nc, len(out) - 1))
     return out
 
 
