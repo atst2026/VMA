@@ -22,8 +22,11 @@ The precision gate here is instead, ALL required together:
   2. an explicit amount that parses to >= MIN_GBP_M (£20m; $/€ accepted
      at rough numeric parity but flagged medium-confidence),
   3. NOT a debt/bond/loan facility (equity growth rounds predict the
-     comms hire; refinancing does not), and
-  4. a named subject company captured from the headline (the lead).
+     comms hire; refinancing does not),
+  4. a named subject company captured from the headline (the lead), and
+  5. UK-relevant: GBP-denominated OR a UK geo marker in the text. The
+     Account Director's desk is UK-primary, so off-patch (e.g. US)
+     scale-up rounds are dropped rather than surfaced as off-patch noise.
 
 No external calls. Runs over the RAW scoured signals (GDELT news graph
 + trade press already fetched every run) — a reader, not a new scraper.
@@ -64,6 +67,21 @@ _DEBT_RX = re.compile(
     r"\b(?:debt facility|loan facility|term loan|credit facility|"
     r"bond (?:issue|offering)|refinanc\w+|revolving credit|"
     r"venture debt)\b",
+    re.IGNORECASE,
+)
+
+# UK-relevance gate. The Account Director's desk is UK-primary, so a
+# funded scale-up is only a lead if it's UK-based. A round qualifies as
+# UK-relevant if it is GBP-denominated (see _is_uk_relevant) OR the
+# headline/summary carries one of these UK geo markers. Kept to
+# high-signal tokens (nation, home nations, major cities, .co.uk, FTSE,
+# Companies House) to avoid false positives from ordinary prose.
+_UK_GEO_RX = re.compile(
+    r"\b(?:uk|u\.k\.|united kingdom|britain|british|england|scotland|"
+    r"scottish|wales|welsh|northern ireland|london|manchester|birmingham|"
+    r"leeds|glasgow|edinburgh|bristol|liverpool|cambridge|oxford|sheffield|"
+    r"cardiff|belfast|nottingham|newcastle|brighton|reading|milton keynes)\b"
+    r"|\.co\.uk\b|\bcompanies house\b|\bftse\b",
     re.IGNORECASE,
 )
 
@@ -130,6 +148,16 @@ def _to_gbp_m(currency: str, num: str, mag: str) -> float | None:
 
 def _is_gbp(currency: str) -> bool:
     return currency.lower() in ("£", "gbp")
+
+
+def _is_uk_relevant(text: str, currency: str) -> bool:
+    """True if the round is UK-relevant: GBP-denominated, or a UK geo
+    marker is present in the headline/summary. Keeps the funding feed on
+    the Account Director's UK patch instead of surfacing US (or other
+    off-patch) scale-up rounds the desk can't act on."""
+    if _is_gbp(currency or ""):
+        return True
+    return bool(_UK_GEO_RX.search(text or ""))
 
 
 def _clean_company(span: str) -> str:
@@ -202,6 +230,12 @@ def detect_funding(signals: Iterable[dict]) -> list[dict]:
         if gbp_m is None or gbp_m < MIN_GBP_M:
             continue
         is_gbp = _is_gbp(am.group(1))
+
+        # UK-relevance gate: drop off-patch (e.g. US) rounds that carry no
+        # GBP amount and no UK geo marker — they aren't leads for a
+        # UK-primary desk.
+        if not _is_uk_relevant(text, am.group(1)):
+            continue
 
         company = None
         for rx in _SUBJECT_RX:
@@ -277,4 +311,19 @@ def load_funding(limit: int = 30) -> list[dict]:
     except Exception as e:
         log.info("latest_funding.json parse failed: %s", e)
         return []
-    return data[:limit] if isinstance(data, list) else []
+    if not isinstance(data, list):
+        return []
+    # Defensive UK gate: filter any rows persisted before the detector
+    # gained the geo gate (state is regenerated each brief, but a stale
+    # snapshot shouldn't show off-patch rounds). Currency is re-derived
+    # from the stored amount string; geo from the stored evidence text.
+    uk: list[dict] = []
+    for r in data:
+        if not isinstance(r, dict):
+            continue
+        amt = str(r.get("amount") or "")
+        cur = "£" if amt[:1] == "£" else ("€" if amt[:1] == "€" else "$")
+        text = f"{r.get('evidence') or ''} {r.get('company') or ''}"
+        if _is_uk_relevant(text, cur):
+            uk.append(r)
+    return uk[:limit]
