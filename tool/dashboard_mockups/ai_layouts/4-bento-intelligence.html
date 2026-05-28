@@ -1,0 +1,234 @@
+<!doctype html>
+<!-- ========================================================================
+     MOCKUP 4 · BENTO INTELLIGENCE
+     Keeps cards — but deliberately breaks the uniform 3x3 CRM grid into an
+     asymmetric bento with real hierarchy. A wide hero "Top 3 moves" tile
+     with AI rationale dominates; a tall "Pre-market radar" rail sits beside
+     it; big-number stat tiles anchor the eye; and the six plays render as
+     DIFFERENTLY-sized tiles (one primary "Generate" tile + smaller
+     secondary ones) so nothing reads as nine identical squares. Context is
+     a single thin ribbon. Modern product dashboard, not a contact list.
+     ===================================================================== -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VMA Group · Bento Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Crimson+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --navy:#1F1F1F; --teal:#4285F4; --teal-bright:#5B9BFF; --teal-dark:#1A3D7C;
+    --teal-glow:rgba(66,133,244,.22); --teal-soft:rgba(66,133,244,.10);
+    --bg:#f7f9fc; --surface:#fff; --surface-2:#F4F7FC;
+    --border:rgba(60,64,67,.12); --border-hover:rgba(66,133,244,.36);
+    --text:#1F1F1F; --muted:#5F6368; --dim:#9AA0A6;
+    --gold:#C49A3B; --green:#34A853; --pulse:#9FD181;
+    --shadow-md:0 6px 22px rgba(60,64,67,.08),0 1px 3px rgba(60,64,67,.04);
+    --shadow-lg:0 10px 28px rgba(31,55,124,.10),0 2px 6px rgba(31,55,124,.06);
+  }
+  body{font-family:"Inter",system-ui,sans-serif;color:var(--text);font-size:13.5px;line-height:1.5;-webkit-font-smoothing:antialiased;
+    background:radial-gradient(1000px 380px at 78% -160px,#cfe0f5 0%,rgba(247,249,252,0) 65%),var(--bg);min-height:100vh;}
+  a{color:var(--teal-dark);text-decoration:none;}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace;}
+
+  .top{display:flex;align-items:center;justify-content:space-between;padding:20px 32px 8px;}
+  .wordmark{display:inline-flex;align-items:baseline;}
+  .wordmark .vma{font-weight:800;letter-spacing:.06em;font-size:25px;}
+  .wordmark .grp{font-weight:300;letter-spacing:.29em;font-size:25px;padding-left:.42em;}
+  .top .r{display:flex;align-items:center;gap:16px;}
+  .live{font:500 10px/1 "JetBrains Mono";letter-spacing:.22em;text-transform:uppercase;color:var(--muted);display:inline-flex;align-items:center;gap:8px;}
+  .live::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--pulse);box-shadow:0 0 0 0 rgba(159,209,129,.7);animation:p 2.4s infinite;}
+  @keyframes p{70%{box-shadow:0 0 0 9px rgba(159,209,129,0);}}
+  .refresh{background:#C9DDF8;color:var(--teal-dark);border:1px solid rgba(26,61,124,.10);border-radius:9999px;padding:9px 16px;font:600 12px/1 "Inter";cursor:pointer;}
+
+  .wrap{max-width:1340px;margin:0 auto;padding:8px 32px 48px;}
+  .head{margin:8px 0 18px;}
+  .h1{font-family:"Crimson Pro",serif;font-size:27px;font-weight:600;letter-spacing:-.01em;}
+  .h1 .accent{color:var(--teal-dark);}
+  .synth{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12.5px;margin-top:6px;}
+  .synth .spark{color:var(--teal);} .synth b{color:var(--text);font-weight:600;}
+
+  /* ---- BENTO GRID ---- */
+  .bento{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:minmax(10px,auto);gap:16px;}
+  @media(max-width:1080px){.bento{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:640px){.bento{grid-template-columns:1fr;}}
+  .tile{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-md);padding:18px;position:relative;overflow:hidden;transition:.16s;}
+  .tile:hover{box-shadow:var(--shadow-lg);}
+  .tile .th{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .tile .th h3{font-family:"Crimson Pro",serif;font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;}
+  .tile .th h3 .d{width:6px;height:6px;border-radius:50%;background:var(--teal);box-shadow:0 0 6px var(--teal-glow);}
+  .count{font:600 10.5px/1 "JetBrains Mono";color:var(--teal-dark);background:var(--teal-soft);padding:5px 9px;border-radius:9999px;}
+
+  /* span helpers */
+  .c2{grid-column:span 2;} .c3{grid-column:span 3;} .c4{grid-column:span 4;}
+  .r2{grid-row:span 2;}
+  @media(max-width:1080px){.c3{grid-column:span 2;}.c4{grid-column:span 2;}}
+  @media(max-width:640px){.c2,.c3,.c4{grid-column:span 1;}}
+
+  /* HERO top-moves tile */
+  .hero{background:linear-gradient(135deg,#13294f 0%,#1A3D7C 52%,#2E5B9E 100%);color:#fff;border:0;}
+  .hero::after{content:"";position:absolute;top:-60px;right:-30px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(91,155,255,.35),transparent 70%);}
+  .hero .th h3{color:#fff;} .hero .th h3 .d{background:var(--pulse);box-shadow:0 0 8px var(--pulse);}
+  .hero .badge{font:600 9px/1 "JetBrains Mono";letter-spacing:.1em;color:#cfe0f5;border:1px solid rgba(255,255,255,.25);padding:5px 9px;border-radius:9999px;}
+  .move{display:grid;grid-template-columns:28px 1fr auto;gap:3px 13px;padding:13px 0;border-top:1px solid rgba(255,255,255,.13);}
+  .move:first-of-type{border-top:0;}
+  .move .n{font-family:"Crimson Pro",serif;font-size:21px;font-weight:600;color:#9DC0F5;line-height:1;}
+  .move .t{font-weight:600;font-size:15px;} .move .t .co{color:#fff;}
+  .move .why{grid-column:2/4;font-size:12px;color:#C6D6EE;margin-top:5px;line-height:1.5;}
+  .move .why b{color:#fff;font-weight:600;}
+  .move .sx{font:600 9px/1 "Inter";padding:4px 9px;border-radius:9999px;align-self:start;}
+  .sx-high{background:#FCE8E6;color:#B3261E;} .sx-med{background:#FEF7E0;color:#8A6A1F;}
+  .move .act{grid-column:2/4;display:flex;gap:8px;margin-top:10px;}
+  .hbtn{font:600 11px/1 "Inter";border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);color:#fff;border-radius:8px;padding:8px 12px;cursor:pointer;}
+  .hbtn.solid{background:#cfe0f5;color:var(--teal-dark);border-color:transparent;}
+
+  /* stat tiles */
+  .stat .k{font:500 9.5px/1 "JetBrains Mono";letter-spacing:.16em;text-transform:uppercase;color:var(--dim);}
+  .stat .big{font-size:40px;font-weight:800;line-height:1;margin:10px 0 4px;letter-spacing:-.02em;}
+  .stat .sub{font-size:11.5px;color:var(--muted);}
+  .stat.green{background:linear-gradient(150deg,#1E7e34,#34A853);color:#fff;border:0;}
+  .stat.green .k{color:rgba(255,255,255,.8);} .stat.green .sub{color:rgba(255,255,255,.9);}
+  .spark-row{display:flex;align-items:flex-end;gap:3px;height:30px;margin-top:8px;}
+  .spark-row i{flex:1;background:var(--teal-soft);border-radius:3px 3px 0 0;display:block;}
+  .stat.green .spark-row i{background:rgba(255,255,255,.35);}
+
+  /* list rows inside tiles */
+  .lr{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--border);}
+  .lr:first-of-type{border-top:0;}
+  .rk{width:20px;height:20px;border-radius:6px;background:var(--teal-dark);color:#fff;font:600 10px/20px "JetBrains Mono";text-align:center;flex-shrink:0;}
+  .lr .t{font-weight:600;font-size:12.5px;flex:1;} .lr .t .co{color:var(--teal-dark);} .lr .t .m{color:var(--dim);font-weight:400;font-size:11px;}
+  .tag{font:600 9px/1 "Inter";padding:4px 8px;border-radius:9999px;}
+  .g-high{background:#FCE8E6;color:#B3261E;} .g-med{background:#FEF7E0;color:#8A6A1F;} .g-cas{background:var(--teal-soft);color:var(--teal-dark);}
+
+  /* PLAY tiles — differentiated sizes, not nine equal squares */
+  .play-hero{background:linear-gradient(140deg,#fff, #eef4fd);}
+  .play-hero .halo{width:30px;height:30px;border-radius:9px;background:radial-gradient(circle at 32% 30%,#a8c8e6,var(--teal));color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 0 14px var(--teal-glow);}
+  .play-hero h3{font-family:"Crimson Pro",serif;font-size:17px;font-weight:600;margin:10px 0 2px;}
+  .play-hero p{font-size:12px;color:var(--muted);margin-bottom:12px;}
+  .play-hero .chips{display:flex;flex-wrap:wrap;gap:7px;}
+  .pchip{font:500 11.5px/1 "Inter";border:1px solid var(--border);background:#fff;border-radius:9999px;padding:8px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+  .pchip:hover{border-color:var(--border-hover);color:var(--teal-dark);}
+  .pchip.go{background:#C9DDF8;border-color:rgba(26,61,124,.10);color:var(--teal-dark);font-weight:600;}
+
+  .mini-tile{display:flex;flex-direction:column;gap:6px;justify-content:center;cursor:pointer;}
+  .mini-tile .ic{width:30px;height:30px;border-radius:9px;background:var(--teal-soft);color:var(--teal-dark);display:flex;align-items:center;justify-content:center;font-size:15px;}
+  .mini-tile .nm{font-weight:600;font-size:13px;} .mini-tile .ds{font-size:11px;color:var(--dim);}
+  .mini-tile:hover{border-color:var(--border-hover);}
+
+  /* context ribbon */
+  .ribbon{display:flex;align-items:stretch;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-md);overflow:hidden;margin-top:16px;}
+  .rb{flex:1;padding:13px 16px;border-right:1px solid var(--border);display:flex;align-items:center;gap:11px;}
+  .rb:last-child{border-right:0;}
+  .rb .ic{width:26px;height:26px;border-radius:8px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+  .rb .lbl{font:500 9px/1.2 "JetBrains Mono";letter-spacing:.12em;text-transform:uppercase;color:var(--dim);}
+  .rb .t{font-weight:600;font-size:12.5px;margin-top:2px;} .rb .t .w{color:var(--teal-dark);font-weight:500;font-size:11px;}
+  .foot{text-align:center;color:var(--dim);font-size:11px;margin-top:26px;letter-spacing:.05em;}
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="wordmark"><span class="vma">VMA</span><span class="grp">GROUP</span></div>
+    <div class="r"><span class="live">Intelligence Platform · Live</span><button class="refresh">↻ Daily Refresh</button></div>
+  </div>
+
+  <div class="wrap">
+    <div class="head">
+      <div class="h1">Morning, Sara. <span class="accent">Three calls worth making before lunch.</span></div>
+      <div class="synth"><span class="spark">✦</span> Synthesised <b>247 signals</b> overnight into <b>11 leads</b> &amp; <b>8 predictions</b> · Thursday 28 May 2026</div>
+    </div>
+
+    <div class="bento">
+
+      <!-- HERO: top 3 moves (wide + tall) -->
+      <div class="tile hero c2 r2">
+        <div class="th"><h3><span class="d"></span>Top 3 moves today</h3><span class="badge mono">HIGHEST LEVERAGE</span></div>
+        <div class="move">
+          <span class="n">1</span>
+          <div class="t"><span class="co">NatWest</span> — CCO seat vacated</div>
+          <span class="sx sx-high">HIGH</span>
+          <div class="why"><b>Call HR and the Chair today.</b> Three competitors will be in conversation by Wednesday; first credible shortlist wins the retainer.</div>
+          <div class="act"><button class="hbtn solid">✉ Copy opener</button><button class="hbtn">📄 Pitch Pack</button></div>
+        </div>
+        <div class="move">
+          <span class="n">2</span>
+          <div class="t"><span class="co">Standard Chartered</span> — tenure cliff</div>
+          <span class="sx sx-med">MED</span>
+          <div class="why">Corp Comms director at a 26-month cliff; three peers moved in 2025–26. <b>Pre-position now.</b></div>
+        </div>
+        <div class="move">
+          <span class="n">3</span>
+          <div class="t"><span class="co">Octopus Energy</span> — £140m Series F</div>
+          <span class="sx sx-med">MED</span>
+          <div class="why">Senior comms hire typically follows funding by <b>~6 months</b>. Warm the account now.</div>
+        </div>
+      </div>
+
+      <!-- stat: pipeline value -->
+      <div class="tile stat">
+        <div class="k">Pipeline value surfaced</div>
+        <div class="big">£420k</div>
+        <div class="sub">across today's high-strength leads</div>
+        <div class="spark-row"><i style="height:40%"></i><i style="height:55%"></i><i style="height:35%"></i><i style="height:70%"></i><i style="height:60%"></i><i style="height:90%"></i><i style="height:100%;background:var(--teal)!important"></i></div>
+      </div>
+
+      <!-- stat: new today -->
+      <div class="tile stat green">
+        <div class="k">New since yesterday</div>
+        <div class="big">+3</div>
+        <div class="sub">leads · 2 fresh predictions</div>
+        <div class="spark-row"><i style="height:30%"></i><i style="height:50%"></i><i style="height:40%"></i><i style="height:65%"></i><i style="height:55%"></i><i style="height:80%"></i><i style="height:100%"></i></div>
+      </div>
+
+      <!-- pre-market radar (tall) -->
+      <div class="tile c2 r2">
+        <div class="th"><h3><span class="d"></span>Pre-market radar</h3><span class="count mono">8 · 90D</span></div>
+        <div class="lr"><span class="rk">1</span><div class="t"><span class="co">Standard Chartered</span> <span class="m">· 26-mo tenure cliff</span></div><span class="tag g-high">HIGH</span></div>
+        <div class="lr"><span class="rk">2</span><div class="t"><span class="co">Octopus Energy</span> <span class="m">· £140m Series F</span></div><span class="tag g-med">MED</span></div>
+        <div class="lr"><span class="rk">3</span><div class="t"><span class="co">Intertek Group</span> <span class="m">· new CEO re-org</span></div><span class="tag g-med">MED</span></div>
+        <div class="lr"><span class="rk">4</span><div class="t"><span class="co">Centrica</span> <span class="m">· appointment cascade</span></div><span class="tag g-cas">CASCADE</span></div>
+        <div class="lr"><span class="rk">5</span><div class="t"><span class="co">Vodafone</span> <span class="m">· spin-off comms build</span></div><span class="tag g-cas">WATCH</span></div>
+      </div>
+
+      <!-- leads list (wide) -->
+      <div class="tile c2">
+        <div class="th"><h3><span class="d"></span>Today's Leads</h3><span class="count mono">11 · 3 NEW</span></div>
+        <div class="lr"><span class="rk">1</span><div class="t"><span class="co">NatWest</span> <span class="m">· CCO seat vacated · Sky · 1h</span></div><span class="tag g-high">HIGH</span></div>
+        <div class="lr"><span class="rk">2</span><div class="t"><span class="co">Severn Trent</span> <span class="m">· comms review · RNS · 3h</span></div><span class="tag g-med">MED</span></div>
+        <div class="lr"><span class="rk">3</span><div class="t"><span class="co">Lloyds</span> <span class="m">· Jane Smith → CCO · warm</span></div><span class="tag g-med">MED</span></div>
+      </div>
+
+      <!-- PLAY hero tile (the primary tool) -->
+      <div class="tile play-hero c2">
+        <div class="halo">✦</div>
+        <h3>Generate something</h3>
+        <p>Hand a play to Sara's Desk — emailed back to you in under two minutes.</p>
+        <div class="chips">
+          <button class="pchip go">📄 Pitch Pack</button>
+          <button class="pchip">🔁 Reverse Match</button>
+          <button class="pchip">🗒️ Pre-meeting</button>
+        </div>
+      </div>
+
+      <!-- secondary play tiles (smaller, differentiated) -->
+      <div class="tile mini-tile"><div class="ic">👤</div><div><div class="nm">Candidate Watch</div><div class="ds">1 overdue · float to top</div></div></div>
+      <div class="tile mini-tile"><div class="ic">🛰️</div><div><div class="nm">Manual Sweep</div><div class="ds">catch missed signals</div></div></div>
+      <div class="tile mini-tile"><div class="ic">🗂️</div><div><div class="nm">Recent Reports</div><div class="ds">3 in last 48h ↓</div></div></div>
+      <div class="tile mini-tile"><div class="ic">🎯</div><div><div class="nm">Top picks</div><div class="ds">ranked by leverage</div></div></div>
+
+    </div>
+
+    <!-- CONTEXT RIBBON -->
+    <div class="ribbon">
+      <div class="rb"><div class="ic">📅</div><div><div class="lbl mono">Placement Window</div><div class="t">FCA Consumer Duty <span class="w">· Apr–Jun</span></div></div></div>
+      <div class="rb"><div class="ic">📅</div><div><div class="lbl mono">Placement Window</div><div class="t">Ofwat AMP8 <span class="w">· water sector</span></div></div></div>
+      <div class="rb"><div class="ic">🎟️</div><div><div class="lbl mono">Event</div><div class="t">PRWeek Awards <span class="w">· Sep · 4 watchlist</span></div></div></div>
+      <div class="rb"><div class="ic">🏛️</div><div><div class="lbl mono">Framework</div><div class="t">CCS Comms · open <span class="w">· bid window</span></div></div></div>
+    </div>
+
+    <div class="foot mono">VMA GROUP · Recruitment • Executive Search • Advisory Services</div>
+  </div>
+</body>
+</html>

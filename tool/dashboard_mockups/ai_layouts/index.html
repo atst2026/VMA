@@ -1,0 +1,94 @@
+<!doctype html>
+<!-- Gallery for the four AI-product dashboard layout concepts. Each tile
+     links to a full standalone mockup. Same palette / wordmark as the live
+     dashboard; the goal across all four is to kill the "nine equal boxes"
+     CRM feel and make the page read like an AI product Sara wants to use. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VMA · Dashboard layout concepts</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Crimson+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{--teal:#4285F4;--teal-dark:#1A3D7C;--teal-soft:rgba(66,133,244,.10);--bg:#f7f9fc;--surface:#fff;--border:rgba(60,64,67,.12);--text:#1F1F1F;--muted:#5F6368;--dim:#9AA0A6;--pulse:#9FD181;--shadow:0 6px 22px rgba(60,64,67,.08),0 1px 3px rgba(60,64,67,.04);--shadow-lg:0 14px 36px rgba(31,55,124,.14);}
+  body{font-family:"Inter",system-ui,sans-serif;color:var(--text);background:radial-gradient(1000px 400px at 50% -180px,#cfe0f5,rgba(247,249,252,0) 70%),var(--bg);min-height:100vh;-webkit-font-smoothing:antialiased;}
+  .mono{font-family:"JetBrains Mono",monospace;}
+  .wrap{max-width:1180px;margin:0 auto;padding:40px 30px 60px;}
+  .wordmark{display:inline-flex;align-items:baseline;}
+  .wordmark .vma{font-weight:800;letter-spacing:.06em;font-size:26px;}
+  .wordmark .grp{font-weight:300;letter-spacing:.29em;font-size:26px;padding-left:.42em;}
+  .live{font:500 10px/1 "JetBrains Mono";letter-spacing:.2em;text-transform:uppercase;color:var(--muted);display:inline-flex;align-items:center;gap:8px;margin-left:14px;}
+  .live::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--pulse);box-shadow:0 0 7px var(--pulse);}
+  h1{font-family:"Crimson Pro",serif;font-size:30px;font-weight:600;margin:22px 0 6px;letter-spacing:-.01em;}
+  h1 .accent{color:var(--teal-dark);}
+  .lede{color:var(--muted);font-size:14px;max-width:760px;line-height:1.6;}
+  .lede b{color:var(--text);font-weight:600;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:30px;}
+  @media(max-width:820px){.grid{grid-template-columns:1fr;}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;text-decoration:none;color:inherit;transition:.18s;display:flex;flex-direction:column;}
+  .card:hover{box-shadow:var(--shadow-lg);transform:translateY(-3px);border-color:rgba(66,133,244,.36);}
+  .shot{aspect-ratio:16/10;background:var(--bg);border-bottom:1px solid var(--border);overflow:hidden;display:flex;align-items:flex-start;justify-content:center;}
+  .shot img{width:100%;height:100%;object-fit:cover;object-position:top;display:block;}
+  .meta{padding:16px 18px 18px;}
+  .tagrow{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+  .num{font:600 10px/1 "JetBrains Mono";color:var(--teal-dark);background:var(--teal-soft);padding:5px 9px;border-radius:9999px;}
+  .kind{font:600 9.5px/1 "JetBrains Mono";letter-spacing:.12em;text-transform:uppercase;color:var(--dim);}
+  .meta h2{font-family:"Crimson Pro",serif;font-size:19px;font-weight:600;margin-bottom:5px;}
+  .meta p{font-size:12.5px;color:var(--muted);line-height:1.55;}
+  .meta .open{display:inline-flex;align-items:center;gap:6px;margin-top:12px;font:600 12px/1 "Inter";color:var(--teal-dark);}
+  .foot{text-align:center;color:var(--dim);font-size:11px;margin-top:36px;letter-spacing:.05em;}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="wordmark"><span class="vma">VMA</span><span class="grp">GROUP</span></div><span class="live mono">Layout concepts</span>
+    <h1>Four ways to make the dashboard feel like <span class="accent">an AI product</span>, not a CRM.</h1>
+    <p class="lede">Each concept keeps the current colours and wordmark but replaces the <b>nine equal boxes</b> below Leads &amp; Signals with a layout that leads with insight and makes the tools feel like things you <b>ask an assistant to do</b>. Open any one full-screen.</p>
+
+    <div class="grid">
+      <a class="card" href="1-command-console.html">
+        <div class="shot"><img src="previews/1-command-console.png" alt="Command Console preview"></div>
+        <div class="meta">
+          <div class="tagrow"><span class="num mono">01</span><span class="kind mono">Conversational</span></div>
+          <h2>Agentic Command Console</h2>
+          <p>A single "ask anything" command bar is the hero; the six tools become AI <b>plays</b> you invoke, not forms. Context collapses to a slim rail. Feels like a copilot at Sara's desk.</p>
+          <span class="open">Open full mockup →</span>
+        </div>
+      </a>
+
+      <a class="card" href="2-app-workspace.html">
+        <div class="shot"><img src="previews/2-app-workspace.png" alt="App Workspace preview"></div>
+        <div class="meta">
+          <div class="tagrow"><span class="num mono">02</span><span class="kind mono">Product app</span></div>
+          <h2>App Workspace</h2>
+          <p>Tools and context move into a persistent <b>left navigation</b> — no grid at all. The canvas stays focused on the feed; a play opens as a focused work surface. Reads like software you log into.</p>
+          <span class="open">Open full mockup →</span>
+        </div>
+      </a>
+
+      <a class="card" href="3-daily-briefing.html">
+        <div class="shot"><img src="previews/3-daily-briefing.png" alt="Daily Briefing preview"></div>
+        <div class="meta">
+          <div class="tagrow"><span class="num mono">03</span><span class="kind mono">Editorial</span></div>
+          <h2>Editorial Daily Briefing</h2>
+          <p>A calm single-column note written by an AI analyst. The six tools shrink to <b>one slim play toolbar</b>; context becomes a tabbed strip. Premium, low-clutter, something you read with coffee.</p>
+          <span class="open">Open full mockup →</span>
+        </div>
+      </a>
+
+      <a class="card" href="4-bento-intelligence.html">
+        <div class="shot"><img src="previews/4-bento-intelligence.png" alt="Bento Intelligence preview"></div>
+        <div class="meta">
+          <div class="tagrow"><span class="num mono">04</span><span class="kind mono">Bento</span></div>
+          <h2>Bento Intelligence</h2>
+          <p>Keeps cards but breaks the uniform grid into an <b>asymmetric bento</b> with real hierarchy — a hero "Top moves" tile, big-number stats, and tools sized by importance. Modern, never a contact list.</p>
+          <span class="open">Open full mockup →</span>
+        </div>
+      </a>
+    </div>
+
+    <div class="foot mono">VMA GROUP · Recruitment • Executive Search • Advisory Services</div>
+  </div>
+</body>
+</html>

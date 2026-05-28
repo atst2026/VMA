@@ -1,0 +1,193 @@
+<!doctype html>
+<!-- ========================================================================
+     MOCKUP 3 · EDITORIAL DAILY BRIEFING
+     The opposite of a CRM grid: a calm, single-column intelligence
+     briefing that reads like an FT/Economist morning note written by an
+     AI analyst. The nine boxes dissolve — the six plays become ONE slim
+     "Run a play" toolbar (pills, not tiles), and the three context feeds
+     become a single tabbed strip at the foot. Leads + signals are an
+     editorial ranked list with AI rationale. Premium, low-clutter,
+     something Sara would *want* to read with her coffee.
+     ===================================================================== -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VMA Group · Daily Briefing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --navy:#1F1F1F; --teal:#4285F4; --teal-dark:#1A3D7C; --teal-glow:rgba(66,133,244,.22);
+    --teal-soft:rgba(66,133,244,.10); --bg:#f7f9fc; --paper:#fff; --surface-2:#F4F7FC;
+    --border:rgba(60,64,67,.12); --text:#1F1F1F; --muted:#5F6368; --dim:#9AA0A6;
+    --gold:#C49A3B; --green:#34A853; --pulse:#9FD181;
+    --shadow-md:0 6px 22px rgba(60,64,67,.08),0 1px 3px rgba(60,64,67,.04);
+    --rule:rgba(60,64,67,.16);
+  }
+  body{font-family:"Inter",system-ui,sans-serif;color:var(--text);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;
+    background:radial-gradient(900px 360px at 50% -160px,#d6e4f6 0%,rgba(247,249,252,0) 70%),var(--bg);min-height:100vh;}
+  a{color:var(--teal-dark);text-decoration:none;}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace;}
+
+  .sheet{max-width:760px;margin:0 auto;padding:30px 26px 60px;}
+
+  /* masthead */
+  .mast{display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:2px solid var(--text);}
+  .wordmark{display:inline-flex;align-items:baseline;}
+  .wordmark .vma{font-weight:800;letter-spacing:.05em;font-size:23px;}
+  .wordmark .grp{font-weight:300;letter-spacing:.27em;font-size:23px;padding-left:.4em;}
+  .mast .ed{font:500 9.5px/1.5 "JetBrains Mono";letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-align:right;}
+  .mast .ed .live{display:inline-flex;align-items:center;gap:6px;color:var(--green);}
+  .mast .ed .live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--pulse);box-shadow:0 0 6px var(--pulse);}
+
+  /* dateline + synthesis */
+  .dateline{display:flex;align-items:center;gap:10px;font:500 10.5px/1 "JetBrains Mono";letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin:16px 0 14px;}
+  .dateline .spark{color:var(--teal);font-size:12px;}
+  .dateline .rule{flex:1;height:1px;background:var(--rule);}
+
+  .lede{font-family:"Crimson Pro",Georgia,serif;font-size:31px;line-height:1.18;font-weight:600;letter-spacing:-.01em;}
+  .lede .em{color:var(--teal-dark);font-style:italic;}
+  .standfirst{font-family:"Crimson Pro",serif;font-size:16.5px;color:var(--muted);margin-top:12px;line-height:1.55;}
+  .standfirst b{color:var(--text);font-weight:600;}
+
+  /* AI play toolbar — the six tools, as one slim bar */
+  .actbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:20px 0 6px;padding:11px 14px;background:var(--paper);border:1px solid var(--border);border-radius:13px;box-shadow:var(--shadow-md);}
+  .actbar .lab{display:inline-flex;align-items:center;gap:8px;font:600 11px/1 "Inter";color:var(--teal-dark);margin-right:4px;}
+  .actbar .halo{width:22px;height:22px;border-radius:7px;background:radial-gradient(circle at 32% 30%,#a8c8e6,var(--teal));color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;}
+  .play{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:#fff;border-radius:9999px;padding:7px 13px;font:500 12px/1 "Inter";cursor:pointer;color:var(--text);transition:.14s;}
+  .play:hover{border-color:rgba(66,133,244,.36);background:var(--teal-soft);color:var(--teal-dark);}
+  .play.go{margin-left:auto;background:#C9DDF8;border-color:rgba(26,61,124,.10);color:var(--teal-dark);font-weight:600;}
+
+  /* section heading */
+  .sec{display:flex;align-items:baseline;gap:12px;margin:34px 0 4px;}
+  .sec h2{font-family:"Crimson Pro",serif;font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text);}
+  .sec .rule{flex:1;height:1px;background:var(--rule);}
+  .sec .ct{font:600 10.5px/1 "JetBrains Mono";color:var(--teal-dark);}
+
+  /* editorial lead entries */
+  .entry{display:grid;grid-template-columns:34px 1fr;gap:0 16px;padding:18px 0;border-bottom:1px solid var(--border);}
+  .num{font-family:"Crimson Pro",serif;font-size:26px;font-weight:600;color:var(--dim);line-height:1;}
+  .entry.hot .num{color:var(--teal-dark);}
+  .hl{font-family:"Crimson Pro",serif;font-size:20px;font-weight:600;line-height:1.25;}
+  .hl .co{color:var(--teal-dark);}
+  .kicker{display:inline-flex;align-items:center;gap:7px;font:600 9.5px/1 "JetBrains Mono";letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;}
+  .kicker .k-high{color:#B3261E;} .kicker .k-med{color:#8A6A1F;} .kicker .src{color:var(--dim);font-weight:500;}
+  .body{font-size:13.5px;color:#3A3D42;margin-top:8px;line-height:1.62;}
+  .body .why{color:var(--teal-dark);font-weight:600;}
+  .acts{display:flex;gap:8px;margin-top:11px;}
+  .mini{font:500 11.5px/1 "Inter";border:1px solid var(--border);background:#fff;border-radius:8px;padding:8px 12px;cursor:pointer;color:var(--text);}
+  .mini:hover{border-color:rgba(66,133,244,.36);}
+  .mini.fill{background:#C9DDF8;border-color:rgba(26,61,124,.10);color:var(--teal-dark);font-weight:600;}
+
+  /* signals as a tight digest */
+  .digest{padding:6px 0 0;}
+  .dg{display:flex;align-items:baseline;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);}
+  .dg .co{font-weight:600;font-size:14px;min-width:160px;}
+  .dg .co .ar{color:var(--dim);font-weight:400;}
+  .dg .tx{color:var(--muted);font-size:13px;flex:1;}
+  .dg .tag{font:600 9px/1 "JetBrains Mono";letter-spacing:.08em;padding:4px 8px;border-radius:9999px;}
+  .t-high{background:#FCE8E6;color:#B3261E;} .t-med{background:#FEF7E0;color:#8A6A1F;} .t-cas{background:var(--teal-soft);color:var(--teal-dark);}
+
+  /* context strip — tabbed, foot of page */
+  .ctxstrip{margin-top:30px;background:var(--paper);border:1px solid var(--border);border-radius:13px;box-shadow:var(--shadow-md);overflow:hidden;}
+  .ctx-tabs{display:flex;border-bottom:1px solid var(--border);}
+  .ctx-tab{flex:1;text-align:center;font:600 11.5px/1 "Inter";color:var(--muted);padding:13px 8px;cursor:pointer;border-bottom:2px solid transparent;}
+  .ctx-tab.on{color:var(--teal-dark);border-bottom-color:var(--teal);}
+  .ctx-tab .n{font:600 9.5px/1 "JetBrains Mono";color:var(--dim);margin-left:6px;}
+  .ctx-body{display:flex;gap:0;}
+  .cx{flex:1;padding:14px 16px;border-right:1px solid var(--border);}
+  .cx:last-child{border-right:0;}
+  .cx .w{font:500 9.5px/1 "JetBrains Mono";color:var(--teal-dark);background:var(--teal-soft);padding:3px 7px;border-radius:9999px;float:right;}
+  .cx .t{font-weight:600;font-size:12.5px;} .cx .m{font-size:11px;color:var(--dim);margin-top:3px;}
+
+  .foot{text-align:center;color:var(--dim);font-size:11px;margin-top:30px;letter-spacing:.05em;}
+</style>
+</head>
+<body>
+  <div class="sheet">
+
+    <div class="mast">
+      <div class="wordmark"><span class="vma">VMA</span><span class="grp">GROUP</span></div>
+      <div class="ed">Intelligence Briefing<br><span class="live">Live · refreshed 8m ago</span></div>
+    </div>
+
+    <div class="dateline mono"><span class="spark">✦</span> Thursday 28 May 2026 · Synthesised from 247 signals <span class="rule"></span> RNS · FT · Reuters · Sky</div>
+
+    <h1 class="lede">Three calls worth making <span class="em">before lunch.</span></h1>
+    <p class="standfirst">A CCO seat at <b>NatWest</b> vacated this morning; <b>Severn Trent</b> flagged a comms review in disappointing results; and a warm candidate just landed the top job at <b>Lloyds</b>. Here's the order to work them — and why.</p>
+
+    <!-- PLAY TOOLBAR (the six tools) -->
+    <div class="actbar">
+      <span class="lab"><span class="halo">✦</span> Run a play</span>
+      <button class="play">📄 Pitch Pack</button>
+      <button class="play">🔁 Reverse Match</button>
+      <button class="play">🗒️ Pre-meeting</button>
+      <button class="play">👤 Candidate Watch</button>
+      <button class="play">🛰️ Sweep</button>
+      <button class="play go">↻ Daily Refresh</button>
+    </div>
+
+    <!-- LEADS -->
+    <div class="sec"><h2>Today's Leads</h2><span class="rule"></span><span class="ct mono">11 ACTIVE · 3 NEW</span></div>
+
+    <div class="entry hot">
+      <div class="num">1</div>
+      <div>
+        <div class="kicker mono"><span class="k-high">● High intent</span><span class="src">Sky News · 1h ago · UK Banking</span></div>
+        <div class="hl"><span class="co">NatWest</span> — Chief Communications Officer seat just vacated</div>
+        <div class="body">The departure broke an hour ago and isn't yet on the search firms' radar. <span class="why">Call HR and the Chair today:</span> three competitors will be in conversation by Wednesday, and the first credible shortlist usually wins the retainer.</div>
+        <div class="acts"><button class="mini fill">✉ Copy opener</button><button class="mini">📄 Pitch Pack for this seat</button><button class="mini">✓ Mark followed up</button></div>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="num">2</div>
+      <div>
+        <div class="kicker mono"><span class="k-med">● Medium</span><span class="src">RNS · 3h ago · UK Utilities</span></div>
+        <div class="hl"><span class="co">Severn Trent</span> — results miss names a "comms &amp; stakeholder review"</div>
+        <div class="body">FY numbers landed below guidance and the statement explicitly flags a review of external affairs. <span class="why">A Director-level hire historically follows within 8–10 weeks</span> — get the pre-meeting brief ready now so you're first in when the role is signed off.</div>
+        <div class="acts"><button class="mini fill">✉ Copy opener</button><button class="mini">🗒️ Pre-meeting brief</button></div>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="num">3</div>
+      <div>
+        <div class="kicker mono"><span class="k-med">● Warm</span><span class="src">LinkedIn · UK Banking</span></div>
+        <div class="hl"><span class="co">Lloyds</span> — Jane Smith appointed CCO</div>
+        <div class="body">Jane is a candidate you've kept warm for two years. <span class="why">New CCOs rebuild their bench in the first 90 days</span> — congratulate her today, then map the two-to-three senior hires she'll need to make.</div>
+        <div class="acts"><button class="mini fill">✉ Copy opener</button><button class="mini">👤 Open in Candidate Watch</button></div>
+      </div>
+    </div>
+
+    <!-- SIGNALS -->
+    <div class="sec"><h2>Pre-Market Signals</h2><span class="rule"></span><span class="ct mono">8 · 90-DAY WINDOW</span></div>
+    <div class="digest">
+      <div class="dg"><span class="co">Standard Chartered</span><span class="tx">Corp Comms director hits a 26-month tenure cliff; three sector peers moved in 2025–26.</span><span class="tag t-high mono">PRE-POSITION</span></div>
+      <div class="dg"><span class="co">Octopus Energy</span><span class="tx">£140m Series F closed last week — a senior comms hire typically follows ~6 months later.</span><span class="tag t-med mono">6MO</span></div>
+      <div class="dg"><span class="co">Intertek Group</span><span class="tx">New CEO appointed; incoming chiefs reshape Corporate Affairs within two quarters.</span><span class="tag t-med mono">RE-ORG</span></div>
+      <div class="dg"><span class="co">Centrica <span class="ar">→</span></span><span class="tx">Comms director appointment confirmed, leaving their previous seat open — cascade lead.</span><span class="tag t-cas mono">CASCADE</span></div>
+    </div>
+
+    <!-- CONTEXT STRIP -->
+    <div class="sec"><h2>Groundwork &amp; Calendar</h2><span class="rule"></span></div>
+    <div class="ctxstrip">
+      <div class="ctx-tabs">
+        <div class="ctx-tab on">Placement Windows<span class="n mono">6</span></div>
+        <div class="ctx-tab">Events &amp; Networking<span class="n mono">8</span></div>
+        <div class="ctx-tab">Frameworks<span class="n mono">4</span></div>
+      </div>
+      <div class="ctx-body">
+        <div class="cx"><span class="w mono">Apr–Jun</span><div class="t">FCA Consumer Duty</div><div class="m">Banks staffing comms ahead of the deadline</div></div>
+        <div class="cx"><span class="w mono">AMP8</span><div class="t">Ofwat price review</div><div class="m">Water-sector regulatory hiring window</div></div>
+        <div class="cx"><span class="w mono">Sep</span><div class="t">PRWeek Awards</div><div class="m">4 watchlist comms leaders attending</div></div>
+      </div>
+    </div>
+
+    <div class="foot mono">VMA GROUP · Recruitment • Executive Search • Advisory Services</div>
+  </div>
+</body>
+</html>

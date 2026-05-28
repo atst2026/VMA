@@ -1,0 +1,280 @@
+<!doctype html>
+<!-- ========================================================================
+     MOCKUP 1 · AGENTIC COMMAND CONSOLE
+     The CRM-grid of 9 boxes is gone. The six "tools" (Pitch Pack, Reverse
+     Match, Pre-meeting Brief, Candidate Watch, Manual Sweep, Recent
+     Reports) are reframed as AI *plays* you invoke from a single command
+     bar — the way you'd ask a copilot to do something. The three context
+     feeds collapse into a slim right rail. Leads + signals are the live
+     feed in the centre. Feels like an AI analyst sitting at Sara's desk.
+     Palette + wordmark identical to the live dashboard.
+     ===================================================================== -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VMA Group · Command Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --navy:#1F1F1F; --teal:#4285F4; --teal-bright:#5B9BFF; --teal-dark:#1A3D7C;
+    --teal-glow:rgba(66,133,244,.22); --teal-soft:rgba(66,133,244,.10);
+    --bg:#f7f9fc; --bg-warm:#E3EAF5; --surface:#fff; --surface-2:#F4F7FC;
+    --border:rgba(60,64,67,.12); --border-hover:rgba(66,133,244,.36);
+    --text:#1F1F1F; --muted:#5F6368; --dim:#9AA0A6;
+    --gold:#C49A3B; --green:#34A853; --pulse:#9FD181;
+    --shadow-md:0 6px 22px rgba(60,64,67,.08),0 1px 3px rgba(60,64,67,.04);
+    --shadow-lg:0 10px 28px rgba(31,55,124,.10),0 2px 6px rgba(31,55,124,.06);
+  }
+  body{
+    font-family:"Inter",system-ui,sans-serif; color:var(--text);
+    font-size:13.5px; line-height:1.55; -webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(1100px 420px at 50% -180px, #cfe0f5 0%, #e0eaf7 30%, rgba(247,249,252,0) 70%),
+      var(--bg);
+    min-height:100vh;
+  }
+  a{color:var(--teal-dark);text-decoration:none;}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace;}
+
+  /* ---- top bar ---- */
+  .top{display:flex;align-items:center;justify-content:space-between;padding:20px 34px;}
+  .wordmark{display:inline-flex;align-items:baseline;line-height:1;}
+  .wordmark .vma{font-weight:800;letter-spacing:.06em;font-size:27px;}
+  .wordmark .grp{font-weight:300;letter-spacing:.30em;font-size:27px;padding-left:.42em;margin-right:-.30em;}
+  .top-right{display:flex;align-items:center;gap:18px;}
+  .live{display:inline-flex;align-items:center;gap:8px;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);}
+  .live::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--pulse);box-shadow:0 0 0 0 rgba(159,209,129,.7);animation:pulse 2.4s infinite;}
+  @keyframes pulse{70%{box-shadow:0 0 0 9px rgba(159,209,129,0);}100%{box-shadow:0 0 0 0 rgba(159,209,129,0);}}
+  .refresh{display:inline-flex;align-items:center;gap:8px;background:#C9DDF8;color:var(--teal-dark);border:1px solid rgba(26,61,124,.10);border-radius:9999px;padding:9px 16px;font:600 12.5px/1 "Inter";cursor:pointer;}
+  .refresh:hover{background:#B8D0F2;}
+
+  .wrap{max-width:1320px;margin:0 auto;padding:6px 34px 48px;}
+
+  /* ---- HERO: AI command bar (replaces the tool grid) ---- */
+  .hero{margin:10px 0 26px;}
+  .greet{font-family:"Crimson Pro",Georgia,serif;font-size:30px;font-weight:600;letter-spacing:-.01em;line-height:1.15;}
+  .greet .accent{color:var(--teal-dark);}
+  .synth{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:13px;margin-top:7px;}
+  .synth .spark{color:var(--teal);font-size:13px;}
+  .synth b{color:var(--text);font-weight:600;}
+
+  .cmd{
+    margin-top:18px;background:var(--surface);border:1px solid var(--border);
+    border-radius:18px;box-shadow:var(--shadow-lg);padding:6px 6px 6px 18px;
+    display:flex;align-items:center;gap:12px;position:relative;overflow:hidden;
+  }
+  .cmd::before{content:"";position:absolute;inset:0;border-radius:18px;padding:1.5px;
+    background:linear-gradient(100deg,var(--teal) 0%,#8AB6F8 35%,transparent 60%);
+    -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;opacity:.55;pointer-events:none;}
+  .cmd .halo{width:30px;height:30px;border-radius:50%;flex-shrink:0;
+    background:radial-gradient(circle at 32% 30%,#a8c8e6,var(--teal));
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;box-shadow:0 0 14px var(--teal-glow);}
+  .cmd input{flex:1;border:0;outline:0;font:400 15px/1 "Inter";color:var(--text);background:transparent;padding:14px 0;}
+  .cmd input::placeholder{color:var(--dim);}
+  .cmd .slash{font-size:11px;color:var(--dim);border:1px solid var(--border);border-radius:6px;padding:3px 7px;}
+  .cmd .go{width:38px;height:38px;border:0;border-radius:12px;background:var(--teal);color:#fff;font-size:17px;cursor:pointer;flex-shrink:0;box-shadow:0 4px 12px var(--teal-glow);}
+
+  /* play chips — the 6 tools, reframed as things you ask the AI to run */
+  .plays{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px;}
+  .plays .lbl{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);align-self:center;margin-right:2px;}
+  .chip{display:inline-flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--border);border-radius:9999px;padding:8px 14px;font:500 12.5px/1 "Inter";cursor:pointer;transition:.15s;}
+  .chip:hover{border-color:var(--border-hover);box-shadow:var(--shadow-md);transform:translateY(-1px);}
+  .chip .ic{font-size:13px;}
+  .chip.primary{background:#C9DDF8;border-color:rgba(26,61,124,.12);color:var(--teal-dark);font-weight:600;}
+
+  /* ---- main grid: feed + context rail ---- */
+  .grid{display:grid;grid-template-columns:1fr 320px;gap:22px;margin-top:28px;align-items:start;}
+  @media(max-width:1040px){.grid{grid-template-columns:1fr;}}
+
+  .feed{display:flex;flex-direction:column;gap:22px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-md);overflow:hidden;}
+  .card-h{display:flex;align-items:center;justify-content:space-between;padding:15px 18px 11px;}
+  .card-h h2{font-family:"Crimson Pro",serif;font-size:18px;font-weight:600;display:flex;align-items:center;gap:9px;}
+  .card-h h2 .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 7px var(--teal-glow);}
+  .count{font:600 12px/1 "Inter";color:var(--teal-dark);background:var(--teal-soft);border-radius:9999px;padding:5px 11px;}
+  .tabs{display:flex;gap:6px;padding:0 18px 8px;}
+  .tab{font-size:11.5px;color:var(--muted);padding:6px 11px;border-radius:9999px;cursor:pointer;}
+  .tab.on{background:#C9DDF8;color:var(--teal-dark);font-weight:600;}
+
+  .lead{padding:14px 18px;border-top:1px solid var(--border);display:grid;grid-template-columns:26px 1fr auto;gap:4px 12px;align-items:start;}
+  .lead:hover{background:var(--surface-2);}
+  .rank{width:24px;height:24px;border-radius:7px;background:var(--teal-dark);color:#fff;font:600 12px/24px "JetBrains Mono";text-align:center;}
+  .lead .ttl{font-weight:600;font-size:14px;}
+  .lead .ttl .co{color:var(--teal-dark);}
+  .badge{display:inline-block;font-size:10.5px;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:2px 8px;margin:6px 6px 0 0;}
+  .badge.new{background:#FBEEDD;border-color:#EBD3A8;color:#8A6A1F;}
+  .why{grid-column:2/4;margin-top:8px;font-size:12px;color:var(--muted);background:linear-gradient(0deg,var(--teal-soft),var(--teal-soft));border-left:2px solid var(--teal);border-radius:0 8px 8px 0;padding:8px 11px;}
+  .why b{color:var(--teal-dark);font-weight:600;}
+  .why .tag{font:500 9.5px/1 "JetBrains Mono";letter-spacing:.1em;color:var(--teal);text-transform:uppercase;margin-right:7px;}
+  .mini{grid-column:2/4;display:flex;gap:8px;margin-top:9px;}
+  .btn-mini{font:500 11.5px/1 "Inter";border:1px solid var(--border);background:#fff;border-radius:7px;padding:7px 11px;cursor:pointer;color:var(--text);}
+  .btn-mini:hover{border-color:var(--border-hover);}
+  .btn-mini.fill{background:#C9DDF8;border-color:rgba(26,61,124,.10);color:var(--teal-dark);font-weight:600;}
+  .strength{font:600 10px/1 "Inter";padding:4px 8px;border-radius:9999px;align-self:center;}
+  .s-high{background:#FCE8E6;color:#B3261E;} .s-med{background:#FEF7E0;color:#8A6A1F;} .s-low{background:#E6F4EA;color:#1E7e34;}
+
+  /* signal rows compact */
+  .sig{padding:12px 18px;border-top:1px solid var(--border);display:flex;align-items:center;gap:12px;}
+  .sig:hover{background:var(--surface-2);}
+  .sig .co{font-weight:600;font-size:13.5px;min-width:135px;}
+  .sig .desc{color:var(--muted);font-size:12px;flex:1;}
+  .rolechip{font-size:10.5px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--muted);}
+
+  /* ---- right rail ---- */
+  .rail{display:flex;flex-direction:column;gap:18px;position:sticky;top:14px;}
+  .stat-card{background:linear-gradient(150deg,#1A3D7C,#2E5B9E);color:#fff;border-radius:14px;padding:18px;box-shadow:var(--shadow-lg);}
+  .stat-card .k{font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:.75;}
+  .stat-card .big{font-size:38px;font-weight:800;line-height:1;margin:8px 0 2px;}
+  .stat-card .sub{font-size:12px;opacity:.85;}
+  .stat-row{display:flex;gap:10px;margin-top:14px;}
+  .stat-row .s{flex:1;background:rgba(255,255,255,.10);border-radius:10px;padding:9px 11px;}
+  .stat-row .s .n{font-size:19px;font-weight:700;} .stat-row .s .l{font-size:10px;opacity:.8;}
+
+  .ctx{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-md);overflow:hidden;}
+  .ctx-h{display:flex;gap:4px;padding:10px;border-bottom:1px solid var(--border);}
+  .ctx-tab{flex:1;text-align:center;font-size:11px;color:var(--muted);padding:7px 4px;border-radius:8px;cursor:pointer;}
+  .ctx-tab.on{background:var(--surface-2);color:var(--teal-dark);font-weight:600;}
+  .ctx-row{padding:11px 14px;border-top:1px solid var(--border);font-size:12px;}
+  .ctx-row:first-of-type{border-top:0;}
+  .ctx-row .t{font-weight:600;} .ctx-row .m{color:var(--dim);font-size:11px;margin-top:2px;}
+  .ctx-row .w{float:right;font:500 10px/1 "JetBrains Mono";color:var(--teal-dark);background:var(--teal-soft);padding:4px 7px;border-radius:9999px;}
+
+  .recents{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-md);padding:14px 16px;}
+  .recents h3{font-family:"Crimson Pro",serif;font-size:15px;margin-bottom:4px;}
+  .recents .sub{font-size:11px;color:var(--dim);margin-bottom:10px;}
+  .rr{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border);font-size:12px;}
+  .rr .ix{width:20px;height:20px;border-radius:6px;background:var(--teal-soft);color:var(--teal-dark);font:600 10px/20px "JetBrains Mono";text-align:center;}
+  .rr .nm{flex:1;font-weight:500;} .rr .dl{color:var(--teal-dark);cursor:pointer;}
+  .foot{text-align:center;color:var(--dim);font-size:11px;margin-top:30px;letter-spacing:.04em;}
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="wordmark"><span class="vma">VMA</span><span class="grp">GROUP</span></div>
+    <div class="top-right">
+      <span class="live mono">Intelligence Platform · Live</span>
+      <button class="refresh">↻ Daily Refresh</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="greet">Morning, Sara. <span class="accent">Three calls worth making before lunch.</span></div>
+      <div class="synth"><span class="spark">✦</span> Synthesised <b>247 signals</b> overnight from RNS, FT, Reuters, Sky &amp; sector trades into <b>11 leads</b> and <b>8 pre-market predictions</b> · Thursday 28 May 2026</div>
+
+      <div class="cmd">
+        <div class="halo">✦</div>
+        <input placeholder="Ask Sara's Desk anything — or run a play. e.g. “draft a pitch pack for NatWest's CCO seat”">
+        <span class="slash mono">/</span>
+        <button class="go">↑</button>
+      </div>
+
+      <div class="plays">
+        <span class="lbl">Plays</span>
+        <button class="chip primary"><span class="ic">📄</span> Pitch Pack</button>
+        <button class="chip"><span class="ic">🔁</span> Reverse Match</button>
+        <button class="chip"><span class="ic">🗒️</span> Pre-meeting Brief</button>
+        <button class="chip"><span class="ic">👤</span> Candidate Watch</button>
+        <button class="chip"><span class="ic">🛰️</span> Manual Sweep</button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="grid">
+      <div class="feed">
+
+        <!-- LEADS -->
+        <div class="card">
+          <div class="card-h">
+            <h2><span class="dot"></span>Today's Leads</h2>
+            <span class="count">11 active</span>
+          </div>
+          <div class="tabs">
+            <span class="tab on">Active 11</span><span class="tab">New today 3</span>
+            <span class="tab">Followed up</span><span class="tab">Dismissed</span>
+          </div>
+
+          <div class="lead">
+            <span class="rank">1</span>
+            <div><div class="ttl"><span class="co">NatWest</span> · CCO seat just vacated</div>
+              <span class="badge new">new today</span><span class="badge">Sky News</span><span class="badge">UK · Banking</span></div>
+            <span class="strength s-high">HIGH</span>
+            <div class="why"><span class="tag mono">why this matters</span>The Chief Comms Officer departed this morning. Three competitor searches will open by Wednesday — <b>call HR and the Chair today</b> to pre-position VMA before the seat is briefed out.</div>
+            <div class="mini"><button class="btn-mini fill">✉ Copy opener</button><button class="btn-mini">✓ Followed up</button><button class="btn-mini">Run Pitch Pack →</button></div>
+          </div>
+
+          <div class="lead">
+            <span class="rank">2</span>
+            <div><div class="ttl"><span class="co">Severn Trent</span> · Results miss, comms restructure flagged</div>
+              <span class="badge">RNS</span><span class="badge">UK · Utilities</span></div>
+            <span class="strength s-med">MED</span>
+            <div class="why"><span class="tag mono">why this matters</span>FY results missed guidance and the statement names a "comms and stakeholder review". Historically a <b>Director of External Affairs</b> hire follows within 8–10 weeks.</div>
+            <div class="mini"><button class="btn-mini fill">✉ Copy opener</button><button class="btn-mini">✓ Followed up</button></div>
+          </div>
+
+          <div class="lead">
+            <span class="rank">3</span>
+            <div><div class="ttl"><span class="co">Lloyds</span> · Jane Smith joins as CCO</div>
+              <span class="badge new">new today</span><span class="badge">LinkedIn</span><span class="badge">UK · Banking</span></div>
+            <span class="strength s-med">MED</span>
+            <div class="why"><span class="tag mono">why this matters</span>New CCOs rebuild their team in the first 90 days. Jane is a <b>warm VMA candidate</b> — congratulate now, then map her likely 2–3 hires.</div>
+            <div class="mini"><button class="btn-mini fill">✉ Copy opener</button><button class="btn-mini">Open in Candidate Watch →</button></div>
+          </div>
+        </div>
+
+        <!-- SIGNALS -->
+        <div class="card">
+          <div class="card-h">
+            <h2><span class="dot"></span>Pre-Market Signals</h2>
+            <span class="count">8 · 90-day window</span>
+          </div>
+          <div class="sig"><span class="co">Standard Chartered</span><span class="desc">Director of Corp Comms hits 26-month tenure cliff · three sector peers moved in 2025–26</span><span class="rolechip">Pre-position</span><span class="strength s-high">HIGH</span></div>
+          <div class="sig"><span class="co">Octopus Energy</span><span class="desc">£140m Series F closed last week · senior comms hire typically follows ~6 months later</span><span class="rolechip">6mo window</span><span class="strength s-med">MED</span></div>
+          <div class="sig"><span class="co">Intertek Group</span><span class="desc">New CEO appointed · incoming chiefs reshape Corporate Affairs within 2 quarters</span><span class="rolechip">Re-org</span><span class="strength s-med">MED</span></div>
+          <div class="sig"><span class="co">Centrica</span><span class="desc">Director of Comms appointment confirmed → cascade: their old seat now open</span><span class="rolechip">Cascade</span><span class="strength s-low">LOW</span></div>
+        </div>
+      </div>
+
+      <!-- RAIL -->
+      <div class="rail">
+        <div class="stat-card">
+          <div class="k">Pipeline value surfaced</div>
+          <div class="big">£420k</div>
+          <div class="sub">Est. fee value across today's high-strength leads</div>
+          <div class="stat-row">
+            <div class="s"><div class="n">11</div><div class="l">live leads</div></div>
+            <div class="s"><div class="n">8</div><div class="l">predictions</div></div>
+            <div class="s"><div class="n">3</div><div class="l">new today</div></div>
+          </div>
+        </div>
+
+        <div class="ctx">
+          <div class="ctx-h">
+            <span class="ctx-tab on">Windows</span><span class="ctx-tab">Events</span><span class="ctx-tab">Frameworks</span>
+          </div>
+          <div class="ctx-row"><span class="w mono">Apr–Jun</span><div class="t">FCA Consumer Duty</div><div class="m">Statutory build-up · banks staffing comms</div></div>
+          <div class="ctx-row"><span class="w mono">AMP8</span><div class="t">Ofwat price review</div><div class="m">Water sector regulatory window opens</div></div>
+          <div class="ctx-row"><span class="w mono">Q3</span><div class="t">PRWeek Awards</div><div class="m">Networking · 4 watchlist comms leaders attending</div></div>
+        </div>
+
+        <div class="recents">
+          <h3>Recent Reports</h3>
+          <div class="sub">Generated within the last 48 hours</div>
+          <div class="rr"><span class="ix mono">1</span><span class="nm">Pitch Pack · Unilever</span><span class="dl">↓</span></div>
+          <div class="rr"><span class="ix mono">2</span><span class="nm">Reverse Match · R. Torres</span><span class="dl">↓</span></div>
+          <div class="rr"><span class="ix mono">3</span><span class="nm">Pre-meeting · Severn Trent</span><span class="dl">↓</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot mono">VMA GROUP · Recruitment • Executive Search • Advisory Services</div>
+  </div>
+</body>
+</html>

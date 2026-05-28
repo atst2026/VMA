@@ -1,0 +1,185 @@
+<!doctype html>
+<!-- ========================================================================
+     MOCKUP 2 · APP WORKSPACE (left-rail navigation)
+     The nine boxes become navigation, not a grid. A persistent left rail
+     holds the six plays (Pitch Pack, Reverse Match, Pre-meeting Brief,
+     Candidate Watch, Manual Sweep, Recent Reports) and the three context
+     feeds (Placement Windows, Events, Frameworks) as nav items. The main
+     canvas is a focused intelligence feed; selecting a play opens it in a
+     focused work surface here (Pitch Pack shown active) instead of living
+     as a permanent CRM tile. Reads like a real product you log into daily.
+     ===================================================================== -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VMA Group · Workspace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Crimson+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --navy:#1F1F1F; --teal:#4285F4; --teal-dark:#1A3D7C; --teal-glow:rgba(66,133,244,.22);
+    --teal-soft:rgba(66,133,244,.10); --bg:#f7f9fc; --surface:#fff; --surface-2:#F4F7FC;
+    --border:rgba(60,64,67,.12); --border-hover:rgba(66,133,244,.36);
+    --text:#1F1F1F; --muted:#5F6368; --dim:#9AA0A6;
+    --gold:#C49A3B; --green:#34A853; --pulse:#9FD181;
+    --shadow-md:0 6px 22px rgba(60,64,67,.08),0 1px 3px rgba(60,64,67,.04);
+    --shadow-lg:0 10px 28px rgba(31,55,124,.10),0 2px 6px rgba(31,55,124,.06);
+  }
+  body{font-family:"Inter",system-ui,sans-serif;color:var(--text);font-size:13.5px;line-height:1.55;-webkit-font-smoothing:antialiased;background:var(--bg);}
+  a{color:var(--teal-dark);text-decoration:none;}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace;}
+  .layout{display:grid;grid-template-columns:248px 1fr;min-height:100vh;}
+
+  /* ---- LEFT RAIL ---- */
+  .rail{background:var(--surface);border-right:1px solid var(--border);padding:20px 14px;display:flex;flex-direction:column;gap:5px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+  .brand{display:flex;align-items:baseline;gap:1px;padding:4px 8px 2px;}
+  .brand .vma{font-weight:800;letter-spacing:.05em;font-size:21px;}
+  .brand .grp{font-weight:300;letter-spacing:.26em;font-size:21px;padding-left:.4em;}
+  .brand-sub{font:500 9px/1 "JetBrains Mono";letter-spacing:.18em;text-transform:uppercase;color:var(--dim);padding:0 8px 14px;display:flex;align-items:center;gap:7px;}
+  .brand-sub::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--pulse);box-shadow:0 0 6px var(--pulse);}
+
+  .newbrief{display:flex;align-items:center;gap:9px;background:#C9DDF8;color:var(--teal-dark);border:1px solid rgba(26,61,124,.10);border-radius:9999px;padding:10px 14px;font:600 13px/1 "Inter";cursor:pointer;margin-bottom:14px;}
+  .newbrief .halo{width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 32% 30%,#a8c8e6,var(--teal));color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;}
+
+  .sec{font:600 10px/1 "JetBrains Mono";letter-spacing:.16em;text-transform:uppercase;color:var(--dim);padding:14px 12px 6px;}
+  .nav{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:10px;font-size:13px;color:var(--text);cursor:pointer;transition:.12s;}
+  .nav:hover{background:var(--surface-2);}
+  .nav.on{background:var(--teal-soft);color:var(--teal-dark);font-weight:600;}
+  .nav .ic{width:18px;text-align:center;font-size:14px;}
+  .nav .n{margin-left:auto;font:600 10.5px/1 "JetBrains Mono";color:var(--dim);background:var(--surface-2);border-radius:9999px;padding:3px 7px;}
+  .nav.on .n{background:#fff;color:var(--teal-dark);}
+  .nav .new{margin-left:auto;font:600 9px/1 "Inter";color:#8A6A1F;background:#FBEEDD;border-radius:9999px;padding:3px 7px;}
+
+  .rail-foot{margin-top:auto;padding:12px 10px 4px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--border);}
+  .av{width:30px;height:30px;border-radius:50%;background:linear-gradient(150deg,#1A3D7C,#4285F4);color:#fff;display:flex;align-items:center;justify-content:center;font:700 12px/1 "Inter";}
+  .rail-foot .who{font-size:12px;font-weight:600;} .rail-foot .role{font-size:10.5px;color:var(--dim);}
+
+  /* ---- MAIN CANVAS ---- */
+  .main{padding:24px 32px 48px;max-width:1180px;}
+  .crumb{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+  .crumb .path{font:500 10.5px/1 "JetBrains Mono";letter-spacing:.12em;text-transform:uppercase;color:var(--dim);}
+  .crumb .refresh{font:600 11.5px/1 "Inter";color:var(--teal-dark);background:#fff;border:1px solid var(--border);border-radius:9999px;padding:8px 14px;cursor:pointer;}
+
+  .h1{font-family:"Crimson Pro",serif;font-size:28px;font-weight:600;letter-spacing:-.01em;line-height:1.15;margin-bottom:6px;}
+  .h1 .accent{color:var(--teal-dark);}
+  .synth{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12.5px;margin-bottom:22px;}
+  .synth .spark{color:var(--teal);} .synth b{color:var(--text);font-weight:600;}
+
+  /* focused work surface (the active play) */
+  .work{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-lg);padding:20px 22px;margin-bottom:24px;position:relative;overflow:hidden;}
+  .work::after{content:"";position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,var(--teal-glow),transparent 70%);pointer-events:none;}
+  .work-h{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+  .work-h .halo{width:26px;height:26px;border-radius:8px;background:radial-gradient(circle at 32% 30%,#a8c8e6,var(--teal));color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;}
+  .work-h h2{font-family:"Crimson Pro",serif;font-size:19px;font-weight:600;}
+  .work-h .ai{font:600 9px/1 "JetBrains Mono";letter-spacing:.1em;color:var(--teal);background:var(--teal-soft);padding:4px 8px;border-radius:9999px;}
+  .work .desc{color:var(--muted);font-size:12.5px;margin:2px 0 16px;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+  label{display:block;font:600 11px/1 "Inter";color:var(--muted);margin-bottom:6px;}
+  .inp{width:100%;border:1px solid var(--border);border-radius:9px;padding:11px 13px;font:400 13px/1 "Inter";color:var(--text);background:var(--surface-2);}
+  .inp:focus{outline:0;border-color:var(--border-hover);background:#fff;box-shadow:0 0 0 3px var(--teal-soft);}
+  .inp::placeholder{color:var(--dim);}
+  .run{display:flex;align-items:center;gap:10px;margin-top:6px;}
+  .run button{background:var(--teal);color:#fff;border:0;border-radius:10px;padding:12px 22px;font:600 13.5px/1 "Inter";cursor:pointer;box-shadow:0 4px 14px var(--teal-glow);}
+  .run .note{font-size:11.5px;color:var(--dim);}
+
+  /* feed cards */
+  .feed{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media(max-width:880px){.feed{grid-template-columns:1fr;}.layout{grid-template-columns:1fr;}.rail{display:none;}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-md);overflow:hidden;}
+  .card.span{grid-column:1/-1;}
+  .card-h{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px;}
+  .card-h h3{font-family:"Crimson Pro",serif;font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;}
+  .card-h h3 .d{width:6px;height:6px;border-radius:50%;background:var(--teal);box-shadow:0 0 6px var(--teal-glow);}
+  .count{font:600 11px/1 "Inter";color:var(--teal-dark);background:var(--teal-soft);padding:5px 10px;border-radius:9999px;}
+  .row{display:flex;align-items:flex-start;gap:11px;padding:12px 18px;border-top:1px solid var(--border);}
+  .row:hover{background:var(--surface-2);}
+  .rk{width:22px;height:22px;border-radius:6px;background:var(--teal-dark);color:#fff;font:600 11px/22px "JetBrains Mono";text-align:center;flex-shrink:0;}
+  .row .b{flex:1;}
+  .row .t{font-weight:600;font-size:13.5px;} .row .t .co{color:var(--teal-dark);}
+  .row .m{color:var(--muted);font-size:11.5px;margin-top:3px;}
+  .pill{font:600 9px/1 "Inter";padding:4px 8px;border-radius:9999px;align-self:center;}
+  .p-high{background:#FCE8E6;color:#B3261E;} .p-med{background:#FEF7E0;color:#8A6A1F;} .p-cas{background:var(--teal-soft);color:var(--teal-dark);}
+  .foot{color:var(--dim);font-size:11px;margin-top:26px;letter-spacing:.04em;}
+</style>
+</head>
+<body>
+  <div class="layout">
+
+    <!-- LEFT RAIL -->
+    <aside class="rail">
+      <div class="brand"><span class="vma">VMA</span><span class="grp">GROUP</span></div>
+      <div class="brand-sub">Intelligence · Live</div>
+
+      <button class="newbrief"><span class="halo">✦</span> Ask Sara's Desk</button>
+
+      <div class="sec">Today</div>
+      <div class="nav on"><span class="ic">◎</span> Intelligence feed <span class="n mono">19</span></div>
+      <div class="nav"><span class="ic">🎯</span> Top 3 moves <span class="n mono">3</span></div>
+
+      <div class="sec">Plays</div>
+      <div class="nav"><span class="ic">📄</span> Pitch Pack</div>
+      <div class="nav"><span class="ic">🔁</span> Reverse Match</div>
+      <div class="nav"><span class="ic">🗒️</span> Pre-meeting Brief</div>
+      <div class="nav"><span class="ic">👤</span> Candidate Watch <span class="new">1 due</span></div>
+      <div class="nav"><span class="ic">🛰️</span> Manual Sweep</div>
+      <div class="nav"><span class="ic">🗂️</span> Recent Reports <span class="n mono">3</span></div>
+
+      <div class="sec">Context</div>
+      <div class="nav"><span class="ic">📅</span> Placement Windows <span class="n mono">6</span></div>
+      <div class="nav"><span class="ic">🎟️</span> Events &amp; Networking <span class="n mono">8</span></div>
+      <div class="nav"><span class="ic">🏛️</span> Frameworks <span class="n mono">4</span></div>
+
+      <div class="rail-foot"><div class="av">ST</div><div><div class="who">Sara Tehrani</div><div class="role">Account Director</div></div></div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+      <div class="crumb">
+        <span class="path mono">Today / Intelligence feed</span>
+        <button class="refresh">↻ Daily Refresh · 8m ago</button>
+      </div>
+      <div class="h1">Morning, Sara. <span class="accent">Three calls worth making before lunch.</span></div>
+      <div class="synth"><span class="spark">✦</span> Synthesised <b>247 signals</b> overnight into <b>11 leads</b> · <b>8 predictions</b> · Thursday 28 May 2026</div>
+
+      <!-- ACTIVE PLAY -->
+      <div class="work">
+        <div class="work-h"><span class="halo">📄</span><h2>Pitch Pack</h2><span class="ai mono">AI · ~90s</span></div>
+        <div class="desc">Turn a client's open vacancy into a tailored, retained-search proposal — emailed to you in under two minutes.</div>
+        <div class="field-row">
+          <div><label>Account</label><input class="inp" placeholder="e.g. NatWest" value="NatWest"></div>
+          <div><label>Role</label><input class="inp" placeholder="e.g. Chief Communications Officer" value="Chief Communications Officer"></div>
+        </div>
+        <div class="run"><button>✦ Generate &amp; email</button><span class="note">Lands at stehrani@vmagroup.com · prefilled from the NatWest lead</span></div>
+      </div>
+
+      <!-- FEED -->
+      <div class="feed">
+        <div class="card">
+          <div class="card-h"><h3><span class="d"></span>Today's Leads</h3><span class="count">11</span></div>
+          <div class="row"><span class="rk">1</span><div class="b"><div class="t"><span class="co">NatWest</span> · CCO seat vacated</div><div class="m">Sky · 1h ago · call HR + Chair before competitors brief it out</div></div><span class="pill p-high">HIGH</span></div>
+          <div class="row"><span class="rk">2</span><div class="b"><div class="t"><span class="co">Severn Trent</span> · Results miss</div><div class="m">RNS · 3h ago · comms review flagged in statement</div></div><span class="pill p-med">MED</span></div>
+          <div class="row"><span class="rk">3</span><div class="b"><div class="t"><span class="co">Lloyds</span> · Jane Smith joins as CCO</div><div class="m">LinkedIn · warm VMA candidate — map her first hires</div></div><span class="pill p-med">MED</span></div>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><h3><span class="d"></span>Pre-Market Signals</h3><span class="count">8</span></div>
+          <div class="row"><span class="rk">1</span><div class="b"><div class="t"><span class="co">Standard Chartered</span></div><div class="m">Corp Comms director · 26-mo tenure cliff · pre-position</div></div><span class="pill p-high">HIGH</span></div>
+          <div class="row"><span class="rk">2</span><div class="b"><div class="t"><span class="co">Octopus Energy</span></div><div class="m">£140m Series F · senior hire ~6mo out</div></div><span class="pill p-med">MED</span></div>
+          <div class="row"><span class="rk">3</span><div class="b"><div class="t"><span class="co">Centrica</span></div><div class="m">Comms director appointed → old seat cascade</div></div><span class="pill p-cas">CASCADE</span></div>
+        </div>
+
+        <div class="card span">
+          <div class="card-h"><h3><span class="d"></span>Candidate Watch — overdue floats to top</h3><span class="count">1 due</span></div>
+          <div class="row"><span class="rk">!</span><div class="b"><div class="t">Maya Chen · Aviva → Head of External Comms</div><div class="m">Last touched 41 days ago · cadence 30d — <b>overdue</b>, reach out today</div></div><span class="pill p-high">DUE</span></div>
+          <div class="row"><span class="rk">·</span><div class="b"><div class="t">Ravi Patel · Centrica · Director of Comms</div><div class="m">Touched 12 days ago · on cadence</div></div></div>
+        </div>
+      </div>
+
+      <div class="foot mono">VMA GROUP · Recruitment • Executive Search • Advisory Services</div>
+    </main>
+  </div>
+</body>
+</html>
