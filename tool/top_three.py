@@ -40,9 +40,9 @@ expect to tune them once Sara's used the surface for a week.
   Candidate (high drift) : 30 + drift contribution
   Funding         : 30 + window-proximity boost
 
-Everything else (specialist signals, BD calendar) deliberately
-excluded — they're context, not actions you'd describe in one
-sentence.
+Everything else (specialist signals, placement windows, events)
+deliberately excluded — they're context, not actions you'd describe
+in one sentence.
 """
 from __future__ import annotations
 

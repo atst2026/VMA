@@ -1959,12 +1959,12 @@ TEMPLATE = r"""
     .panel-body::-webkit-scrollbar-thumb:hover { background: var(--navy-soft); }
 
     /* ===== Calendar Pulses — year ribbon (Alternate A) =====
-       Hire Watch + BD Calendar sit side-by-side; both panels share
+       Hire Watch + Placement Windows sit side-by-side; both panels share
        the same fixed 400px height for visual parity. Bodies scroll
        internally. */
     /* Two full-height (400px) sections side by side: the combined
-       Hire Watch & Framework Windows panel, and BD Calendar. Bodies scroll
-       internally. minmax(0,1fr) + min-width:0 keep the split a true 50/50. */
+       Hire Watch & Framework Windows panel, and Placement Windows. Bodies
+       scroll internally. minmax(0,1fr) + min-width:0 keep the split 50/50. */
     #hire-calendar-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     #hire-calendar-row > .panel { min-width: 0; }
     #hire-calendar-row .panel { height: 400px; display: flex; flex-direction: column; }
@@ -2016,16 +2016,6 @@ TEMPLATE = r"""
       font-weight: 700; letter-spacing: .04em;
     }
 
-    /* Industry-event chip inside the BD Calendar detail card. */
-    .cal-eventchip {
-      display: inline-block;
-      padding: 2px 8px;
-      font-size: 10.5px; font-weight: 700; letter-spacing: .08em;
-      text-transform: uppercase;
-      background: #fff4e0; color: #8a5a00;
-      border-radius: 10px;
-    }
-
     .cal-wrap { padding: 14px 16px; }
     .cal-ribbon {
       display: grid;
@@ -2063,7 +2053,6 @@ TEMPLATE = r"""
     .cal-pip { width: 9px; height: 9px; border-radius: 50%; }
     .cal-pip.high  { background: var(--teal); }   /* high = teal */
     .cal-pip.med   { background: var(--green); }  /* policy-firming = green */
-    .cal-pip.event { background: #e89c4a; }       /* industry event = amber */
     /* NEW month: same reddening wash as a fresh finding row */
     .cal-tile.fresh {
       background: linear-gradient(90deg, var(--teal-soft), transparent 72%);
@@ -2168,6 +2157,36 @@ TEMPLATE = r"""
     .cal-legend { display: flex; gap: 16px; font-size: 10px; color: var(--text-dim); margin-top: 10px; }
     .cal-legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: middle; }
     .cal-dsep { border: 0; border-top: 1px solid var(--border); margin: 10px 0; }
+
+    /* ===== Events & Networking — light chronological list ===== */
+    .ev-list { list-style: none; margin: 0; padding: 0; }
+    .ev-item { padding: 11px 16px; border-bottom: 1px solid var(--border); }
+    .ev-item:last-child { border-bottom: none; }
+    .ev-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .ev-name { font-weight: 600; font-size: 12.5px; color: var(--navy); }
+    .ev-focus {
+      font: 700 9.5px/1.4 "Inter", sans-serif; letter-spacing: .04em;
+      text-transform: uppercase; padding: 2px 7px; border-radius: 10px; white-space: nowrap;
+    }
+    .ev-internal { background: var(--teal-soft); color: var(--teal-dark); }
+    .ev-external { background: #fff4e0; color: #8a5a00; }
+    .ev-mixed    { background: #eef0f3; color: #80868b; }
+    .ev-open {
+      font: 700 9.5px/1.4 "Inter", sans-serif; letter-spacing: .03em;
+      background: #e7f3ec; color: #2e7d50; padding: 2px 7px; border-radius: 10px;
+    }
+    .ev-when { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+    .ev-rm {
+      background: transparent; color: var(--text-muted);
+      border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px;
+      font: 500 10px/1.4 "Inter", sans-serif; cursor: pointer;
+      transition: border-color .12s, color .12s;
+    }
+    .ev-rm:hover { border-color: #A33A22; color: #A33A22; }
+    .ev-meta { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+    .ev-why  { font-size: 11.5px; color: var(--text-dim); margin-top: 4px; }
+    .ev-src  { font-size: 11px; margin-top: 4px; }
+    .ev-src a { color: #0366d6; text-decoration: none; }
 
     /* ITEMS */
     .item {
@@ -3196,9 +3215,11 @@ TEMPLATE = r"""
        year ribbon. Funding-Round signals are folded into Predicted
        Briefs above; rare detectors live in Specialist Signals below. -->
 
-  <!-- HIRE WATCH + BD CALENDAR side-by-side. Hire Watch (cascade
-       moves) on the left; BD Calendar (statutory pulses + UK/EU
-       industry events) on the right. Both stack under 900px. -->
+  <!-- HIRE WATCH + PLACEMENT WINDOWS side-by-side. Hire Watch (cascade
+       moves) on the left; Placement Windows (statutory/regulatory +
+       policy pulses ONLY) on the right. Industry events were split out
+       into their own Events & Networking panel below. Both stack under
+       900px. -->
   <div class="row" id="hire-calendar-row">
     <div class="panel" id="cascade-row">
       <div class="panel-header">
@@ -3309,7 +3330,7 @@ TEMPLATE = r"""
 
     <div class="panel" id="pulses-row">
       <div class="panel-header">
-        <h2>BD Calendar</h2>
+        <h2>Placement Windows</h2>
         <div style="display:flex;align-items:center;gap:8px;">
           <button class="cal-headnew" id="pulses-new" type="button" style="display:none;">
             <span class="cal-nd"></span><span id="pulses-new-n">0</span>&nbsp;new</button>
@@ -3355,6 +3376,23 @@ TEMPLATE = r"""
           <div id="mandates-body"></div>
         </div>
 
+      </div>
+    </div>
+  </div>
+
+  <!-- EVENTS & NETWORKING — UK/EU comms industry events (awards,
+       conferences, summits). Split out of the old BD Calendar: these are
+       relationship / candidate-visibility moments, NOT statute-forced
+       placement windows (those live in Placement Windows above). Loaded
+       from the unchanged /api/industry-events endpoint. -->
+  <div class="row row-full" id="events-row">
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Events &amp; Networking</h2>
+        <span class="count" id="events-count">—</span>
+      </div>
+      <div class="panel-body" id="events-body">
+        <div class="empty compact">Loading…</div>
       </div>
     </div>
   </div>
@@ -3968,29 +4006,13 @@ async function loadPulses() {
   const body = document.getElementById('pulses-body');
   const count = document.getElementById('pulses-count');
   try {
-    // Fetch statutory pulses AND industry events in parallel; both
-    // are rendered as pips on the same month ribbon. Events get a
-    // distinguishing pip colour + chip in the detail card.
-    const [pulseRes, eventRes] = await Promise.all([
-      fetch('/api/pulses'),
-      fetch('/api/industry-events'),
-    ]);
-    const j  = await pulseRes.json();
-    const je = await eventRes.json();
-    const pulseRows = (j.rows || []).map(r => Object.assign({}, r, { _kind: 'pulse' }));
-    const eventRows = (je.rows || []).map(r => Object.assign({}, r, {
-      _kind: 'event',
-      // unify the detail card's expected fields
-      seat:  r.focus === 'internal' ? 'Internal-comms event'
-           : r.focus === 'external' ? 'External-comms event'
-           : 'Comms event',
-      angle: r.why_now || '',
-      scope_note: (r.location || '') + (r.location ? ' · ' : '') +
-                  ((r.focus || 'mixed').replace(/^./, c => c.toUpperCase())),
-      confidence: 'event',          // drives pip colour
-      days_left:  r.days_to_event,
-    }));
-    const total = pulseRows.length + eventRows.length;
+    // Placement Windows = statutory/regulatory + policy pulses ONLY.
+    // Industry events were split out into the Events & Networking panel
+    // (loadEvents); they no longer share this ribbon.
+    const res = await fetch('/api/pulses');
+    const j   = await res.json();
+    const pulseRows = j.rows || [];
+    const total = pulseRows.length;
     count.textContent = total;
     if (total === 0) {
       body.innerHTML = '<div class="empty compact">No placement window open today. ' +
@@ -4001,7 +4023,7 @@ async function loadPulses() {
       return;
     }
     const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const rows = pulseRows.concat(eventRows);
+    const rows = pulseRows;
 
     // act-by month/year per pulse (window-end month — the deadline the
     // run-up builds to). Fall back to the printed window if act_by absent.
@@ -4026,8 +4048,7 @@ async function loadPulses() {
     for (let m = 0; m < 12; m++) if (buckets[m].some(p => p.just_opened)) { freshMonth = m; break; }
 
     const pipFor = p => {
-      const cls = p._kind === 'event' ? 'event'
-                : p.confidence === 'high' ? 'high' : 'med';
+      const cls = p.confidence === 'high' ? 'high' : 'med';
       return '<span class="cal-pip ' + cls + '"></span>';
     };
     const out = ['<div class="cal-wrap"><div class="cal-ribbon">'];
@@ -4057,28 +4078,16 @@ async function loadPulses() {
         '<div class="cal-legend">' +
           '<span><i style="background:var(--teal)"></i>Regulatory deadline</span>' +
           '<span><i style="background:var(--green)"></i>Policy timeline</span>' +
-          '<span><i style="background:#e89c4a"></i>Comms event</span>' +
         '</div>' +
       '</div></div>'  // .cal-detail .cal-wrap
     );
     body.innerHTML = out.join('');
 
     const cardFor = p => {
-      const isEvent = p._kind === 'event';
-      const conf = isEvent ? 'cal-eventchip'
-                 : (p.confidence === 'high') ? 'mandate-age'
-                 : 'hook-badge generic_fit';
-      const confLabel = isEvent ? 'Comms event'
-                 : (p.confidence === 'high') ? 'Regulatory deadline'
-                 : 'Policy timeline';
+      const conf = (p.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
+      const confLabel = (p.confidence === 'high') ? 'Regulatory deadline' : 'Policy timeline';
       const far = (typeof p.days_left === 'number' && p.days_left > 150);
-      const daysLabel = isEvent
-        ? (typeof p.days_left === 'number'
-            ? (p.days_left === 0 ? 'today'
-               : p.days_left === 1 ? 'tomorrow'
-               : 'in ' + p.days_left + 'd') : '')
-        : (typeof p.days_left === 'number'
-            ? (p.days_left + 'd left') : '');
+      const daysLabel = (typeof p.days_left === 'number') ? (p.days_left + 'd left') : '';
       const targets = (p.targets || []).map(t =>
         '<span class="hook-badge generic_fit" style="margin:2px 4px 2px 0;display:inline-block;">' +
         esc(t) + '</span>').join('');
@@ -4166,6 +4175,94 @@ async function loadPulses() {
 
     // No auto-open: the ribbon shows the placeholder until Sara clicks
     // a month. The NEW badge / header chip entice the click instead.
+  } catch (e) {
+    body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
+  }
+}
+
+// ---------- Events & Networking (industry events) ----------
+// Relationship / candidate-visibility moments (awards, conferences,
+// summits) — split out of the old BD Calendar. Rendered as a light
+// chronological list rather than a placement-window ribbon, because an
+// event drives networking, not a statute-forced hire.
+async function loadEvents() {
+  const body = document.getElementById('events-body');
+  const count = document.getElementById('events-count');
+  if (!body) return;
+  try {
+    const res = await fetch('/api/industry-events');
+    const j = await res.json();
+    const rows = j.rows || [];
+    if (count) count.textContent = rows.length;
+    if (rows.length === 0) {
+      body.innerHTML = '<div class="empty compact">No comms awards, conferences or ' +
+        'summits in the next ~6 months. This panel lists networking & candidate-' +
+        'visibility moments (PRWeek / CIPR / PRCA awards, IoIC, EACD, European ' +
+        'Excellence) — relationship groundwork, not statute-forced placement windows.</div>';
+      return;
+    }
+    const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const fmtDate = iso => {
+      const p = String(iso || '').split('-');
+      if (p.length < 3) return iso || '';
+      return parseInt(p[2], 10) + ' ' + (MON[parseInt(p[1], 10) - 1] || '') + ' ' + p[0];
+    };
+    const whenChip = d => {
+      if (typeof d !== 'number') return '';
+      if (d < 0) return 'past';
+      if (d === 0) return 'today';
+      if (d === 1) return 'tomorrow';
+      if (d < 60) return 'in ' + d + 'd';
+      return 'in ' + Math.round(d / 30) + 'mo';
+    };
+    const focusChip = f => {
+      const lab = f === 'internal' ? 'Internal comms'
+                : f === 'external' ? 'External comms' : 'Mixed';
+      return '<span class="ev-focus ev-' + esc(f || 'mixed') + '">' + lab + '</span>';
+    };
+    const out = ['<ul class="ev-list">'];
+    rows.forEach(e => {
+      const win = e.in_action_window
+        ? '<span class="ev-open" title="Outreach window open now">window open</span>' : '';
+      const rm = e.key
+        ? '<button class="ev-rm" data-key="' + esc(e.key) + '" title="Remove this event">&#10005;</button>' : '';
+      out.push(
+        '<li class="ev-item">' +
+          '<div class="ev-top">' +
+            focusChip(e.focus) +
+            '<span class="ev-name">' + esc(e.name || '') + '</span>' +
+            (win ? ' ' + win : '') +
+            '<span class="ev-when">' + esc(whenChip(e.days_to_event)) + '</span>' +
+            rm +
+          '</div>' +
+          '<div class="ev-meta">' + esc(fmtDate(e.event_date)) +
+            (e.location ? ' &middot; ' + esc(e.location) : '') + '</div>' +
+          (e.why_now ? '<div class="ev-why">' + esc(e.why_now) + '</div>' : '') +
+          (e.source ? '<div class="ev-src"><a href="' + safeUrl(e.source) +
+             '" target="_blank" rel="noopener noreferrer">source &rsaquo;</a></div>' : '') +
+        '</li>'
+      );
+    });
+    out.push('</ul>');
+    body.innerHTML = out.join('');
+    // Remove-an-event (delegated): persist the dismissal (shared pulse_dismiss
+    // keyspace) then re-render so the count + list stay correct.
+    body.querySelectorAll('.ev-rm').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const key = btn.getAttribute('data-key');
+        if (!key) return;
+        btn.disabled = true;
+        try {
+          const r = await fetch('/api/pulses/dismiss', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: key, dismissed: true }),
+          });
+          const jj = await r.json();
+          if (jj.ok) { loadEvents(); }
+          else { btn.disabled = false; alert(jj.detail || 'Could not remove.'); }
+        } catch (err) { btn.disabled = false; alert('Network error: ' + err.message); }
+      });
+    });
   } catch (e) {
     body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
   }
@@ -4454,6 +4551,7 @@ document.addEventListener('DOMContentLoaded', () => {
   applyFilter('active');
   applyLeadFilter('active');
   loadPulses();
+  loadEvents();
   loadSpecialistSignals();
   loadWatchList();
   loadRecentReports();
@@ -4464,7 +4562,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // predictors empty (i.e. the dashboard-state hydrate hasn't populated
 // them yet), auto-pull today's brief once — the same action as the
 // Daily Refresh button — so the user never sees a half-populated
-// dashboard (BD Calendar / Hire Watch showing while Leads / Pre-Market
+// dashboard (Placement Windows / Hire Watch showing while Leads / Pre-Market
 // sit empty). Guarded by sessionStorage so it fires at most once per
 // tab session and can never loop. Self-disables the moment the
 // state-branch hydrate works (leads won't be empty, so it won't fire).
