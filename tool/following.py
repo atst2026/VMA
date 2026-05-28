@@ -87,11 +87,11 @@ _PREV_EMPLOYER_PATTERNS = [
         r"\b(?:formerly|previously)\s+(?:of|with)\s+" + _CO + _END,
         r"\b(?:leaves?|departs?|departed|exits?|exited)\s+" + _CO + r"\s+(?:to join|to take|after|for\b)",
         # "<Co>'s (former|outgoing|ex) <role>" — possessive + adjective.
-        r"\b" + _CO + r"'s\s+(?:former|outgoing|ex[- ]?)\s+(?:head of|director of|chief|group head of|vp|chief communications)\b",
+        r"\b" + _CO + r"'s?\s+(?:former|outgoing|ex[- ]?)\s+(?:head of|director of|chief|group head of|vp|chief communications)\b",
         # "<Co>'s <comms role> (steps down|leaves|departs|to step down…)"
         # — possessive + the seat + a departure verb. The cleanest pure-
         # departure backfill phrasing; previously uncaught.
-        r"\b" + _CO + r"'s\s+" + _ROLE + r"\b[^.,;]{0,30}?\b(?:steps? down|stepping down|to step down|leaves?|leaving|departs?|departing|to leave|resigns?|resigned|retires?|retiring|to retire|has left|exits?)\b",
+        r"\b" + _CO + r"'s?\s+" + _ROLE + r"\b[^.,;]{0,30}?\b(?:steps? down|stepping down|to step down|leaves?|leaving|departs?|departing|to leave|resigns?|resigned|retires?|retiring|to retire|has left|exits?)\b",
     )
 ]
 
@@ -103,13 +103,54 @@ def _confidence(source: str) -> str:
     return "medium"
 
 
-def detect_following(signals: Iterable[dict]) -> list[dict]:
-    """Return vacated-seat records, one per detected senior-comms move
-    whose PREVIOUS employer resolves to a watchlist account.
+# Generic / place / sentence words a previous-employer regex can capture
+# but that are NOT a real employer. Used only to sanity-check UNRESOLVED
+# (non-watchlist) spans before surfacing them as a broader-market seat —
+# watchlist spans are already validated by resolve_account.
+_NOT_A_COMPANY = {
+    "the", "a", "an", "this", "that", "his", "her", "their", "its", "our",
+    "uk", "us", "eu", "britain", "british", "england", "scotland", "wales",
+    "london", "city", "government", "council", "board", "company", "group",
+    "firm", "business", "team", "industry", "sector", "market", "role",
+    "post", "office", "department", "ministry", "agency", "trust", "client",
+    "following", "meanwhile", "however", "exclusive", "breaking", "new",
+    "former", "outgoing", "interim", "acting",
+}
 
-    Each record: {company, vacated_role, evidence, url, source,
-    sector, confidence}.  `company` is the previous employer (the
-    seat that is now the brief).
+
+def _looks_like_company(span: str) -> bool:
+    """Sanity gate for an UNRESOLVED previous-employer span (one that did
+    not match the watchlist). Keeps broader-market vacated seats honest:
+    the span must look like a proper employer name, not a generic / place /
+    sentence fragment."""
+    s = (span or "").strip(" .,'-\"")
+    if len(s) < 3 or not s[:1].isupper():
+        return False
+    if any(ch.isdigit() for ch in s):
+        return False
+    toks = s.split()
+    if len(toks) > 6:                       # long span = sentence fragment
+        return False
+    if all(t.lower().strip(".,'\"") in _NOT_A_COMPANY for t in toks):
+        return False                        # all generic words ("The Group")
+    return True
+
+
+def detect_following(signals: Iterable[dict],
+                     include_unresolved: bool = False) -> list[dict]:
+    """Return vacated-seat records, one per detected senior-comms move.
+
+    The PREVIOUS employer (the seat that is now the brief) is extracted
+    and run through resolve_account:
+      * resolves to a watchlist account            -> watchlist=True
+      * include_unresolved AND looks like a real
+        employer (and no pattern resolved)          -> watchlist=False
+        (a broader-market seat; the caller decides whether to keep it,
+        e.g. gated on UK geo). Off by default so other callers are
+        unchanged.
+
+    Each record: {company, watchlist, vacated_role, evidence, url, source,
+    sector, geo, confidence}. `company` is the previous employer.
     """
     from tool.account_match import resolve_account
     from tool.advisory import advisory_for
@@ -118,8 +159,7 @@ def detect_following(signals: Iterable[dict]) -> list[dict]:
     except Exception:
         detect_sector = lambda _n: None  # noqa: E731
 
-    out: list[dict] = []
-    seen: set[str] = set()
+    best: dict[tuple, dict] = {}
     for s in signals:
         if not isinstance(s, dict):
             continue
@@ -132,7 +172,8 @@ def detect_following(signals: Iterable[dict]) -> list[dict]:
         if not role_m or not _MOVE_RX.search(text):
             continue
 
-        prev_company = None
+        company = None
+        is_watchlist = False
         for rx in _PREV_EMPLOYER_PATTERNS:
             m = rx.search(text)
             if not m:
@@ -140,33 +181,39 @@ def detect_following(signals: Iterable[dict]) -> list[dict]:
             span = (m.group(1) or "").strip(" .,'-")
             if not span or len(span) < 3:
                 continue
-            # Resolve ONLY the captured previous-employer span — never
-            # the whole headline — so the new employer can't be picked.
+            # Resolve ONLY the captured previous-employer span — never the
+            # whole headline — so the new employer can't be picked.
             acct = resolve_account(span, span)
             if acct:
-                prev_company = acct
+                company, is_watchlist = acct, True
                 break
-        if not prev_company:
+            # No watchlist match: remember the first plausible employer span
+            # but keep scanning in case a later pattern DOES resolve.
+            if include_unresolved and company is None and _looks_like_company(span):
+                company = span.strip(" .,'-\"")
+        if not company:
             continue
 
         role = role_m.group(0).strip()
-        # De-dupe on (company, role) — one vacated seat per pair.
-        key = (prev_company.lower(), re.sub(r"\s+", " ", role.lower()))
-        if key in seen:
-            continue
-        seen.add(key)
-
-        out.append({
-            "company":      prev_company,
+        key = (company.lower(), re.sub(r"\s+", " ", role.lower()))
+        rec = {
+            "company":      company,
+            "watchlist":    is_watchlist,
             "vacated_role": role.title(),
             "evidence":     title[:200] or summary[:200],
             "url":          s.get("url", ""),
             "source":       s.get("source", ""),
-            "sector":       detect_sector(prev_company) or "",
+            "sector":       detect_sector(company) or "",
+            "geo":          s.get("geo", ""),
             "advisory":     advisory_for("following"),
-            "confidence":   _confidence(s.get("source", "")),
-        })
+            "confidence":   _confidence(s.get("source", "")) if is_watchlist else "medium",
+        }
+        prev = best.get(key)
+        # Prefer the watchlist-resolved record if both tiers appear.
+        if prev is None or (rec["watchlist"] and not prev["watchlist"]):
+            best[key] = rec
 
-    # High-confidence (RNS/CH) first, then by company name for stability.
-    out.sort(key=lambda r: (r["confidence"] != "high", r["company"]))
+    out = list(best.values())
+    # Watchlist first, then high-confidence source, then company name.
+    out.sort(key=lambda r: (not r["watchlist"], r["confidence"] != "high", r["company"]))
     return out

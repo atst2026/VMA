@@ -236,7 +236,7 @@ def fetch_all(hours_back: int | None = None) -> list[dict]:
                         GDELT_FETCHALL_BUDGET_S)
             break
         r = get(SOURCES["gdelt_doc"], params={
-            "query": f'{term} (appointed OR "new role" OR joins OR departs OR "stepping down" OR resigns OR promoted)',
+            "query": f'{term} (appointed OR "new role" OR joins OR departs OR "steps down" OR "stepping down" OR resigns OR retires OR leaves OR exits OR promoted OR succeeds)',
             "mode": "ArtList",
             "format": "json",
             "timespan": f"{hours_back}h",

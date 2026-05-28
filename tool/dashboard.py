@@ -3241,7 +3241,7 @@ TEMPLATE = r"""
       </div>
       <div class="panel-body" id="cascade-body">
         {% if cascade_events|length == 0 %}
-          <div class="empty compact">No watchlist senior-comms moves in the latest brief. This panel only surfaces moves where the vacated seat's firm — or the new employer — is a watchlist account, so off-patch headlines are filtered out rather than shown as noise.</div>
+          <div class="empty compact">No UK senior-comms moves in the latest brief. This panel surfaces a vacated senior-comms seat at <em>any</em> UK employer (core-watchlist accounts ranked first; others tagged &ldquo;Broader UK&rdquo;), plus re-org watches at watchlist firms. Off-patch / non-UK headlines are filtered out rather than shown as noise.</div>
         {% endif %}
 
         {% for c in cascade_events %}
@@ -3256,6 +3256,7 @@ TEMPLATE = r"""
               <span class="typ hw">VS</span>
               <span class="row2-title">{% if c.person_name %}{{ c.person_name }}{% if c.role %} &rarr; {{ c.role }}{% endif %}{% else %}{{ (c.role or 'Senior comms seat')|title }}{% if c.old_company %} &middot; {{ c.old_company }}{% endif %}{% endif %}</span>
               <span class="row2-tags">
+                {% if c.confidence == 'medium' %}<span class="ipill mut" title="UK employer, not on the core watchlist — verify fit">Broader UK</span>{% endif %}
                 {% if _old_on %}<span class="ipill s">Search</span>{% endif %}
                 {% if _new_on %}<span class="ipill w">Watch</span>{% endif %}
               </span>
