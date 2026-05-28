@@ -583,9 +583,15 @@ def _event_on_watchlist(e: dict) -> bool:
 
 def _event_kept(e: dict) -> bool:
     """Read-path relevance filter. Keeps watchlist events AND the newer
-    broader-market UK events (which carry a confidence tier). Drops only
-    legacy events persisted before the gate existed (no confidence + not
-    watchlist) — e.g. the old mis-parsed US school-district headline."""
+    broader-market UK events (which carry a confidence tier). Drops legacy
+    events persisted before the gate existed (no confidence + not watchlist)
+    AND — self-heal — any event whose person field is a mis-parsed headline
+    fragment rather than a real name, e.g. the old US school-district
+    'To Replace Retiring … As Dist' row. Departure-only events (no person)
+    are unaffected."""
+    person = e.get("person_name") or e.get("person") or ""
+    if person and not _looks_like_real_person(person):
+        return False
     return _event_on_watchlist(e) or e.get("confidence") in ("high", "medium")
 
 
@@ -614,6 +620,43 @@ def list_all() -> list[dict]:
     # predictor_pipeline.all_predictors' in-memory filtering.
     kept, _ = purge_triaged(_load_events())
     return _watchlist_first([e for e in kept if _event_kept(e)])
+
+
+def opportunity_value(event: dict) -> float:
+    """Opportunity value for a vacated senior-comms seat, on the same scale
+    as predictors/funding (~0.4–2.5) so it interleaves in the Pre-Market
+    panel. A vacated seat is the highest-intent signal there is — the seat is
+    open *now* — so a watchlist Director/CCO seat ranks at the top; recency
+    decays it across the ~6-month replacement-search window."""
+    role = (event.get("role") or event.get("vacated_role") or "").lower()
+    watchlist = event.get("confidence") == "high" or _event_on_watchlist(event)
+    if any(t in role for t in ("chief", "cco", "director")):
+        base = 2.0
+    elif "head" in role:
+        base = 1.5
+    else:
+        base = 1.2
+    if not watchlist:
+        base *= 0.65   # broader-market UK seat (not a named watchlist account)
+    weeks = 0.0
+    try:
+        det = (event.get("detected_at") or "").replace("Z", "+00:00")
+        if det:
+            weeks = max(0.0, (datetime.now(timezone.utc)
+                              - datetime.fromisoformat(det)).days / 7.0)
+    except Exception:
+        weeks = 0.0
+    decay = 1.0 if weeks <= 8 else max(0.4, 1.0 - (weeks - 8) / 24.0)
+    return round(base * decay, 3)
+
+
+def list_vacated_seats() -> list[dict]:
+    """Active replacement-search plays — the vacated-seat (old-co) side, which
+    is the commission play — for the Pre-Market panel. One row per open
+    senior-comms seat. The speculative re-org-watch (new-co) side is not
+    surfaced here."""
+    return [e for e in list_active()
+            if e.get("old_company") and e.get("old_co_status", "active") == "active"]
 
 
 def mark(event_id: str, side: str, status: str) -> bool:
