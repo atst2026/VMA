@@ -160,6 +160,8 @@ class CascadeEvent:
     new_co_status: str = "active"   # active / called / dismissed
     old_co_opener: str = ""
     new_co_opener: str = ""
+    # high = touches a watchlist account; medium = broader-market UK seat.
+    confidence: str = "high"
 
 
 def _now_iso() -> str:
@@ -568,20 +570,6 @@ def purge_triaged(events: list[dict],
 
 
 # ----- public API -----------------------------------------------------
-def list_active() -> list[dict]:
-    """Events where at least one side (old-co or new-co) still has an
-    active BD action. Hides events Sara has fully triaged. Watchlist-gated
-    (same as list_all) so legacy off-watchlist events don't leak into the
-    Top-3 builder."""
-    out = []
-    for e in _load_events():
-        old_st = e.get("old_co_status", "active")
-        new_st = e.get("new_co_status", "active")
-        if (old_st == "active" or new_st == "active") and _event_on_watchlist(e):
-            out.append(e)
-    return out
-
-
 def _event_on_watchlist(e: dict) -> bool:
     """True if either side of the event resolves to a watchlist account.
     Fail-open: if the watchlist can't load, resolve_account returns the
@@ -593,16 +581,39 @@ def _event_on_watchlist(e: dict) -> bool:
     return False
 
 
+def _event_kept(e: dict) -> bool:
+    """Read-path relevance filter. Keeps watchlist events AND the newer
+    broader-market UK events (which carry a confidence tier). Drops only
+    legacy events persisted before the gate existed (no confidence + not
+    watchlist) — e.g. the old mis-parsed US school-district headline."""
+    return _event_on_watchlist(e) or e.get("confidence") in ("high", "medium")
+
+
+def _watchlist_first(events: list[dict]) -> list[dict]:
+    """Stable sort putting watchlist/high-confidence seats first while
+    preserving the detected-at recency order within each tier."""
+    return sorted(events, key=lambda e: e.get("confidence", "high") != "high")
+
+
+def list_active() -> list[dict]:
+    """Events where at least one side (old-co or new-co) still has an
+    active BD action. Hides fully-triaged events; filters legacy junk so it
+    can't leak into the Top-3 builder. Watchlist/high-confidence first."""
+    out = []
+    for e in _load_events():
+        old_st = e.get("old_co_status", "active")
+        new_st = e.get("new_co_status", "active")
+        if (old_st == "active" or new_st == "active") and _event_kept(e):
+            out.append(e)
+    return _watchlist_first(out)
+
+
 def list_all() -> list[dict]:
     # Hide events triaged > TRIAGED_RETENTION_DAYS ago immediately on the
     # read path (the daily scour persists the actual removal). Mirrors
     # predictor_pipeline.all_predictors' in-memory filtering.
     kept, _ = purge_triaged(_load_events())
-    # Defensive watchlist gate on the read path: drop legacy events
-    # persisted before the detector gained the gate (e.g. the old
-    # mis-parsed US school-district headline), so they vanish from the
-    # board immediately rather than waiting for a re-scour.
-    return [e for e in kept if _event_on_watchlist(e)]
+    return _watchlist_first([e for e in kept if _event_kept(e)])
 
 
 def mark(event_id: str, side: str, status: str) -> bool:
@@ -660,27 +671,48 @@ def _load_signals_raw() -> list[dict]:
         return []
 
 
+# Broader-market UK-relevance gate (non-watchlist vacated-seat tier only).
+# A watchlist seat is relevant wherever it's reported; a non-watchlist seat
+# is only a UK-desk lead if it is UK.
+_UK_GEO_RX = re.compile(
+    r"\b(?:uk|u\.k\.|united kingdom|britain|british|england|scotland|"
+    r"scottish|wales|welsh|northern ireland|london|manchester|birmingham|"
+    r"leeds|glasgow|edinburgh|bristol|liverpool|cambridge|oxford|cardiff|"
+    r"belfast|ftse)\b|\.co\.uk\b",
+    re.IGNORECASE,
+)
+
+
+def _is_uk(geo: str, text: str) -> bool:
+    if (geo or "").upper() == "UK":
+        return True
+    return bool(_UK_GEO_RX.search(text or ""))
+
+
 def _detect_events(signals: list[dict]) -> list[dict]:
-    """Pure detection + watchlist gate (no persistence). Returns one
-    side-resolved move dict per emitted event. Every event must touch the
-    watchlist:
+    """Pure detection + tiered relevance gate (no persistence). One
+    side-resolved move dict per emitted event:
 
-      * vacated-seat (old-co) side — sourced from following.detect_following
-        (arrivals "from <WatchlistCo>" + pure departures), already
-        watchlist-resolved;
-      * re-org-watch (new-co) side — the arrival's new employer, kept only
-        if it resolves to a watchlist account.
+      * REPLACEMENT SEARCH (old-co / vacated seat) — the commission play.
+        Surfaced when the vacated seat's employer is a watchlist account
+        (confidence=high) OR any UK employer (confidence=medium / broader
+        market): a vacated senior-comms seat is a search mandate anywhere in
+        the UK, not only at the ~550 watchlist names.
+      * RE-ORG WATCH (new-co) — speculative team build-out, kept
+        WATCHLIST-ONLY (not worth surfacing for a random employer).
 
-    An event with neither side on the watchlist is dropped — the precision
-    gate that removes off-patch / mis-parsed headlines."""
+    Precision floors keep junk out: the move must carry a senior-comms role
+    + move verb (following's gate); the broader tier additionally requires
+    UK relevance AND a sane employer name (following._looks_like_company).
+    Off-patch / mis-parsed US headlines resolve to nothing on both tiers and
+    are dropped."""
     from tool.account_match import resolve_account
     from tool import following
 
-    # Watchlist-gated vacated seats, keyed by source URL so we can pair them
-    # back to the arrival headline that produced them.
+    # Vacated seats — watchlist + broader-market UK — keyed by source URL.
     seats_by_url: dict[str, dict] = {}
     try:
-        for r in following.detect_following(signals):
+        for r in following.detect_following(signals, include_unresolved=True):
             seats_by_url.setdefault(r.get("url", ""), r)
     except Exception as e:
         log.info("cascade: following extract failed: %s", e)
@@ -690,31 +722,39 @@ def _detect_events(signals: list[dict]) -> list[dict]:
         if not isinstance(s, dict):
             continue
         title = s.get("title") or ""
+        summary = s.get("summary") or ""
         url = s.get("url") or ""
+        text = title + " . " + summary
+
         move = _extract_move(title)
 
-        # New-co (re-org watch) side: only if the new employer is watchlist.
+        # Re-org-watch (new-co) side: WATCHLIST ONLY (speculative).
         new_co_raw = (move or {}).get("new_co", "")
         new_acct = resolve_account(new_co_raw, new_co_raw) if new_co_raw else None
 
-        # Old-co (replacement search / vacated seat) side: prefer the
-        # watchlist-resolved previous employer from following; else fall back
-        # to the move's own old-co if IT resolves to the watchlist.
+        # Replacement-search (old-co / vacated seat) side: watchlist (high)
+        # OR a UK employer (medium / broader market).
         seat = seats_by_url.get(url)
         old_acct = None
+        old_watchlist = False
         old_role = ""
         if seat:
-            old_acct = seat.get("company") or None
             old_role = seat.get("vacated_role", "") or ""
+            if seat.get("watchlist"):
+                old_acct, old_watchlist = (seat.get("company") or None), True
+            elif _is_uk(seat.get("geo", ""), text):
+                old_acct = seat.get("company") or None        # broader-market UK
         elif move and move.get("old_co"):
-            old_acct = resolve_account(move["old_co"], move["old_co"])
+            r = resolve_account(move["old_co"], move["old_co"])
+            if r:
+                old_acct, old_watchlist = r, True
 
-        # WATCHLIST GATE.
         if not (old_acct or new_acct):
             continue
 
         person = (move or {}).get("person", "") or ""
         role = (move or {}).get("role", "") or old_role
+        confidence = "high" if (old_watchlist or new_acct) else "medium"
         out.append({
             "person":      person,
             "role":        role,
@@ -722,6 +762,7 @@ def _detect_events(signals: list[dict]) -> list[dict]:
             "new_company": new_acct or "",
             "old_status":  "active" if old_acct else "n/a",
             "new_status":  "active" if new_acct else "n/a",
+            "confidence":  confidence,
             "url":         url,
             "title":       title,
             "published":   s.get("published") or "",
@@ -775,6 +816,7 @@ def scour(signals: list[dict] | None = None) -> dict:
                                if d["old_status"] == "active" else ""),
                 new_co_opener=(_new_co_opener(person, d["role"], new_co)
                                if d["new_status"] == "active" else ""),
+                confidence=d.get("confidence", "high"),
             )
             events.append(asdict(ev))
             known.add(eid)
