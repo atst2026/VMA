@@ -97,20 +97,41 @@ def _predicted_role_for(stk: Stack) -> str:
     return "Senior Comms hire"
 
 
-def _probability_for(score: float, depth: int) -> int:
-    """Convert raw stack score into a calibrated probability % for the
-    'PREDICTED BRIEFS — next 90 days' display. Loose calibration based
-    on observed stacker output ranges:
-      depth=1 single trigger  ~score 0.6-1.5 → 45-65%
-      depth=2 stacked         ~score 1.5-3.0 → 65-82%
-      depth=3+ heavy stack    ~score 3.0+    → 82-92%
-    Capped 35-92% so we never overclaim or underclaim."""
-    base = 40 + score * 10
-    if depth >= 2:
-        base += 8
-    if depth >= 3:
-        base += 6
-    return int(max(35, min(92, base)))
+def _imminence_mult(window_weeks: tuple | None) -> float:
+    """Sooner predicted hiring window = hotter, more actionable opportunity
+    for an AD. Scales the signal strength by how soon the comms hire is
+    likely to be needed."""
+    if (not window_weeks or window_weeks[0] is None
+            or window_weeks[1] is None):
+        return 0.85
+    mid = (window_weeks[0] + window_weeks[1]) / 2.0
+    if mid <= 8:
+        return 1.25
+    if mid <= 16:
+        return 1.05
+    if mid <= 26:
+        return 0.90
+    return 0.80
+
+
+def strength_band(score: float, window_weeks: tuple | None = None) -> str:
+    """Opportunity-strength tier shown on Pre-Market Signals — what an AD
+    actually needs: how strong the signal is that a senior-comms hire is
+    soon to be needed. Combines signal strength (the ranker score: trigger
+    weight × stacking × company tier × recency × UK) with imminence (how
+    soon the predicted hiring window opens). Banded Low/Med/High rather than
+    dressed up as a spurious probability %.
+
+      high   = stacked triggers, or a strong + imminent single trigger
+      medium = a solid single trigger
+      low    = a weak and/or far-off lone signal
+    """
+    opp = (score or 0.0) * _imminence_mult(window_weeks)
+    if opp >= 1.5:
+        return "high"
+    if opp >= 0.8:
+        return "medium"
+    return "low"
 
 
 def _serialise_stack(stk: Stack, score: float, now_iso: str) -> dict:
@@ -119,7 +140,7 @@ def _serialise_stack(stk: Stack, score: float, now_iso: str) -> dict:
         "company": stk.company,
         "score": score,
         "depth": stk.depth,
-        "probability": _probability_for(score, stk.depth),
+        "strength": strength_band(score, w),
         "predicted_role": _predicted_role_for(stk),
         "window_weeks_min": w[0] if w else None,
         "window_weeks_max": w[1] if w else None,

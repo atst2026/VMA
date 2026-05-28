@@ -579,6 +579,20 @@ def load_latest_predictive() -> list[dict]:
         p_item["advisory"] = advisory_for(
             evs[0].get("trigger_key") if evs and isinstance(evs[0], dict) else None
         )
+        # Opportunity-strength band (low/medium/high) for the chip. Derive it
+        # for entries persisted before the band existed, from their stored
+        # score + predicted-hire window, so the dashboard shows it without
+        # waiting for a fresh brief.
+        if not p_item.get("strength"):
+            _ww = ((p_item.get("window_weeks_min"), p_item.get("window_weeks_max"))
+                   if p_item.get("window_weeks_min") is not None else None)
+            p_item["strength"] = predictor_pipeline.strength_band(
+                p_item.get("score") or 0.0, _ww)
+    # Rank High → Medium → Low, then by raw score within a band, so the
+    # strongest, soonest opportunities sit at the top of the panel.
+    _band_rank = {"high": 0, "medium": 1, "low": 2}
+    data.sort(key=lambda d: (_band_rank.get(d.get("strength", "low"), 3),
+                             -(d.get("score") or 0.0)))
     return data
 
 
@@ -2345,7 +2359,7 @@ TEMPLATE = r"""
     }
     .predictor .evidence strong { color: var(--navy); font-weight: 600; }
 
-    /* Predicted role + probability chips on the row summary */
+    /* Predicted role + opportunity-strength chips on the row summary */
     .role-chip {
       display: inline-flex;
       align-items: center;
@@ -2358,19 +2372,22 @@ TEMPLATE = r"""
       border: 1px solid rgba(201, 100, 66, 0.22);
       border-radius: 8px;
     }
-    .prob-chip {
+    /* Opportunity-strength band (replaces the old probability %). */
+    .strength-chip {
       display: inline-flex;
       align-items: center;
       padding: 2px 9px;
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 700;
-      letter-spacing: 0.02em;
-      color: var(--text);
-      background: var(--surface-elevated);
-      border: 1px solid var(--border);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
       border-radius: 8px;
-      font-variant-numeric: tabular-nums;
+      border: 1px solid transparent;
+      cursor: help;
     }
+    .strength-chip.s-high   { color: #2e7d50; background: #e7f3ec; border-color: #bfe3cd; }
+    .strength-chip.s-medium { color: #8a5a00; background: #fff4e0; border-color: #f0d9ad; }
+    .strength-chip.s-low    { color: var(--text-muted); background: var(--surface-elevated); border-color: var(--border); }
     .panel-header h2 .window-sub {
       font-weight: 400;
       color: var(--text-muted);
@@ -3139,7 +3156,7 @@ TEMPLATE = r"""
                 <span class="title">{{ p.company }}</span>
                 <span class="chips">
                   {% if p.predicted_role %}<span class="role-chip">{{ p.predicted_role }}</span>{% endif %}
-                  {% if p.probability %}<span class="prob-chip">{{ p.probability }}%</span>{% endif %}
+                  {% if p.strength %}<span class="strength-chip s-{{ p.strength }}" title="Opportunity strength — how strong the signal is that a senior-comms hire is soon to be needed. Combines trigger weight, stacking, recency, UK weighting and how soon the predicted hiring window opens.">{{ p.strength|capitalize }}</span>{% endif %}
                   {% if p.window_label %}<span class="window-badge">{{ p.window_label }}</span>{% endif %}
                   {% if p.status == 'followed_up' %}<span class="status-badge followed-up">✓ followed up</span>{% endif %}
                   {% if p.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
