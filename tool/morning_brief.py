@@ -362,20 +362,19 @@ def main() -> int:
     _persist_state("tool/state/latest_signals.json", _signals_payload,
                    "state: morning-brief latest_signals.json")
 
-    # Mandates Worth Following — vacated-seat / backfill detector. Runs
-    # over the RAW scoured signals (like the predictor): when a senior
-    # comms person is publicly announced moving, the seat they LEFT at
-    # a watchlist company becomes a live brief.
+    # Vacated Seats & Senior Moves — unified senior-comms-move engine
+    # (merges the former Hire Watch + Mandates Worth Following). Runs over
+    # the RAW scoured signals: a senior comms person publicly moving means
+    # the seat they LEFT at a watchlist firm is a live brief (replacement
+    # search), and a senior hire AT a watchlist firm is a re-org to watch.
+    # Watchlist-gated, so off-patch headlines are dropped. Now part of the
+    # daily brief (previously a manual dashboard-only scour).
     try:
-        from tool import following as _fol
-        following_feed = _fol.detect_following(signals)
-        (STATE_DIR / "latest_following.json").write_text(
-            json.dumps(following_feed, indent=2, default=str)
-        )
-        log.info("Mandates Worth Following: %d vacated-seat records from "
-                 "%d raw signals", len(following_feed), len(signals))
+        from tool import cascade as _cascade
+        cstats = _cascade.scour(signals)
+        log.info("Vacated Seats & Senior Moves: %s", cstats)
     except Exception as e:
-        log.info("following detector failed: %s", e)
+        log.info("cascade scour failed: %s", e)
 
     # Calendar Pulses — deterministic, date-driven placement windows
     # (FCA Consumer Duty board-report ramp, UK SRS first-cycle build-up,

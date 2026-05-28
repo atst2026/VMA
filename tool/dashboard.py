@@ -1369,17 +1369,6 @@ def api_competitor_mandates():
                     "min_age_days": min_age, "per_source": min_age is None})
 
 
-@app.route("/api/following", methods=["GET"])
-@_auth_required
-def api_following():
-    """Mandates Worth Following — vacated-seat / backfill detector. A
-    senior comms person publicly moved; the seat they left at a
-    watchlist company is the live brief."""
-    from tool.following import load_following
-    rows = load_following(limit=40)
-    return jsonify({"rows": rows, "total": len(rows)})
-
-
 @app.route("/api/pulses", methods=["GET"])
 @_auth_required
 def api_pulses():
@@ -1959,17 +1948,16 @@ TEMPLATE = r"""
     .panel-body::-webkit-scrollbar-thumb:hover { background: var(--navy-soft); }
 
     /* ===== Calendar Pulses — year ribbon (Alternate A) =====
-       Hire Watch + Placement Windows sit side-by-side; both panels share
-       the same fixed 400px height for visual parity. Bodies scroll
-       internally. */
-    /* Two full-height (400px) sections side by side: the combined
-       Hire Watch & Framework Windows panel, and Placement Windows. Bodies
-       scroll internally. minmax(0,1fr) + min-width:0 keep the split 50/50. */
+       Vacated Seats & Senior Moves + Placement Windows sit side-by-side;
+       both panels share the same fixed 400px height for visual parity.
+       Bodies scroll internally. minmax(0,1fr) + min-width:0 keep the split
+       a true 50/50. */
     #hire-calendar-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     #hire-calendar-row > .panel { min-width: 0; }
     #hire-calendar-row .panel { height: 400px; display: flex; flex-direction: column; }
     #hire-calendar-row .panel-body { max-height: none; flex: 1; min-height: 0; overflow-y: auto; }
-    /* ===== Unified findings list (Hire Watch moves + Framework windows) =====
+    /* ===== Unified findings list (.row2 — Vacated Seats moves + Framework
+       Eligibility windows share this row template) =====
        One clean row per finding; click the head to expand its detail. A small
        HW/FW tag on the right names the type. */
     .row2 { border-bottom: 1px solid var(--border); }
@@ -3229,16 +3217,17 @@ TEMPLATE = r"""
        year ribbon. Funding-Round signals are folded into Predicted
        Briefs above; rare detectors live in Specialist Signals below. -->
 
-  <!-- HIRE WATCH + PLACEMENT WINDOWS side-by-side. Hire Watch (cascade
-       moves) on the left; Placement Windows (statutory/regulatory +
-       policy pulses ONLY) on the right. Framework Windows were unglued
-       from Hire Watch into the Framework Eligibility panel (Band C,
-       below); industry events into Events & Networking. Both stack under
-       900px. -->
+  <!-- VACATED SEATS & SENIOR MOVES + PLACEMENT WINDOWS side-by-side.
+       Vacated Seats (cascade engine: watchlist-gated senior-comms moves —
+       replacement-search + re-org-watch, merges the former Hire Watch +
+       Mandates Worth Following) on the left; Placement Windows
+       (statutory/regulatory + policy pulses ONLY) on the right. Framework
+       Windows were unglued into the Framework Eligibility panel (Band C);
+       industry events into Events & Networking. Both stack under 900px. -->
   <div class="row" id="hire-calendar-row">
     <div class="panel" id="cascade-row">
       <div class="panel-header">
-        <h2>Hire Watch</h2>
+        <h2>Vacated Seats &amp; Senior Moves</h2>
         <span style="display:flex;align-items:center;gap:10px;">
           <button type="button" class="btn-mini" id="cs-scour">Re-scan</button>
           <span class="count" id="cascade-count">{{ cascade_events|length }}</span>
@@ -3252,7 +3241,7 @@ TEMPLATE = r"""
       </div>
       <div class="panel-body" id="cascade-body">
         {% if cascade_events|length == 0 %}
-          <div class="empty compact">Nothing in the latest brief.</div>
+          <div class="empty compact">No watchlist senior-comms moves in the latest brief. This panel only surfaces moves where the vacated seat's firm — or the new employer — is a watchlist account, so off-patch headlines are filtered out rather than shown as noise.</div>
         {% endif %}
 
         {% for c in cascade_events %}
@@ -3264,8 +3253,8 @@ TEMPLATE = r"""
           {% set _new_on = new_st != 'n/a' %}
           <div class="row2 cascade-item" data-event-id="{{ c.event_id }}" data-cs-bucket="{{ c.cs_bucket }}">
             <div class="row2-head">
-              <span class="typ hw">HW</span>
-              <span class="row2-title">{{ c.person_name }}{% if c.role %} &rarr; {{ c.role }}{% endif %}</span>
+              <span class="typ hw">VS</span>
+              <span class="row2-title">{% if c.person_name %}{{ c.person_name }}{% if c.role %} &rarr; {{ c.role }}{% endif %}{% else %}{{ (c.role or 'Senior comms seat')|title }}{% if c.old_company %} &middot; {{ c.old_company }}{% endif %}{% endif %}</span>
               <span class="row2-tags">
                 {% if _old_on %}<span class="ipill s">Search</span>{% endif %}
                 {% if _new_on %}<span class="ipill w">Watch</span>{% endif %}
@@ -3329,11 +3318,11 @@ TEMPLATE = r"""
     </div>
   </div>
 
-  <!-- SPECIALIST SIGNALS — Mandates Worth Following / Water SAR /
-       Contract-End / Mandates Worth Stealing, collapsed into one panel
-       that is HIDDEN unless a sub-detector actually has rows. Each
-       sub-section also hides itself when empty. Detectors + /api
-       endpoints unchanged; pure presentation. -->
+  <!-- SPECIALIST SIGNALS — Water SAR / Contract-End / Mandates Worth
+       Stealing, collapsed into one panel that is HIDDEN unless a
+       sub-detector actually has rows. Each sub-section also hides itself
+       when empty. (Mandates Worth Following was merged into the Vacated
+       Seats & Senior Moves panel above.) -->
   <div class="row row-full" id="specialist-row" style="display:none">
     <div class="panel">
       <div class="panel-header">
@@ -3341,11 +3330,6 @@ TEMPLATE = r"""
         <span class="count" id="specialist-count">—</span>
       </div>
       <div class="panel-body" id="specialist-body">
-
-        <div class="specialist-sub" id="sub-following" style="display:none">
-          <h3 class="specialist-h">Mandates Worth Following</h3>
-          <div id="following-body"></div>
-        </div>
 
         <div class="specialist-sub" id="sub-watersar" style="display:none">
           <h3 class="specialist-h">Water Special-Administration Watch</h3>
@@ -4384,46 +4368,8 @@ async function loadContractEnd() {
   }
 }
 
-// ---------- Mandates Worth Following (vacated-seat detector) ----------
-async function loadFollowing() {
-  const body = document.getElementById('following-body');
-  const sub = document.getElementById('sub-following');
-  try {
-    const r = await fetch('/api/following');
-    const j = await r.json();
-    const rows = (j && j.rows) || [];
-    if (!rows.length) { sub.style.display = 'none'; return 0; }
-    const out = ['<ul style="margin:6px 0;padding:0;list-style:none;">'];
-    for (const f of rows.slice(0, 14)) {
-      const conf = (f.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
-      out.push(
-        '<li style="padding:8px 0;border-bottom:1px solid var(--border);">' +
-          '<span class="' + conf + '">' + esc(f.confidence || '') + '</span> ' +
-          '<strong style="color:var(--text);">' + esc(f.company || '(unknown)') + '</strong>' +
-          ' &middot; <span style="color:var(--text);">' + esc(f.vacated_role || 'senior comms seat') + '</span>' +
-          '<span style="color:var(--text-muted);font-size:12px;display:block;margin-top:2px;">' +
-            (f.url
-              ? '<a href="' + safeUrl(f.url) + '" target="_blank" rel="noopener noreferrer" style="color:#0366d6;">' + esc(f.evidence || 'source') + '</a>'
-              : esc(f.evidence || '')) +
-            (f.source ? ' &middot; ' + esc(f.source) : '') +
-            (f.sector ? ' &middot; ' + esc(f.sector) : '') +
-          '</span>' +
-          (f.advisory ? '<div class="advisory-line">' + esc(f.advisory) + '</div>' : '') +
-        '</li>'
-      );
-    }
-    out.push('</ul>');
-    body.innerHTML = out.join('');
-    sub.style.display = '';
-    return rows.length;
-  } catch (e) {
-    sub.style.display = 'none';
-    return 0;
-  }
-}
-
 // ---------- Specialist Signals orchestrator ----------
-// Loads the four low-frequency sub-detectors via their unchanged /api
+// Loads the low-frequency sub-detectors via their unchanged /api
 // endpoints; reveals only the sub-sections that have rows, and the
 // whole panel only if at least one did. All empty -> panel stays
 // hidden (the dashboard never shows an empty Specialist panel).
@@ -4433,7 +4379,7 @@ async function loadSpecialistSignals() {
   let total = 0;
   try {
     const counts = await Promise.all([
-      loadFollowing(), loadWaterSar(), loadContractEnd(), loadMandates(),
+      loadWaterSar(), loadContractEnd(), loadMandates(),
     ]);
     total = counts.reduce((a, b) => a + (b || 0), 0);
   } catch (e) {
