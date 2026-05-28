@@ -2006,15 +2006,9 @@ TEMPLATE = r"""
     }
     .panel-body::-webkit-scrollbar-thumb:hover { background: var(--navy-soft); }
 
-    /* ===== Calendar Pulses — year ribbon (Alternate A) =====
-       Vacated Seats & Senior Moves + Placement Windows sit side-by-side;
-       both panels share the same fixed 400px height for visual parity.
-       Bodies scroll internally. minmax(0,1fr) + min-width:0 keep the split
-       a true 50/50. */
-    #hire-calendar-row { grid-template-columns: 1fr; }   /* Vacated Seats folded into Pre-Market; Placement Windows now full-width */
-    #hire-calendar-row > .panel { min-width: 0; }
-    #hire-calendar-row .panel { height: 400px; display: flex; flex-direction: column; }
-    #hire-calendar-row .panel-body { max-height: none; flex: 1; min-height: 0; overflow-y: auto; }
+    /* ===== Calendar & Context strip — Placement Windows + Events +
+       Frameworks, three compact columns in one row (Vacated Seats moved into
+       Pre-Market). See also #context-row below for the 3-up grid. ===== */
     /* ===== Unified findings list (.row2 — Vacated Seats moves + Framework
        Eligibility windows share this row template) =====
        One clean row per finding; click the head to expand its detail. A small
@@ -2045,10 +2039,6 @@ TEMPLATE = r"""
     .play.search .play-lab { color: #2e7d50; }
     .play-desc { font-size: 12px; color: var(--navy); margin-top: 3px; }
     .play .item-actions { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
-    @media (max-width: 900px) {
-      /* Stack vertically on mobile so neither panel is squashed. */
-      #hire-calendar-row { grid-template-columns: 1fr; }
-    }
     /* Funding-signal sub-section inside Predicted Briefs — visually
        same row template so funding rows sit inline among the
        tenure-driven predictors. */
@@ -2245,11 +2235,14 @@ TEMPLATE = r"""
     /* ===== Groundwork row: Events & Networking + Framework Eligibility =====
        Band-C reference pair; matched height + internal scroll like the
        Hire Watch / Placement Windows row above. */
-    #groundwork-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-    #groundwork-row > .panel { min-width: 0; }
-    #groundwork-row .panel { height: 360px; display: flex; flex-direction: column; }
-    #groundwork-row .panel-body { max-height: none; flex: 1; min-height: 0; overflow-y: auto; }
-    @media (max-width: 900px) { #groundwork-row { grid-template-columns: 1fr; } }
+    /* Calendar & Context strip: three compact columns in one row, reclaiming
+       the vertical space the old two-row groundwork layout used. */
+    #context-row { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+    #context-row > .panel { min-width: 0; }
+    #context-row .ctx-col { height: 340px; display: flex; flex-direction: column; }
+    #context-row .ctx-col .panel-body { max-height: none; flex: 1; min-height: 0; overflow-y: auto; }
+    @media (max-width: 1100px) { #context-row { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 760px)  { #context-row { grid-template-columns: 1fr; } }
     /* Eligibility-not-a-lead disclaimer atop Framework Eligibility. */
     .fw-note {
       font-size: 11px; color: var(--text-dim);
@@ -3331,22 +3324,6 @@ TEMPLATE = r"""
        (statutory/regulatory + policy pulses ONLY) on the right. Framework
        Windows were unglued into the Framework Eligibility panel (Band C);
        industry events into Events & Networking. Both stack under 900px. -->
-  <div class="row" id="hire-calendar-row">
-    <div class="panel" id="pulses-row">
-      <div class="panel-header">
-        <h2>Placement Windows</h2>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <button class="cal-headnew" id="pulses-new" type="button" style="display:none;">
-            <span class="cal-nd"></span><span id="pulses-new-n">0</span>&nbsp;new</button>
-          <span class="count" id="pulses-count">—</span>
-        </div>
-      </div>
-      <div class="panel-body" id="pulses-body">
-        <div class="empty compact">Loading…</div>
-      </div>
-    </div>
-  </div>
-
   <!-- SPECIALIST SIGNALS — Water SAR / Contract-End / Mandates Worth
        Stealing, collapsed into one panel that is HIDDEN unless a
        sub-detector actually has rows. Each sub-section also hides itself
@@ -3379,17 +3356,29 @@ TEMPLATE = r"""
     </div>
   </div>
 
-  <!-- GROUNDWORK & RELATIONSHIPS (Band C) — context, not a live lead list.
-       Left: Events & Networking (UK/EU comms awards, conferences, summits —
-       relationship / candidate-visibility moments, split out of the old BD
-       Calendar; loaded from /api/industry-events).
-       Right: Framework Eligibility (public-sector framework bid windows —
-       where VMA can compete; eligibility/BD groundwork, ~yearly cadence).
-       Unglued from the Hire Watch panel: a vacated seat is a commission
-       play, a framework window is eligibility-to-bid — different things.
-       Both stack under 900px. -->
-  <div class="row" id="groundwork-row">
-    <div class="panel">
+  <!-- CALENDAR & CONTEXT (Band C) — groundwork, not a live lead list. One
+       compact strip consolidating the three context feeds that used to span
+       two separate rows: Placement Windows (statutory/regulator date-driven
+       hiring build-ups), Events & Networking (comms awards/conferences/
+       summits), and Framework Eligibility (public-sector bid windows). All
+       three are subordinate to the live lead panels above; each keeps its own
+       AJAX loader / filter. Stacks 2-up under 1100px, 1-up under 760px. -->
+  <div class="row" id="context-row">
+    <div class="panel ctx-col" id="pulses-row">
+      <div class="panel-header">
+        <h2>Placement Windows</h2>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button class="cal-headnew" id="pulses-new" type="button" style="display:none;">
+            <span class="cal-nd"></span><span id="pulses-new-n">0</span>&nbsp;new</button>
+          <span class="count" id="pulses-count">—</span>
+        </div>
+      </div>
+      <div class="panel-body" id="pulses-body">
+        <div class="empty compact">Loading…</div>
+      </div>
+    </div>
+
+    <div class="panel ctx-col">
       <div class="panel-header">
         <h2>Events &amp; Networking</h2>
         <span class="count" id="events-count">—</span>
@@ -3399,7 +3388,7 @@ TEMPLATE = r"""
       </div>
     </div>
 
-    <div class="panel" id="framework-row">
+    <div class="panel ctx-col" id="framework-row">
       <div class="panel-header">
         <h2>Framework Eligibility</h2>
         <span class="count" id="framework-count">{{ framework_events|length }}</span>
