@@ -327,3 +327,23 @@ def load_funding(limit: int = 30) -> list[dict]:
         if _is_uk_relevant(text, cur):
             uk.append(r)
     return uk[:limit]
+
+
+_AMOUNT_DISP_RX = re.compile(r"(\d+(?:\.\d+)?)\s*(bn|b|m)?", re.IGNORECASE)
+
+
+def opportunity_value(record: dict) -> float:
+    """Raw opportunity value for a funding round, on the SAME scale as a
+    predictor's (so the Pre-Market panel can tier them together): a bigger
+    round implies a bigger comms build-out, and a GBP round is more
+    on-patch. ~£50m ≈ 1.0. The senior-comms hire window is a fixed ~6 months
+    so imminence is constant and not separately scored."""
+    amt = str(record.get("amount") or "")
+    is_gbp = amt[:1] == "£"
+    m = _AMOUNT_DISP_RX.search(amt)
+    if not m:
+        return 0.0
+    val = float(m.group(1))
+    if (m.group(2) or "m").lower() in ("bn", "b"):
+        val *= 1000.0
+    return (val / 50.0) * (1.0 if is_gbp else 0.85)
