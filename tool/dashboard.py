@@ -957,8 +957,16 @@ def index():
     for _f in funding_events:
         _f["_opp"] = _funding_opp(_f)
     _assign_opportunity_tiers(predictors + funding_events)
-    predictors.sort(key=lambda d: d.get("_opp") or 0.0, reverse=True)
-    funding_events.sort(key=lambda d: d.get("_opp") or 0.0, reverse=True)
+    # Interleave funding rows among the predictors by opportunity value, so a
+    # high-tier funding signal sits with the other High rows instead of being
+    # stranded at the bottom. One ordered list rendered in a single loop; each
+    # row carries a _kind discriminator for the template.
+    for _p in predictors:
+        _p["_kind"] = "predictor"
+    for _f in funding_events:
+        _f["_kind"] = "funding"
+    premarket_rows = sorted(predictors + funding_events,
+                            key=lambda d: d.get("_opp") or 0.0, reverse=True)
     from tool import framework_status as _fws
     _fwst = _fws.get_statuses()
     # `status` already holds the refresh-window state (refresh_window/live);
@@ -978,6 +986,7 @@ def index():
         leads=leads,
         predictors=predictors,
         funding_events=funding_events,
+        premarket_rows=premarket_rows,
         framework_events=framework_events,
         fw_active_count=_fw_counts["active"],
         fw_followed_count=_fw_counts["followed_up"],
@@ -3176,8 +3185,44 @@ TEMPLATE = r"""
         <button class="filter-pill" data-filter="all">All</button>
       </div>
       <div class="panel-body compact" id="predictor-list">
-        {% if predictors %}
-          {% for p in predictors %}
+        {% if premarket_rows %}
+          {% for row in premarket_rows %}
+          {% if row['_kind'] == 'funding' %}{% set f = row %}
+            <div class="item predictor funding-row" data-fid="{{ f.fid }}" data-status="{{ f.status }}" data-new="0">
+              <div class="row-summary">
+                <span class="rank">{{ loop.index }}</span>
+                <span class="title">{{ f.company }}</span>
+                <span class="chips">
+                  <span class="role-chip funding-chip-inline">Funding</span>
+                  <span class="role-chip">{{ f.amount }} {{ f.round }}</span>
+                  {% if f.strength %}<span class="strength-chip s-{{ f.strength }}" title="Opportunity strength — relative priority across the current Pre-Market panel. For a funding round: round size, GBP-weighting and the ~6-month senior-comms hire window.">{{ f.strength|capitalize }}</span>{% endif %}
+                  {% if f.status == 'followed_up' %}<span class="status-badge followed-up">&#10003; followed up</span>{% endif %}
+                  {% if f.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
+                </span>
+              </div>
+              <div class="row-preview">
+                <span class="signal-sub">{{ f.window }}{% if f.investor %} · led by {{ f.investor }}{% endif %}</span>
+              </div>
+              <div class="row-details">
+                {% if f.evidence %}
+                <div class="meta">
+                  <div class="evidence">
+                    <strong>Funding round:</strong> {{ f.evidence[:200] }}
+                    {% if f.url %} · <a href="{{ f.url | safe_url }}" target="_blank">source</a>{% endif %}
+                  </div>
+                </div>
+                {% endif %}
+                <div class="item-actions">
+                  {% if f.status == 'active' %}
+                    <button class="btn-mini funding-action" data-status="followed_up" type="button">&#10003; Mark followed up</button>
+                    <button class="btn-mini funding-action ghost" data-status="dismissed" type="button">&#10005; Dismiss</button>
+                  {% else %}
+                    <button class="btn-mini funding-action" data-status="active" type="button">&#8634; Restore</button>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          {% else %}{% set p = row %}
             <div class="item predictor" data-pid="{{ p.pid }}" data-status="{{ p.status }}" data-new="{{ '1' if p.is_new else '0' }}">
               <div class="row-summary">
                 <span class="rank">{{ loop.index }}</span>
@@ -3214,46 +3259,11 @@ TEMPLATE = r"""
                 </div>
               </div>
             </div>
+          {% endif %}
           {% endfor %}
         {% else %}
           <div class="empty compact">No predictors loaded yet. Click Daily Refresh.</div>
         {% endif %}
-        {% for f in funding_events %}
-          <div class="item predictor funding-row" data-fid="{{ f.fid }}" data-status="{{ f.status }}" data-new="0">
-            <div class="row-summary">
-              <span class="rank">{{ loop.index + predictors|length }}</span>
-              <span class="title">{{ f.company }}</span>
-              <span class="chips">
-                <span class="role-chip funding-chip-inline">Funding</span>
-                <span class="role-chip">{{ f.amount }} {{ f.round }}</span>
-                {% if f.strength %}<span class="strength-chip s-{{ f.strength }}" title="Opportunity strength — relative priority across the current Pre-Market panel. For a funding round: round size, GBP-weighting and the ~6-month senior-comms hire window.">{{ f.strength|capitalize }}</span>{% endif %}
-                {% if f.status == 'followed_up' %}<span class="status-badge followed-up">&#10003; followed up</span>{% endif %}
-                {% if f.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
-              </span>
-            </div>
-            <div class="row-preview">
-              <span class="signal-sub">{{ f.window }}{% if f.investor %} · led by {{ f.investor }}{% endif %}</span>
-            </div>
-            <div class="row-details">
-              {% if f.evidence %}
-              <div class="meta">
-                <div class="evidence">
-                  <strong>Funding round:</strong> {{ f.evidence[:200] }}
-                  {% if f.url %} · <a href="{{ f.url | safe_url }}" target="_blank">source</a>{% endif %}
-                </div>
-              </div>
-              {% endif %}
-              <div class="item-actions">
-                {% if f.status == 'active' %}
-                  <button class="btn-mini funding-action" data-status="followed_up" type="button">&#10003; Mark followed up</button>
-                  <button class="btn-mini funding-action ghost" data-status="dismissed" type="button">&#10005; Dismiss</button>
-                {% else %}
-                  <button class="btn-mini funding-action" data-status="active" type="button">&#8634; Restore</button>
-                {% endif %}
-              </div>
-            </div>
-          </div>
-        {% endfor %}
       </div>
     </div>
 
@@ -3706,6 +3716,7 @@ function applyFilter(name) {
   document.querySelectorAll('.filter-pill').forEach(p => {
     p.classList.toggle('active', p.dataset.filter === name);
   });
+  let vis = 0;
   document.querySelectorAll('#predictor-list .item.predictor').forEach(item => {
     const status = item.dataset.status || 'active';
     const isNew = item.dataset.new === '1';
@@ -3715,6 +3726,8 @@ function applyFilter(name) {
     else if (name === 'active') show = status === 'active';
     else show = status === name;
     item.style.display = show ? '' : 'none';
+    // Renumber the visible rows 1..N so the active view never reads 4,7,8,10…
+    if (show) { vis += 1; const r = item.querySelector('.rank'); if (r) r.textContent = vis; }
   });
 }
 document.addEventListener('click', (event) => {
@@ -3760,7 +3773,8 @@ function applyLeadFilter(name) {
                : (name === 'active') ? status === 'active'
                : status === name;
     item.style.display = show ? '' : 'none';
-    if (show) visible++;
+    // Renumber the visible rows 1..N so the active view never reads 2,3,6,7…
+    if (show) { visible++; const r = item.querySelector('.rank'); if (r) r.textContent = visible; }
   });
   const empty = document.getElementById('leads-empty');
   if (empty) empty.style.display = visible ? 'none' : '';
