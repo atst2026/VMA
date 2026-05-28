@@ -114,24 +114,13 @@ def _imminence_mult(window_weeks: tuple | None) -> float:
     return 0.80
 
 
-def strength_band(score: float, window_weeks: tuple | None = None) -> str:
-    """Opportunity-strength tier shown on Pre-Market Signals — what an AD
-    actually needs: how strong the signal is that a senior-comms hire is
-    soon to be needed. Combines signal strength (the ranker score: trigger
-    weight × stacking × company tier × recency × UK) with imminence (how
-    soon the predicted hiring window opens). Banded Low/Med/High rather than
-    dressed up as a spurious probability %.
-
-      high   = stacked triggers, or a strong + imminent single trigger
-      medium = a solid single trigger
-      low    = a weak and/or far-off lone signal
-    """
-    opp = (score or 0.0) * _imminence_mult(window_weeks)
-    if opp >= 1.5:
-        return "high"
-    if opp >= 0.8:
-        return "medium"
-    return "low"
+def opportunity_value(score: float, window_weeks: tuple | None = None) -> float:
+    """Raw opportunity value for a predictor = signal strength (the ranker
+    score: trigger weight × stacking × company tier × recency × UK) scaled
+    by imminence (sooner predicted hiring window = hotter). Fed into the
+    relative Low/Med/High tiering computed across the whole Pre-Market panel
+    at render time (see dashboard._assign_opportunity_tiers)."""
+    return (score or 0.0) * _imminence_mult(window_weeks)
 
 
 def _serialise_stack(stk: Stack, score: float, now_iso: str) -> dict:
@@ -140,7 +129,6 @@ def _serialise_stack(stk: Stack, score: float, now_iso: str) -> dict:
         "company": stk.company,
         "score": score,
         "depth": stk.depth,
-        "strength": strength_band(score, w),
         "predicted_role": _predicted_role_for(stk),
         "window_weeks_min": w[0] if w else None,
         "window_weeks_max": w[1] if w else None,

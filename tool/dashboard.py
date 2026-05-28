@@ -579,21 +579,39 @@ def load_latest_predictive() -> list[dict]:
         p_item["advisory"] = advisory_for(
             evs[0].get("trigger_key") if evs and isinstance(evs[0], dict) else None
         )
-        # Opportunity-strength band (low/medium/high) for the chip. Derive it
-        # for entries persisted before the band existed, from their stored
-        # score + predicted-hire window, so the dashboard shows it without
-        # waiting for a fresh brief.
-        if not p_item.get("strength"):
-            _ww = ((p_item.get("window_weeks_min"), p_item.get("window_weeks_max"))
-                   if p_item.get("window_weeks_min") is not None else None)
-            p_item["strength"] = predictor_pipeline.strength_band(
-                p_item.get("score") or 0.0, _ww)
-    # Rank High → Medium → Low, then by raw score within a band, so the
-    # strongest, soonest opportunities sit at the top of the panel.
-    _band_rank = {"high": 0, "medium": 1, "low": 2}
-    data.sort(key=lambda d: (_band_rank.get(d.get("strength", "low"), 3),
-                             -(d.get("score") or 0.0)))
+        # Opportunity value (signal strength × imminence). The Low/Med/High
+        # tier is assigned later relative to the whole Pre-Market panel
+        # (see _assign_opportunity_tiers) so it can't collapse to all-Low.
+        _ww = ((p_item.get("window_weeks_min"), p_item.get("window_weeks_max"))
+               if p_item.get("window_weeks_min") is not None else None)
+        p_item["_opp"] = predictor_pipeline.opportunity_value(
+            p_item.get("score") or 0.0, _ww)
     return data
+
+
+def _assign_opportunity_tiers(items: list[dict], floor: float = 0.20) -> None:
+    """Relative-priority Low/Med/High tiering across the Pre-Market panel
+    (predictors + funding pooled), with a dead-floor so a trivially weak
+    pipeline can't fake a 'High'.
+
+    Among items whose '_opp' clears the floor: the top ~20% are 'high', the
+    next ~30% 'medium', the rest 'low'. Items below the floor are 'low'.
+    Sets item['strength'] in place. This guarantees a usable spread for a
+    daily worklist regardless of the absolute score range (which drifts),
+    rather than collapsing everything into one band."""
+    import math
+    eligible = sorted(
+        (it for it in items if (it.get("_opp") or 0.0) >= floor),
+        key=lambda it: it.get("_opp") or 0.0, reverse=True,
+    )
+    m = len(eligible)
+    hi_cut = math.ceil(m * 0.20)
+    md_cut = math.ceil(m * 0.50)
+    for i, it in enumerate(eligible):
+        it["strength"] = "high" if i < hi_cut else ("medium" if i < md_cut else "low")
+    for it in items:
+        if (it.get("_opp") or 0.0) < floor:
+            it["strength"] = "low"
 
 
 # ---- Outreach message drafting -----------------------------------------
@@ -931,6 +949,16 @@ def index():
               "status": _fst.get(_fs.funding_id(f), "active")}
         for f in funding_events
     ]
+    # Unified opportunity tiering across Pre-Market (predictors + funding):
+    # one relative Low/Med/High scale, so the panel ranks the strongest,
+    # soonest opportunities first and funding rows are tiered consistently
+    # rather than left untagged.
+    from tool.funding_round import opportunity_value as _funding_opp
+    for _f in funding_events:
+        _f["_opp"] = _funding_opp(_f)
+    _assign_opportunity_tiers(predictors + funding_events)
+    predictors.sort(key=lambda d: d.get("_opp") or 0.0, reverse=True)
+    funding_events.sort(key=lambda d: d.get("_opp") or 0.0, reverse=True)
     from tool import framework_status as _fws
     _fwst = _fws.get_statuses()
     # `status` already holds the refresh-window state (refresh_window/live);
@@ -3156,7 +3184,7 @@ TEMPLATE = r"""
                 <span class="title">{{ p.company }}</span>
                 <span class="chips">
                   {% if p.predicted_role %}<span class="role-chip">{{ p.predicted_role }}</span>{% endif %}
-                  {% if p.strength %}<span class="strength-chip s-{{ p.strength }}" title="Opportunity strength — how strong the signal is that a senior-comms hire is soon to be needed. Combines trigger weight, stacking, recency, UK weighting and how soon the predicted hiring window opens.">{{ p.strength|capitalize }}</span>{% endif %}
+                  {% if p.strength %}<span class="strength-chip s-{{ p.strength }}" title="Opportunity strength — relative priority across the current Pre-Market panel: how strong the signal is that a senior-comms hire is soon to be needed (trigger weight, stacking, recency, UK weighting × how soon the predicted hiring window opens). High = your strongest current opportunities.">{{ p.strength|capitalize }}</span>{% endif %}
                   {% if p.window_label %}<span class="window-badge">{{ p.window_label }}</span>{% endif %}
                   {% if p.status == 'followed_up' %}<span class="status-badge followed-up">✓ followed up</span>{% endif %}
                   {% if p.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
@@ -3198,6 +3226,7 @@ TEMPLATE = r"""
               <span class="chips">
                 <span class="role-chip funding-chip-inline">Funding</span>
                 <span class="role-chip">{{ f.amount }} {{ f.round }}</span>
+                {% if f.strength %}<span class="strength-chip s-{{ f.strength }}" title="Opportunity strength — relative priority across the current Pre-Market panel. For a funding round: round size, GBP-weighting and the ~6-month senior-comms hire window.">{{ f.strength|capitalize }}</span>{% endif %}
                 {% if f.status == 'followed_up' %}<span class="status-badge followed-up">&#10003; followed up</span>{% endif %}
                 {% if f.status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
               </span>
