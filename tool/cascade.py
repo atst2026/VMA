@@ -1,37 +1,39 @@
-"""Cascade-Hire Watch — detects senior comms moves in public news and
-emits two derived BD actions per move:
+"""Vacated Seats & Senior Moves — the unified senior-comms-move engine.
 
-  (A) OLD-COMPANY EXIT-RISK
-      When a CCO / Director of Comms / Head of IC leaves a UK firm,
-      their direct reports are now flight risks AND the firm needs a
-      replacement search. Action: call the old firm proactively to
-      offer market mapping / replacement search.
+Detects senior comms moves in public news and emits two derived BD
+actions per move:
 
-  (B) NEW-COMPANY RE-ORG PRESSURE
-      Senior comms hires reshape their team within 6-12 months. The new
-      firm becomes a forward predictor pipeline entry. Action: track
-      the new firm for downstream hiring.
+  (A) REPLACEMENT SEARCH (vacated seat)
+      When a CCO / Director of Comms / Head of IC leaves a watchlist
+      firm, that firm needs a replacement search and its direct reports
+      are flight risks. The vacated seat is the highest-intent brief
+      there is. Action: pitch VMA to run the replacement search.
 
-Why this works
-==============
-Manufactures opportunities from already-public news that other firms
-of Sara's size don't systematically track. No JobAdder dependency.
-Detection is essentially free (reuses morning_brief's GDELT/RSS scour).
+  (B) RE-ORG WATCH (new company)
+      A senior comms hire reshapes their team within 6-12 months. When
+      the *new* employer is a watchlist firm, track it for downstream
+      briefs. Action: watch for team build-out.
 
-Honest precision expectations
-=============================
-Title-only regex extraction is noisy. Conversion path:
+This module merges the former "Hire Watch" (two-sided framing + triage)
+with "Mandates Worth Following" (the watchlist-gated vacated-seat
+detector). The vacated-seat side is sourced from following.detect_following
+(arrivals "from <WatchlistCo>" + pure departures), so departure-only
+announcements — the cleanest backfill signal — are now caught too.
 
-  ~5 cascade detections per week → ~40% have a usable old-co (so old-co
-  exit-risk angle fires on ~2/wk) → maybe 1 actionable call per week
-  off the (A) angle, with (B) maturing into Q2/Q3.
+PRECISION GATE (this is what changed)
+=====================================
+Every emitted event must touch the watchlist. Each side is resolved via
+tool.account_match.resolve_account; the event fires only if the vacated
+seat's firm OR the new employer is a watchlist account. An off-patch
+headline (e.g. a US school-district "communications director" story) no
+longer resolves to anything and is dropped. Other guards retained:
 
-Guards against false positives:
   1. Senior-comms title gate — must contain a tracked title fragment.
-  2. Entity-extraction confidence floor — drop events where the
-     extracted person looks like a non-person (single word, generic).
-  3. Suppression window — same person+new-co pair won't re-fire
-     within 90 days (slow signal; longer suppression than trade press).
+  2. Person/company sanity floor — drop mis-parsed non-person fragments.
+  3. Suppression window — the same move won't re-fire within 90 days.
+
+Runs in the daily morning brief (no longer manual-only). Detection is
+free (a pure parse of already-fetched GDELT/RSS signals).
 """
 from __future__ import annotations
 
@@ -433,17 +435,21 @@ def _extract_move(title: str) -> dict | None:
 
 # ----- openers --------------------------------------------------------
 def _old_co_opener(person: str, role: str, old_co: str) -> str:
-    return (f"Hi — saw that {person} just left {old_co}. Comms teams "
-            f"often reshape after a {role} departure; happy to share what "
-            f"we're seeing in the senior comms market and flag any movers "
-            f"in your space if useful.")
+    # Person may be unknown on a pure-departure announcement.
+    lead = (f"saw that {person} just left {old_co}" if person
+            else f"saw that {old_co}'s {role} seat looks to have opened up")
+    return (f"Hi — {lead}. Comms teams often reshape after a senior "
+            f"departure; happy to share what we're seeing in the senior "
+            f"comms market and flag any movers in your space if useful.")
 
 
 def _new_co_opener(person: str, role: str, new_co: str) -> str:
-    return (f"Hi {person.split()[0]} — congrats on the {role} role at "
-            f"{new_co}. New senior comms hires often reshape their teams "
-            f"in the first 6-12 months; would love a quick chat about how "
-            f"we can help if/when you're sizing up the team.")
+    greet = f"Hi {person.split()[0]} — " if person else "Hi — "
+    subj = (f"congrats on the {role} role at {new_co}" if person
+            else f"congrats to {new_co} on the new {role}")
+    return (f"{greet}{subj}. New senior comms hires often reshape their "
+            f"teams in the first 6-12 months; would love a quick chat about "
+            f"how we can help if/when you're sizing up the team.")
 
 
 # ----- events store ---------------------------------------------------
@@ -495,8 +501,7 @@ def _save_suppression(s: dict) -> None:
         pass
 
 
-def _is_suppressed(person: str, new_co: str, suppression: dict) -> bool:
-    key = f"{person.lower()}::{new_co.lower()}"
+def _is_suppressed_key(key: str, suppression: dict) -> bool:
     iso = suppression.get(key)
     if not iso:
         return False
@@ -565,14 +570,27 @@ def purge_triaged(events: list[dict],
 # ----- public API -----------------------------------------------------
 def list_active() -> list[dict]:
     """Events where at least one side (old-co or new-co) still has an
-    active BD action. Hides events Sara has fully triaged."""
+    active BD action. Hides events Sara has fully triaged. Watchlist-gated
+    (same as list_all) so legacy off-watchlist events don't leak into the
+    Top-3 builder."""
     out = []
     for e in _load_events():
         old_st = e.get("old_co_status", "active")
         new_st = e.get("new_co_status", "active")
-        if old_st == "active" or new_st == "active":
+        if (old_st == "active" or new_st == "active") and _event_on_watchlist(e):
             out.append(e)
     return out
+
+
+def _event_on_watchlist(e: dict) -> bool:
+    """True if either side of the event resolves to a watchlist account.
+    Fail-open: if the watchlist can't load, resolve_account returns the
+    company string, so events are kept rather than wrongly dropped."""
+    from tool.account_match import resolve_account
+    for co in (e.get("old_company", ""), e.get("new_company", "")):
+        if co and resolve_account(co, co):
+            return True
+    return False
 
 
 def list_all() -> list[dict]:
@@ -580,7 +598,11 @@ def list_all() -> list[dict]:
     # read path (the daily scour persists the actual removal). Mirrors
     # predictor_pipeline.all_predictors' in-memory filtering.
     kept, _ = purge_triaged(_load_events())
-    return kept
+    # Defensive watchlist gate on the read path: drop legacy events
+    # persisted before the detector gained the gate (e.g. the old
+    # mis-parsed US school-district headline), so they vanish from the
+    # board immediately rather than waiting for a re-scour.
+    return [e for e in kept if _event_on_watchlist(e)]
 
 
 def mark(event_id: str, side: str, status: str) -> bool:
@@ -616,9 +638,10 @@ def mark(event_id: str, side: str, status: str) -> bool:
 
 
 # ----- scour orchestration --------------------------------------------
-def _event_id(person: str, new_co: str, url: str) -> str:
+def _event_id(person: str, old_co: str, new_co: str, url: str) -> str:
     h = hashlib.sha1(
-        f"{person.lower()}|{new_co.lower()}|{url}".encode("utf-8")).hexdigest()
+        f"{person.lower()}|{old_co.lower()}|{new_co.lower()}|{url}"
+        .encode("utf-8")).hexdigest()
     return h[:16]
 
 
@@ -637,68 +660,125 @@ def _load_signals_raw() -> list[dict]:
         return []
 
 
-def scour() -> dict:
-    """Read morning_brief signals, find senior-comms moves, emit
-    cascade events. Cheap (no HTTP — pure parse of already-fetched
-    data) so safe to schedule daily."""
-    raw = _load_signals_raw()
+def _detect_events(signals: list[dict]) -> list[dict]:
+    """Pure detection + watchlist gate (no persistence). Returns one
+    side-resolved move dict per emitted event. Every event must touch the
+    watchlist:
+
+      * vacated-seat (old-co) side — sourced from following.detect_following
+        (arrivals "from <WatchlistCo>" + pure departures), already
+        watchlist-resolved;
+      * re-org-watch (new-co) side — the arrival's new employer, kept only
+        if it resolves to a watchlist account.
+
+    An event with neither side on the watchlist is dropped — the precision
+    gate that removes off-patch / mis-parsed headlines."""
+    from tool.account_match import resolve_account
+    from tool import following
+
+    # Watchlist-gated vacated seats, keyed by source URL so we can pair them
+    # back to the arrival headline that produced them.
+    seats_by_url: dict[str, dict] = {}
+    try:
+        for r in following.detect_following(signals):
+            seats_by_url.setdefault(r.get("url", ""), r)
+    except Exception as e:
+        log.info("cascade: following extract failed: %s", e)
+
+    out: list[dict] = []
+    for s in signals:
+        if not isinstance(s, dict):
+            continue
+        title = s.get("title") or ""
+        url = s.get("url") or ""
+        move = _extract_move(title)
+
+        # New-co (re-org watch) side: only if the new employer is watchlist.
+        new_co_raw = (move or {}).get("new_co", "")
+        new_acct = resolve_account(new_co_raw, new_co_raw) if new_co_raw else None
+
+        # Old-co (replacement search / vacated seat) side: prefer the
+        # watchlist-resolved previous employer from following; else fall back
+        # to the move's own old-co if IT resolves to the watchlist.
+        seat = seats_by_url.get(url)
+        old_acct = None
+        old_role = ""
+        if seat:
+            old_acct = seat.get("company") or None
+            old_role = seat.get("vacated_role", "") or ""
+        elif move and move.get("old_co"):
+            old_acct = resolve_account(move["old_co"], move["old_co"])
+
+        # WATCHLIST GATE.
+        if not (old_acct or new_acct):
+            continue
+
+        person = (move or {}).get("person", "") or ""
+        role = (move or {}).get("role", "") or old_role
+        out.append({
+            "person":      person,
+            "role":        role,
+            "old_company": old_acct or "",
+            "new_company": new_acct or "",
+            "old_status":  "active" if old_acct else "n/a",
+            "new_status":  "active" if new_acct else "n/a",
+            "url":         url,
+            "title":       title,
+            "published":   s.get("published") or "",
+            "source":      s.get("source") or "",
+        })
+    return out
+
+
+def scour(signals: list[dict] | None = None) -> dict:
+    """Detect senior-comms moves, watchlist-gate them, and persist new
+    events. Cheap (no HTTP — pure parse of already-fetched data) so it runs
+    in the daily brief. Pass `signals` to gate an in-memory batch; otherwise
+    reads latest_signals.json."""
+    raw = signals if signals is not None else _load_signals_raw()
     if not raw:
         log.info("cascade: no signals to parse")
         return {"signals_seen": 0, "moves_detected": 0, "events_new": 0,
                 "detail": "no signals available"}
 
-    candidates = [s for s in raw if (s.get("kind") or "").lower()
-                                    == "leadership_change"]
-    # Also include any non-leadership_change row whose title contains a
-    # senior comms title — the kind classifier doesn't catch every
-    # appointment-shaped headline.
-    if not candidates:
-        candidates = [s for s in raw
-                      if any(t in (s.get("title") or "").lower()
-                             for t in SENIOR_TITLES)]
+    detected = _detect_events(raw)
 
     with _locked(EVENTS_FILE):
         events = _load_events()
         known = {e["event_id"] for e in events}
         suppression = _load_suppression()
         new_count = 0
-        moves_detected = 0
 
-        for s in candidates:
-            title = s.get("title") or ""
-            move = _extract_move(title)
-            if not move:
+        for d in detected:
+            person, old_co, new_co = d["person"], d["old_company"], d["new_company"]
+            url = d["url"]
+            supp_key = f"{person.lower()}::{old_co.lower()}::{new_co.lower()}"
+            if _is_suppressed_key(supp_key, suppression):
                 continue
-            moves_detected += 1
-            if _is_suppressed(move["person"], move["new_co"], suppression):
-                continue
-            url = s.get("url") or ""
-            eid = _event_id(move["person"], move["new_co"], url)
+            eid = _event_id(person, old_co, new_co, url)
             if eid in known:
                 continue
             ev = CascadeEvent(
                 event_id=eid,
-                person_name=move["person"],
-                new_company=move["new_co"],
-                old_company=move["old_co"],
-                role=move["role"],
+                person_name=person,
+                new_company=new_co,
+                old_company=old_co,
+                role=d["role"],
                 article_url=url,
-                article_title=title,
-                article_date=s.get("published") or "",
-                source=s.get("source") or "",
+                article_title=d["title"],
+                article_date=d["published"],
+                source=d["source"],
                 detected_at=_now_iso(),
-                old_co_status="active" if move["old_co"] else "n/a",
-                new_co_status="active",
-                old_co_opener=(_old_co_opener(move["person"], move["role"],
-                                              move["old_co"])
-                               if move["old_co"] else ""),
-                new_co_opener=_new_co_opener(move["person"], move["role"],
-                                             move["new_co"]),
+                old_co_status=d["old_status"],
+                new_co_status=d["new_status"],
+                old_co_opener=(_old_co_opener(person, d["role"], old_co)
+                               if d["old_status"] == "active" else ""),
+                new_co_opener=(_new_co_opener(person, d["role"], new_co)
+                               if d["new_status"] == "active" else ""),
             )
             events.append(asdict(ev))
             known.add(eid)
-            suppression[f"{move['person'].lower()}::{move['new_co'].lower()}"] \
-                = _now_iso()
+            suppression[supp_key] = _now_iso()
             new_count += 1
 
         events, purged = purge_triaged(events)
@@ -708,8 +788,7 @@ def scour() -> dict:
             _save_suppression(suppression)
 
         return {"signals_seen": len(raw),
-                "candidates": len(candidates),
-                "moves_detected": moves_detected,
+                "moves_detected": len(detected),
                 "events_new": new_count,
                 "purged_triaged": purged}
 

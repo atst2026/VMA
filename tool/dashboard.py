@@ -1369,17 +1369,6 @@ def api_competitor_mandates():
                     "min_age_days": min_age, "per_source": min_age is None})
 
 
-@app.route("/api/following", methods=["GET"])
-@_auth_required
-def api_following():
-    """Mandates Worth Following — vacated-seat / backfill detector. A
-    senior comms person publicly moved; the seat they left at a
-    watchlist company is the live brief."""
-    from tool.following import load_following
-    rows = load_following(limit=40)
-    return jsonify({"rows": rows, "total": len(rows)})
-
-
 @app.route("/api/pulses", methods=["GET"])
 @_auth_required
 def api_pulses():
@@ -1959,17 +1948,16 @@ TEMPLATE = r"""
     .panel-body::-webkit-scrollbar-thumb:hover { background: var(--navy-soft); }
 
     /* ===== Calendar Pulses — year ribbon (Alternate A) =====
-       Hire Watch + BD Calendar sit side-by-side; both panels share
-       the same fixed 400px height for visual parity. Bodies scroll
-       internally. */
-    /* Two full-height (400px) sections side by side: the combined
-       Hire Watch & Framework Windows panel, and BD Calendar. Bodies scroll
-       internally. minmax(0,1fr) + min-width:0 keep the split a true 50/50. */
+       Vacated Seats & Senior Moves + Placement Windows sit side-by-side;
+       both panels share the same fixed 400px height for visual parity.
+       Bodies scroll internally. minmax(0,1fr) + min-width:0 keep the split
+       a true 50/50. */
     #hire-calendar-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     #hire-calendar-row > .panel { min-width: 0; }
     #hire-calendar-row .panel { height: 400px; display: flex; flex-direction: column; }
     #hire-calendar-row .panel-body { max-height: none; flex: 1; min-height: 0; overflow-y: auto; }
-    /* ===== Unified findings list (Hire Watch moves + Framework windows) =====
+    /* ===== Unified findings list (.row2 — Vacated Seats moves + Framework
+       Eligibility windows share this row template) =====
        One clean row per finding; click the head to expand its detail. A small
        HW/FW tag on the right names the type. */
     .row2 { border-bottom: 1px solid var(--border); }
@@ -2016,16 +2004,6 @@ TEMPLATE = r"""
       font-weight: 700; letter-spacing: .04em;
     }
 
-    /* Industry-event chip inside the BD Calendar detail card. */
-    .cal-eventchip {
-      display: inline-block;
-      padding: 2px 8px;
-      font-size: 10.5px; font-weight: 700; letter-spacing: .08em;
-      text-transform: uppercase;
-      background: #fff4e0; color: #8a5a00;
-      border-radius: 10px;
-    }
-
     .cal-wrap { padding: 14px 16px; }
     .cal-ribbon {
       display: grid;
@@ -2063,7 +2041,6 @@ TEMPLATE = r"""
     .cal-pip { width: 9px; height: 9px; border-radius: 50%; }
     .cal-pip.high  { background: var(--teal); }   /* high = teal */
     .cal-pip.med   { background: var(--green); }  /* policy-firming = green */
-    .cal-pip.event { background: #e89c4a; }       /* industry event = amber */
     /* NEW month: same reddening wash as a fresh finding row */
     .cal-tile.fresh {
       background: linear-gradient(90deg, var(--teal-soft), transparent 72%);
@@ -2168,6 +2145,50 @@ TEMPLATE = r"""
     .cal-legend { display: flex; gap: 16px; font-size: 10px; color: var(--text-dim); margin-top: 10px; }
     .cal-legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: middle; }
     .cal-dsep { border: 0; border-top: 1px solid var(--border); margin: 10px 0; }
+
+    /* ===== Events & Networking — light chronological list ===== */
+    .ev-list { list-style: none; margin: 0; padding: 0; }
+    .ev-item { padding: 11px 16px; border-bottom: 1px solid var(--border); }
+    .ev-item:last-child { border-bottom: none; }
+    .ev-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .ev-name { font-weight: 600; font-size: 12.5px; color: var(--navy); }
+    .ev-focus {
+      font: 700 9.5px/1.4 "Inter", sans-serif; letter-spacing: .04em;
+      text-transform: uppercase; padding: 2px 7px; border-radius: 10px; white-space: nowrap;
+    }
+    .ev-internal { background: var(--teal-soft); color: var(--teal-dark); }
+    .ev-external { background: #fff4e0; color: #8a5a00; }
+    .ev-mixed    { background: #eef0f3; color: #80868b; }
+    .ev-open {
+      font: 700 9.5px/1.4 "Inter", sans-serif; letter-spacing: .03em;
+      background: #e7f3ec; color: #2e7d50; padding: 2px 7px; border-radius: 10px;
+    }
+    .ev-when { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+    .ev-rm {
+      background: transparent; color: var(--text-muted);
+      border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px;
+      font: 500 10px/1.4 "Inter", sans-serif; cursor: pointer;
+      transition: border-color .12s, color .12s;
+    }
+    .ev-rm:hover { border-color: #A33A22; color: #A33A22; }
+    .ev-meta { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+    .ev-why  { font-size: 11.5px; color: var(--text-dim); margin-top: 4px; }
+    .ev-src  { font-size: 11px; margin-top: 4px; }
+    .ev-src a { color: #0366d6; text-decoration: none; }
+
+    /* ===== Groundwork row: Events & Networking + Framework Eligibility =====
+       Band-C reference pair; matched height + internal scroll like the
+       Hire Watch / Placement Windows row above. */
+    #groundwork-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    #groundwork-row > .panel { min-width: 0; }
+    #groundwork-row .panel { height: 360px; display: flex; flex-direction: column; }
+    #groundwork-row .panel-body { max-height: none; flex: 1; min-height: 0; overflow-y: auto; }
+    @media (max-width: 900px) { #groundwork-row { grid-template-columns: 1fr; } }
+    /* Eligibility-not-a-lead disclaimer atop Framework Eligibility. */
+    .fw-note {
+      font-size: 11px; color: var(--text-dim);
+      padding: 10px 16px 4px; line-height: 1.4;
+    }
 
     /* ITEMS */
     .item {
@@ -3196,27 +3217,31 @@ TEMPLATE = r"""
        year ribbon. Funding-Round signals are folded into Predicted
        Briefs above; rare detectors live in Specialist Signals below. -->
 
-  <!-- HIRE WATCH + BD CALENDAR side-by-side. Hire Watch (cascade
-       moves) on the left; BD Calendar (statutory pulses + UK/EU
-       industry events) on the right. Both stack under 900px. -->
+  <!-- VACATED SEATS & SENIOR MOVES + PLACEMENT WINDOWS side-by-side.
+       Vacated Seats (cascade engine: watchlist-gated senior-comms moves —
+       replacement-search + re-org-watch, merges the former Hire Watch +
+       Mandates Worth Following) on the left; Placement Windows
+       (statutory/regulatory + policy pulses ONLY) on the right. Framework
+       Windows were unglued into the Framework Eligibility panel (Band C);
+       industry events into Events & Networking. Both stack under 900px. -->
   <div class="row" id="hire-calendar-row">
     <div class="panel" id="cascade-row">
       <div class="panel-header">
-        <h2>Hire Watch &amp; Framework Windows</h2>
+        <h2>Vacated Seats &amp; Senior Moves</h2>
         <span style="display:flex;align-items:center;gap:10px;">
           <button type="button" class="btn-mini" id="cs-scour">Re-scan</button>
-          <span class="count" id="cascade-count">{{ cascade_events|length + framework_events|length }}</span>
+          <span class="count" id="cascade-count">{{ cascade_events|length }}</span>
         </span>
       </div>
       <div class="filter-bar" id="cs-filter-bar">
-        <button class="lead-filter-pill active" data-filter="active">Active <span class="pill-count" id="cs-pc-active">{{ cs_active_count + fw_active_count }}</span></button>
-        <button class="lead-filter-pill" data-filter="followed_up">Followed up <span class="pill-count" id="cs-pc-followed_up">{{ cs_followed_count + fw_followed_count }}</span></button>
-        <button class="lead-filter-pill" data-filter="dismissed">Dismissed <span class="pill-count" id="cs-pc-dismissed">{{ cs_dismissed_count + fw_dismissed_count }}</span></button>
+        <button class="lead-filter-pill active" data-filter="active">Active <span class="pill-count" id="cs-pc-active">{{ cs_active_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="followed_up">Followed up <span class="pill-count" id="cs-pc-followed_up">{{ cs_followed_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="dismissed">Dismissed <span class="pill-count" id="cs-pc-dismissed">{{ cs_dismissed_count }}</span></button>
         <button class="lead-filter-pill" data-filter="all">All</button>
       </div>
       <div class="panel-body" id="cascade-body">
-        {% if cascade_events|length == 0 and framework_events|length == 0 %}
-          <div class="empty compact">Nothing in the latest brief.</div>
+        {% if cascade_events|length == 0 %}
+          <div class="empty compact">No watchlist senior-comms moves in the latest brief. This panel only surfaces moves where the vacated seat's firm — or the new employer — is a watchlist account, so off-patch headlines are filtered out rather than shown as noise.</div>
         {% endif %}
 
         {% for c in cascade_events %}
@@ -3228,8 +3253,8 @@ TEMPLATE = r"""
           {% set _new_on = new_st != 'n/a' %}
           <div class="row2 cascade-item" data-event-id="{{ c.event_id }}" data-cs-bucket="{{ c.cs_bucket }}">
             <div class="row2-head">
-              <span class="typ hw">HW</span>
-              <span class="row2-title">{{ c.person_name }}{% if c.role %} &rarr; {{ c.role }}{% endif %}</span>
+              <span class="typ hw">VS</span>
+              <span class="row2-title">{% if c.person_name %}{{ c.person_name }}{% if c.role %} &rarr; {{ c.role }}{% endif %}{% else %}{{ (c.role or 'Senior comms seat')|title }}{% if c.old_company %} &middot; {{ c.old_company }}{% endif %}{% endif %}</span>
               <span class="row2-tags">
                 {% if _old_on %}<span class="ipill s">Search</span>{% endif %}
                 {% if _new_on %}<span class="ipill w">Watch</span>{% endif %}
@@ -3275,7 +3300,92 @@ TEMPLATE = r"""
             </div>
           </div>
         {% endfor %}
+      </div>
+    </div>
 
+    <div class="panel" id="pulses-row">
+      <div class="panel-header">
+        <h2>Placement Windows</h2>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button class="cal-headnew" id="pulses-new" type="button" style="display:none;">
+            <span class="cal-nd"></span><span id="pulses-new-n">0</span>&nbsp;new</button>
+          <span class="count" id="pulses-count">—</span>
+        </div>
+      </div>
+      <div class="panel-body" id="pulses-body">
+        <div class="empty compact">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPECIALIST SIGNALS — Water SAR / Contract-End / Mandates Worth
+       Stealing, collapsed into one panel that is HIDDEN unless a
+       sub-detector actually has rows. Each sub-section also hides itself
+       when empty. (Mandates Worth Following was merged into the Vacated
+       Seats & Senior Moves panel above.) -->
+  <div class="row row-full" id="specialist-row" style="display:none">
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Specialist Signals</h2>
+        <span class="count" id="specialist-count">—</span>
+      </div>
+      <div class="panel-body" id="specialist-body">
+
+        <div class="specialist-sub" id="sub-watersar" style="display:none">
+          <h3 class="specialist-h">Water Special-Administration Watch</h3>
+          <div id="watersar-body"></div>
+        </div>
+
+        <div class="specialist-sub" id="sub-contractend" style="display:none">
+          <h3 class="specialist-h">Contract-End / Re-Tender Window</h3>
+          <div id="contractend-body"></div>
+        </div>
+
+        <div class="specialist-sub" id="sub-mandates" style="display:none">
+          <h3 class="specialist-h">Mandates Worth Stealing</h3>
+          <div id="mandates-body"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- GROUNDWORK & RELATIONSHIPS (Band C) — context, not a live lead list.
+       Left: Events & Networking (UK/EU comms awards, conferences, summits —
+       relationship / candidate-visibility moments, split out of the old BD
+       Calendar; loaded from /api/industry-events).
+       Right: Framework Eligibility (public-sector framework bid windows —
+       where VMA can compete; eligibility/BD groundwork, ~yearly cadence).
+       Unglued from the Hire Watch panel: a vacated seat is a commission
+       play, a framework window is eligibility-to-bid — different things.
+       Both stack under 900px. -->
+  <div class="row" id="groundwork-row">
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Events &amp; Networking</h2>
+        <span class="count" id="events-count">—</span>
+      </div>
+      <div class="panel-body" id="events-body">
+        <div class="empty compact">Loading…</div>
+      </div>
+    </div>
+
+    <div class="panel" id="framework-row">
+      <div class="panel-header">
+        <h2>Framework Eligibility</h2>
+        <span class="count" id="framework-count">{{ framework_events|length }}</span>
+      </div>
+      <div class="filter-bar" id="fw-filter-bar">
+        <button class="lead-filter-pill active" data-filter="active">Active <span class="pill-count" id="fw-pc-active">{{ fw_active_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="followed_up">Followed up <span class="pill-count" id="fw-pc-followed_up">{{ fw_followed_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="dismissed">Dismissed <span class="pill-count" id="fw-pc-dismissed">{{ fw_dismissed_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="all">All</button>
+      </div>
+      <div class="panel-body" id="framework-body">
+        <div class="fw-note">Where VMA can bid — public-sector framework windows. Eligibility &amp; BD groundwork, not a live lead list.</div>
+        {% if framework_events|length == 0 %}
+          <div class="empty compact">No framework windows tracked.</div>
+        {% endif %}
         {% for fw in framework_events %}
           <div class="row2 framework-row" data-status="{{ fw.triage }}" data-new="0" data-fwid="{{ fw.key }}">
             <div class="row2-head">
@@ -3304,57 +3414,6 @@ TEMPLATE = r"""
             </div>
           </div>
         {% endfor %}
-      </div>
-    </div>
-
-    <div class="panel" id="pulses-row">
-      <div class="panel-header">
-        <h2>BD Calendar</h2>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <button class="cal-headnew" id="pulses-new" type="button" style="display:none;">
-            <span class="cal-nd"></span><span id="pulses-new-n">0</span>&nbsp;new</button>
-          <span class="count" id="pulses-count">—</span>
-        </div>
-      </div>
-      <div class="panel-body" id="pulses-body">
-        <div class="empty compact">Loading…</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SPECIALIST SIGNALS — Mandates Worth Following / Water SAR /
-       Contract-End / Mandates Worth Stealing, collapsed into one panel
-       that is HIDDEN unless a sub-detector actually has rows. Each
-       sub-section also hides itself when empty. Detectors + /api
-       endpoints unchanged; pure presentation. -->
-  <div class="row row-full" id="specialist-row" style="display:none">
-    <div class="panel">
-      <div class="panel-header">
-        <h2>Specialist Signals</h2>
-        <span class="count" id="specialist-count">—</span>
-      </div>
-      <div class="panel-body" id="specialist-body">
-
-        <div class="specialist-sub" id="sub-following" style="display:none">
-          <h3 class="specialist-h">Mandates Worth Following</h3>
-          <div id="following-body"></div>
-        </div>
-
-        <div class="specialist-sub" id="sub-watersar" style="display:none">
-          <h3 class="specialist-h">Water Special-Administration Watch</h3>
-          <div id="watersar-body"></div>
-        </div>
-
-        <div class="specialist-sub" id="sub-contractend" style="display:none">
-          <h3 class="specialist-h">Contract-End / Re-Tender Window</h3>
-          <div id="contractend-body"></div>
-        </div>
-
-        <div class="specialist-sub" id="sub-mandates" style="display:none">
-          <h3 class="specialist-h">Mandates Worth Stealing</h3>
-          <div id="mandates-body"></div>
-        </div>
-
       </div>
     </div>
   </div>
@@ -3968,29 +4027,13 @@ async function loadPulses() {
   const body = document.getElementById('pulses-body');
   const count = document.getElementById('pulses-count');
   try {
-    // Fetch statutory pulses AND industry events in parallel; both
-    // are rendered as pips on the same month ribbon. Events get a
-    // distinguishing pip colour + chip in the detail card.
-    const [pulseRes, eventRes] = await Promise.all([
-      fetch('/api/pulses'),
-      fetch('/api/industry-events'),
-    ]);
-    const j  = await pulseRes.json();
-    const je = await eventRes.json();
-    const pulseRows = (j.rows || []).map(r => Object.assign({}, r, { _kind: 'pulse' }));
-    const eventRows = (je.rows || []).map(r => Object.assign({}, r, {
-      _kind: 'event',
-      // unify the detail card's expected fields
-      seat:  r.focus === 'internal' ? 'Internal-comms event'
-           : r.focus === 'external' ? 'External-comms event'
-           : 'Comms event',
-      angle: r.why_now || '',
-      scope_note: (r.location || '') + (r.location ? ' · ' : '') +
-                  ((r.focus || 'mixed').replace(/^./, c => c.toUpperCase())),
-      confidence: 'event',          // drives pip colour
-      days_left:  r.days_to_event,
-    }));
-    const total = pulseRows.length + eventRows.length;
+    // Placement Windows = statutory/regulatory + policy pulses ONLY.
+    // Industry events were split out into the Events & Networking panel
+    // (loadEvents); they no longer share this ribbon.
+    const res = await fetch('/api/pulses');
+    const j   = await res.json();
+    const pulseRows = j.rows || [];
+    const total = pulseRows.length;
     count.textContent = total;
     if (total === 0) {
       body.innerHTML = '<div class="empty compact">No placement window open today. ' +
@@ -4001,7 +4044,7 @@ async function loadPulses() {
       return;
     }
     const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const rows = pulseRows.concat(eventRows);
+    const rows = pulseRows;
 
     // act-by month/year per pulse (window-end month — the deadline the
     // run-up builds to). Fall back to the printed window if act_by absent.
@@ -4026,8 +4069,7 @@ async function loadPulses() {
     for (let m = 0; m < 12; m++) if (buckets[m].some(p => p.just_opened)) { freshMonth = m; break; }
 
     const pipFor = p => {
-      const cls = p._kind === 'event' ? 'event'
-                : p.confidence === 'high' ? 'high' : 'med';
+      const cls = p.confidence === 'high' ? 'high' : 'med';
       return '<span class="cal-pip ' + cls + '"></span>';
     };
     const out = ['<div class="cal-wrap"><div class="cal-ribbon">'];
@@ -4057,28 +4099,16 @@ async function loadPulses() {
         '<div class="cal-legend">' +
           '<span><i style="background:var(--teal)"></i>Regulatory deadline</span>' +
           '<span><i style="background:var(--green)"></i>Policy timeline</span>' +
-          '<span><i style="background:#e89c4a"></i>Comms event</span>' +
         '</div>' +
       '</div></div>'  // .cal-detail .cal-wrap
     );
     body.innerHTML = out.join('');
 
     const cardFor = p => {
-      const isEvent = p._kind === 'event';
-      const conf = isEvent ? 'cal-eventchip'
-                 : (p.confidence === 'high') ? 'mandate-age'
-                 : 'hook-badge generic_fit';
-      const confLabel = isEvent ? 'Comms event'
-                 : (p.confidence === 'high') ? 'Regulatory deadline'
-                 : 'Policy timeline';
+      const conf = (p.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
+      const confLabel = (p.confidence === 'high') ? 'Regulatory deadline' : 'Policy timeline';
       const far = (typeof p.days_left === 'number' && p.days_left > 150);
-      const daysLabel = isEvent
-        ? (typeof p.days_left === 'number'
-            ? (p.days_left === 0 ? 'today'
-               : p.days_left === 1 ? 'tomorrow'
-               : 'in ' + p.days_left + 'd') : '')
-        : (typeof p.days_left === 'number'
-            ? (p.days_left + 'd left') : '');
+      const daysLabel = (typeof p.days_left === 'number') ? (p.days_left + 'd left') : '';
       const targets = (p.targets || []).map(t =>
         '<span class="hook-badge generic_fit" style="margin:2px 4px 2px 0;display:inline-block;">' +
         esc(t) + '</span>').join('');
@@ -4171,6 +4201,94 @@ async function loadPulses() {
   }
 }
 
+// ---------- Events & Networking (industry events) ----------
+// Relationship / candidate-visibility moments (awards, conferences,
+// summits) — split out of the old BD Calendar. Rendered as a light
+// chronological list rather than a placement-window ribbon, because an
+// event drives networking, not a statute-forced hire.
+async function loadEvents() {
+  const body = document.getElementById('events-body');
+  const count = document.getElementById('events-count');
+  if (!body) return;
+  try {
+    const res = await fetch('/api/industry-events');
+    const j = await res.json();
+    const rows = j.rows || [];
+    if (count) count.textContent = rows.length;
+    if (rows.length === 0) {
+      body.innerHTML = '<div class="empty compact">No comms awards, conferences or ' +
+        'summits in the next ~6 months. This panel lists networking & candidate-' +
+        'visibility moments (PRWeek / CIPR / PRCA awards, IoIC, EACD, European ' +
+        'Excellence) — relationship groundwork, not statute-forced placement windows.</div>';
+      return;
+    }
+    const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const fmtDate = iso => {
+      const p = String(iso || '').split('-');
+      if (p.length < 3) return iso || '';
+      return parseInt(p[2], 10) + ' ' + (MON[parseInt(p[1], 10) - 1] || '') + ' ' + p[0];
+    };
+    const whenChip = d => {
+      if (typeof d !== 'number') return '';
+      if (d < 0) return 'past';
+      if (d === 0) return 'today';
+      if (d === 1) return 'tomorrow';
+      if (d < 60) return 'in ' + d + 'd';
+      return 'in ' + Math.round(d / 30) + 'mo';
+    };
+    const focusChip = f => {
+      const lab = f === 'internal' ? 'Internal comms'
+                : f === 'external' ? 'External comms' : 'Mixed';
+      return '<span class="ev-focus ev-' + esc(f || 'mixed') + '">' + lab + '</span>';
+    };
+    const out = ['<ul class="ev-list">'];
+    rows.forEach(e => {
+      const win = e.in_action_window
+        ? '<span class="ev-open" title="Outreach window open now">window open</span>' : '';
+      const rm = e.key
+        ? '<button class="ev-rm" data-key="' + esc(e.key) + '" title="Remove this event">&#10005;</button>' : '';
+      out.push(
+        '<li class="ev-item">' +
+          '<div class="ev-top">' +
+            focusChip(e.focus) +
+            '<span class="ev-name">' + esc(e.name || '') + '</span>' +
+            (win ? ' ' + win : '') +
+            '<span class="ev-when">' + esc(whenChip(e.days_to_event)) + '</span>' +
+            rm +
+          '</div>' +
+          '<div class="ev-meta">' + esc(fmtDate(e.event_date)) +
+            (e.location ? ' &middot; ' + esc(e.location) : '') + '</div>' +
+          (e.why_now ? '<div class="ev-why">' + esc(e.why_now) + '</div>' : '') +
+          (e.source ? '<div class="ev-src"><a href="' + safeUrl(e.source) +
+             '" target="_blank" rel="noopener noreferrer">source &rsaquo;</a></div>' : '') +
+        '</li>'
+      );
+    });
+    out.push('</ul>');
+    body.innerHTML = out.join('');
+    // Remove-an-event (delegated): persist the dismissal (shared pulse_dismiss
+    // keyspace) then re-render so the count + list stay correct.
+    body.querySelectorAll('.ev-rm').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const key = btn.getAttribute('data-key');
+        if (!key) return;
+        btn.disabled = true;
+        try {
+          const r = await fetch('/api/pulses/dismiss', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: key, dismissed: true }),
+          });
+          const jj = await r.json();
+          if (jj.ok) { loadEvents(); }
+          else { btn.disabled = false; alert(jj.detail || 'Could not remove.'); }
+        } catch (err) { btn.disabled = false; alert('Network error: ' + err.message); }
+      });
+    });
+  } catch (e) {
+    body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
+  }
+}
+
 // ---------- Water Special-Administration Watch ----------
 async function loadWaterSar() {
   const body = document.getElementById('watersar-body');
@@ -4250,46 +4368,8 @@ async function loadContractEnd() {
   }
 }
 
-// ---------- Mandates Worth Following (vacated-seat detector) ----------
-async function loadFollowing() {
-  const body = document.getElementById('following-body');
-  const sub = document.getElementById('sub-following');
-  try {
-    const r = await fetch('/api/following');
-    const j = await r.json();
-    const rows = (j && j.rows) || [];
-    if (!rows.length) { sub.style.display = 'none'; return 0; }
-    const out = ['<ul style="margin:6px 0;padding:0;list-style:none;">'];
-    for (const f of rows.slice(0, 14)) {
-      const conf = (f.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
-      out.push(
-        '<li style="padding:8px 0;border-bottom:1px solid var(--border);">' +
-          '<span class="' + conf + '">' + esc(f.confidence || '') + '</span> ' +
-          '<strong style="color:var(--text);">' + esc(f.company || '(unknown)') + '</strong>' +
-          ' &middot; <span style="color:var(--text);">' + esc(f.vacated_role || 'senior comms seat') + '</span>' +
-          '<span style="color:var(--text-muted);font-size:12px;display:block;margin-top:2px;">' +
-            (f.url
-              ? '<a href="' + safeUrl(f.url) + '" target="_blank" rel="noopener noreferrer" style="color:#0366d6;">' + esc(f.evidence || 'source') + '</a>'
-              : esc(f.evidence || '')) +
-            (f.source ? ' &middot; ' + esc(f.source) : '') +
-            (f.sector ? ' &middot; ' + esc(f.sector) : '') +
-          '</span>' +
-          (f.advisory ? '<div class="advisory-line">' + esc(f.advisory) + '</div>' : '') +
-        '</li>'
-      );
-    }
-    out.push('</ul>');
-    body.innerHTML = out.join('');
-    sub.style.display = '';
-    return rows.length;
-  } catch (e) {
-    sub.style.display = 'none';
-    return 0;
-  }
-}
-
 // ---------- Specialist Signals orchestrator ----------
-// Loads the four low-frequency sub-detectors via their unchanged /api
+// Loads the low-frequency sub-detectors via their unchanged /api
 // endpoints; reveals only the sub-sections that have rows, and the
 // whole panel only if at least one did. All empty -> panel stays
 // hidden (the dashboard never shows an empty Specialist panel).
@@ -4299,7 +4379,7 @@ async function loadSpecialistSignals() {
   let total = 0;
   try {
     const counts = await Promise.all([
-      loadFollowing(), loadWaterSar(), loadContractEnd(), loadMandates(),
+      loadWaterSar(), loadContractEnd(), loadMandates(),
     ]);
     total = counts.reduce((a, b) => a + (b || 0), 0);
   } catch (e) {
@@ -4454,6 +4534,7 @@ document.addEventListener('DOMContentLoaded', () => {
   applyFilter('active');
   applyLeadFilter('active');
   loadPulses();
+  loadEvents();
   loadSpecialistSignals();
   loadWatchList();
   loadRecentReports();
@@ -4464,7 +4545,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // predictors empty (i.e. the dashboard-state hydrate hasn't populated
 // them yet), auto-pull today's brief once — the same action as the
 // Daily Refresh button — so the user never sees a half-populated
-// dashboard (BD Calendar / Hire Watch showing while Leads / Pre-Market
+// dashboard (Placement Windows / Hire Watch showing while Leads / Pre-Market
 // sit empty). Guarded by sessionStorage so it fires at most once per
 // tab session and can never loop. Self-disables the moment the
 // state-branch hydrate works (leads won't be empty, so it won't fire).
@@ -4496,10 +4577,11 @@ async function maybeAutoRefresh() {
   }
 }
 
-// ---- In-place triage for the Hire Watch & Framework list (no reload) ----
-// Recompute the combined pill counts from the DOM and re-apply the active
-// filter, so marking a row updates instantly without a full page reload.
-function hwfwRefresh() {
+// ---- In-place triage for the Hire Watch list (no reload) ----
+// Recompute the pill counts from the DOM and re-apply the active filter,
+// so marking a row updates instantly without a full page reload.
+// (Framework Eligibility now lives in its own panel — see fwRefresh.)
+function csRefresh() {
   const bar = document.getElementById('cs-filter-bar');
   const root = document.getElementById('cascade-body');
   if (!bar || !root) return;
@@ -4507,10 +4589,6 @@ function hwfwRefresh() {
   root.querySelectorAll('.cascade-item').forEach(it => {
     const b = it.getAttribute('data-cs-bucket') || 'active';
     if (b in counts) counts[b]++;
-  });
-  root.querySelectorAll('.framework-row').forEach(it => {
-    const s = it.getAttribute('data-status') || 'active';
-    if (s in counts) counts[s]++;
   });
   const set = (id, n) => { const e = document.getElementById(id); if (e) e.textContent = n; };
   set('cs-pc-active', counts.active);
@@ -4522,6 +4600,24 @@ function hwfwRefresh() {
     const b = it.getAttribute('data-cs-bucket') || 'active';
     it.style.display = (f === 'all' || b === f) ? '' : 'none';
   });
+}
+
+// ---- In-place triage for Framework Eligibility (own panel, no reload) ----
+function fwRefresh() {
+  const bar = document.getElementById('fw-filter-bar');
+  const root = document.getElementById('framework-body');
+  if (!bar || !root) return;
+  const counts = { active: 0, followed_up: 0, dismissed: 0 };
+  root.querySelectorAll('.framework-row').forEach(it => {
+    const s = it.getAttribute('data-status') || 'active';
+    if (s in counts) counts[s]++;
+  });
+  const set = (id, n) => { const e = document.getElementById(id); if (e) e.textContent = n; };
+  set('fw-pc-active', counts.active);
+  set('fw-pc-followed_up', counts.followed_up);
+  set('fw-pc-dismissed', counts.dismissed);
+  const ap = bar.querySelector('.lead-filter-pill.active');
+  const f = ap ? (ap.getAttribute('data-filter') || 'active') : 'active';
   root.querySelectorAll('.framework-row').forEach(it => {
     const s = it.getAttribute('data-status') || 'active';
     it.style.display = (f === 'all' || s === f) ? '' : 'none';
@@ -4558,11 +4654,6 @@ function fwButtons(status) {
     root.querySelectorAll('.cascade-item').forEach(item => {
       const bucket = item.getAttribute('data-cs-bucket') || 'active';
       item.style.display = (filter === 'all' || bucket === filter) ? '' : 'none';
-    });
-    // Framework windows share this list — filter them by their triage too.
-    root.querySelectorAll('.framework-row').forEach(item => {
-      const st = item.getAttribute('data-status') || 'active';
-      item.style.display = (filter === 'all' || st === filter) ? '' : 'none';
     });
   }
   if (bar) {
@@ -4625,7 +4716,7 @@ function fwButtons(status) {
           else if (sides.some(s => s === 'called' || s === 'followed_up')) bucket = 'followed_up';
           else if (sides.length && sides.every(s => s === 'dismissed')) bucket = 'dismissed';
           item.setAttribute('data-cs-bucket', bucket);
-          hwfwRefresh();
+          csRefresh();
         } else {
           actBtn.disabled = false;
           alert(j.detail || 'Could not update.');
@@ -4700,12 +4791,33 @@ function fwButtons(status) {
   });
 })();
 
-// Framework-signal triage — mirrors the funding-action handler. Frameworks
-// share the combined Hire Watch list (#cascade-body).
+// Framework Eligibility — own panel (#framework-body): filter pills +
+// in-place triage. Unglued from the Hire Watch list.
 (function(){
-  const host = document.getElementById('cascade-body');
-  if (!host) return;
-  host.addEventListener('click', async (ev) => {
+  const root = document.getElementById('framework-body');
+  if (!root) return;
+
+  const bar = document.getElementById('fw-filter-bar');
+  function applyFwFilter(filter) {
+    root.querySelectorAll('.framework-row').forEach(item => {
+      const st = item.getAttribute('data-status') || 'active';
+      item.style.display = (filter === 'all' || st === filter) ? '' : 'none';
+    });
+  }
+  if (bar) {
+    bar.addEventListener('click', (ev) => {
+      const pill = ev.target.closest('.lead-filter-pill');
+      if (!pill) return;
+      bar.querySelectorAll('.lead-filter-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      applyFwFilter(pill.getAttribute('data-filter') || 'active');
+    });
+    applyFwFilter('active');
+  }
+
+  // (Row expand/collapse is handled by the global .row2-head handler.)
+  // In-place triage (mark followed up / dismissed / restore).
+  root.addEventListener('click', async (ev) => {
     const btn = ev.target.closest('.framework-action');
     if (!btn) return;
     const row = btn.closest('.framework-row');
@@ -4721,7 +4833,6 @@ function fwButtons(status) {
       });
       const j = await r.json();
       if (j.ok) {
-        // In-place: swap the row's buttons + status badge, refresh filter.
         row.setAttribute('data-status', status);
         const actions = row.querySelector('.item-actions');
         if (actions) actions.innerHTML = fwButtons(status);
@@ -4731,7 +4842,7 @@ function fwButtons(status) {
           if (status === 'followed_up') tags.insertAdjacentHTML('beforeend', '<span class="status-badge followed-up">&#10003;</span>');
           else if (status === 'dismissed') tags.insertAdjacentHTML('beforeend', '<span class="status-badge dismissed">dismissed</span>');
         }
-        hwfwRefresh();
+        fwRefresh();
       } else {
         btn.disabled = false;
         alert(j.detail || 'Could not update.');

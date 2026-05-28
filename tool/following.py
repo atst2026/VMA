@@ -1,4 +1,9 @@
-"""Mandates Worth Following — the vacated-seat / backfill detector.
+"""Vacated-seat / backfill detector (watchlist-gated extraction layer).
+
+Consumed by tool.cascade to build the unified "Vacated Seats & Senior
+Moves" panel — this is no longer a standalone dashboard section. It
+provides the precise, watchlist-resolved previous-employer extraction
+(detect_following) that gives cascade its departure coverage + gate.
 
 When a senior IC/CorpComms person is publicly announced *moving* to a
 new job, the seat they just *left* has become a live (or imminent)
@@ -27,15 +32,11 @@ No external calls. Runs over the raw scoured signals, like the
 predictor.
 """
 from __future__ import annotations
-import json
 import logging
 import re
-from pathlib import Path
 from typing import Iterable
 
 log = logging.getLogger("brief.following")
-
-STATE_DIR = Path(__file__).resolve().parent / "state"
 
 # Senior IC/CorpComms role tokens (the seat that becomes the brief).
 _ROLE = (
@@ -169,16 +170,3 @@ def detect_following(signals: Iterable[dict]) -> list[dict]:
     # High-confidence (RNS/CH) first, then by company name for stability.
     out.sort(key=lambda r: (r["confidence"] != "high", r["company"]))
     return out
-
-
-def load_following(limit: int = 30) -> list[dict]:
-    """Read latest_following.json for the dashboard. No external calls."""
-    path = STATE_DIR / "latest_following.json"
-    if not path.exists():
-        return []
-    try:
-        data = json.loads(path.read_text())
-    except Exception as e:
-        log.info("latest_following.json parse failed: %s", e)
-        return []
-    return data[:limit] if isinstance(data, list) else []
