@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import time
 
-from tool.config import ROLE_KEYWORDS, SOURCES
+from tool.config import SOURCES
 from tool.sources._http import get, signal_id
 
 log = logging.getLogger("brief.gdelt")
@@ -32,7 +32,31 @@ QUERY_TERMS = [
     '"head of corporate affairs"',
     '"head of internal communications"',
     '"PR director"',
+    # Widened net for the Vacated Seats & Senior Moves engine — role
+    # variants the cascade/following detectors recognise but the original
+    # 8 terms missed. More in-scope appointment/departure headlines reach
+    # the (watchlist-gated) detector. Budget-bounded by GDELT_FETCHALL_BUDGET_S.
+    '"VP communications"',
+    '"group communications director"',
+    '"global head of communications"',
+    '"head of corporate communications"',
+    '"head of public affairs"',
+    '"head of external communications"',
+    '"director of corporate affairs"',
+    '"communications chief"',
 ]
+
+# Title-level comms-role filter for the leadership_change (move) lane —
+# broader than the shared jobs ROLE_KEYWORDS so move headlines for the
+# extra QUERY_TERMS above survive the post-fetch tighten. Safe to be
+# permissive here: these signals are kind=leadership_change, which is
+# excluded from Today's Leads and re-gated by role AND watchlist in
+# cascade/following, so a loose pre-filter can't leak noise to the user.
+COMMS_MOVE_KEYWORDS = (
+    "communications", "comms", "corporate affairs", "public affairs",
+    "external affairs", "media relations", "press office",
+    "investor relations", "pr director", "head of pr", "public relations",
+)
 
 
 # ---- Predictive trigger queries ----------------------------------------
@@ -108,6 +132,12 @@ PREDICTIVE_TRIGGER_QUERIES = [
     # NED / trustee appointment (12–18mo exit signal, strongest soft trigger)
     '"director of communications" ("appointed trustee" OR "non-executive director" OR "board of trustees")',
     '"head of communications" ("appointed trustee" OR "non-executive director")',
+
+    # Funded UK scale-ups — a >=£20m growth round predicts a senior-comms
+    # hire ~6 months later. Previously NO source fed funding_round; these
+    # give it a real lane. UK-scoped at source; the detector UK-gates again.
+    '("Series B" OR "Series C" OR "Series D" OR "growth round" OR "growth equity") (raises OR raised OR secures OR closes OR lands) (UK OR London OR Britain OR British)',
+    '"funding round" (UK OR London OR Britain) (million OR billion) (raises OR raised OR secures OR closes)',
 ]
 
 
@@ -228,7 +258,7 @@ def fetch_all(hours_back: int | None = None) -> list[dict]:
             continue
         for a in articles:
             title = a.get("title", "")
-            if not any(rk in (title or "").lower() for rk in ROLE_KEYWORDS):
+            if not any(rk in (title or "").lower() for rk in COMMS_MOVE_KEYWORDS):
                 # GDELT sometimes returns adjacent hits; tighten with role-match
                 continue
             out.append({
