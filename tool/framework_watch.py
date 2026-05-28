@@ -1,10 +1,12 @@
 """Framework Watch — public-sector executive-search framework tracker.
 
-Routed into Pre-Market Signals as a "framework refresh window" signal
-(the same way funding rounds are folded in): it surfaces the named
-exec-search frameworks Sara could compete on and when each is up for
-re-procurement (the window to get appointed) — fully automatic, no manual
-upkeep.
+Surfaces the named exec-search frameworks VMA could compete on and when
+each is up for re-procurement (the window to get appointed) — fully
+automatic, no manual upkeep. Lives in its own "Framework Eligibility"
+reference panel: this is eligibility-to-bid / BD groundwork, NOT a live
+commission lead. Deliberately kept OUT of Pre-Market Signals — unlike a
+funding round, a framework refresh window is not a sales/commission
+opportunity the way a pre-market hiring signal is.
 
 Deterministic + public. A curated registry of framework metadata
 (buyer, scope, dates, portal) drives a refresh-window engine off today's

@@ -2188,6 +2188,20 @@ TEMPLATE = r"""
     .ev-src  { font-size: 11px; margin-top: 4px; }
     .ev-src a { color: #0366d6; text-decoration: none; }
 
+    /* ===== Groundwork row: Events & Networking + Framework Eligibility =====
+       Band-C reference pair; matched height + internal scroll like the
+       Hire Watch / Placement Windows row above. */
+    #groundwork-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    #groundwork-row > .panel { min-width: 0; }
+    #groundwork-row .panel { height: 360px; display: flex; flex-direction: column; }
+    #groundwork-row .panel-body { max-height: none; flex: 1; min-height: 0; overflow-y: auto; }
+    @media (max-width: 900px) { #groundwork-row { grid-template-columns: 1fr; } }
+    /* Eligibility-not-a-lead disclaimer atop Framework Eligibility. */
+    .fw-note {
+      font-size: 11px; color: var(--text-dim);
+      padding: 10px 16px 4px; line-height: 1.4;
+    }
+
     /* ITEMS */
     .item {
       padding: 11px 16px;
@@ -3217,26 +3231,27 @@ TEMPLATE = r"""
 
   <!-- HIRE WATCH + PLACEMENT WINDOWS side-by-side. Hire Watch (cascade
        moves) on the left; Placement Windows (statutory/regulatory +
-       policy pulses ONLY) on the right. Industry events were split out
-       into their own Events & Networking panel below. Both stack under
+       policy pulses ONLY) on the right. Framework Windows were unglued
+       from Hire Watch into the Framework Eligibility panel (Band C,
+       below); industry events into Events & Networking. Both stack under
        900px. -->
   <div class="row" id="hire-calendar-row">
     <div class="panel" id="cascade-row">
       <div class="panel-header">
-        <h2>Hire Watch &amp; Framework Windows</h2>
+        <h2>Hire Watch</h2>
         <span style="display:flex;align-items:center;gap:10px;">
           <button type="button" class="btn-mini" id="cs-scour">Re-scan</button>
-          <span class="count" id="cascade-count">{{ cascade_events|length + framework_events|length }}</span>
+          <span class="count" id="cascade-count">{{ cascade_events|length }}</span>
         </span>
       </div>
       <div class="filter-bar" id="cs-filter-bar">
-        <button class="lead-filter-pill active" data-filter="active">Active <span class="pill-count" id="cs-pc-active">{{ cs_active_count + fw_active_count }}</span></button>
-        <button class="lead-filter-pill" data-filter="followed_up">Followed up <span class="pill-count" id="cs-pc-followed_up">{{ cs_followed_count + fw_followed_count }}</span></button>
-        <button class="lead-filter-pill" data-filter="dismissed">Dismissed <span class="pill-count" id="cs-pc-dismissed">{{ cs_dismissed_count + fw_dismissed_count }}</span></button>
+        <button class="lead-filter-pill active" data-filter="active">Active <span class="pill-count" id="cs-pc-active">{{ cs_active_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="followed_up">Followed up <span class="pill-count" id="cs-pc-followed_up">{{ cs_followed_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="dismissed">Dismissed <span class="pill-count" id="cs-pc-dismissed">{{ cs_dismissed_count }}</span></button>
         <button class="lead-filter-pill" data-filter="all">All</button>
       </div>
       <div class="panel-body" id="cascade-body">
-        {% if cascade_events|length == 0 and framework_events|length == 0 %}
+        {% if cascade_events|length == 0 %}
           <div class="empty compact">Nothing in the latest brief.</div>
         {% endif %}
 
@@ -3296,35 +3311,6 @@ TEMPLATE = r"""
             </div>
           </div>
         {% endfor %}
-
-        {% for fw in framework_events %}
-          <div class="row2 framework-row" data-status="{{ fw.triage }}" data-new="0" data-fwid="{{ fw.key }}">
-            <div class="row2-head">
-              <span class="typ fw">FW</span>
-              <span class="row2-title">{{ fw.ad_title or fw.title }}</span>
-              <span class="row2-tags">
-                <span class="ipill {{ 'w' if fw.status == 'refresh_window' else 'mut' }}">{{ fw.window_pill }}</span>
-                {% if fw.triage == 'followed_up' %}<span class="status-badge followed-up">&#10003;</span>{% elif fw.triage == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
-              </span>
-              <span class="row2-chev">&rsaquo;</span>
-            </div>
-            <div class="row2-detail">
-              <div class="row2-sub">{{ fw.ad_desc or fw.scope }}</div>
-              <div class="play">
-                <div class="play-lab">&#9654; {{ fw.window_label }}</div>
-                <div class="play-desc" title="{{ fw.notes }}">{{ fw.title }} · <a class="lnk" href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify on portal &rsaquo;</a></div>
-                <div class="item-actions">
-                  {% if fw.triage == 'active' %}
-                    <button class="btn-mini framework-action" data-status="followed_up" type="button">&#10003; Mark followed up</button>
-                    <button class="btn-mini framework-action ghost" data-status="dismissed" type="button">&#10005; Dismiss</button>
-                  {% else %}
-                    <button class="btn-mini framework-action" data-status="active" type="button">&#8634; Restore</button>
-                  {% endif %}
-                </div>
-              </div>
-            </div>
-          </div>
-        {% endfor %}
       </div>
     </div>
 
@@ -3380,12 +3366,16 @@ TEMPLATE = r"""
     </div>
   </div>
 
-  <!-- EVENTS & NETWORKING — UK/EU comms industry events (awards,
-       conferences, summits). Split out of the old BD Calendar: these are
-       relationship / candidate-visibility moments, NOT statute-forced
-       placement windows (those live in Placement Windows above). Loaded
-       from the unchanged /api/industry-events endpoint. -->
-  <div class="row row-full" id="events-row">
+  <!-- GROUNDWORK & RELATIONSHIPS (Band C) — context, not a live lead list.
+       Left: Events & Networking (UK/EU comms awards, conferences, summits —
+       relationship / candidate-visibility moments, split out of the old BD
+       Calendar; loaded from /api/industry-events).
+       Right: Framework Eligibility (public-sector framework bid windows —
+       where VMA can compete; eligibility/BD groundwork, ~yearly cadence).
+       Unglued from the Hire Watch panel: a vacated seat is a commission
+       play, a framework window is eligibility-to-bid — different things.
+       Both stack under 900px. -->
+  <div class="row" id="groundwork-row">
     <div class="panel">
       <div class="panel-header">
         <h2>Events &amp; Networking</h2>
@@ -3393,6 +3383,53 @@ TEMPLATE = r"""
       </div>
       <div class="panel-body" id="events-body">
         <div class="empty compact">Loading…</div>
+      </div>
+    </div>
+
+    <div class="panel" id="framework-row">
+      <div class="panel-header">
+        <h2>Framework Eligibility</h2>
+        <span class="count" id="framework-count">{{ framework_events|length }}</span>
+      </div>
+      <div class="filter-bar" id="fw-filter-bar">
+        <button class="lead-filter-pill active" data-filter="active">Active <span class="pill-count" id="fw-pc-active">{{ fw_active_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="followed_up">Followed up <span class="pill-count" id="fw-pc-followed_up">{{ fw_followed_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="dismissed">Dismissed <span class="pill-count" id="fw-pc-dismissed">{{ fw_dismissed_count }}</span></button>
+        <button class="lead-filter-pill" data-filter="all">All</button>
+      </div>
+      <div class="panel-body" id="framework-body">
+        <div class="fw-note">Where VMA can bid — public-sector framework windows. Eligibility &amp; BD groundwork, not a live lead list.</div>
+        {% if framework_events|length == 0 %}
+          <div class="empty compact">No framework windows tracked.</div>
+        {% endif %}
+        {% for fw in framework_events %}
+          <div class="row2 framework-row" data-status="{{ fw.triage }}" data-new="0" data-fwid="{{ fw.key }}">
+            <div class="row2-head">
+              <span class="typ fw">FW</span>
+              <span class="row2-title">{{ fw.ad_title or fw.title }}</span>
+              <span class="row2-tags">
+                <span class="ipill {{ 'w' if fw.status == 'refresh_window' else 'mut' }}">{{ fw.window_pill }}</span>
+                {% if fw.triage == 'followed_up' %}<span class="status-badge followed-up">&#10003;</span>{% elif fw.triage == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
+              </span>
+              <span class="row2-chev">&rsaquo;</span>
+            </div>
+            <div class="row2-detail">
+              <div class="row2-sub">{{ fw.ad_desc or fw.scope }}</div>
+              <div class="play">
+                <div class="play-lab">&#9654; {{ fw.window_label }}</div>
+                <div class="play-desc" title="{{ fw.notes }}">{{ fw.title }} · <a class="lnk" href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify on portal &rsaquo;</a></div>
+                <div class="item-actions">
+                  {% if fw.triage == 'active' %}
+                    <button class="btn-mini framework-action" data-status="followed_up" type="button">&#10003; Mark followed up</button>
+                    <button class="btn-mini framework-action ghost" data-status="dismissed" type="button">&#10005; Dismiss</button>
+                  {% else %}
+                    <button class="btn-mini framework-action" data-status="active" type="button">&#8634; Restore</button>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
       </div>
     </div>
   </div>
@@ -4594,10 +4631,11 @@ async function maybeAutoRefresh() {
   }
 }
 
-// ---- In-place triage for the Hire Watch & Framework list (no reload) ----
-// Recompute the combined pill counts from the DOM and re-apply the active
-// filter, so marking a row updates instantly without a full page reload.
-function hwfwRefresh() {
+// ---- In-place triage for the Hire Watch list (no reload) ----
+// Recompute the pill counts from the DOM and re-apply the active filter,
+// so marking a row updates instantly without a full page reload.
+// (Framework Eligibility now lives in its own panel — see fwRefresh.)
+function csRefresh() {
   const bar = document.getElementById('cs-filter-bar');
   const root = document.getElementById('cascade-body');
   if (!bar || !root) return;
@@ -4605,10 +4643,6 @@ function hwfwRefresh() {
   root.querySelectorAll('.cascade-item').forEach(it => {
     const b = it.getAttribute('data-cs-bucket') || 'active';
     if (b in counts) counts[b]++;
-  });
-  root.querySelectorAll('.framework-row').forEach(it => {
-    const s = it.getAttribute('data-status') || 'active';
-    if (s in counts) counts[s]++;
   });
   const set = (id, n) => { const e = document.getElementById(id); if (e) e.textContent = n; };
   set('cs-pc-active', counts.active);
@@ -4620,6 +4654,24 @@ function hwfwRefresh() {
     const b = it.getAttribute('data-cs-bucket') || 'active';
     it.style.display = (f === 'all' || b === f) ? '' : 'none';
   });
+}
+
+// ---- In-place triage for Framework Eligibility (own panel, no reload) ----
+function fwRefresh() {
+  const bar = document.getElementById('fw-filter-bar');
+  const root = document.getElementById('framework-body');
+  if (!bar || !root) return;
+  const counts = { active: 0, followed_up: 0, dismissed: 0 };
+  root.querySelectorAll('.framework-row').forEach(it => {
+    const s = it.getAttribute('data-status') || 'active';
+    if (s in counts) counts[s]++;
+  });
+  const set = (id, n) => { const e = document.getElementById(id); if (e) e.textContent = n; };
+  set('fw-pc-active', counts.active);
+  set('fw-pc-followed_up', counts.followed_up);
+  set('fw-pc-dismissed', counts.dismissed);
+  const ap = bar.querySelector('.lead-filter-pill.active');
+  const f = ap ? (ap.getAttribute('data-filter') || 'active') : 'active';
   root.querySelectorAll('.framework-row').forEach(it => {
     const s = it.getAttribute('data-status') || 'active';
     it.style.display = (f === 'all' || s === f) ? '' : 'none';
@@ -4656,11 +4708,6 @@ function fwButtons(status) {
     root.querySelectorAll('.cascade-item').forEach(item => {
       const bucket = item.getAttribute('data-cs-bucket') || 'active';
       item.style.display = (filter === 'all' || bucket === filter) ? '' : 'none';
-    });
-    // Framework windows share this list — filter them by their triage too.
-    root.querySelectorAll('.framework-row').forEach(item => {
-      const st = item.getAttribute('data-status') || 'active';
-      item.style.display = (filter === 'all' || st === filter) ? '' : 'none';
     });
   }
   if (bar) {
@@ -4723,7 +4770,7 @@ function fwButtons(status) {
           else if (sides.some(s => s === 'called' || s === 'followed_up')) bucket = 'followed_up';
           else if (sides.length && sides.every(s => s === 'dismissed')) bucket = 'dismissed';
           item.setAttribute('data-cs-bucket', bucket);
-          hwfwRefresh();
+          csRefresh();
         } else {
           actBtn.disabled = false;
           alert(j.detail || 'Could not update.');
@@ -4798,12 +4845,33 @@ function fwButtons(status) {
   });
 })();
 
-// Framework-signal triage — mirrors the funding-action handler. Frameworks
-// share the combined Hire Watch list (#cascade-body).
+// Framework Eligibility — own panel (#framework-body): filter pills +
+// in-place triage. Unglued from the Hire Watch list.
 (function(){
-  const host = document.getElementById('cascade-body');
-  if (!host) return;
-  host.addEventListener('click', async (ev) => {
+  const root = document.getElementById('framework-body');
+  if (!root) return;
+
+  const bar = document.getElementById('fw-filter-bar');
+  function applyFwFilter(filter) {
+    root.querySelectorAll('.framework-row').forEach(item => {
+      const st = item.getAttribute('data-status') || 'active';
+      item.style.display = (filter === 'all' || st === filter) ? '' : 'none';
+    });
+  }
+  if (bar) {
+    bar.addEventListener('click', (ev) => {
+      const pill = ev.target.closest('.lead-filter-pill');
+      if (!pill) return;
+      bar.querySelectorAll('.lead-filter-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      applyFwFilter(pill.getAttribute('data-filter') || 'active');
+    });
+    applyFwFilter('active');
+  }
+
+  // (Row expand/collapse is handled by the global .row2-head handler.)
+  // In-place triage (mark followed up / dismissed / restore).
+  root.addEventListener('click', async (ev) => {
     const btn = ev.target.closest('.framework-action');
     if (!btn) return;
     const row = btn.closest('.framework-row');
@@ -4819,7 +4887,6 @@ function fwButtons(status) {
       });
       const j = await r.json();
       if (j.ok) {
-        // In-place: swap the row's buttons + status badge, refresh filter.
         row.setAttribute('data-status', status);
         const actions = row.querySelector('.item-actions');
         if (actions) actions.innerHTML = fwButtons(status);
@@ -4829,7 +4896,7 @@ function fwButtons(status) {
           if (status === 'followed_up') tags.insertAdjacentHTML('beforeend', '<span class="status-badge followed-up">&#10003;</span>');
           else if (status === 'dismissed') tags.insertAdjacentHTML('beforeend', '<span class="status-badge dismissed">dismissed</span>');
         }
-        hwfwRefresh();
+        fwRefresh();
       } else {
         btn.disabled = false;
         alert(j.detail || 'Could not update.');
