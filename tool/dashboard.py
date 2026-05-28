@@ -3241,7 +3241,7 @@ TEMPLATE = r"""
       </div>
       <div class="panel-body" id="cascade-body">
         {% if cascade_events|length == 0 %}
-          <div class="empty compact">No UK senior-comms moves in the latest brief. This panel surfaces a vacated senior-comms seat at <em>any</em> UK employer (core-watchlist accounts ranked first; others tagged &ldquo;Broader UK&rdquo;), plus re-org watches at watchlist firms. Off-patch / non-UK headlines are filtered out rather than shown as noise.</div>
+          <div class="empty compact">No UK senior-comms move in the latest brief. This panel surfaces a vacated senior-comms seat at any UK employer (core-watchlist accounts ranked first; others tagged &ldquo;Broader UK&rdquo;), plus re-org watches at watchlist firms. Off-patch / non-UK headlines are filtered out rather than shown as noise.</div>
         {% endif %}
 
         {% for c in cascade_events %}
