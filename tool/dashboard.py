@@ -3774,7 +3774,6 @@ TEMPLATE = r"""
       </div>
       <div class="cc-cards">
         <button class="cc-card" data-open="windows"><span class="ci">◴</span><span class="cx"><span class="ct">Placement Windows</span><span class="cd">Statutory hiring windows that open on a known calendar.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
-        <button class="cc-card" data-open="events"><span class="ci">▦</span><span class="cx"><span class="ct">Events &amp; Networking</span><span class="cd">Awards, summits and networking dates worth showing up to.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
         <button class="cc-card" data-open="frameworks"><span class="ci">❏</span><span class="cx"><span class="ct">Framework Eligibility</span><span class="cd">Public-sector frameworks where VMA can bid.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
       </div>
     </div>
@@ -5317,7 +5316,6 @@ async function loadRecentReports() {
   var mx = document.getElementById('bd-mx');
   var BDMETA = {
     windows:    { ic: '◴', t: 'Placement Windows' },
-    events:     { ic: '▦', t: 'Events & Networking' },
     frameworks: { ic: '❏', t: 'Framework Eligibility' }
   };
   var openKey = null;
