@@ -3798,16 +3798,6 @@ TEMPLATE = r"""
         </div>
       </div>
 
-      <div class="panel ctx-col" data-bd="events">
-        <div class="panel-header">
-          <h2>Events &amp; Networking</h2>
-          <span class="count" id="events-count">—</span>
-        </div>
-        <div class="panel-body" id="events-body">
-          <div class="empty compact">Loading…</div>
-        </div>
-      </div>
-
       <div class="panel ctx-col" id="framework-row" data-bd="frameworks">
         <div class="panel-header">
           <h2>Framework Eligibility</h2>
