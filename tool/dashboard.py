@@ -2204,34 +2204,69 @@ TEMPLATE = r"""
     .cal-dsep { border: 0; border-top: 1px solid var(--border); margin: 10px 0; }
 
     /* ===== Events & Networking — light chronological list ===== */
-    .ev-list { list-style: none; margin: 0; padding: 0; }
-    .ev-item { padding: 11px 16px; border-bottom: 1px solid var(--border); }
-    .ev-item:last-child { border-bottom: none; }
-    .ev-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .ev-name { font-weight: 600; font-size: 12.5px; color: var(--navy); }
-    .ev-focus {
-      font: 700 9.5px/1.4 "Inter", sans-serif; letter-spacing: .04em;
-      text-transform: uppercase; padding: 2px 7px; border-radius: 10px; white-space: nowrap;
-    }
-    .ev-internal { background: var(--teal-soft); color: var(--teal-dark); }
-    .ev-external { background: #fff4e0; color: #8a5a00; }
-    .ev-mixed    { background: #eef0f3; color: #80868b; }
-    .ev-open {
-      font: 700 9.5px/1.4 "Inter", sans-serif; letter-spacing: .03em;
-      background: #e7f3ec; color: #2e7d50; padding: 2px 7px; border-radius: 10px;
-    }
-    .ev-when { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
-    .ev-rm {
-      background: transparent; color: var(--text-muted);
-      border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px;
-      font: 500 10px/1.4 "Inter", sans-serif; cursor: pointer;
-      transition: border-color .12s, color .12s;
-    }
+    /* Events & Networking — v21 date-tile layout: a calendar date chip, then
+       the event with its focus + location. */
+    .ev-list { list-style: none; margin: 0; padding: 4px 0; }
+    .ev-row { display: flex; align-items: center; gap: 12px; padding: 11px 16px;
+      border-bottom: 1px solid var(--hairline); }
+    .ev-row:last-child { border-bottom: none; }
+    .ev-row:hover { background: var(--elevated); }
+    .ev-date { flex-shrink: 0; width: 40px; height: 40px; border-radius: 10px;
+      background: var(--blue-wash); color: var(--blue-deep); display: flex; flex-direction: column;
+      align-items: center; justify-content: center; line-height: 1; }
+    .ev-date b { font: 700 15px/1 "Inter", sans-serif; }
+    .ev-date span { font: 600 7.5px/1 "JetBrains Mono", monospace; letter-spacing: .08em;
+      text-transform: uppercase; margin-top: 2px; }
+    .ev-main { flex: 1; min-width: 0; }
+    .ev-n { font-size: 12.5px; font-weight: 600; color: var(--ink); }
+    .ev-t { font: 600 8.5px/1 "JetBrains Mono", monospace; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--dim); margin-top: 5px; display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
+    .ev-foc { padding: 2px 6px; border-radius: 5px; background: var(--elevated); color: var(--ink-2); }
+    .ev-open { font: 700 8px/1.3 "Inter", sans-serif; letter-spacing: .03em; text-transform: none;
+      background: #e7f3ec; color: #2e7d50; padding: 2px 7px; border-radius: 10px; margin-left: 7px; }
+    .ev-why { font-size: 11px; color: var(--muted); margin-top: 5px; }
+    .ev-rm { background: transparent; color: var(--muted); border: 1px solid var(--border);
+      border-radius: 6px; padding: 3px 7px; font: 500 11px/1 "Inter", sans-serif; cursor: pointer;
+      flex-shrink: 0; transition: border-color .12s, color .12s; }
     .ev-rm:hover { border-color: #A33A22; color: #A33A22; }
-    .ev-meta { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
-    .ev-why  { font-size: 11.5px; color: var(--text-dim); margin-top: 4px; }
-    .ev-src  { font-size: 11px; margin-top: 4px; }
-    .ev-src a { color: #0366d6; text-decoration: none; }
+    /* Placement Windows — each window drawn as a glass window-pane tile
+       (frame + cross mullions) beside its role + timing. */
+    .win-list { padding: 4px 0; }
+    .win-row { display: flex; align-items: flex-start; gap: 13px; padding: 13px 16px;
+      border-bottom: 1px solid var(--hairline); }
+    .win-row:last-child { border-bottom: none; }
+    .win-row:hover { background: var(--elevated); }
+    .win-tile { position: relative; flex-shrink: 0; width: 46px; height: 46px; border-radius: 5px;
+      background: linear-gradient(155deg, #cbe0f5 0%, #eaf3fc 70%); border: 2px solid var(--blue-deep);
+      box-shadow: inset 0 0 0 1.5px #fff; margin-top: 1px; }
+    .win-tile::before { content: ""; position: absolute; left: 50%; top: 3px; bottom: 3px; width: 2px;
+      background: var(--blue-deep); opacity: .5; transform: translateX(-50%); }
+    .win-tile::after { content: ""; position: absolute; top: 50%; left: 3px; right: 3px; height: 2px;
+      background: var(--blue-deep); opacity: .5; transform: translateY(-50%); }
+    .win-main { flex: 1; min-width: 0; }
+    .win-name { font-size: 12.5px; font-weight: 600; color: var(--ink); line-height: 1.35; }
+    .win-seat { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+    .win-tags { margin-top: 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .conf-pill { font: 600 8.5px/1 "JetBrains Mono", monospace; letter-spacing: .06em;
+      text-transform: uppercase; padding: 4px 8px; border-radius: 9999px; }
+    .conf-pill.high { background: var(--grn-bg); color: var(--grn-tx); }
+    .conf-pill.med { background: var(--tan-bg); color: var(--tan-tx); }
+    .win-days { font: 600 9.5px/1 "JetBrains Mono", monospace; color: var(--ink-2); }
+    .win-scope { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.45; }
+    /* Framework Eligibility — 'structural framework' treatment: each row framed
+       like a built structure (left girder + corner joints). */
+    #framework-body .framework-row { position: relative; margin: 12px 12px 0;
+      padding: 13px 15px 13px 18px; border: 1px solid var(--border); border-radius: 4px;
+      background: var(--elevated); }
+    #framework-body .framework-row:last-child { margin-bottom: 12px; }
+    #framework-body .framework-row::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; border-radius: 4px 0 0 4px; background: linear-gradient(180deg, var(--blue-deep), var(--blue)); }
+    #framework-body .framework-row::after { content: ""; position: absolute; inset: 5px; pointer-events: none;
+      background:
+        linear-gradient(var(--border-hi),var(--border-hi)) left top/11px 2px no-repeat,
+        linear-gradient(var(--border-hi),var(--border-hi)) left top/2px 11px no-repeat,
+        linear-gradient(var(--border-hi),var(--border-hi)) right bottom/11px 2px no-repeat,
+        linear-gradient(var(--border-hi),var(--border-hi)) right bottom/2px 11px no-repeat; }
 
     /* ===== Groundwork row: Events & Networking + Framework Eligibility =====
        Band-C reference pair; matched height + internal scroll like the
@@ -3143,7 +3178,9 @@ TEMPLATE = r"""
     @keyframes pgfade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
     /* ----- shared wordmark header (page 1) ----- */
-    .wm-head { flex: none; text-align: center; padding: 30px 0 16px; }
+    .wm-head { flex: none; text-align: center; padding: 46px 0 26px;
+      background: radial-gradient(ellipse 78% 150% at 50% -8%,
+        #a8c8e6 0%, #bdd3e9 14%, #d2e1ee 32%, #e8eff6 56%, #f4f7fb 76%, rgba(247,249,252,0) 100%); }
     .wm-head .brand { display: inline-flex; align-items: center; gap: 14px; }
     .brand-title { font-family: "Newsreader", Georgia, serif; font-weight: 400; font-size: 30px;
       letter-spacing: -.01em; color: var(--ink); }
@@ -3157,6 +3194,21 @@ TEMPLATE = r"""
       70% { box-shadow: 0 0 0 11px rgba(159,209,129,0), 0 0 13px rgba(159,209,129,.95); }
       100% { box-shadow: 0 0 0 0 rgba(159,209,129,0), 0 0 11px rgba(159,209,129,.7); }
     }
+    /* Market Intelligence Radar — a live scanning radar (replaces the static
+       dot): concentric ring + a sweeping beam + a pulsing blip, signalling the
+       AI is continuously scouring the market for opportunities. */
+    .radar { position: relative; width: 20px; height: 20px; border-radius: 50%; align-self: center;
+      flex-shrink: 0; overflow: hidden;
+      background: radial-gradient(circle, rgba(159,209,129,.22), rgba(159,209,129,.05) 58%, transparent 72%);
+      box-shadow: inset 0 0 0 1px rgba(120,180,90,.45); }
+    .radar::before { content: ""; position: absolute; inset: 0; border-radius: 50%;
+      background: conic-gradient(from 0deg, rgba(96,178,74,.7), rgba(96,178,74,.16) 40deg, transparent 72deg);
+      animation: radar-sweep 2.2s linear infinite; }
+    .radar::after { content: ""; position: absolute; left: 50%; top: 50%; width: 3px; height: 3px;
+      margin: -1.5px 0 0 -1.5px; border-radius: 50%; background: #5fae46;
+      box-shadow: 0 0 6px rgba(96,178,74,.95); animation: radar-blip 2.2s ease-in-out infinite; }
+    @keyframes radar-sweep { to { transform: rotate(360deg); } }
+    @keyframes radar-blip { 0%,55%,100% { opacity: .4; } 72% { opacity: 1; } }
 
     /* ----- page 1: leads/signals one-viewport scroll chain -----
        page (flex col, fixed vh) -> container (flex:1, min-height:0) ->
@@ -3368,7 +3420,7 @@ TEMPLATE = r"""
 <!-- LEFT RAIL — page switcher. Active state toggled by render() (additive JS). -->
 <aside class="rail">
   <button class="ri active" id="nav-leads" data-tip="Market Intelligence Radar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3.5l2.5 7 4-15 2.5 8H21"/></svg></button>
-  <button class="ri" id="nav-agent" data-tip="Executive Assistant"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M10 2.6c.42 4.55 2.33 6.46 6.88 6.88-4.55.42-6.46 2.33-6.88 6.88-.42-4.55-2.33-6.46-6.88-6.88 4.55-.42 6.46-2.33 6.88-6.88z"/><path d="M18.4 13.6c.2 2.2 1.1 3.1 3.3 3.3-2.2.2-3.1 1.1-3.3 3.3-.2-2.2-1.1-3.1-3.3-3.3 2.2-.2 3.1-1.1 3.3-3.3z"/></svg></button>
+  <button class="ri" id="nav-agent" data-tip="Executive Assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v-.5a8 8 0 0 1 16 0v.5"/><rect x="2.5" y="12.5" width="3.5" height="6" rx="1.75"/><rect x="18" y="12.5" width="3.5" height="6" rx="1.75"/><path d="M20 18.5v1a2.5 2.5 0 0 1-2.5 2.5h-3"/></svg></button>
   <button class="ri" id="nav-cal" data-tip="BD Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></button>
 </aside>
 
@@ -3377,7 +3429,7 @@ TEMPLATE = r"""
   <!-- ===== PAGE 1 · MARKET INTELLIGENCE RADAR (leads + pre-market) ===== -->
   <section class="page active" id="leads">
     <div class="wm-head">
-      <div class="brand"><span class="vma-ic"></span><span class="brand-title">Market Intelligence Radar</span><span class="live-dot"></span></div>
+      <div class="brand"><span class="vma-ic"></span><span class="brand-title">Market Intelligence Radar</span><span class="radar" title="Live — scanning the market for opportunities"></span></div>
     </div>
 
     <div class="container">
@@ -3607,7 +3659,7 @@ TEMPLATE = r"""
   <section class="page" id="agent">
     <div class="agent-wrap">
       <div class="ea-hero">
-        <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M10 2.6c.42 4.55 2.33 6.46 6.88 6.88-4.55.42-6.46 2.33-6.88 6.88-.42-4.55-2.33-6.46-6.88-6.88 4.55-.42 6.46-2.33 6.88-6.88z"/><path d="M18.4 13.6c.2 2.2 1.1 3.1 3.3 3.3-2.2.2-3.1 1.1-3.3 3.3-.2-2.2-1.1-3.1-3.3-3.3 2.2-.2 3.1-1.1 3.3-3.3z"/></svg></div>
+        <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v-.5a8 8 0 0 1 16 0v.5"/><rect x="2.5" y="12.5" width="3.5" height="6" rx="1.75"/><rect x="18" y="12.5" width="3.5" height="6" rx="1.75"/><path d="M20 18.5v1a2.5 2.5 0 0 1-2.5 2.5h-3"/></svg></div>
         <h1 class="gemini-title">Executive Assistant</h1>
         <div class="cc-sub">Real-time reports generated for you. On-demand.</div>
       </div>
@@ -4327,128 +4379,47 @@ async function loadPulses() {
         'dated windows rather than show stale noise.</div>';
       return;
     }
-    const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const rows = pulseRows;
-
-    // act-by month/year per pulse (window-end month — the deadline the
-    // run-up builds to). Fall back to the printed window if act_by absent.
-    const abOf = p => {
-      const ab = (p.act_by || (String(p.window || '').split('→').pop() || '')).trim();
-      return { y: parseInt(ab.slice(0, 4), 10), m: parseInt(ab.slice(5, 7), 10) - 1 };
-    };
-    // Ribbon year = the most common act-by year across active pulses.
-    const yc = {};
-    rows.forEach(p => { const y = abOf(p).y; if (y) yc[y] = (yc[y] || 0) + 1; });
-    const ribYear = Object.keys(yc).sort((a, b) => yc[b] - yc[a])[0]
-      ? parseInt(Object.keys(yc).sort((a, b) => yc[b] - yc[a])[0], 10)
-      : new Date().getFullYear();
-    const now = new Date(), nowY = now.getFullYear(), nowM = now.getMonth();
-
-    // Bucket pulses by act-by month within the ribbon year.
-    const buckets = Array.from({ length: 12 }, () => []);
-    rows.forEach(p => { const a = abOf(p); if (a.y === ribYear && a.m >= 0 && a.m < 12) buckets[a.m].push(p); });
-
-    const newCount = rows.filter(p => p.just_opened).length;
-    let freshMonth = -1;
-    for (let m = 0; m < 12; m++) if (buckets[m].some(p => p.just_opened)) { freshMonth = m; break; }
-
-    const pipFor = p => {
-      const cls = p.confidence === 'high' ? 'high' : 'med';
-      return '<span class="cal-pip ' + cls + '"></span>';
-    };
-    const out = ['<div class="cal-wrap"><div class="cal-ribbon">'];
-    for (let m = 0; m < 12; m++) {
-      const ps = buckets[m], has = ps.length > 0;
-      const fresh = ps.some(p => p.just_opened);
-      const past = (ribYear < nowY) || (ribYear === nowY && m < nowM);
-      const isNow = (ribYear === nowY && m === nowM);
-      const cls = 'cal-tile' + (past ? ' past' : '') + (isNow ? ' now' : '') +
-                  (has ? ' has' : '') + (fresh ? ' fresh' : '');
+    // Each placement window is drawn as a glass window-pane tile beside its
+    // target role + timing — "the concept of a window" made literal.
+    const newCount = pulseRows.filter(p => p.just_opened).length;
+    const out = ['<div class="win-list">'];
+    pulseRows.forEach(p => {
+      const high = p.confidence === 'high';
+      const confLabel = high ? 'Regulatory deadline' : 'Policy timeline';
+      const days = (typeof p.days_left === 'number') ? p.days_left + 'd left' : '';
+      const rm = p.key
+        ? '<button class="cal-rm" data-key="' + esc(p.key) + '" title="Remove this window">&#10005;</button>'
+        : '';
       out.push(
-        '<div class="' + cls + '" data-m="' + m + '">' +
-          '<span class="cal-mlab">' + MON[m] + '</span>' +
-          '<span class="cal-right">' +
-            (has ? '<span class="cal-pips">' + ps.map(pipFor).join('') + '</span>' : '') +
-            (fresh ? '<span class="cal-nbadge">NEW</span>' : '') +
-          '</span>' +
+        '<div class="win-row' + (p.just_opened ? ' is-new' : '') + '">' +
+          '<div class="win-tile" title="Placement window"></div>' +
+          '<div class="win-main">' +
+            '<div class="win-name">' + esc(p.name || '') + '</div>' +
+            (p.seat ? '<div class="win-seat">' + esc(p.seat) + '</div>' : '') +
+            '<div class="win-tags">' +
+              '<span class="conf-pill ' + (high ? 'high' : 'med') + '">' + esc(confLabel) + '</span>' +
+              (days ? '<span class="win-days">' + esc(days) + '</span>' : '') +
+            '</div>' +
+            (p.scope_note ? '<div class="win-scope">' + esc(p.scope_note) +
+              (p.source ? ' &middot; <a href="' + safeUrl(p.source) +
+                 '" target="_blank" rel="noopener noreferrer" style="color:var(--blue-deep);text-decoration:none;">source</a>' : '') +
+              '</div>' : '') +
+            (p.advisory ? '<div class="win-scope">' + esc(p.advisory) + '</div>' : '') +
+          '</div>' +
+          rm +
         '</div>'
       );
-    }
-    out.push('</div>');  // .cal-ribbon
-    out.push(
-      '<div class="cal-detail">' +
-        '<div class="cal-card" id="cal-card">' +
-          '<span class="cal-ph">Click a month with pips for the lead detail.</span>' +
-        '</div>' +
-        '<div class="cal-legend">' +
-          '<span><i style="background:var(--teal)"></i>Regulatory deadline</span>' +
-          '<span><i style="background:var(--green)"></i>Policy timeline</span>' +
-        '</div>' +
-      '</div></div>'  // .cal-detail .cal-wrap
-    );
+    });
+    out.push('</div>');
     body.innerHTML = out.join('');
 
-    const cardFor = p => {
-      const conf = (p.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
-      const confLabel = (p.confidence === 'high') ? 'Regulatory deadline' : 'Policy timeline';
-      const far = (typeof p.days_left === 'number' && p.days_left > 150);
-      const daysLabel = (typeof p.days_left === 'number') ? (p.days_left + 'd left') : '';
-      const targets = (p.targets || []).map(t =>
-        '<span class="hook-badge generic_fit" style="margin:2px 4px 2px 0;display:inline-block;">' +
-        esc(t) + '</span>').join('');
-      const rm = p.key
-        ? '<button class="cal-rm" data-key="' + esc(p.key) + '" title="Remove this finding">✕ Remove</button>'
-        : '';
-      return (
-        '<div class="cal-card-head">' +
-          '<span class="' + conf + '">' + esc(confLabel) + '</span> ' +
-          '<span class="cal-c-name">' + esc(p.name || '') + '</span>' +
-          (daysLabel
-            ? '<span class="cal-days' + (far ? ' far' : '') + '">' + esc(daysLabel) + '</span>'
-            : '') +
-          rm +
-        '</div>' +
-        '<div class="cal-seat">' + esc(p.seat || '') + '</div>' +
-        '<div class="cal-angle">' + esc(p.angle || '') + '</div>' +
-        (targets ? '<div style="margin-top:6px;">' + targets + '</div>' : '') +
-        '<div class="cal-scope">' + esc(p.scope_note || '') +
-          (p.source
-            ? ' &middot; <a href="' + safeUrl(p.source) + '" target="_blank" rel="noopener noreferrer" style="color:#0366d6;">source</a>'
-            : '') +
-        '</div>' +
-        (p.advisory ? '<div class="advisory-line">' + esc(p.advisory) + '</div>' : '')
-      );
-    };
-    const CAL_PH = '<span class="cal-ph">Click a month with pips for the lead detail.</span>';
-    const openMonth = m => {
-      const ps = buckets[m] || [];
-      if (!ps.length) return;
-      const tile = body.querySelector('.cal-tile[data-m="' + m + '"]');
-      const alreadyOpen = tile && tile.classList.contains('sel');
-      body.querySelectorAll('.cal-tile').forEach(t => t.classList.remove('sel'));
-      if (alreadyOpen) {
-        // Second click on the open month → collapse back to placeholder.
-        document.getElementById('cal-card').innerHTML = CAL_PH;
-        return;
-      }
-      if (tile) tile.classList.add('sel');
-      document.getElementById('cal-card').innerHTML =
-        ps.map(cardFor).join('<hr class="cal-dsep">');
-    };
-    body.querySelectorAll('.cal-tile.has').forEach(t =>
-      t.addEventListener('click', () => openMonth(parseInt(t.dataset.m, 10))));
-
-    // Remove-a-finding: delegated click on the cal-card. Persists the
-    // dismissal then re-renders the whole calendar so pip counts and
-    // month buckets stay correct.
-    const calCard = document.getElementById('cal-card');
-    if (calCard) {
-      calCard.addEventListener('click', async (ev) => {
-        const rmBtn = ev.target.closest('.cal-rm');
-        if (!rmBtn) return;
-        const key = rmBtn.getAttribute('data-key');
+    // Remove-a-window: delegated dismissal (shared pulse_dismiss keyspace),
+    // then re-render so the count stays correct.
+    body.querySelectorAll('.cal-rm').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const key = btn.getAttribute('data-key');
         if (!key) return;
-        rmBtn.disabled = true;
+        btn.disabled = true;
         try {
           const r = await fetch('/api/pulses/dismiss', {
             method: 'POST',
@@ -4457,29 +4428,29 @@ async function loadPulses() {
           });
           const j = await r.json();
           if (j.ok) {
-            loadPulses();   // re-render with the finding removed
+            loadPulses();   // re-render with the window removed
           } else {
-            rmBtn.disabled = false;
+            btn.disabled = false;
             alert(j.detail || 'Could not remove.');
           }
         } catch (e) {
-          rmBtn.disabled = false;
+          btn.disabled = false;
           alert('Network error: ' + e.message);
         }
       });
-    }
+    });
 
     const nb = document.getElementById('pulses-new');
-    if (newCount > 0 && freshMonth >= 0) {
-      document.getElementById('pulses-new-n').textContent = newCount;
-      nb.style.display = 'inline-flex';
-      nb.onclick = () => openMonth(freshMonth);
-    } else if (nb) {
-      nb.style.display = 'none';
+    if (nb) {
+      if (newCount > 0) {
+        const n = document.getElementById('pulses-new-n');
+        if (n) n.textContent = newCount;
+        nb.style.display = 'inline-flex';
+        nb.onclick = null;
+      } else {
+        nb.style.display = 'none';
+      }
     }
-
-    // No auto-open: the ribbon shows the placeholder until Sara clicks
-    // a month. The NEW badge / header chip entice the click instead.
   } catch (e) {
     body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
   }
@@ -4525,30 +4496,35 @@ async function loadEvents() {
                 : f === 'external' ? 'External comms' : 'Mixed';
       return '<span class="ev-focus ev-' + esc(f || 'mixed') + '">' + lab + '</span>';
     };
-    const out = ['<ul class="ev-list">'];
+    const dayOf = iso => { const p = String(iso || '').split('-'); return p.length >= 3 ? parseInt(p[2], 10) : ''; };
+    const monOf = iso => { const p = String(iso || '').split('-'); return p.length >= 2 ? (MON[parseInt(p[1], 10) - 1] || '') : ''; };
+    const out = ['<div class="ev-list">'];
     rows.forEach(e => {
       const win = e.in_action_window
         ? '<span class="ev-open" title="Outreach window open now">window open</span>' : '';
       const rm = e.key
         ? '<button class="ev-rm" data-key="' + esc(e.key) + '" title="Remove this event">&#10005;</button>' : '';
+      const focLab = e.focus === 'internal' ? 'Internal' : e.focus === 'external' ? 'External' : 'Mixed';
+      const when = whenChip(e.days_to_event);
       out.push(
-        '<li class="ev-item">' +
-          '<div class="ev-top">' +
-            focusChip(e.focus) +
-            '<span class="ev-name">' + esc(e.name || '') + '</span>' +
-            (win ? ' ' + win : '') +
-            '<span class="ev-when">' + esc(whenChip(e.days_to_event)) + '</span>' +
-            rm +
+        '<div class="ev-row">' +
+          '<div class="ev-date"><b>' + esc(dayOf(e.event_date)) + '</b><span>' + esc(monOf(e.event_date)) + '</span></div>' +
+          '<div class="ev-main">' +
+            '<div class="ev-n">' + esc(e.name || '') + win + '</div>' +
+            '<div class="ev-t">' +
+              '<span class="ev-foc">' + focLab + '</span>' +
+              (e.location ? '<span>' + esc(e.location) + '</span>' : '') +
+              (when ? '<span>' + esc(when) + '</span>' : '') +
+            '</div>' +
+            (e.why_now ? '<div class="ev-why">' + esc(e.why_now) + '</div>' : '') +
+            (e.source ? '<div class="ev-why"><a href="' + safeUrl(e.source) +
+               '" target="_blank" rel="noopener noreferrer" style="color:var(--blue-deep);text-decoration:none;">source &rsaquo;</a></div>' : '') +
           '</div>' +
-          '<div class="ev-meta">' + esc(fmtDate(e.event_date)) +
-            (e.location ? ' &middot; ' + esc(e.location) : '') + '</div>' +
-          (e.why_now ? '<div class="ev-why">' + esc(e.why_now) + '</div>' : '') +
-          (e.source ? '<div class="ev-src"><a href="' + safeUrl(e.source) +
-             '" target="_blank" rel="noopener noreferrer">source &rsaquo;</a></div>' : '') +
-        '</li>'
+          rm +
+        '</div>'
       );
     });
-    out.push('</ul>');
+    out.push('</div>');
     body.innerHTML = out.join('');
     // Remove-an-event (delegated): persist the dismissal (shared pulse_dismiss
     // keyspace) then re-render so the count + list stay correct.
