@@ -2229,6 +2229,44 @@ TEMPLATE = r"""
       border-radius: 6px; padding: 3px 7px; font: 500 11px/1 "Inter", sans-serif; cursor: pointer;
       flex-shrink: 0; transition: border-color .12s, color .12s; }
     .ev-rm:hover { border-color: #A33A22; color: #A33A22; }
+    /* Placement Windows — each window drawn as a glass window-pane tile
+       (frame + cross mullions) beside its role + timing. */
+    .win-list { padding: 4px 0; }
+    .win-row { display: flex; align-items: flex-start; gap: 13px; padding: 13px 16px;
+      border-bottom: 1px solid var(--hairline); }
+    .win-row:last-child { border-bottom: none; }
+    .win-row:hover { background: var(--elevated); }
+    .win-tile { position: relative; flex-shrink: 0; width: 46px; height: 46px; border-radius: 5px;
+      background: linear-gradient(155deg, #cbe0f5 0%, #eaf3fc 70%); border: 2px solid var(--blue-deep);
+      box-shadow: inset 0 0 0 1.5px #fff; margin-top: 1px; }
+    .win-tile::before { content: ""; position: absolute; left: 50%; top: 3px; bottom: 3px; width: 2px;
+      background: var(--blue-deep); opacity: .5; transform: translateX(-50%); }
+    .win-tile::after { content: ""; position: absolute; top: 50%; left: 3px; right: 3px; height: 2px;
+      background: var(--blue-deep); opacity: .5; transform: translateY(-50%); }
+    .win-main { flex: 1; min-width: 0; }
+    .win-name { font-size: 12.5px; font-weight: 600; color: var(--ink); line-height: 1.35; }
+    .win-seat { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+    .win-tags { margin-top: 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .conf-pill { font: 600 8.5px/1 "JetBrains Mono", monospace; letter-spacing: .06em;
+      text-transform: uppercase; padding: 4px 8px; border-radius: 9999px; }
+    .conf-pill.high { background: var(--grn-bg); color: var(--grn-tx); }
+    .conf-pill.med { background: var(--tan-bg); color: var(--tan-tx); }
+    .win-days { font: 600 9.5px/1 "JetBrains Mono", monospace; color: var(--ink-2); }
+    .win-scope { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.45; }
+    /* Framework Eligibility — 'structural framework' treatment: each row framed
+       like a built structure (left girder + corner joints). */
+    #framework-body .framework-row { position: relative; margin: 12px 12px 0;
+      padding: 13px 15px 13px 18px; border: 1px solid var(--border); border-radius: 4px;
+      background: var(--elevated); }
+    #framework-body .framework-row:last-child { margin-bottom: 12px; }
+    #framework-body .framework-row::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; border-radius: 4px 0 0 4px; background: linear-gradient(180deg, var(--blue-deep), var(--blue)); }
+    #framework-body .framework-row::after { content: ""; position: absolute; inset: 5px; pointer-events: none;
+      background:
+        linear-gradient(var(--border-hi),var(--border-hi)) left top/11px 2px no-repeat,
+        linear-gradient(var(--border-hi),var(--border-hi)) left top/2px 11px no-repeat,
+        linear-gradient(var(--border-hi),var(--border-hi)) right bottom/11px 2px no-repeat,
+        linear-gradient(var(--border-hi),var(--border-hi)) right bottom/2px 11px no-repeat; }
 
     /* ===== Groundwork row: Events & Networking + Framework Eligibility =====
        Band-C reference pair; matched height + internal scroll like the
@@ -4341,128 +4379,47 @@ async function loadPulses() {
         'dated windows rather than show stale noise.</div>';
       return;
     }
-    const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const rows = pulseRows;
-
-    // act-by month/year per pulse (window-end month — the deadline the
-    // run-up builds to). Fall back to the printed window if act_by absent.
-    const abOf = p => {
-      const ab = (p.act_by || (String(p.window || '').split('→').pop() || '')).trim();
-      return { y: parseInt(ab.slice(0, 4), 10), m: parseInt(ab.slice(5, 7), 10) - 1 };
-    };
-    // Ribbon year = the most common act-by year across active pulses.
-    const yc = {};
-    rows.forEach(p => { const y = abOf(p).y; if (y) yc[y] = (yc[y] || 0) + 1; });
-    const ribYear = Object.keys(yc).sort((a, b) => yc[b] - yc[a])[0]
-      ? parseInt(Object.keys(yc).sort((a, b) => yc[b] - yc[a])[0], 10)
-      : new Date().getFullYear();
-    const now = new Date(), nowY = now.getFullYear(), nowM = now.getMonth();
-
-    // Bucket pulses by act-by month within the ribbon year.
-    const buckets = Array.from({ length: 12 }, () => []);
-    rows.forEach(p => { const a = abOf(p); if (a.y === ribYear && a.m >= 0 && a.m < 12) buckets[a.m].push(p); });
-
-    const newCount = rows.filter(p => p.just_opened).length;
-    let freshMonth = -1;
-    for (let m = 0; m < 12; m++) if (buckets[m].some(p => p.just_opened)) { freshMonth = m; break; }
-
-    const pipFor = p => {
-      const cls = p.confidence === 'high' ? 'high' : 'med';
-      return '<span class="cal-pip ' + cls + '"></span>';
-    };
-    const out = ['<div class="cal-wrap"><div class="cal-ribbon">'];
-    for (let m = 0; m < 12; m++) {
-      const ps = buckets[m], has = ps.length > 0;
-      const fresh = ps.some(p => p.just_opened);
-      const past = (ribYear < nowY) || (ribYear === nowY && m < nowM);
-      const isNow = (ribYear === nowY && m === nowM);
-      const cls = 'cal-tile' + (past ? ' past' : '') + (isNow ? ' now' : '') +
-                  (has ? ' has' : '') + (fresh ? ' fresh' : '');
+    // Each placement window is drawn as a glass window-pane tile beside its
+    // target role + timing — "the concept of a window" made literal.
+    const newCount = pulseRows.filter(p => p.just_opened).length;
+    const out = ['<div class="win-list">'];
+    pulseRows.forEach(p => {
+      const high = p.confidence === 'high';
+      const confLabel = high ? 'Regulatory deadline' : 'Policy timeline';
+      const days = (typeof p.days_left === 'number') ? p.days_left + 'd left' : '';
+      const rm = p.key
+        ? '<button class="cal-rm" data-key="' + esc(p.key) + '" title="Remove this window">&#10005;</button>'
+        : '';
       out.push(
-        '<div class="' + cls + '" data-m="' + m + '">' +
-          '<span class="cal-mlab">' + MON[m] + '</span>' +
-          '<span class="cal-right">' +
-            (has ? '<span class="cal-pips">' + ps.map(pipFor).join('') + '</span>' : '') +
-            (fresh ? '<span class="cal-nbadge">NEW</span>' : '') +
-          '</span>' +
+        '<div class="win-row' + (p.just_opened ? ' is-new' : '') + '">' +
+          '<div class="win-tile" title="Placement window"></div>' +
+          '<div class="win-main">' +
+            '<div class="win-name">' + esc(p.name || '') + '</div>' +
+            (p.seat ? '<div class="win-seat">' + esc(p.seat) + '</div>' : '') +
+            '<div class="win-tags">' +
+              '<span class="conf-pill ' + (high ? 'high' : 'med') + '">' + esc(confLabel) + '</span>' +
+              (days ? '<span class="win-days">' + esc(days) + '</span>' : '') +
+            '</div>' +
+            (p.scope_note ? '<div class="win-scope">' + esc(p.scope_note) +
+              (p.source ? ' &middot; <a href="' + safeUrl(p.source) +
+                 '" target="_blank" rel="noopener noreferrer" style="color:var(--blue-deep);text-decoration:none;">source</a>' : '') +
+              '</div>' : '') +
+            (p.advisory ? '<div class="win-scope">' + esc(p.advisory) + '</div>' : '') +
+          '</div>' +
+          rm +
         '</div>'
       );
-    }
-    out.push('</div>');  // .cal-ribbon
-    out.push(
-      '<div class="cal-detail">' +
-        '<div class="cal-card" id="cal-card">' +
-          '<span class="cal-ph">Click a month with pips for the lead detail.</span>' +
-        '</div>' +
-        '<div class="cal-legend">' +
-          '<span><i style="background:var(--teal)"></i>Regulatory deadline</span>' +
-          '<span><i style="background:var(--green)"></i>Policy timeline</span>' +
-        '</div>' +
-      '</div></div>'  // .cal-detail .cal-wrap
-    );
+    });
+    out.push('</div>');
     body.innerHTML = out.join('');
 
-    const cardFor = p => {
-      const conf = (p.confidence === 'high') ? 'mandate-age' : 'hook-badge generic_fit';
-      const confLabel = (p.confidence === 'high') ? 'Regulatory deadline' : 'Policy timeline';
-      const far = (typeof p.days_left === 'number' && p.days_left > 150);
-      const daysLabel = (typeof p.days_left === 'number') ? (p.days_left + 'd left') : '';
-      const targets = (p.targets || []).map(t =>
-        '<span class="hook-badge generic_fit" style="margin:2px 4px 2px 0;display:inline-block;">' +
-        esc(t) + '</span>').join('');
-      const rm = p.key
-        ? '<button class="cal-rm" data-key="' + esc(p.key) + '" title="Remove this finding">✕ Remove</button>'
-        : '';
-      return (
-        '<div class="cal-card-head">' +
-          '<span class="' + conf + '">' + esc(confLabel) + '</span> ' +
-          '<span class="cal-c-name">' + esc(p.name || '') + '</span>' +
-          (daysLabel
-            ? '<span class="cal-days' + (far ? ' far' : '') + '">' + esc(daysLabel) + '</span>'
-            : '') +
-          rm +
-        '</div>' +
-        '<div class="cal-seat">' + esc(p.seat || '') + '</div>' +
-        '<div class="cal-angle">' + esc(p.angle || '') + '</div>' +
-        (targets ? '<div style="margin-top:6px;">' + targets + '</div>' : '') +
-        '<div class="cal-scope">' + esc(p.scope_note || '') +
-          (p.source
-            ? ' &middot; <a href="' + safeUrl(p.source) + '" target="_blank" rel="noopener noreferrer" style="color:#0366d6;">source</a>'
-            : '') +
-        '</div>' +
-        (p.advisory ? '<div class="advisory-line">' + esc(p.advisory) + '</div>' : '')
-      );
-    };
-    const CAL_PH = '<span class="cal-ph">Click a month with pips for the lead detail.</span>';
-    const openMonth = m => {
-      const ps = buckets[m] || [];
-      if (!ps.length) return;
-      const tile = body.querySelector('.cal-tile[data-m="' + m + '"]');
-      const alreadyOpen = tile && tile.classList.contains('sel');
-      body.querySelectorAll('.cal-tile').forEach(t => t.classList.remove('sel'));
-      if (alreadyOpen) {
-        // Second click on the open month → collapse back to placeholder.
-        document.getElementById('cal-card').innerHTML = CAL_PH;
-        return;
-      }
-      if (tile) tile.classList.add('sel');
-      document.getElementById('cal-card').innerHTML =
-        ps.map(cardFor).join('<hr class="cal-dsep">');
-    };
-    body.querySelectorAll('.cal-tile.has').forEach(t =>
-      t.addEventListener('click', () => openMonth(parseInt(t.dataset.m, 10))));
-
-    // Remove-a-finding: delegated click on the cal-card. Persists the
-    // dismissal then re-renders the whole calendar so pip counts and
-    // month buckets stay correct.
-    const calCard = document.getElementById('cal-card');
-    if (calCard) {
-      calCard.addEventListener('click', async (ev) => {
-        const rmBtn = ev.target.closest('.cal-rm');
-        if (!rmBtn) return;
-        const key = rmBtn.getAttribute('data-key');
+    // Remove-a-window: delegated dismissal (shared pulse_dismiss keyspace),
+    // then re-render so the count stays correct.
+    body.querySelectorAll('.cal-rm').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const key = btn.getAttribute('data-key');
         if (!key) return;
-        rmBtn.disabled = true;
+        btn.disabled = true;
         try {
           const r = await fetch('/api/pulses/dismiss', {
             method: 'POST',
@@ -4471,29 +4428,29 @@ async function loadPulses() {
           });
           const j = await r.json();
           if (j.ok) {
-            loadPulses();   // re-render with the finding removed
+            loadPulses();   // re-render with the window removed
           } else {
-            rmBtn.disabled = false;
+            btn.disabled = false;
             alert(j.detail || 'Could not remove.');
           }
         } catch (e) {
-          rmBtn.disabled = false;
+          btn.disabled = false;
           alert('Network error: ' + e.message);
         }
       });
-    }
+    });
 
     const nb = document.getElementById('pulses-new');
-    if (newCount > 0 && freshMonth >= 0) {
-      document.getElementById('pulses-new-n').textContent = newCount;
-      nb.style.display = 'inline-flex';
-      nb.onclick = () => openMonth(freshMonth);
-    } else if (nb) {
-      nb.style.display = 'none';
+    if (nb) {
+      if (newCount > 0) {
+        const n = document.getElementById('pulses-new-n');
+        if (n) n.textContent = newCount;
+        nb.style.display = 'inline-flex';
+        nb.onclick = null;
+      } else {
+        nb.style.display = 'none';
+      }
     }
-
-    // No auto-open: the ribbon shows the placeholder until Sara clicks
-    // a month. The NEW badge / header chip entice the click instead.
   } catch (e) {
     body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
   }
