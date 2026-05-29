@@ -3143,7 +3143,9 @@ TEMPLATE = r"""
     @keyframes pgfade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
     /* ----- shared wordmark header (page 1) ----- */
-    .wm-head { flex: none; text-align: center; padding: 30px 0 16px; }
+    .wm-head { flex: none; text-align: center; padding: 46px 0 26px;
+      background: radial-gradient(ellipse 78% 150% at 50% -8%,
+        #a8c8e6 0%, #bdd3e9 14%, #d2e1ee 32%, #e8eff6 56%, #f4f7fb 76%, rgba(247,249,252,0) 100%); }
     .wm-head .brand { display: inline-flex; align-items: center; gap: 14px; }
     .brand-title { font-family: "Newsreader", Georgia, serif; font-weight: 400; font-size: 30px;
       letter-spacing: -.01em; color: var(--ink); }
@@ -3157,6 +3159,21 @@ TEMPLATE = r"""
       70% { box-shadow: 0 0 0 11px rgba(159,209,129,0), 0 0 13px rgba(159,209,129,.95); }
       100% { box-shadow: 0 0 0 0 rgba(159,209,129,0), 0 0 11px rgba(159,209,129,.7); }
     }
+    /* Market Intelligence Radar — a live scanning radar (replaces the static
+       dot): concentric ring + a sweeping beam + a pulsing blip, signalling the
+       AI is continuously scouring the market for opportunities. */
+    .radar { position: relative; width: 20px; height: 20px; border-radius: 50%; align-self: center;
+      flex-shrink: 0; overflow: hidden;
+      background: radial-gradient(circle, rgba(159,209,129,.22), rgba(159,209,129,.05) 58%, transparent 72%);
+      box-shadow: inset 0 0 0 1px rgba(120,180,90,.45); }
+    .radar::before { content: ""; position: absolute; inset: 0; border-radius: 50%;
+      background: conic-gradient(from 0deg, rgba(96,178,74,.7), rgba(96,178,74,.16) 40deg, transparent 72deg);
+      animation: radar-sweep 2.2s linear infinite; }
+    .radar::after { content: ""; position: absolute; left: 50%; top: 50%; width: 3px; height: 3px;
+      margin: -1.5px 0 0 -1.5px; border-radius: 50%; background: #5fae46;
+      box-shadow: 0 0 6px rgba(96,178,74,.95); animation: radar-blip 2.2s ease-in-out infinite; }
+    @keyframes radar-sweep { to { transform: rotate(360deg); } }
+    @keyframes radar-blip { 0%,55%,100% { opacity: .4; } 72% { opacity: 1; } }
 
     /* ----- page 1: leads/signals one-viewport scroll chain -----
        page (flex col, fixed vh) -> container (flex:1, min-height:0) ->
@@ -3368,7 +3385,7 @@ TEMPLATE = r"""
 <!-- LEFT RAIL — page switcher. Active state toggled by render() (additive JS). -->
 <aside class="rail">
   <button class="ri active" id="nav-leads" data-tip="Market Intelligence Radar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3.5l2.5 7 4-15 2.5 8H21"/></svg></button>
-  <button class="ri" id="nav-agent" data-tip="Executive Assistant"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M10 2.6c.42 4.55 2.33 6.46 6.88 6.88-4.55.42-6.46 2.33-6.88 6.88-.42-4.55-2.33-6.46-6.88-6.88 4.55-.42 6.46-2.33 6.88-6.88z"/><path d="M18.4 13.6c.2 2.2 1.1 3.1 3.3 3.3-2.2.2-3.1 1.1-3.3 3.3-.2-2.2-1.1-3.1-3.3-3.3 2.2-.2 3.1-1.1 3.3-3.3z"/></svg></button>
+  <button class="ri" id="nav-agent" data-tip="Executive Assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v-.5a8 8 0 0 1 16 0v.5"/><rect x="2.5" y="12.5" width="3.5" height="6" rx="1.75"/><rect x="18" y="12.5" width="3.5" height="6" rx="1.75"/><path d="M20 18.5v1a2.5 2.5 0 0 1-2.5 2.5h-3"/></svg></button>
   <button class="ri" id="nav-cal" data-tip="BD Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></button>
 </aside>
 
@@ -3377,7 +3394,7 @@ TEMPLATE = r"""
   <!-- ===== PAGE 1 · MARKET INTELLIGENCE RADAR (leads + pre-market) ===== -->
   <section class="page active" id="leads">
     <div class="wm-head">
-      <div class="brand"><span class="vma-ic"></span><span class="brand-title">Market Intelligence Radar</span><span class="live-dot"></span></div>
+      <div class="brand"><span class="vma-ic"></span><span class="brand-title">Market Intelligence Radar</span><span class="radar" title="Live — scanning the market for opportunities"></span></div>
     </div>
 
     <div class="container">
@@ -3607,7 +3624,7 @@ TEMPLATE = r"""
   <section class="page" id="agent">
     <div class="agent-wrap">
       <div class="ea-hero">
-        <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M10 2.6c.42 4.55 2.33 6.46 6.88 6.88-4.55.42-6.46 2.33-6.88 6.88-.42-4.55-2.33-6.46-6.88-6.88 4.55-.42 6.46-2.33 6.88-6.88z"/><path d="M18.4 13.6c.2 2.2 1.1 3.1 3.3 3.3-2.2.2-3.1 1.1-3.3 3.3-.2-2.2-1.1-3.1-3.3-3.3 2.2-.2 3.1-1.1 3.3-3.3z"/></svg></div>
+        <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v-.5a8 8 0 0 1 16 0v.5"/><rect x="2.5" y="12.5" width="3.5" height="6" rx="1.75"/><rect x="18" y="12.5" width="3.5" height="6" rx="1.75"/><path d="M20 18.5v1a2.5 2.5 0 0 1-2.5 2.5h-3"/></svg></div>
         <h1 class="gemini-title">Executive Assistant</h1>
         <div class="cc-sub">Real-time reports generated for you. On-demand.</div>
       </div>
