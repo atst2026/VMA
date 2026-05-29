@@ -2204,34 +2204,31 @@ TEMPLATE = r"""
     .cal-dsep { border: 0; border-top: 1px solid var(--border); margin: 10px 0; }
 
     /* ===== Events & Networking — light chronological list ===== */
-    .ev-list { list-style: none; margin: 0; padding: 0; }
-    .ev-item { padding: 11px 16px; border-bottom: 1px solid var(--border); }
-    .ev-item:last-child { border-bottom: none; }
-    .ev-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .ev-name { font-weight: 600; font-size: 12.5px; color: var(--navy); }
-    .ev-focus {
-      font: 700 9.5px/1.4 "Inter", sans-serif; letter-spacing: .04em;
-      text-transform: uppercase; padding: 2px 7px; border-radius: 10px; white-space: nowrap;
-    }
-    .ev-internal { background: var(--teal-soft); color: var(--teal-dark); }
-    .ev-external { background: #fff4e0; color: #8a5a00; }
-    .ev-mixed    { background: #eef0f3; color: #80868b; }
-    .ev-open {
-      font: 700 9.5px/1.4 "Inter", sans-serif; letter-spacing: .03em;
-      background: #e7f3ec; color: #2e7d50; padding: 2px 7px; border-radius: 10px;
-    }
-    .ev-when { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
-    .ev-rm {
-      background: transparent; color: var(--text-muted);
-      border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px;
-      font: 500 10px/1.4 "Inter", sans-serif; cursor: pointer;
-      transition: border-color .12s, color .12s;
-    }
+    /* Events & Networking — v21 date-tile layout: a calendar date chip, then
+       the event with its focus + location. */
+    .ev-list { list-style: none; margin: 0; padding: 4px 0; }
+    .ev-row { display: flex; align-items: center; gap: 12px; padding: 11px 16px;
+      border-bottom: 1px solid var(--hairline); }
+    .ev-row:last-child { border-bottom: none; }
+    .ev-row:hover { background: var(--elevated); }
+    .ev-date { flex-shrink: 0; width: 40px; height: 40px; border-radius: 10px;
+      background: var(--blue-wash); color: var(--blue-deep); display: flex; flex-direction: column;
+      align-items: center; justify-content: center; line-height: 1; }
+    .ev-date b { font: 700 15px/1 "Inter", sans-serif; }
+    .ev-date span { font: 600 7.5px/1 "JetBrains Mono", monospace; letter-spacing: .08em;
+      text-transform: uppercase; margin-top: 2px; }
+    .ev-main { flex: 1; min-width: 0; }
+    .ev-n { font-size: 12.5px; font-weight: 600; color: var(--ink); }
+    .ev-t { font: 600 8.5px/1 "JetBrains Mono", monospace; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--dim); margin-top: 5px; display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
+    .ev-foc { padding: 2px 6px; border-radius: 5px; background: var(--elevated); color: var(--ink-2); }
+    .ev-open { font: 700 8px/1.3 "Inter", sans-serif; letter-spacing: .03em; text-transform: none;
+      background: #e7f3ec; color: #2e7d50; padding: 2px 7px; border-radius: 10px; margin-left: 7px; }
+    .ev-why { font-size: 11px; color: var(--muted); margin-top: 5px; }
+    .ev-rm { background: transparent; color: var(--muted); border: 1px solid var(--border);
+      border-radius: 6px; padding: 3px 7px; font: 500 11px/1 "Inter", sans-serif; cursor: pointer;
+      flex-shrink: 0; transition: border-color .12s, color .12s; }
     .ev-rm:hover { border-color: #A33A22; color: #A33A22; }
-    .ev-meta { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
-    .ev-why  { font-size: 11.5px; color: var(--text-dim); margin-top: 4px; }
-    .ev-src  { font-size: 11px; margin-top: 4px; }
-    .ev-src a { color: #0366d6; text-decoration: none; }
 
     /* ===== Groundwork row: Events & Networking + Framework Eligibility =====
        Band-C reference pair; matched height + internal scroll like the
@@ -4542,30 +4539,35 @@ async function loadEvents() {
                 : f === 'external' ? 'External comms' : 'Mixed';
       return '<span class="ev-focus ev-' + esc(f || 'mixed') + '">' + lab + '</span>';
     };
-    const out = ['<ul class="ev-list">'];
+    const dayOf = iso => { const p = String(iso || '').split('-'); return p.length >= 3 ? parseInt(p[2], 10) : ''; };
+    const monOf = iso => { const p = String(iso || '').split('-'); return p.length >= 2 ? (MON[parseInt(p[1], 10) - 1] || '') : ''; };
+    const out = ['<div class="ev-list">'];
     rows.forEach(e => {
       const win = e.in_action_window
         ? '<span class="ev-open" title="Outreach window open now">window open</span>' : '';
       const rm = e.key
         ? '<button class="ev-rm" data-key="' + esc(e.key) + '" title="Remove this event">&#10005;</button>' : '';
+      const focLab = e.focus === 'internal' ? 'Internal' : e.focus === 'external' ? 'External' : 'Mixed';
+      const when = whenChip(e.days_to_event);
       out.push(
-        '<li class="ev-item">' +
-          '<div class="ev-top">' +
-            focusChip(e.focus) +
-            '<span class="ev-name">' + esc(e.name || '') + '</span>' +
-            (win ? ' ' + win : '') +
-            '<span class="ev-when">' + esc(whenChip(e.days_to_event)) + '</span>' +
-            rm +
+        '<div class="ev-row">' +
+          '<div class="ev-date"><b>' + esc(dayOf(e.event_date)) + '</b><span>' + esc(monOf(e.event_date)) + '</span></div>' +
+          '<div class="ev-main">' +
+            '<div class="ev-n">' + esc(e.name || '') + win + '</div>' +
+            '<div class="ev-t">' +
+              '<span class="ev-foc">' + focLab + '</span>' +
+              (e.location ? '<span>' + esc(e.location) + '</span>' : '') +
+              (when ? '<span>' + esc(when) + '</span>' : '') +
+            '</div>' +
+            (e.why_now ? '<div class="ev-why">' + esc(e.why_now) + '</div>' : '') +
+            (e.source ? '<div class="ev-why"><a href="' + safeUrl(e.source) +
+               '" target="_blank" rel="noopener noreferrer" style="color:var(--blue-deep);text-decoration:none;">source &rsaquo;</a></div>' : '') +
           '</div>' +
-          '<div class="ev-meta">' + esc(fmtDate(e.event_date)) +
-            (e.location ? ' &middot; ' + esc(e.location) : '') + '</div>' +
-          (e.why_now ? '<div class="ev-why">' + esc(e.why_now) + '</div>' : '') +
-          (e.source ? '<div class="ev-src"><a href="' + safeUrl(e.source) +
-             '" target="_blank" rel="noopener noreferrer">source &rsaquo;</a></div>' : '') +
-        '</li>'
+          rm +
+        '</div>'
       );
     });
-    out.push('</ul>');
+    out.push('</div>');
     body.innerHTML = out.join('');
     // Remove-an-event (delegated): persist the dismissal (shared pulse_dismiss
     // keyspace) then re-render so the count + list stay correct.
