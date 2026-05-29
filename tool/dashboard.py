@@ -956,24 +956,16 @@ def index():
     from tool.funding_round import opportunity_value as _funding_opp
     for _f in funding_events:
         _f["_opp"] = _funding_opp(_f)
-    # Vacated senior-comms seats (the replacement-search play) are the
-    # highest-intent pre-market signal — the seat is open now — so they belong
-    # in Pre-Market alongside predictors + funding, not in a starved standalone
-    # panel. Surface the old-co side only; score on the same opportunity scale.
-    vacated_seats = cascade.list_vacated_seats()
-    for _v in vacated_seats:
-        _v["_kind"] = "vacated_seat"
-        _v["_opp"] = cascade.opportunity_value(_v)
-    _assign_opportunity_tiers(predictors + funding_events + vacated_seats)
-    # Interleave every pre-market signal type among the predictors by
-    # opportunity value, so a high-tier funding round or vacated seat sits with
-    # the other High rows instead of being stranded. One ordered list rendered
-    # in a single loop; each row carries a _kind discriminator for the template.
+    _assign_opportunity_tiers(predictors + funding_events)
+    # Interleave funding rows among the predictors by opportunity value, so a
+    # high-tier funding signal sits with the other High rows instead of being
+    # stranded at the bottom. One ordered list rendered in a single loop; each
+    # row carries a _kind discriminator for the template.
     for _p in predictors:
         _p["_kind"] = "predictor"
     for _f in funding_events:
         _f["_kind"] = "funding"
-    premarket_rows = sorted(predictors + funding_events + vacated_seats,
+    premarket_rows = sorted(predictors + funding_events,
                             key=lambda d: d.get("_opp") or 0.0, reverse=True)
     from tool import framework_status as _fws
     _fwst = _fws.get_statuses()
@@ -2006,11 +1998,11 @@ TEMPLATE = r"""
     }
     .panel-body::-webkit-scrollbar-thumb:hover { background: var(--navy-soft); }
 
-    /* ===== Calendar & Context strip — Placement Windows + Events +
-       Frameworks, three compact columns in one row (Vacated Seats moved into
-       Pre-Market). See also #context-row below for the 3-up grid. ===== */
-    /* ===== Unified findings list (.row2 — Vacated Seats moves + Framework
-       Eligibility windows share this row template) =====
+    /* ===== Calendar & Context panels — Placement Windows + Events +
+       Frameworks. In the 3-page layout these live in the BD Calendar page
+       (hosted in #cal-host, opened in a modal). ===== */
+    /* ===== Unified findings list (.row2 — Framework Eligibility windows use
+       this row template) =====
        One clean row per finding; click the head to expand its detail. A small
        HW/FW tag on the right names the type. */
     .row2 { border-bottom: 1px solid var(--border); }
@@ -2050,13 +2042,6 @@ TEMPLATE = r"""
     .framework-chip-inline {
       background: #ece9f7 !important;
       color: #4a3d82 !important;
-      font-weight: 700; letter-spacing: .04em;
-    }
-    /* Vacated seat = the open-now, highest-intent pre-market signal. Warm
-       amber so it reads as "act now" against the cooler predictor/funding chips. */
-    .vacated-chip-inline {
-      background: #fbeede !important;
-      color: #8a4b13 !important;
       font-weight: 700; letter-spacing: .04em;
     }
 
@@ -3434,42 +3419,6 @@ TEMPLATE = r"""
                 </div>
               </div>
             </div>
-          {% elif row['_kind'] == 'vacated_seat' %}{% set v = row %}
-            <div class="item predictor vacated-row" data-event-id="{{ v.event_id }}" data-status="{{ v.old_co_status|default('active') }}" data-new="0">
-              <div class="row-summary">
-                <span class="rank">{{ loop.index }}</span>
-                <span class="title">{{ v.old_company }}</span>
-                <span class="chips">
-                  <span class="role-chip vacated-chip-inline">Vacated seat</span>
-                  {% if v.role %}<span class="role-chip">{{ v.role }}</span>{% endif %}
-                  {% if v.strength %}<span class="strength-chip s-{{ v.strength }}" title="Opportunity strength — relative priority across the current Pre-Market panel. A vacated senior-comms seat is the highest-intent signal: the seat is open now. Ranked by watchlist tier, seniority and recency.">{{ v.strength|capitalize }}</span>{% endif %}
-                  {% if v.old_co_status == 'followed_up' %}<span class="status-badge followed-up">&#10003; followed up</span>{% endif %}
-                  {% if v.old_co_status == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
-                </span>
-              </div>
-              <div class="row-preview">
-                <span class="signal-sub">Replacement search{% if v.person_name %} · {{ v.person_name }} departed{% endif %}</span>
-              </div>
-              <div class="row-details">
-                {% if v.article_title %}
-                <div class="meta">
-                  <div class="evidence">
-                    <strong>Vacated seat:</strong> {{ v.article_title[:200] }}
-                    {% if v.article_url %} · <a href="{{ v.article_url | safe_url }}" target="_blank">source</a>{% endif %}
-                  </div>
-                </div>
-                {% endif %}
-                {% if v.old_co_opener %}<pre class="outreach-text">{{ v.old_co_opener }}</pre>{% endif %}
-                <div class="item-actions">
-                  {% if v.old_co_status|default('active') == 'active' %}
-                    <button class="btn-mini vacated-action" data-status="followed_up" type="button">&#10003; Mark followed up</button>
-                    <button class="btn-mini vacated-action ghost" data-status="dismissed" type="button">&#10005; Dismiss</button>
-                  {% else %}
-                    <button class="btn-mini vacated-action" data-status="active" type="button">&#8634; Restore</button>
-                  {% endif %}
-                </div>
-              </div>
-            </div>
           {% else %}{% set p = row %}
             <div class="item predictor" data-pid="{{ p.pid }}" data-status="{{ p.status }}" data-new="{{ '1' if p.is_new else '0' }}">
               <div class="row-summary">
@@ -3521,18 +3470,10 @@ TEMPLATE = r"""
        year ribbon. Funding-Round signals are folded into Predicted
        Briefs above; rare detectors live in Specialist Signals below. -->
 
-  <!-- VACATED SEATS & SENIOR MOVES + PLACEMENT WINDOWS side-by-side.
-       Vacated Seats (cascade engine: watchlist-gated senior-comms moves —
-       replacement-search + re-org-watch, merges the former Hire Watch +
-       Mandates Worth Following) on the left; Placement Windows
-       (statutory/regulatory + policy pulses ONLY) on the right. Framework
-       Windows were unglued into the Framework Eligibility panel (Band C);
-       industry events into Events & Networking. Both stack under 900px. -->
   <!-- SPECIALIST SIGNALS — Water SAR / Contract-End / Mandates Worth
        Stealing, collapsed into one panel that is HIDDEN unless a
        sub-detector actually has rows. Each sub-section also hides itself
-       when empty. (Mandates Worth Following was merged into the Vacated
-       Seats & Senior Moves panel above.) -->
+       when empty. -->
   <div class="row row-full" id="specialist-row" style="display:none">
     <div class="panel">
       <div class="panel-header">
@@ -5077,39 +5018,6 @@ function fwButtons(status) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fid: fid, status: status }),
-      });
-      const j = await r.json();
-      if (j.ok) {
-        setTimeout(() => window.location.reload(), 200);
-      } else {
-        btn.disabled = false;
-        alert(j.detail || 'Could not update.');
-      }
-    } catch (e) {
-      btn.disabled = false;
-      alert('Network error: ' + e.message);
-    }
-  });
-})();
-
-// ---------- Vacated seats (folded into Pre-Market) — triage the old-co /
-// replacement-search side via the cascade mark API. ----------
-(function(){
-  const host = document.getElementById('predictor-list');
-  if (!host) return;
-  host.addEventListener('click', async (ev) => {
-    const btn = ev.target.closest('.vacated-action');
-    if (!btn) return;
-    const row = btn.closest('.vacated-row');
-    const id = row && row.getAttribute('data-event-id');
-    const status = btn.getAttribute('data-status');
-    if (!id || !status) return;
-    btn.disabled = true;
-    try {
-      const r = await fetch('/api/cascade/mark', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event_id: id, side: 'old_co', status: status }),
       });
       const j = await r.json();
       if (j.ok) {
