@@ -2207,10 +2207,15 @@ TEMPLATE = r"""
     /* Events & Networking — v21 date-tile layout: a calendar date chip, then
        the event with its focus + location. */
     .ev-list { list-style: none; margin: 0; padding: 4px 0; }
-    .ev-row { display: flex; align-items: center; gap: 12px; padding: 11px 16px;
-      border-bottom: 1px solid var(--hairline); }
-    .ev-row:last-child { border-bottom: none; }
+    .ev-item { border-bottom: 1px solid var(--hairline); }
+    .ev-item:last-child { border-bottom: none; }
+    .ev-row { display: flex; align-items: center; gap: 12px; padding: 11px 16px; }
+    .ev-item.has-detail .ev-row { cursor: pointer; }
     .ev-row:hover { background: var(--elevated); }
+    .ev-chev { margin-left: 2px; flex-shrink: 0; color: var(--dim); font-size: 18px; line-height: 1; transition: transform .15s; }
+    .ev-item.expanded .ev-chev { transform: rotate(90deg); }
+    .ev-detail { display: none; padding: 2px 16px 12px 56px; }
+    .ev-item.expanded .ev-detail { display: block; }
     .ev-date { flex-shrink: 0; width: 40px; height: 40px; border-radius: 10px;
       background: var(--blue-wash); color: var(--blue-deep); display: flex; flex-direction: column;
       align-items: center; justify-content: center; line-height: 1; }
@@ -2229,30 +2234,38 @@ TEMPLATE = r"""
       border-radius: 6px; padding: 3px 7px; font: 500 11px/1 "Inter", sans-serif; cursor: pointer;
       flex-shrink: 0; transition: border-color .12s, color .12s; }
     .ev-rm:hover { border-color: #A33A22; color: #A33A22; }
-    /* Placement Windows — each window drawn as a glass window-pane tile
-       (frame + cross mullions) beside its role + timing. */
-    .win-list { padding: 4px 0; }
-    .win-row { display: flex; align-items: flex-start; gap: 13px; padding: 13px 16px;
-      border-bottom: 1px solid var(--hairline); }
-    .win-row:last-child { border-bottom: none; }
-    .win-row:hover { background: var(--elevated); }
-    .win-tile { position: relative; flex-shrink: 0; width: 46px; height: 46px; border-radius: 5px;
-      background: linear-gradient(155deg, #cbe0f5 0%, #eaf3fc 70%); border: 2px solid var(--blue-deep);
-      box-shadow: inset 0 0 0 1.5px #fff; margin-top: 1px; }
-    .win-tile::before { content: ""; position: absolute; left: 50%; top: 3px; bottom: 3px; width: 2px;
-      background: var(--blue-deep); opacity: .5; transform: translateX(-50%); }
-    .win-tile::after { content: ""; position: absolute; top: 50%; left: 3px; right: 3px; height: 2px;
-      background: var(--blue-deep); opacity: .5; transform: translateY(-50%); }
-    .win-main { flex: 1; min-width: 0; }
-    .win-name { font-size: 12.5px; font-weight: 600; color: var(--ink); line-height: 1.35; }
-    .win-seat { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
-    .win-tags { margin-top: 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-    .conf-pill { font: 600 8.5px/1 "JetBrains Mono", monospace; letter-spacing: .06em;
-      text-transform: uppercase; padding: 4px 8px; border-radius: 9999px; }
-    .conf-pill.high { background: var(--grn-bg); color: var(--grn-tx); }
-    .conf-pill.med { background: var(--tan-bg); color: var(--tan-tx); }
-    .win-days { font: 600 9.5px/1 "JetBrains Mono", monospace; color: var(--ink-2); }
-    .win-scope { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.45; }
+    /* Placement Windows — timeline graph: each window is a bar from "now" out
+       to its act-by deadline on a Now -> +12w axis; click a bar for detail. */
+    .wins-graph { padding: 6px 18px 4px; }
+    .wins-plot { position: relative; padding-top: 18px; }
+    .wins-plot > .gl { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--hairline); }
+    .wins-plot > .gl span { position: absolute; top: 1px; left: 6px; white-space: nowrap;
+      font: 500 8.5px/1 "JetBrains Mono", monospace; color: var(--dim); }
+    .wins-plot > .gl-end span { left: auto; right: 5px; }
+    .wnow { position: absolute; top: 0; bottom: 0; left: 0; width: 2px; background: var(--green); z-index: 3; }
+    .wnow::before { content: ""; position: absolute; top: 14px; left: -4px; width: 10px; height: 10px;
+      border-radius: 50%; background: var(--green); }
+    .wins-lanes { position: relative; display: flex; flex-direction: column; gap: 8px; z-index: 1; }
+    .wlane { position: relative; height: 30px; display: flex; align-items: center; }
+    .wbar { position: relative; min-width: 134px; max-width: 100%; height: 100%; border-radius: 8px;
+      display: flex; align-items: center; padding: 0 11px; cursor: pointer; color: #fff;
+      background: linear-gradient(120deg, var(--blue-bright), var(--blue));
+      box-shadow: 0 4px 12px rgba(66,133,244,.26); font: 600 10.5px/1 "Inter", sans-serif;
+      white-space: nowrap; overflow: hidden; transition: transform .14s; }
+    .wbar:hover { transform: translateY(-1px); }
+    .wbar.med { background: linear-gradient(120deg, #9ec1f7, #6fa3f0); }
+    .wbar.sel { outline: 2px solid #fff; box-shadow: 0 0 0 3px var(--blue); }
+    .wbar .wb-name { overflow: hidden; text-overflow: ellipsis; }
+    .wbar .wb-act { margin-left: auto; padding-left: 10px; font: 600 9px/1 "JetBrains Mono", monospace; opacity: .92; }
+    .wlane .cal-rm { margin-left: 8px; flex-shrink: 0; }
+    .win-detail { margin: 8px 16px 14px; padding: 12px 15px; border-radius: 12px; background: var(--elevated);
+      border: 1px solid var(--hairline); min-height: 52px; }
+    .win-detail .dt { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+    .win-detail .pill { font: 600 9px/1 "JetBrains Mono", monospace; padding: 3px 8px; border-radius: 9999px;
+      background: var(--blue-wash); color: var(--blue-deep); }
+    .win-detail .seat { font-size: 11.5px; color: var(--muted); margin-top: 7px; line-height: 1.5; }
+    .win-detail .seat b { color: var(--ink-2); }
+    .win-detail .ph { font-size: 11.5px; color: var(--dim); }
     /* Framework Eligibility — 'structural framework' treatment: each row framed
        like a built structure (left girder + corner joints). */
     #framework-body .framework-row { position: relative; margin: 12px 12px 0;
@@ -3661,7 +3674,7 @@ TEMPLATE = r"""
       <div class="ea-hero">
         <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7.5" width="17" height="13" rx="5"/><path d="M12 7.5V4.6"/><circle cx="12" cy="3.4" r="1.2"/><circle cx="9" cy="14" r="1.65" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.65" fill="currentColor" stroke="none"/></svg></div>
         <h1 class="gemini-title">Executive Assistant</h1>
-        <div class="cc-sub">Real-time reports generated for you. On-demand.</div>
+        <div class="cc-sub">Your very own AI helper for key reports, in real-time and the latest data.</div>
       </div>
 
       <!-- COMPOSER PILL. The .cform morph area holds either the default free-text
@@ -4379,44 +4392,60 @@ async function loadPulses() {
         'dated windows rather than show stale noise.</div>';
       return;
     }
-    // Each placement window is drawn as a glass window-pane tile beside its
-    // target role + timing — "the concept of a window" made literal.
+    // Placement windows as a timeline: each window is a bar from "now" out to
+    // its act-by deadline (Now -> +12w axis); click a bar for the seat detail.
     const newCount = pulseRows.filter(p => p.just_opened).length;
-    const out = ['<div class="win-list">'];
-    pulseRows.forEach(p => {
-      const high = p.confidence === 'high';
-      const confLabel = high ? 'Regulatory deadline' : 'Policy timeline';
-      const days = (typeof p.days_left === 'number') ? p.days_left + 'd left' : '';
+    const T = 84;  // axis span in days (12 weeks)
+    const actOf = p => esc((p.act_by || String(p.window || '').split('→').pop() || '').trim());
+    const gridlines = [0, 28, 56, 84].map(d =>
+      '<div class="gl' + (d === T ? ' gl-end' : '') + '" style="left:' + (d / T * 100) + '%"><span>' +
+      (d === 0 ? 'Now' : '+' + (d / 7) + 'w') + '</span></div>').join('');
+    const lanes = pulseRows.map((p, i) => {
+      const dl = (typeof p.days_left === 'number') ? p.days_left : T;
+      const width = Math.max(8, Math.min(dl, T) / T * 100);
+      const cls = (p.confidence !== 'high' ? 'med ' : '') + (p.just_opened ? 'is-new' : '');
+      const act = dl > T ? '12+ wks' : ('act by ' + actOf(p));
       const rm = p.key
-        ? '<button class="cal-rm" data-key="' + esc(p.key) + '" title="Remove this window">&#10005;</button>'
-        : '';
-      out.push(
-        '<div class="win-row' + (p.just_opened ? ' is-new' : '') + '">' +
-          '<div class="win-tile" title="Placement window"></div>' +
-          '<div class="win-main">' +
-            '<div class="win-name">' + esc(p.name || '') + '</div>' +
-            (p.seat ? '<div class="win-seat">' + esc(p.seat) + '</div>' : '') +
-            '<div class="win-tags">' +
-              '<span class="conf-pill ' + (high ? 'high' : 'med') + '">' + esc(confLabel) + '</span>' +
-              (days ? '<span class="win-days">' + esc(days) + '</span>' : '') +
-            '</div>' +
-            (p.scope_note ? '<div class="win-scope">' + esc(p.scope_note) +
-              (p.source ? ' &middot; <a href="' + safeUrl(p.source) +
-                 '" target="_blank" rel="noopener noreferrer" style="color:var(--blue-deep);text-decoration:none;">source</a>' : '') +
-              '</div>' : '') +
-            (p.advisory ? '<div class="win-scope">' + esc(p.advisory) + '</div>' : '') +
-          '</div>' +
-          rm +
-        '</div>'
-      );
+        ? '<button class="cal-rm" data-key="' + esc(p.key) + '" title="Remove this window">&#10005;</button>' : '';
+      return '<div class="wlane">' +
+        '<div class="wbar ' + cls + '" data-i="' + i + '" style="width:' + width + '%">' +
+          '<span class="wb-name">' + esc(p.name || '') + '</span>' +
+          '<span class="wb-act">' + act + '</span>' +
+        '</div>' + rm +
+      '</div>';
+    }).join('');
+    body.innerHTML =
+      '<div class="wins-graph"><div class="wins-plot">' + gridlines +
+        '<div class="wnow"></div>' +
+        '<div class="wins-lanes">' + lanes + '</div>' +
+      '</div></div>' +
+      '<div class="win-detail"><div class="ph">Click a window to see the seat it opens and when to act.</div></div>';
+
+    // Click a bar -> seat + timing detail in the panel below.
+    const det = body.querySelector('.win-detail');
+    body.querySelectorAll('.wbar').forEach(b => {
+      b.addEventListener('click', () => {
+        b.classList.remove('is-new');
+        body.querySelectorAll('.wbar').forEach(x => x.classList.remove('sel'));
+        b.classList.add('sel');
+        const p = pulseRows[+b.dataset.i];
+        const conf = p.confidence === 'high' ? 'Regulatory deadline' : 'Policy timeline';
+        const dl = (typeof p.days_left === 'number') ? p.days_left + 'd' : '';
+        det.innerHTML =
+          '<div class="dt">' + esc(p.name || '') +
+            '<span class="pill">act by ' + actOf(p) + (dl ? ' · ' + dl : '') + '</span>' +
+            '<span class="pill">' + conf + '</span></div>' +
+          (p.seat ? '<div class="seat"><b>Seat:</b> ' + esc(p.seat) + '</div>' : '') +
+          (p.scope_note ? '<div class="seat">' + esc(p.scope_note) +
+            (p.source ? ' · <a href="' + safeUrl(p.source) + '" target="_blank" rel="noopener noreferrer" style="color:var(--blue-deep);">source</a>' : '') + '</div>' : '');
+      });
     });
-    out.push('</div>');
-    body.innerHTML = out.join('');
 
     // Remove-a-window: delegated dismissal (shared pulse_dismiss keyspace),
-    // then re-render so the count stays correct.
+    // then re-render so the graph stays correct.
     body.querySelectorAll('.cal-rm').forEach(btn => {
-      btn.addEventListener('click', async () => {
+      btn.addEventListener('click', async (ev) => {
+        ev.stopPropagation();
         const key = btn.getAttribute('data-key');
         if (!key) return;
         btn.disabled = true;
@@ -4499,33 +4528,47 @@ async function loadEvents() {
     const dayOf = iso => { const p = String(iso || '').split('-'); return p.length >= 3 ? parseInt(p[2], 10) : ''; };
     const monOf = iso => { const p = String(iso || '').split('-'); return p.length >= 2 ? (MON[parseInt(p[1], 10) - 1] || '') : ''; };
     const out = ['<div class="ev-list">'];
-    rows.forEach(e => {
+    rows.forEach((e, i) => {
       const win = e.in_action_window
         ? '<span class="ev-open" title="Outreach window open now">window open</span>' : '';
       const rm = e.key
         ? '<button class="ev-rm" data-key="' + esc(e.key) + '" title="Remove this event">&#10005;</button>' : '';
       const focLab = e.focus === 'internal' ? 'Internal' : e.focus === 'external' ? 'External' : 'Mixed';
       const when = whenChip(e.days_to_event);
+      const hasDetail = !!(e.why_now || e.source);
       out.push(
-        '<div class="ev-row">' +
-          '<div class="ev-date"><b>' + esc(dayOf(e.event_date)) + '</b><span>' + esc(monOf(e.event_date)) + '</span></div>' +
-          '<div class="ev-main">' +
-            '<div class="ev-n">' + esc(e.name || '') + win + '</div>' +
-            '<div class="ev-t">' +
-              '<span class="ev-foc">' + focLab + '</span>' +
-              (e.location ? '<span>' + esc(e.location) + '</span>' : '') +
-              (when ? '<span>' + esc(when) + '</span>' : '') +
+        '<div class="ev-item' + (hasDetail ? ' has-detail' : '') + '">' +
+          '<div class="ev-row">' +
+            '<div class="ev-date"><b>' + esc(dayOf(e.event_date)) + '</b><span>' + esc(monOf(e.event_date)) + '</span></div>' +
+            '<div class="ev-main">' +
+              '<div class="ev-n">' + esc(e.name || '') + win + '</div>' +
+              '<div class="ev-t">' +
+                '<span class="ev-foc">' + focLab + '</span>' +
+                (e.location ? '<span>' + esc(e.location) + '</span>' : '') +
+                (when ? '<span>' + esc(when) + '</span>' : '') +
+              '</div>' +
             '</div>' +
-            (e.why_now ? '<div class="ev-why">' + esc(e.why_now) + '</div>' : '') +
-            (e.source ? '<div class="ev-why"><a href="' + safeUrl(e.source) +
-               '" target="_blank" rel="noopener noreferrer" style="color:var(--blue-deep);text-decoration:none;">source &rsaquo;</a></div>' : '') +
+            (hasDetail ? '<span class="ev-chev">&rsaquo;</span>' : '') +
+            rm +
           '</div>' +
-          rm +
+          (hasDetail ?
+            '<div class="ev-detail">' +
+              (e.why_now ? '<div class="ev-why">' + esc(e.why_now) + '</div>' : '') +
+              (e.source ? '<div class="ev-why"><a href="' + safeUrl(e.source) +
+                 '" target="_blank" rel="noopener noreferrer" style="color:var(--blue-deep);text-decoration:none;">source &rsaquo;</a></div>' : '') +
+            '</div>' : '') +
         '</div>'
       );
     });
     out.push('</div>');
     body.innerHTML = out.join('');
+    // Click a row to expand its why-now + source link below it.
+    body.querySelectorAll('.ev-item.has-detail .ev-row').forEach(row => {
+      row.addEventListener('click', (ev) => {
+        if (ev.target.closest('.ev-rm')) return;   // dismiss is handled separately
+        row.parentElement.classList.toggle('expanded');
+      });
+    });
     // Remove-an-event (delegated): persist the dismissal (shared pulse_dismiss
     // keyspace) then re-render so the count + list stay correct.
     body.querySelectorAll('.ev-rm').forEach(btn => {
