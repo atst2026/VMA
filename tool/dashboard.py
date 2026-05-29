@@ -1655,7 +1655,7 @@ TEMPLATE = r"""
   <title>VMA Group</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
       /* Gemini-feel palette. Variable names preserved so the rest of the
@@ -1998,17 +1998,11 @@ TEMPLATE = r"""
     }
     .panel-body::-webkit-scrollbar-thumb:hover { background: var(--navy-soft); }
 
-    /* ===== Calendar Pulses — year ribbon (Alternate A) =====
-       Vacated Seats & Senior Moves + Placement Windows sit side-by-side;
-       both panels share the same fixed 400px height for visual parity.
-       Bodies scroll internally. minmax(0,1fr) + min-width:0 keep the split
-       a true 50/50. */
-    #hire-calendar-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-    #hire-calendar-row > .panel { min-width: 0; }
-    #hire-calendar-row .panel { height: 400px; display: flex; flex-direction: column; }
-    #hire-calendar-row .panel-body { max-height: none; flex: 1; min-height: 0; overflow-y: auto; }
-    /* ===== Unified findings list (.row2 — Vacated Seats moves + Framework
-       Eligibility windows share this row template) =====
+    /* ===== Calendar & Context panels — Placement Windows + Events +
+       Frameworks. In the 3-page layout these live in the BD Calendar page
+       (hosted in #cal-host, opened in a modal). ===== */
+    /* ===== Unified findings list (.row2 — Framework Eligibility windows use
+       this row template) =====
        One clean row per finding; click the head to expand its detail. A small
        HW/FW tag on the right names the type. */
     .row2 { border-bottom: 1px solid var(--border); }
@@ -2037,10 +2031,6 @@ TEMPLATE = r"""
     .play.search .play-lab { color: #2e7d50; }
     .play-desc { font-size: 12px; color: var(--navy); margin-top: 3px; }
     .play .item-actions { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
-    @media (max-width: 900px) {
-      /* Stack vertically on mobile so neither panel is squashed. */
-      #hire-calendar-row { grid-template-columns: 1fr; }
-    }
     /* Funding-signal sub-section inside Predicted Briefs — visually
        same row template so funding rows sit inline among the
        tenure-driven predictors. */
@@ -2230,11 +2220,14 @@ TEMPLATE = r"""
     /* ===== Groundwork row: Events & Networking + Framework Eligibility =====
        Band-C reference pair; matched height + internal scroll like the
        Hire Watch / Placement Windows row above. */
-    #groundwork-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-    #groundwork-row > .panel { min-width: 0; }
-    #groundwork-row .panel { height: 360px; display: flex; flex-direction: column; }
-    #groundwork-row .panel-body { max-height: none; flex: 1; min-height: 0; overflow-y: auto; }
-    @media (max-width: 900px) { #groundwork-row { grid-template-columns: 1fr; } }
+    /* Calendar & Context strip: three compact columns in one row, reclaiming
+       the vertical space the old two-row groundwork layout used. */
+    #context-row { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+    #context-row > .panel { min-width: 0; }
+    #context-row .ctx-col { height: 340px; display: flex; flex-direction: column; }
+    #context-row .ctx-col .panel-body { max-height: none; flex: 1; min-height: 0; overflow-y: auto; }
+    @media (max-width: 1100px) { #context-row { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 760px)  { #context-row { grid-template-columns: 1fr; } }
     /* Eligibility-not-a-lead disclaimer atop Framework Eligibility. */
     .fw-note {
       font-size: 11px; color: var(--text-dim);
@@ -3087,30 +3080,234 @@ TEMPLATE = r"""
       font-size: 11px;
       font-family: "SF Mono", Monaco, Consolas, monospace;
     }
+
+    /* =====================================================================
+       3-PAGE SHELL (layout-only refactor — v21 mockup). New, additive CSS
+       only. Existing rules above are untouched. New colour vars added to
+       :root below (only the ones not already defined). Collision-safe class
+       names; form-field restyling is scoped to .composer .cform so it never
+       leaks to other inputs.
+       ===================================================================== */
+    :root {
+      --ink: #1F1F1F; --ink-2: #3C4043; --muted: #5F6368; --dim: #9AA0A6;
+      --vma: #3E5C84;
+      --blue: #4285F4; --blue-bright: #5B9BFF; --blue-deep: #1A3D7C;
+      --blue-soft: #C9DDF8; --blue-wash: #E8F0FE;
+      --pulse: #9FD181;
+      --hairline: rgba(31,31,31,.06);
+      --elevated: #F4F7FC;
+      --border-hi: rgba(66,133,244,.4);
+      --grn-bg: #E8F5EC; --grn-tx: #1E7A41;
+      --tan-bg: #FFF3E0; --tan-tx: #9A6516;
+      --r: 16px;
+      /* --green already defined above — not redeclared. */
+    }
+
+    /* page becomes one viewport tall; the body scroll is owned by each
+       page's internal scroll region. */
+    html, body { height: 100%; }
+    body.has-shell { overflow: hidden; }
+
+    /* ----- left rail ----- */
+    .rail { position: fixed; top: 0; left: 0; bottom: 0; width: 62px; display: flex;
+      flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; z-index: 1000; }
+    .rail .ri { width: 42px; height: 42px; border-radius: 12px; border: none; background: transparent;
+      color: var(--muted); display: grid; place-items: center; transition: all .14s; position: relative; cursor: pointer; }
+    .rail .ri svg { width: 20px; height: 20px; }
+    .rail .ri:hover { background: rgba(31,31,31,.05); color: var(--ink); }
+    .rail .ri.active { background: rgba(31,31,31,.07); color: var(--ink); }
+    .rail [data-tip]:hover::after { content: attr(data-tip); position: absolute; left: 54px; top: 50%;
+      transform: translateY(-50%); background: var(--ink); color: #fff; font: 500 11px/1 "Inter", sans-serif;
+      padding: 6px 9px; border-radius: 7px; white-space: nowrap; z-index: 5; box-shadow: var(--shadow-md); }
+
+    /* ----- stage + pages ----- */
+    .stage { padding: 0 62px; height: 100vh; overflow: hidden; }
+    .page { display: none; height: 100vh; overflow: hidden; animation: pgfade .35s ease; }
+    .page.active { display: flex; flex-direction: column; }
+    @keyframes pgfade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+    /* ----- shared wordmark header (page 1) ----- */
+    .wm-head { flex: none; text-align: center; padding: 30px 0 16px; }
+    .wm-head .brand { display: inline-flex; align-items: center; gap: 14px; }
+    .brand-title { font-family: "Newsreader", Georgia, serif; font-weight: 400; font-size: 30px;
+      letter-spacing: -.01em; color: var(--ink); }
+    .vma-ic { position: relative; overflow: hidden; box-shadow: 0 5px 16px rgba(62,92,132,.42);
+      flex-shrink: 0; width: 44px; height: 44px; border-radius: 10px; }
+    .vma-ic svg { display: block; width: 100%; height: 100%; }
+    .live-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--pulse); align-self: center;
+      box-shadow: 0 0 0 0 rgba(159,209,129,.7), 0 0 11px rgba(159,209,129,.9); animation: livepulse 2.4s infinite; }
+    @keyframes livepulse {
+      0% { box-shadow: 0 0 0 0 rgba(159,209,129,.7), 0 0 11px rgba(159,209,129,.7); }
+      70% { box-shadow: 0 0 0 11px rgba(159,209,129,0), 0 0 13px rgba(159,209,129,.95); }
+      100% { box-shadow: 0 0 0 0 rgba(159,209,129,0), 0 0 11px rgba(159,209,129,.7); }
+    }
+
+    /* ----- page 1: leads/signals one-viewport scroll chain -----
+       page (flex col, fixed vh) -> container (flex:1, min-height:0) ->
+       row (flex:1, min-height:0) -> panel (min-height:0) -> panel-body
+       (scrolls). The refresh bar + specialist row + footer are flex:none. */
+    #leads .container { flex: 1; min-height: 0; display: flex; flex-direction: column;
+      padding-top: 0; padding-bottom: 10px; overflow: hidden; }
+    #leads .refresh-bar { flex: none; }
+    #leads .warn-banner { flex: none; }
+    #leads .row { flex: 1; min-height: 0; margin-bottom: 12px; }
+    #leads .row .panel { min-height: 0; }
+    #leads .row .panel-body { flex: 1; min-height: 0; max-height: none; overflow-y: auto; }
+    #leads #specialist-row { flex: none; }
+    #leads .footer { flex: none; padding: 10px 18px; margin-top: 0; }
+    /* the refresh button keeps its icon + label inline */
+    .big-refresh { display: inline-flex; align-items: center; gap: 7px; }
+    .big-refresh svg { flex-shrink: 0; }
+
+    /* ----- page 2: Executive Assistant ----- */
+    #agent .agent-wrap { flex: 1; min-height: 0; overflow-y: auto; max-width: 900px; margin: 0 auto;
+      padding: 40px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; }
+    .ea-hero { text-align: center; }
+    .cc-bigicon { width: 78px; height: 78px; border-radius: 18px; margin: 0 auto 22px; display: grid;
+      place-items: center; color: var(--vma); background: rgba(62,92,132,.09); }
+    .cc-bigicon svg { width: 38px; height: 38px; }
+    .gemini-title { font-family: "Newsreader", Georgia, serif; font-weight: 400; font-size: 34px;
+      letter-spacing: -.01em; color: var(--ink); text-align: center; }
+    .cc-sub { font-size: 13.5px; color: var(--muted); margin-top: 11px; }
+
+    /* COMPOSER PILL — verbatim spec from approved mockup. */
+    .composer { box-sizing: content-box; width: 672px; max-width: 100%; background: #fff;
+      border: 1px solid transparent; border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.07), 0 0 0 .5px rgba(31,31,30,.286);
+      padding: 0; margin: 24px auto 0; text-align: left; transition: border-color .2s, box-shadow .2s; }
+    .composer:focus-within { border-color: rgba(31,31,30,.20); }
+    .composer .inner { display: flex; flex-direction: column; margin: 14px; gap: 12px; }
+    .composer .cform { min-height: 48px; max-height: 384px; overflow-y: auto; padding: 6px 0 0 6px; transition: all .2s; }
+    .composer .cfoot { display: flex; justify-content: flex-end; align-items: center; }
+    .cinput { border: none; outline: none; background: transparent; width: 100%;
+      font-family: "Inter", system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 16px; line-height: 22.4px; font-weight: 430; color: rgb(11,11,11); }
+    .cinput::placeholder { color: var(--dim); }
+    .cf-head { display: flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 600; color: var(--ink); }
+    .cf-head .cf-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--blue); }
+    .cf-desc { font-size: 12.5px; color: var(--muted); margin-top: 7px; line-height: 1.5; }
+    .cf-label { display: block; font: 600 9.5px/1 "JetBrains Mono", monospace; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--ink-2); margin: 15px 0 7px; }
+    .cf-input { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 10px;
+      font: 400 13.5px/1.3 "Inter", sans-serif; color: var(--ink); background: #fff; }
+    .cf-input::placeholder { color: var(--dim); }
+    .composer .cf-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(66,133,244,.12); }
+    .send { width: 30px; height: 30px; border-radius: 50%; background: #a8c8e6; color: #1A3D7C;
+      display: grid; place-items: center; font-size: 16px; border: none; flex-shrink: 0; transition: all .14s; cursor: pointer; }
+    .send:hover { background: #93b9de; color: #10294f; }
+    .send svg { width: 16px; height: 16px; }
+    /* Restyle the MOVED action-forms' bare label/input/button to the cf-* look.
+       Scoped to .composer .cform so it never touches other inputs/labels. */
+    .composer .cform label { display: block; font: 600 9.5px/1 "JetBrains Mono", monospace;
+      letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); margin: 15px 0 7px; }
+    .composer .cform input, .composer .cform select, .composer .cform textarea {
+      width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 10px;
+      font: 400 13.5px/1.3 "Inter", sans-serif; color: var(--ink); background: #fff; }
+    .composer .cform input::placeholder { color: var(--dim); }
+    .composer .cform input:focus, .composer .cform select:focus, .composer .cform textarea:focus {
+      outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(66,133,244,.12); }
+    /* hide the original full-width Run buttons; the corner arrow submits instead */
+    .composer .cform form > button[type="submit"]:not(.send) { display: none; }
+    .cf-formhead { margin-bottom: 4px; }
+    .cap-form { display: none; }
+    .cap-form.active { display: block; }
+    /* status line inside the moved forms (loses .action-card scoping) */
+    .composer .cform .status { margin-top: 10px; padding: 8px 11px; border-radius: 8px;
+      font-size: 11.5px; display: none; line-height: 1.4; }
+    .composer .cform .status.ok { background: var(--blue-wash); color: var(--blue-deep);
+      border-left: 2px solid var(--blue); display: block; }
+    .composer .cform .status.err { background: rgba(201,59,43,.08); color: #8B2C20;
+      border-left: 2px solid #C93B2B; display: block; }
+
+    /* chips below the pill (scoped to #agent so it never hits the predictor .chips) */
+    #agent .chips { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; margin-top: 22px; max-width: 600px; }
+    #agent .chip { display: inline-flex; align-items: center; gap: 8px; background: transparent;
+      border: 1px solid var(--border); border-radius: 11px; padding: 10px 14px; font: 500 13px/1 "Inter", sans-serif;
+      color: var(--ink); transition: all .14s; cursor: pointer; }
+    #agent .chip:hover { background: var(--elevated); border-color: var(--border-hi); }
+    #agent .chip .i { color: var(--ink-2); font-size: 13px; }
+    #agent .chip.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+    #agent .chip.active .i { color: #fff; }
+
+    /* Candidate Watch + Recent Reports moved onto page 2 — keep them in a
+       centred column under the composer; reuse their existing .action-card
+       look by keeping the .action-card class on the cards. */
+    #agent .agent-extras { width: 100%; max-width: 900px; margin: 30px auto 0; display: grid;
+      grid-template-columns: 1fr 1fr; gap: 16px; text-align: left; }
+    @media (max-width: 760px) { #agent .agent-extras { grid-template-columns: 1fr; } }
+    #agent .agent-extras .action-card { height: auto; max-height: 420px; }
+
+    /* ----- page 3: BD Calendar (Customize-Claude-style menu + modal) ----- */
+    #cal .cc-wrap { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column;
+      align-items: center; max-width: 720px; margin: 0 auto; padding: 48px 24px; width: 100%; }
+    .cc-hero { text-align: center; margin-bottom: 30px; }
+    .cc-cards { width: 100%; display: flex; flex-direction: column; gap: 14px; }
+    .cc-card { display: flex; align-items: center; gap: 16px; background: #fff; border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px 22px; box-shadow: var(--shadow-sm); cursor: pointer;
+      transition: box-shadow .16s, border-color .16s, transform .16s; text-align: left; width: 100%; }
+    .cc-card:hover { box-shadow: var(--shadow-md); border-color: var(--border-hi); transform: translateY(-1px); }
+    .cc-card .ci { width: 44px; height: 44px; border-radius: 12px; background: var(--elevated); display: grid;
+      place-items: center; color: var(--vma); flex-shrink: 0; font-size: 18px; }
+    .cc-card .cx { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .cc-card .ct { font-size: 15px; font-weight: 600; color: var(--ink); }
+    .cc-card .cd { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+    .cc-card .cbadge { font: 600 9px/1 "JetBrains Mono", monospace; letter-spacing: .06em; text-transform: uppercase;
+      color: #fff; background: var(--blue); padding: 4px 8px; border-radius: 9999px; flex-shrink: 0; }
+    .cc-card .cbadge:empty { display: none; }
+    .cc-card .cv { color: var(--dim); font-size: 22px; flex-shrink: 0; }
+    .cal-host { display: none; }
+
+    .bd-modal-backdrop { position: fixed; inset: 0; background: rgba(20,28,46,.28); backdrop-filter: blur(5px);
+      z-index: 1100; display: none; align-items: center; justify-content: center; padding: 40px; }
+    .bd-modal-backdrop.open { display: flex; animation: pgfade .2s ease; }
+    .bd-modal { background: #fff; border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow-lg);
+      width: 100%; max-width: 620px; max-height: 82vh; display: flex; flex-direction: column; overflow: hidden; }
+    .bd-modal .mh { flex: none; display: flex; align-items: center; gap: 11px; padding: 15px 18px;
+      border-bottom: 1px solid var(--hairline); }
+    .bd-modal .mh-ic { width: 34px; height: 34px; border-radius: 10px; background: var(--elevated);
+      color: var(--vma); display: grid; place-items: center; font-size: 15px; flex-shrink: 0; }
+    .bd-modal .mh-t { font-size: 15px; font-weight: 600; flex: 1; }
+    .bd-modal .mh-x { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border);
+      background: #fff; color: var(--muted); cursor: pointer; }
+    .bd-modal .mh-x:hover { background: var(--elevated); color: var(--ink); }
+    .bd-modal .mb { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 0; }
+    /* the moved context panels lose their #context-row sizing inside the modal;
+       give them full height + scroll within the modal body. */
+    .bd-modal .mb .panel { border: none; box-shadow: none; border-radius: 0; height: auto; }
+    .bd-modal .mb .panel .panel-header { display: none; }
+    .bd-modal .mb .panel .panel-body { max-height: none; overflow: visible; }
   </style>
 </head>
-<body>
+<body class="has-shell">
 
-<header class="top-bar" aria-label="VMA Group">
-  <div class="brand-line-1">
-    <span class="bm-vma">VMA</span><span class="bm-group">GROUP</span>
-  </div>
-  <div class="sub-cap">Intelligence Platform &middot; Live</div>
-</header>
+<!-- LEFT RAIL — page switcher. Active state toggled by render() (additive JS). -->
+<aside class="rail">
+  <button class="ri active" id="nav-leads" data-tip="Market Intelligence Radar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3.5l2.5 7 4-15 2.5 8H21"/></svg></button>
+  <button class="ri" id="nav-agent" data-tip="Executive Assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.4a7.6 7.6 0 0 1-11 6.8L4.5 19.5l1.3-4.2A7.6 7.6 0 1 1 20 11.4z"/><path d="M12.1 7.8l.85 2.1 2.1.85-2.1.85-.85 2.1-.85-2.1-2.1-.85 2.1-.85z" fill="currentColor" stroke="none"/></svg></button>
+  <button class="ri" id="nav-cal" data-tip="BD Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></button>
+</aside>
 
-{% if not has_token %}
-<div class="warn-banner">
-  <strong>GITHUB_TOKEN not set</strong> in your .env. The "Run and Send" buttons won't work until you add one.
-  See <code>DASHBOARD_SETUP.md</code> for instructions (it's a 5-minute one-time setup).
-</div>
-{% endif %}
+<div class="stage">
 
-<div class="container">
+  <!-- ===== PAGE 1 · MARKET INTELLIGENCE RADAR (leads + pre-market) ===== -->
+  <section class="page active" id="leads">
+    <div class="wm-head">
+      <div class="brand"><span class="vma-ic"></span><span class="brand-title">Market Intelligence Radar</span><span class="live-dot"></span></div>
+    </div>
+
+    <div class="container">
+
+    {% if not has_token %}
+    <div class="warn-banner">
+      <strong>GITHUB_TOKEN not set</strong> in your .env. The "Run and Send" buttons won't work until you add one.
+      See <code>DASHBOARD_SETUP.md</code> for instructions (it's a 5-minute one-time setup).
+    </div>
+    {% endif %}
 
   <!-- DAILY REFRESH BAR — primary CTA, sits above the leads/predictors -->
   <div class="refresh-bar">
     <button onclick="refreshBrief()" id="refresh-btn" class="big-refresh">
-      ↻ Daily Refresh
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg><span class="rbtn-label">Daily Refresh</span>
     </button>
     <div class="refresh-meta">
       <span class="refresh-label">Pull today's freshly-generated brief</span>
@@ -3124,7 +3321,7 @@ TEMPLATE = r"""
     <!-- TODAY'S LEADS -->
     <div class="panel">
       <div class="panel-header">
-        <h2>Today's Leads</h2>
+        <h2>Live Jobs</h2>
         <span class="count" id="leads-count">{{ leads_active_count }}</span>
       </div>
       <div class="filter-bar" id="leads-filter-bar">
@@ -3174,7 +3371,7 @@ TEMPLATE = r"""
     <!-- PREDICTOR PIPELINE (rolling 90-day forward window, auto-populated) -->
     <div class="panel">
       <div class="panel-header">
-        <h2>Pre-Market Signals</h2>
+        <h2>BD Leads</h2>
         <span class="count" id="pred-count">{{ active_count }}</span>
       </div>
       <div class="filter-bar">
@@ -3273,113 +3470,10 @@ TEMPLATE = r"""
        year ribbon. Funding-Round signals are folded into Predicted
        Briefs above; rare detectors live in Specialist Signals below. -->
 
-  <!-- VACATED SEATS & SENIOR MOVES + PLACEMENT WINDOWS side-by-side.
-       Vacated Seats (cascade engine: watchlist-gated senior-comms moves —
-       replacement-search + re-org-watch, merges the former Hire Watch +
-       Mandates Worth Following) on the left; Placement Windows
-       (statutory/regulatory + policy pulses ONLY) on the right. Framework
-       Windows were unglued into the Framework Eligibility panel (Band C);
-       industry events into Events & Networking. Both stack under 900px. -->
-  <div class="row" id="hire-calendar-row">
-    <div class="panel" id="cascade-row">
-      <div class="panel-header">
-        <h2>Vacated Seats &amp; Senior Moves</h2>
-        <span style="display:flex;align-items:center;gap:10px;">
-          <button type="button" class="btn-mini" id="cs-scour">Re-scan</button>
-          <span class="count" id="cascade-count">{{ cascade_events|length }}</span>
-        </span>
-      </div>
-      <div class="filter-bar" id="cs-filter-bar">
-        <button class="lead-filter-pill active" data-filter="active">Active <span class="pill-count" id="cs-pc-active">{{ cs_active_count }}</span></button>
-        <button class="lead-filter-pill" data-filter="followed_up">Followed up <span class="pill-count" id="cs-pc-followed_up">{{ cs_followed_count }}</span></button>
-        <button class="lead-filter-pill" data-filter="dismissed">Dismissed <span class="pill-count" id="cs-pc-dismissed">{{ cs_dismissed_count }}</span></button>
-        <button class="lead-filter-pill" data-filter="all">All</button>
-      </div>
-      <div class="panel-body" id="cascade-body">
-        {% if cascade_events|length == 0 %}
-          <div class="empty compact">No UK senior-comms move in the latest brief. This panel surfaces a vacated senior-comms seat at any UK employer (core-watchlist accounts ranked first; others tagged &ldquo;Broader UK&rdquo;), plus re-org watches at watchlist firms. Off-patch / non-UK headlines are filtered out rather than shown as noise.</div>
-        {% endif %}
-
-        {% for c in cascade_events %}
-          {% set old_st = c.old_co_status|default('active') %}
-          {% set new_st = c.new_co_status|default('active') %}
-          {% set _old_followed = old_st in ('called','followed_up') %}
-          {% set _new_followed = new_st in ('called','followed_up') %}
-          {% set _old_on = c.old_company and old_st != 'n/a' %}
-          {% set _new_on = new_st != 'n/a' %}
-          <div class="row2 cascade-item" data-event-id="{{ c.event_id }}" data-cs-bucket="{{ c.cs_bucket }}">
-            <div class="row2-head">
-              <span class="typ hw">VS</span>
-              <span class="row2-title">{% if c.person_name %}{{ c.person_name }}{% if c.role %} &rarr; {{ c.role }}{% endif %}{% else %}{{ (c.role or 'Senior comms seat')|title }}{% if c.old_company %} &middot; {{ c.old_company }}{% endif %}{% endif %}</span>
-              <span class="row2-tags">
-                {% if c.confidence == 'medium' %}<span class="ipill mut" title="UK employer, not on the core watchlist — verify fit">Broader UK</span>{% endif %}
-                {% if _old_on %}<span class="ipill s">Search</span>{% endif %}
-                {% if _new_on %}<span class="ipill w">Watch</span>{% endif %}
-              </span>
-              <span class="row2-chev">&rsaquo;</span>
-            </div>
-            <div class="row2-detail">
-              <div class="row2-sub">{% if c.old_company %}{{ c.old_company }} &rarr; {{ c.new_company }}{% else %}&rarr; {{ c.new_company }}{% endif %} · senior comms move{% if c.article_url %} · <a class="lnk" href="{{ c.article_url | safe_url }}" target="_blank" rel="noopener noreferrer">source &rsaquo;</a>{% endif %}</div>
-              <div class="plays">
-                {% if _old_on %}
-                <div class="play search cs-side" data-side="old_co" data-side-status="{{ old_st }}">
-                  <div class="play-lab">&#9654; Replacement search · {{ c.old_company }}{% if _old_followed %} · followed up{% elif old_st == 'dismissed' %} · dismissed{% endif %}</div>
-                  <div class="play-desc">Seat just vacated — pitch VMA to run the replacement search.</div>
-                  <pre class="outreach-text" hidden>{{ c.old_co_opener }}</pre>
-                  <div class="item-actions">
-                    <button class="btn-mini cs-copy" type="button">&#9993; Copy opener</button>
-                    {% if old_st == 'active' %}
-                      <button class="btn-mini cs-action" data-side="old_co" data-status="followed_up" type="button">&#10003; Mark followed up</button>
-                      <button class="btn-mini cs-action ghost" data-side="old_co" data-status="dismissed" type="button">&#10005; Dismiss</button>
-                    {% else %}
-                      <button class="btn-mini cs-action" data-side="old_co" data-status="active" type="button">&#8634; Restore</button>
-                    {% endif %}
-                  </div>
-                </div>
-                {% endif %}
-                {% if _new_on %}
-                <div class="play cs-side" data-side="new_co" data-side-status="{{ new_st }}">
-                  <div class="play-lab">&#9654; Re-org watch · {{ c.new_company }}{% if _new_followed %} · followed up{% elif new_st == 'dismissed' %} · dismissed{% endif %}</div>
-                  <div class="play-desc">New comms leader landed — watch for team build-out and new briefs.</div>
-                  <pre class="outreach-text" hidden>{{ c.new_co_opener }}</pre>
-                  <div class="item-actions">
-                    <button class="btn-mini cs-copy" type="button">&#9993; Copy opener</button>
-                    {% if new_st == 'active' %}
-                      <button class="btn-mini cs-action" data-side="new_co" data-status="followed_up" type="button">&#10003; Mark followed up</button>
-                      <button class="btn-mini cs-action ghost" data-side="new_co" data-status="dismissed" type="button">&#10005; Dismiss</button>
-                    {% else %}
-                      <button class="btn-mini cs-action" data-side="new_co" data-status="active" type="button">&#8634; Restore</button>
-                    {% endif %}
-                  </div>
-                </div>
-                {% endif %}
-              </div>
-            </div>
-          </div>
-        {% endfor %}
-      </div>
-    </div>
-
-    <div class="panel" id="pulses-row">
-      <div class="panel-header">
-        <h2>Placement Windows</h2>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <button class="cal-headnew" id="pulses-new" type="button" style="display:none;">
-            <span class="cal-nd"></span><span id="pulses-new-n">0</span>&nbsp;new</button>
-          <span class="count" id="pulses-count">—</span>
-        </div>
-      </div>
-      <div class="panel-body" id="pulses-body">
-        <div class="empty compact">Loading…</div>
-      </div>
-    </div>
-  </div>
-
   <!-- SPECIALIST SIGNALS — Water SAR / Contract-End / Mandates Worth
        Stealing, collapsed into one panel that is HIDDEN unless a
        sub-detector actually has rows. Each sub-section also hides itself
-       when empty. (Mandates Worth Following was merged into the Vacated
-       Seats & Senior Moves panel above.) -->
+       when empty. -->
   <div class="row row-full" id="specialist-row" style="display:none">
     <div class="panel">
       <div class="panel-header">
@@ -3407,174 +3501,8 @@ TEMPLATE = r"""
     </div>
   </div>
 
-  <!-- GROUNDWORK & RELATIONSHIPS (Band C) — context, not a live lead list.
-       Left: Events & Networking (UK/EU comms awards, conferences, summits —
-       relationship / candidate-visibility moments, split out of the old BD
-       Calendar; loaded from /api/industry-events).
-       Right: Framework Eligibility (public-sector framework bid windows —
-       where VMA can compete; eligibility/BD groundwork, ~yearly cadence).
-       Unglued from the Hire Watch panel: a vacated seat is a commission
-       play, a framework window is eligibility-to-bid — different things.
-       Both stack under 900px. -->
-  <div class="row" id="groundwork-row">
-    <div class="panel">
-      <div class="panel-header">
-        <h2>Events &amp; Networking</h2>
-        <span class="count" id="events-count">—</span>
-      </div>
-      <div class="panel-body" id="events-body">
-        <div class="empty compact">Loading…</div>
-      </div>
-    </div>
-
-    <div class="panel" id="framework-row">
-      <div class="panel-header">
-        <h2>Framework Eligibility</h2>
-        <span class="count" id="framework-count">{{ framework_events|length }}</span>
-      </div>
-      <div class="filter-bar" id="fw-filter-bar">
-        <button class="lead-filter-pill active" data-filter="active">Active <span class="pill-count" id="fw-pc-active">{{ fw_active_count }}</span></button>
-        <button class="lead-filter-pill" data-filter="followed_up">Followed up <span class="pill-count" id="fw-pc-followed_up">{{ fw_followed_count }}</span></button>
-        <button class="lead-filter-pill" data-filter="dismissed">Dismissed <span class="pill-count" id="fw-pc-dismissed">{{ fw_dismissed_count }}</span></button>
-        <button class="lead-filter-pill" data-filter="all">All</button>
-      </div>
-      <div class="panel-body" id="framework-body">
-        <div class="fw-note">Where VMA can bid — public-sector framework windows. Eligibility &amp; BD groundwork, not a live lead list.</div>
-        {% if framework_events|length == 0 %}
-          <div class="empty compact">No framework windows tracked.</div>
-        {% endif %}
-        {% for fw in framework_events %}
-          <div class="row2 framework-row" data-status="{{ fw.triage }}" data-new="0" data-fwid="{{ fw.key }}">
-            <div class="row2-head">
-              <span class="typ fw">FW</span>
-              <span class="row2-title">{{ fw.ad_title or fw.title }}</span>
-              <span class="row2-tags">
-                <span class="ipill {{ 'w' if fw.status == 'refresh_window' else 'mut' }}">{{ fw.window_pill }}</span>
-                {% if fw.triage == 'followed_up' %}<span class="status-badge followed-up">&#10003;</span>{% elif fw.triage == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
-              </span>
-              <span class="row2-chev">&rsaquo;</span>
-            </div>
-            <div class="row2-detail">
-              <div class="row2-sub">{{ fw.ad_desc or fw.scope }}</div>
-              <div class="play">
-                <div class="play-lab">&#9654; {{ fw.window_label }}</div>
-                <div class="play-desc" title="{{ fw.notes }}">{{ fw.title }} · <a class="lnk" href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify on portal &rsaquo;</a></div>
-                <div class="item-actions">
-                  {% if fw.triage == 'active' %}
-                    <button class="btn-mini framework-action" data-status="followed_up" type="button">&#10003; Mark followed up</button>
-                    <button class="btn-mini framework-action ghost" data-status="dismissed" type="button">&#10005; Dismiss</button>
-                  {% else %}
-                    <button class="btn-mini framework-action" data-status="active" type="button">&#8634; Restore</button>
-                  {% endif %}
-                </div>
-              </div>
-            </div>
-          </div>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
-
-  <!-- ACTION BOXES -->
-  <div class="actions">
-
-    <!-- REVERSE MATCH -->
-    <div class="panel action-card">
-      <h3>Reverse Match</h3>
-      <div class="subhead">Take a candidate, search the market fresh, and give a ranked list of accounts to match them to.</div>
-      <form id="rm-form" onsubmit="dispatch(event, 'rm-form', '/api/dispatch/reverse-match')">
-        <label for="rm-name">Candidate name</label>
-        <input id="rm-name" name="candidate_name" placeholder="e.g. Rebecca Torres" required>
-        <label for="rm-company">Current company</label>
-        <input id="rm-company" name="current_company" placeholder="e.g. Vodafone" required>
-        <label for="rm-title">Current title</label>
-        <input id="rm-title" name="current_title" placeholder="e.g. Head of Internal Communications" required>
-        <button type="submit">Run</button>
-        <div class="status" id="rm-status"></div>
-      </form>
-    </div>
-
-    <!-- PITCH PACK -->
-    <div class="panel action-card">
-      <h3>Pitch Pack</h3>
-      <div class="subhead">Generate a tailored proposal to upgrade a client's job vacancy into an exclusive, retained search.</div>
-      <form id="pitch-form" onsubmit="dispatch(event, 'pitch-form', '/api/dispatch/pitch-pack')">
-        <label for="pp-account">Account name</label>
-        <input id="pp-account" name="account_name" placeholder="e.g. Unilever" required>
-        <label for="pp-role">Role</label>
-        <input id="pp-role" name="role" placeholder="e.g. Head of Internal Communications" required>
-        <button type="submit">Run</button>
-        <div class="status" id="pitch-status"></div>
-      </form>
-    </div>
-
-    <!-- PRE-MEETING BRIEF -->
-    <div class="panel action-card">
-      <h3>Pre-meeting Brief</h3>
-      <div class="subhead">Walk into any client meeting with up-to-date prep.</div>
-      <form id="pm-form" onsubmit="dispatch(event, 'pm-form', '/api/dispatch/pre-meeting')">
-        <label for="pm-account">Account name</label>
-        <input id="pm-account" name="account_name" placeholder="e.g. Severn Trent" required>
-        <label for="pm-contact">Contact (optional)</label>
-        <input id="pm-contact" name="contact_name" placeholder="e.g. Carla Sherry">
-        <label for="pm-context">Meeting context (optional)</label>
-        <input id="pm-context" name="meeting_context" placeholder="e.g. 10am Mon, Zoom">
-        <button type="submit">Run</button>
-        <div class="status" id="pm-status"></div>
-      </form>
-    </div>
-
-    <!-- CANDIDATE WATCH -->
-    <div class="panel action-card">
-      <h3>Candidate Watch</h3>
-      <div class="subhead">Keep a roster of warm candidates to stay in touch with. Overdue ones float to the top so relationships don't go cold.</div>
-      <div id="watch-list-wrap">
-        <div class="status" id="watch-list-status">Loading…</div>
-        <div id="watch-list"></div>
-      </div>
-      <details style="margin-top:10px;">
-        <summary class="add-toggle">+ Add candidate</summary>
-        <form id="watch-add-form" onsubmit="addWatchCandidate(event)" style="margin-top:8px;">
-          <label for="wa-name">Name</label>
-          <input id="wa-name" name="name" required>
-          <label for="wa-company">Current company</label>
-          <input id="wa-company" name="current_company">
-          <label for="wa-title">Current title</label>
-          <input id="wa-title" name="current_title">
-          <label for="wa-cadence">Remind me every (days)</label>
-          <input id="wa-cadence" name="touch_cadence_days" type="number" value="30" min="7" max="180">
-          <label for="wa-notes">Notes</label>
-          <input id="wa-notes" name="notes">
-          <button type="submit">Add</button>
-          <div class="status" id="watch-add-status"></div>
-        </form>
-      </details>
-    </div>
-
-    <!-- MANUAL SWEEP -->
-    <div class="panel action-card">
-      <h3>Manual Sweep</h3>
-      <div class="subhead">Sweep for potential missed leads or pre-market signals.</div>
-      <form id="sweep-form" onsubmit="dispatch(event, 'sweep-form', '/api/dispatch/sweep')">
-        <label for="sw-days">Window (days)</label>
-        <input id="sw-days" name="window_days" type="number" min="1" max="60" placeholder="e.g. 14" required>
-        <button type="submit">Run</button>
-        <div class="status" id="sweep-status"></div>
-      </form>
-    </div>
-
-    <!-- RECENT REPORTS (6th action-card slot — fits the 3x2 grid) -->
-    <div class="panel action-card recent-card">
-      <h3>Recent Reports</h3>
-      <div class="subhead">Generated within the last 48 hours.</div>
-      <button type="button" class="rr-clear" onclick="clearRecentReports(this)">Clear</button>
-      <div id="recent-reports">
-        <div class="empty compact">Loading…</div>
-      </div>
-    </div>
-
-  </div>
-
+  <!-- SPECIALIST SIGNALS row stays hidden on Page 1 above. Footer + dev
+       controls sit at the bottom of Page 1. -->
   <div class="footer">
     <span class="brand-tag">Recruitment<span class="sep">•</span>Executive Search<span class="sep">•</span>Advisory Services</span>
     <span class="dev-zone">
@@ -3588,6 +3516,252 @@ TEMPLATE = r"""
     </span>
   </div>
 
+    </div><!-- /#leads .container -->
+  </section><!-- /#leads -->
+
+  <!-- ===== PAGE 2 · EXECUTIVE ASSISTANT ===== -->
+  <section class="page" id="agent">
+    <div class="agent-wrap">
+      <div class="ea-hero">
+        <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.4a7.6 7.6 0 0 1-11 6.8L4.5 19.5l1.3-4.2A7.6 7.6 0 1 1 20 11.4z"/><path d="M12.1 7.8l.85 2.1 2.1.85-2.1.85-.85 2.1-.85-2.1-2.1-.85 2.1-.85z" fill="currentColor" stroke="none"/></svg></div>
+        <h1 class="gemini-title">Executive Assistant</h1>
+        <div class="cc-sub">Real-time reports generated for you. On-demand.</div>
+      </div>
+
+      <!-- COMPOSER PILL. The .cform morph area holds either the default free-text
+           cinput (no chip selected) or one of the four MOVED action-forms. Each
+           form keeps its id / field names / onsubmit dispatch(); the original
+           full-width Run button is hidden (CSS) and a corner arrow .send submits
+           the form via a native click so dispatch()'s window.open isn't blocked. -->
+      <div class="composer" data-mode="free">
+        <div class="inner">
+          <div class="cform" data-cform>
+
+            <!-- DEFAULT free-text prompt (shown when no chip is active) -->
+            <input class="cinput" id="cprompt" placeholder="Tell me what to make…">
+
+            <!-- PITCH PACK -->
+            <div class="cap-form" data-cap="pitch">
+              <div class="cf-head cf-formhead"><span class="cf-dot"></span>Pitch Pack</div>
+              <div class="cf-desc">Generate a tailored proposal to upgrade a client's job vacancy into an exclusive, retained search.</div>
+              <form id="pitch-form" onsubmit="dispatch(event, 'pitch-form', '/api/dispatch/pitch-pack')">
+                <label for="pp-account">Account name</label>
+                <input id="pp-account" name="account_name" placeholder="e.g. Unilever" required>
+                <label for="pp-role">Role</label>
+                <input id="pp-role" name="role" placeholder="e.g. Head of Internal Communications" required>
+                <button type="submit">Run</button>
+                <button type="submit" class="send" title="Run"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+                <div class="status" id="pitch-status"></div>
+              </form>
+            </div>
+
+            <!-- REVERSE MATCH -->
+            <div class="cap-form" data-cap="reverse">
+              <div class="cf-head cf-formhead"><span class="cf-dot"></span>Reverse Match</div>
+              <div class="cf-desc">Take a candidate, search the market fresh, and give a ranked list of accounts to match them to.</div>
+              <form id="rm-form" onsubmit="dispatch(event, 'rm-form', '/api/dispatch/reverse-match')">
+                <label for="rm-name">Candidate name</label>
+                <input id="rm-name" name="candidate_name" placeholder="e.g. Rebecca Torres" required>
+                <label for="rm-company">Current company</label>
+                <input id="rm-company" name="current_company" placeholder="e.g. Vodafone" required>
+                <label for="rm-title">Current title</label>
+                <input id="rm-title" name="current_title" placeholder="e.g. Head of Internal Communications" required>
+                <button type="submit">Run</button>
+                <button type="submit" class="send" title="Run"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+                <div class="status" id="rm-status"></div>
+              </form>
+            </div>
+
+            <!-- PRE-MEETING BRIEF -->
+            <div class="cap-form" data-cap="premeeting">
+              <div class="cf-head cf-formhead"><span class="cf-dot"></span>Pre-meeting Brief</div>
+              <div class="cf-desc">Walk into any client meeting with up-to-date prep.</div>
+              <form id="pm-form" onsubmit="dispatch(event, 'pm-form', '/api/dispatch/pre-meeting')">
+                <label for="pm-account">Account name</label>
+                <input id="pm-account" name="account_name" placeholder="e.g. Severn Trent" required>
+                <label for="pm-contact">Contact (optional)</label>
+                <input id="pm-contact" name="contact_name" placeholder="e.g. Carla Sherry">
+                <label for="pm-context">Meeting context (optional)</label>
+                <input id="pm-context" name="meeting_context" placeholder="e.g. 10am Mon, Zoom">
+                <button type="submit">Run</button>
+                <button type="submit" class="send" title="Run"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+                <div class="status" id="pm-status"></div>
+              </form>
+            </div>
+
+            <!-- MANUAL SWEEP -->
+            <div class="cap-form" data-cap="sweep">
+              <div class="cf-head cf-formhead"><span class="cf-dot"></span>Manual Sweep</div>
+              <div class="cf-desc">Sweep for potential missed leads or pre-market signals.</div>
+              <form id="sweep-form" onsubmit="dispatch(event, 'sweep-form', '/api/dispatch/sweep')">
+                <label for="sw-days">Window (days)</label>
+                <input id="sw-days" name="window_days" type="number" min="1" max="60" placeholder="e.g. 14" required>
+                <button type="submit">Run</button>
+                <button type="submit" class="send" title="Run"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+                <div class="status" id="sweep-status"></div>
+              </form>
+            </div>
+
+          </div>
+          <div class="cfoot"></div>
+        </div>
+      </div>
+
+      <!-- chip selector — clicking morphs the composer into that form -->
+      <div class="chips">
+        <button class="chip" data-cap="pitch"><span class="i">✦</span>Pitch Pack</button>
+        <button class="chip" data-cap="reverse"><span class="i">↗</span>Reverse Match</button>
+        <button class="chip" data-cap="premeeting"><span class="i">◷</span>Pre-meeting</button>
+        <button class="chip" data-cap="sweep"><span class="i">⟲</span>Sweep</button>
+      </div>
+
+      <!-- Candidate Watch + Recent Reports moved onto page 2 -->
+      <div class="agent-extras">
+        <!-- CANDIDATE WATCH -->
+        <div class="panel action-card">
+          <h3>Candidate Watch</h3>
+          <div class="subhead">Keep a roster of warm candidates to stay in touch with. Overdue ones float to the top so relationships don't go cold.</div>
+          <div id="watch-list-wrap">
+            <div class="status" id="watch-list-status">Loading…</div>
+            <div id="watch-list"></div>
+          </div>
+          <details style="margin-top:10px;">
+            <summary class="add-toggle">+ Add candidate</summary>
+            <form id="watch-add-form" onsubmit="addWatchCandidate(event)" style="margin-top:8px;">
+              <label for="wa-name">Name</label>
+              <input id="wa-name" name="name" required>
+              <label for="wa-company">Current company</label>
+              <input id="wa-company" name="current_company">
+              <label for="wa-title">Current title</label>
+              <input id="wa-title" name="current_title">
+              <label for="wa-cadence">Remind me every (days)</label>
+              <input id="wa-cadence" name="touch_cadence_days" type="number" value="30" min="7" max="180">
+              <label for="wa-notes">Notes</label>
+              <input id="wa-notes" name="notes">
+              <button type="submit">Add</button>
+              <div class="status" id="watch-add-status"></div>
+            </form>
+          </details>
+        </div>
+
+        <!-- RECENT REPORTS -->
+        <div class="panel action-card recent-card">
+          <h3>Recent Reports</h3>
+          <div class="subhead">Generated within the last 48 hours.</div>
+          <button type="button" class="rr-clear" onclick="clearRecentReports(this)">Clear</button>
+          <div id="recent-reports">
+            <div class="empty compact">Loading…</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== PAGE 3 · BD CALENDAR ===== -->
+  <section class="page" id="cal">
+    <div class="cc-wrap">
+      <div class="cc-hero">
+        <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></div>
+        <h1 class="gemini-title">BD Calendar</h1>
+        <div class="cc-sub">The business-development moves that run on key dates.</div>
+      </div>
+      <div class="cc-cards">
+        <button class="cc-card" data-open="windows"><span class="ci">◴</span><span class="cx"><span class="ct">Placement Windows</span><span class="cd">Statutory hiring windows that open on a known calendar.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
+        <button class="cc-card" data-open="events"><span class="ci">▦</span><span class="cx"><span class="ct">Events &amp; Networking</span><span class="cd">Awards, summits and networking dates worth showing up to.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
+        <button class="cc-card" data-open="frameworks"><span class="ci">❏</span><span class="cx"><span class="ct">Framework Eligibility</span><span class="cd">Public-sector frameworks where VMA can bid.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
+      </div>
+    </div>
+
+    <!-- HIDDEN HOST — the three context panels live here so their on-load
+         AJAX loaders (loadPulses / loadEvents) and the server-side framework
+         loop resolve into still-in-DOM mounts. Clicking a card moves the
+         matching panel into the modal body; closing moves it back here. -->
+    <div class="cal-host" id="cal-host">
+
+      <div class="panel ctx-col" id="pulses-row" data-bd="windows">
+        <div class="panel-header">
+          <h2>Placement Windows</h2>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button class="cal-headnew" id="pulses-new" type="button" style="display:none;">
+              <span class="cal-nd"></span><span id="pulses-new-n">0</span>&nbsp;new</button>
+            <span class="count" id="pulses-count">—</span>
+          </div>
+        </div>
+        <div class="panel-body" id="pulses-body">
+          <div class="empty compact">Loading…</div>
+        </div>
+      </div>
+
+      <div class="panel ctx-col" data-bd="events">
+        <div class="panel-header">
+          <h2>Events &amp; Networking</h2>
+          <span class="count" id="events-count">—</span>
+        </div>
+        <div class="panel-body" id="events-body">
+          <div class="empty compact">Loading…</div>
+        </div>
+      </div>
+
+      <div class="panel ctx-col" id="framework-row" data-bd="frameworks">
+        <div class="panel-header">
+          <h2>Framework Eligibility</h2>
+          <span class="count" id="framework-count">{{ framework_events|length }}</span>
+        </div>
+        <div class="filter-bar" id="fw-filter-bar">
+          <button class="lead-filter-pill active" data-filter="active">Active <span class="pill-count" id="fw-pc-active">{{ fw_active_count }}</span></button>
+          <button class="lead-filter-pill" data-filter="followed_up">Followed up <span class="pill-count" id="fw-pc-followed_up">{{ fw_followed_count }}</span></button>
+          <button class="lead-filter-pill" data-filter="dismissed">Dismissed <span class="pill-count" id="fw-pc-dismissed">{{ fw_dismissed_count }}</span></button>
+          <button class="lead-filter-pill" data-filter="all">All</button>
+        </div>
+        <div class="panel-body" id="framework-body">
+          <div class="fw-note">Where VMA can bid — public-sector framework windows. Eligibility &amp; BD groundwork, not a live lead list.</div>
+          {% if framework_events|length == 0 %}
+            <div class="empty compact">No framework windows tracked.</div>
+          {% endif %}
+          {% for fw in framework_events %}
+            <div class="row2 framework-row" data-status="{{ fw.triage }}" data-new="0" data-fwid="{{ fw.key }}">
+              <div class="row2-head">
+                <span class="typ fw">FW</span>
+                <span class="row2-title">{{ fw.ad_title or fw.title }}</span>
+                <span class="row2-tags">
+                  <span class="ipill {{ 'w' if fw.status == 'refresh_window' else 'mut' }}">{{ fw.window_pill }}</span>
+                  {% if fw.triage == 'followed_up' %}<span class="status-badge followed-up">&#10003;</span>{% elif fw.triage == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
+                </span>
+                <span class="row2-chev">&rsaquo;</span>
+              </div>
+              <div class="row2-detail">
+                <div class="row2-sub">{{ fw.ad_desc or fw.scope }}</div>
+                <div class="play">
+                  <div class="play-lab">&#9654; {{ fw.window_label }}</div>
+                  <div class="play-desc" title="{{ fw.notes }}">{{ fw.title }} · <a class="lnk" href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify on portal &rsaquo;</a></div>
+                  <div class="item-actions">
+                    {% if fw.triage == 'active' %}
+                      <button class="btn-mini framework-action" data-status="followed_up" type="button">&#10003; Mark followed up</button>
+                      <button class="btn-mini framework-action ghost" data-status="dismissed" type="button">&#10005; Dismiss</button>
+                    {% else %}
+                      <button class="btn-mini framework-action" data-status="active" type="button">&#8634; Restore</button>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</div><!-- /.stage -->
+
+<!-- ONE shared modal for the BD-Calendar cards. open/close + node relocation
+     handled by additive JS at the end of <script>. -->
+<div class="bd-modal-backdrop" id="bd-modal">
+  <div class="bd-modal">
+    <div class="mh"><span class="mh-ic" id="bd-mic"></span><span class="mh-t" id="bd-mt"></span><button class="mh-x" id="bd-mx">✕</button></div>
+    <div class="mb" id="bd-mb"></div>
+  </div>
 </div>
 
 <script>
@@ -3978,9 +4152,13 @@ document.addEventListener('click', async (event) => {
 // appointments in today's news without Sara having to click Re-scan.
 async function refreshBrief() {
   const btn = document.getElementById('refresh-btn');
-  const originalLabel = btn.textContent;
+  if (!btn) return;
+  // The button now holds a persistent SVG icon + a .rbtn-label span; only
+  // ever read/write the label so the icon is never wiped.
+  const lbl = btn.querySelector('.rbtn-label');
+  const originalLabel = lbl.textContent;
   btn.disabled = true;
-  btn.textContent = 'Refreshing…';
+  lbl.textContent = 'Refreshing…';
   try {
     const r = await fetch('/api/refresh', { method: 'POST' });
     const j = await r.json();
@@ -3988,7 +4166,7 @@ async function refreshBrief() {
       // Brief landed — re-parse signals for cascade moves before
       // reloading so the Hire Watch panel reflects today's data.
       // Non-blocking: cascade failure must not stop the reload.
-      btn.textContent = 'Scanning hires…';
+      lbl.textContent = 'Scanning hires…';
       try {
         await fetch('/api/cascade/scour', { method: 'POST' });
       } catch (e) { /* non-fatal — log only */ }
@@ -3998,12 +4176,12 @@ async function refreshBrief() {
       // failed, or it succeeded but found nothing — both carry a warning).
       showRefreshBanner(j);
       btn.disabled = false;
-      btn.textContent = originalLabel;
+      lbl.textContent = originalLabel;
     }
   } catch (e) {
     showRefreshBanner({ok: false, detail: 'Refresh failed: ' + e.message});
     btn.disabled = false;
-    btn.textContent = originalLabel;
+    lbl.textContent = originalLabel;
   }
 }
 
@@ -4619,7 +4797,9 @@ async function maybeAutoRefresh() {
     sessionStorage.setItem('vma_autorefresh', '1');
 
     const btn = document.getElementById('refresh-btn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Loading today’s brief…'; }
+    // Write only the .rbtn-label span so the persistent SVG icon survives.
+    const lbl = btn && btn.querySelector('.rbtn-label');
+    if (btn) { btn.disabled = true; if (lbl) lbl.textContent = 'Loading today’s brief…'; }
     const r = await fetch('/api/refresh', { method: 'POST' });
     const j = await r.json();
     if (j.ok && (j.leads > 0 || j.predictors > 0)) {
@@ -4630,11 +4810,12 @@ async function maybeAutoRefresh() {
     } else if (btn) {
       // Genuinely nothing to pull (no token / no artifact / 0 results).
       // Leave the panels empty and restore the button silently.
-      btn.disabled = false; btn.textContent = '↻ Daily Refresh';
+      btn.disabled = false; if (lbl) lbl.textContent = 'Daily Refresh';
     }
   } catch (e) {
     const btn = document.getElementById('refresh-btn');
-    if (btn) { btn.disabled = false; btn.textContent = '↻ Daily Refresh'; }
+    const lbl = btn && btn.querySelector('.rbtn-label');
+    if (btn) { btn.disabled = false; if (lbl) lbl.textContent = 'Daily Refresh'; }
   }
 }
 
@@ -5007,6 +5188,141 @@ async function loadRecentReports() {
     body.innerHTML = '<div class="empty compact">Could not load recent reports.</div>';
   }
 }
+
+// ===========================================================================
+// 3-PAGE SHELL — additive nav, composer morph, BD-calendar modal. Purely
+// layout/UI; does not touch any existing data loader or handler. Existing
+// delegated handlers select by class/closest (never DOM position), so the
+// relocated subtrees keep working unchanged.
+// ===========================================================================
+(function () {
+  // --- VMA logo tile (navy) — injected like the mockup's LOGO const ---
+  var LOGO = '<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">'
+    + '<rect width="100" height="100" fill="#3E5C84"/>'
+    + '<text x="50" y="56" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-weight="800" font-size="31" letter-spacing="-1.6" fill="#fff">VMA</text>'
+    + '<text x="51.6" y="77" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-weight="300" font-size="14.5" letter-spacing="3.4" fill="#fff">GROUP</text></svg>';
+  document.querySelectorAll('.vma-ic').forEach(function (e) { e.innerHTML = LOGO; });
+
+  // --- rail nav: CSS show/hide of .page; inactive pages stay in the DOM ---
+  function render(page) {
+    document.querySelectorAll('.page').forEach(function (s) {
+      s.classList.toggle('active', s.id === page);
+    });
+    var map = { leads: 'nav-leads', agent: 'nav-agent', cal: 'nav-cal' };
+    Object.keys(map).forEach(function (k) {
+      var b = document.getElementById(map[k]);
+      if (b) b.classList.toggle('active', k === page);
+    });
+  }
+  var nl = document.getElementById('nav-leads');
+  var na = document.getElementById('nav-agent');
+  var nc = document.getElementById('nav-cal');
+  if (nl) nl.onclick = function () { render('leads'); };
+  if (na) na.onclick = function () { render('agent'); };
+  if (nc) nc.onclick = function () { render('cal'); };
+  render('leads');
+
+  // --- composer morph: chips toggle which MOVED form is visible ---
+  var agent = document.getElementById('agent');
+  if (agent) {
+    var composer = agent.querySelector('.composer');
+    var cprompt = document.getElementById('cprompt');
+    var capForms = agent.querySelectorAll('.cap-form');
+    var chips = agent.querySelectorAll('.chip[data-cap]');
+
+    function showFree() {
+      composer.dataset.mode = 'free';
+      capForms.forEach(function (f) { f.classList.remove('active'); });
+      if (cprompt) cprompt.style.display = '';
+      chips.forEach(function (c) { c.classList.remove('active'); });
+    }
+    function showCap(cap) {
+      composer.dataset.mode = cap;
+      if (cprompt) cprompt.style.display = 'none';
+      capForms.forEach(function (f) { f.classList.toggle('active', f.dataset.cap === cap); });
+      chips.forEach(function (c) { c.classList.toggle('active', c.dataset.cap === cap); });
+      // focus the first field of the revealed form for quick entry
+      var active = agent.querySelector('.cap-form.active');
+      var first = active && active.querySelector('input, select, textarea');
+      if (first) { try { first.focus(); } catch (e) {} }
+    }
+    showFree();
+    chips.forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        var cap = chip.dataset.cap;
+        if (composer.dataset.mode === cap) showFree(); else showCap(cap);
+      });
+    });
+    // NOTE: the corner arrow (.send) inside each form is a native submit
+    // button, so a click submits the form → onsubmit → dispatch(). We do
+    // NOT call requestSubmit so the user-gesture popup isn't blocked.
+  }
+
+  // --- BD-calendar modal: move a context panel in on open, back on close ---
+  var host = document.getElementById('cal-host');
+  var modal = document.getElementById('bd-modal');
+  var mb = document.getElementById('bd-mb');
+  var mic = document.getElementById('bd-mic');
+  var mt = document.getElementById('bd-mt');
+  var mx = document.getElementById('bd-mx');
+  var BDMETA = {
+    windows:    { ic: '◴', t: 'Placement Windows' },
+    events:     { ic: '▦', t: 'Events & Networking' },
+    frameworks: { ic: '❏', t: 'Framework Eligibility' }
+  };
+  var openKey = null;
+  function panelFor(key) { return host ? host.querySelector('[data-bd="' + key + '"]') : null; }
+  function openBD(key) {
+    var meta = BDMETA[key]; if (!meta || !mb) return;
+    var panel = panelFor(key); if (!panel) return;
+    if (openKey && openKey !== key) {   // return any already-open panel to the host first (no stranding on card-to-card switch)
+      var prev = mb.querySelector('[data-bd="' + openKey + '"]');
+      if (prev && host) host.appendChild(prev);
+    }
+    if (mic) mic.textContent = meta.ic;
+    if (mt) mt.textContent = meta.t;
+    mb.appendChild(panel);            // relocate the live panel into the modal
+    openKey = key;
+    modal.classList.add('open');
+  }
+  function closeBD() {
+    if (!openKey) { modal.classList.remove('open'); return; }
+    var panel = mb ? mb.querySelector('[data-bd="' + openKey + '"]') : null;
+    if (panel && host) host.appendChild(panel);   // move it back to the host
+    openKey = null;
+    modal.classList.remove('open');
+  }
+  document.querySelectorAll('.cc-card[data-open]').forEach(function (c) {
+    c.addEventListener('click', function () { refreshCardBadges(); openBD(c.dataset.open); });
+  });
+  if (mx) mx.onclick = closeBD;
+  if (modal) modal.addEventListener('click', function (e) { if (e.target === modal) closeBD(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && openKey) closeBD(); });
+
+  // --- card "new" badges: data-derived from the rendered panels (reuse the
+  //     existing indicators — pulses' "new" header, events' window-open
+  //     marker, framework rows). Recomputed on a short delay after the
+  //     on-init loaders resolve, and again whenever a card is clicked. ---
+  function refreshCardBadges() {
+    var set = function (key, n) {
+      var b = document.querySelector('.cc-card[data-open="' + key + '"] .cbadge');
+      if (b) b.textContent = n ? (n + ' new') : '';
+    };
+    // Placement Windows: the existing #pulses-new header badge surfaces the
+    // just_opened count; mirror it onto the card.
+    var pn = document.getElementById('pulses-new');
+    var pnn = document.getElementById('pulses-new-n');
+    var winNew = (pn && pn.style.display !== 'none' && pnn) ? parseInt(pnn.textContent || '0', 10) : 0;
+    set('windows', winNew || 0);
+    // Events: count in-action-window markers rendered by loadEvents().
+    set('events', document.querySelectorAll('#events-body .ev-open').length);
+    // Frameworks: count the tracked framework rows.
+    set('frameworks', document.querySelectorAll('#framework-body .framework-row').length);
+  }
+  // Loaders are async fetches fired on DOMContentLoaded; recompute a few
+  // times so the badges settle once the panels have rendered.
+  [800, 2000, 4000].forEach(function (ms) { setTimeout(refreshCardBadges, ms); });
+})();
 </script>
 
 </body>
