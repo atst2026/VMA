@@ -3278,6 +3278,9 @@ TEMPLATE = r"""
       display: grid; place-items: center; font-size: 16px; border: none; flex-shrink: 0; transition: all .14s; cursor: pointer; }
     .send:hover { background: #93b9de; color: #10294f; }
     .send svg { width: 16px; height: 16px; }
+    /* arrow submit sits at the bottom-right of each composer form box */
+    .composer .cform form { display: flex; flex-direction: column; }
+    .composer .cform .send { align-self: flex-end; order: 99; margin-top: 10px; }
     /* Restyle the MOVED action-forms' bare label/input/button to the cf-* look.
        Scoped to .composer .cform so it never touches other inputs/labels. */
     .composer .cform label { display: block; font: 600 9.5px/1 "JetBrains Mono", monospace;
@@ -3365,7 +3368,7 @@ TEMPLATE = r"""
 <!-- LEFT RAIL — page switcher. Active state toggled by render() (additive JS). -->
 <aside class="rail">
   <button class="ri active" id="nav-leads" data-tip="Market Intelligence Radar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3.5l2.5 7 4-15 2.5 8H21"/></svg></button>
-  <button class="ri" id="nav-agent" data-tip="Executive Assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="8" width="15" height="11" rx="3.5"/><path d="M12 8V5"/><circle cx="12" cy="3.6" r="1.3"/><circle cx="9.6" cy="13.2" r="1" fill="currentColor" stroke="none"/><circle cx="14.4" cy="13.2" r="1" fill="currentColor" stroke="none"/><path d="M2.7 12.6v2.8M21.3 12.6v2.8"/></svg></button>
+  <button class="ri" id="nav-agent" data-tip="Executive Assistant"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M10 2.6c.42 4.55 2.33 6.46 6.88 6.88-4.55.42-6.46 2.33-6.88 6.88-.42-4.55-2.33-6.46-6.88-6.88 4.55-.42 6.46-2.33 6.88-6.88z"/><path d="M18.4 13.6c.2 2.2 1.1 3.1 3.3 3.3-2.2.2-3.1 1.1-3.3 3.3-.2-2.2-1.1-3.1-3.3-3.3 2.2-.2 3.1-1.1 3.3-3.3z"/></svg></button>
   <button class="ri" id="nav-cal" data-tip="BD Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></button>
 </aside>
 
@@ -3586,7 +3589,6 @@ TEMPLATE = r"""
   <!-- SPECIALIST SIGNALS row stays hidden on Page 1 above. Footer + dev
        controls sit at the bottom of Page 1. -->
   <div class="footer">
-    <span class="brand-tag">Recruitment<span class="sep">•</span>Executive Search<span class="sep">•</span>Advisory Services</span>
     <span class="dev-zone">
       <span class="dev-zone-label">For dev only - not a user feature:</span>
       <button type="button" id="dev-run-brief" class="dev-btn"
@@ -3605,7 +3607,7 @@ TEMPLATE = r"""
   <section class="page" id="agent">
     <div class="agent-wrap">
       <div class="ea-hero">
-        <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="8" width="15" height="11" rx="3.5"/><path d="M12 8V5"/><circle cx="12" cy="3.6" r="1.3"/><circle cx="9.6" cy="13.2" r="1" fill="currentColor" stroke="none"/><circle cx="14.4" cy="13.2" r="1" fill="currentColor" stroke="none"/><path d="M2.7 12.6v2.8M21.3 12.6v2.8"/></svg></div>
+        <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M10 2.6c.42 4.55 2.33 6.46 6.88 6.88-4.55.42-6.46 2.33-6.88 6.88-.42-4.55-2.33-6.46-6.88-6.88 4.55-.42 6.46-2.33 6.88-6.88z"/><path d="M18.4 13.6c.2 2.2 1.1 3.1 3.3 3.3-2.2.2-3.1 1.1-3.3 3.3-.2-2.2-1.1-3.1-3.3-3.3 2.2-.2 3.1-1.1 3.3-3.3z"/></svg></div>
         <h1 class="gemini-title">Executive Assistant</h1>
         <div class="cc-sub">Real-time reports generated for you. On-demand.</div>
       </div>
