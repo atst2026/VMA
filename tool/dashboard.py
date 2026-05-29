@@ -1695,11 +1695,10 @@ TEMPLATE = r"""
     html, body { margin: 0; padding: 0; }
     body {
       font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-      background-color: var(--bg);
-      /* No body radial overlays — keep the page a flat #f7f9fc so the
-         top-bar halo can fade into transparent and meet the body
-         seamlessly with no visible seam. */
-      background-attachment: fixed;
+      /* Background matches the landing page exactly: near-white ground with
+         the verbatim Gemini halo (see body::before), applied to the body so
+         all three pages share the identical soft-blue glow. */
+      background-color: rgb(253, 252, 252);
       color: var(--text);
       line-height: 1.5;
       font-weight: 400;
@@ -1707,6 +1706,23 @@ TEMPLATE = r"""
       font-feature-settings: "ss01", "cv11", "cv02", "cv03";
       -webkit-font-smoothing: antialiased;
       letter-spacing: -0.005em;
+      position: relative;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    /* Gemini halo — verbatim from LANDING_TEMPLATE, recentred on the viewport
+       so the dashboard's background is identical to the landing page. */
+    body::before {
+      content: "";
+      position: fixed;
+      z-index: -1;
+      width: 792px; height: 300px;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 9999px;
+      background-image: radial-gradient(100% 100% at 50% 8%, rgb(253, 252, 252) 0px, rgb(157, 210, 255) 50%);
+      filter: blur(125px);
+      pointer-events: none;
     }
     .serif { font-family: "Crimson Pro", Georgia, serif; }
 
@@ -3150,7 +3166,9 @@ TEMPLATE = r"""
       padding-top: 0; padding-bottom: 10px; overflow: hidden; }
     #leads .refresh-bar { flex: none; }
     #leads .warn-banner { flex: none; }
-    #leads .row { flex: 1; min-height: 0; margin-bottom: 12px; }
+    #leads .row { flex: 1; min-height: 0; margin-bottom: 0; display: grid;
+      grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 880px) { #leads .row { grid-template-columns: 1fr; } }
     #leads .row .panel { min-height: 0; }
     #leads .row .panel-body { flex: 1; min-height: 0; max-height: none; overflow-y: auto; }
     #leads #specialist-row { flex: none; }
@@ -3159,9 +3177,73 @@ TEMPLATE = r"""
     .big-refresh { display: inline-flex; align-items: center; gap: 7px; }
     .big-refresh svg { flex-shrink: 0; }
 
+    /* ===== Page 1 reskin — match the approved mockup's Leads & Signals look.
+       CSS-only: maps the existing markup/classes onto the mockup's visual
+       language. No data, markup or JS changes. ===== */
+    #leads .container { max-width: 1700px; width: 100%; margin: 0 auto; }
+    /* refresh bar -> mockup .refresh (white card, blue accent rail) */
+    #leads .refresh-bar { display: flex; align-items: center; gap: 16px; padding: 13px 18px;
+      background: #fff; border: 1px solid var(--border); border-radius: 12px;
+      box-shadow: var(--shadow-sm); position: relative; overflow: hidden; margin-bottom: 16px; }
+    #leads .refresh-bar::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 4px; background: linear-gradient(180deg, var(--blue-bright), var(--blue-deep)); }
+    #leads .big-refresh { background: var(--blue-wash); color: var(--blue-deep);
+      border: 1px solid rgba(26,61,124,.12); border-radius: 9999px; padding: 10px 18px;
+      font: 600 12.5px/1 "Inter"; }
+    #leads .big-refresh:hover { background: #d6e4fb; }
+    #leads .refresh-meta { display: flex; flex-direction: column; gap: 3px; }
+    #leads .refresh-label { font-size: 13px; font-weight: 600; color: var(--ink); }
+    #leads .refresh-sub { font-size: 11px; color: var(--muted); }
+    /* panels -> mockup .panel + .ph */
+    #leads .panel { background: #fff; border: 1px solid var(--border); border-radius: 12px;
+      box-shadow: var(--shadow-md); overflow: hidden; display: flex; flex-direction: column; }
+    #leads .panel-header { display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border-bottom: 1px solid var(--hairline);
+      background: linear-gradient(180deg, rgba(66,133,244,.03), transparent); }
+    #leads .panel-header h2 { font-size: 10.5px; font-weight: 600; letter-spacing: .13em;
+      text-transform: uppercase; color: var(--blue-deep); display: flex; align-items: center; gap: 8px; }
+    #leads .panel-header h2::before { content: ""; width: 5px; height: 5px; border-radius: 50%;
+      background: var(--blue); box-shadow: 0 0 6px rgba(66,133,244,.5); }
+    #leads .panel-header .count { font: 600 10px/1 "JetBrains Mono"; color: var(--blue-deep);
+      background: var(--blue-wash); padding: 3px 9px; border-radius: 9999px; }
+    /* filter tabs -> mockup .tabs/.tab */
+    #leads .filter-bar { display: flex; gap: 6px; padding: 10px 14px;
+      border-bottom: 1px solid var(--hairline); flex-wrap: wrap; }
+    #leads .lead-filter-pill, #leads .filter-pill { border: none; background: transparent;
+      border-radius: 9999px; padding: 6px 11px; font: 600 11px/1 "Inter"; color: var(--muted);
+      display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+    #leads .lead-filter-pill:not(.active):hover, #leads .filter-pill:not(.active):hover {
+      background: var(--elevated); color: var(--ink); }
+    #leads .lead-filter-pill.active, #leads .filter-pill.active {
+      background: var(--blue-wash); color: var(--blue-deep); }
+    #leads .pill-count { font: 600 9.5px/1 "JetBrains Mono"; background: rgba(31,31,31,.06);
+      color: var(--ink-2); padding: 2px 6px; border-radius: 9999px; }
+    #leads .lead-filter-pill.active .pill-count, #leads .filter-pill.active .pill-count {
+      background: #fff; color: var(--blue-deep); }
+    /* item rows -> mockup .it tokens (layout structure is already analogous) */
+    #leads .item { padding: 13px 16px; border-bottom: 1px solid var(--hairline); }
+    #leads .item:hover { background: var(--elevated); }
+    #leads .item .rank { width: 19px; height: 19px; background: var(--blue-wash);
+      color: var(--blue-deep); border: none; border-radius: 5px; font: 600 10px/1 "JetBrains Mono"; }
+    #leads .item .title { font-size: 13px; font-weight: 600; color: var(--ink); }
+    #leads .item .title a { color: var(--ink); }
+    #leads .item .title a:hover { color: var(--blue-deep); border-bottom-color: var(--blue); }
+    #leads .item .meta { margin-top: 8px; margin-left: 27px; gap: 6px; font-size: 11px; }
+    #leads .item .meta .badge { background: var(--elevated); border: 1px solid var(--border);
+      border-radius: 6px; padding: 4px 9px; font: 500 10.5px/1.3 "Inter"; color: var(--ink-2); }
+    #leads .item .outreach-text { display: none; }   /* mockup is copy-only, no inline outreach */
+    #leads .item .item-actions { margin-top: 9px; margin-left: 27px; gap: 7px; }
+    #leads .btn-mini { font: 500 10.5px/1 "Inter"; padding: 6px 11px; border-radius: 7px;
+      border: 1px solid var(--border); background: #fff; color: var(--blue-deep);
+      letter-spacing: 0; gap: 5px; }
+    #leads .btn-mini:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
+    #leads .btn-mini.ghost { color: var(--muted); border-color: var(--border); }
+    #leads .btn-mini.ghost:hover { background: #fbecea; color: #A33A22; border-color: #e7b9b1; }
+
     /* ----- page 2: Executive Assistant ----- */
     #agent .agent-wrap { flex: 1; min-height: 0; overflow-y: auto; max-width: 900px; margin: 0 auto;
-      padding: 40px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; }
+      padding: 40px 24px; text-align: center; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; }
     .ea-hero { text-align: center; }
     .cc-bigicon { width: 78px; height: 78px; border-radius: 18px; margin: 0 auto 22px; display: grid;
       place-items: center; color: var(--vma); background: rgba(62,92,132,.09); }
@@ -3283,7 +3365,7 @@ TEMPLATE = r"""
 <!-- LEFT RAIL — page switcher. Active state toggled by render() (additive JS). -->
 <aside class="rail">
   <button class="ri active" id="nav-leads" data-tip="Market Intelligence Radar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3.5l2.5 7 4-15 2.5 8H21"/></svg></button>
-  <button class="ri" id="nav-agent" data-tip="Executive Assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.4a7.6 7.6 0 0 1-11 6.8L4.5 19.5l1.3-4.2A7.6 7.6 0 1 1 20 11.4z"/><path d="M12.1 7.8l.85 2.1 2.1.85-2.1.85-.85 2.1-.85-2.1-2.1-.85 2.1-.85z" fill="currentColor" stroke="none"/></svg></button>
+  <button class="ri" id="nav-agent" data-tip="Executive Assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="8" width="15" height="11" rx="3.5"/><path d="M12 8V5"/><circle cx="12" cy="3.6" r="1.3"/><circle cx="9.6" cy="13.2" r="1" fill="currentColor" stroke="none"/><circle cx="14.4" cy="13.2" r="1" fill="currentColor" stroke="none"/><path d="M2.7 12.6v2.8M21.3 12.6v2.8"/></svg></button>
   <button class="ri" id="nav-cal" data-tip="BD Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></button>
 </aside>
 
@@ -3523,7 +3605,7 @@ TEMPLATE = r"""
   <section class="page" id="agent">
     <div class="agent-wrap">
       <div class="ea-hero">
-        <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.4a7.6 7.6 0 0 1-11 6.8L4.5 19.5l1.3-4.2A7.6 7.6 0 1 1 20 11.4z"/><path d="M12.1 7.8l.85 2.1 2.1.85-2.1.85-.85 2.1-.85-2.1-2.1-.85 2.1-.85z" fill="currentColor" stroke="none"/></svg></div>
+        <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="8" width="15" height="11" rx="3.5"/><path d="M12 8V5"/><circle cx="12" cy="3.6" r="1.3"/><circle cx="9.6" cy="13.2" r="1" fill="currentColor" stroke="none"/><circle cx="14.4" cy="13.2" r="1" fill="currentColor" stroke="none"/><path d="M2.7 12.6v2.8M21.3 12.6v2.8"/></svg></div>
         <h1 class="gemini-title">Executive Assistant</h1>
         <div class="cc-sub">Real-time reports generated for you. On-demand.</div>
       </div>
@@ -3615,45 +3697,6 @@ TEMPLATE = r"""
         <button class="chip" data-cap="sweep"><span class="i">⟲</span>Sweep</button>
       </div>
 
-      <!-- Candidate Watch + Recent Reports moved onto page 2 -->
-      <div class="agent-extras">
-        <!-- CANDIDATE WATCH -->
-        <div class="panel action-card">
-          <h3>Candidate Watch</h3>
-          <div class="subhead">Keep a roster of warm candidates to stay in touch with. Overdue ones float to the top so relationships don't go cold.</div>
-          <div id="watch-list-wrap">
-            <div class="status" id="watch-list-status">Loading…</div>
-            <div id="watch-list"></div>
-          </div>
-          <details style="margin-top:10px;">
-            <summary class="add-toggle">+ Add candidate</summary>
-            <form id="watch-add-form" onsubmit="addWatchCandidate(event)" style="margin-top:8px;">
-              <label for="wa-name">Name</label>
-              <input id="wa-name" name="name" required>
-              <label for="wa-company">Current company</label>
-              <input id="wa-company" name="current_company">
-              <label for="wa-title">Current title</label>
-              <input id="wa-title" name="current_title">
-              <label for="wa-cadence">Remind me every (days)</label>
-              <input id="wa-cadence" name="touch_cadence_days" type="number" value="30" min="7" max="180">
-              <label for="wa-notes">Notes</label>
-              <input id="wa-notes" name="notes">
-              <button type="submit">Add</button>
-              <div class="status" id="watch-add-status"></div>
-            </form>
-          </details>
-        </div>
-
-        <!-- RECENT REPORTS -->
-        <div class="panel action-card recent-card">
-          <h3>Recent Reports</h3>
-          <div class="subhead">Generated within the last 48 hours.</div>
-          <button type="button" class="rr-clear" onclick="clearRecentReports(this)">Clear</button>
-          <div id="recent-reports">
-            <div class="empty compact">Loading…</div>
-          </div>
-        </div>
-      </div>
 
     </div>
   </section>
@@ -4636,6 +4679,7 @@ async function loadSpecialistSignals() {
 async function loadWatchList() {
   const wrap = document.getElementById('watch-list');
   const status = document.getElementById('watch-list-status');
+  if (!wrap || !status) return;   // Candidate Watch panel removed from the UI
   try {
     const r = await fetch('/api/candidates/watch');
     const j = await r.json();
