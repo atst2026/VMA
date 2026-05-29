@@ -3420,7 +3420,7 @@ TEMPLATE = r"""
 <!-- LEFT RAIL — page switcher. Active state toggled by render() (additive JS). -->
 <aside class="rail">
   <button class="ri active" id="nav-leads" data-tip="Market Intelligence Radar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3.5l2.5 7 4-15 2.5 8H21"/></svg></button>
-  <button class="ri" id="nav-agent" data-tip="Executive Assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v-.5a8 8 0 0 1 16 0v.5"/><rect x="2.5" y="12.5" width="3.5" height="6" rx="1.75"/><rect x="18" y="12.5" width="3.5" height="6" rx="1.75"/><path d="M20 18.5v1a2.5 2.5 0 0 1-2.5 2.5h-3"/></svg></button>
+  <button class="ri" id="nav-agent" data-tip="Executive Assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="7.5" width="14" height="11.5" rx="4"/><path d="M12 7.5V5"/><circle cx="12" cy="3.9" r="1.1"/><circle cx="9.5" cy="13" r="1.3" fill="currentColor" stroke="none"/><circle cx="14.5" cy="13" r="1.3" fill="currentColor" stroke="none"/></svg></button>
   <button class="ri" id="nav-cal" data-tip="BD Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></button>
 </aside>
 
@@ -3659,7 +3659,7 @@ TEMPLATE = r"""
   <section class="page" id="agent">
     <div class="agent-wrap">
       <div class="ea-hero">
-        <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v-.5a8 8 0 0 1 16 0v.5"/><rect x="2.5" y="12.5" width="3.5" height="6" rx="1.75"/><rect x="18" y="12.5" width="3.5" height="6" rx="1.75"/><path d="M20 18.5v1a2.5 2.5 0 0 1-2.5 2.5h-3"/></svg></div>
+        <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="7.5" width="14" height="11.5" rx="4"/><path d="M12 7.5V5"/><circle cx="12" cy="3.9" r="1.1"/><circle cx="9.5" cy="13" r="1.3" fill="currentColor" stroke="none"/><circle cx="14.5" cy="13" r="1.3" fill="currentColor" stroke="none"/></svg></div>
         <h1 class="gemini-title">Executive Assistant</h1>
         <div class="cc-sub">Real-time reports generated for you. On-demand.</div>
       </div>
