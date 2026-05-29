@@ -3299,7 +3299,7 @@ TEMPLATE = r"""
 
     /* ----- page 2: Executive Assistant ----- */
     #agent .agent-wrap { flex: 1; min-height: 0; overflow-y: auto; max-width: 900px; margin: 0 auto;
-      padding: 40px 24px; text-align: center; display: flex; flex-direction: column;
+      padding: 30px 24px 164px; text-align: center; display: flex; flex-direction: column;
       align-items: center; justify-content: center; }
     .ea-hero { text-align: center; }
     .cc-bigicon { width: 78px; height: 78px; border-radius: 18px; margin: 0 auto 22px; display: grid;
@@ -3308,23 +3308,20 @@ TEMPLATE = r"""
     .gemini-title { font-family: "Newsreader", Georgia, serif; font-weight: 400; font-size: 34px;
       letter-spacing: -.01em; color: var(--ink); text-align: center; }
     .cc-sub { font-size: 13.5px; color: var(--muted); margin-top: 11px; }
-    /* Agent page: keep the greeting compact so the composer pill is the
-       centred focal element of the page (not the Executive Assistant hero). */
-    #agent .cc-bigicon { width: 50px; height: 50px; border-radius: 13px; margin: 0 auto 12px; }
-    #agent .cc-bigicon svg { width: 27px; height: 27px; }
-    #agent .gemini-title { font-size: 25px; }
-    #agent .cc-sub { font-size: 13px; margin-top: 7px; }
-    #agent .ea-hero { margin-bottom: 2px; }
+    /* Agent page: full-size hero sits just above the centred composer pill. */
+    #agent .ea-hero { margin-bottom: 26px; }
 
     /* COMPOSER PILL — verbatim spec from approved mockup. */
     .composer { box-sizing: content-box; width: 672px; max-width: 100%; background: #fff;
       border: 1px solid transparent; border-radius: 20px;
       box-shadow: 0 4px 20px rgba(0,0,0,.07), 0 0 0 .5px rgba(31,31,30,.286);
-      padding: 0; margin: 24px auto 0; text-align: left; transition: border-color .2s, box-shadow .2s; }
+      padding: 0; margin: 0 auto; text-align: left; transition: border-color .2s, box-shadow .2s; }
     .composer:focus-within { border-color: rgba(31,31,30,.20); }
     .composer .inner { display: flex; flex-direction: column; margin: 14px; gap: 12px; }
     .composer .cform { min-height: 48px; max-height: 384px; overflow-y: auto; padding: 6px 0 0 6px; transition: all .2s; }
     .composer .cfoot { display: flex; justify-content: flex-end; align-items: center; }
+    /* Footer send shows in free mode; chip-forms keep their own native submit arrow. */
+    .composer:not([data-mode="free"]) .cfoot .send { display: none; }
     .cinput { border: none; outline: none; background: transparent; width: 100%;
       font-family: "Inter", system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       font-size: 16px; line-height: 22.4px; font-weight: 430; color: rgb(11,11,11); }
@@ -3751,7 +3748,7 @@ TEMPLATE = r"""
             </div>
 
           </div>
-          <div class="cfoot"></div>
+          <div class="cfoot"><button class="send" id="composer-send" type="button" title="Run"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>
         </div>
       </div>
 
@@ -5301,9 +5298,14 @@ async function loadRecentReports() {
         if (composer.dataset.mode === cap) showFree(); else showCap(cap);
       });
     });
-    // NOTE: the corner arrow (.send) inside each form is a native submit
-    // button, so a click submits the form → onsubmit → dispatch(). We do
-    // NOT call requestSubmit so the user-gesture popup isn't blocked.
+    // The corner arrow (.send) inside each form is a native submit button, so a
+    // click submits the form → onsubmit → dispatch() (no requestSubmit, so the
+    // user-gesture popup isn't blocked). The footer send shows only in free mode
+    // and focuses the prompt, so the empty pill still reads complete.
+    var footSend = document.getElementById('composer-send');
+    if (footSend && cprompt) {
+      footSend.addEventListener('click', function () { try { cprompt.focus(); } catch (e) {} });
+    }
   }
 
   // --- BD-calendar modal: move a context panel in on open, back on close ---
