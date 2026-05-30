@@ -40,6 +40,8 @@ Everything user-facing lives in **`tool/dashboard.py`**:
    `#cal-host` and returns it on close (so the panel keeps its own AJAX
    loader / filters / dismiss). Current cards:
    - **Placement Windows** — window-pane list, loaded from `/api/pulses`.
+   - **Events & Networking** — comms awards / conferences, loaded from
+     `/api/industry-events`.
    - **Framework Eligibility** — server-rendered from `framework_events`.
 
 ## Data sources (the `/api/*` reads pull from these)
@@ -52,15 +54,14 @@ Everything user-facing lives in **`tool/dashboard.py`**:
 - `tool/pulse_dismiss.py` — per-finding dismissals (shared keyspace; the
   `✕` on a row POSTs to `/api/pulses/dismiss`).
 
-## Events & Networking — currently disabled
+## Events & Networking — data note
 
-The "Events & Networking" feature was removed from the UI (its BD-Calendar
-card, modal panel and `BDMETA` entry). It is **dormant, not deleted** — the
-`loadEvents()` renderer, the `/api/industry-events` route, and the
-`INDUSTRY_EVENTS` list in `calendar_pulses.py` are still present so it can be
-re-enabled later. ⚠️ Note: `INDUSTRY_EVENTS` is a **hand-entered static list**
-(dates and source links were typed in, not scraped/verified), so before
-re-enabling, the dates and links need verifying or replacing with a real feed.
+The "Events & Networking" card serves `INDUSTRY_EVENTS` from
+`tool/calendar_pulses.py`. ⚠️ This is a **curated static list**, not a live
+feed: each entry's date and source link was verified against the organiser's
+own 2026 listing (May 2026), and events without a firm public 2026 date were
+omitted rather than guessed. It therefore needs periodic re-verification (or
+replacing with a real feed) as organisers publish/update their calendars.
 
 ## Conventions / gotchas
 
