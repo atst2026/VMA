@@ -1642,10 +1642,10 @@ LANDING_TEMPLATE = r"""
   .wordmark .g{font-weight:300;letter-spacing:.32em;font-size:64px;padding-left:.42em;margin-right:-.32em;}
 
   .pill{
-    background:rgb(255,255,255);border:none;border-radius:29px;
+    background:rgb(255,255,255);border:none;border-radius:26px;
     box-shadow:0 2px 8px -2px rgba(0,0,0,0.16);
-    padding:0 20px;width:594px;height:58px;max-width:none;
-    display:flex;align-items:center;justify-content:center;gap:13px;
+    padding:0 18px;width:535px;height:52px;max-width:none;
+    display:flex;align-items:center;justify-content:center;gap:12px;
     text-decoration:none;color:rgb(31,31,31);cursor:pointer;
     transition:transform .15s ease, box-shadow .15s ease;
   }
@@ -1753,15 +1753,23 @@ LANDING_TEMPLATE = r"""
       var KIND = { green: 'sig green', gold: 'sig gold', blue: 'sig' };
       var DELAYS = [0, 1600, 3100, 4600];   // matches the per-chip animation-delay
       var CYCLE = 7000;                      // matches sigpop duration
+      var BD = POOL.filter(function (c) { return c.kind === 'green' || c.kind === 'gold'; });
+      var JOBS = POOL.filter(function (c) { return c.kind === 'blue'; });
       var shown = {};
       chips.forEach(function (c) { var b = c.querySelector('b'); if (b) shown[b.textContent] = 1; });
 
+      // Kind-preserving swap: a chip showing a BD lead (green/gold) refreshes to
+      // another BD lead, a job chip to another job — so the initial mix (2 BD +
+      // 2 jobs, set server-side) is kept for the life of the page.
       function swap(chip) {
+        var b = chip.querySelector('b'); if (!b) return;
+        var isBD = chip.classList.contains('green') || chip.classList.contains('gold');
+        var src = isBD ? BD : JOBS;
+        if (src.length <= 1) return;   // nothing else of this kind to rotate to
         var pick, tries = 0;
-        do { pick = POOL[Math.floor(Math.random() * POOL.length)]; tries++; }
+        do { pick = src[Math.floor(Math.random() * src.length)]; tries++; }
         while (shown[pick.label] && tries < 25);
         if (shown[pick.label]) return;
-        var b = chip.querySelector('b'); if (!b) return;
         shown[b.textContent] = 0; shown[pick.label] = 1;
         b.textContent = pick.label;                 // swap text + dot colour
         chip.className = KIND[pick.kind] || 'sig';   // (chip is invisible now)
@@ -3311,6 +3319,12 @@ TEMPLATE = r"""
     .rail .ri svg { width: 20px; height: 20px; }
     .rail .ri:hover { background: rgba(31,31,31,.05); color: var(--ink); }
     .rail .ri.active { background: rgba(31,31,31,.07); color: var(--ink); }
+    /* VMA logo pinned to the bottom of the rail — same 42x42 faded-navy
+       square + radius as the nav icons, holding the navy logo tile. */
+    .rail .rail-logo { margin-top: auto; width: 42px; height: 42px; border-radius: 12px;
+      overflow: hidden; flex-shrink: 0; position: relative; display: grid; place-items: center;
+      background: rgba(62,92,132,.09); }
+    .rail .rail-logo svg { display: block; width: 100%; height: 100%; border-radius: 12px; }
     .rail [data-tip]:hover::after { content: attr(data-tip); position: absolute; left: 54px; top: 50%;
       transform: translateY(-50%); background: var(--ink); color: #fff; font: 500 11px/1 "Inter", sans-serif;
       padding: 6px 9px; border-radius: 7px; white-space: nowrap; z-index: 5; box-shadow: var(--shadow-md); }
@@ -3629,6 +3643,7 @@ TEMPLATE = r"""
   <button class="ri active" id="nav-leads" data-tip="Market Intelligence Radar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12 L12 3.2 A8.8 8.8 0 1 1 5.6 6"/><circle cx="12" cy="12" r="3.4"/><circle cx="12" cy="12" r="8.8" opacity=".4"/></svg></button>
   <button class="ri" id="nav-agent" data-tip="Personal Assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7.5" width="17" height="13" rx="5"/><path d="M12 7.5V4.6"/><circle cx="12" cy="3.4" r="1.2"/><circle cx="9" cy="14" r="1.65" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.65" fill="currentColor" stroke="none"/></svg></button>
   <button class="ri" id="nav-cal" data-tip="BD Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></button>
+  <span class="rail-logo" data-tip="VMA Group"></span>
 </aside>
 
 <div class="stage">
@@ -5444,7 +5459,7 @@ async function loadRecentReports() {
     + '<rect width="100" height="100" fill="#3E5C84"/>'
     + '<text x="50" y="56" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-weight="800" font-size="31" letter-spacing="-1.6" fill="#fff">VMA</text>'
     + '<text x="51.6" y="77" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-weight="300" font-size="14.5" letter-spacing="3.4" fill="#fff">GROUP</text></svg>';
-  document.querySelectorAll('.vma-ic').forEach(function (e) { e.innerHTML = LOGO; });
+  document.querySelectorAll('.vma-ic, .rail-logo').forEach(function (e) { e.innerHTML = LOGO; });
 
   // --- rail nav: CSS show/hide of .page; inactive pages stay in the DOM ---
   function render(page) {
