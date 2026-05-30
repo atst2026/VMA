@@ -3454,12 +3454,14 @@ TEMPLATE = r"""
       .page { height: auto; overflow: visible; }
       .page.active { display: block; }
 
-      /* page 1 — leads/signals: drop the internal flex-scroll chain so the
-         two panels simply stack and the document scrolls */
+      /* page 1 — leads/signals: stack the two panels, but each keeps its
+         OWN internal scroll (bounded height) rather than growing the whole
+         document down — same in-section scroll feel as desktop. */
       #leads .container { height: auto; overflow: visible; padding-bottom: 0; }
       #leads .row { display: flex; flex-direction: column; gap: 14px; }
-      #leads .row .panel { min-height: 0; }
-      #leads .row .panel-body { overflow: visible; max-height: none; }
+      #leads .row .panel { min-height: 0; height: 70vh; }
+      #leads .row .panel-body { flex: 1; min-height: 0; overflow-y: auto;
+        max-height: none; -webkit-overflow-scrolling: touch; }
       .wm-head { padding: 26px 0 18px; }
       .brand-title { font-size: 22px; }
       #leads .refresh-bar { flex-wrap: wrap; gap: 10px; }
@@ -3474,6 +3476,11 @@ TEMPLATE = r"""
       .composer { width: 100%; }
       .composer .inner { margin: 12px; }
       #agent .chips { max-width: 100%; }
+      /* iOS auto-zooms when a focused field is < 16px. Tapping a pack focuses
+         the first form input, so force every composer field to 16px on mobile
+         to stop the zoom-in. (Desktop keeps its 13.5px — outside this query.) */
+      .composer .cform input, .composer .cform select, .composer .cform textarea,
+      .cf-input, .cinput { font-size: 16px; }
 
       /* page 3 — BD calendar: natural scroll, full-width cards + modal */
       #cal .cc-wrap { height: auto; overflow: visible; padding: 8px 0 0; }
