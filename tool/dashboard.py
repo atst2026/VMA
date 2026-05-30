@@ -1503,9 +1503,10 @@ LANDING_TEMPLATE = r"""
 <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   /* ============================================================
-     L1 Ethena-style globe over Gemini ground-truth halo.
-     Gemini ::before values untouched (only top/left/transform
-     recentred). Wireframe globe overlay + live-pulse dot.
+     L1 — VMA logo over the Gemini ground-truth halo, with a market-
+     scanner radar that surfaces live recruitment/market signals.
+     Gemini ::before halo values UNCHANGED (only top/left/transform
+     recentred). The globe is replaced by the radar + signal chips.
      ============================================================ */
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;height:100%;}
@@ -1515,7 +1516,7 @@ LANDING_TEMPLATE = r"""
     background-image:none;
     min-height:100vh;
     position:relative;overflow:hidden;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:36px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;
   }
 
   /* Gemini halo — verbatim, recentred */
@@ -1528,26 +1529,34 @@ LANDING_TEMPLATE = r"""
     filter:blur(125px);opacity:1;mix-blend-mode:normal;
   }
 
-  /* Wireframe globe with intelligence-point pulse nodes */
-  .globe{
-    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-    width:min(720px,76vh);height:min(720px,76vh);
-    z-index:0;pointer-events:none;
-  }
-  .globe .ring{fill:none;stroke:rgba(58,143,164,.42);stroke-width:1;}
-  .globe .ring.bold{stroke:rgba(58,143,164,.68);stroke-width:1.3;}
-  .globe .spin{transform-origin:center;animation:spin 32s linear infinite;}
-  @keyframes spin{from{transform:rotateZ(0deg);}to{transform:rotateZ(360deg);}}
-  .node{
-    fill:rgb(157,210,255);
-    filter:drop-shadow(0 0 6px rgb(157,210,255));
-    animation:nodepulse 3.2s ease-in-out infinite;
-  }
-  @keyframes nodepulse{
-    0%,100%{r:3;opacity:.75;}
-    50%{r:6;opacity:1;}
-  }
-  .node.b{animation-delay:.7s;}.node.c{animation-delay:1.4s;}.node.d{animation-delay:2.1s;}
+  /* ----- market-scanner hero: logo at centre, radar behind, signals around ----- */
+  .hero{position:relative;z-index:0;width:min(440px,86vw);height:min(440px,86vw);
+    display:grid;place-items:center;}
+  .hero .viz{position:absolute;inset:0;z-index:0;pointer-events:none;}
+  .ring-s{fill:none;stroke:rgba(58,143,164,.28);stroke-width:1;}
+  .radar-sweep{transform-box:view-box;transform-origin:210px 210px;animation:sweep 5s linear infinite;}
+  @keyframes sweep{to{transform:rotate(360deg);}}
+
+  /* the real VMA logo icon (navy tile) with a slow sheen */
+  .logo-tile{position:relative;z-index:3;width:108px;height:108px;border-radius:24px;overflow:hidden;
+    box-shadow:0 16px 40px rgba(62,92,132,.42),0 3px 10px rgba(62,92,132,.34);}
+  .logo-tile svg{display:block;width:100%;height:100%;}
+  .logo-tile::after{content:"";position:absolute;inset:0;
+    background:linear-gradient(115deg,transparent 38%,rgba(255,255,255,.34) 50%,transparent 62%);
+    transform:translateX(-130%);animation:sheen 5s ease-in-out infinite;}
+  @keyframes sheen{0%,72%{transform:translateX(-130%);}88%,100%{transform:translateX(130%);}}
+
+  /* signal chips — recruitment / market triggers the scanner surfaces */
+  .sig{position:absolute;z-index:4;display:inline-flex;align-items:center;gap:6px;
+    background:#fff;border:1px solid rgba(60,64,67,.12);border-radius:9999px;
+    padding:6px 11px 6px 8px;font-family:"Google Sans","Inter",Arial,sans-serif;
+    font-size:11.5px;font-weight:600;color:#1A3D7C;white-space:nowrap;
+    box-shadow:0 6px 18px rgba(31,55,124,.12);opacity:0;transform:scale(.8);
+    animation:sigpop 7s ease-in-out infinite;}
+  .sig i{width:7px;height:7px;border-radius:50%;background:#4285F4;flex-shrink:0;box-shadow:0 0 7px rgba(66,133,244,.6);}
+  .sig.green i{background:#34A853;box-shadow:0 0 7px rgba(52,168,83,.6);}
+  .sig.gold i{background:#C49A3B;box-shadow:0 0 7px rgba(196,154,59,.6);}
+  @keyframes sigpop{0%,92%,100%{opacity:0;transform:scale(.8);}8%,84%{opacity:1;transform:scale(1);}}
 
   /* Content */
   .stage{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:32px;text-align:center;}
@@ -1604,42 +1613,50 @@ LANDING_TEMPLATE = r"""
 
   @media (max-width:720px){
     .stage{gap:24px;}
-    .wordmark .v,.wordmark .g{font-size:44px;}
     .pill{width:90%;height:56px;}
     .lbl{font-size:11px;letter-spacing:.18em;}
-    .globe{width:min(420px,48vh);height:min(420px,48vh);}
+    .sig{font-size:10.5px;}
+    .logo-tile{width:92px;height:92px;}
   }
   @media (prefers-reduced-motion: reduce){
-    .globe .spin,.node,.dot,.dot::before,.dot::after{animation:none;}
+    .radar-sweep,.logo-tile::after,.dot,.dot::before,.dot::after{animation:none;}
+    .sig{opacity:1;transform:none;animation:none;}
   }
 </style>
 </head>
 <body>
-  <svg class="globe" viewBox="0 0 720 720">
-    <g class="spin">
-      <circle class="ring bold" cx="360" cy="360" r="340"/>
-      <ellipse class="ring" cx="360" cy="360" rx="340" ry="80"/>
-      <ellipse class="ring" cx="360" cy="360" rx="340" ry="160"/>
-      <ellipse class="ring" cx="360" cy="360" rx="340" ry="240"/>
-      <ellipse class="ring" cx="360" cy="360" rx="340" ry="340"/>
-      <ellipse class="ring" cx="360" cy="360" rx="80"  ry="340"/>
-      <ellipse class="ring" cx="360" cy="360" rx="160" ry="340"/>
-      <ellipse class="ring" cx="360" cy="360" rx="240" ry="340"/>
-      <ellipse class="ring" cx="360" cy="360" rx="340" ry="340"/>
-      <circle class="node"   cx="320" cy="240" r="4"/>
-      <circle class="node b" cx="180" cy="320" r="4"/>
-      <circle class="node c" cx="360" cy="260" r="4"/>
-      <circle class="node d" cx="540" cy="380" r="4"/>
-    </g>
-  </svg>
   <div class="stage">
-    <div class="wordmark"><span class="v">VMA</span><span class="g">GROUP</span></div>
+    <div class="hero">
+      <svg class="viz" viewBox="0 0 420 420" aria-hidden="true">
+        <g class="ring-s">
+          <circle cx="210" cy="210" r="84"/><circle cx="210" cy="210" r="138"/><circle cx="210" cy="210" r="192"/>
+          <line x1="18" y1="210" x2="402" y2="210"/><line x1="210" y1="18" x2="210" y2="402"/>
+        </g>
+        <defs><linearGradient id="sweepg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="rgba(66,133,244,0)"/><stop offset="1" stop-color="rgba(66,133,244,.34)"/>
+        </linearGradient></defs>
+        <g class="radar-sweep"><path d="M210 210 L210 18 A192 192 0 0 1 346 74 Z" fill="url(#sweepg)"/></g>
+      </svg>
+      <span class="sig"       style="top:12%;left:8%;animation-delay:0s"><i></i>Head of Comms &middot; NHS</span>
+      <span class="sig green" style="top:28%;right:2%;animation-delay:1.6s"><i></i>&pound;37m Series B &middot; hiring</span>
+      <span class="sig gold"  style="bottom:22%;left:3%;animation-delay:3.1s"><i></i>CEO exit &middot; CCO opening</span>
+      <span class="sig"       style="bottom:9%;right:10%;animation-delay:4.6s"><i></i>Director of Comms &middot; FTSE</span>
+      <div class="logo-tile"></div>
+    </div>
     <a class="pill" href="/dashboard">
       <span class="dot"></span>
-      <span class="lbl">Intelligence Platform &middot; Live</span>
+      <span class="lbl">Scanning the market &middot; Live</span>
       <span class="arrow">&rarr;</span>
     </a>
   </div>
+  <script>
+    var LOGO = '<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">'
+      + '<rect width="100" height="100" fill="#3E5C84"/>'
+      + '<text x="50" y="55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="30" letter-spacing="-1.5" fill="#fff">VMA</text>'
+      + '<text x="51" y="76" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="300" font-size="13.5" letter-spacing="3" fill="#fff">GROUP</text>'
+      + '</svg>';
+    document.querySelectorAll('.logo-tile').forEach(function (e) { e.innerHTML = LOGO; });
+  </script>
 </body>
 </html>
 """
