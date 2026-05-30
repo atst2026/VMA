@@ -3310,31 +3310,11 @@ TEMPLATE = r"""
     .wm-head .brand { display: inline-flex; align-items: center; gap: 14px; }
     .brand-title { font-family: "Newsreader", Georgia, serif; font-weight: 400; font-size: 30px;
       letter-spacing: -.01em; color: var(--ink); }
-    .vma-ic { position: relative; overflow: hidden; box-shadow: 0 5px 16px rgba(62,92,132,.42);
-      flex-shrink: 0; width: 44px; height: 44px; border-radius: 10px; }
-    .vma-ic svg { display: block; width: 100%; height: 100%; }
-    .live-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--pulse); align-self: center;
-      box-shadow: 0 0 0 0 rgba(159,209,129,.7), 0 0 11px rgba(159,209,129,.9); animation: livepulse 2.4s infinite; }
-    @keyframes livepulse {
-      0% { box-shadow: 0 0 0 0 rgba(159,209,129,.7), 0 0 11px rgba(159,209,129,.7); }
-      70% { box-shadow: 0 0 0 11px rgba(159,209,129,0), 0 0 13px rgba(159,209,129,.95); }
-      100% { box-shadow: 0 0 0 0 rgba(159,209,129,0), 0 0 11px rgba(159,209,129,.7); }
-    }
-    /* Market Intelligence Radar — a live scanning radar (replaces the static
-       dot): concentric ring + a sweeping beam + a pulsing blip, signalling the
-       AI is continuously scouring the market for opportunities. */
-    .radar { position: relative; width: 20px; height: 20px; border-radius: 50%; align-self: center;
-      flex-shrink: 0; overflow: hidden;
-      background: radial-gradient(circle, rgba(159,209,129,.22), rgba(159,209,129,.05) 58%, transparent 72%);
-      box-shadow: inset 0 0 0 1px rgba(120,180,90,.45); }
-    .radar::before { content: ""; position: absolute; inset: 0; border-radius: 50%;
-      background: conic-gradient(from 0deg, rgba(96,178,74,.7), rgba(96,178,74,.16) 40deg, transparent 72deg);
-      animation: radar-sweep 2.2s linear infinite; }
-    .radar::after { content: ""; position: absolute; left: 50%; top: 50%; width: 3px; height: 3px;
-      margin: -1.5px 0 0 -1.5px; border-radius: 50%; background: #5fae46;
-      box-shadow: 0 0 6px rgba(96,178,74,.95); animation: radar-blip 2.2s ease-in-out infinite; }
-    @keyframes radar-sweep { to { transform: rotate(360deg); } }
-    @keyframes radar-blip { 0%,55%,100% { opacity: .4; } 72% { opacity: 1; } }
+    /* radar icon at the end of the "Market Intelligence Radar" title — line-art
+       dish + dome with a slow sweep, in the brand navy. */
+    .radar-ic { display: inline-flex; align-self: center; color: var(--vma); }
+    .radar-ic svg { width: 24px; height: 24px; transform-origin: 12px 12px; animation: radar-spin 6s linear infinite; }
+    @keyframes radar-spin { to { transform: rotate(360deg); } }
 
     /* ----- page 1: leads/signals one-viewport scroll chain -----
        page (flex col, fixed vh) -> container (flex:1, min-height:0) ->
@@ -3624,7 +3604,7 @@ TEMPLATE = r"""
 
 <!-- LEFT RAIL — page switcher. Active state toggled by render() (additive JS). -->
 <aside class="rail">
-  <button class="ri active" id="nav-leads" data-tip="Market Intelligence Radar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3.5l2.5 8.5 4-17 2.5 8.5H21"/></svg></button>
+  <button class="ri active" id="nav-leads" data-tip="Market Intelligence Radar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12 L12 3.2 A8.8 8.8 0 1 1 5.6 6"/><circle cx="12" cy="12" r="3.4"/><circle cx="12" cy="12" r="8.8" opacity=".4"/></svg></button>
   <button class="ri" id="nav-agent" data-tip="Personal Assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7.5" width="17" height="13" rx="5"/><path d="M12 7.5V4.6"/><circle cx="12" cy="3.4" r="1.2"/><circle cx="9" cy="14" r="1.65" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.65" fill="currentColor" stroke="none"/></svg></button>
   <button class="ri" id="nav-cal" data-tip="BD Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></button>
 </aside>
@@ -3634,7 +3614,7 @@ TEMPLATE = r"""
   <!-- ===== PAGE 1 · MARKET INTELLIGENCE RADAR (leads + pre-market) ===== -->
   <section class="page active" id="leads">
     <div class="wm-head">
-      <div class="brand"><span class="vma-ic"></span><span class="brand-title">Market Intelligence Radar</span><span class="radar" title="Live — scanning the market for opportunities"></span></div>
+      <div class="brand"><span class="brand-title">Market Intelligence Radar</span><span class="radar-ic" title="Live — scanning the market for opportunities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12 L12 3.2 A8.8 8.8 0 1 1 5.6 6"/><circle cx="12" cy="12" r="3.4"/><circle cx="12" cy="12" r="8.8" opacity=".35"/></svg></span></div>
     </div>
 
     <div class="container">
@@ -5559,16 +5539,49 @@ async function loadRecentReports() {
       });
     }
     // Pull a likely company/account name: text after "for"/"at", else the
-    // first Capitalised multi-word run.
+    // Pull a likely company/account name: the capitalised run right after
+    // "for"/"at"/etc., but STOP at the first word that signals the sentence has
+    // moved on (a lowercase word, or a capitalised stop-word like "I"). This
+    // prevents "...for HSBC UK I am meeting..." becoming the account "HSBC UK I".
+    // Company names are a run of Capitalised tokens (HSBC, Severn Trent, Boston
+    // Consulting Group), optionally joined by lowercase particles (of/and/&/the
+    // — "Bank of England"). We keep tokens while they look like part of the
+    // name and STOP at the first word that doesn't: a lowercase connector
+    // (for/on/with/I'm...) or a capitalised stop-word like "I". This prevents
+    // "...for HSBC UK I am meeting..." -> "HSBC UK I", and "Severn Trent for
+    // their" -> stops at "for".
+    var PARTICLE = /^(of|and|the|for|&|de|du|la|le)$/i;   // allowed only BETWEEN cap words
+    function cleanRun(run) {
+      if (!run) return '';
+      var words = run.trim().replace(/[,.;:]+$/, '').split(/\s+/);
+      var out = [];
+      for (var i = 0; i < words.length; i++) {
+        var w = words[i];
+        // a name-like token: starts capital/number AND isn't a bare pronoun
+        var isCap = /^[A-Z0-9][\w&.'-]*$/.test(w) && !/^(I|A)$/.test(w);
+        if (isCap) { out.push(w); }
+        else if (PARTICLE.test(w) && out.length && i + 1 < words.length
+                 && /^[A-Z0-9]/.test(words[i + 1])) {
+          out.push(w);   // lowercase particle, but only if a cap word follows
+        } else {
+          break;         // lowercase connector / pronoun / sentence moved on
+        }
+        if (out.length >= 5) break;
+      }
+      // trim a trailing particle (e.g. captured "Severn Trent for" -> drop "for")
+      while (out.length && PARTICLE.test(out[out.length - 1])) out.pop();
+      return out.join(' ').trim();
+    }
     function extractAccount(text) {
-      var m = text.match(/\b(?:for|at|on|about)\s+([A-Z][\w&.'-]*(?:\s+[A-Z][\w&.'-]*){0,3})/);
-      if (m) return m[1].trim();
-      m = text.match(/\b([A-Z][\w&.'-]*(?:\s+[A-Z][\w&.'-]*){1,3})\b/);
-      return m ? m[1].trim() : '';
+      var m = text.match(/\b(?:for|at|on|about|with)\s+([A-Z][\w&.'-]*(?:\s+[A-Za-z][\w&.'-]*){0,4})/);
+      if (m) { var a = cleanRun(m[1]); if (a) return a; }
+      // fallback: first capitalised multi-word run anywhere, same cleaning
+      m = text.match(/\b([A-Z][\w&.'-]*(?:\s+[A-Za-z][\w&.'-]*){0,4})\b/);
+      return m ? cleanRun(m[1]) : '';
     }
     function extractRole(text) {
       var m = text.match(/\b((?:head|director|chief|vp|manager|lead)[\w ,/&-]*?(?:communications?|comms|affairs|relations|marketing|engagement))\b/i);
-      return m ? m[1].trim() : '';
+      return m ? m[1].replace(/[,.;:]+$/, '').trim() : '';
     }
     function setField(id, val) { var el = document.getElementById(id); if (el && val) el.value = val; }
     function runFromPrompt() {
