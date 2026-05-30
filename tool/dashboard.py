@@ -1751,8 +1751,6 @@ LANDING_TEMPLATE = r"""
       var chips = Array.prototype.slice.call(document.querySelectorAll('.sig[data-slot]'));
       if (!chips.length || POOL.length <= chips.length) return;
       var KIND = { green: 'sig green', gold: 'sig gold', blue: 'sig' };
-      var DELAYS = [0, 1600, 3100, 4600];   // matches the per-chip animation-delay
-      var CYCLE = 7000;                      // matches sigpop duration
       var BD = POOL.filter(function (c) { return c.kind === 'green' || c.kind === 'gold'; });
       var JOBS = POOL.filter(function (c) { return c.kind === 'blue'; });
       var shown = {};
@@ -1772,18 +1770,17 @@ LANDING_TEMPLATE = r"""
         if (shown[pick.label]) return;
         shown[b.textContent] = 0; shown[pick.label] = 1;
         b.textContent = pick.label;                 // swap text + dot colour
-        chip.className = KIND[pick.kind] || 'sig';   // (chip is invisible now)
+        chip.className = KIND[pick.kind] || 'sig';
       }
 
-      // For each chip, fire the swap at ~95% of its cycle — i.e. just after it
-      // has faded out and before it pops back in — then every CYCLE thereafter.
-      chips.forEach(function (chip, i) {
-        var firstSwapIn = (CYCLE * 0.95) - (DELAYS[i % 4] % CYCLE);
-        if (firstSwapIn < 0) firstSwapIn += CYCLE;
-        setTimeout(function () {
-          swap(chip);
-          setInterval(function () { swap(chip); }, CYCLE);
-        }, firstSwapIn);
+      // Swap ONLY at the end of each sigpop loop (animationiteration fires at
+      // the 100%/0% boundary, where the chip is fully faded out). So the content
+      // never changes while the chip is on screen — each chip fades out, swaps
+      // while invisible, then re-appears showing the fresh lead.
+      chips.forEach(function (chip) {
+        chip.addEventListener('animationiteration', function (e) {
+          if (e.animationName === 'sigpop') swap(chip);
+        });
       });
     })();
   </script>
@@ -3321,7 +3318,7 @@ TEMPLATE = r"""
     .rail .ri.active { background: rgba(31,31,31,.07); color: var(--ink); }
     /* VMA logo pinned to the bottom of the rail — same 42x42 faded-navy
        square + radius as the nav icons, holding the navy logo tile. */
-    .rail .rail-logo { margin-top: auto; width: 42px; height: 42px; border-radius: 12px;
+    .rail .rail-logo { margin-top: auto; margin-bottom: -6px; width: 42px; height: 42px; border-radius: 12px;
       overflow: hidden; flex-shrink: 0; position: relative; display: grid; place-items: center;
       background: rgba(62,92,132,.09); }
     .rail .rail-logo svg { display: block; width: 100%; height: 100%; border-radius: 12px; }
