@@ -286,143 +286,78 @@ def load_pulses(limit: int = 10) -> list[dict]:
 # shortlists land, panels are confirmed, and outreach to finalists or
 # attendees has the strongest hook.
 # ---------------------------------------------------------------------------
+# Each entry's date + source link was verified against the organiser's own
+# 2026 listing (May 2026). Events with no firm public 2026 ceremony date, or
+# whose date has already passed, are deliberately omitted rather than guessed.
 INDUSTRY_EVENTS: list[dict] = [
-    {
-        "key": "prweek_awards_uk_2026",
-        "name": "PRWeek Awards UK",
-        "event_date": "2026-10-22",
-        "action_window": ("2026-08-15", "2026-10-22"),
-        "location": "London",
-        "focus": "external",
-        "why_now": "Shortlists land ~6 weeks before; finalists are visible "
-                   "mid-career external-comms candidates worth tracking. "
-                   "Winners get a hiring spotlight the week after.",
-        "source": "https://awards.prweek.com/uk",
-    },
     {
         "key": "cipr_excellence_2026",
         "name": "CIPR Excellence Awards",
-        "event_date": "2026-06-18",
-        "action_window": ("2026-04-15", "2026-06-18"),
-        "location": "London",
+        "event_date": "2026-07-01",
+        "action_window": ("2026-05-01", "2026-07-01"),
+        "location": "Royal Lancaster Hotel, London",
         "focus": "external",
-        "why_now": "UK PR practitioner gold standard; shortlists in April. "
-                   "Senior in-house comms judges = direct relationship route.",
-        "source": "https://www.cipr.co.uk/excellence",
+        "why_now": "UK PR practitioner gold standard (42nd year); 145 orgs "
+                   "across 33 categories. Senior in-house comms judges + "
+                   "finalists = a direct relationship route.",
+        "source": "https://awards.cipr.co.uk/",
     },
     {
-        "key": "prca_awards_2026",
-        "name": "PRCA Awards",
-        "event_date": "2026-04-23",
-        "action_window": ("2026-02-15", "2026-04-23"),
-        "location": "London",
-        "focus": "external",
-        "why_now": "UK consultancy + in-house team awards. Shortlists "
-                   "surface team leaders worth approaching for retainer pitch.",
-        "source": "https://www.prca.org.uk/awards",
-    },
-    {
-        "key": "sabre_emea_2026",
-        "name": "PRovoke SABRE Awards EMEA",
-        "event_date": "2026-05-19",
-        "action_window": ("2026-03-15", "2026-05-19"),
-        "location": "London",
-        "focus": "external",
-        "why_now": "Largest external-comms awards in the EMEA region. "
-                   "Senior CCOs from FTSE / CAC / DAX issuers attend in person.",
-        "source": "https://www.provokemedia.com/awards-events",
+        "key": "communicate_ic_engagement_live_2026",
+        "name": "Internal Communications & Engagement Live",
+        "event_date": "2026-07-08",
+        "action_window": ("2026-05-08", "2026-07-08"),
+        "location": "The Brewery, London",
+        "focus": "internal",
+        "why_now": "One-day UK IC conference; delegates + speakers skew "
+                   "Head of IC / Director of IC at large UK employers.",
+        "source": "https://www.communicatemagazine.com/conference/internal-communications-and-engagement-live-2026/",
     },
     {
         "key": "ioic_awards_2026",
         "name": "IoIC Awards",
-        "event_date": "2026-06-25",
-        "action_window": ("2026-04-25", "2026-06-25"),
+        "event_date": "2026-09-17",
+        "action_window": ("2026-07-17", "2026-09-17"),
         "location": "London",
         "focus": "internal",
         "why_now": "Premier UK internal-comms awards. Finalists = visible "
                    "Heads of IC and IC Directors at large UK employers.",
-        "source": "https://www.ioic.org.uk/awards",
-    },
-    {
-        "key": "communicate_corp_engagement_2026",
-        "name": "Communicate Magazine Corporate Engagement Awards",
-        "event_date": "2026-11-12",
-        "action_window": ("2026-09-15", "2026-11-12"),
-        "location": "London",
-        "focus": "internal",
-        "why_now": "Corporate IC + employee engagement specialism. "
-                   "Shortlists surface Heads of Internal Comms at "
-                   "mid-to-large UK employers.",
-        "source": "https://www.communicatemagazine.com/awards",
-    },
-    {
-        "key": "european_excellence_2026",
-        "name": "European Excellence Awards",
-        "event_date": "2026-11-26",
-        "action_window": ("2026-09-15", "2026-11-26"),
-        "location": "Berlin",
-        "focus": "mixed",
-        "why_now": "Pan-EU comms awards. UK + EU CCO attendance; useful "
-                   "for European-headquartered briefs landing in London offices.",
-        "source": "https://www.excellence-awards.eu",
-    },
-    {
-        "key": "eacd_convention_2026",
-        "name": "EACD European Annual Convention",
-        "event_date": "2026-06-11",
-        "action_window": ("2026-04-15", "2026-06-11"),
-        "location": "Brussels",
-        "focus": "external",
-        "why_now": "European Association of Communication Directors annual "
-                   "convention. Attendee list = CCOs and Comms Directors "
-                   "across European firms.",
-        "source": "https://www.eacd-online.eu",
-    },
-    {
-        "key": "iabc_emena_gold_quill_2026",
-        "name": "IABC EMENA Gold Quill Awards",
-        "event_date": "2026-06-04",
-        "action_window": ("2026-04-10", "2026-06-04"),
-        "location": "London",
-        "focus": "internal",
-        "why_now": "International IC body's EMENA chapter — surfaces "
-                   "internal-comms leaders working on cross-border programmes.",
-        "source": "https://www.iabc.com/awards/gold-quill",
+        "source": "https://www.ioic.org.uk/awards.html",
     },
     {
         "key": "icco_global_summit_2026",
         "name": "ICCO Global Summit",
-        "event_date": "2026-10-15",
-        "action_window": ("2026-08-15", "2026-10-15"),
-        "location": "Vienna",
+        "event_date": "2026-11-11",
+        "action_window": ("2026-09-11", "2026-11-11"),
+        "location": "Milan",
         "focus": "external",
         "why_now": "International Communications Consultancy Organisation "
-                   "annual summit. Agency principals + senior in-house "
-                   "clients attend; relationship-building venue.",
-        "source": "https://iccopr.com/summit",
+                   "annual summit (11-13 Nov). Consultancy CEOs + senior "
+                   "in-house clients attend; relationship-building venue.",
+        "source": "https://iccopr.com/globalsummit/",
     },
     {
         "key": "cipr_conference_2026",
         "name": "CIPR Annual Conference",
-        "event_date": "2026-11-05",
-        "action_window": ("2026-09-15", "2026-11-05"),
+        "event_date": "2026-11-18",
+        "action_window": ("2026-09-18", "2026-11-18"),
         "location": "London",
         "focus": "external",
-        "why_now": "Speaker line-up is a tier-1 list of senior in-house "
-                   "comms leaders willing to do public-speaking. Pre-event "
+        "why_now": "Theme: Organisational Resilience. Speaker line-up is a "
+                   "tier-1 list of senior in-house comms leaders; pre-event "
                    "outreach has a clear hook.",
-        "source": "https://www.cipr.co.uk/conference",
+        "source": "https://cipr.co.uk/CIPR/CIPR/Network/Events_/Annual_conference.aspx",
     },
     {
-        "key": "communicate_ic_conference_2026",
-        "name": "Communicate Magazine Internal Communications Conference",
-        "event_date": "2026-03-19",
-        "action_window": ("2026-01-20", "2026-03-19"),
-        "location": "London",
-        "focus": "internal",
-        "why_now": "Annual UK IC conference; speakers + delegates skew "
-                   "Head of IC / Director of IC at large UK employers.",
-        "source": "https://www.communicatemagazine.com/events",
+        "key": "european_excellence_2026",
+        "name": "European Excellence Awards",
+        "event_date": "2026-12-11",
+        "action_window": ("2026-10-11", "2026-12-11"),
+        "location": "Europe",
+        "focus": "mixed",
+        "why_now": "Pan-EU comms awards. UK + EU CCO attendance; useful "
+                   "for European-headquartered briefs landing in London offices.",
+        "source": "https://www.excellence-awards.com/",
     },
 ]
 
