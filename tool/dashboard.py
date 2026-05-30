@@ -1627,14 +1627,13 @@ LANDING_TEMPLATE = r"""
     background:#fff;border:1px solid rgba(60,64,67,.12);border-radius:9999px;
     padding:6px 11px 6px 8px;font-family:"Google Sans","Inter",Arial,sans-serif;
     font-size:11.5px;font-weight:600;color:#1A3D7C;white-space:nowrap;
-    max-width:248px;box-shadow:0 6px 18px rgba(31,55,124,.12);opacity:0;transform:scale(.85);
-    animation:sigin .5s cubic-bezier(.2,1.3,.5,1) forwards;}
+    max-width:248px;box-shadow:0 6px 18px rgba(31,55,124,.12);opacity:0;transform:scale(.8);
+    animation:sigpop 7s ease-in-out infinite;}
   .sig b{font-weight:inherit;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .sig i{width:7px;height:7px;border-radius:50%;background:#4285F4;flex-shrink:0;box-shadow:0 0 7px rgba(66,133,244,.6);}
   .sig.green i{background:#34A853;box-shadow:0 0 7px rgba(52,168,83,.6);}
   .sig.gold i{background:#C49A3B;box-shadow:0 0 7px rgba(196,154,59,.6);}
-  .sig:nth-of-type(2){animation-delay:.5s;}.sig:nth-of-type(3){animation-delay:1s;}.sig:nth-of-type(4){animation-delay:1.5s;}
-  @keyframes sigin{to{opacity:1;transform:scale(1);}}
+  @keyframes sigpop{0%,92%,100%{opacity:0;transform:scale(.8);}8%,84%{opacity:1;transform:scale(1);}}
 
   /* Content */
   .stage{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:32px;text-align:center;}
@@ -1715,16 +1714,17 @@ LANDING_TEMPLATE = r"""
         </linearGradient></defs>
         <g class="radar-sweep"><path d="M210 210 L210 18 A192 192 0 0 1 346 74 Z" fill="url(#sweepg)"/></g>
       </svg>
-      {% set pos = ['top:12%;left:8%', 'top:28%;right:2%', 'bottom:22%;left:3%', 'bottom:9%;right:10%'] %}
+      {% set pos = ['top:48px;left:34px', 'top:120px;right:8px', 'bottom:96px;left:14px', 'bottom:40px;right:42px'] %}
+      {% set delays = ['0s', '1.6s', '3.1s', '4.6s'] %}
       {% if signals %}
         {% for sg in signals %}
-        <span class="sig {{ sg.kind if sg.kind != 'blue' else '' }}" data-slot="{{ loop.index0 }}" style="{{ pos[loop.index0 % 4] }}"><i></i><b>{{ sg.label }}</b></span>
+        <span class="sig {{ sg.kind if sg.kind != 'blue' else '' }}" data-slot="{{ loop.index0 }}" style="{{ pos[loop.index0 % 4] }};animation-delay:{{ delays[loop.index0 % 4] }}"><i></i><b>{{ sg.label }}</b></span>
         {% endfor %}
       {% else %}
-        <span class="sig"       data-slot="0" style="top:12%;left:8%"><i></i><b>Head of Comms &middot; NHS</b></span>
-        <span class="sig green" data-slot="1" style="top:28%;right:2%"><i></i><b>&pound;37m Series B &middot; hiring</b></span>
-        <span class="sig gold"  data-slot="2" style="bottom:22%;left:3%"><i></i><b>CEO exit &middot; CCO opening</b></span>
-        <span class="sig"       data-slot="3" style="bottom:9%;right:10%"><i></i><b>Director of Comms &middot; FTSE</b></span>
+        <span class="sig"       data-slot="0" style="top:48px;left:34px;animation-delay:0s"><i></i><b>Head of Comms &middot; NHS</b></span>
+        <span class="sig green" data-slot="1" style="top:120px;right:8px;animation-delay:1.6s"><i></i><b>&pound;37m Series B &middot; hiring</b></span>
+        <span class="sig gold"  data-slot="2" style="bottom:96px;left:14px;animation-delay:3.1s"><i></i><b>CEO exit &middot; CCO opening</b></span>
+        <span class="sig"       data-slot="3" style="bottom:40px;right:42px;animation-delay:4.6s"><i></i><b>Director of Comms &middot; FTSE</b></span>
       {% endif %}
       <div class="logo-tile"></div>
     </div>
@@ -1742,15 +1742,17 @@ LANDING_TEMPLATE = r"""
       + '</svg>';
     document.querySelectorAll('.logo-tile').forEach(function (e) { e.innerHTML = LOGO; });
 
-    // Scanner chips change AS THE RADAR BEAM SWEEPS OVER each one — so a chip
-    // only refreshes the moment the beam passes its position, like the scanner
-    // just found a new lead there. (Not on independent timers.)
+    // Chips pop in / hold / fade out on the mockup's exact CSS loop (sigpop,
+    // 7s, staggered per chip). JS only swaps each chip's label to a fresh LIVE
+    // signal during the invisible part of its cycle — so the next pop-in shows
+    // a new lead. Pure content swap; the pop/fade animation is the mockup's.
     var POOL = {{ signal_pool | tojson | safe if signal_pool else '[]' }};
     (function () {
       var chips = Array.prototype.slice.call(document.querySelectorAll('.sig[data-slot]'));
-      var sweep = document.querySelector('.radar-sweep');
-      if (!chips.length || POOL.length <= chips.length || !sweep) return;
+      if (!chips.length || POOL.length <= chips.length) return;
       var KIND = { green: 'sig green', gold: 'sig gold', blue: 'sig' };
+      var DELAYS = [0, 1600, 3100, 4600];   // matches the per-chip animation-delay
+      var CYCLE = 7000;                      // matches sigpop duration
       var shown = {};
       chips.forEach(function (c) { var b = c.querySelector('b'); if (b) shown[b.textContent] = 1; });
 
@@ -1761,55 +1763,20 @@ LANDING_TEMPLATE = r"""
         if (shown[pick.label]) return;
         var b = chip.querySelector('b'); if (!b) return;
         shown[b.textContent] = 0; shown[pick.label] = 1;
-        // pop: shrink+fade the old, then scale-bounce the fresh one in
-        chip.style.transition = 'opacity .28s ease, transform .28s ease';
-        chip.style.opacity = '0';
-        chip.style.transform = 'scale(.7)';
-        setTimeout(function () {
-          b.textContent = pick.label;
-          chip.className = KIND[pick.kind] || 'sig';
-          chip.style.transition = 'none';
-          chip.style.transform = 'scale(.7)';
-          requestAnimationFrame(function () {
-            chip.style.transition = 'opacity .3s ease, transform .42s cubic-bezier(.2,1.3,.5,1)';
-            chip.style.opacity = '1';
-            chip.style.transform = 'scale(1)';
-          });
-        }, 300);
+        b.textContent = pick.label;                 // swap text + dot colour
+        chip.className = KIND[pick.kind] || 'sig';   // (chip is invisible now)
       }
 
-      // Each chip's clock-angle from the radar centre (the .hero box). The beam
-      // starts pointing straight up and sweeps clockwise over SWEEP_MS.
-      var SWEEP_MS = 5000;   // matches .radar-sweep animation: sweep 5s
-      function angleOf(el) {
-        var hr = el.closest('.hero').getBoundingClientRect();
-        var cx = hr.left + hr.width / 2, cy = hr.top + hr.height / 2;
-        var r = el.getBoundingClientRect();
-        var ex = r.left + r.width / 2, ey = r.top + r.height / 2;
-        // 0deg = up, increasing clockwise, range [0,360)
-        var a = Math.atan2(ex - cx, cy - ey) * 180 / Math.PI;
-        return (a + 360) % 360;
-      }
-      var meta = chips.map(function (c) { return { el: c, ang: angleOf(c), armed: true }; });
-      var t0 = performance.now();
-      var prev = 0;
-      function tick(now) {
-        var beam = ((now - t0) % SWEEP_MS) / SWEEP_MS * 360;
-        meta.forEach(function (m) {
-          // did the beam cross this chip's angle since the last frame?
-          var crossed = (prev <= beam) ? (m.ang > prev && m.ang <= beam)
-                                       : (m.ang > prev || m.ang <= beam);   // wrapped past 360
-          if (crossed && m.armed) { m.armed = false; swap(m.el); }
-          else if (!crossed) {
-            // re-arm once the beam is well away, so it fires once per pass
-            var gap = (m.ang - beam + 360) % 360;
-            if (gap > 30 && gap < 330) m.armed = true;
-          }
-        });
-        prev = beam;
-        requestAnimationFrame(tick);
-      }
-      requestAnimationFrame(tick);
+      // For each chip, fire the swap at ~95% of its cycle — i.e. just after it
+      // has faded out and before it pops back in — then every CYCLE thereafter.
+      chips.forEach(function (chip, i) {
+        var firstSwapIn = (CYCLE * 0.95) - (DELAYS[i % 4] % CYCLE);
+        if (firstSwapIn < 0) firstSwapIn += CYCLE;
+        setTimeout(function () {
+          swap(chip);
+          setInterval(function () { swap(chip); }, CYCLE);
+        }, firstSwapIn);
+      });
     })();
   </script>
 </body>
