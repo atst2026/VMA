@@ -3478,6 +3478,13 @@ TEMPLATE = r"""
     .cf-formhead { margin-bottom: 4px; }
     .cap-form { display: none; }
     .cap-form.active { display: block; }
+    /* ambiguous-prompt chooser — "which of the four?" inside the pill */
+    .cap-choose .choose-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 14px; }
+    .cap-choose .choose-opt { display: block; width: 100%; text-align: left; cursor: pointer;
+      background: #fff; border: 1px solid var(--border); border-radius: 11px; padding: 12px 14px;
+      font: 600 13px/1 "Inter", sans-serif; color: var(--ink); transition: all .14s; }
+    .cap-choose .choose-opt:hover { background: var(--blue-wash); border-color: var(--blue); color: var(--blue-deep); }
+    @media (max-width: 640px) { .cap-choose .choose-grid { grid-template-columns: 1fr; } }
     /* status line inside the moved forms (loses .action-card scoping) */
     .composer .cform .status { margin-top: 10px; padding: 8px 11px; border-radius: 8px;
       font-size: 11.5px; display: none; line-height: 1.4; }
@@ -5467,6 +5474,7 @@ async function loadRecentReports() {
     function showFree() {
       composer.dataset.mode = 'free';
       capForms.forEach(function (f) { f.classList.remove('active'); });
+      var ch = agent.querySelector('.cap-choose'); if (ch) ch.remove();   // clear any chooser
       if (cprompt) cprompt.style.display = '';
       chips.forEach(function (c) { c.classList.remove('active'); });
     }
@@ -5498,7 +5506,57 @@ async function loadRecentReports() {
       if (/\b(reverse|match|place|where (can|could|to)|accounts? for|fit)\b/.test(s)) return 'reverse';
       if (/\b(meeting|brief|prep|pre-?meeting|walk into|before (my|the))\b/.test(s)) return 'premeeting';
       if (/\b(sweep|missed|catch[\s-]?up|scan|last\s+\d+\s*days?|recent)\b/.test(s)) return 'sweep';
-      return 'pitch';   // sensible default — the most common ask
+      return null;   // ambiguous — ask which of the four rather than guessing
+    }
+    var CAP_LABELS = { pitch: 'Pitch Pack', reverse: 'Reverse Match',
+                       premeeting: 'Pre-meeting Brief', sweep: 'Manual Sweep' };
+    // Morph the pill into one of the four forms, pre-filled from the prompt.
+    // submit=true runs it immediately (confident match); submit=false just
+    // reveals the pre-filled form so the user can confirm (after an ambiguous
+    // prompt where they picked the type).
+    function fillAndShow(cap, text, submit) {
+      var acct = extractAccount(text), role = extractRole(text);
+      if (cap === 'pitch') { setField('pp-account', acct); setField('pp-role', role); }
+      else if (cap === 'reverse') { setField('rm-name', acct); setField('rm-title', role); }
+      else if (cap === 'premeeting') { setField('pm-account', acct); }
+      else if (cap === 'sweep') { var d = (text.match(/(\d+)\s*days?/) || [])[1]; setField('sw-days', d || '14'); }
+      showCap(cap);
+      if (submit) {
+        var form = document.getElementById(
+          cap === 'pitch' ? 'pitch-form' : cap === 'reverse' ? 'rm-form'
+          : cap === 'premeeting' ? 'pm-form' : 'sweep-form');
+        if (form) {
+          var btn = form.querySelector('button.send') || form.querySelector('button[type="submit"]');
+          if (btn) btn.click();   // user-gesture click keeps the popup unblocked
+        }
+      }
+    }
+    // Ambiguous-prompt chooser: morph the pill into a "which of the four?"
+    // question with the four options as buttons. Picking one reveals that
+    // form pre-filled from what they typed (no auto-submit — they confirm).
+    function showChooser(text) {
+      composer.dataset.mode = 'choose';
+      if (cprompt) cprompt.style.display = 'none';
+      capForms.forEach(function (f) { f.classList.remove('active'); });
+      chips.forEach(function (c) { c.classList.remove('active'); });
+      var host = agent.querySelector('[data-cform]');
+      var old = host.querySelector('.cap-choose');
+      if (old) old.remove();
+      var box = document.createElement('div');
+      box.className = 'cap-choose';
+      var btns = Object.keys(CAP_LABELS).map(function (k) {
+        return '<button type="button" class="choose-opt" data-cap="' + k + '">' + CAP_LABELS[k] + '</button>';
+      }).join('');
+      box.innerHTML = '<div class="cf-head cf-formhead"><span class="cf-dot"></span>Which would you like to build?</div>'
+        + '<div class="cf-desc">I wasn’t sure which report you meant. Pick one and I’ll fill it in from what you typed.</div>'
+        + '<div class="choose-grid">' + btns + '</div>';
+      host.appendChild(box);
+      box.querySelectorAll('.choose-opt').forEach(function (b) {
+        b.addEventListener('click', function () {
+          box.remove();
+          fillAndShow(b.dataset.cap, text, false);   // reveal pre-filled, let them confirm
+        });
+      });
     }
     // Pull a likely company/account name: text after "for"/"at", else the
     // first Capitalised multi-word run.
@@ -5517,22 +5575,8 @@ async function loadRecentReports() {
       var text = (cprompt && cprompt.value || '').trim();
       if (!text) { if (cprompt) cprompt.focus(); return; }
       var cap = classifyPrompt(text);
-      var acct = extractAccount(text);
-      var role = extractRole(text);
-      // pre-fill the chosen form from the parsed text
-      if (cap === 'pitch') { setField('pp-account', acct); setField('pp-role', role); }
-      else if (cap === 'reverse') { setField('rm-name', acct); setField('rm-title', role); }
-      else if (cap === 'premeeting') { setField('pm-account', acct); }
-      else if (cap === 'sweep') { var d = (text.match(/(\d+)\s*days?/) || [])[1]; setField('sw-days', d || '14'); }
-      // reveal that form, then submit it (native submit -> dispatch() popup)
-      showCap(cap);
-      var form = document.getElementById(
-        cap === 'pitch' ? 'pitch-form' : cap === 'reverse' ? 'rm-form'
-        : cap === 'premeeting' ? 'pm-form' : 'sweep-form');
-      if (form) {
-        var btn = form.querySelector('button.send') || form.querySelector('button[type="submit"]');
-        if (btn) btn.click();   // user-gesture click keeps the popup unblocked
-      }
+      if (!cap) { showChooser(text); return; }   // ambiguous -> ask which of the four
+      fillAndShow(cap, text, true);              // confident -> fill + run
     }
     // Footer send (free mode) + Enter in the prompt both route the text.
     var footSend = document.getElementById('composer-send');
