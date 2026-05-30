@@ -1642,10 +1642,10 @@ LANDING_TEMPLATE = r"""
   .wordmark .g{font-weight:300;letter-spacing:.32em;font-size:64px;padding-left:.42em;margin-right:-.32em;}
 
   .pill{
-    background:rgb(255,255,255);border:none;border-radius:23px;
+    background:rgb(255,255,255);border:none;border-radius:26px;
     box-shadow:0 2px 8px -2px rgba(0,0,0,0.16);
-    padding:0 16px;width:482px;height:47px;max-width:none;
-    display:flex;align-items:center;justify-content:center;gap:11px;
+    padding:0 18px;width:535px;height:52px;max-width:none;
+    display:flex;align-items:center;justify-content:center;gap:12px;
     text-decoration:none;color:rgb(31,31,31);cursor:pointer;
     transition:transform .15s ease, box-shadow .15s ease;
   }
