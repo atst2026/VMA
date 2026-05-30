@@ -1642,10 +1642,10 @@ LANDING_TEMPLATE = r"""
   .wordmark .g{font-weight:300;letter-spacing:.32em;font-size:64px;padding-left:.42em;margin-right:-.32em;}
 
   .pill{
-    background:rgb(255,255,255);border:none;border-radius:26px;
+    background:rgb(255,255,255);border:none;border-radius:23px;
     box-shadow:0 2px 8px -2px rgba(0,0,0,0.16);
-    padding:0 18px;width:535px;height:52px;max-width:none;
-    display:flex;align-items:center;justify-content:center;gap:12px;
+    padding:0 16px;width:482px;height:47px;max-width:none;
+    display:flex;align-items:center;justify-content:center;gap:11px;
     text-decoration:none;color:rgb(31,31,31);cursor:pointer;
     transition:transform .15s ease, box-shadow .15s ease;
   }
@@ -3904,7 +3904,7 @@ TEMPLATE = r"""
       <div class="ea-hero">
         <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7.5" width="17" height="13" rx="5"/><path d="M12 7.5V4.6"/><circle cx="12" cy="3.4" r="1.2"/><circle cx="9" cy="14" r="1.65" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.65" fill="currentColor" stroke="none"/></svg></div>
         <h1 class="gemini-title">Personal Assistant</h1>
-        <div class="cc-sub">Your very own AI helper. Prompt key reports in real-time, and with the latest data.</div>
+        <div class="cc-sub">A simple prompt to build key reports in real-time, with the latest data.</div>
       </div>
 
       <!-- COMPOSER PILL. The .cform morph area holds either the default free-text
