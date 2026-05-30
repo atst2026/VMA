@@ -902,13 +902,17 @@ def _landing_signal_pool() -> list[dict]:
     drafting, which would be far too heavy for the landing route). Pulls every
     available BD lead (funding + predictor pre-market triggers) and every job
     lead, so the scanner can rotate through totally different ones. Each chip
-    is {label, kind} where kind drives the dot colour (blue/green/gold)."""
+    is {label, kind} where kind drives the dot colour (blue/green/gold).
+    Labels are kept short so the popping chips never get massively wide."""
+    def _short(s: str, n: int) -> str:
+        s = (s or "").strip()
+        return s if len(s) <= n else s[: n - 1].rstrip() + "…"
     pool: list[dict] = []
     try:
         # Pre-market BD triggers — funding rounds.
         from tool.funding_round import load_funding
         for f in load_funding():
-            comp = (f.get("company") or "").strip()
+            comp = _short(f.get("company") or "", 22)
             amt = (f.get("amount") or "").strip()
             if comp:
                 pool.append({"label": (amt + " · " if amt else "") + comp + " · hiring",
@@ -919,8 +923,8 @@ def _landing_signal_pool() -> list[dict]:
         # Pre-market BD triggers — predictor seats.
         from tool import predictor_pipeline
         for p in predictor_pipeline.all_predictors():
-            comp = (p.get("company") or "").strip()
-            seat = (p.get("role") or p.get("seat") or "senior comms seat").strip()
+            comp = _short(p.get("company") or "", 22)
+            seat = _short(p.get("role") or p.get("seat") or "senior comms seat", 24)
             if comp:
                 pool.append({"label": comp + " · " + seat, "kind": "gold"})
     except Exception:
@@ -930,12 +934,10 @@ def _landing_signal_pool() -> list[dict]:
         p = STATE_DIR / "latest_signals.json"
         raw = json.loads(p.read_text()) if p.exists() else []
         for s in raw:
-            title = (s.get("title") or "").strip()
-            comp = (s.get("company") or "").strip()
+            title = _short(s.get("title") or "", 24)
+            comp = _short(s.get("company") or "", 20)
             if title and comp and (s.get("kind") or "").lower() != "leadership_change":
-                t = title if len(title) <= 34 else title[:32] + "…"
-                c = comp if len(comp) <= 26 else comp[:24] + "…"
-                pool.append({"label": t + " · " + c, "kind": "blue"})
+                pool.append({"label": title + " · " + comp, "kind": "blue"})
     except Exception:
         pass
     # de-dup by label, preserve order
@@ -1625,9 +1627,9 @@ LANDING_TEMPLATE = r"""
     background:#fff;border:1px solid rgba(60,64,67,.12);border-radius:9999px;
     padding:6px 11px 6px 8px;font-family:"Google Sans","Inter",Arial,sans-serif;
     font-size:11.5px;font-weight:600;color:#1A3D7C;white-space:nowrap;
-    box-shadow:0 6px 18px rgba(31,55,124,.12);opacity:0;transform:scale(.85);
-    animation:sigin .5s ease forwards;transition:opacity .35s ease;}
-  .sig b{font-weight:inherit;}
+    max-width:248px;box-shadow:0 6px 18px rgba(31,55,124,.12);opacity:0;transform:scale(.85);
+    animation:sigin .5s cubic-bezier(.2,1.3,.5,1) forwards;}
+  .sig b{font-weight:inherit;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .sig i{width:7px;height:7px;border-radius:50%;background:#4285F4;flex-shrink:0;box-shadow:0 0 7px rgba(66,133,244,.6);}
   .sig.green i{background:#34A853;box-shadow:0 0 7px rgba(52,168,83,.6);}
   .sig.gold i{background:#C49A3B;box-shadow:0 0 7px rgba(196,154,59,.6);}
@@ -1758,16 +1760,30 @@ LANDING_TEMPLATE = r"""
         if (shown[pick.label]) return;
         var b = chip.querySelector('b'); if (!b) return;
         shown[b.textContent] = 0; shown[pick.label] = 1;
-        // fade out, swap text + colour class (keep position styles), fade in
-        chip.style.transition = 'opacity .35s ease';
+        // Smooth "found a new lead" pop: shrink + fade the old chip away, then
+        // swap its text/colour and pop the fresh one in with a little scale
+        // bounce (matches the entrance feel).
+        chip.style.transition = 'opacity .3s ease, transform .3s ease';
         chip.style.opacity = '0';
+        chip.style.transform = 'scale(.75)';
         setTimeout(function () {
           b.textContent = pick.label;
           chip.className = KIND[pick.kind] || 'sig';
-          chip.style.opacity = '1';
-        }, 360);
+          // start tiny, then pop to full size on the next frame
+          chip.style.transition = 'none';
+          chip.style.transform = 'scale(.75)';
+          requestAnimationFrame(function () {
+            chip.style.transition = 'opacity .32s ease, transform .42s cubic-bezier(.2,1.3,.5,1)';
+            chip.style.opacity = '1';
+            chip.style.transform = 'scale(1)';
+          });
+        }, 320);
       }
-      setInterval(rotateOne, 2600);
+      // stagger each chip's rotation so they pop at different moments (more
+      // alive, like leads landing one after another)
+      chips.forEach(function (_, idx) {
+        setInterval(rotateOne, 2400 + idx * 350 + Math.random() * 600);
+      });
     })();
   </script>
 </body>
