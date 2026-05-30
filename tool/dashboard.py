@@ -3422,6 +3422,67 @@ TEMPLATE = r"""
     .bd-modal .mb .panel { border: none; box-shadow: none; border-radius: 0; height: auto; }
     .bd-modal .mb .panel .panel-header { display: none; }
     .bd-modal .mb .panel .panel-body { max-height: none; overflow: visible; }
+
+    /* ============================================================
+       MOBILE LAYER — phones only (<= 640px). Purely additive: every
+       rule here is inside this media query, so nothing at >= 641px
+       (laptop / desktop) is affected. The desktop design assumes a
+       tall viewport with a fixed left rail and 100vh, overflow-hidden
+       pages that own their own internal scroll — which doesn't work on
+       a short phone screen. On mobile we (a) move the rail to a bottom
+       tab bar, (b) let the document scroll naturally instead of locking
+       each page to 100vh, and (c) fit the fixed-width pieces (composer,
+       cards, modal) to the narrow width.
+       ============================================================ */
+    @media (max-width: 640px) {
+      /* let the page scroll naturally on a phone */
+      html, body { height: auto; }
+      body.has-shell { overflow: auto; -webkit-text-size-adjust: 100%; }
+
+      /* rail -> bottom tab bar */
+      .rail { top: auto; right: 0; bottom: 0; width: 100%; height: 56px;
+        flex-direction: row; justify-content: space-around; align-items: center;
+        gap: 0; padding: 0; background: #fff;
+        border-top: 1px solid var(--border); box-shadow: 0 -2px 12px rgba(31,55,124,.06); }
+      .rail .ri { width: 46px; height: 40px; border-radius: 10px; }
+      /* tooltips would sit off-screen on a bottom bar — hide them on mobile */
+      .rail [data-tip]:hover::after { display: none; }
+
+      /* unlock the viewport: pages flow in normal document scroll, with
+         room at the bottom for the tab bar */
+      .stage { padding: 0 14px 72px; height: auto; overflow: visible; }
+      .page { height: auto; overflow: visible; }
+      .page.active { display: block; }
+
+      /* page 1 — leads/signals: drop the internal flex-scroll chain so the
+         two panels simply stack and the document scrolls */
+      #leads .container { height: auto; overflow: visible; padding-bottom: 0; }
+      #leads .row { display: flex; flex-direction: column; gap: 14px; }
+      #leads .row .panel { min-height: 0; }
+      #leads .row .panel-body { overflow: visible; max-height: none; }
+      .wm-head { padding: 26px 0 18px; }
+      .brand-title { font-size: 22px; }
+      #leads .refresh-bar { flex-wrap: wrap; gap: 10px; }
+
+      /* page 2 — assistant: natural scroll, full-width composer */
+      #agent .agent-wrap { height: auto; max-width: 100%; padding: 24px 4px 8px;
+        display: block; }
+      #agent .ea-hero { margin-bottom: 20px; }
+      .cc-bigicon { width: 60px; height: 60px; border-radius: 15px; margin-bottom: 16px; }
+      .cc-bigicon svg { width: 30px; height: 30px; }
+      .gemini-title { font-size: 27px; }
+      .composer { width: 100%; }
+      .composer .inner { margin: 12px; }
+      #agent .chips { max-width: 100%; }
+
+      /* page 3 — BD calendar: natural scroll, full-width cards + modal */
+      #cal .cc-wrap { height: auto; overflow: visible; padding: 8px 0 0; }
+      .cc-hero { margin-bottom: 22px; }
+      .cc-card { padding: 16px; gap: 12px; }
+      .cc-card .cd { font-size: 12px; }
+      .bd-modal-backdrop { padding: 12px; align-items: flex-end; }
+      .bd-modal { max-width: 100%; max-height: 88vh; border-radius: 16px; }
+    }
   </style>
 </head>
 <body class="has-shell">
