@@ -896,13 +896,66 @@ def _safe_url_filter(u):
     return "#"
 
 
+def _landing_signals(limit: int = 4) -> list[dict]:
+    """Lightweight live signal chips for the landing-page scanner — built
+    straight from the raw state files (NO contact-resolution / outreach
+    drafting, which would be far too heavy for the landing route). Each chip
+    is {label, kind} where kind drives the dot colour (blue/green/gold).
+    Falls back to nothing (the template then shows static sample chips)."""
+    chips: list[dict] = []
+    try:
+        # Pre-market triggers first — they're the most "AI inference" looking.
+        from tool.funding_round import load_funding
+        for f in load_funding()[:2]:
+            comp = (f.get("company") or "").strip()
+            amt = (f.get("amount") or "").strip()
+            if comp:
+                chips.append({"label": (amt + " · " if amt else "") + comp + " · hiring",
+                              "kind": "green"})
+    except Exception:
+        pass
+    try:
+        from tool import predictor_pipeline
+        for p in predictor_pipeline.all_predictors()[:2]:
+            comp = (p.get("company") or "").strip()
+            seat = (p.get("role") or p.get("seat") or "senior comms seat").strip()
+            if comp:
+                chips.append({"label": comp + " · " + seat, "kind": "gold"})
+    except Exception:
+        pass
+    try:
+        # Live job leads — the bread-and-butter "scanning the market" signal.
+        p = STATE_DIR / "latest_signals.json"
+        raw = json.loads(p.read_text()) if p.exists() else []
+        for s in raw:
+            title = (s.get("title") or "").strip()
+            comp = (s.get("company") or "").strip()
+            if title and comp and (s.get("kind") or "").lower() != "leadership_change":
+                # keep chips short
+                t = title if len(title) <= 34 else title[:32] + "…"
+                c = comp if len(comp) <= 26 else comp[:24] + "…"
+                chips.append({"label": t + " · " + c, "kind": "blue"})
+    except Exception:
+        pass
+    # de-dup by label, preserve order, cap to `limit`
+    seen, out = set(), []
+    for ch in chips:
+        if ch["label"] not in seen:
+            seen.add(ch["label"])
+            out.append(ch)
+        if len(out) >= limit:
+            break
+    return out
+
+
 @app.route("/")
 @_auth_required
 def landing():
     """Gemini-clone landing — verbatim ground-truth CSS captured from
-    gemini.google.com/app, ::before recentred for our viewport. VMA
-    wordmark + click-pill into the dashboard. No globe, no map."""
-    return render_template_string(LANDING_TEMPLATE)
+    gemini.google.com/app, ::before recentred for our viewport. VMA logo
+    over a market-scanner radar whose signal chips are pulled live from the
+    latest leads / pre-market triggers."""
+    return render_template_string(LANDING_TEMPLATE, signals=_landing_signals())
 
 
 @app.route("/dashboard")
@@ -1637,15 +1690,23 @@ LANDING_TEMPLATE = r"""
         </linearGradient></defs>
         <g class="radar-sweep"><path d="M210 210 L210 18 A192 192 0 0 1 346 74 Z" fill="url(#sweepg)"/></g>
       </svg>
-      <span class="sig"       style="top:12%;left:8%;animation-delay:0s"><i></i>Head of Comms &middot; NHS</span>
-      <span class="sig green" style="top:28%;right:2%;animation-delay:1.6s"><i></i>&pound;37m Series B &middot; hiring</span>
-      <span class="sig gold"  style="bottom:22%;left:3%;animation-delay:3.1s"><i></i>CEO exit &middot; CCO opening</span>
-      <span class="sig"       style="bottom:9%;right:10%;animation-delay:4.6s"><i></i>Director of Comms &middot; FTSE</span>
+      {% if signals %}
+        {% set pos = ['top:12%;left:8%', 'top:28%;right:2%', 'bottom:22%;left:3%', 'bottom:9%;right:10%'] %}
+        {% set delays = ['0s', '1.6s', '3.1s', '4.6s'] %}
+        {% for sg in signals %}
+        <span class="sig {{ sg.kind if sg.kind != 'blue' else '' }}" style="{{ pos[loop.index0 % 4] }};animation-delay:{{ delays[loop.index0 % 4] }}"><i></i>{{ sg.label }}</span>
+        {% endfor %}
+      {% else %}
+        <span class="sig"       style="top:12%;left:8%;animation-delay:0s"><i></i>Head of Comms &middot; NHS</span>
+        <span class="sig green" style="top:28%;right:2%;animation-delay:1.6s"><i></i>&pound;37m Series B &middot; hiring</span>
+        <span class="sig gold"  style="bottom:22%;left:3%;animation-delay:3.1s"><i></i>CEO exit &middot; CCO opening</span>
+        <span class="sig"       style="bottom:9%;right:10%;animation-delay:4.6s"><i></i>Director of Comms &middot; FTSE</span>
+      {% endif %}
       <div class="logo-tile"></div>
     </div>
     <a class="pill" href="/dashboard">
       <span class="dot"></span>
-      <span class="lbl">Scanning the market &middot; Live</span>
+      <span class="lbl">Intelligence Platform &middot; Live</span>
       <span class="arrow">&rarr;</span>
     </a>
   </div>
