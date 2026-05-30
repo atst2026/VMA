@@ -1692,8 +1692,15 @@ LANDING_TEMPLATE = r"""
     .stage{gap:24px;}
     .pill{width:90%;height:56px;}
     .lbl{font-size:11px;letter-spacing:.18em;}
-    .sig{font-size:10.5px;}
     .logo-tile{width:92px;height:92px;}
+    /* shrink + edge-anchor the signal chips so they never sit over the logo on
+       a narrow hero. Cap width and push to the corners. */
+    .sig{font-size:10px;padding:5px 9px 5px 7px;max-width:46vw;}
+    .sig b{max-width:38vw;}
+    .sig[data-slot="0"]{top:2%;left:-2%;}
+    .sig[data-slot="1"]{top:18%;right:-4%;}
+    .sig[data-slot="2"]{bottom:18%;left:-4%;}
+    .sig[data-slot="3"]{bottom:2%;right:-2%;}
   }
   @media (prefers-reduced-motion: reduce){
     .radar-sweep,.logo-tile::after,.dot,.dot::before,.dot::after{animation:none;}
@@ -1714,17 +1721,17 @@ LANDING_TEMPLATE = r"""
         </linearGradient></defs>
         <g class="radar-sweep"><path d="M210 210 L210 18 A192 192 0 0 1 346 74 Z" fill="url(#sweepg)"/></g>
       </svg>
-      {% set pos = ['top:48px;left:34px', 'top:120px;right:8px', 'bottom:96px;left:14px', 'bottom:40px;right:42px'] %}
+      {% set pos = ['top:8%;left:0%', 'top:24%;right:-2%', 'bottom:20%;left:-2%', 'bottom:7%;right:4%'] %}
       {% set delays = ['0s', '1.6s', '3.1s', '4.6s'] %}
       {% if signals %}
         {% for sg in signals %}
         <span class="sig {{ sg.kind if sg.kind != 'blue' else '' }}" data-slot="{{ loop.index0 }}" style="{{ pos[loop.index0 % 4] }};animation-delay:{{ delays[loop.index0 % 4] }}"><i></i><b>{{ sg.label }}</b></span>
         {% endfor %}
       {% else %}
-        <span class="sig"       data-slot="0" style="top:48px;left:34px;animation-delay:0s"><i></i><b>Head of Comms &middot; NHS</b></span>
-        <span class="sig green" data-slot="1" style="top:120px;right:8px;animation-delay:1.6s"><i></i><b>&pound;37m Series B &middot; hiring</b></span>
-        <span class="sig gold"  data-slot="2" style="bottom:96px;left:14px;animation-delay:3.1s"><i></i><b>CEO exit &middot; CCO opening</b></span>
-        <span class="sig"       data-slot="3" style="bottom:40px;right:42px;animation-delay:4.6s"><i></i><b>Director of Comms &middot; FTSE</b></span>
+        <span class="sig"       data-slot="0" style="top:8%;left:0%;animation-delay:0s"><i></i><b>Head of Comms &middot; NHS</b></span>
+        <span class="sig green" data-slot="1" style="top:24%;right:-2%;animation-delay:1.6s"><i></i><b>&pound;37m Series B &middot; hiring</b></span>
+        <span class="sig gold"  data-slot="2" style="bottom:20%;left:-2%;animation-delay:3.1s"><i></i><b>CEO exit &middot; CCO opening</b></span>
+        <span class="sig"       data-slot="3" style="bottom:7%;right:4%;animation-delay:4.6s"><i></i><b>Director of Comms &middot; FTSE</b></span>
       {% endif %}
       <div class="logo-tile"></div>
     </div>
@@ -3599,6 +3606,10 @@ TEMPLATE = r"""
         gap: 0; padding: 0; background: #fff;
         border-top: 1px solid var(--border); box-shadow: 0 -2px 12px rgba(31,55,124,.06); }
       .rail .ri { width: 46px; height: 40px; border-radius: 10px; }
+      /* the VMA logo is desktop rail chrome — hide it in the mobile tab bar so
+         the three nav icons stay evenly spaced (its desktop margins would
+         otherwise break the horizontal layout). */
+      .rail .rail-logo { display: none; }
       /* tooltips would sit off-screen on a bottom bar — hide them on mobile */
       .rail [data-tip]:hover::after { display: none; }
 
