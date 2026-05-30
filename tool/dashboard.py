@@ -1742,48 +1742,74 @@ LANDING_TEMPLATE = r"""
       + '</svg>';
     document.querySelectorAll('.logo-tile').forEach(function (e) { e.innerHTML = LOGO; });
 
-    // Rotate the scanner chips through the full live pool of BD leads + jobs,
-    // so they keep changing to totally different signals while you watch.
+    // Scanner chips change AS THE RADAR BEAM SWEEPS OVER each one — so a chip
+    // only refreshes the moment the beam passes its position, like the scanner
+    // just found a new lead there. (Not on independent timers.)
     var POOL = {{ signal_pool | tojson | safe if signal_pool else '[]' }};
     (function () {
       var chips = Array.prototype.slice.call(document.querySelectorAll('.sig[data-slot]'));
-      if (!chips.length || POOL.length <= chips.length) return;
+      var sweep = document.querySelector('.radar-sweep');
+      if (!chips.length || POOL.length <= chips.length || !sweep) return;
+      var KIND = { green: 'sig green', gold: 'sig gold', blue: 'sig' };
       var shown = {};
       chips.forEach(function (c) { var b = c.querySelector('b'); if (b) shown[b.textContent] = 1; });
-      var KIND = { green: 'sig green', gold: 'sig gold', blue: 'sig' };
-      function rotateOne() {
-        var chip = chips[Math.floor(Math.random() * chips.length)];
-        // pick a pool item not currently on screen
+
+      function swap(chip) {
         var pick, tries = 0;
         do { pick = POOL[Math.floor(Math.random() * POOL.length)]; tries++; }
-        while (shown[pick.label] && tries < 20);
+        while (shown[pick.label] && tries < 25);
         if (shown[pick.label]) return;
         var b = chip.querySelector('b'); if (!b) return;
         shown[b.textContent] = 0; shown[pick.label] = 1;
-        // Smooth "found a new lead" pop: shrink + fade the old chip away, then
-        // swap its text/colour and pop the fresh one in with a little scale
-        // bounce (matches the entrance feel).
-        chip.style.transition = 'opacity .3s ease, transform .3s ease';
+        // pop: shrink+fade the old, then scale-bounce the fresh one in
+        chip.style.transition = 'opacity .28s ease, transform .28s ease';
         chip.style.opacity = '0';
-        chip.style.transform = 'scale(.75)';
+        chip.style.transform = 'scale(.7)';
         setTimeout(function () {
           b.textContent = pick.label;
           chip.className = KIND[pick.kind] || 'sig';
-          // start tiny, then pop to full size on the next frame
           chip.style.transition = 'none';
-          chip.style.transform = 'scale(.75)';
+          chip.style.transform = 'scale(.7)';
           requestAnimationFrame(function () {
-            chip.style.transition = 'opacity .32s ease, transform .42s cubic-bezier(.2,1.3,.5,1)';
+            chip.style.transition = 'opacity .3s ease, transform .42s cubic-bezier(.2,1.3,.5,1)';
             chip.style.opacity = '1';
             chip.style.transform = 'scale(1)';
           });
-        }, 320);
+        }, 300);
       }
-      // stagger each chip's rotation so they pop at different moments (more
-      // alive, like leads landing one after another)
-      chips.forEach(function (_, idx) {
-        setInterval(rotateOne, 2400 + idx * 350 + Math.random() * 600);
-      });
+
+      // Each chip's clock-angle from the radar centre (the .hero box). The beam
+      // starts pointing straight up and sweeps clockwise over SWEEP_MS.
+      var SWEEP_MS = 5000;   // matches .radar-sweep animation: sweep 5s
+      function angleOf(el) {
+        var hr = el.closest('.hero').getBoundingClientRect();
+        var cx = hr.left + hr.width / 2, cy = hr.top + hr.height / 2;
+        var r = el.getBoundingClientRect();
+        var ex = r.left + r.width / 2, ey = r.top + r.height / 2;
+        // 0deg = up, increasing clockwise, range [0,360)
+        var a = Math.atan2(ex - cx, cy - ey) * 180 / Math.PI;
+        return (a + 360) % 360;
+      }
+      var meta = chips.map(function (c) { return { el: c, ang: angleOf(c), armed: true }; });
+      var t0 = performance.now();
+      var prev = 0;
+      function tick(now) {
+        var beam = ((now - t0) % SWEEP_MS) / SWEEP_MS * 360;
+        meta.forEach(function (m) {
+          // did the beam cross this chip's angle since the last frame?
+          var crossed = (prev <= beam) ? (m.ang > prev && m.ang <= beam)
+                                       : (m.ang > prev || m.ang <= beam);   // wrapped past 360
+          if (crossed && m.armed) { m.armed = false; swap(m.el); }
+          else if (!crossed) {
+            // re-arm once the beam is well away, so it fires once per pass
+            var gap = (m.ang - beam + 360) % 360;
+            if (gap > 30 && gap < 330) m.armed = true;
+          }
+        });
+        prev = beam;
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
     })();
   </script>
 </body>
