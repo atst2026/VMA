@@ -896,56 +896,65 @@ def _safe_url_filter(u):
     return "#"
 
 
-def _landing_signals(limit: int = 4) -> list[dict]:
-    """Lightweight live signal chips for the landing-page scanner — built
+def _landing_signal_pool() -> list[dict]:
+    """The FULL pool of live signal chips for the landing-page scanner — built
     straight from the raw state files (NO contact-resolution / outreach
-    drafting, which would be far too heavy for the landing route). Each chip
-    is {label, kind} where kind drives the dot colour (blue/green/gold).
-    Falls back to nothing (the template then shows static sample chips)."""
-    chips: list[dict] = []
+    drafting, which would be far too heavy for the landing route). Pulls every
+    available BD lead (funding + predictor pre-market triggers) and every job
+    lead, so the scanner can rotate through totally different ones. Each chip
+    is {label, kind} where kind drives the dot colour (blue/green/gold)."""
+    pool: list[dict] = []
     try:
-        # Pre-market triggers first — they're the most "AI inference" looking.
+        # Pre-market BD triggers — funding rounds.
         from tool.funding_round import load_funding
-        for f in load_funding()[:2]:
+        for f in load_funding():
             comp = (f.get("company") or "").strip()
             amt = (f.get("amount") or "").strip()
             if comp:
-                chips.append({"label": (amt + " · " if amt else "") + comp + " · hiring",
-                              "kind": "green"})
+                pool.append({"label": (amt + " · " if amt else "") + comp + " · hiring",
+                             "kind": "green"})
     except Exception:
         pass
     try:
+        # Pre-market BD triggers — predictor seats.
         from tool import predictor_pipeline
-        for p in predictor_pipeline.all_predictors()[:2]:
+        for p in predictor_pipeline.all_predictors():
             comp = (p.get("company") or "").strip()
             seat = (p.get("role") or p.get("seat") or "senior comms seat").strip()
             if comp:
-                chips.append({"label": comp + " · " + seat, "kind": "gold"})
+                pool.append({"label": comp + " · " + seat, "kind": "gold"})
     except Exception:
         pass
     try:
-        # Live job leads — the bread-and-butter "scanning the market" signal.
+        # Every live job lead (the "All" set) — the bread-and-butter signal.
         p = STATE_DIR / "latest_signals.json"
         raw = json.loads(p.read_text()) if p.exists() else []
         for s in raw:
             title = (s.get("title") or "").strip()
             comp = (s.get("company") or "").strip()
             if title and comp and (s.get("kind") or "").lower() != "leadership_change":
-                # keep chips short
                 t = title if len(title) <= 34 else title[:32] + "…"
                 c = comp if len(comp) <= 26 else comp[:24] + "…"
-                chips.append({"label": t + " · " + c, "kind": "blue"})
+                pool.append({"label": t + " · " + c, "kind": "blue"})
     except Exception:
         pass
-    # de-dup by label, preserve order, cap to `limit`
+    # de-dup by label, preserve order
     seen, out = set(), []
-    for ch in chips:
+    for ch in pool:
         if ch["label"] not in seen:
             seen.add(ch["label"])
             out.append(ch)
-        if len(out) >= limit:
-            break
     return out
+
+
+def _landing_signals(limit: int = 4) -> list[dict]:
+    """A randomised handful of chips for the initial render — different on each
+    page load so the scanner shows totally different signals over time."""
+    import random
+    pool = _landing_signal_pool()
+    if len(pool) <= limit:
+        return pool
+    return random.sample(pool, limit)
 
 
 @app.route("/")
@@ -954,8 +963,11 @@ def landing():
     """Gemini-clone landing — verbatim ground-truth CSS captured from
     gemini.google.com/app, ::before recentred for our viewport. VMA logo
     over a market-scanner radar whose signal chips are pulled live from the
-    latest leads / pre-market triggers."""
-    return render_template_string(LANDING_TEMPLATE, signals=_landing_signals())
+    latest leads / pre-market triggers, and rotate through the full pool."""
+    pool = _landing_signal_pool()
+    import random
+    shown = random.sample(pool, 4) if len(pool) > 4 else pool
+    return render_template_string(LANDING_TEMPLATE, signals=shown, signal_pool=pool)
 
 
 @app.route("/dashboard")
@@ -1604,12 +1616,14 @@ LANDING_TEMPLATE = r"""
     background:#fff;border:1px solid rgba(60,64,67,.12);border-radius:9999px;
     padding:6px 11px 6px 8px;font-family:"Google Sans","Inter",Arial,sans-serif;
     font-size:11.5px;font-weight:600;color:#1A3D7C;white-space:nowrap;
-    box-shadow:0 6px 18px rgba(31,55,124,.12);opacity:0;transform:scale(.8);
-    animation:sigpop 7s ease-in-out infinite;}
+    box-shadow:0 6px 18px rgba(31,55,124,.12);opacity:0;transform:scale(.85);
+    animation:sigin .5s ease forwards;transition:opacity .35s ease;}
+  .sig b{font-weight:inherit;}
   .sig i{width:7px;height:7px;border-radius:50%;background:#4285F4;flex-shrink:0;box-shadow:0 0 7px rgba(66,133,244,.6);}
   .sig.green i{background:#34A853;box-shadow:0 0 7px rgba(52,168,83,.6);}
   .sig.gold i{background:#C49A3B;box-shadow:0 0 7px rgba(196,154,59,.6);}
-  @keyframes sigpop{0%,92%,100%{opacity:0;transform:scale(.8);}8%,84%{opacity:1;transform:scale(1);}}
+  .sig:nth-of-type(2){animation-delay:.5s;}.sig:nth-of-type(3){animation-delay:1s;}.sig:nth-of-type(4){animation-delay:1.5s;}
+  @keyframes sigin{to{opacity:1;transform:scale(1);}}
 
   /* Content */
   .stage{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:32px;text-align:center;}
@@ -1690,17 +1704,16 @@ LANDING_TEMPLATE = r"""
         </linearGradient></defs>
         <g class="radar-sweep"><path d="M210 210 L210 18 A192 192 0 0 1 346 74 Z" fill="url(#sweepg)"/></g>
       </svg>
+      {% set pos = ['top:12%;left:8%', 'top:28%;right:2%', 'bottom:22%;left:3%', 'bottom:9%;right:10%'] %}
       {% if signals %}
-        {% set pos = ['top:12%;left:8%', 'top:28%;right:2%', 'bottom:22%;left:3%', 'bottom:9%;right:10%'] %}
-        {% set delays = ['0s', '1.6s', '3.1s', '4.6s'] %}
         {% for sg in signals %}
-        <span class="sig {{ sg.kind if sg.kind != 'blue' else '' }}" style="{{ pos[loop.index0 % 4] }};animation-delay:{{ delays[loop.index0 % 4] }}"><i></i>{{ sg.label }}</span>
+        <span class="sig {{ sg.kind if sg.kind != 'blue' else '' }}" data-slot="{{ loop.index0 }}" style="{{ pos[loop.index0 % 4] }}"><i></i><b>{{ sg.label }}</b></span>
         {% endfor %}
       {% else %}
-        <span class="sig"       style="top:12%;left:8%;animation-delay:0s"><i></i>Head of Comms &middot; NHS</span>
-        <span class="sig green" style="top:28%;right:2%;animation-delay:1.6s"><i></i>&pound;37m Series B &middot; hiring</span>
-        <span class="sig gold"  style="bottom:22%;left:3%;animation-delay:3.1s"><i></i>CEO exit &middot; CCO opening</span>
-        <span class="sig"       style="bottom:9%;right:10%;animation-delay:4.6s"><i></i>Director of Comms &middot; FTSE</span>
+        <span class="sig"       data-slot="0" style="top:12%;left:8%"><i></i><b>Head of Comms &middot; NHS</b></span>
+        <span class="sig green" data-slot="1" style="top:28%;right:2%"><i></i><b>&pound;37m Series B &middot; hiring</b></span>
+        <span class="sig gold"  data-slot="2" style="bottom:22%;left:3%"><i></i><b>CEO exit &middot; CCO opening</b></span>
+        <span class="sig"       data-slot="3" style="bottom:9%;right:10%"><i></i><b>Director of Comms &middot; FTSE</b></span>
       {% endif %}
       <div class="logo-tile"></div>
     </div>
@@ -1717,6 +1730,36 @@ LANDING_TEMPLATE = r"""
       + '<text x="51" y="76" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="300" font-size="13.5" letter-spacing="3" fill="#fff">GROUP</text>'
       + '</svg>';
     document.querySelectorAll('.logo-tile').forEach(function (e) { e.innerHTML = LOGO; });
+
+    // Rotate the scanner chips through the full live pool of BD leads + jobs,
+    // so they keep changing to totally different signals while you watch.
+    var POOL = {{ signal_pool | tojson | safe if signal_pool else '[]' }};
+    (function () {
+      var chips = Array.prototype.slice.call(document.querySelectorAll('.sig[data-slot]'));
+      if (!chips.length || POOL.length <= chips.length) return;
+      var shown = {};
+      chips.forEach(function (c) { var b = c.querySelector('b'); if (b) shown[b.textContent] = 1; });
+      var KIND = { green: 'sig green', gold: 'sig gold', blue: 'sig' };
+      function rotateOne() {
+        var chip = chips[Math.floor(Math.random() * chips.length)];
+        // pick a pool item not currently on screen
+        var pick, tries = 0;
+        do { pick = POOL[Math.floor(Math.random() * POOL.length)]; tries++; }
+        while (shown[pick.label] && tries < 20);
+        if (shown[pick.label]) return;
+        var b = chip.querySelector('b'); if (!b) return;
+        shown[b.textContent] = 0; shown[pick.label] = 1;
+        // fade out, swap text + colour class (keep position styles), fade in
+        chip.style.transition = 'opacity .35s ease';
+        chip.style.opacity = '0';
+        setTimeout(function () {
+          b.textContent = pick.label;
+          chip.className = KIND[pick.kind] || 'sig';
+          chip.style.opacity = '1';
+        }, 360);
+      }
+      setInterval(rotateOne, 2600);
+    })();
   </script>
 </body>
 </html>
@@ -3375,7 +3418,7 @@ TEMPLATE = r"""
     #leads .btn-mini.ghost { color: var(--muted); border-color: var(--border); }
     #leads .btn-mini.ghost:hover { background: #fbecea; color: #A33A22; border-color: #e7b9b1; }
 
-    /* ----- page 2: Executive Assistant ----- */
+    /* ----- page 2: Personal Assistant ----- */
     #agent .agent-wrap { flex: 1; min-height: 0; overflow-y: auto; max-width: 900px; margin: 0 auto;
       padding: 30px 24px 164px; text-align: center; display: flex; flex-direction: column;
       align-items: center; justify-content: center; }
@@ -3575,7 +3618,7 @@ TEMPLATE = r"""
 <!-- LEFT RAIL — page switcher. Active state toggled by render() (additive JS). -->
 <aside class="rail">
   <button class="ri active" id="nav-leads" data-tip="Market Intelligence Radar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3.5l2.5 8.5 4-17 2.5 8.5H21"/></svg></button>
-  <button class="ri" id="nav-agent" data-tip="Executive Assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7.5" width="17" height="13" rx="5"/><path d="M12 7.5V4.6"/><circle cx="12" cy="3.4" r="1.2"/><circle cx="9" cy="14" r="1.65" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.65" fill="currentColor" stroke="none"/></svg></button>
+  <button class="ri" id="nav-agent" data-tip="Personal Assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7.5" width="17" height="13" rx="5"/><path d="M12 7.5V4.6"/><circle cx="12" cy="3.4" r="1.2"/><circle cx="9" cy="14" r="1.65" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.65" fill="currentColor" stroke="none"/></svg></button>
   <button class="ri" id="nav-cal" data-tip="BD Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></button>
 </aside>
 
@@ -3815,7 +3858,7 @@ TEMPLATE = r"""
     <div class="agent-wrap">
       <div class="ea-hero">
         <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7.5" width="17" height="13" rx="5"/><path d="M12 7.5V4.6"/><circle cx="12" cy="3.4" r="1.2"/><circle cx="9" cy="14" r="1.65" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.65" fill="currentColor" stroke="none"/></svg></div>
-        <h1 class="gemini-title">Executive Assistant</h1>
+        <h1 class="gemini-title">Personal Assistant</h1>
         <div class="cc-sub">Your very own AI helper. Prompt key reports in real-time, and with the latest data.</div>
       </div>
 
@@ -5444,13 +5487,60 @@ async function loadRecentReports() {
         if (composer.dataset.mode === cap) showFree(); else showCap(cap);
       });
     });
-    // The corner arrow (.send) inside each form is a native submit button, so a
-    // click submits the form → onsubmit → dispatch() (no requestSubmit, so the
-    // user-gesture popup isn't blocked). The footer send shows only in free mode
-    // and focuses the prompt, so the empty pill still reads complete.
+    // ----- Free-text router: type a request any way you like and the
+    // composer works out which report you mean, fills the matching form from
+    // your words, and runs it. Restores the natural-language entry we had
+    // before. Submitting reuses the form's own submit so dispatch()'s popup
+    // keeps its user-gesture. -----
+    function classifyPrompt(text) {
+      var s = text.toLowerCase();
+      if (/\b(pitch|proposal|retain|upgrade|pitch pack)\b/.test(s)) return 'pitch';
+      if (/\b(reverse|match|place|where (can|could|to)|accounts? for|fit)\b/.test(s)) return 'reverse';
+      if (/\b(meeting|brief|prep|pre-?meeting|walk into|before (my|the))\b/.test(s)) return 'premeeting';
+      if (/\b(sweep|missed|catch[\s-]?up|scan|last\s+\d+\s*days?|recent)\b/.test(s)) return 'sweep';
+      return 'pitch';   // sensible default — the most common ask
+    }
+    // Pull a likely company/account name: text after "for"/"at", else the
+    // first Capitalised multi-word run.
+    function extractAccount(text) {
+      var m = text.match(/\b(?:for|at|on|about)\s+([A-Z][\w&.'-]*(?:\s+[A-Z][\w&.'-]*){0,3})/);
+      if (m) return m[1].trim();
+      m = text.match(/\b([A-Z][\w&.'-]*(?:\s+[A-Z][\w&.'-]*){1,3})\b/);
+      return m ? m[1].trim() : '';
+    }
+    function extractRole(text) {
+      var m = text.match(/\b((?:head|director|chief|vp|manager|lead)[\w ,/&-]*?(?:communications?|comms|affairs|relations|marketing|engagement))\b/i);
+      return m ? m[1].trim() : '';
+    }
+    function setField(id, val) { var el = document.getElementById(id); if (el && val) el.value = val; }
+    function runFromPrompt() {
+      var text = (cprompt && cprompt.value || '').trim();
+      if (!text) { if (cprompt) cprompt.focus(); return; }
+      var cap = classifyPrompt(text);
+      var acct = extractAccount(text);
+      var role = extractRole(text);
+      // pre-fill the chosen form from the parsed text
+      if (cap === 'pitch') { setField('pp-account', acct); setField('pp-role', role); }
+      else if (cap === 'reverse') { setField('rm-name', acct); setField('rm-title', role); }
+      else if (cap === 'premeeting') { setField('pm-account', acct); }
+      else if (cap === 'sweep') { var d = (text.match(/(\d+)\s*days?/) || [])[1]; setField('sw-days', d || '14'); }
+      // reveal that form, then submit it (native submit -> dispatch() popup)
+      showCap(cap);
+      var form = document.getElementById(
+        cap === 'pitch' ? 'pitch-form' : cap === 'reverse' ? 'rm-form'
+        : cap === 'premeeting' ? 'pm-form' : 'sweep-form');
+      if (form) {
+        var btn = form.querySelector('button.send') || form.querySelector('button[type="submit"]');
+        if (btn) btn.click();   // user-gesture click keeps the popup unblocked
+      }
+    }
+    // Footer send (free mode) + Enter in the prompt both route the text.
     var footSend = document.getElementById('composer-send');
-    if (footSend && cprompt) {
-      footSend.addEventListener('click', function () { try { cprompt.focus(); } catch (e) {} });
+    if (footSend) footSend.addEventListener('click', runFromPrompt);
+    if (cprompt) {
+      cprompt.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); runFromPrompt(); }
+      });
     }
   }
 
