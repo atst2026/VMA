@@ -3322,9 +3322,16 @@ TEMPLATE = r"""
     @keyframes pgfade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
     /* ----- shared wordmark header (page 1) ----- */
-    .wm-head { flex: none; text-align: center; padding: 46px 0 26px;
-      background: radial-gradient(ellipse 78% 150% at 50% -8%,
-        #a8c8e6 0%, #bdd3e9 14%, #d2e1ee 32%, #e8eff6 56%, #f4f7fb 76%, rgba(247,249,252,0) 100%); }
+    .wm-head { flex: none; text-align: center; padding: 46px 0 26px; position: relative; }
+    /* Soft blue glow behind the header that fades seamlessly to transparent on
+       every side (so it blends into the page bg + halo with no hard edges).
+       A large, very soft radial centred above the title, on a transparent
+       canvas — no colour stop ever lands on a different white, which is what
+       caused the visible vertical lines. */
+    .wm-head::before { content: ""; position: absolute; inset: -40px -10% 0; z-index: -1; pointer-events: none;
+      background: radial-gradient(120% 150% at 50% -20%,
+        rgba(168,200,230,.55) 0%, rgba(189,211,233,.40) 22%, rgba(210,225,238,.24) 42%,
+        rgba(232,239,246,.10) 64%, rgba(232,239,246,0) 82%); }
     .wm-head .brand { display: inline-flex; align-items: center; gap: 14px; }
     .brand-title { font-family: "Newsreader", Georgia, serif; font-weight: 400; font-size: 30px;
       letter-spacing: -.01em; color: var(--ink); }
