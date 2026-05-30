@@ -4468,7 +4468,7 @@ async function loadPulses() {
         ? '<button class="cal-rm" data-key="' + esc(p.key) + '" title="Remove this window">&#10005;</button>'
         : '';
       out.push(
-        '<div class="win-row' + (p.just_opened ? ' is-new' : '') + '">' +
+        '<div class="win-row' + (p.just_opened ? ' is-new' : '') + '" data-key="' + esc(p.key || p.name || '') + '">' +
           '<div class="win-tile" title="Placement window"></div>' +
           '<div class="win-main">' +
             '<div class="win-name">' + esc(p.name || '') + '</div>' +
@@ -4585,7 +4585,7 @@ async function loadEvents() {
       const when = whenChip(e.days_to_event);
       const hasDetail = !!(e.why_now || e.source);
       out.push(
-        '<div class="ev-item' + (hasDetail ? ' has-detail' : '') + '">' +
+        '<div class="ev-item' + (hasDetail ? ' has-detail' : '') + '" data-evkey="' + esc(e.key || e.name || '') + '">' +
           '<div class="ev-row">' +
             '<div class="ev-date"><b>' + esc(dayOf(e.event_date)) + '</b><span>' + esc(monOf(e.event_date)) + '</span></div>' +
             '<div class="ev-main">' +
@@ -5411,31 +5411,61 @@ async function loadRecentReports() {
     modal.classList.remove('open');
   }
   document.querySelectorAll('.cc-card[data-open]').forEach(function (c) {
-    c.addEventListener('click', function () { refreshCardBadges(); openBD(c.dataset.open); });
+    c.addEventListener('click', function () { openBD(c.dataset.open); markCardSeen(c.dataset.open); });
   });
   if (mx) mx.onclick = closeBD;
   if (modal) modal.addEventListener('click', function (e) { if (e.target === modal) closeBD(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && openKey) closeBD(); });
 
-  // --- card "new" badges: data-derived from the rendered panels (reuse the
-  //     existing indicators — pulses' "new" header, events' window-open
-  //     marker, framework rows). Recomputed on a short delay after the
-  //     on-init loaders resolve, and again whenever a card is clicked. ---
+  // --- card "new" badges: a card shows "N new" only when items are present
+  //     whose stable key the user hasn't SEEN yet. Opening a card marks its
+  //     current items as seen (clears the badge); a genuinely-new item that
+  //     appears later re-triggers it. Seen-keys persist in localStorage so the
+  //     badge doesn't reappear on every reload. ---
+  var SEEN_PREFIX = 'bdSeen:';   // localStorage key per card
+  function seenSet(key) {
+    try { return new Set(JSON.parse(localStorage.getItem(SEEN_PREFIX + key) || '[]')); }
+    catch (e) { return new Set(); }
+  }
+  function saveSeen(key, set) {
+    try { localStorage.setItem(SEEN_PREFIX + key, JSON.stringify(Array.from(set))); } catch (e) {}
+  }
+  // Current item keys per card (unique), read from the rendered panels.
+  function currentKeys(key) {
+    var sel = key === 'windows' ? '#pulses-body .win-row[data-key]'
+            : key === 'events' ? '#events-body .ev-item[data-evkey]'
+            : key === 'frameworks' ? '#framework-body .framework-row[data-fwid]'
+            : null;
+    if (!sel) return [];
+    var attr = key === 'windows' ? 'data-key' : key === 'events' ? 'data-evkey' : 'data-fwid';
+    var seen = {}, out = [];
+    Array.prototype.forEach.call(document.querySelectorAll(sel), function (el) {
+      var k = el.getAttribute(attr);
+      if (k && !seen[k]) { seen[k] = 1; out.push(k); }
+    });
+    return out;
+  }
+  function setBadge(key, n) {
+    var b = document.querySelector('.cc-card[data-open="' + key + '"] .cbadge');
+    if (b) b.textContent = n ? (n + ' new') : '';
+  }
   function refreshCardBadges() {
-    var set = function (key, n) {
-      var b = document.querySelector('.cc-card[data-open="' + key + '"] .cbadge');
-      if (b) b.textContent = n ? (n + ' new') : '';
-    };
-    // Placement Windows: the existing #pulses-new header badge surfaces the
-    // just_opened count; mirror it onto the card.
-    var pn = document.getElementById('pulses-new');
-    var pnn = document.getElementById('pulses-new-n');
-    var winNew = (pn && pn.style.display !== 'none' && pnn) ? parseInt(pnn.textContent || '0', 10) : 0;
-    set('windows', winNew || 0);
-    // Events: count in-action-window markers rendered by loadEvents().
-    set('events', document.querySelectorAll('#events-body .ev-open').length);
-    // Frameworks: count the tracked framework rows.
-    set('frameworks', document.querySelectorAll('#framework-body .framework-row').length);
+    ['windows', 'events', 'frameworks'].forEach(function (key) {
+      var keys = currentKeys(key);
+      if (!keys.length) { setBadge(key, 0); return; }   // panel not loaded yet / empty
+      var seen = seenSet(key);
+      var unseen = keys.filter(function (k) { return !seen.has(k); });
+      setBadge(key, unseen.length);
+    });
+  }
+  // Mark every currently-shown item in a card as seen, then clear its badge.
+  function markCardSeen(key) {
+    var keys = currentKeys(key);
+    if (!keys.length) return;
+    var seen = seenSet(key);
+    keys.forEach(function (k) { seen.add(k); });
+    saveSeen(key, seen);
+    setBadge(key, 0);
   }
   // Loaders are async fetches fired on DOMContentLoaded; recompute a few
   // times so the badges settle once the panels have rendered.
