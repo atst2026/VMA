@@ -964,9 +964,18 @@ def landing():
     gemini.google.com/app, ::before recentred for our viewport. VMA logo
     over a market-scanner radar whose signal chips are pulled live from the
     latest leads / pre-market triggers, and rotate through the full pool."""
-    pool = _landing_signal_pool()
     import random
-    shown = random.sample(pool, 4) if len(pool) > 4 else pool
+    pool = _landing_signal_pool()
+    # Initial 4: guarantee BD leads (funding=green / predictor=gold) get a slot
+    # when they exist — job leads vastly outnumber them, so a flat random sample
+    # would almost never surface a BD lead. Show up to 2 BD leads, fill with jobs.
+    bd = [c for c in pool if c["kind"] in ("green", "gold")]
+    jobs = [c for c in pool if c["kind"] == "blue"]
+    random.shuffle(bd); random.shuffle(jobs)
+    shown = (bd[:2] + jobs)[:4] if bd else jobs[:4]
+    random.shuffle(shown)
+    if len(shown) < 4:
+        shown = pool[:4]
     return render_template_string(LANDING_TEMPLATE, signals=shown, signal_pool=pool)
 
 
@@ -3312,8 +3321,12 @@ TEMPLATE = r"""
       letter-spacing: -.01em; color: var(--ink); }
     /* radar icon at the end of the "Market Intelligence Radar" title — line-art
        dish + dome with a slow sweep, in the brand navy. */
-    .radar-ic { display: inline-flex; align-self: center; color: var(--vma); }
-    .radar-ic svg { width: 24px; height: 24px; transform-origin: 12px 12px; animation: radar-spin 6s linear infinite; }
+    /* radar icon at the end of the "Market Intelligence Radar" title — matches
+       the BD-Calendar page hero tile exactly: same 78px faded-navy square,
+       same radius + svg size, with a slow sweep on the dish. */
+    .radar-ic { width: 78px; height: 78px; border-radius: 18px; display: grid; place-items: center;
+      color: var(--vma); background: rgba(62,92,132,.09); flex-shrink: 0; align-self: center; }
+    .radar-ic svg { width: 38px; height: 38px; transform-origin: center; animation: radar-spin 6s linear infinite; }
     @keyframes radar-spin { to { transform: rotate(360deg); } }
 
     /* ----- page 1: leads/signals one-viewport scroll chain -----
