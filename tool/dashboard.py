@@ -1773,15 +1773,28 @@ LANDING_TEMPLATE = r"""
         chip.className = KIND[pick.kind] || 'sig';
       }
 
-      // Swap ONLY at the end of each sigpop loop (animationiteration fires at
-      // the 100%/0% boundary, where the chip is fully faded out). So the content
-      // never changes while the chip is on screen — each chip fades out, swaps
-      // while invisible, then re-appears showing the fresh lead.
+      // A chip's content may ONLY change while the chip is invisible. Each loop
+      // we set a "pending swap" flag; an rAF watcher then performs the swap the
+      // instant the chip's computed opacity is ~0 (the fade-out plateau), and
+      // never while any of it is still visible. So the new lead is only ever
+      // revealed on the chip's NEXT fade-in — never appearing before the old
+      // one has fully gone.
+      var pending = new WeakSet();
       chips.forEach(function (chip) {
         chip.addEventListener('animationiteration', function (e) {
-          if (e.animationName === 'sigpop') swap(chip);
+          if (e.animationName === 'sigpop') pending.add(chip);
         });
       });
+      function watch() {
+        chips.forEach(function (chip) {
+          if (pending.has(chip) && parseFloat(getComputedStyle(chip).opacity) <= 0.02) {
+            pending.delete(chip);
+            swap(chip);
+          }
+        });
+        requestAnimationFrame(watch);
+      }
+      requestAnimationFrame(watch);
     })();
   </script>
 </body>
@@ -3318,7 +3331,7 @@ TEMPLATE = r"""
     .rail .ri.active { background: rgba(31,31,31,.07); color: var(--ink); }
     /* VMA logo pinned to the bottom of the rail — same 42x42 faded-navy
        square + radius as the nav icons, holding the navy logo tile. */
-    .rail .rail-logo { margin-top: auto; margin-bottom: -6px; width: 42px; height: 42px; border-radius: 12px;
+    .rail .rail-logo { margin-top: auto; margin-bottom: -13px; width: 42px; height: 42px; border-radius: 12px;
       overflow: hidden; flex-shrink: 0; position: relative; display: grid; place-items: center;
       background: rgba(62,92,132,.09); }
     .rail .rail-logo svg { display: block; width: 100%; height: 100%; border-radius: 12px; }
@@ -5529,11 +5542,21 @@ async function loadRecentReports() {
     // reveals the pre-filled form so the user can confirm (after an ambiguous
     // prompt where they picked the type).
     function fillAndShow(cap, text, submit) {
-      var acct = extractAccount(text), role = extractRole(text);
-      if (cap === 'pitch') { setField('pp-account', acct); setField('pp-role', role); }
-      else if (cap === 'reverse') { setField('rm-name', acct); setField('rm-title', role); }
-      else if (cap === 'premeeting') { setField('pm-account', acct); }
-      else if (cap === 'sweep') { var d = (text.match(/(\d+)\s*days?/) || [])[1]; setField('sw-days', d || '14'); }
+      if (cap === 'pitch') {
+        setField('pp-account', extractAccount(text)); setField('pp-role', extractRole(text));
+      } else if (cap === 'reverse') {
+        // candidate name (after match/for), their company (after at/from), title
+        setField('rm-name', extractCandidate(text));
+        setField('rm-company', extractCompany(text));
+        setField('rm-title', extractRole(text));
+      } else if (cap === 'premeeting') {
+        // account = who you're meeting (after for/at); contact = person (after with)
+        setField('pm-account', phraseAfter(text, ['for', 'at', 'about']) || extractAccount(text));
+        var withName = phraseAfter(text, ['with']);
+        if (withName) setField('pm-contact', withName);
+      } else if (cap === 'sweep') {
+        var d = (text.match(/(\d+)\s*days?/) || [])[1]; setField('sw-days', d || '14');
+      }
       showCap(cap);
       if (submit) {
         var form = document.getElementById(
@@ -5572,50 +5595,67 @@ async function loadRecentReports() {
         });
       });
     }
-    // Pull a likely company/account name: text after "for"/"at", else the
-    // Pull a likely company/account name: the capitalised run right after
-    // "for"/"at"/etc., but STOP at the first word that signals the sentence has
-    // moved on (a lowercase word, or a capitalised stop-word like "I"). This
-    // prevents "...for HSBC UK I am meeting..." becoming the account "HSBC UK I".
-    // Company names are a run of Capitalised tokens (HSBC, Severn Trent, Boston
-    // Consulting Group), optionally joined by lowercase particles (of/and/&/the
-    // — "Bank of England"). We keep tokens while they look like part of the
-    // name and STOP at the first word that doesn't: a lowercase connector
-    // (for/on/with/I'm...) or a capitalised stop-word like "I". This prevents
-    // "...for HSBC UK I am meeting..." -> "HSBC UK I", and "Severn Trent for
-    // their" -> stops at "for".
-    var PARTICLE = /^(of|and|the|for|&|de|du|la|le)$/i;   // allowed only BETWEEN cap words
-    function cleanRun(run) {
-      if (!run) return '';
-      var words = run.trim().replace(/[,.;:]+$/, '').split(/\s+/);
-      var out = [];
-      for (var i = 0; i < words.length; i++) {
-        var w = words[i];
-        // a name-like token: starts capital/number AND isn't a bare pronoun
-        var isCap = /^[A-Z0-9][\w&.'-]*$/.test(w) && !/^(I|A)$/.test(w);
-        if (isCap) { out.push(w); }
-        else if (PARTICLE.test(w) && out.length && i + 1 < words.length
-                 && /^[A-Z0-9]/.test(words[i + 1])) {
-          out.push(w);   // lowercase particle, but only if a cap word follows
-        } else {
-          break;         // lowercase connector / pronoun / sentence moved on
+    // ---- entity extraction ----------------------------------------------
+    // Words that end a name phrase (the sentence has moved on).
+    var BOUNDARY = /^(for|at|on|about|with|from|to|in|of|and|the|a|an|i|im|i'm|we|our|my|me|is|are|am|who|that|this|it|meeting|meet|role|position|job|vacancy|please|today|tomorrow|tonight|next|this|on|by)$/i;
+    var PARTICLE = /^(of|and|the|&|de|du|la|le|van|von)$/i;   // kept INSIDE a name
+    function titleCase(s) {
+      return s.replace(/\b([a-z])([a-z']*)/gi, function (_, a, b) {
+        // keep ALL-CAPS acronyms (HSBC, PA, NHS, BP) as-is
+        var w = a + b;
+        if (w.length <= 4 && w === w.toUpperCase()) return w;
+        return a.toUpperCase() + b.toLowerCase();
+      });
+    }
+    // Grab the phrase right after any of `cues`, stopping at the next boundary
+    // word; works regardless of case, then Title-Cases it. e.g. after "for" in
+    // "...for molly cutler at pa consulting" -> "Molly Cutler".
+    function phraseAfter(text, cues) {
+      // try each cue in priority order; take the first that yields a name
+      for (var ci = 0; ci < cues.length; ci++) {
+        var m = text.match(new RegExp('\\b' + cues[ci] + '\\s+(.+)$', 'i'));
+        if (!m) continue;
+        var words = m[1].split(/\s+/);
+        var out = [];
+        for (var i = 0; i < words.length; i++) {
+          var hadComma = /[,.;:]/.test(words[i]);
+          var raw = words[i].replace(/[,.;:]+.*$/, '');   // a comma also ends the run
+          var bare = raw.replace(/[^\w'&-]/g, '');
+          if (!bare) break;
+          if (PARTICLE.test(bare)) {   // particle kept only if more name follows
+            if (out.length && i + 1 < words.length && !BOUNDARY.test(words[i + 1].replace(/[^\w'&-]/g, ''))) {
+              out.push(raw); if (hadComma) break; continue;
+            }
+            break;
+          }
+          if (BOUNDARY.test(bare)) break;   // next cue / sentence continues
+          out.push(raw);
+          if (hadComma || out.length >= 4) break;   // stop at a comma or 4 words
         }
-        if (out.length >= 5) break;
+        while (out.length && PARTICLE.test(out[out.length - 1])) out.pop();
+        if (out.length) return titleCase(out.join(' ').trim());
       }
-      // trim a trailing particle (e.g. captured "Severn Trent for" -> drop "for")
-      while (out.length && PARTICLE.test(out[out.length - 1])) out.pop();
-      return out.join(' ').trim();
+      return '';
     }
     function extractAccount(text) {
-      var m = text.match(/\b(?:for|at|on|about|with)\s+([A-Z][\w&.'-]*(?:\s+[A-Za-z][\w&.'-]*){0,4})/);
-      if (m) { var a = cleanRun(m[1]); if (a) return a; }
-      // fallback: first capitalised multi-word run anywhere, same cleaning
-      m = text.match(/\b([A-Z][\w&.'-]*(?:\s+[A-Za-z][\w&.'-]*){0,4})\b/);
-      return m ? cleanRun(m[1]) : '';
+      // company/account: after for/at/with/about, else first capitalised run
+      return phraseAfter(text, ['for', 'at', 'with', 'about'])
+          || (function () {
+               var m = text.match(/\b([A-Z][\w&.'-]*(?:\s+[A-Za-z][\w&.'-]*){0,4})\b/);
+               return m ? titleCase(m[1].replace(/[,.;:]+$/, '').trim()) : '';
+             })();
     }
     function extractRole(text) {
-      var m = text.match(/\b((?:head|director|chief|vp|manager|lead)[\w ,/&-]*?(?:communications?|comms|affairs|relations|marketing|engagement))\b/i);
-      return m ? m[1].replace(/[,.;:]+$/, '').trim() : '';
+      var m = text.match(/\b((?:head|director|chief|vp|manager|lead|officer)[\w ,/&-]*?(?:communications?|comms|affairs|relations|marketing|engagement))\b/i);
+      return m ? titleCase(m[1].replace(/[,.;:]+$/, '').trim()) : '';
+    }
+    // Reverse Match wants: candidate (after "match"/"for"), their company
+    // (after "at"/"from"), and current title.
+    function extractCandidate(text) {
+      return phraseAfter(text, ['match', 'for', 'place', 'candidate']);
+    }
+    function extractCompany(text) {
+      return phraseAfter(text, ['at', 'from', 'with', 'works at', 'currently at']);
     }
     function setField(id, val) { var el = document.getElementById(id); if (el && val) el.value = val; }
     function runFromPrompt() {
