@@ -3453,7 +3453,7 @@ TEMPLATE = r"""
 
     /* ----- page 2: Personal Assistant ----- */
     #agent .agent-wrap { flex: 1; min-height: 0; overflow-y: auto; max-width: 900px; margin: 0 auto;
-      padding: 30px 24px 164px; text-align: center; display: flex; flex-direction: column;
+      padding: 40px 24px; text-align: center; display: flex; flex-direction: column;
       align-items: center; justify-content: center; }
     .ea-hero { text-align: center; }
     .cc-bigicon { width: 78px; height: 78px; border-radius: 18px; margin: 0 auto 22px; display: grid;
@@ -3546,11 +3546,11 @@ TEMPLATE = r"""
 
     /* ----- page 3: BD Calendar (Customize-Claude-style menu + modal) ----- */
     #cal .cc-wrap { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column;
-      align-items: center; max-width: 720px; margin: 0 auto; padding: 48px 24px; width: 100%; }
+      align-items: center; justify-content: center; max-width: 720px; margin: 0 auto; padding: 40px 24px; width: 100%; }
     .cc-hero { text-align: center; margin-bottom: 30px; }
     .cc-cards { width: 100%; display: flex; flex-direction: column; gap: 14px; }
     .cc-card { display: flex; align-items: center; gap: 16px; background: #fff; border: 1px solid var(--border);
-      border-radius: 16px; padding: 20px 22px; box-shadow: var(--shadow-sm); cursor: pointer;
+      border-radius: 22px; padding: 20px 22px; box-shadow: var(--shadow-sm); cursor: pointer;
       transition: box-shadow .16s, border-color .16s, transform .16s; text-align: left; width: 100%; }
     .cc-card:hover { box-shadow: var(--shadow-md); border-color: var(--border-hi); transform: translateY(-1px); }
     .cc-card .ci { width: 44px; height: 44px; border-radius: 12px; background: var(--elevated); display: grid;
