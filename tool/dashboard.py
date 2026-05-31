@@ -1612,8 +1612,6 @@ LANDING_TEMPLATE = r"""
   .ring-s{fill:none;stroke:rgba(58,143,164,.28);stroke-width:1;}
   .radar-sweep{transform-box:view-box;transform-origin:210px 210px;animation:sweep 5s linear infinite;}
   @keyframes sweep{to{transform:rotate(360deg);}}
-  .infnode{fill:rgb(157,210,255);filter:drop-shadow(0 0 5px rgb(157,210,255));animation:np 3s ease-in-out infinite;}
-  @keyframes np{0%,100%{opacity:.5;r:3;}50%{opacity:1;r:5;}}
 
   /* the real VMA logo icon (navy tile) with a slow sheen */
   .logo-tile{position:relative;z-index:3;width:108px;height:108px;border-radius:24px;overflow:hidden;
@@ -1705,7 +1703,7 @@ LANDING_TEMPLATE = r"""
     .sig[data-slot="3"]{bottom:2%;right:-2%;}
   }
   @media (prefers-reduced-motion: reduce){
-    .radar-sweep,.infnode,.logo-tile::after,.dot,.dot::before,.dot::after{animation:none;}
+    .radar-sweep,.logo-tile::after,.dot,.dot::before,.dot::after{animation:none;}
     .sig{opacity:1;transform:none;animation:none;}
   }
 </style>
@@ -1714,13 +1712,14 @@ LANDING_TEMPLATE = r"""
   <div class="stage">
     <div class="hero">
       <svg class="viz" viewBox="0 0 420 420" aria-hidden="true">
-        <g class="ring-s"><circle cx="210" cy="210" r="96"/><circle cx="210" cy="210" r="158"/><circle cx="210" cy="210" r="198"/></g>
+        <g class="ring-s">
+          <circle cx="210" cy="210" r="84"/><circle cx="210" cy="210" r="138"/><circle cx="210" cy="210" r="192"/>
+          <line x1="18" y1="210" x2="402" y2="210"/><line x1="210" y1="18" x2="210" y2="402"/>
+        </g>
         <defs><linearGradient id="sweepg" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stop-color="rgba(66,133,244,0)"/><stop offset="1" stop-color="rgba(66,133,244,.34)"/>
         </linearGradient></defs>
-        <g class="radar-sweep"><path d="M210 210 L210 12 A198 198 0 0 1 350 70 Z" fill="url(#sweepg)"/></g>
-        <circle class="infnode" cx="300" cy="120" r="3"/><circle class="infnode" cx="118" cy="150" r="3" style="animation-delay:.6s"/>
-        <circle class="infnode" cx="150" cy="300" r="3" style="animation-delay:1.2s"/><circle class="infnode" cx="312" cy="288" r="3" style="animation-delay:1.8s"/>
+        <g class="radar-sweep"><path d="M210 210 L210 18 A192 192 0 0 1 346 74 Z" fill="url(#sweepg)"/></g>
       </svg>
       {% set pos = ['top:8%;left:0%', 'top:24%;right:-2%', 'bottom:20%;left:-2%', 'bottom:7%;right:4%'] %}
       {% set delays = ['0s', '1.6s', '3.1s', '4.6s'] %}
