@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VMA Group — AI scanning the market (no circles)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ===========================================================
+     8 hero visuals — "AI scanning the market", NO circles.
+     Same shell as the live page: off-white bg + Gemini halo,
+     navy VMA logo tile at the centre, CTA pill below.
+     Each is one clean, non-circular scanning motif + a sweep.
+     =========================================================== */
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background-color:rgb(253,252,252);color:#1F1F1F;
+    font-family:"Inter",Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased;}
+
+  .variant{position:relative;min-height:100vh;overflow:hidden;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:36px;}
+  .variant::before{content:"";position:absolute;z-index:0;
+    width:792px;height:300px;top:50%;left:50%;transform:translate(-50%,-50%);
+    border-radius:9999px;
+    background-image:radial-gradient(100% 100% at 50% 8%,rgb(253,252,252) 0px,rgb(157,210,255) 50%);
+    filter:blur(125px);opacity:1;}
+
+  .vlabel{position:absolute;top:20px;left:20px;z-index:6;
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:#5F6368;background:rgba(255,255,255,.72);
+    backdrop-filter:blur(5px);padding:8px 13px;border-radius:9px;border:1px solid rgba(60,64,67,.1);}
+
+  .stage{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;
+    gap:34px;text-align:center;}
+  .cap{position:relative;z-index:2;max-width:380px;margin-top:-8px;
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;line-height:1.6;
+    letter-spacing:.02em;color:#5F6368;text-align:center;}
+
+  .hero{position:relative;width:420px;height:420px;display:grid;place-items:center;}
+  .hero .viz{position:absolute;inset:0;z-index:0;pointer-events:none;}
+
+  /* navy VMA logo tile with the slow sheen */
+  .logo-tile{position:relative;z-index:3;width:104px;height:104px;border-radius:23px;overflow:hidden;
+    box-shadow:0 16px 40px rgba(62,92,132,.42),0 3px 10px rgba(62,92,132,.34);}
+  .logo-tile svg{display:block;width:100%;height:100%;}
+  .logo-tile::after{content:"";position:absolute;inset:0;
+    background:linear-gradient(115deg,transparent 38%,rgba(255,255,255,.34) 50%,transparent 62%);
+    transform:translateX(-130%);animation:sheen 5s ease-in-out infinite;}
+  @keyframes sheen{0%,72%{transform:translateX(-130%);}88%,100%{transform:translateX(130%);}}
+
+  /* CTA pill */
+  .pill{background:#fff;border:none;border-radius:32px;box-shadow:0 2px 8px -2px rgba(0,0,0,.16);
+    padding:0 22px;height:62px;display:flex;align-items:center;justify-content:center;
+    gap:14px;text-decoration:none;color:#1F1F1F;cursor:pointer;transition:transform .15s,box-shadow .15s;}
+  .pill:hover{transform:translateY(-1px);box-shadow:0 6px 16px -2px rgba(0,0,0,.18);}
+  .dot{position:relative;width:11px;height:11px;border-radius:50%;background:#9FD181;flex-shrink:0;
+    box-shadow:0 0 10px rgba(159,209,129,.85),inset 0 0 3px rgba(255,255,255,.4);animation:throb 1.8s ease-in-out infinite;}
+  .dot::before{content:"";position:absolute;inset:-3px;border-radius:50%;background:rgba(159,209,129,.55);animation:ringp 1.8s ease-out infinite;}
+  .dot::after{content:"";position:absolute;inset:-6px;border-radius:50%;background:rgba(159,209,129,.30);animation:ringp 1.8s ease-out infinite;animation-delay:.6s;}
+  @keyframes throb{0%,100%{transform:scale(1);}50%{transform:scale(1.22);}}
+  @keyframes ringp{0%{transform:scale(1);opacity:.7;}100%{transform:scale(3.4);opacity:0;}}
+  .lbl{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;font-weight:500;}
+  .arrow{color:#5F6368;font-size:18px;margin-left:6px;}
+
+  /* ---------- scanning beams (shared) ---------- */
+  .beamV{transform-box:view-box;animation:beamX 3s linear infinite;}
+  @keyframes beamX{from{transform:translateX(-48px);}to{transform:translateX(420px);}}
+  .beamH{transform-box:view-box;animation:beamY 3.2s linear infinite;}
+  @keyframes beamY{from{transform:translateY(-48px);}to{transform:translateY(420px);}}
+  .beamEdge{fill:rgba(47,107,228,.55);}
+
+  /* ---------- motif primitives ---------- */
+  .bar{stroke:rgba(58,143,164,.36);stroke-width:6;stroke-linecap:round;
+    transform-box:fill-box;transform-origin:center;animation:barP 2.8s ease-in-out infinite;}
+  @keyframes barP{0%,100%{transform:scaleY(.80);}50%{transform:scaleY(1.10);}}
+  .gl{stroke:rgba(58,143,164,.17);stroke-width:1;}
+  .gnode{fill:#2F6BE4;animation:gn 2.4s ease-in-out infinite;}
+  @keyframes gn{0%,100%{opacity:.25;}50%{opacity:1;}}
+  .hline{stroke:rgba(58,143,164,.20);stroke-width:1;}
+  .scol{animation-name:streamUp;animation-timing-function:linear;animation-iteration-count:infinite;}
+  @keyframes streamUp{from{transform:translateY(0);}to{transform:translateY(-420px);}}
+  .tick{fill:rgba(58,143,164,.30);} .tick.on{fill:#2F6BE4;}
+  .wave{fill:none;stroke:#3E5C84;stroke-width:2;opacity:.6;}
+  .wave.soft{stroke:rgba(58,143,164,.32);stroke-width:1.5;opacity:1;}
+  .wdot{fill:#2F6BE4;}
+  .cursorV{stroke:rgba(47,107,228,.55);stroke-width:1.5;transform-box:view-box;animation:beamX 3.6s linear infinite;}
+  .pt{fill:rgba(58,143,164,.42);}
+  .pt.hit{fill:#2F6BE4;animation:gn 2.2s ease-in-out infinite;}
+  .reticle{transform-box:view-box;animation:retmove 7.5s ease-in-out infinite;}
+  .reticle path{stroke:#2F6BE4;stroke-width:2;fill:none;stroke-linecap:round;}
+  @keyframes retmove{
+    0%,18%{transform:translate(150px,112px);}
+    27%,45%{transform:translate(298px,206px);}
+    54%,72%{transform:translate(170px,298px);}
+    81%,100%{transform:translate(150px,112px);}
+  }
+  .wick{stroke:rgba(62,92,132,.5);stroke-width:1.3;}
+  .body{fill:rgba(62,92,132,.5);}
+  .body.sig{fill:#2F6BE4;} .wick.sig{stroke:#2F6BE4;}
+  .contour{fill:none;stroke:rgba(58,143,164,.34);stroke-width:1.3;}
+
+  .fademask{-webkit-mask-image:linear-gradient(to bottom,transparent,#000 16%,#000 84%,transparent);
+            mask-image:linear-gradient(to bottom,transparent,#000 16%,#000 84%,transparent);}
+
+  @media (max-width:720px){ .hero{width:330px;height:330px;} }
+  @media (prefers-reduced-motion: reduce){ *{animation:none !important;} }
+</style>
+</head>
+<body>
+
+  <!-- shared gradient defs -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <linearGradient id="beamVg" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="rgba(47,107,228,0)"/><stop offset=".5" stop-color="rgba(47,107,228,.30)"/><stop offset="1" stop-color="rgba(47,107,228,0)"/>
+    </linearGradient>
+    <linearGradient id="beamHg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="rgba(47,107,228,0)"/><stop offset=".5" stop-color="rgba(47,107,228,.26)"/><stop offset="1" stop-color="rgba(47,107,228,0)"/>
+    </linearGradient>
+  </defs></svg>
+
+  <!-- ============ 1 · SWEEP LINES ============ -->
+  <section class="variant">
+    <span class="vlabel">1 — Sweep lines</span>
+    <div class="stage">
+      <div class="hero">
+        <svg class="viz" viewBox="0 0 420 420">
+          <g id="m1lines"></g>
+          <g class="beamH"><rect x="0" y="0" width="420" height="48" fill="url(#beamHg)"/><rect class="beamEdge" x="0" y="46" width="420" height="1.5"/></g>
+        </svg>
+        <div class="logo-tile"></div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Scanning the market · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">A scan beam sweeps the market, line by line.</p>
+  </section>
+
+  <!-- ============ 2 · MARKET SPECTRUM ============ -->
+  <section class="variant">
+    <span class="vlabel">2 — Market spectrum</span>
+    <div class="stage">
+      <div class="hero">
+        <svg class="viz" viewBox="0 0 420 420">
+          <g id="m2bars"></g>
+          <g class="beamV"><rect x="0" y="0" width="48" height="420" fill="url(#beamVg)"/><rect class="beamEdge" x="46" y="0" width="1.5" height="420"/></g>
+        </svg>
+        <div class="logo-tile"></div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Scanning the market · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">Reading the market's signals like a live spectrum.</p>
+  </section>
+
+  <!-- ============ 3 · MARKET GRID ============ -->
+  <section class="variant">
+    <span class="vlabel">3 — Market grid</span>
+    <div class="stage">
+      <div class="hero">
+        <svg class="viz" viewBox="0 0 420 420">
+          <g id="m3grid"></g>
+          <g class="beamV"><rect x="0" y="0" width="48" height="420" fill="url(#beamVg)"/><rect class="beamEdge" x="46" y="0" width="1.5" height="420"/></g>
+        </svg>
+        <div class="logo-tile"></div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Scanning the market · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">The market as a grid — swept for movement.</p>
+  </section>
+
+  <!-- ============ 4 · DATA STREAMS ============ -->
+  <section class="variant">
+    <span class="vlabel">4 — Data streams</span>
+    <div class="stage">
+      <div class="hero">
+        <svg class="viz fademask" viewBox="0 0 420 420">
+          <g id="m4stream"></g>
+          <g class="beamH"><rect x="0" y="0" width="420" height="48" fill="url(#beamHg)"/><rect class="beamEdge" x="0" y="46" width="420" height="1.5"/></g>
+        </svg>
+        <div class="logo-tile"></div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Scanning the market · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">Streaming market data, read in real time.</p>
+  </section>
+
+  <!-- ============ 5 · SIGNAL WAVEFORM ============ -->
+  <section class="variant">
+    <span class="vlabel">5 — Signal waveform</span>
+    <div class="stage">
+      <div class="hero">
+        <svg class="viz" viewBox="0 0 420 420">
+          <g id="m5wave"></g>
+          <line class="cursorV" x1="16" y1="48" x2="16" y2="372"/>
+        </svg>
+        <div class="logo-tile"></div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Scanning the market · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">Tracking the market's signal, peak by peak.</p>
+  </section>
+
+  <!-- ============ 6 · TARGET LOCK ============ -->
+  <section class="variant">
+    <span class="vlabel">6 — Target lock</span>
+    <div class="stage">
+      <div class="hero">
+        <svg class="viz" viewBox="0 0 420 420">
+          <g id="m6field"></g>
+          <g class="reticle">
+            <path d="M -38 -22 L -38 -38 L -22 -38"/>
+            <path d="M 22 -38 L 38 -38 L 38 -22"/>
+            <path d="M 38 22 L 38 38 L 22 38"/>
+            <path d="M -22 38 L -38 38 L -38 22"/>
+          </g>
+        </svg>
+        <div class="logo-tile"></div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Scanning the market · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">AI locking onto targets across the market.</p>
+  </section>
+
+  <!-- ============ 7 · CANDLESTICK SCAN ============ -->
+  <section class="variant">
+    <span class="vlabel">7 — Candlestick scan</span>
+    <div class="stage">
+      <div class="hero">
+        <svg class="viz" viewBox="0 0 420 420">
+          <g id="m7candles"></g>
+          <g class="beamV"><rect x="0" y="0" width="48" height="420" fill="url(#beamVg)"/><rect class="beamEdge" x="46" y="0" width="1.5" height="420"/></g>
+        </svg>
+        <div class="logo-tile"></div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Scanning the market · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">Scanning the market's moves as they happen.</p>
+  </section>
+
+  <!-- ============ 8 · MARKET TERRAIN ============ -->
+  <section class="variant">
+    <span class="vlabel">8 — Market terrain</span>
+    <div class="stage">
+      <div class="hero">
+        <svg class="viz" viewBox="0 0 420 420">
+          <g id="m8contours"></g>
+          <g class="beamH"><rect x="0" y="0" width="420" height="56" fill="url(#beamHg)"/><rect class="beamEdge" x="0" y="54" width="420" height="1.5"/></g>
+        </svg>
+        <div class="logo-tile"></div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Scanning the market · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">Mapping the market's terrain.</p>
+  </section>
+
+<script>
+  var NS = 'http://www.w3.org/2000/svg';
+  function E(t, a){ var e = document.createElementNS(NS, t); for (var k in a) e.setAttribute(k, a[k]); return e; }
+
+  var LOGO = '<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">'
+    + '<rect width="100" height="100" fill="#3E5C84"/>'
+    + '<text x="50" y="55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="30" letter-spacing="-1.5" fill="#fff">VMA</text>'
+    + '<text x="51" y="76" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="300" font-size="13.5" letter-spacing="3" fill="#fff">GROUP</text>'
+    + '</svg>';
+  document.querySelectorAll('.logo-tile').forEach(function (e) { e.innerHTML = LOGO; });
+
+  /* 1 · horizontal guide lines */
+  (function () {
+    var g = document.getElementById('m1lines'); if (!g) return;
+    for (var y = 56; y <= 364; y += 44) g.appendChild(E('line', { x1:30, y1:y, x2:390, y2:y, 'class':'hline' }));
+  })();
+
+  /* 2 · market spectrum bars */
+  (function () {
+    var g = document.getElementById('m2bars'); if (!g) return;
+    var hs = [42,74,112,150,120,178,92,142,200,158,214,150,190,118,172,92,142,108,80,60,46];
+    var N = hs.length, x0 = 36, x1 = 384, gap = (x1 - x0) / (N - 1);
+    for (var i = 0; i < N; i++) {
+      var x = x0 + i * gap, h = hs[i];
+      var ln = E('line', { x1:x, y1:210 - h / 2, x2:x, y2:210 + h / 2, 'class':'bar' });
+      ln.style.animationDelay = (i * 0.09) + 's';
+      g.appendChild(ln);
+    }
+  })();
+
+  /* 3 · market grid + a few live nodes */
+  (function () {
+    var g = document.getElementById('m3grid'); if (!g) return;
+    for (var x = 30; x <= 390; x += 40) g.appendChild(E('line', { x1:x, y1:30, x2:x, y2:390, 'class':'gl' }));
+    for (var y = 30; y <= 390; y += 40) g.appendChild(E('line', { x1:30, y1:y, x2:390, y2:y, 'class':'gl' }));
+    [[110,150],[310,110],[230,310],[150,270],[330,290]].forEach(function (n, i) {
+      var c = E('circle', { cx:n[0], cy:n[1], r:3.5, 'class':'gnode' });
+      c.style.animationDelay = (i * 0.5) + 's'; g.appendChild(c);
+    });
+  })();
+
+  /* 4 · data stream columns (seamless loop) */
+  (function () {
+    var g = document.getElementById('m4stream'); if (!g) return;
+    var cols = 9, x0 = 40, x1 = 380, gap = (x1 - x0) / (cols - 1);
+    for (var c = 0; c < cols; c++) {
+      var x = x0 + c * gap;
+      var grp = E('g', { 'class':'scol' });
+      grp.style.animationDuration = (7 + (c % 4) * 2.4) + 's';
+      grp.style.animationDelay = (-c * 1.3) + 's';
+      for (var half = 0; half < 2; half++) {
+        for (var k = 0; k < 14; k++) {
+          var y = (half * 14 + k) * 30;
+          var w = (k % 4 === 0) ? 14 : 8;
+          var on = (k % 5 === 0 && c % 2 === 0);
+          grp.appendChild(E('rect', { x:x - w / 2, y:y, width:w, height:3, rx:1.5, 'class':'tick' + (on ? ' on' : '') }));
+        }
+      }
+      g.appendChild(grp);
+    }
+  })();
+
+  /* 5 · market signal waveform */
+  (function () {
+    var g = document.getElementById('m5wave'); if (!g) return;
+    function wave(amp, ph, cls) {
+      var d = 'M 16 ' + (210 + amp * Math.sin(ph)).toFixed(1);
+      for (var x = 16; x <= 404; x += 4) {
+        var y = 210 + amp * Math.sin(x / 38 + ph) + (amp * 0.38) * Math.sin(x / 13 + ph * 1.7);
+        d += ' L ' + x + ' ' + y.toFixed(1);
+      }
+      g.appendChild(E('path', { d:d, 'class':cls }));
+      return d;
+    }
+    wave(26, 1.2, 'wave soft');
+    var main = wave(38, 0, 'wave');
+    var dot = E('circle', { r:4, 'class':'wdot' });
+    dot.appendChild(E('animateMotion', { dur:'3.6s', repeatCount:'indefinite', path:main }));
+    g.appendChild(dot);
+  })();
+
+  /* 6 · target field (small squares = non-circular) */
+  (function () {
+    var g = document.getElementById('m6field'); if (!g) return;
+    var pts = [[150,112,1],[298,206,1],[170,298,1],
+      [70,90,0],[120,70,0],[330,80,0],[360,160,0],[300,140,0],[90,180,0],
+      [60,260,0],[120,340,0],[240,360,0],[330,330,0],[366,280,0],[210,80,0],
+      [250,250,0],[140,210,0],[280,310,0],[210,150,0]];
+    pts.forEach(function (p) {
+      g.appendChild(E('rect', { x:p[0] - 3, y:p[1] - 3, width:6, height:6, 'class':'pt' + (p[2] ? ' hit' : '') }));
+    });
+  })();
+
+  /* 7 · candlestick chart */
+  (function () {
+    var g = document.getElementById('m7candles'); if (!g) return;
+    // each: [wickTop, wickBot, bodyTop, bodyBot]
+    var d = [
+      [120,250,150,220],[100,230,135,205],[140,300,170,250],[90,200,120,175],
+      [110,260,140,210],[80,190,110,150],[130,280,165,230],[100,240,130,195],
+      [70,180,95,140],[120,260,150,215],[95,210,125,170],[140,290,175,245],
+      [90,205,120,165],[110,250,145,200],[80,195,105,150]
+    ];
+    var N = d.length, x0 = 44, x1 = 376, gap = (x1 - x0) / (N - 1);
+    for (var i = 0; i < N; i++) {
+      var x = x0 + i * gap, c = d[i];
+      var sig = (i === 8 || i === 12) ? ' sig' : '';
+      g.appendChild(E('line', { x1:x, y1:c[0], x2:x, y2:c[1], 'class':'wick' + sig }));
+      g.appendChild(E('rect', { x:x - 5, y:c[2], width:10, height:c[3] - c[2], rx:2, 'class':'body' + sig }));
+    }
+  })();
+
+  /* 8 · contour terrain */
+  (function () {
+    var g = document.getElementById('m8contours'); if (!g) return;
+    for (var r = 0; r < 7; r++) {
+      var baseY = 72 + r * 44, amp = 12 + (r % 3) * 7, ph = r * 0.7;
+      var d = 'M 10 ' + (baseY + amp * Math.sin(ph)).toFixed(1);
+      for (var x = 10; x <= 410; x += 6) d += ' L ' + x + ' ' + (baseY + amp * Math.sin(x / 46 + ph)).toFixed(1);
+      var p = E('path', { d:d, 'class':'contour' });
+      p.style.opacity = (0.5 - r * 0.03).toFixed(2);
+      g.appendChild(p);
+    }
+  })();
+</script>
+</body>
+</html>
