@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VMA Group — scanning / AI hero mockups (grounded)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ===========================================================
+     8 hero mockups, round 2 — GROUNDED.
+     Background / Gemini halo / CTA pill = UNCHANGED.
+     The central visual is now a real, legible product surface
+     (the VMA tile is the app icon) instead of abstract glow.
+     =========================================================== */
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background-color:rgb(253,252,252);color:#16223D;
+    font-family:"Inter",Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased;}
+
+  .variant{position:relative;min-height:100vh;overflow:hidden;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;}
+  .variant::before{content:"";position:absolute;z-index:0;
+    width:792px;height:300px;top:50%;left:50%;transform:translate(-50%,-50%);
+    border-radius:9999px;
+    background-image:radial-gradient(100% 100% at 50% 8%,rgb(253,252,252) 0px,rgb(157,210,255) 50%);
+    filter:blur(125px);opacity:1;}
+
+  .vlabel{position:absolute;top:20px;left:20px;z-index:6;
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:#5F6368;background:rgba(255,255,255,.72);
+    backdrop-filter:blur(5px);padding:8px 13px;border-radius:9px;border:1px solid rgba(60,64,67,.1);}
+
+  .stage{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;
+    gap:30px;text-align:center;}
+  .cap{position:relative;z-index:2;max-width:420px;margin-top:-8px;
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;line-height:1.6;
+    letter-spacing:.02em;color:#5F6368;text-align:center;}
+
+  /* CTA pill — unchanged */
+  .pill{background:#fff;border:none;border-radius:32px;box-shadow:0 2px 8px -2px rgba(0,0,0,.16);
+    padding:0 22px;height:62px;display:flex;align-items:center;justify-content:center;
+    gap:14px;text-decoration:none;color:#1F1F1F;cursor:pointer;transition:transform .15s,box-shadow .15s;}
+  .pill:hover{transform:translateY(-1px);box-shadow:0 6px 16px -2px rgba(0,0,0,.18);}
+  .dot{position:relative;width:11px;height:11px;border-radius:50%;background:#9FD181;flex-shrink:0;
+    box-shadow:0 0 10px rgba(159,209,129,.85),inset 0 0 3px rgba(255,255,255,.4);animation:throb 1.8s ease-in-out infinite;}
+  .dot::before{content:"";position:absolute;inset:-3px;border-radius:50%;background:rgba(159,209,129,.55);animation:ring 1.8s ease-out infinite;}
+  .dot::after{content:"";position:absolute;inset:-6px;border-radius:50%;background:rgba(159,209,129,.30);animation:ring 1.8s ease-out infinite;animation-delay:.6s;}
+  @keyframes throb{0%,100%{transform:scale(1);}50%{transform:scale(1.22);}}
+  @keyframes ring{0%{transform:scale(1);opacity:.7;}100%{transform:scale(3.4);opacity:0;}}
+  .lbl{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;font-weight:500;}
+  .arrow{color:#5F6368;font-size:18px;margin-left:6px;}
+
+  /* ---------- the product card ---------- */
+  .card{position:relative;z-index:2;width:362px;max-width:90vw;background:#fff;
+    border:1px solid rgba(31,41,59,.08);border-radius:16px;
+    box-shadow:0 30px 70px -32px rgba(31,55,124,.42),0 2px 6px rgba(31,55,124,.06);
+    overflow:hidden;text-align:left;}
+  .card-h{display:flex;align-items:center;gap:11px;padding:13px 16px;border-bottom:1px solid rgba(31,41,59,.07);}
+  .card-ic{width:30px;height:30px;border-radius:8px;overflow:hidden;flex-shrink:0;box-shadow:0 2px 6px rgba(62,92,132,.35);}
+  .card-ic svg{display:block;width:100%;height:100%;}
+  .htext{min-width:0;}
+  .card-t{font-size:13px;font-weight:700;color:#16223D;letter-spacing:-.01em;line-height:1.1;}
+  .card-sub{font-size:10px;color:#9aa0a8;font-family:"JetBrains Mono",monospace;margin-top:2px;letter-spacing:.04em;}
+  .card-live{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-family:"JetBrains Mono",monospace;
+    font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#15803D;white-space:nowrap;}
+  .card-live i{width:6px;height:6px;border-radius:50%;background:#1FA85A;}
+  .card-live.muted{color:#9aa0a8;} .card-live.muted i{background:#c2c7cd;}
+  .card-b{padding:4px 16px 6px;}
+  .card-f{padding:10px 16px;border-top:1px solid rgba(31,41,59,.07);background:rgba(31,41,59,.018);
+    font-family:"JetBrains Mono",monospace;font-size:9.5px;color:#9aa0a8;letter-spacing:.03em;display:flex;align-items:center;gap:8px;}
+  .card-f b{color:#5b6573;font-weight:600;}
+
+  .row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(31,41,59,.05);}
+  .row:last-child{border-bottom:0;}
+  .dotc{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .dotc.b{background:#2F6BE4;} .dotc.g{background:#1FA85A;} .dotc.a{background:#D08700;} .dotc.n{background:#c2c7cd;}
+  .main{font-size:12.5px;color:#1f2a44;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .main .org{color:#8a9099;font-weight:400;}
+  .tagx{margin-left:auto;font-family:"JetBrains Mono",monospace;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;
+    padding:2px 7px;border-radius:5px;border:1px solid;white-space:nowrap;}
+  .tagx.hot{color:#B25C00;border-color:rgba(208,135,0,.35);background:rgba(208,135,0,.08);}
+  .tagx.new{color:#15803D;border-color:rgba(31,168,90,.35);background:rgba(31,168,90,.08);}
+  .tagx.lead{color:#2F6BE4;border-color:rgba(47,107,228,.35);background:rgba(47,107,228,.08);}
+
+  /* score bar */
+  .bar{position:relative;height:6px;border-radius:999px;background:rgba(31,41,59,.09);overflow:hidden;width:60px;flex-shrink:0;}
+  .bar>span{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#3E5C84,#2F6BE4);
+    width:0;animation:fillbar 1s .25s cubic-bezier(.4,0,.2,1) both;}
+  .bar.g>span{background:#1FA85A;}
+  @keyframes fillbar{from{width:0;}}
+  .pct{font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:600;color:#16223D;width:34px;text-align:right;}
+
+  /* avatars */
+  .av{width:27px;height:27px;border-radius:8px;flex-shrink:0;display:grid;place-items:center;
+    font-size:10px;font-weight:700;color:#3E5C84;background:rgba(62,92,132,.10);border:1px solid rgba(62,92,132,.16);}
+  .rk{font-family:"JetBrains Mono",monospace;font-size:10px;color:#9aa0a8;width:12px;text-align:center;flex-shrink:0;}
+
+  /* small feature chips */
+  .chips{display:flex;flex-wrap:wrap;gap:6px;padding:8px 0 10px;}
+  .chip{font-size:10.5px;color:#3a4659;background:rgba(31,41,59,.04);border:1px solid rgba(31,41,59,.08);
+    border-radius:7px;padding:3px 8px;display:inline-flex;align-items:center;gap:5px;}
+  .chip b{font-weight:600;color:#16223D;}
+
+  /* scan line over a panel */
+  .scanpanel{position:relative;overflow:hidden;}
+  .scanline{position:absolute;left:0;right:0;top:0;height:36px;pointer-events:none;
+    background:linear-gradient(180deg,rgba(47,107,228,.14),rgba(47,107,228,0));
+    border-top:1px solid rgba(47,107,228,.5);animation:scandown 2.8s ease-in-out infinite;}
+  @keyframes scandown{0%{transform:translateY(-36px);}100%{transform:translateY(160px);}}
+
+  /* tiny scanning spinner */
+  .spin{width:11px;height:11px;border-radius:50%;border:1.6px solid rgba(47,107,228,.25);border-top-color:#2F6BE4;
+    animation:spin 0.9s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .srow .num{margin-left:auto;font-family:"JetBrains Mono",monospace;font-size:10.5px;color:#5b6573;}
+  .check{color:#1FA85A;font-weight:700;font-size:12px;margin-left:auto;}
+
+  /* document mini-preview */
+  .doc{flex:1;border:1px solid rgba(31,41,59,.10);border-radius:9px;padding:11px 11px;background:#fdfdfe;position:relative;overflow:hidden;}
+  .dl{height:6px;border-radius:3px;background:rgba(31,41,59,.10);margin:7px 0;}
+  .fields{flex:1;display:flex;flex-direction:column;gap:9px;}
+  .field{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;}
+  .field .k{color:#8a9099;font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;}
+  .field .v{color:#16223D;font-weight:600;}
+
+  /* live feed terminal */
+  .feed{height:150px;overflow:hidden;-webkit-mask-image:linear-gradient(to bottom,transparent,#000 14%,#000 86%,transparent);
+    mask-image:linear-gradient(to bottom,transparent,#000 14%,#000 86%,transparent);}
+  .feedroll{display:flex;flex-direction:column;animation:feedup 17s linear infinite;}
+  @keyframes feedup{to{transform:translateY(-50%);}}
+  .frow{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:7px;
+    font-family:"JetBrains Mono",monospace;font-size:10.5px;color:#3a4659;white-space:nowrap;}
+  .frow .ts{color:#a6abb3;}
+  .frow .kd{font-weight:600;width:42px;}
+  .frow .kd.job{color:#2F6BE4;} .frow .kd.fund{color:#15803D;} .frow .kd.move{color:#B25C00;} .frow .kd.rfp{color:#7A5BD6;}
+  .frow.lock{background:rgba(47,107,228,.07);border:1px solid rgba(47,107,228,.18);color:#16223D;}
+  .frow.lock .lockx{margin-left:auto;font-size:8.5px;letter-spacing:.12em;color:#2F6BE4;}
+
+  /* reasoning / brief */
+  .brief{padding:6px 0 4px;}
+  .brief .bt{font-size:12.5px;font-weight:700;color:#16223D;margin-bottom:7px;}
+  .brief p{margin:0 0 6px;font-size:11.5px;line-height:1.55;color:#5b6573;}
+  .cur{display:inline-block;width:6px;height:1.02em;vertical-align:-2px;background:#3E5C84;margin-left:1px;animation:blink 1s steps(1) infinite;}
+  @keyframes blink{50%{opacity:0;}}
+  .steps{display:flex;align-items:center;gap:7px;margin-top:9px;font-family:"JetBrains Mono",monospace;font-size:9.5px;color:#8a9099;}
+  .steps .s{display:inline-flex;align-items:center;gap:5px;}
+  .steps .s.ok{color:#15803D;} .steps .sep{color:#cfd3d8;}
+
+  /* pipeline stepper */
+  .pipe{display:flex;align-items:center;justify-content:space-between;padding:12px 2px 14px;}
+  .pstep{display:flex;flex-direction:column;align-items:center;gap:7px;flex:1;}
+  .pbubble{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:13px;
+    background:rgba(31,168,90,.10);border:1px solid rgba(31,168,90,.3);color:#15803D;font-weight:700;}
+  .pbubble.run{background:rgba(47,107,228,.10);border-color:rgba(47,107,228,.3);color:#2F6BE4;}
+  .pbubble.idle{background:rgba(31,41,59,.04);border-color:rgba(31,41,59,.10);color:#b5bbc2;}
+  .plabel{font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.04em;color:#6b7480;text-transform:uppercase;}
+  .pconn{height:1px;flex:0 0 14px;background:rgba(31,41,59,.14);margin-bottom:22px;}
+  .outs{display:flex;gap:8px;padding-top:4px;}
+  .out{flex:1;border:1px solid rgba(31,41,59,.10);border-radius:9px;padding:9px 8px;text-align:center;}
+  .out .ov{font-size:14px;font-weight:700;color:#16223D;}
+  .out .ok2{font-family:"JetBrains Mono",monospace;font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:#8a9099;margin-top:2px;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;}
+    .bar>span{width:var(--w,90%);}
+  }
+</style>
+</head>
+<body>
+
+  <!-- ============ 1 · SCAN THE MARKET ============ -->
+  <section class="variant">
+    <span class="vlabel">1 — Scan the market</span>
+    <div class="stage">
+      <div class="card">
+        <div class="card-h">
+          <span class="card-ic"></span>
+          <span class="htext"><div class="card-t">Market scan</div><div class="card-sub">comms · public affairs · digital</div></span>
+          <span class="card-live"><i></i>Live</span>
+        </div>
+        <div class="card-b scanpanel">
+          <div class="scanline"></div>
+          <div class="row"><span class="dotc a"></span><span class="main">CEO change<span class="org"> · British Land</span></span><span class="tagx hot">Hot</span></div>
+          <div class="row"><span class="dotc g"></span><span class="main">£37.3m Series B<span class="org"> · Orbital Industries</span></span><span class="tagx new">New</span></div>
+          <div class="row"><span class="dotc b"></span><span class="main">Comms framework RFP<span class="org"> · Police Scotland</span></span><span class="tagx lead">Lead</span></div>
+          <div class="row"><span class="dotc b"></span><span class="main">Director of Comms<span class="org"> · FTSE 100</span></span><span class="tagx lead">Lead</span></div>
+        </div>
+        <div class="card-f"><b>2,431</b> sources scanned&nbsp;·&nbsp;<b>14</b> new triggers today</div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Intelligence Platform · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">Scanning the market and surfacing live hiring triggers, ranked by relevance.</p>
+  </section>
+
+  <!-- ============ 2 · SCAN THE INTERNET ============ -->
+  <section class="variant">
+    <span class="vlabel">2 — Scan the internet</span>
+    <div class="stage">
+      <div class="card">
+        <div class="card-h">
+          <span class="card-ic"></span>
+          <span class="htext"><div class="card-t">Source crawl</div><div class="card-sub">crawling 5 sources</div></span>
+          <span class="card-live"><i></i>Live</span>
+        </div>
+        <div class="card-b">
+          <div class="row srow"><span class="dotc b"></span><span class="main">LinkedIn</span><span class="num">8,210</span><span class="check">✓</span></div>
+          <div class="row srow"><span class="dotc b"></span><span class="main">Companies House</span><span class="num">2,140</span><span class="check">✓</span></div>
+          <div class="row srow"><span class="dotc b"></span><span class="main">News &amp; trade press</span><span class="num">1,002</span><span class="check">✓</span></div>
+          <div class="row srow"><span class="dotc n"></span><span class="main">Regulatory filings</span><span class="num">scanning</span><span class="spin"></span></div>
+          <div class="row srow"><span class="dotc b"></span><span class="main">Job boards</span><span class="num">6,540</span><span class="check">✓</span></div>
+        </div>
+        <div class="card-f"><b>17,892</b> records indexed&nbsp;·&nbsp;updated 2m ago</div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Intelligence Platform · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">Continuously crawling the open web — LinkedIn, filings, news, job boards — into one index.</p>
+  </section>
+
+  <!-- ============ 3 · UTILISING AI · PREDICTION ============ -->
+  <section class="variant">
+    <span class="vlabel">3 — Utilising AI · move prediction</span>
+    <div class="stage">
+      <div class="card">
+        <div class="card-h">
+          <span class="card-ic"></span>
+          <span class="htext"><div class="card-t">Move prediction</div><div class="card-sub">model v4 · 92 features</div></span>
+          <span class="card-live muted"><i></i>Scored</span>
+        </div>
+        <div class="card-b">
+          <div class="row"><span class="av">AM</span><span class="main">Alex Mercer<span class="org"> · CFO, NHS England</span></span></div>
+          <div class="chips">
+            <span class="chip">Tenure <b>8.2y</b></span>
+            <span class="chip">Funding <b>+£37m</b></span>
+            <span class="chip">Hiring <b>↑</b></span>
+            <span class="chip">Network <b>2nd°</b></span>
+          </div>
+          <div class="row" style="padding-top:11px;">
+            <span class="main" style="font-weight:600;">Likely to move</span>
+            <span class="bar" style="width:120px;margin-left:auto;"><span style="--w:91%;width:91%;"></span></span>
+            <span class="pct">0.91</span>
+          </div>
+        </div>
+        <div class="card-f">Best-fit mandate&nbsp;·&nbsp;<b>Group CFO, FTSE 250</b></div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Intelligence Platform · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">The model weighs tenure, funding and network signals to predict who is about to move.</p>
+  </section>
+
+  <!-- ============ 4 · SCAN DOCUMENTS ============ -->
+  <section class="variant">
+    <span class="vlabel">4 — Scan documents</span>
+    <div class="stage">
+      <div class="card">
+        <div class="card-h">
+          <span class="card-ic"></span>
+          <span class="htext"><div class="card-t">Document read</div><div class="card-sub">annual report · 84 pages</div></span>
+          <span class="card-live"><i></i>Reading</span>
+        </div>
+        <div class="card-b">
+          <div style="display:flex;gap:13px;align-items:stretch;padding:8px 0 4px;">
+            <div class="doc scanpanel">
+              <div class="scanline" style="animation-duration:2.4s;"></div>
+              <div class="dl" style="width:80%"></div><div class="dl" style="width:96%"></div>
+              <div class="dl" style="width:64%"></div><div class="dl" style="width:90%"></div>
+              <div class="dl" style="width:72%"></div><div class="dl" style="width:88%"></div>
+            </div>
+            <div class="fields">
+              <div class="field"><span class="k">Role</span><span class="v">CFO</span></div>
+              <div class="field"><span class="k">Tenure</span><span class="v">8 yrs</span></div>
+              <div class="field"><span class="k">Location</span><span class="v">London</span></div>
+              <div class="field"><span class="k">Raise</span><span class="v">£37.3m</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="card-f"><b>26</b> entities extracted&nbsp;·&nbsp;filings, CVs &amp; reports</div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Intelligence Platform · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">Reading filings, reports and CVs line by line and lifting out the facts that matter.</p>
+  </section>
+
+  <!-- ============ 5 · SCAN THE LIVE FEED ============ -->
+  <section class="variant">
+    <span class="vlabel">5 — Scan the live feed</span>
+    <div class="stage">
+      <div class="card">
+        <div class="card-h">
+          <span class="card-ic"></span>
+          <span class="htext"><div class="card-t">Live feed</div><div class="card-sub">6 sources · real time</div></span>
+          <span class="card-live"><i></i>Live</span>
+        </div>
+        <div class="card-b">
+          <div class="feed"><div class="feedroll" id="feed"></div></div>
+        </div>
+        <div class="card-f"><b>Locked</b> 09:39 · CEO change · British Land&nbsp;→&nbsp;qualifying</div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Intelligence Platform · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">A real-time feed of market events; the platform locks onto the ones worth qualifying.</p>
+  </section>
+
+  <!-- ============ 6 · UTILISING AI · BRIEF ============ -->
+  <section class="variant">
+    <span class="vlabel">6 — Utilising AI · writes the brief</span>
+    <div class="stage">
+      <div class="card">
+        <div class="card-h">
+          <span class="card-ic"></span>
+          <span class="htext"><div class="card-t">Executive brief</div><div class="card-sub">generated · 4s</div></span>
+          <span class="card-live muted"><i></i>Drafting</span>
+        </div>
+        <div class="card-b">
+          <div class="brief">
+            <div class="bt">Group CFO · NHS England</div>
+            <p>Incumbent CFO (8.2y tenure) flagged as a likely mover following a board change and a £37.3m funding round.</p>
+            <p>Three comparable executives identified across the FTSE 250; outreach windows estimated at 4–6 weeks<span class="cur"></span></p>
+          </div>
+          <div class="steps">
+            <span class="s ok">✓ Signals</span><span class="sep">›</span>
+            <span class="s ok">✓ Mandates</span><span class="sep">›</span>
+            <span class="s">Drafting…</span>
+          </div>
+        </div>
+        <div class="card-f">Sourced from <b>11</b> documents&nbsp;·&nbsp;fully cited</div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Intelligence Platform · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">From the evidence it has gathered, the AI drafts a cited executive brief on demand.</p>
+  </section>
+
+  <!-- ============ 7 · UTILISING AI · RANKED SHORTLIST ============ -->
+  <section class="variant">
+    <span class="vlabel">7 — Utilising AI · ranked shortlist</span>
+    <div class="stage">
+      <div class="card">
+        <div class="card-h">
+          <span class="card-ic"></span>
+          <span class="htext"><div class="card-t">Shortlist · Group CFO</div><div class="card-sub">1,240 candidates ranked</div></span>
+          <span class="card-live muted"><i></i>Ranked</span>
+        </div>
+        <div class="card-b">
+          <div class="row"><span class="rk">1</span><span class="av">AM</span><span class="main">Alex Mercer<span class="org"> · CFO</span></span><span class="bar g" style="margin-left:auto;"><span style="--w:96%;width:96%;"></span></span><span class="pct">96%</span></div>
+          <div class="row"><span class="rk">2</span><span class="av">RP</span><span class="main">Rhea Patel<span class="org"> · Finance Dir</span></span><span class="bar" style="margin-left:auto;"><span style="--w:91%;width:91%;"></span></span><span class="pct">91%</span></div>
+          <div class="row"><span class="rk">3</span><span class="av">JC</span><span class="main">Jon Cole<span class="org"> · Group FC</span></span><span class="bar" style="margin-left:auto;"><span style="--w:88%;width:88%;"></span></span><span class="pct">88%</span></div>
+        </div>
+        <div class="card-f">Matched on experience, sector &amp; trajectory&nbsp;·&nbsp;<b>3</b> contactable now</div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Intelligence Platform · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">Every candidate scored against the brief and ranked — the strongest fit at the top.</p>
+  </section>
+
+  <!-- ============ 8 · UTILISING AI · AGENT RUN ============ -->
+  <section class="variant">
+    <span class="vlabel">8 — Utilising AI · agent run</span>
+    <div class="stage">
+      <div class="card">
+        <div class="card-h">
+          <span class="card-ic"></span>
+          <span class="htext"><div class="card-t">Agent run</div><div class="card-sub">end-to-end · 38s</div></span>
+          <span class="card-live"><i></i>Running</span>
+        </div>
+        <div class="card-b">
+          <div class="pipe">
+            <div class="pstep"><span class="pbubble">✓</span><span class="plabel">Scan</span></div>
+            <span class="pconn"></span>
+            <div class="pstep"><span class="pbubble">✓</span><span class="plabel">Qualify</span></div>
+            <span class="pconn"></span>
+            <div class="pstep"><span class="pbubble">✓</span><span class="plabel">Match</span></div>
+            <span class="pconn"></span>
+            <div class="pstep"><span class="pbubble run">●</span><span class="plabel">Brief</span></div>
+          </div>
+          <div class="outs">
+            <div class="out"><div class="ov">1</div><div class="ok2">Brief</div></div>
+            <div class="out"><div class="ov">12</div><div class="ok2">Leads</div></div>
+            <div class="out"><div class="ov">5</div><div class="ok2">Shortlist</div></div>
+          </div>
+        </div>
+        <div class="card-f">Scan → qualify → match → brief&nbsp;·&nbsp;ran in <b>38s</b></div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Intelligence Platform · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">One agent runs the whole job end to end and hands back the deliverables.</p>
+  </section>
+
+<script>
+  var LOGO = '<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">'
+    + '<rect width="100" height="100" fill="#3E5C84"/>'
+    + '<text x="50" y="58" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="34" letter-spacing="-2" fill="#fff">VMA</text>'
+    + '</svg>';
+  document.querySelectorAll('.card-ic').forEach(function (e) { e.innerHTML = LOGO; });
+
+  // live feed rows (duplicated for a seamless loop)
+  (function () {
+    var roll = document.getElementById('feed'); if (!roll) return;
+    var FEED = [
+      ['09:42','JOB','job','Head of Communications · NHS England'],
+      ['09:41','FUND','fund','Orbital Industries · +£37.3m Series B'],
+      ['09:39','MOVE','move','CEO change · British Land', true],
+      ['09:37','RFP','rfp','Comms framework · Police Scotland'],
+      ['09:34','JOB','job','Director of Comms · FTSE 100'],
+      ['09:31','FUND','fund','Lumen Bio · +£12m'],
+      ['09:28','MOVE','move','CCO exit · major utility'],
+      ['09:24','JOB','job','Head of Public Affairs · charity']
+    ];
+    function build(list) {
+      list.forEach(function (f) {
+        var d = document.createElement('div');
+        d.className = 'frow' + (f[4] ? ' lock' : '');
+        d.innerHTML = '<span class="ts">' + f[0] + '</span>'
+          + '<span class="kd ' + f[2] + '">' + f[1] + '</span>'
+          + '<span>' + f[3] + '</span>'
+          + (f[4] ? '<span class="lockx">◧ LOCKED</span>' : '');
+        roll.appendChild(d);
+      });
+    }
+    build(FEED); build(FEED);
+  })();
+</script>
+</body>
+</html>
