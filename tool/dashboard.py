@@ -3359,9 +3359,9 @@ TEMPLATE = r"""
     .wm-head .brand { display: inline-flex; align-items: center; gap: 14px; }
     .brand-title { font-family: "Newsreader", Georgia, serif; font-weight: 400; font-size: 30px;
       letter-spacing: -.01em; color: var(--ink); }
-    /* radar icon at the end of the "Market Intelligence Radar" title — line-art
+    /* radar icon at the end of the "Market Opportunities Radar" title — line-art
        dish + dome with a slow sweep, in the brand navy. */
-    /* radar icon at the end of the "Market Intelligence Radar" title — matches
+    /* radar icon at the end of the "Market Opportunities Radar" title — matches
        the BD-Calendar page hero tile exactly: same 78px faded-navy square,
        same radius + svg size, with a slow sweep on the dish. */
     .radar-ic { width: 78px; height: 78px; border-radius: 18px; display: grid; place-items: center;
@@ -3661,7 +3661,7 @@ TEMPLATE = r"""
 
 <!-- LEFT RAIL — page switcher. Active state toggled by render() (additive JS). -->
 <aside class="rail">
-  <button class="ri active" id="nav-leads" data-tip="Market Intelligence Radar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12 L12 3.2 A8.8 8.8 0 1 1 5.6 6"/><circle cx="12" cy="12" r="3.4"/><circle cx="12" cy="12" r="8.8" opacity=".4"/></svg></button>
+  <button class="ri active" id="nav-leads" data-tip="Market Opportunities Radar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12 L12 3.2 A8.8 8.8 0 1 1 5.6 6"/><circle cx="12" cy="12" r="3.4"/><circle cx="12" cy="12" r="8.8" opacity=".4"/></svg></button>
   <button class="ri" id="nav-agent" data-tip="Personal Assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7.5" width="17" height="13" rx="5"/><path d="M12 7.5V4.6"/><circle cx="12" cy="3.4" r="1.2"/><circle cx="9" cy="14" r="1.65" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.65" fill="currentColor" stroke="none"/></svg></button>
   <button class="ri" id="nav-cal" data-tip="BD Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></button>
   <span class="rail-logo" data-tip="VMA Group"></span>
@@ -3672,7 +3672,7 @@ TEMPLATE = r"""
   <!-- ===== PAGE 1 · MARKET INTELLIGENCE RADAR (leads + pre-market) ===== -->
   <section class="page active" id="leads">
     <div class="wm-head">
-      <div class="brand"><span class="brand-title">Market Intelligence Radar</span><span class="radar-ic" title="Live — scanning the market for opportunities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12 L12 3.2 A8.8 8.8 0 1 1 5.6 6"/><circle cx="12" cy="12" r="3.4"/><circle cx="12" cy="12" r="8.8" opacity=".35"/></svg></span></div>
+      <div class="brand"><span class="brand-title">Market Opportunities Radar</span><span class="radar-ic" title="Live — scanning the market for opportunities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12 L12 3.2 A8.8 8.8 0 1 1 5.6 6"/><circle cx="12" cy="12" r="3.4"/><circle cx="12" cy="12" r="8.8" opacity=".35"/></svg></span></div>
     </div>
 
     <div class="container">
@@ -3683,17 +3683,6 @@ TEMPLATE = r"""
       See <code>DASHBOARD_SETUP.md</code> for instructions (it's a 5-minute one-time setup).
     </div>
     {% endif %}
-
-  <!-- DAILY REFRESH BAR — primary CTA, sits above the leads/predictors -->
-  <div class="refresh-bar">
-    <button onclick="refreshBrief()" id="refresh-btn" class="big-refresh">
-      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg><span class="rbtn-label">Daily Refresh</span>
-    </button>
-    <div class="refresh-meta">
-      <span class="refresh-label">Pull today's freshly-generated brief</span>
-      <span class="refresh-sub">Last refreshed: {{ last_updated }}</span>
-    </div>
-  </div>
 
   <!-- LEADS + PREDICTORS -->
   <div class="row">
@@ -3886,9 +3875,13 @@ TEMPLATE = r"""
   <div class="footer">
     <span class="dev-zone">
       <span class="dev-zone-label">For dev only - not a user feature:</span>
+      <button type="button" onclick="refreshBrief()" id="refresh-btn" class="dev-btn"
+              title="Load today's latest brief (the data normally auto-loads; this forces a reload now). Last refreshed: {{ last_updated }}">
+        <span class="rbtn-label">Daily Refresh</span>
+      </button>
       <button type="button" id="dev-run-brief" class="dev-btn"
               onclick="devTriggerBrief()"
-              title="Maintenance: triggers a fresh morning-brief workflow run. Not for day-to-day use — Daily Refresh is the user control.">
+              title="Maintenance: triggers a fresh morning-brief workflow run. Not for day-to-day use — Daily Refresh just loads the last completed run.">
         trigger fresh data
       </button>
       <span class="dev-status" id="dev-run-status"></span>
