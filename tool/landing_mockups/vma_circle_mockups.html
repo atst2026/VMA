@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VMA Group — circle "thing" mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ===========================================================
+     5 mockups of THE CIRCLE THING only.
+     Everything else is kept IDENTICAL to the landing page:
+       - body rgb(253,252,252) + verbatim Gemini halo
+       - the navy VMA logo tile with its slow sheen
+       - the white CTA pill (same label on every mockup)
+     The ONLY thing that changes between sections is the
+     central visualisation behind/around the logo.
+
+       1 · Market Scanner   — Variation 2's circle, kept verbatim
+       2 · Talent Constellation — candidates orbit the AI core
+       3 · Talent Network   — a web of relationships + intro paths
+       4 · Match-Making     — mandates <-> candidates via the core
+       5 · Confidence Dial  — an arc gauge that fills to a fit score
+     =========================================================== */
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background-color:rgb(253,252,252);color:#1F1F1F;
+    font-family:"Inter",Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased;}
+
+  .variant{position:relative;min-height:100vh;overflow:hidden;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:38px;}
+  .variant::before{content:"";position:absolute;z-index:0;
+    width:792px;height:300px;top:50%;left:50%;transform:translate(-50%,-50%);
+    border-radius:9999px;
+    background-image:radial-gradient(100% 100% at 50% 8%,rgb(253,252,252) 0px,rgb(157,210,255) 50%);
+    filter:blur(125px);opacity:1;}
+
+  .vlabel{position:absolute;top:20px;left:20px;z-index:6;
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:#5F6368;background:rgba(255,255,255,.72);
+    backdrop-filter:blur(5px);padding:8px 13px;border-radius:9px;border:1px solid rgba(60,64,67,.1);}
+
+  .stage{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;
+    gap:34px;text-align:center;}
+
+  .cap{position:relative;z-index:2;max-width:400px;margin-top:-10px;
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;line-height:1.65;
+    letter-spacing:.02em;color:#5F6368;text-align:center;}
+
+  .hero{position:relative;width:420px;height:420px;display:grid;place-items:center;}
+  .hero .viz{position:absolute;inset:0;z-index:0;pointer-events:none;}
+
+  /* the real VMA logo icon (navy tile) with a slow sheen */
+  .logo-tile{position:relative;z-index:3;width:104px;height:104px;border-radius:23px;overflow:hidden;
+    box-shadow:0 16px 40px rgba(62,92,132,.42),0 3px 10px rgba(62,92,132,.34);}
+  .logo-tile svg{display:block;width:100%;height:100%;}
+  .logo-tile::after{content:"";position:absolute;inset:0;
+    background:linear-gradient(115deg,transparent 38%,rgba(255,255,255,.34) 50%,transparent 62%);
+    transform:translateX(-130%);animation:sheen 5s ease-in-out infinite;}
+  @keyframes sheen{0%,72%{transform:translateX(-130%);}88%,100%{transform:translateX(130%);}}
+
+  /* CTA pill — identical on every mockup */
+  .pill{background:#fff;border:none;border-radius:32px;box-shadow:0 2px 8px -2px rgba(0,0,0,.16);
+    padding:0 22px;height:62px;display:flex;align-items:center;justify-content:center;
+    gap:14px;text-decoration:none;color:#1F1F1F;cursor:pointer;transition:transform .15s,box-shadow .15s;}
+  .pill:hover{transform:translateY(-1px);box-shadow:0 6px 16px -2px rgba(0,0,0,.18);}
+  .dot{position:relative;width:11px;height:11px;border-radius:50%;background:#9FD181;flex-shrink:0;
+    box-shadow:0 0 10px rgba(159,209,129,.85),inset 0 0 3px rgba(255,255,255,.4);animation:throb 1.8s ease-in-out infinite;}
+  .dot::before{content:"";position:absolute;inset:-3px;border-radius:50%;background:rgba(159,209,129,.55);animation:ring 1.8s ease-out infinite;}
+  .dot::after{content:"";position:absolute;inset:-6px;border-radius:50%;background:rgba(159,209,129,.30);animation:ring 1.8s ease-out infinite;animation-delay:.6s;}
+  @keyframes throb{0%,100%{transform:scale(1);}50%{transform:scale(1.22);}}
+  @keyframes ring{0%{transform:scale(1);opacity:.7;}100%{transform:scale(3.4);opacity:0;}}
+  .lbl{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;font-weight:500;}
+  .arrow{color:#5F6368;font-size:18px;margin-left:6px;}
+
+  .ring-s{fill:none;stroke:rgba(58,143,164,.28);stroke-width:1;}
+
+  /* ---- signal chips (used to give the visuals meaning) ---- */
+  .sig{position:absolute;z-index:4;display:inline-flex;align-items:center;gap:6px;
+    background:#fff;border:1px solid rgba(60,64,67,.12);border-radius:9999px;
+    padding:6px 11px 6px 8px;font-size:11.5px;font-weight:600;color:#1A3D7C;white-space:nowrap;
+    box-shadow:0 6px 18px rgba(31,55,124,.12);opacity:0;transform:scale(.8);
+    animation:sigpop 7s ease-in-out infinite;}
+  .sig i{width:7px;height:7px;border-radius:50%;background:#4285F4;flex-shrink:0;box-shadow:0 0 7px rgba(66,133,244,.6);}
+  .sig.green i{background:#34A853;box-shadow:0 0 7px rgba(52,168,83,.6);}
+  .sig.gold i{background:#C49A3B;box-shadow:0 0 7px rgba(196,154,59,.6);}
+  @keyframes sigpop{0%,92%,100%{opacity:0;transform:scale(.8);}8%,84%{opacity:1;transform:scale(1);}}
+
+  /* radar sweep (Mockup 1) */
+  .radar-sweep{transform-box:view-box;transform-origin:210px 210px;animation:spin360 5s linear infinite;}
+  @keyframes spin360{to{transform:rotate(360deg);}}
+  .infnode{fill:rgb(157,210,255);filter:drop-shadow(0 0 5px rgb(157,210,255));animation:np 3s ease-in-out infinite;}
+  @keyframes np{0%,100%{opacity:.5;r:3;}50%{opacity:1;r:5;}}
+
+  /* people / candidate nodes (Mockups 2 & 3) */
+  .tnode{fill:#3E5C84;stroke:#fff;stroke-width:2;filter:drop-shadow(0 0 6px rgba(62,92,132,.45));}
+  .tnode.green{fill:#34A853;filter:drop-shadow(0 0 6px rgba(52,168,83,.5));}
+  .tnode.gold{fill:#C49A3B;filter:drop-shadow(0 0 6px rgba(196,154,59,.5));}
+
+  /* Mockup 2 — orbits */
+  .orbit{transform-box:view-box;transform-origin:210px 210px;}
+  .orbit.o1{animation:spin360 24s linear infinite;}
+  .orbit.o2{animation:spin360 30s linear infinite reverse;}
+  .orbit.o3{animation:spin360 40s linear infinite;}
+
+  /* Mockup 3 — network edges flowing */
+  .edge{stroke:rgba(58,143,164,.30);stroke-width:1.2;fill:none;stroke-dasharray:5 7;animation:flow 2.6s linear infinite;}
+  .edge.hot{stroke:rgba(66,133,244,.55);stroke-width:1.6;animation-duration:1.5s;}
+  @keyframes flow{to{stroke-dashoffset:-48;}}
+
+  /* Mockup 4 — match-making */
+  .fline{stroke:rgba(58,143,164,.3);stroke-width:1.2;fill:none;}
+  .matchline{stroke:#34A853;stroke-width:2.5;fill:none;
+    filter:drop-shadow(0 0 6px rgba(52,168,83,.55));
+    stroke-dasharray:24 360;stroke-dashoffset:384;animation:matchflow 2.6s linear infinite;}
+  @keyframes matchflow{from{stroke-dashoffset:384;}to{stroke-dashoffset:0;}}
+
+  /* Mockup 5 — confidence dial */
+  .gtrack{fill:none;stroke:rgba(58,143,164,.18);stroke-width:8;}
+  .gticks{fill:none;stroke:rgba(58,143,164,.35);stroke-width:6;stroke-dasharray:1.5 22;}
+  .gfill{fill:none;stroke:url(#gaugeg);stroke-width:8;stroke-linecap:round;
+    stroke-dasharray:942;stroke-dashoffset:942;
+    transform:rotate(-90deg);transform-box:view-box;transform-origin:210px 210px;
+    animation:fillgauge 3.6s cubic-bezier(.45,0,.25,1) infinite;}
+  @keyframes fillgauge{0%{stroke-dashoffset:942;}38%,86%{stroke-dashoffset:40;}100%{stroke-dashoffset:942;}}
+  .score{position:absolute;z-index:4;top:4px;left:50%;transform:translateX(-50%);
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;letter-spacing:.18em;
+    font-weight:600;color:#2E8B49;background:rgba(255,255,255,.82);
+    padding:5px 12px;border-radius:9999px;border:1px solid rgba(52,168,83,.25);}
+
+  @media (max-width:720px){
+    .hero{width:330px;height:330px;}
+    .sig{font-size:10.5px;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;}
+    .sig{opacity:1;transform:none;}
+    .gfill{stroke-dashoffset:40;}
+    .matchline{stroke-dasharray:none;}
+  }
+</style>
+</head>
+<body>
+
+  <!-- ============ MOCKUP 1 · MARKET SCANNER (Variation 2, verbatim) ============ -->
+  <section class="variant">
+    <span class="vlabel">Mockup 1 — Market Scanner (Variation 2)</span>
+    <div class="stage">
+      <div class="hero">
+        <svg class="viz" viewBox="0 0 420 420">
+          <defs><linearGradient id="sweepg1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="rgba(66,133,244,0)"/><stop offset="1" stop-color="rgba(66,133,244,.34)"/>
+          </linearGradient></defs>
+          <g class="ring-s"><circle cx="210" cy="210" r="96"/><circle cx="210" cy="210" r="158"/><circle cx="210" cy="210" r="198"/></g>
+          <g class="radar-sweep"><path d="M210 210 L210 12 A198 198 0 0 1 350 70 Z" fill="url(#sweepg1)"/></g>
+          <circle class="infnode" cx="300" cy="120" r="3"/><circle class="infnode" cx="118" cy="150" r="3" style="animation-delay:.6s"/>
+          <circle class="infnode" cx="150" cy="300" r="3" style="animation-delay:1.2s"/><circle class="infnode" cx="312" cy="288" r="3" style="animation-delay:1.8s"/>
+        </svg>
+        <div class="logo-tile"></div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Intelligence Platform · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">Concentric rings + a sweeping radar arc. The "bullseye" you flagged — kept here so you can compare it side by side.</p>
+  </section>
+
+  <!-- ============ MOCKUP 2 · TALENT CONSTELLATION ============ -->
+  <section class="variant">
+    <span class="vlabel">Mockup 2 — Talent Constellation</span>
+    <div class="stage">
+      <div class="hero">
+        <svg class="viz" viewBox="0 0 420 420">
+          <g class="ring-s">
+            <circle cx="210" cy="210" r="92"/><circle cx="210" cy="210" r="142"/><circle cx="210" cy="210" r="190"/>
+          </g>
+          <g class="orbit o1">
+            <circle class="tnode" cx="210" cy="118" r="6"/>
+            <circle class="tnode green" cx="210" cy="302" r="6"/>
+          </g>
+          <g class="orbit o2">
+            <circle class="tnode" cx="352" cy="210" r="6"/>
+            <circle class="tnode" cx="68"  cy="210" r="6"/>
+            <circle class="tnode gold" cx="286" cy="86" r="5"/>
+          </g>
+          <g class="orbit o3">
+            <circle class="tnode" cx="210" cy="20"  r="5"/>
+            <circle class="tnode green" cx="372" cy="300" r="5"/>
+            <circle class="tnode" cx="60"  cy="300" r="5"/>
+          </g>
+        </svg>
+        <span class="sig"       style="top:34px;left:16px;animation-delay:.3s"><i></i>CFO · search</span>
+        <span class="sig gold"  style="top:150px;right:4px;animation-delay:1.6s"><i></i>CMO · shortlisting</span>
+        <span class="sig green" style="bottom:48px;left:12px;animation-delay:3s"><i></i>Head of Comms · placed</span>
+        <div class="logo-tile"></div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Intelligence Platform · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">Candidates orbit the AI core like a talent universe; matches glow green as they're placed.</p>
+  </section>
+
+  <!-- ============ MOCKUP 3 · TALENT NETWORK ============ -->
+  <section class="variant">
+    <span class="vlabel">Mockup 3 — Talent Network</span>
+    <div class="stage">
+      <div class="hero">
+        <svg class="viz" viewBox="0 0 420 420">
+          <g>
+            <path class="edge" d="M96 108 L208 56"/>
+            <path class="edge" d="M208 56 L322 96"/>
+            <path class="edge" d="M322 96 L366 206"/>
+            <path class="edge" d="M366 206 L330 322"/>
+            <path class="edge" d="M330 322 L210 368"/>
+            <path class="edge" d="M210 368 L90 322"/>
+            <path class="edge" d="M90 322 L52 206"/>
+            <path class="edge" d="M52 206 L96 108"/>
+            <path class="edge" d="M208 56 L330 322"/>
+            <path class="edge" d="M52 206 L322 96"/>
+            <path class="edge" d="M210 210 L96 108"/>
+            <path class="edge hot" d="M210 210 L366 206"/>
+            <path class="edge" d="M210 210 L210 368"/>
+          </g>
+          <circle class="tnode" cx="96" cy="108" r="6"/>
+          <circle class="tnode" cx="208" cy="56" r="6"/>
+          <circle class="tnode" cx="322" cy="96" r="6"/>
+          <circle class="tnode green" cx="366" cy="206" r="7"/>
+          <circle class="tnode" cx="330" cy="322" r="6"/>
+          <circle class="tnode" cx="210" cy="368" r="6"/>
+          <circle class="tnode green" cx="90" cy="322" r="6"/>
+          <circle class="tnode" cx="52" cy="206" r="6"/>
+        </svg>
+        <span class="sig"       style="top:38px;left:18px;animation-delay:.4s"><i></i>2,400 profiles mapped</span>
+        <span class="sig green" style="bottom:54px;right:16px;animation-delay:2.4s"><i></i>Warm-intro path found</span>
+        <div class="logo-tile"></div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Intelligence Platform · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">A living web of relationships. The AI maps connections and surfaces the warmest route to a candidate.</p>
+  </section>
+
+  <!-- ============ MOCKUP 4 · MATCH-MAKING ============ -->
+  <section class="variant">
+    <span class="vlabel">Mockup 4 — Match-Making</span>
+    <div class="stage">
+      <div class="hero">
+        <svg class="viz" viewBox="0 0 420 420">
+          <g class="fline">
+            <path d="M52 118 C150 118 160 210 210 210"/>
+            <path d="M52 210 C150 210 170 210 210 210"/>
+            <path d="M52 302 C150 302 160 210 210 210"/>
+            <path d="M210 210 C260 210 270 118 368 118"/>
+            <path d="M210 210 C260 210 250 210 368 210"/>
+            <path d="M210 210 C260 210 270 302 368 302"/>
+          </g>
+          <path class="matchline" d="M52 210 C150 210 270 210 368 210"/>
+        </svg>
+        <span class="sig"       style="top:94px;left:0;animation-delay:.3s"><i></i>CFO role</span>
+        <span class="sig green" style="top:196px;left:0;animation-delay:1.4s"><i></i>CMO role</span>
+        <span class="sig"       style="bottom:94px;left:0;animation-delay:2.5s"><i></i>Chair role</span>
+        <span class="sig"       style="top:94px;right:0;animation-delay:.9s"><i></i>Match 91%</span>
+        <span class="sig green" style="top:196px;right:0;animation-delay:2s"><i></i>Match 96%</span>
+        <span class="sig"       style="bottom:94px;right:0;animation-delay:3.1s"><i></i>Match 88%</span>
+        <div class="logo-tile"></div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Intelligence Platform · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">Open mandates on the left, candidates on the right — the AI core routes each role to its strongest match.</p>
+  </section>
+
+  <!-- ============ MOCKUP 5 · CONFIDENCE DIAL ============ -->
+  <section class="variant">
+    <span class="vlabel">Mockup 5 — Confidence Dial</span>
+    <div class="stage">
+      <div class="hero">
+        <svg class="viz" viewBox="0 0 420 420">
+          <defs><linearGradient id="gaugeg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#4285F4"/><stop offset="1" stop-color="#34A853"/>
+          </linearGradient></defs>
+          <circle class="gticks" cx="210" cy="210" r="172"/>
+          <circle class="gtrack" cx="210" cy="210" r="150"/>
+          <circle class="gfill"  cx="210" cy="210" r="150"/>
+        </svg>
+        <div class="score">96% FIT</div>
+        <div class="logo-tile"></div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Intelligence Platform · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">An instrument, not a target — the ring fills to the AI's confidence that a candidate fits the brief.</p>
+  </section>
+
+<script>
+  var LOGO = '<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">'
+    + '<rect width="100" height="100" fill="#3E5C84"/>'
+    + '<text x="50" y="55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="30" letter-spacing="-1.5" fill="#fff">VMA</text>'
+    + '<text x="51" y="76" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="300" font-size="13.5" letter-spacing="3" fill="#fff">GROUP</text>'
+    + '</svg>';
+  document.querySelectorAll('.logo-tile').forEach(function (e) { e.innerHTML = LOGO; });
+</script>
+</body>
+</html>
