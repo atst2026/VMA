@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VMA Group — scanning / AI hero mockups (no circles)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ===========================================================
+     8 hero mockups — NO circles / no bullseye.
+     Same chrome on every one (off-white bg + Gemini halo, navy VMA
+     logo tile, white CTA pill); only the central visual changes.
+
+       SCANNING
+       1 · Scan the market   — live market board, sweeping scan bar
+       2 · Scan the internet — crawling web sources into the core
+       4 · Scan (documents)  — reading filings/CVs, a line-scan beam
+       5 · Scan (live feed)  — streaming ticker, lock-on band
+       UTILISING AI
+       3 · AI inference      — layered neural net, signals -> result
+       6 · AI reasoning      — streaming reasoning / brief generation
+       7 · AI embeddings     — candidates clustered, best-fit matched
+       8 · AI agent pipeline — feeds -> agent -> brief / leads / shortlist
+     =========================================================== */
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background-color:rgb(253,252,252);color:#1F1F1F;
+    font-family:"Inter",Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased;}
+
+  .variant{position:relative;min-height:100vh;overflow:hidden;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:38px;}
+  .variant::before{content:"";position:absolute;z-index:0;
+    width:792px;height:300px;top:50%;left:50%;transform:translate(-50%,-50%);
+    border-radius:9999px;
+    background-image:radial-gradient(100% 100% at 50% 8%,rgb(253,252,252) 0px,rgb(157,210,255) 50%);
+    filter:blur(125px);opacity:1;}
+
+  .vlabel{position:absolute;top:20px;left:20px;z-index:6;
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:#5F6368;background:rgba(255,255,255,.72);
+    backdrop-filter:blur(5px);padding:8px 13px;border-radius:9px;border:1px solid rgba(60,64,67,.1);}
+
+  .stage{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;
+    gap:34px;text-align:center;}
+  .cap{position:relative;z-index:2;max-width:420px;margin-top:-10px;
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;line-height:1.65;
+    letter-spacing:.02em;color:#5F6368;text-align:center;}
+
+  .hero{position:relative;width:420px;height:420px;display:grid;place-items:center;}
+  .hero .viz{position:absolute;inset:0;z-index:0;pointer-events:none;}
+
+  /* the real VMA logo icon (navy tile) with a slow sheen */
+  .logo-tile{position:relative;z-index:3;width:104px;height:104px;border-radius:23px;overflow:hidden;
+    box-shadow:0 16px 40px rgba(62,92,132,.42),0 3px 10px rgba(62,92,132,.34);}
+  .logo-tile svg{display:block;width:100%;height:100%;}
+  .logo-tile::after{content:"";position:absolute;inset:0;
+    background:linear-gradient(115deg,transparent 38%,rgba(255,255,255,.34) 50%,transparent 62%);
+    transform:translateX(-130%);animation:sheen 5s ease-in-out infinite;}
+  @keyframes sheen{0%,72%{transform:translateX(-130%);}88%,100%{transform:translateX(130%);}}
+
+  /* CTA pill — identical on every mockup */
+  .pill{background:#fff;border:none;border-radius:32px;box-shadow:0 2px 8px -2px rgba(0,0,0,.16);
+    padding:0 22px;height:62px;display:flex;align-items:center;justify-content:center;
+    gap:14px;text-decoration:none;color:#1F1F1F;cursor:pointer;transition:transform .15s,box-shadow .15s;}
+  .pill:hover{transform:translateY(-1px);box-shadow:0 6px 16px -2px rgba(0,0,0,.18);}
+  .dot{position:relative;width:11px;height:11px;border-radius:50%;background:#9FD181;flex-shrink:0;
+    box-shadow:0 0 10px rgba(159,209,129,.85),inset 0 0 3px rgba(255,255,255,.4);animation:throb 1.8s ease-in-out infinite;}
+  .dot::before{content:"";position:absolute;inset:-3px;border-radius:50%;background:rgba(159,209,129,.55);animation:ring 1.8s ease-out infinite;}
+  .dot::after{content:"";position:absolute;inset:-6px;border-radius:50%;background:rgba(159,209,129,.30);animation:ring 1.8s ease-out infinite;animation-delay:.6s;}
+  @keyframes throb{0%,100%{transform:scale(1);}50%{transform:scale(1.22);}}
+  @keyframes ring{0%{transform:scale(1);opacity:.7;}100%{transform:scale(3.4);opacity:0;}}
+  .lbl{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;font-weight:500;}
+  .arrow{color:#5F6368;font-size:18px;margin-left:6px;}
+
+  /* ---- small context label chips (popping) ---- */
+  .sig{position:absolute;z-index:4;display:inline-flex;align-items:center;gap:6px;
+    background:#fff;border:1px solid rgba(60,64,67,.12);border-radius:9999px;
+    padding:6px 11px 6px 8px;font-size:11px;font-weight:600;color:#1A3D7C;white-space:nowrap;
+    box-shadow:0 6px 18px rgba(31,55,124,.12);opacity:0;transform:scale(.8);
+    animation:sigpop 7s ease-in-out infinite;}
+  .sig i{width:7px;height:7px;border-radius:50%;background:#4285F4;flex-shrink:0;box-shadow:0 0 7px rgba(66,133,244,.6);}
+  .sig.green i{background:#34A853;box-shadow:0 0 7px rgba(52,168,83,.6);}
+  .sig.gold i{background:#C49A3B;box-shadow:0 0 7px rgba(196,154,59,.6);}
+  @keyframes sigpop{0%,92%,100%{opacity:0;transform:scale(.8);}8%,84%{opacity:1;transform:scale(1);}}
+
+  /* ---- static label chips (always on) ---- */
+  .tag{position:absolute;z-index:4;display:inline-flex;align-items:center;gap:6px;
+    background:#fff;border:1px solid rgba(60,64,67,.12);border-radius:9999px;
+    padding:5px 10px 5px 8px;font-size:10.5px;font-weight:600;color:#1A3D7C;white-space:nowrap;
+    box-shadow:0 6px 18px rgba(31,55,124,.10);}
+  .tag i{width:7px;height:7px;border-radius:50%;background:#4285F4;flex-shrink:0;box-shadow:0 0 6px rgba(66,133,244,.55);}
+  .tag.green i{background:#34A853;box-shadow:0 0 6px rgba(52,168,83,.55);}
+  .tag.gold i{background:#C49A3B;box-shadow:0 0 6px rgba(196,154,59,.55);}
+
+  /* ---- shared SVG primitives ---- */
+  .edge{stroke:rgba(58,143,164,.30);stroke-width:1.2;fill:none;stroke-dasharray:5 7;animation:flow 2.6s linear infinite;}
+  .edge.hot{stroke:rgba(66,133,244,.55);stroke-width:1.6;animation-duration:1.5s;}
+  .edge.in{stroke-dasharray:4 8;}
+  @keyframes flow{to{stroke-dashoffset:-48;}}
+  .node{fill:#3E5C84;stroke:#fff;stroke-width:2;filter:drop-shadow(0 0 5px rgba(62,92,132,.4));}
+  .node.green{fill:#34A853;filter:drop-shadow(0 0 5px rgba(52,168,83,.5));}
+  .node.dim{fill:rgba(62,92,132,.55);stroke:#fff;stroke-width:1.2;filter:none;}
+  .infnode{fill:rgb(157,210,255);filter:drop-shadow(0 0 5px rgb(157,210,255));animation:np 3s ease-in-out infinite;}
+  @keyframes np{0%,100%{opacity:.5;r:3;}50%{opacity:1;r:5;}}
+  .emp{animation:emp 3.4s ease-in-out infinite;}
+  @keyframes emp{0%,100%{opacity:.55;}50%{opacity:1;}}
+  .cedge{stroke:rgba(58,143,164,.22);stroke-width:1;}
+  .pip{fill:#4285F4;filter:drop-shadow(0 0 5px rgba(66,133,244,.7));}
+  .pip.g{fill:#34A853;filter:drop-shadow(0 0 5px rgba(52,168,83,.7));}
+
+  /* scanning beams */
+  .scanbar{transform-box:view-box;animation:scanx 3.1s linear infinite;}
+  @keyframes scanx{from{transform:translateX(-50px);}to{transform:translateX(420px);}}
+  .docscan{transform-box:view-box;animation:scany 3s ease-in-out infinite;}
+  @keyframes scany{0%,100%{transform:translateY(0);}50%{transform:translateY(248px);}}
+
+  /* M1 market board */
+  .cell{fill:rgba(58,143,164,.12);stroke:rgba(58,143,164,.22);stroke-width:1;animation:cellpulse 3.1s ease-in-out infinite;}
+  .cell.g{fill:rgba(52,168,83,.22);stroke:rgba(52,168,83,.45);}
+  .cell.gold{fill:rgba(196,154,59,.22);stroke:rgba(196,154,59,.45);}
+  .cell.b{fill:rgba(66,133,244,.22);stroke:rgba(66,133,244,.45);}
+  @keyframes cellpulse{0%,100%{opacity:.45;}50%{opacity:.95;}}
+
+  /* M4 document */
+  .docpage{fill:#fff;stroke:rgba(60,64,67,.14);stroke-width:1;}
+  .docline{fill:rgba(58,143,164,.18);}
+
+  /* M5 ticker */
+  .stream{position:absolute;top:0;height:100%;width:150px;overflow:hidden;z-index:1;
+    -webkit-mask-image:linear-gradient(to bottom,transparent,#000 16%,#000 84%,transparent);
+            mask-image:linear-gradient(to bottom,transparent,#000 16%,#000 84%,transparent);}
+  .stream.left{left:4px;} .stream.right{right:4px;text-align:right;}
+  .roll{display:flex;flex-direction:column;gap:11px;animation:rollup 15s linear infinite;}
+  .stream.right .roll{animation-duration:19s;}
+  @keyframes rollup{from{transform:translateY(0);}to{transform:translateY(-50%);}}
+  .row{font-family:"JetBrains Mono",monospace;font-size:9.5px;line-height:1.25;color:#7a7f86;white-space:nowrap;}
+  .row .k{font-weight:600;color:#1A3D7C;}
+  .row.g .k{color:#2E8B49;} .row.gold .k{color:#9a7b2e;}
+  .lockband{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);height:42px;z-index:2;
+    background:linear-gradient(90deg,rgba(157,210,255,0),rgba(157,210,255,.20),rgba(157,210,255,0));
+    border-top:1px solid rgba(66,133,244,.22);border-bottom:1px solid rgba(66,133,244,.22);
+    display:flex;align-items:center;}
+  .locktag{margin-left:6px;font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;
+    color:#1A3D7C;background:rgba(255,255,255,.82);padding:3px 7px;border-radius:6px;border:1px solid rgba(66,133,244,.22);}
+
+  /* M6 reasoning trace */
+  .trace{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:4;width:312px;text-align:left;
+    font-family:"JetBrains Mono",monospace;font-size:11px;line-height:1.95;color:#5F6368;}
+  .tline{opacity:0;transform:translateY(6px);animation:tin .5s ease forwards;}
+  .tline .ok{color:#2E8B49;}
+  @keyframes tin{to{opacity:1;transform:none;}}
+  .cur{display:inline-block;width:7px;height:1.05em;vertical-align:-2px;background:#3E5C84;margin-left:2px;animation:blink 1s steps(1) infinite;}
+  @keyframes blink{50%{opacity:0;}}
+
+  @media (max-width:720px){
+    .hero{width:330px;height:330px;}
+    .sig,.tag{font-size:10px;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;}
+    .sig{opacity:1;transform:none;} .tline{opacity:1;transform:none;}
+  }
+</style>
+</head>
+<body>
+
+  <!-- ============ 1 · SCAN THE MARKET ============ -->
+  <section class="variant">
+    <span class="vlabel">1 — Scan the market · live board</span>
+    <div class="stage">
+      <div class="hero">
+        <svg class="viz" viewBox="0 0 420 420">
+          <defs><linearGradient id="m1g" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0" stop-color="rgba(66,133,244,0)"/><stop offset=".5" stop-color="rgba(66,133,244,.22)"/><stop offset="1" stop-color="rgba(66,133,244,0)"/>
+          </linearGradient></defs>
+          <g id="m1grid"></g>
+          <rect class="scanbar" x="0" y="0" width="50" height="420" fill="url(#m1g)"/>
+        </svg>
+        <span class="tag" style="top:16px;left:12px"><i></i>FTSE · NHS · scale-ups</span>
+        <span class="sig green" style="bottom:40px;right:18px;animation-delay:1.2s"><i></i>Opportunity found</span>
+        <div class="logo-tile"></div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Intelligence Platform · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">The market as a live board — a scan bar sweeps the grid and cells light up as hiring triggers surface.</p>
+  </section>
+
+  <!-- ============ 2 · SCAN THE INTERNET ============ -->
+  <section class="variant">
+    <span class="vlabel">2 — Scan the internet · source crawl</span>
+    <div class="stage">
+      <div class="hero">
+        <svg class="viz" viewBox="0 0 420 420">
+          <defs><linearGradient id="m2g" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0" stop-color="rgba(66,133,244,0)"/><stop offset=".5" stop-color="rgba(66,133,244,.18)"/><stop offset="1" stop-color="rgba(66,133,244,0)"/>
+          </linearGradient></defs>
+          <path class="edge in" d="M78 78 C 130 120 170 170 206 206"/>
+          <path class="edge in" d="M342 86 C 290 124 250 170 214 206"/>
+          <path class="edge in" d="M52 210 C 110 210 160 210 200 210"/>
+          <path class="edge in" d="M372 210 C 312 210 262 210 220 210"/>
+          <path class="edge in" d="M86 340 C 134 298 172 250 206 214"/>
+          <path class="edge in" d="M330 344 C 286 300 250 250 214 214"/>
+          <rect class="scanbar" x="0" y="0" width="46" height="420" fill="url(#m2g)"/>
+        </svg>
+        <span class="tag"      style="top:54px;left:18px"><i></i>LinkedIn</span>
+        <span class="tag"      style="top:60px;right:18px"><i></i>News &amp; press</span>
+        <span class="tag"      style="top:188px;left:2px"><i></i>Companies House</span>
+        <span class="tag"      style="top:188px;right:8px"><i></i>Filings</span>
+        <span class="tag"      style="bottom:54px;left:14px"><i></i>Job boards</span>
+        <span class="tag gold" style="bottom:54px;right:12px"><i></i>Trade press</span>
+        <div class="logo-tile"></div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Intelligence Platform · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">Crawling the open web — LinkedIn, news, filings, job boards — and pulling every signal into the core.</p>
+  </section>
+
+  <!-- ============ 3 · AI INFERENCE (neural) ============ -->
+  <section class="variant">
+    <span class="vlabel">3 — Utilising AI · neural inference</span>
+    <div class="stage">
+      <div class="hero">
+        <svg class="viz" viewBox="0 0 420 420">
+          <g id="m3net"></g>
+        </svg>
+        <span class="tag" style="top:18px;left:14px"><i></i>signals in</span>
+        <span class="tag green" style="top:18px;right:14px"><i></i>match out</span>
+        <div class="logo-tile"></div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Intelligence Platform · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">A neural model — raw market signals on the left fire through the layers and resolve into a ranked match.</p>
+  </section>
+
+  <!-- ============ 4 · SCAN DOCUMENTS ============ -->
+  <section class="variant">
+    <span class="vlabel">4 — Scan documents · line-by-line read</span>
+    <div class="stage">
+      <div class="hero">
+        <svg class="viz" viewBox="0 0 420 420">
+          <defs><linearGradient id="m4g" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0" stop-color="rgba(66,133,244,0)"/><stop offset=".5" stop-color="rgba(66,133,244,.30)"/><stop offset="1" stop-color="rgba(66,133,244,0)"/>
+          </linearGradient></defs>
+          <rect class="docpage" x="138" y="58" width="150" height="300" rx="11" opacity=".55"/>
+          <rect class="docpage" x="120" y="70" width="170" height="288" rx="12"/>
+          <g id="m4lines"></g>
+          <rect class="docscan" x="120" y="70" width="170" height="26" fill="url(#m4g)"/>
+        </svg>
+        <span class="sig"       style="top:80px;right:6px;animation-delay:.3s"><i></i>CFO</span>
+        <span class="sig gold"  style="top:150px;right:0;animation-delay:1.4s"><i></i>£37m raised</span>
+        <span class="sig"       style="bottom:140px;right:8px;animation-delay:2.4s"><i></i>London</span>
+        <span class="sig green" style="bottom:72px;right:2px;animation-delay:3.4s"><i></i>8-yr tenure</span>
+        <div class="logo-tile"></div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Intelligence Platform · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">Reading filings, reports and CVs line by line — a scan beam runs the page and lifts out the entities that matter.</p>
+  </section>
+
+  <!-- ============ 5 · SCAN LIVE FEED (ticker) ============ -->
+  <section class="variant">
+    <span class="vlabel">5 — Scan the feed · live ticker + lock-on</span>
+    <div class="stage">
+      <div class="hero">
+        <div class="stream left"><div class="roll" id="m5L"></div></div>
+        <div class="stream right"><div class="roll" id="m5R"></div></div>
+        <div class="lockband"><span class="locktag">▣ locked · qualifying</span></div>
+        <div class="logo-tile"></div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Intelligence Platform · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">A never-ending market feed streams past; the platform locks onto the rows worth qualifying.</p>
+  </section>
+
+  <!-- ============ 6 · AI REASONING ============ -->
+  <section class="variant">
+    <span class="vlabel">6 — Utilising AI · reasoning &amp; briefing</span>
+    <div class="stage">
+      <div class="hero">
+        <svg class="viz" viewBox="0 0 420 420">
+          <circle class="infnode" cx="150" cy="96" r="3"/><circle class="infnode" cx="270" cy="100" r="3" style="animation-delay:.5s"/>
+          <circle class="infnode" cx="210" cy="70" r="3" style="animation-delay:1s"/><circle class="infnode" cx="120" cy="140" r="3" style="animation-delay:1.5s"/>
+          <circle class="infnode" cx="300" cy="146" r="3" style="animation-delay:2s"/>
+        </svg>
+        <span class="tag" style="top:120px;left:50%;transform:translateX(-50%)"><i></i>AI · reasoning</span>
+        <div class="logo-tile"></div>
+        <div class="trace">
+          <div class="tline" style="animation-delay:.2s">› analysing tenure &amp; hiring signals</div>
+          <div class="tline" style="animation-delay:.9s">› cross-referencing funding rounds</div>
+          <div class="tline" style="animation-delay:1.6s">› matching to live mandates</div>
+          <div class="tline" style="animation-delay:2.3s"><span class="ok">›</span> drafting executive brief<span class="cur"></span></div>
+        </div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Intelligence Platform · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">The model reasons over the evidence out loud, then writes the brief — the AI doing the analyst's thinking.</p>
+  </section>
+
+  <!-- ============ 7 · AI EMBEDDINGS ============ -->
+  <section class="variant">
+    <span class="vlabel">7 — Utilising AI · embeddings &amp; best-fit</span>
+    <div class="stage">
+      <div class="hero">
+        <svg class="viz" viewBox="0 0 420 420">
+          <g id="m7field"></g>
+        </svg>
+        <span class="tag" style="top:16px;left:14px"><i></i>talent embedded</span>
+        <span class="tag green" style="bottom:40px;right:14px"><i></i>best-fit pool</span>
+        <div class="logo-tile"></div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Intelligence Platform · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">Every candidate placed in vector space; the AI clusters them and locks onto the cluster that fits the brief.</p>
+  </section>
+
+  <!-- ============ 8 · AI AGENT PIPELINE ============ -->
+  <section class="variant">
+    <span class="vlabel">8 — Utilising AI · agent pipeline</span>
+    <div class="stage">
+      <div class="hero">
+        <svg class="viz" viewBox="0 0 420 420">
+          <path class="edge in" d="M64 210 C 120 210 150 210 198 210"/>
+          <path class="edge" d="M214 206 C 270 188 300 130 352 120"/>
+          <path class="edge" d="M218 210 C 280 210 300 210 352 210"/>
+          <path class="edge" d="M214 214 C 270 232 300 290 352 300"/>
+          <circle r="3.5" class="pip"><animateMotion dur="2.2s" repeatCount="indefinite" path="M64 210 C 120 210 150 210 200 210"/></circle>
+          <circle r="3" class="pip g"><animateMotion dur="2.4s" repeatCount="indefinite" path="M212 208 C 270 188 300 130 352 120"/></circle>
+          <circle r="3" class="pip"><animateMotion dur="2.4s" begin="-.8s" repeatCount="indefinite" path="M216 210 C 280 210 300 210 352 210"/></circle>
+          <circle r="3" class="pip g"><animateMotion dur="2.4s" begin="-1.6s" repeatCount="indefinite" path="M212 212 C 270 232 300 290 352 300"/></circle>
+        </svg>
+        <span class="tag" style="top:196px;left:0"><i></i>market + web feeds</span>
+        <span class="tag green" style="top:104px;right:0"><i></i>Executive brief</span>
+        <span class="tag gold"  style="top:196px;right:0"><i></i>New leads</span>
+        <span class="tag"       style="bottom:104px;right:0"><i></i>Shortlist</span>
+        <div class="logo-tile"></div>
+      </div>
+      <a class="pill" href="#"><span class="dot"></span><span class="lbl">Intelligence Platform · Live</span><span class="arrow">→</span></a>
+    </div>
+    <p class="cap">An agent in the middle: it takes the scanned feeds and outputs the deliverables — brief, leads, shortlist.</p>
+  </section>
+
+<script>
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  function el(t, a){ var e = document.createElementNS(SVGNS, t); for (var k in a) e.setAttribute(k, a[k]); return e; }
+
+  var LOGO = '<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">'
+    + '<rect width="100" height="100" fill="#3E5C84"/>'
+    + '<text x="50" y="55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="30" letter-spacing="-1.5" fill="#fff">VMA</text>'
+    + '<text x="51" y="76" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="300" font-size="13.5" letter-spacing="3" fill="#fff">GROUP</text>'
+    + '</svg>';
+  document.querySelectorAll('.logo-tile').forEach(function (e) { e.innerHTML = LOGO; });
+
+  /* ---- 1 · market grid ---- */
+  (function () {
+    var g = document.getElementById('m1grid'); if (!g) return;
+    var xs = [24, 98, 172, 246, 320], ys = [44, 108, 172, 236, 300];
+    var special = { '4,0':'g', '1,3':'g', '3,4':'gold', '0,1':'b', '2,0':'b', '3,2':'b', '4,3':'b', '1,1':'b' };
+    xs.forEach(function (x, ci) {
+      ys.forEach(function (y, ri) {
+        var kind = special[ci + ',' + ri] || '';
+        var r = el('rect', { x:x, y:y, width:50, height:34, rx:5, 'class':'cell' + (kind ? ' ' + kind : '') });
+        r.style.animationDelay = (ci * 0.62) + 's';
+        g.appendChild(r);
+      });
+    });
+  })();
+
+  /* ---- 3 · neural net ---- */
+  (function () {
+    var g = document.getElementById('m3net'); if (!g) return;
+    var cx = 210, cy = 210, X0 = 46, X1 = 120, X2 = 300, X3 = 374;
+    var L0 = [120,170,220,270], L1 = [96,152,208,264,320], R1 = [96,152,208,264,320], OUT = [180,220,260];
+    function edge(x1,y1,x2,y2,hot){ var mx=(x1+x2)/2; g.appendChild(el('path',{ d:'M'+x1+' '+y1+' C '+mx+' '+y1+', '+mx+' '+y2+', '+x2+' '+y2, 'class':'edge'+(hot?' hot':'') })); }
+    L0.forEach(function (y,i){ edge(X0,y,X1,L1[i]); edge(X0,y,X1,L1[i+1]); });
+    L1.forEach(function (y){ edge(X1,y,cx,cy); });
+    R1.forEach(function (y){ edge(cx,cy,X2,y); });
+    var map = [0,0,1,2,2];
+    R1.forEach(function (y,i){ edge(X2,y,X3,OUT[map[i]]); });
+    edge(X0,L0[1],X1,L1[1],true); edge(X1,L1[1],cx,cy,true); edge(cx,cy,X2,R1[2],true); edge(X2,R1[2],X3,OUT[1],true);
+    function dot(x,y,cls,r,d){ var c = el('circle',{ cx:x, cy:y, r:r, 'class':cls }); if (d) c.style.animationDelay = d + 's'; g.appendChild(c); }
+    L0.forEach(function (y,i){ dot(X0,y,'infnode',3,i*0.3); });
+    L1.forEach(function (y){ dot(X1,y,'node',5); });
+    R1.forEach(function (y){ dot(X2,y,'node',5); });
+    OUT.forEach(function (y,i){ dot(X3,y,'node green',6,i*0.2); });
+  })();
+
+  /* ---- 4 · document text lines ---- */
+  (function () {
+    var g = document.getElementById('m4lines'); if (!g) return;
+    var widths = [130,150,96,140,110,150,84,150,120], y = 92;
+    widths.forEach(function (w) {
+      g.appendChild(el('rect', { x:140, y:y, width:w, height:7, rx:3, 'class':'docline' }));
+      y += 26;
+    });
+  })();
+
+  /* ---- 5 · ticker rows ---- */
+  (function () {
+    var FEED = [
+      ['JOB','Head of Communications · NHS England','b'],
+      ['FUND','Orbital Industries · +£37.3m Series B','g'],
+      ['MOVE','CEO change · British Land','gold'],
+      ['JOB','Director of Comms · FTSE 100','b'],
+      ['RFP','Comms framework · Police Scotland','b'],
+      ['FUND','Lumen Bio · +£12m','g'],
+      ['MOVE','CCO exit · major utility','gold'],
+      ['JOB','Head of Public Affairs · charity','b']
+    ];
+    function build(id, list) {
+      var r = document.getElementById(id); if (!r) return;
+      list.concat(list).forEach(function (f) {
+        var d = document.createElement('div');
+        d.className = 'row' + (f[2] === 'g' ? ' g' : f[2] === 'gold' ? ' gold' : '');
+        d.innerHTML = '<span class="k">' + f[0] + '</span> ' + f[1];
+        r.appendChild(d);
+      });
+    }
+    build('m5L', FEED);
+    build('m5R', FEED.slice().reverse());
+  })();
+
+  /* ---- 7 · embedding clusters ---- */
+  (function () {
+    var g = document.getElementById('m7field'); if (!g) return;
+    var clusters = [ {x:108,y:122}, {x:322,y:128}, {x:120,y:312}, {x:320,y:300} ];
+    var matched = 3;
+    // query line core -> matched centroid (drawn first, under the dots)
+    var m = clusters[matched];
+    g.appendChild(el('path', { d:'M210 210 C 250 240, 290 282, ' + m.x + ' ' + m.y, 'class':'edge hot' }));
+    clusters.forEach(function (c, ci) {
+      var pts = [];
+      for (var k = 0; k < 6; k++) {
+        var a = k / 6 * Math.PI * 2 + ci;
+        var rr = 20 + (k % 3) * 9;
+        pts.push([ c.x + Math.cos(a) * rr, c.y + Math.sin(a) * rr * 0.82 ]);
+      }
+      pts.forEach(function (p) { g.appendChild(el('line', { x1:c.x, y1:c.y, x2:p[0], y2:p[1], 'class':'cedge' })); });
+      pts.forEach(function (p, k) {
+        var d = el('circle', { cx:p[0], cy:p[1], r:4.5, 'class':'node ' + (ci === matched ? 'green' : 'dim') + ' emp' });
+        d.style.animationDelay = (k * 0.25) + 's';
+        g.appendChild(d);
+      });
+    });
+  })();
+</script>
+</body>
+</html>
