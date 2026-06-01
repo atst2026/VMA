@@ -3661,7 +3661,7 @@ TEMPLATE = r"""
 
 <!-- LEFT RAIL — page switcher. Active state toggled by render() (additive JS). -->
 <aside class="rail">
-  <button class="ri active" id="nav-leads" data-tip="Market Opportunities Radar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12 L12 3.2 A8.8 8.8 0 1 1 5.6 6"/><circle cx="12" cy="12" r="3.4"/><circle cx="12" cy="12" r="8.8" opacity=".4"/></svg></button>
+  <button class="ri active" id="nav-leads" data-tip="Market Opportunities Radar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" opacity=".4"/><path d="M12 12 L12 3 A9 9 0 0 1 19.8 7.5 Z" fill="currentColor" stroke="none" opacity=".55"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></button>
   <button class="ri" id="nav-agent" data-tip="Personal Assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7.5" width="17" height="13" rx="5"/><path d="M12 7.5V4.6"/><circle cx="12" cy="3.4" r="1.2"/><circle cx="9" cy="14" r="1.65" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.65" fill="currentColor" stroke="none"/></svg></button>
   <button class="ri" id="nav-cal" data-tip="BD Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></button>
   <span class="rail-logo" data-tip="VMA Group"></span>
@@ -3672,7 +3672,7 @@ TEMPLATE = r"""
   <!-- ===== PAGE 1 · MARKET INTELLIGENCE RADAR (leads + pre-market) ===== -->
   <section class="page active" id="leads">
     <div class="wm-head">
-      <div class="brand"><span class="brand-title">Market Opportunities Radar</span><span class="radar-ic" title="Live — scanning the market for opportunities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12 L12 3.2 A8.8 8.8 0 1 1 5.6 6"/><circle cx="12" cy="12" r="3.4"/><circle cx="12" cy="12" r="8.8" opacity=".35"/></svg></span></div>
+      <div class="brand"><span class="brand-title">Market Opportunities Radar</span><span class="radar-ic" title="Live — scanning the market for opportunities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" opacity=".35"/><path d="M12 12 L12 3 A9 9 0 0 1 19.8 7.5 Z" fill="currentColor" stroke="none" opacity=".5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></span></div>
     </div>
 
     <div class="container">
