@@ -30,7 +30,7 @@ from pathlib import Path
 
 import re
 import requests
-from flask import Flask, jsonify, render_template_string, request, Response
+from flask import Flask, jsonify, redirect, render_template_string, request, Response
 from urllib.parse import quote_plus
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -60,6 +60,16 @@ from tool.state_paths import state_root
 PROFILE = active_profile()
 STATE_DIR = state_root()
 STATE_DIR.mkdir(parents=True, exist_ok=True)
+# Optional map of profile-key -> absolute dashboard URL, so the chooser can
+# link sibling desks that run as their own instances (same codebase, own
+# VMA_PROFILE, own state). JSON in VMA_PROFILE_URLS, e.g.
+#   {"marketing": "https://vma-marketing.onrender.com"}
+try:
+    PROFILE_URLS = json.loads(os.environ.get("VMA_PROFILE_URLS") or "{}")
+    if not isinstance(PROFILE_URLS, dict):
+        PROFILE_URLS = {}
+except Exception:
+    PROFILE_URLS = {}
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 GITHUB_OWNER = os.environ.get("GITHUB_OWNER", "atst2026")
@@ -1031,31 +1041,33 @@ _CHOOSER_TEMPLATE = (
     "</body></html>"
 )
 
-_COMING_SOON_TEMPLATE = (
+_DESK_INFO_TEMPLATE = (
     "<!doctype html><html lang=en><head><meta charset=utf-8>"
     "<meta name=viewport content='width=device-width, initial-scale=1'>"
-    "<title>{{ label }} &mdash; coming soon &middot; VMA Intelligence</title>"
+    "<title>{{ label }} &middot; VMA Intelligence</title>"
     "<style>" + _CHOOSER_CSS + "</style></head><body>"
     "<div class=logo>{{ logo|safe }}</div>"
     "<h1>{{ label }} desk</h1>"
-    "<p class=sub>The {{ label }} desk is in build. It runs the same engine as "
-    "Comms &mdash; the same nightly scan, ranking and dashboard &mdash; tuned to "
-    "{{ label|lower }} roles, target companies and trade press.</p>"
-    "<span class=pill>Coming soon</span>"
+    "<p class=sub>{{ message }}</p>"
+    "<span class=pill>{{ pill }}</span>"
     "<p class=foot><a href='/'>&larr; Back</a></p>"
     "</body></html>"
 )
 
 
 def _chooser_cards() -> list[dict]:
-    """Tiles for the chooser: every live profile, then any announced-but-
-    not-live specialism as a 'coming soon' tile."""
+    """Tiles for the chooser: every live profile (the current process's own
+    desk linked locally, sibling desks via VMA_PROFILE_URLS), then any
+    announced-but-not-live specialism as a 'coming soon' tile."""
     cards: list[dict] = []
     seen = set()
     for p in all_profiles():
+        if p.key == PROFILE.key:
+            href = "/comms" if p.key == "comms" else "/dashboard"
+        else:
+            href = PROFILE_URLS.get(p.key) or f"/{p.key}"
         cards.append({
-            "key": p.key, "label": p.label, "live": True,
-            "href": "/comms" if p.key == "comms" else f"/{p.key}",
+            "key": p.key, "label": p.label, "live": True, "href": href,
             "blurb": _PROFILE_BLURBS.get(p.key, f"Open the {p.label} desk."),
         })
         seen.add(p.key)
@@ -1080,11 +1092,22 @@ def chooser():
 
 @app.route("/marketing")
 @_auth_required
-def marketing_coming_soon():
-    """Placeholder for the Marketing desk until its profile is authored
-    (Phase 2). Replaced by the real landing once marketing goes live."""
+def marketing_desk():
+    """The Marketing desk. If this process serves marketing, hand off to the
+    dashboard; if a sibling marketing instance is configured, redirect there;
+    otherwise explain that the desk is live and runs as its own instance."""
+    if PROFILE.key == "marketing":
+        return redirect("/dashboard")
+    if PROFILE_URLS.get("marketing"):
+        return redirect(PROFILE_URLS["marketing"])
     return render_template_string(
-        _COMING_SOON_TEMPLATE, logo=_VMA_LOGO_SVG, label="Marketing",
+        _DESK_INFO_TEMPLATE, logo=_VMA_LOGO_SVG, label="Marketing",
+        message=("The Marketing desk is live and runs as its own instance off "
+                 "the same codebase — same engine, nightly scan, ranking and "
+                 "dashboard, tuned to marketing roles. Deploy it with "
+                 "VMA_PROFILE=marketing and point the chooser at it via "
+                 "VMA_PROFILE_URLS."),
+        pill="Separate instance",
     )
 
 

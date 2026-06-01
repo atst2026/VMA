@@ -18,25 +18,24 @@ import os
 
 from tool.profiles.base import Profile
 from tool.profiles.comms import COMMS
+from tool.profiles.marketing import MARKETING
 
 log = logging.getLogger("brief.profiles")
 
 DEFAULT_PROFILE_KEY = "comms"
 
-# Registry of every available specialism. Marketing slots in here once its
-# profile is authored (Phase 2) — that single line is all it takes to make
-# `VMA_PROFILE=marketing` and the landing-page door light up.
+# Registry of every available specialism. Registering a profile here is all
+# it takes to make `VMA_PROFILE=<key>` and the landing-page door light up.
 _REGISTRY: dict[str, Profile] = {
     COMMS.key: COMMS,
+    MARKETING.key: MARKETING,
 }
 
 # Specialisms that are announced but not yet live. The landing-page chooser
 # shows these as "coming soon" doors so the split is visible before the
 # profile exists. Move an entry into _REGISTRY (and delete it here) the
-# moment its profile is authored.
-UPCOMING_PROFILES: list[tuple[str, str]] = [
-    ("marketing", "Marketing"),
-]
+# moment its profile is authored. (Marketing is now live — see above.)
+UPCOMING_PROFILES: list[tuple[str, str]] = []
 
 
 def all_profiles() -> list[Profile]:

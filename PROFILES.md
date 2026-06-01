@@ -52,11 +52,36 @@ dir); namespacing kicks in the moment the profile is registered.
 ## The landing chooser
 
 `/` is the front door — a tile per **live** profile plus a "coming soon"
-tile for each entry in `UPCOMING_PROFILES`. Today: **Comms** (live, → the
-existing dashboard) and **Marketing** (coming soon). The comms landing now
-lives at `/comms`; `/dashboard` is unchanged (Sara's bookmark still works).
-When the marketing profile is registered, its door goes live automatically —
-no template change.
+tile for each entry in `UPCOMING_PROFILES`. Today **Comms** and **Marketing**
+are both live. The comms landing lives at `/comms`; `/dashboard` is unchanged
+(Sara's bookmark still works).
+
+Each tile links to that desk's dashboard. A process serves its **own** desk
+locally; **sibling** desks are linked via `VMA_PROFILE_URLS` (a JSON map of
+`{key: absolute_url}`), since each profile runs as its own instance.
+
+## Two desks, one codebase (deployment)
+
+`render.yaml` defines two free web services off this same repo: `vma-dashboard`
+(`VMA_PROFILE=comms`) and `vma-marketing-dashboard` (`VMA_PROFILE=marketing`).
+Same code, different profile → different taxonomy and a separate state
+namespace (`tool/state/` vs `tool/state/marketing/`). Set each service's
+`VMA_PROFILE_URLS` to the other's URL so the chooser cross-links them.
+
+## Email
+
+The daily morning-brief email is **off by default**
+(`config.MORNING_BRIEF_EMAIL_ENABLED`): the brief still scours, ranks and
+refreshes the dashboard every run, it just emails no one. The dashboard is the
+surface. Set `MORNING_BRIEF_EMAIL_ENABLED=1` to resume delivery.
+
+## ⚠ Marketing is a first draft
+
+`tool/profiles/marketing.py` is seeded from general marketing-recruitment
+knowledge so the desk works today. Its job titles, search queries, competitor
+excludes and (later) target companies / trade press are the things to review
+with the marketing team and tune — editing that one file re-tunes the whole
+Marketing desk.
 
 ## Adding the Marketing profile (later phases)
 

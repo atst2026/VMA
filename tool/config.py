@@ -69,12 +69,20 @@ TEST_RECIPIENT = _PROFILE.test_recipient
 SEND_AT = "08:55"                         # Europe/London
 SEND_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"]  # Monday sweeps Sat+Sun too
 
-# Only the morning brief auto-emails Sara. All other report-generators
-# (Pitch Pack, Reverse Match, Pre-meeting Brief, Manual Sweep) save
-# HTML to disk and upload via GitHub Actions artifact, but do NOT send
-# email — Sara picks them up from the dashboard's Recent Reports panel.
-# Flip this to True to re-enable per-report email sends.
+# Report-generators (Pitch Pack, Reverse Match, Pre-meeting Brief, Manual
+# Sweep) save HTML to disk and upload via GitHub Actions artifact, but do
+# NOT send email — they're picked up from the dashboard's Recent Reports
+# panel. Flip this to True to re-enable per-report email sends.
 NON_BRIEF_EMAIL_ENABLED = False
+
+# Master switch for the daily morning-brief email. OFF by default: the
+# dashboard is the primary surface, so the brief still scours, ranks and
+# refreshes the dashboard every run — it just emails no one. Set
+# MORNING_BRIEF_EMAIL_ENABLED=1 (or True/yes/on) to resume email delivery.
+MORNING_BRIEF_EMAIL_ENABLED = (
+    (os.environ.get("MORNING_BRIEF_EMAIL_ENABLED") or "").strip().lower()
+    in ("1", "true", "yes", "on")
+)
 
 # --- API keys (set via env, never commit secrets) ---
 COMPANIES_HOUSE_KEY = os.environ.get("COMPANIES_HOUSE_KEY") or ""

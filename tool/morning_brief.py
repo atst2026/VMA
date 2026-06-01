@@ -497,6 +497,14 @@ def main() -> int:
 
     # Deliver
     if mode in ("send", "test"):
+        # Global kill-switch: the dashboard is the surface, so by default the
+        # brief refreshes state/dashboard (done above) and emails no one.
+        if not config.MORNING_BRIEF_EMAIL_ENABLED:
+            log.info("Morning-brief email disabled "
+                     "(config.MORNING_BRIEF_EMAIL_ENABLED=False) — state and "
+                     "dashboard updated; no email sent.")
+            print("✓ Brief built and dashboard updated; email delivery disabled.")
+            return 0
         # Skip the send if there's literally nothing new to show. This is
         # what prevents the second cron of the day (the BST/GMT companion)
         # from blasting Sara with an empty 0-signal brief — dedup state
