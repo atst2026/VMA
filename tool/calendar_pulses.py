@@ -217,10 +217,15 @@ def _targets_for(sectors: list[str]) -> list[str]:
     return out
 
 
-def active_pulses(today: Optional[date] = None) -> list[dict]:
+def active_pulses(today: Optional[date] = None,
+                  entries: Optional[list[dict]] = None) -> list[dict]:
     """Pulses whose ACTION window is open *today*. Each record is a
     placeable lead: dated reason + named target cohort + the seat + a
     pitch angle.
+
+    `entries` lets callers decorate an arbitrary list of RAW pulse dicts
+    (curated PULSES + auto-discovered items from the pipeline) with the
+    same live date math; defaults to the hand-curated PULSES baseline.
 
     Sorted high-confidence first, then by urgency (fewest days left in
     the window first) so the most time-critical pulse is at the top.
@@ -230,8 +235,9 @@ def active_pulses(today: Optional[date] = None) -> list[dict]:
     if today is None:
         today = date.today()
 
+    source_list = PULSES if entries is None else entries
     out: list[dict] = []
-    for p in PULSES:
+    for p in source_list:
         try:
             start, end = _parse(p["window"][0]), _parse(p["window"][1])
         except Exception as e:  # malformed entry — skip, never crash
@@ -260,6 +266,8 @@ def active_pulses(today: Optional[date] = None) -> list[dict]:
             "targets":     targets,
             "confidence":  p.get("confidence", "medium"),
             "source":      p.get("source", ""),
+            "url":         p.get("url", ""),
+            "discovered":  bool(p.get("discovered")),
             "advisory":    advisory_for(p["key"]),
         })
 
@@ -267,11 +275,33 @@ def active_pulses(today: Optional[date] = None) -> list[dict]:
     return out
 
 
+def _pipeline_entries(kind: str) -> Optional[list[dict]]:
+    """RAW entries from the persistent calendar pipeline (curated baseline +
+    auto-discovered), with each entry's triage status attached. Returns None
+    if the pipeline is empty/unavailable so callers fall back to the curated
+    baseline (e.g. before the first scour has run)."""
+    try:
+        from tool import calendar_pipeline
+        items = calendar_pipeline.all_items(kind, include_dismissed=True)
+    except Exception as e:
+        log.info("calendar pipeline read failed (%s): %s", kind, e)
+        return None
+    return items or None
+
+
 def load_pulses(limit: int = 10) -> list[dict]:
-    """Dashboard accessor. Computed LIVE (pulses depend only on today's
-    date, so a 05:30-cron snapshot would be stale on days_left). No
-    external calls, no signals needed."""
-    return active_pulses()[:limit]
+    """Dashboard accessor. Decorated LIVE every call (days_left depends on
+    today's date). Reads the persistent pipeline (curated baseline +
+    auto-discovered placement windows) so newly-found regulator obligations
+    appear automatically; falls back to the curated PULSES baseline if the
+    pipeline hasn't been populated yet."""
+    entries = _pipeline_entries("windows")
+    rows = active_pulses(entries=entries)
+    if entries is not None:
+        status = {e.get("key"): e.get("status", "active") for e in entries}
+        for r in rows:
+            r["status"] = status.get(r.get("key"), "active")
+    return rows[:limit]
 
 
 # ---------------------------------------------------------------------------
@@ -363,15 +393,20 @@ INDUSTRY_EVENTS: list[dict] = [
 
 
 def active_events(today: Optional[date] = None,
-                  lookahead_days: int = 180) -> list[dict]:
+                  lookahead_days: int = 180,
+                  entries: Optional[list[dict]] = None) -> list[dict]:
     """Industry events whose ACTION window is open today OR whose event
     date falls within the next `lookahead_days`. Sorted by event date
-    so the soonest event is at the top."""
+    so the soonest event is at the top.
+
+    `entries` lets callers decorate an arbitrary list of RAW event dicts
+    (curated INDUSTRY_EVENTS + auto-discovered items from the pipeline)
+    with the same live date math; defaults to the curated baseline."""
     if today is None:
         today = date.today()
-    horizon = today.replace() if False else today
+    source_list = INDUSTRY_EVENTS if entries is None else entries
     out: list[dict] = []
-    for e in INDUSTRY_EVENTS:
+    for e in source_list:
         try:
             ev_date = _parse(e["event_date"])
             win_start, win_end = (_parse(e["action_window"][0]),
@@ -395,6 +430,8 @@ def active_events(today: Optional[date] = None,
             "focus":         e.get("focus", "mixed"),
             "why_now":       e.get("why_now", ""),
             "source":        e.get("source", ""),
+            "url":           e.get("url", ""),
+            "discovered":    bool(e.get("discovered")),
             "in_action_window": in_window,
             "type":          "event",                  # distinguishes from pulse
         })
@@ -403,5 +440,14 @@ def active_events(today: Optional[date] = None,
 
 
 def load_events(limit: int = 24) -> list[dict]:
-    """Dashboard accessor for industry events. Same pattern as load_pulses."""
-    return active_events()[:limit]
+    """Dashboard accessor for industry events. Same pattern as load_pulses:
+    decorated live from the persistent pipeline (curated baseline +
+    auto-discovered comms events), falling back to the curated baseline if
+    the pipeline is empty."""
+    entries = _pipeline_entries("events")
+    rows = active_events(entries=entries)
+    if entries is not None:
+        status = {e.get("key"): e.get("status", "active") for e in entries}
+        for r in rows:
+            r["status"] = status.get(r.get("key"), "active")
+    return rows[:limit]
