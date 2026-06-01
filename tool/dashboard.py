@@ -54,7 +54,7 @@ log = logging.getLogger("dashboard")
 # (default: comms). State lives in that profile's namespace: comms uses the
 # legacy root tool/state/ (so Sara's tool is unaffected); other profiles get
 # tool/state/<key>/. See tool/profiles/ and tool/state_paths.py.
-from tool.profiles import UPCOMING_PROFILES, active_profile, all_profiles
+from tool.profiles import active_profile
 from tool.state_paths import state_root
 
 PROFILE = active_profile()
@@ -1002,16 +1002,7 @@ def _landing_signals(limit: int = 4) -> list[dict]:
     return random.sample(pool, limit)
 
 
-# ---- Landing chooser (Comms / Marketing) --------------------------------
-# The front door. One tile per live profile (from the registry) plus a
-# "coming soon" tile for each announced-but-not-yet-built specialism
-# (profiles.UPCOMING_PROFILES). A new specialism appears here the instant
-# its profile is registered — no template change needed.
-_PROFILE_BLURBS = {
-    "comms": "Senior in-house Communications leads, predictors & BD intelligence.",
-    "marketing": "Senior Marketing & Brand leads — same engine, in build.",
-}
-
+# ---- Secondary-desk info page (used by the /marketing handoff) ----------
 _CHOOSER_CSS = (
     ":root{--steel:#3F5E83;--deep:#1A3D7C;--ink:#1f2733;--muted:#6b7689;"
     "--line:rgba(31,39,51,.12);}*{box-sizing:border-box;}"
@@ -1042,25 +1033,6 @@ _CHOOSER_CSS = (
     ".foot{margin-top:34px;color:#9aa3b2;font-size:12px;}a{color:var(--steel);}"
 )
 
-_CHOOSER_TEMPLATE = (
-    "<!doctype html><html lang=en><head><meta charset=utf-8>"
-    "<meta name=viewport content='width=device-width, initial-scale=1'>"
-    "<title>VMA Intelligence</title><style>" + _CHOOSER_CSS + "</style></head><body>"
-    "<div class=logo>{{ logo|safe }}</div>"
-    "<h1>VMA Intelligence</h1>"
-    "<p class=sub>Choose a desk. Each runs the same engine and nightly scan, "
-    "tuned to its own specialism.</p>"
-    "<div class=grid>{% for c in cards %}"
-    "<a class='card {{ '' if c.live else 'soon' }}' href='{{ c.href }}'>"
-    "<p class=label><span class=dot></span>{{ c.label }}</p>"
-    "<p class=blurb>{{ c.blurb }}</p>"
-    "{% if c.live %}<span class=go>Open &rarr;</span>"
-    "{% else %}<span class=pill>Coming soon</span>{% endif %}</a>"
-    "{% endfor %}</div>"
-    "<div class=foot>One codebase &middot; one nightly scan &middot; separate desks</div>"
-    "</body></html>"
-)
-
 _DESK_INFO_TEMPLATE = (
     "<!doctype html><html lang=en><head><meta charset=utf-8>"
     "<meta name=viewport content='width=device-width, initial-scale=1'>"
@@ -1073,41 +1045,6 @@ _DESK_INFO_TEMPLATE = (
     "<p class=foot><a href='/'>&larr; Back</a></p>"
     "</body></html>"
 )
-
-
-def _chooser_cards() -> list[dict]:
-    """Tiles for the chooser: every live profile (the current process's own
-    desk linked locally, sibling desks via VMA_PROFILE_URLS), then any
-    announced-but-not-live specialism as a 'coming soon' tile."""
-    cards: list[dict] = []
-    seen = set()
-    for p in all_profiles():
-        if p.key == PROFILE.key:
-            href = "/comms" if p.key == "comms" else "/dashboard"
-        else:
-            href = PROFILE_URLS.get(p.key) or f"/{p.key}"
-        cards.append({
-            "key": p.key, "label": p.label, "live": True, "href": href,
-            "blurb": _PROFILE_BLURBS.get(p.key, f"Open the {p.label} desk."),
-        })
-        seen.add(p.key)
-    for key, label in UPCOMING_PROFILES:
-        if key in seen:
-            continue
-        cards.append({
-            "key": key, "label": label, "live": False, "href": f"/{key}",
-            "blurb": _PROFILE_BLURBS.get(key, "In build — launching soon."),
-        })
-    return cards
-
-
-@app.route("/")
-@_auth_required
-def chooser():
-    """Front door — pick a desk (Comms live; Marketing coming soon)."""
-    return render_template_string(
-        _CHOOSER_TEMPLATE, cards=_chooser_cards(), logo=_VMA_LOGO_SVG,
-    )
 
 
 @app.route("/marketing")
@@ -1131,13 +1068,14 @@ def marketing_desk():
     )
 
 
-@app.route("/comms")
+@app.route("/")
 @_auth_required
 def landing():
     """Gemini-clone landing — verbatim ground-truth CSS captured from
     gemini.google.com/app, ::before recentred for our viewport. VMA logo
     over a market-scanner radar whose signal chips are pulled live from the
-    latest leads / pre-market triggers, and rotate through the full pool."""
+    latest leads / pre-market triggers, and rotate through the full pool.
+    The single launch pill is split into two: Comms and Marketing."""
     import random
     pool = _landing_signal_pool()
     # Initial 4: guarantee BD leads (funding=green / predictor=gold) get a slot
@@ -1150,7 +1088,15 @@ def landing():
     random.shuffle(shown)
     if len(shown) < 4:
         shown = pool[:4]
-    return render_template_string(LANDING_TEMPLATE, signals=shown, signal_pool=pool)
+    # Each launch pill points at that desk: the desk THIS process serves is
+    # local (/dashboard); the sibling desk uses VMA_PROFILE_URLS (its own
+    # instance) or falls back to the /marketing handoff page.
+    comms_href = "/dashboard" if PROFILE.key == "comms" else (PROFILE_URLS.get("comms") or "/dashboard")
+    marketing_href = "/dashboard" if PROFILE.key == "marketing" else (PROFILE_URLS.get("marketing") or "/marketing")
+    return render_template_string(
+        LANDING_TEMPLATE, signals=shown, signal_pool=pool,
+        comms_href=comms_href, marketing_href=marketing_href,
+    )
 
 
 @app.route("/dashboard")
@@ -1854,10 +1800,14 @@ LANDING_TEMPLATE = r"""
   .wordmark .v{font-weight:800;letter-spacing:.06em;font-size:64px;}
   .wordmark .g{font-weight:300;letter-spacing:.32em;font-size:64px;padding-left:.42em;margin-right:-.32em;}
 
+  .pill-row{
+    display:flex;gap:14px;justify-content:center;align-items:stretch;
+    width:535px;max-width:90vw;flex-wrap:wrap;
+  }
   .pill{
     background:rgb(255,255,255);border:none;border-radius:26px;
     box-shadow:0 2px 8px -2px rgba(0,0,0,0.16);
-    padding:0 18px;width:535px;height:52px;max-width:none;
+    padding:0 18px;flex:1 1 200px;min-width:0;height:52px;max-width:none;
     display:flex;align-items:center;justify-content:center;gap:12px;
     text-decoration:none;color:rgb(31,31,31);cursor:pointer;
     transition:transform .15s ease, box-shadow .15s ease;
@@ -1903,7 +1853,8 @@ LANDING_TEMPLATE = r"""
 
   @media (max-width:720px){
     .stage{gap:24px;}
-    .pill{width:90%;height:56px;}
+    .pill-row{width:92%;}
+    .pill{flex:1 1 100%;height:56px;}
     .lbl{font-size:11px;letter-spacing:.18em;}
     .logo-tile{width:92px;height:92px;}
     /* shrink + edge-anchor the signal chips so they never sit over the logo on
@@ -1948,11 +1899,18 @@ LANDING_TEMPLATE = r"""
       {% endif %}
       <div class="logo-tile"></div>
     </div>
-    <a class="pill" href="/dashboard">
-      <span class="dot"></span>
-      <span class="lbl">Intelligence Platform &middot; Live</span>
-      <span class="arrow">&rarr;</span>
-    </a>
+    <div class="pill-row">
+      <a class="pill" href="{{ comms_href }}">
+        <span class="dot"></span>
+        <span class="lbl">Comms &middot; Launch App</span>
+        <span class="arrow">&rarr;</span>
+      </a>
+      <a class="pill" href="{{ marketing_href }}">
+        <span class="dot"></span>
+        <span class="lbl">Marketing &middot; Launch App</span>
+        <span class="arrow">&rarr;</span>
+      </a>
+    </div>
   </div>
   <script>
     var LOGO = '<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">'
