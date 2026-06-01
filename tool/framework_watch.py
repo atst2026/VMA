@@ -122,16 +122,22 @@ def _months_between(a: date, b: date) -> float:
     return (b.year - a.year) * 12 + (b.month - a.month) + (b.day - a.day) / 30.0
 
 
-def load_frameworks(today: date | None = None) -> list[dict]:
+def load_frameworks(today: date | None = None,
+                    entries: list[dict] | None = None) -> list[dict]:
     """Return the watched frameworks decorated with refresh-window status.
 
     status: "refresh_window" (re-procurement window open now),
             "live" (running; window not yet open),
             "expired", or "unknown" (no date to compute from).
-    Sorted: open refresh windows first, then soonest expiry."""
+    Sorted: open refresh windows first, then soonest expiry.
+
+    `entries` lets callers decorate an arbitrary list of RAW framework dicts
+    (curated FRAMEWORKS + auto-discovered notices from the pipeline) with the
+    same live window math; defaults to the curated FRAMEWORKS baseline."""
     today = today or date.today()
+    source_list = FRAMEWORKS if entries is None else entries
     out: list[dict] = []
-    for fw in FRAMEWORKS:
+    for fw in source_list:
         exp = _parse(fw.get("expiry_date"))
         # Drop from the dashboard once it's been expired beyond the grace
         # window — a stale "EXPIRED" row is just noise after that.
@@ -172,3 +178,22 @@ def load_frameworks(today: date | None = None) -> list[dict]:
     out.sort(key=lambda f: (rank.get(f["status"], 9),
                             f["days_to_expiry"] if f["days_to_expiry"] is not None else 1e9))
     return out
+
+
+def load_frameworks_live(today: date | None = None) -> list[dict]:
+    """Pipeline-backed accessor: decorate the persistent calendar pipeline
+    (curated FRAMEWORKS baseline + auto-discovered framework notices) live.
+
+    Triage (active/followed_up/dismissed) is overlaid by the dashboard via
+    framework_status.json keyed by `key` — which already covers discovered
+    keys — so this only handles discovery + live window decoration. Falls
+    back to the curated baseline if the pipeline is empty (e.g. before the
+    first scour)."""
+    entries = None
+    try:
+        from tool import calendar_pipeline
+        items = calendar_pipeline.all_items("frameworks", include_dismissed=True)
+        entries = items or None
+    except Exception as e:
+        log.info("framework pipeline read failed: %s", e)
+    return load_frameworks(today=today, entries=entries)

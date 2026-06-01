@@ -827,6 +827,11 @@ def _boot_state_hydrate():
             "tool/state/latest_predictive.json",
             "tool/state/latest_funding.json",
             "tool/state/predictor_pipeline.json",
+            # BD-Calendar auto-update pipelines (curated baseline +
+            # auto-discovered placement windows / events / frameworks).
+            "tool/state/calendar_pipeline_windows.json",
+            "tool/state/calendar_pipeline_events.json",
+            "tool/state/calendar_pipeline_frameworks.json",
         ])
     except Exception as e:
         log.warning("state hydrate skipped: %s", e)
@@ -1014,8 +1019,8 @@ def index():
         "dismissed":   sum(1 for e in cascade_events if e["cs_bucket"] == "dismissed"),
     }
     funding_events = load_funding(limit=30)
-    from tool.framework_watch import load_frameworks
-    framework_events = load_frameworks()
+    from tool.framework_watch import load_frameworks_live
+    framework_events = load_frameworks_live()
     # Decorate with stable id + persisted triage status so the
     # Followed-up / Dismissed buttons can survive a refresh.
     from tool import funding_status as _fs
@@ -1506,7 +1511,8 @@ def api_pulses():
     from tool.calendar_pulses import load_pulses
     from tool import pulse_dismiss
     dismissed = pulse_dismiss.get_dismissed()
-    rows = [r for r in load_pulses(limit=20) if r.get("key") not in dismissed]
+    rows = [r for r in load_pulses(limit=20)
+            if r.get("key") not in dismissed and r.get("status") != "dismissed"]
     return jsonify({"rows": rows[:10], "total": len(rows[:10])})
 
 
@@ -1518,7 +1524,8 @@ def api_industry_events():
     from tool.calendar_pulses import load_events
     from tool import pulse_dismiss
     dismissed = pulse_dismiss.get_dismissed()
-    rows = [r for r in load_events(limit=40) if r.get("key") not in dismissed]
+    rows = [r for r in load_events(limit=40)
+            if r.get("key") not in dismissed and r.get("status") != "dismissed"]
     return jsonify({"rows": rows[:24], "total": len(rows[:24])})
 
 
@@ -1535,6 +1542,43 @@ def api_pulses_dismiss():
         return jsonify({"ok": False, "detail": "key required"}), 400
     ok = pulse_dismiss.set_dismissed(key, dismissed)
     return jsonify({"ok": ok})
+
+
+@app.route("/api/calendar/<kind>/mark", methods=["POST"])
+@_auth_required
+def api_calendar_mark(kind):
+    """Triage a BD-Calendar pipeline item (placement window / event) —
+    active / followed_up / dismissed — persisted across refreshes in the
+    calendar pipeline, mirroring the predictor + framework triage."""
+    from tool import calendar_pipeline
+    if kind not in calendar_pipeline.VALID_KINDS:
+        return jsonify({"ok": False, "detail": "invalid kind"}), 400
+    data = _safe_json_body()
+    key = (data.get("key") or "").strip()
+    status = (data.get("status") or "").strip()
+    if not key or not status:
+        return jsonify({"ok": False, "detail": "key and status required"}), 400
+    if not calendar_pipeline.set_status(kind, key, status):
+        return jsonify({"ok": False, "detail": "invalid key or status"}), 400
+    return jsonify({"ok": True})
+
+
+@app.route("/api/calendar/refresh", methods=["POST"])
+@_auth_required
+def api_calendar_refresh():
+    """Manually re-scour the BD-Calendar sources on demand (the same
+    discovery the morning brief runs on cron) — finds new placement
+    windows, comms events and exec-search framework notices and merges
+    them into the persistent pipelines."""
+    from tool import calendar_discovery
+    summary = calendar_discovery.refresh_all()
+    return jsonify({
+        "ok": True,
+        "summary": {k: {"new": len(v.get("new", [])),
+                        "active": v.get("total_active"),
+                        "aged_out": v.get("aged_out")}
+                    for k, v in summary.items()},
+    })
 
 
 @app.route("/api/water-sar", methods=["GET"])
@@ -2421,6 +2465,10 @@ TEMPLATE = r"""
     .conf-pill.high { background: var(--grn-bg); color: var(--grn-tx); }
     .conf-pill.med { background: var(--tan-bg); color: var(--tan-tx); }
     .win-days { font: 600 9.5px/1 "JetBrains Mono", monospace; color: var(--ink-2); }
+    /* "Found" = auto-discovered (vs hand-curated) BD-calendar item. */
+    .found-pill { font: 700 8px/1 "JetBrains Mono", monospace; letter-spacing: .05em;
+      text-transform: uppercase; padding: 2px 6px; border-radius: 9999px; vertical-align: 1px;
+      background: var(--blue-soft, #e6effb); color: var(--blue-deep, #1a4f9c); }
     .win-scope { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.45; }
     /* Framework Eligibility — 'structural framework' treatment: each row framed
        like a built structure (left girder + corner joints). */
@@ -4056,7 +4104,7 @@ TEMPLATE = r"""
             <div class="row2 framework-row" data-status="{{ fw.triage }}" data-new="0" data-fwid="{{ fw.key }}">
               <div class="row2-head">
                 <span class="typ fw">FW</span>
-                <span class="row2-title">{{ fw.ad_title or fw.title }}</span>
+                <span class="row2-title">{{ fw.ad_title or fw.title }}{% if fw.discovered %} <span class="found-pill" title="Auto-discovered from a live public source">Found</span>{% endif %}</span>
                 <span class="row2-tags">
                   <span class="ipill {{ 'w' if fw.status == 'refresh_window' else 'mut' }}">{{ fw.window_pill }}</span>
                   {% if fw.triage == 'followed_up' %}<span class="status-badge followed-up">&#10003;</span>{% elif fw.triage == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
@@ -4630,14 +4678,15 @@ async function loadPulses() {
         '<div class="win-row' + (p.just_opened ? ' is-new' : '') + '" data-key="' + esc(p.key || p.name || '') + '">' +
           '<div class="win-tile" title="Placement window"></div>' +
           '<div class="win-main">' +
-            '<div class="win-name">' + esc(p.name || '') + '</div>' +
+            '<div class="win-name">' + esc(p.name || '') +
+              (p.discovered ? ' <span class="found-pill" title="Auto-discovered from a live public source">Found</span>' : '') + '</div>' +
             (p.seat ? '<div class="win-seat">' + esc(p.seat) + '</div>' : '') +
             '<div class="win-tags">' +
               '<span class="conf-pill ' + (high ? 'high' : 'med') + '">' + esc(confLabel) + '</span>' +
               (days ? '<span class="win-days">' + esc(days) + '</span>' : '') +
             '</div>' +
             (p.scope_note ? '<div class="win-scope">' + esc(p.scope_note) +
-              (p.source ? ' &middot; <a href="' + safeUrl(p.source) +
+              ((p.url || p.source) ? ' &middot; <a href="' + safeUrl(p.url || p.source) +
                  '" target="_blank" rel="noopener noreferrer" style="color:var(--blue-deep);text-decoration:none;">source</a>' : '') +
               '</div>' : '') +
             (p.advisory ? '<div class="win-scope">' + esc(p.advisory) + '</div>' : '') +
@@ -4742,13 +4791,15 @@ async function loadEvents() {
         ? '<button class="ev-rm" data-key="' + esc(e.key) + '" title="Remove this event">&#10005;</button>' : '';
       const focLab = e.focus === 'internal' ? 'Internal' : e.focus === 'external' ? 'External' : 'Mixed';
       const when = whenChip(e.days_to_event);
-      const hasDetail = !!(e.why_now || e.source);
+      const srcLink = e.url || e.source;
+      const hasDetail = !!(e.why_now || srcLink);
       out.push(
         '<div class="ev-item' + (hasDetail ? ' has-detail' : '') + '" data-evkey="' + esc(e.key || e.name || '') + '">' +
           '<div class="ev-row">' +
             '<div class="ev-date"><b>' + esc(dayOf(e.event_date)) + '</b><span>' + esc(monOf(e.event_date)) + '</span></div>' +
             '<div class="ev-main">' +
-              '<div class="ev-n">' + esc(e.name || '') + win + '</div>' +
+              '<div class="ev-n">' + esc(e.name || '') + win +
+                (e.discovered ? ' <span class="found-pill" title="Auto-discovered from a live public source">Found</span>' : '') + '</div>' +
               '<div class="ev-t">' +
                 '<span class="ev-foc">' + focLab + '</span>' +
                 (e.location ? '<span>' + esc(e.location) + '</span>' : '') +
@@ -4761,7 +4812,7 @@ async function loadEvents() {
           (hasDetail ?
             '<div class="ev-detail">' +
               (e.why_now ? '<div class="ev-why">' + esc(e.why_now) + '</div>' : '') +
-              (e.source ? '<div class="ev-why"><a href="' + safeUrl(e.source) +
+              (srcLink ? '<div class="ev-why"><a href="' + safeUrl(srcLink) +
                  '" target="_blank" rel="noopener noreferrer" style="color:var(--blue-deep);text-decoration:none;">source &rsaquo;</a></div>' : '') +
             '</div>' : '') +
         '</div>'

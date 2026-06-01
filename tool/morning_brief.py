@@ -392,6 +392,29 @@ def main() -> int:
     except Exception as e:
         log.info("calendar pulses failed: %s", e)
 
+    # BD-Calendar auto-update: scour real public sources for NEW placement
+    # windows, comms events and exec-search framework notices, and merge
+    # them (plus the curated baseline) into the persistent calendar
+    # pipelines — so the three BD-Calendar tools auto-update like Today's
+    # Leads / Pre-Market instead of only showing hand-curated seeds. The
+    # pipeline state files are pushed to the dashboard-state branch below.
+    try:
+        from tool import calendar_discovery
+        cal_summary = calendar_discovery.refresh_all()
+        log.info("BD-Calendar discovery: %s",
+                 {k: {"new": len(v.get("new", [])),
+                      "active": v.get("total_active")}
+                  for k, v in cal_summary.items()})
+        from tool import calendar_pipeline as _calpipe
+        for _kind in ("windows", "events", "frameworks"):
+            _p = STATE_DIR / f"calendar_pipeline_{_kind}.json"
+            if _p.exists():
+                _persist_state(_calpipe.repo_state_path(_kind),
+                               _p.read_text(),
+                               f"state: BD-calendar pipeline ({_kind})")
+    except Exception as e:
+        log.info("BD-Calendar discovery failed: %s", e)
+
     # Water Special-Administration Watch — the highest-value single comms
     # event in UK utilities. Runs over the RAW signals (Ofwat News RSS /
     # RNS / GDELT / trade press already scoured); a small extension of
