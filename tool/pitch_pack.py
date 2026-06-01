@@ -64,18 +64,47 @@ SALARY_BANDS_GBP = {
     "head of external communications":   (95_000, 145_000),
 }
 
+# Marketing desk (FIRST DRAFT): senior UK marketing salary bands.
+_MARKETING_SALARY_BANDS_GBP = {
+    "head of marketing":             (85_000, 130_000),
+    "head of brand":                 (90_000, 135_000),
+    "brand director":                (110_000, 160_000),
+    "marketing director":            (120_000, 175_000),
+    "director of marketing":         (120_000, 175_000),
+    "chief marketing officer":       (180_000, 320_000),
+    "head of growth":                (90_000, 150_000),
+    "head of digital marketing":     (85_000, 130_000),
+    "head of performance marketing": (85_000, 130_000),
+    "head of product marketing":     (90_000, 140_000),
+    "ecommerce director":            (110_000, 160_000),
+    "crm director":                  (95_000, 140_000),
+    "head of demand generation":     (85_000, 130_000),
+}
+
+from tool.profiles import active_profile as _active_profile
+_MKT = _active_profile().key == "marketing"
+if _MKT:
+    SALARY_BANDS_GBP = _MARKETING_SALARY_BANDS_GBP
+# Profile-aware defaults used below + in the generated copy.
+_DEFAULT_BAND_KEY = "head of marketing" if _MKT else "head of internal communications"
+_DEFAULT_ROLE = "Head of Marketing" if _MKT else "Head of Internal Communications"
+_NOUN = "marketing" if _MKT else "comms"
+_DOWNSTREAM_EXAMPLES = (
+    "Brand Managers, Campaign Managers, Digital Marketing Managers" if _MKT
+    else "IC Business Partners, Change Comms Leads, Digital Comms Managers")
+
 
 def _salary_band(role: str) -> tuple[int, int, str]:
     """Find the closest matching salary band. Returns (low, high, matched_role).
-    Defaults to Head of IC if nothing matches."""
+    Defaults to the profile's default seat if nothing matches."""
     r = (role or "").lower().strip()
     if not r:
-        return *SALARY_BANDS_GBP["head of internal communications"], "head of internal communications"
+        return *SALARY_BANDS_GBP[_DEFAULT_BAND_KEY], _DEFAULT_BAND_KEY
     # Exact substring match
     for key, band in SALARY_BANDS_GBP.items():
         if key in r or r in key:
             return *band, key
-    return *SALARY_BANDS_GBP["head of internal communications"], "head of internal communications (default)"
+    return *SALARY_BANDS_GBP[_DEFAULT_BAND_KEY], f"{_DEFAULT_BAND_KEY} (default)"
 
 
 # ---- Cost of vacancy: simple defensible template ---------------------
@@ -346,7 +375,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
             "<span style='color:#888;font-size:11px;'>(see Section 3)</span></div>") if cov_total else "")
         + "</div>"
         "<div style='font-size:13px;color:#444;'>"
-        "<span style='color:#888;'>Pipeline:</span> a senior comms placement typically opens "
+        f"<span style='color:#888;'>Pipeline:</span> a senior {_NOUN} placement typically opens "
         "<strong>2–4 follow-on hires</strong> over 12–18 months — a retained engagement positions "
         "VMA for the full pipeline, not just the headline role.</div>"
         f"{ch_footer}"
@@ -402,7 +431,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
   <li>Exclusivity unlocks deeper passive-candidate outreach (~3× larger universe vs contingent)</li>
   <li>Milestone fees align our priority with yours, so we're not racing 6 other firms on the same role</li>
   <li>Pre-agreed methodology removes 8–10 hours of back-and-forth at submission stage</li>
-  <li>Senior comms placements typically open 2-4 downstream hires (IC Business Partners, Change Comms Leads, Digital Comms Managers) over the following 12-18 months, so a retained engagement positions VMA Group for the full pipeline, not just the headline role</li>
+  <li>Senior {_NOUN} placements typically open 2-4 downstream hires ({_DOWNSTREAM_EXAMPLES}) over the following 12-18 months, so a retained engagement positions VMA Group for the full pipeline, not just the headline role</li>
 </ul>
 
 <h3 style="margin:18px 0 6px 0;">8. Risk-mitigation terms</h3>
@@ -436,7 +465,7 @@ def render_text(target: str, role: str, ch_snapshot: dict,
     lines.append(f"   Indicative retained fee: £{_fee_low:,}–£{_fee_high:,} (28–33% of base; more with bonus/LTIP)")
     if _cov_total:
         lines.append(f"   Cost of an empty seat: £{_cov_total:,} (see section 3)")
-    lines.append("   Pipeline: a senior comms placement typically opens 2–4 follow-on hires over 12–18 months.")
+    lines.append(f"   Pipeline: a senior {_NOUN} placement typically opens 2–4 follow-on hires over 12–18 months.")
     if ch_snapshot.get("found"):
         resolved = ch_snapshot.get("resolved") or {}
         lines.append(f"   Companies House: {resolved.get('company_number','?')} · {resolved.get('company_status','?')} "
@@ -501,7 +530,7 @@ def render_text(target: str, role: str, ch_snapshot: dict,
               "   - Exclusivity unlocks ~3x larger passive universe",
               "   - Milestone fees align priority",
               "   - Pre-agreed methodology removes 8-10 hrs of back-and-forth",
-              "   - Senior comms placements typically open 2-4 downstream hires over",
+              f"   - Senior {_NOUN} placements typically open 2-4 downstream hires over",
               "     12-18 months, so retained positions VMA Group for the full pipeline",
               "",
               "8. RISK-MITIGATION TERMS",
@@ -513,11 +542,11 @@ def render_text(target: str, role: str, ch_snapshot: dict,
 
 def main() -> int:
     if len(sys.argv) < 2:
-        print('Usage: python -m tool.pitch_pack "<account name>" [role="Head of Internal Communications"] [mode=preview|send|test]', file=sys.stderr)
+        print(f'Usage: python -m tool.pitch_pack "<account name>" [role="{_DEFAULT_ROLE}"] [mode=preview|send|test]', file=sys.stderr)
         return 2
 
     target = sys.argv[1].strip()
-    role = os.environ.get("PITCH_ROLE", "Head of Internal Communications")
+    role = os.environ.get("PITCH_ROLE", _DEFAULT_ROLE)
     mode = (sys.argv[2] if len(sys.argv) > 2 else "preview").lower()
     log.info("Building pitch pack for %r · role %r · mode %r", target, role, mode)
 

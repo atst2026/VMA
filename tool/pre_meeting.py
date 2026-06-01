@@ -39,7 +39,15 @@ log.setLevel(logging.INFO)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 
 from tool.state_paths import state_root
+from tool.profiles import active_profile as _active_profile
 STATE_DIR = state_root()
+
+# Profile-aware nouns for the generated pre-meeting copy.
+_MKT = _active_profile().key == "marketing"
+_NOUN = "marketing" if _MKT else "comms"
+_DISCIPLINES = "marketing / brand / growth" if _MKT else "comms / IC / corporate-affairs"
+
+
 @dataclass
 class PrepBrief:
     account: str
@@ -375,7 +383,7 @@ def _build_conversation_hooks(brief: PrepBrief) -> list[str]:
         prob = p.get("probability", "?")
         hooks.append(
             f"Predictor angle: the {trigger.lower()} signal at {brief.account} "
-            f"resolves to a {prob}% probability of comms hire within {window}. "
+            f"resolves to a {prob}% probability of {_NOUN} hire within {window}. "
             f"Ask how they're thinking about backup capacity."
         )
         break
@@ -393,7 +401,7 @@ def _build_conversation_hooks(brief: PrepBrief) -> list[str]:
         elif kind in ("rns", "filing", "regulator"):
             hooks.append(
                 f"News angle: their recent disclosure \"{title[:140]}\" - "
-                f"pivot to how it affects their comms / IR rhythm."
+                f"pivot to how it affects their {_NOUN} / IR rhythm."
             )
         elif kind == "news":
             hooks.append(
@@ -420,7 +428,7 @@ def _build_conversation_hooks(brief: PrepBrief) -> list[str]:
         else:
             hooks.append(
                 f"Priority angle: their published priorities include \"{snippet}\" - "
-                f"ask how that translates into comms / IC / corporate-affairs "
+                f"ask how that translates into {_DISCIPLINES} "
                 f"headcount priorities for the year."
             )
         break
@@ -435,12 +443,12 @@ def _build_conversation_hooks(brief: PrepBrief) -> list[str]:
         f"comparators that often surface unstated hiring intent at "
         f"{brief.account}.",
 
-        f"Discovery angle: 'what's the one comms capability gap you wish "
+        f"Discovery angle: 'what's the one {_NOUN} capability gap you wish "
         f"you had more bandwidth for?' is a single open question that "
         f"often unlocks more than any prepared pitch.",
 
         f"Year-ahead angle: 'looking 6 months out, what would make your "
-        f"comms function easier to run?' surfaces plans that haven't hit "
+        f"{_NOUN} function easier to run?' surfaces plans that haven't hit "
         f"any public channel yet.",
     ]
     fallback_idx = 0

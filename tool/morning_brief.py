@@ -522,8 +522,11 @@ def main() -> int:
 
         to = config.TEST_RECIPIENT if mode == "test" else config.RECIPIENT
         n_pred = len(ranked_stacks)
+        from tool.profiles import active_profile as _ap
+        _brief_name = ("Marketing Brief" if _ap().key == "marketing"
+                       else "Sara's Morning Brief")
         subject = (
-            f"Sara's Morning Brief — {now.strftime('%a %d %b')} "
+            f"{_brief_name} — {now.strftime('%a %d %b')} "
             f"({len(ranked)} live · {n_pred} pre-advert)"
         )
         if mode == "test":

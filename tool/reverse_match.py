@@ -101,8 +101,26 @@ def _active_leads_for_target(target: str) -> list[dict]:
 
 
 # ---- Recommended contact by candidate title --------------------------
+from tool.profiles import active_profile as _active_profile
+_MKT = _active_profile().key == "marketing"
+
+
 def _recommended_contact(candidate_title: str) -> str:
     t = (candidate_title or "").lower()
+    if _MKT:
+        if any(k in t for k in ("chief marketing", "cmo")):
+            return "CEO's office / Chair"
+        if any(k in t for k in ("marketing director", "director of marketing", "vp marketing")):
+            return "CEO / CMO"
+        if any(k in t for k in ("brand director", "head of brand")):
+            return "CMO / Marketing Director"
+        if "growth" in t:
+            return "CMO / CEO"
+        if "product marketing" in t:
+            return "CMO / Head of Product"
+        if any(k in t for k in ("crm", "lifecycle", "retention")):
+            return "CMO / Head of Marketing"
+        return "CMO / Marketing Director"
     if any(k in t for k in ("chief communications", "cco")):
         return "CEO's office / Chair"
     if any(k in t for k in ("corporate affairs director", "communications director",
@@ -135,11 +153,38 @@ _FAMILY_DISP = {
     "marketing": "marketing/brand", "ir": "investor relations",
     "unknown": "comms",
 }
+# Marketing desk (FIRST DRAFT): discipline families for marketing titles.
+_FAMILY_DISP_MARKETING = {
+    "brand": "brand", "growth": "growth", "performance": "performance marketing",
+    "digital": "digital marketing", "product": "product marketing",
+    "crm": "CRM / lifecycle", "ecommerce": "ecommerce",
+    "generalist": "marketing", "unknown": "marketing",
+}
+if _MKT:
+    _FAMILY_DISP = _FAMILY_DISP_MARKETING
 
 
 def _comms_family(title: str) -> str:
-    """Bucket a comms title into a discipline family."""
+    """Bucket a title into a discipline family (profile-aware)."""
     t = (title or "").lower()
+    if _MKT:
+        if "brand" in t:
+            return "brand"
+        if "growth" in t:
+            return "growth"
+        if any(k in t for k in ("performance", "paid media", "ppc", "acquisition")):
+            return "performance"
+        if "product marketing" in t:
+            return "product"
+        if any(k in t for k in ("crm", "lifecycle", "retention")):
+            return "crm"
+        if any(k in t for k in ("ecommerce", "e-commerce")):
+            return "ecommerce"
+        if "digital" in t:
+            return "digital"
+        if "marketing" in t:
+            return "generalist"
+        return "unknown"
     if any(k in t for k in ("internal comm", "employee comm", "colleague comm",
                             "change comm", "head of ic", "ic manager")):
         return "ic"

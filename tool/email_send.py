@@ -91,7 +91,10 @@ def _send_gmail(to: str, subject: str, html: str, text: str | None,
                 bcc: list[str] | None = None) -> dict:
     gmail_user = os.environ["GMAIL_USER"].strip()
     gmail_pw = os.environ["GMAIL_APP_PASSWORD"].replace(" ", "").strip()
-    display_name = os.environ.get("GMAIL_FROM_NAME", "Sara's Morning Brief")
+    from tool.profiles import active_profile
+    _default_name = ("Marketing Brief" if active_profile().key == "marketing"
+                     else "Sara's Morning Brief")
+    display_name = os.environ.get("GMAIL_FROM_NAME", _default_name)
     from_header = f"{display_name} <{gmail_user}>"
 
     msg = MIMEMultipart("alternative")
