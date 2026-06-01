@@ -1,15 +1,28 @@
 [
   {
-    "company": "Orbital Industries",
-    "round": "Series B",
-    "amount": "\u00a337.3m",
-    "evidence": "Orbital Industries raises \u00a337.3m to build industrial hardware using AI",
-    "investor": "",
-    "url": "https://www.uktech.news/ai/orbital-industries-raises-37-3m-to-build-industrial-hardware-using-ai-20260528",
+    "company": "Geordie AI",
+    "round": "Series A",
+    "amount": "\u00a322.3m",
+    "evidence": "Geordie AI raises \u00a322.3m for security and governance platform for AI agents",
+    "investor": "Balderton",
+    "url": "https://www.uktech.news/ai/geordie-ai-raises-22-3m-for-security-and-governance-platform-for-ai-agents-20260601",
     "source": "UKTN",
     "sector": "",
     "window": "Senior-comms window ~6 mo",
     "advisory": "Advisory: comms-function design-for-scale + benchmarking; build the senior-comms market map ahead of the ~6-month hire.",
     "confidence": "high"
+  },
+  {
+    "company": "Head of Communications . We've",
+    "round": "Series B",
+    "amount": "$60m",
+    "evidence": "Head of Communications",
+    "investor": "",
+    "url": "https://www.adzuna.co.uk/jobs/details/5747406007?utm_medium=api&utm_source=2317bb5a",
+    "source": "Adzuna (Indeed + aggregators)",
+    "sector": "",
+    "window": "Senior-comms window ~6 mo",
+    "advisory": "Advisory: comms-function design-for-scale + benchmarking; build the senior-comms market map ahead of the ~6-month hire.",
+    "confidence": "medium"
   }
 ]
