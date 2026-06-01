@@ -518,12 +518,12 @@ def load_latest_signals() -> list[dict]:
             if (s.get("kind") or "").strip().lower() != "leadership_change"
             and (s.get("company") or "").strip()]
     # Compute stable ids up-front so we can drive 7-day retention.
-    # Any lead first seen >7d ago is dropped here — Today's Leads
-    # naturally clears without Sara having to triage stale items.
+    # Any lead whose posting is >7d past its PUBLISHED date is dropped here
+    # (and tombstoned so it can't return unless freshly re-posted) — Live
+    # Jobs naturally clears without Sara having to triage stale items.
     from tool import lead_first_seen
     pre_filter = [{**s, "lead_id": _lead_id(s)} for s in data]
-    kept_ids = lead_first_seen.record_and_filter(
-        [s["lead_id"] for s in pre_filter])
+    kept_ids = lead_first_seen.record_and_filter(pre_filter)
     data = [s for s in pre_filter if s["lead_id"] in kept_ids]
     # The uniform sequence, identical for every lead regardless of kind:
     # resolve best-available contact (+ confidence) -> personalised draft
