@@ -37,6 +37,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from tool.config import COMPANIES_HOUSE_KEY, SOURCES
+from tool.profiles import active_profile
 from tool.predictive import patterns as P
 from tool.predictive.detector import TriggerEvent
 from tool.sources._http import get, signal_id
@@ -135,6 +136,25 @@ COMMS_TITLE_RX = re.compile(
     r"|\b(?:pr director|head of pr|director of pr)\b",
     re.IGNORECASE,
 )
+
+# FIRST DRAFT — senior marketing/brand officer titles (review with the
+# marketing team).
+_MARKETING_TITLE_RX = re.compile(
+    r"\b(?:marketing|brand|growth|e-?commerce|digital marketing)\b.{0,40}"
+    r"\b(?:director|head|officer|lead|vp|chief)\b"
+    r"|\b(?:director|head|officer|chief|vp)\b.{0,40}"
+    r"\b(?:marketing|brand|growth|e-?commerce)\b"
+    r"|\bchief marketing officer\b|\bchief brand officer\b",
+    re.IGNORECASE,
+)
+
+# The active profile picks which leader-departure classifier is used. The
+# emitted trigger key stays the legacy internal name ("comms_leader_departure")
+# for routing compatibility — re-tuning routing to marketing contact roles is
+# a later step.
+LEADER_TITLE_RX = (
+    _MARKETING_TITLE_RX if active_profile().key == "marketing" else COMMS_TITLE_RX
+)
 CEO_RX = re.compile(
     r"\b(?:chief executive(?: officer)?|ceo|group ceo|managing director)\b",
     re.IGNORECASE,
@@ -164,7 +184,7 @@ def classify_title(occupation: str, role_text: str = "") -> str | None:
     s = (occupation or "").strip()
     if not s:
         return None
-    if COMMS_TITLE_RX.search(s):
+    if LEADER_TITLE_RX.search(s):
         return "comms_leader_departure"
     if CFO_RX.search(s):
         return "cfo_change"

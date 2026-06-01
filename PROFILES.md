@@ -75,6 +75,30 @@ The daily morning-brief email is **off by default**
 refreshes the dashboard every run, it just emails no one. The dashboard is the
 surface. Set `MORNING_BRIEF_EMAIL_ENABLED=1` to resume delivery.
 
+## Detector tuning (Phase 3)
+
+Beyond job titles, the *signal detectors* are now profile-aware too, so
+Marketing's non-job intelligence is marketing-tuned rather than comms. Each
+detector keeps the live comms values untouched and adds a first-draft
+marketing variant, selected by the active profile:
+
+| Detector | What it tunes | File |
+|---|---|---|
+| Vacated-seat / senior-move titles | which senior departures count | `tool/cascade.py` |
+| Move-detection regex | "X joins/leaves" role pattern | `tool/following.py` |
+| Companies House officer classifier | which officer titles flag a leader change | `tool/sources/companies_house.py` |
+| Sector-heat weights | which sectors rank hotter | `tool/peers.py` |
+| Calendar pulses | the knowable placement windows | `tool/calendar_pulses.py` |
+
+These marketing values live next to their detector (as `_MARKETING_*`
+constants) rather than in `marketing.py`, because they mirror comms data that
+also lives in those modules. They're all marked **FIRST DRAFT** for review.
+
+**Still comms-only for now** (next, "Phase 3b"): the trade-press warm-call
+feeds, the contact role-routing (CCO → CMO), the framework-discovery keywords,
+full state-namespace isolation across every module, and a marketing-specific
+company watchlist (today both desks share the same account universe).
+
 ## ⚠ Marketing is a first draft
 
 `tool/profiles/marketing.py` is seeded from general marketing-recruitment

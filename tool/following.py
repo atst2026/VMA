@@ -36,10 +36,12 @@ import logging
 import re
 from typing import Iterable
 
+from tool.profiles import active_profile
+
 log = logging.getLogger("brief.following")
 
 # Senior IC/CorpComms role tokens (the seat that becomes the brief).
-_ROLE = (
+_COMMS_ROLE = (
     r"(?:group |chief |deputy |interim |global |acting )?"
     r"(?:head of (?:internal |corporate |external |group )?communications?"
     r"|head of (?:internal |corporate |external )?comms"
@@ -55,6 +57,29 @@ _ROLE = (
     r"|head of investor relations|director of investor relations"
     r"|head of (?:employee engagement|internal engagement))"
 )
+
+# FIRST DRAFT — senior marketing/brand role tokens (review with the
+# marketing team). Same shape as the comms pattern: an optional seniority
+# prefix + a senior marketing seat.
+_MARKETING_ROLE = (
+    r"(?:group |chief |deputy |interim |global |acting )?"
+    r"(?:chief marketing officer"
+    r"|chief brand officer|chief growth officer|chief customer officer"
+    r"|(?:group |global )?marketing director|director of marketing"
+    r"|head of marketing"
+    r"|vp marketing|vice president,? marketing"
+    r"|brand director|director of brand|head of brand|head of brand marketing"
+    r"|marketing and communications director"
+    r"|head of growth|vp growth"
+    r"|head of digital marketing|digital marketing director"
+    r"|head of performance marketing|performance marketing director"
+    r"|head of product marketing|product marketing director"
+    r"|head of ecommerce|ecommerce director|director of ecommerce"
+    r"|head of demand generation|head of customer marketing|crm director)"
+)
+
+# The active profile picks which seat taxonomy this detector watches.
+_ROLE = _MARKETING_ROLE if active_profile().key == "marketing" else _COMMS_ROLE
 _ROLE_RX = re.compile(_ROLE, re.IGNORECASE)
 
 # A move is happening — EITHER an arrival ("joins … from PrevCo") OR a

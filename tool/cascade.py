@@ -49,9 +49,12 @@ from dataclasses import dataclass, field, asdict
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+from tool.profiles import active_profile
+from tool.state_paths import state_root
+
 log = logging.getLogger("brief.cascade")
 
-STATE_DIR = Path(__file__).resolve().parent / "state"
+STATE_DIR = state_root()
 EVENTS_FILE = STATE_DIR / "cascade_events.json"
 SUPPRESS_FILE = STATE_DIR / "cascade_suppression.json"
 
@@ -62,10 +65,12 @@ MAX_EVENTS_KEEP = 200
 # it. Active / untriaged events are never auto-removed.
 TRIAGED_RETENTION_DAYS = 30
 
-# Senior comms titles that count as cascade-worthy moves. Lower-cased,
+# Senior titles that count as cascade-worthy moves. Lower-cased,
 # substring-matched against the article title. Order doesn't matter;
-# any one match is sufficient.
-SENIOR_TITLES = [
+# any one match is sufficient. Per-profile: comms is the live list;
+# marketing is a first-draft senior-marketing taxonomy (review with the
+# marketing team). The active profile picks which set is used.
+_COMMS_SENIOR_TITLES = [
     "chief communications officer", "cco",
     "chief comms officer",
     "communications director", "director of communications",
@@ -83,6 +88,31 @@ SENIOR_TITLES = [
     "chief reputation officer",
     "chief public affairs officer",
 ]
+
+# FIRST DRAFT — senior marketing/brand moves. Bare "cmo" is deliberately
+# omitted (it also abbreviates Chief Medical Officer).
+_MARKETING_SENIOR_TITLES = [
+    "chief marketing officer",
+    "chief brand officer", "chief growth officer", "chief customer officer",
+    "global marketing director", "group marketing director",
+    "marketing director", "director of marketing",
+    "global head of marketing", "head of marketing",
+    "vp marketing", "svp marketing", "vice president of marketing",
+    "brand director", "director of brand", "head of brand",
+    "global head of brand", "head of brand marketing",
+    "marketing and communications director",
+    "head of growth", "vp growth",
+    "head of digital marketing", "digital marketing director",
+    "head of performance marketing", "performance marketing director",
+    "head of product marketing", "product marketing director",
+    "head of ecommerce", "ecommerce director", "director of ecommerce",
+    "head of customer marketing", "crm director",
+]
+
+SENIOR_TITLES = (
+    _MARKETING_SENIOR_TITLES if active_profile().key == "marketing"
+    else _COMMS_SENIOR_TITLES
+)
 
 # Companies we never want to flag — generic words that look like proper
 # nouns to a regex but aren't. Catches common parse errors.

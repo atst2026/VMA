@@ -31,6 +31,8 @@ import logging
 from datetime import date, datetime
 from typing import Optional
 
+from tool.profiles import active_profile
+
 log = logging.getLogger("brief.pulses")
 
 # Per-pulse target-cohort cap. Enough named accounts to act on, small
@@ -58,7 +60,7 @@ _JUST_OPENED_DAYS = 10
 #   confidence  "high"  = fixed statutory / recurring regulator date
 #               "medium"= policy timeline still firming
 #   source      citation so Sara can sanity-check the driver
-PULSES: list[dict] = [
+_COMMS_PULSES: list[dict] = [
     {
         "key": "fca_consumer_duty_2026",
         "name": "FCA Consumer Duty — annual board-report ramp",
@@ -189,6 +191,52 @@ PULSES: list[dict] = [
         "source": "UCAS Clearing cycle + academic year 2026/27.",
     },
 ]
+
+# FIRST DRAFT — marketing's knowable placement windows (review with the
+# marketing team). Same schema as the comms pulses; the target cohort
+# resolves from the shared sector watchlist (tool.peers.SECTOR_PEERS).
+_MARKETING_PULSES: list[dict] = [
+    {
+        "key": "peak_trading_2026",
+        "name": "Peak trading — Golden Quarter campaign ramp",
+        "window": ("2026-06-01", "2026-10-15"),
+        "legal_date": "Black Friday 27 Nov / Christmas 2026 trading peak",
+        "sectors": ["retail_consumer", "media_telecoms"],
+        "seat": "Head of Brand / Campaigns / Performance Marketing "
+                "(peak-trading campaign build)",
+        "angle": "Consumer brands lock peak-season campaign and "
+                 "performance-marketing capacity over the summer for the Q4 "
+                 "Golden Quarter; pitch the retained brief before the autumn "
+                 "scramble.",
+        "scope_note": "UK retail, consumer and media businesses with a Q4 "
+                      "trading peak.",
+        "confidence": "high",
+        "source": "UK retail Golden Quarter (Black Friday + Christmas) "
+                  "trading cycle.",
+    },
+    {
+        "key": "marketing_budget_reset_2026",
+        "name": "New-year marketing budget & brand-planning reset",
+        "window": ("2025-11-01", "2026-02-15"),
+        "legal_date": "Jan calendar-year marketing planning cycle",
+        "sectors": ["retail_consumer", "technology",
+                    "financial_services", "media_telecoms"],
+        "seat": "Marketing Director / Head of Growth "
+                "(new-year plan + agency review)",
+        "angle": "Calendar-year planning and budget resets drive senior "
+                 "marketing hires and agency reviews in Q1; secure the "
+                 "retained brief before January's rush.",
+        "scope_note": "Consumer, tech, financial-services and media brands "
+                      "on a calendar-year planning cycle.",
+        "confidence": "medium",
+        "source": "Calendar-year marketing planning + budget cycle.",
+    },
+]
+
+# The active profile picks which pulse baseline is used.
+PULSES: list[dict] = (
+    _MARKETING_PULSES if active_profile().key == "marketing" else _COMMS_PULSES
+)
 
 
 def _parse(d: str) -> date:
