@@ -109,6 +109,63 @@ _ADVISORY: dict[str, str] = {
         "+ market map ahead of clearing.",
 }
 
+# Marketing desk (FIRST DRAFT): the same advisory lens, marketing-flavoured,
+# incl. the marketing calendar-pulse keys. Review with the marketing team.
+_DEFAULT_MARKETING = (
+    "Advisory: marketing-function capability review + talent/market mapping "
+    "— the lower-barrier sale that opens the retained search.")
+_ADVISORY_MARKETING: dict[str, str] = {
+    "mna": "Advisory: brand-integration & rebrand operating-model review + "
+           "market map of the post-deal marketing leadership.",
+    "restructure": "Advisory: marketing target-operating-model & capability "
+                   "review for the reorganised function.",
+    "regulator_action": "Advisory: brand-trust & customer-marketing capability "
+                        "audit ahead of the permanent hire.",
+    "regulator_probe_early": "Advisory: brand-trust & customer-marketing "
+                             "capability audit for the live-investigation period.",
+    "crisis_event": "Advisory: brand-trust rebuild & customer-marketing "
+                    "readiness review ahead of the permanent hire.",
+    "profit_warning": "Advisory: demand-generation & retention capability "
+                      "review + growth-narrative readiness.",
+    "ceo_change": "Advisory: marketing-function review aligned to the new CEO "
+                  "+ a succession map of the marketing bench.",
+    "chair_change": "Advisory: brand & marketing-strategy review aligned to "
+                    "the new chair + succession map.",
+    "cfo_change": "Advisory: marketing-efficiency & ROI capability review "
+                  "aligned to the new CFO.",
+    "chro_change": "Advisory: marketing org & capability review under the new "
+                   "people leadership.",
+    "ir_director_change": "Advisory: brand / investor-marketing review + "
+                          "succession map for the marketing bench.",
+    "ipo_listing": "Advisory: pre-admission brand & investor-marketing "
+                   "readiness review + market map of the listed-co marketing "
+                   "leadership.",
+    "contract_loss": "Advisory: demand & brand capability review post-loss; "
+                     "market map for the rebuild.",
+    "ic_platform_rfp": "Advisory: martech / CRM operating-model & channel review.",
+    "press_velocity_spike": "Advisory: brand-reputation & share-of-voice "
+                            "review while coverage is elevated.",
+    "water_sar": "Advisory: brand-trust & customer-marketing capability audit "
+                 "+ org review + succession map for the permanent hire.",
+    "contract_end": "Advisory: bid, brand & customer-marketing capability "
+                    "review + market map ahead of the recompete decision.",
+    "funding": "Advisory: marketing-function design-for-scale + benchmarking; "
+               "build the senior-marketing market map ahead of the ~6-month hire.",
+    "following": "Advisory: succession & org review of the vacated marketing "
+                 "function + talent map of the replacement market.",
+    "peak_trading_2026": "Advisory: peak-trading campaign & performance-"
+                         "marketing capability review + benchmarking ahead of "
+                         "the Golden Quarter.",
+    "marketing_budget_reset_2026": "Advisory: marketing operating-model & "
+                                   "budget-allocation review + agency-roster "
+                                   "benchmarking ahead of the new-year plan.",
+}
+
+from tool.profiles import active_profile as _active_profile
+if _active_profile().key == "marketing":
+    _DEFAULT = _DEFAULT_MARKETING
+    _ADVISORY = _ADVISORY_MARKETING
+
 
 def advisory_for(context: str | None) -> str:
     """Return the advisory framing for an event class. Unknown / missing

@@ -54,7 +54,7 @@ log = logging.getLogger("dashboard")
 # (default: comms). State lives in that profile's namespace: comms uses the
 # legacy root tool/state/ (so Sara's tool is unaffected); other profiles get
 # tool/state/<key>/. See tool/profiles/ and tool/state_paths.py.
-from tool.profiles import UPCOMING_PROFILES, active_profile, all_profiles
+from tool.profiles import active_profile
 from tool.state_paths import state_root
 
 PROFILE = active_profile()
@@ -70,6 +70,12 @@ try:
         PROFILE_URLS = {}
 except Exception:
     PROFILE_URLS = {}
+
+# Profile-aware UI labels (forms, empty-states). Comms keeps its wording.
+_IS_MKT = PROFILE.key == "marketing"
+DEFAULT_ROLE_LABEL = "Head of Marketing" if _IS_MKT else "Head of Internal Communications"
+SEAT_FALLBACK = "senior marketing seat" if _IS_MKT else "senior comms seat"
+EXAMPLE_ROLE = "Head of Marketing" if _IS_MKT else "Head of Internal Communications"
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 GITHUB_OWNER = os.environ.get("GITHUB_OWNER", "atst2026")
@@ -435,8 +441,9 @@ def refresh_latest_brief_from_github() -> dict:
                   if a.get("name") in ("morning-brief", "fortnightly-sweep")
                   and not a.get("expired")]
         if not wanted:
+            _wf = "VMA Marketing Brief" if _IS_MKT else "Sara's Morning Brief"
             return {"ok": False, "detail": "No recent brief/sweep artifact found on GitHub Actions. "
-                                            "Trigger a brief manually: Actions tab → 'Sara's Morning Brief' → Run workflow."}
+                                            f"Trigger a brief manually: Actions tab → '{_wf}' → Run workflow."}
         latest = wanted[0]
         zip_url = latest["archive_download_url"]
         r2 = requests.get(zip_url, headers=_github_headers(), timeout=30)
@@ -495,7 +502,7 @@ def refresh_latest_brief_from_github() -> dict:
                        "script crashed between rendering and saving the signals JSON.")
         elif leads_n == 0:
             detail += (" ⚠ Today's brief found 0 leads (dedup filtered everything, "
-                       "or no new jobs matched Sara's criteria).")
+                       "or no new jobs matched the desk's criteria).")
         return {"ok": True, "detail": detail, "leads": leads_n, "predictors": predictors_n,
                 "artifact_name": latest.get("name"), "artifact_created_at": latest.get("created_at"),
                 "files": file_list}
@@ -633,19 +640,32 @@ def _assign_opportunity_tiers(items: list[dict], floor: float = 0.20) -> None:
 
 
 # ---- Outreach message drafting -----------------------------------------
-# Default copy Sara approved. Same message for every lead and every
-# predictor — she just edits the (Name) placeholder per recipient.
-_DEFAULT_OUTREACH = (
-    "Hi (Name), I'm Sara from VMA Group.\n\n"
-    "We specialise in executive search and recruitment across corporate "
-    "communications, internal comms and marketing. I'd love to grab a "
-    "coffee in the next couple of weeks to introduce VMA Group and share "
-    "what we're seeing in the market. I've attached our brochure in case "
-    "it's useful.\n\n"
-    "Would be great to connect.\n\n"
-    "Best,\n"
-    "Sara"
-)
+# Default outreach copy. Same message for every lead and every predictor —
+# just edit the (Name) placeholder per recipient. Profile-aware specialism
+# line; comms keeps the message Sara approved.
+if PROFILE.key == "marketing":
+    _DEFAULT_OUTREACH = (
+        "Hi (Name), I'm (Your name) from VMA Group.\n\n"
+        "We specialise in executive search and recruitment across marketing, "
+        "brand and growth leadership. I'd love to grab a coffee in the next "
+        "couple of weeks to introduce VMA Group and share what we're seeing "
+        "in the market. I've attached our brochure in case it's useful.\n\n"
+        "Would be great to connect.\n\n"
+        "Best,\n"
+        "(Your name)"
+    )
+else:
+    _DEFAULT_OUTREACH = (
+        "Hi (Name), I'm Sara from VMA Group.\n\n"
+        "We specialise in executive search and recruitment across corporate "
+        "communications, internal comms and marketing. I'd love to grab a "
+        "coffee in the next couple of weeks to introduce VMA Group and share "
+        "what we're seeing in the market. I've attached our brochure in case "
+        "it's useful.\n\n"
+        "Would be great to connect.\n\n"
+        "Best,\n"
+        "Sara"
+    )
 
 
 def _display_role(title: str) -> str:
@@ -947,7 +967,7 @@ def _landing_signal_pool() -> list[dict]:
         from tool import predictor_pipeline
         for p in predictor_pipeline.all_predictors():
             comp = _short(p.get("company") or "", 22)
-            seat = _short(p.get("role") or p.get("seat") or "senior comms seat", 24)
+            seat = _short(p.get("role") or p.get("seat") or SEAT_FALLBACK, 24)
             if comp:
                 pool.append({"label": comp + " · " + seat, "kind": "gold"})
     except Exception:
@@ -982,16 +1002,7 @@ def _landing_signals(limit: int = 4) -> list[dict]:
     return random.sample(pool, limit)
 
 
-# ---- Landing chooser (Comms / Marketing) --------------------------------
-# The front door. One tile per live profile (from the registry) plus a
-# "coming soon" tile for each announced-but-not-yet-built specialism
-# (profiles.UPCOMING_PROFILES). A new specialism appears here the instant
-# its profile is registered — no template change needed.
-_PROFILE_BLURBS = {
-    "comms": "Senior in-house Communications leads, predictors & BD intelligence.",
-    "marketing": "Senior Marketing & Brand leads — same engine, in build.",
-}
-
+# ---- Secondary-desk info page (used by the /marketing handoff) ----------
 _CHOOSER_CSS = (
     ":root{--steel:#3F5E83;--deep:#1A3D7C;--ink:#1f2733;--muted:#6b7689;"
     "--line:rgba(31,39,51,.12);}*{box-sizing:border-box;}"
@@ -1022,25 +1033,6 @@ _CHOOSER_CSS = (
     ".foot{margin-top:34px;color:#9aa3b2;font-size:12px;}a{color:var(--steel);}"
 )
 
-_CHOOSER_TEMPLATE = (
-    "<!doctype html><html lang=en><head><meta charset=utf-8>"
-    "<meta name=viewport content='width=device-width, initial-scale=1'>"
-    "<title>VMA Intelligence</title><style>" + _CHOOSER_CSS + "</style></head><body>"
-    "<div class=logo>{{ logo|safe }}</div>"
-    "<h1>VMA Intelligence</h1>"
-    "<p class=sub>Choose a desk. Each runs the same engine and nightly scan, "
-    "tuned to its own specialism.</p>"
-    "<div class=grid>{% for c in cards %}"
-    "<a class='card {{ '' if c.live else 'soon' }}' href='{{ c.href }}'>"
-    "<p class=label><span class=dot></span>{{ c.label }}</p>"
-    "<p class=blurb>{{ c.blurb }}</p>"
-    "{% if c.live %}<span class=go>Open &rarr;</span>"
-    "{% else %}<span class=pill>Coming soon</span>{% endif %}</a>"
-    "{% endfor %}</div>"
-    "<div class=foot>One codebase &middot; one nightly scan &middot; separate desks</div>"
-    "</body></html>"
-)
-
 _DESK_INFO_TEMPLATE = (
     "<!doctype html><html lang=en><head><meta charset=utf-8>"
     "<meta name=viewport content='width=device-width, initial-scale=1'>"
@@ -1053,41 +1045,6 @@ _DESK_INFO_TEMPLATE = (
     "<p class=foot><a href='/'>&larr; Back</a></p>"
     "</body></html>"
 )
-
-
-def _chooser_cards() -> list[dict]:
-    """Tiles for the chooser: every live profile (the current process's own
-    desk linked locally, sibling desks via VMA_PROFILE_URLS), then any
-    announced-but-not-live specialism as a 'coming soon' tile."""
-    cards: list[dict] = []
-    seen = set()
-    for p in all_profiles():
-        if p.key == PROFILE.key:
-            href = "/comms" if p.key == "comms" else "/dashboard"
-        else:
-            href = PROFILE_URLS.get(p.key) or f"/{p.key}"
-        cards.append({
-            "key": p.key, "label": p.label, "live": True, "href": href,
-            "blurb": _PROFILE_BLURBS.get(p.key, f"Open the {p.label} desk."),
-        })
-        seen.add(p.key)
-    for key, label in UPCOMING_PROFILES:
-        if key in seen:
-            continue
-        cards.append({
-            "key": key, "label": label, "live": False, "href": f"/{key}",
-            "blurb": _PROFILE_BLURBS.get(key, "In build — launching soon."),
-        })
-    return cards
-
-
-@app.route("/")
-@_auth_required
-def chooser():
-    """Front door — pick a desk (Comms live; Marketing coming soon)."""
-    return render_template_string(
-        _CHOOSER_TEMPLATE, cards=_chooser_cards(), logo=_VMA_LOGO_SVG,
-    )
 
 
 @app.route("/marketing")
@@ -1111,13 +1068,14 @@ def marketing_desk():
     )
 
 
-@app.route("/comms")
+@app.route("/")
 @_auth_required
 def landing():
     """Gemini-clone landing — verbatim ground-truth CSS captured from
     gemini.google.com/app, ::before recentred for our viewport. VMA logo
     over a market-scanner radar whose signal chips are pulled live from the
-    latest leads / pre-market triggers, and rotate through the full pool."""
+    latest leads / pre-market triggers, and rotate through the full pool.
+    The single launch pill is split into two: Comms and Marketing."""
     import random
     pool = _landing_signal_pool()
     # Initial 4: guarantee BD leads (funding=green / predictor=gold) get a slot
@@ -1130,7 +1088,15 @@ def landing():
     random.shuffle(shown)
     if len(shown) < 4:
         shown = pool[:4]
-    return render_template_string(LANDING_TEMPLATE, signals=shown, signal_pool=pool)
+    # Each launch pill points at that desk: the desk THIS process serves is
+    # local (/dashboard); the sibling desk uses VMA_PROFILE_URLS (its own
+    # instance) or falls back to the /marketing handoff page.
+    comms_href = "/dashboard" if PROFILE.key == "comms" else (PROFILE_URLS.get("comms") or "/dashboard")
+    marketing_href = "/dashboard" if PROFILE.key == "marketing" else (PROFILE_URLS.get("marketing") or "/marketing")
+    return render_template_string(
+        LANDING_TEMPLATE, signals=shown, signal_pool=pool,
+        comms_href=comms_href, marketing_href=marketing_href,
+    )
 
 
 @app.route("/dashboard")
@@ -1211,6 +1177,8 @@ def index():
         _fw_counts[fw.get("triage", "active")] = _fw_counts.get(fw.get("triage", "active"), 0) + 1
     return render_template_string(
         TEMPLATE,
+        example_role=EXAMPLE_ROLE,
+        profile_label=PROFILE.label,
         leads=leads,
         predictors=predictors,
         funding_events=funding_events,
@@ -1293,7 +1261,7 @@ def api_pitch_pack():
     data = _safe_json_body()
     inputs = {
         "account_name": (data.get("account_name") or "").strip(),
-        "role": (data.get("role") or "Head of Internal Communications").strip(),
+        "role": (data.get("role") or DEFAULT_ROLE_LABEL).strip(),
         # Hard-coded to "preview" — emails for non-brief reports are
         # disabled. HTML is still generated, uploaded as a workflow
         # artifact, and surfaced via Recent Reports.
@@ -1832,10 +1800,14 @@ LANDING_TEMPLATE = r"""
   .wordmark .v{font-weight:800;letter-spacing:.06em;font-size:64px;}
   .wordmark .g{font-weight:300;letter-spacing:.32em;font-size:64px;padding-left:.42em;margin-right:-.32em;}
 
+  .pill-row{
+    display:flex;gap:14px;justify-content:center;align-items:stretch;
+    width:535px;max-width:90vw;flex-wrap:wrap;
+  }
   .pill{
     background:rgb(255,255,255);border:none;border-radius:26px;
     box-shadow:0 2px 8px -2px rgba(0,0,0,0.16);
-    padding:0 18px;width:535px;height:52px;max-width:none;
+    padding:0 18px;flex:1 1 200px;min-width:0;height:52px;max-width:none;
     display:flex;align-items:center;justify-content:center;gap:12px;
     text-decoration:none;color:rgb(31,31,31);cursor:pointer;
     transition:transform .15s ease, box-shadow .15s ease;
@@ -1881,7 +1853,8 @@ LANDING_TEMPLATE = r"""
 
   @media (max-width:720px){
     .stage{gap:24px;}
-    .pill{width:90%;height:56px;}
+    .pill-row{width:92%;}
+    .pill{flex:1 1 100%;height:56px;}
     .lbl{font-size:11px;letter-spacing:.18em;}
     .logo-tile{width:92px;height:92px;}
     /* shrink + edge-anchor the signal chips so they never sit over the logo on
@@ -1926,11 +1899,18 @@ LANDING_TEMPLATE = r"""
       {% endif %}
       <div class="logo-tile"></div>
     </div>
-    <a class="pill" href="/dashboard">
-      <span class="dot"></span>
-      <span class="lbl">Intelligence Platform &middot; Live</span>
-      <span class="arrow">&rarr;</span>
-    </a>
+    <div class="pill-row">
+      <a class="pill" href="{{ comms_href }}">
+        <span class="dot"></span>
+        <span class="lbl">Comms &middot; Launch App</span>
+        <span class="arrow">&rarr;</span>
+      </a>
+      <a class="pill" href="{{ marketing_href }}">
+        <span class="dot"></span>
+        <span class="lbl">Marketing &middot; Launch App</span>
+        <span class="arrow">&rarr;</span>
+      </a>
+    </div>
   </div>
   <script>
     var LOGO = '<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">'
@@ -4115,7 +4095,7 @@ TEMPLATE = r"""
                 <label for="pp-account">Account name</label>
                 <input id="pp-account" name="account_name" placeholder="e.g. Unilever" required>
                 <label for="pp-role">Role</label>
-                <input id="pp-role" name="role" placeholder="e.g. Head of Internal Communications" required>
+                <input id="pp-role" name="role" placeholder="e.g. {{ example_role }}" required>
                 <button type="submit">Run</button>
                 <button type="submit" class="send" title="Run"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
                 <div class="status" id="pitch-status"></div>
@@ -4132,7 +4112,7 @@ TEMPLATE = r"""
                 <label for="rm-company">Current company</label>
                 <input id="rm-company" name="current_company" placeholder="e.g. Vodafone" required>
                 <label for="rm-title">Current title</label>
-                <input id="rm-title" name="current_title" placeholder="e.g. Head of Internal Communications" required>
+                <input id="rm-title" name="current_title" placeholder="e.g. {{ example_role }}" required>
                 <button type="submit">Run</button>
                 <button type="submit" class="send" title="Run"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
                 <div class="status" id="rm-status"></div>
@@ -4677,7 +4657,7 @@ document.addEventListener('click', async (event) => {
 //
 // After the brief lands, also re-parses the fresh latest_signals.json
 // for cascade moves so Hire Watch picks up any senior comms
-// appointments in today's news without Sara having to click Re-scan.
+// appointments in today's news without anyone having to click Re-scan.
 async function refreshBrief() {
   const btn = document.getElementById('refresh-btn');
   if (!btn) return;

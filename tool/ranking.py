@@ -33,11 +33,22 @@ def _compile_patterns(keywords: tuple[str, ...]) -> tuple[re.Pattern, ...]:
 
 _ROLE_PATTERNS = _compile_patterns(tuple(ROLE_KEYWORDS))
 _EXCLUDE_PATTERNS = _compile_patterns(tuple(EXCLUDE_TITLE_TERMS))
-_STRONG_PATTERNS = _compile_patterns(tuple([
+# Strongest-signal titles get a score boost. Profile-aware so the marketing
+# desk boosts senior marketing titles (and never boosts a stray comms one).
+_STRONG_TITLES_COMMS = (
     "chief communications officer", "head of corporate communications",
     "head of internal communications", "corporate affairs director",
     "communications director", "pr director", "head of communications",
-]))
+)
+_STRONG_TITLES_MARKETING = (
+    "chief marketing officer", "marketing director", "director of marketing",
+    "brand director", "head of marketing", "head of brand", "head of growth",
+    "head of digital marketing",
+)
+from tool.profiles import active_profile as _active_profile
+_STRONG_PATTERNS = _compile_patterns(
+    _STRONG_TITLES_MARKETING if _active_profile().key == "marketing"
+    else _STRONG_TITLES_COMMS)
 
 log = logging.getLogger("brief.rank")
 

@@ -109,7 +109,7 @@ _RESILIENCE_RX = re.compile(
     re.IGNORECASE,
 )
 
-_WHO_TO_CALL = {
+_COMMS_WHO_TO_CALL = {
     "SAR live / imminent":
         "CCO / GC + the special administrator's adviser bench — the "
         "permanent reputation/stakeholder-comms hire and a comms-function "
@@ -120,6 +120,23 @@ _WHO_TO_CALL = {
         "stakeholder-comms hire (and a capability review) is reviewed "
         "ahead of any formal step; long retained-search runway.",
 }
+
+# Marketing desk (FIRST DRAFT): the same event, the marketing angle —
+# brand-trust and customer-marketing capacity through the crisis.
+_MARKETING_WHO_TO_CALL = {
+    "SAR live / imminent":
+        "CMO / Head of Brand — brand-trust repair and customer-marketing "
+        "capacity follow stabilisation; the SAR is the trigger to secure the "
+        "retained search now.",
+    "financial-resilience watch":
+        "CMO / Head of Brand — the permanent customer/brand-marketing hire "
+        "(and a capability review) is weighed ahead of any formal step; long "
+        "retained-search runway.",
+}
+
+from tool.profiles import active_profile as _active_profile
+_WHO_TO_CALL = (_MARKETING_WHO_TO_CALL
+                if _active_profile().key == "marketing" else _COMMS_WHO_TO_CALL)
 
 
 def _company_in(text: str) -> str | None:

@@ -83,8 +83,20 @@ _FW_RELEVANT_MARKETING = re.compile(
     r"digital|communications|public sector)\b",
     re.I)
 from tool.profiles import active_profile as _active_profile
-if _active_profile().key == "marketing":
+_IS_MKT = _active_profile().key == "marketing"
+if _IS_MKT:
     _FW_RELEVANT = _FW_RELEVANT_MARKETING
+# Profile-aware copy/feeds for discovered windows + events (FIRST DRAFT for
+# marketing). Comms keeps its live wording.
+_PW_SEAT = ("Head of Brand / Customer Marketing" if _IS_MKT
+            else "Head of Regulatory / Corporate Communications")
+_PW_ANGLE_NOUN = "brand/customer-marketing" if _IS_MKT else "comms"
+_EV_WHY_DEFAULT = (
+    "Marketing industry event — finalists / speakers skew senior in-house "
+    "marketing." if _IS_MKT else
+    "Comms industry event — finalists / speakers skew senior in-house comms.")
+_EV_FEEDS = (("marketing_week", "the_drum", "marketing_beat") if _IS_MKT
+             else ("corpcomms", "prmoment", "cipr_influence", "ragan"))
 # Drop obvious non-comms commodity recruitment (clinical/teaching agency
 # staffing) — keep leadership/exec-search framework signals.
 _FW_EXCLUDE = re.compile(
@@ -228,10 +240,10 @@ def discover_windows() -> list[dict]:
                 "window": [win_start.isoformat(), legal_date.isoformat()],
                 "legal_date": legal_date.isoformat(),
                 "sectors": sectors,
-                "seat": "Head of Regulatory / Corporate Communications",
-                "angle": (f"{reg} obligation creates a dated comms-capacity "
-                          "build-up in the regulated cohort — pitch the "
-                          "retained brief before it's advertised."),
+                "seat": _PW_SEAT,
+                "angle": (f"{reg} obligation creates a dated {_PW_ANGLE_NOUN}-"
+                          "capacity build-up in the regulated cohort — pitch "
+                          "the retained brief before it's advertised."),
                 "scope_note": f"{reg}-regulated firms in scope of this notice.",
                 "confidence": "medium",
                 "source": f"{reg} — {summary[:80]}" if summary else reg,
@@ -260,6 +272,17 @@ _EV_NEWS_QUERIES = [
     '"public relations" (awards OR conference) UK 2026',
     '"corporate communications" summit 2026',
 ]
+# Marketing desk (FIRST DRAFT): match marketing/brand events + query for them.
+if _IS_MKT:
+    _EV_COMMS = re.compile(
+        r"\b(marketing|brand|advertising|creative|digital marketing|growth|"
+        r"ecommerce|e-commerce|cmo|media|content)\b", re.I)
+    _EV_NEWS_QUERIES = [
+        '"marketing" (awards OR conference OR summit) UK 2026',
+        '"brand" (awards OR conference) UK 2026',
+        '"CMO" (summit OR conference) 2026',
+        '"digital marketing" (conference OR expo) 2026',
+    ]
 
 
 def _events_from_items(items, src_label: str, today: date) -> list[dict]:
@@ -286,8 +309,7 @@ def _events_from_items(items, src_label: str, today: date) -> list[dict]:
             "action_window": [action_start.isoformat(), ev_date.isoformat()],
             "location": "See listing",
             "focus": "internal" if re.search(r"internal", text, re.I) else "external",
-            "why_now": (summary[:160] or "Comms industry event — finalists / "
-                        "speakers skew senior in-house comms."),
+            "why_now": (summary[:160] or _EV_WHY_DEFAULT),
             "source": link or src_label,
             "url": link,
             "discovered": True,
@@ -302,8 +324,8 @@ def discover_events() -> list[dict]:
     today = date.today()
     seen: set[str] = set()
 
-    # Trade-press feeds already configured for the brief.
-    for skey in ("corpcomms", "prmoment", "cipr_influence", "ragan"):
+    # Trade-press feeds already configured for the brief (profile-aware).
+    for skey in _EV_FEEDS:
         url = SOURCES.get(skey)
         if not url:
             continue

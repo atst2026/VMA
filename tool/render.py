@@ -5,6 +5,18 @@ from datetime import datetime
 from typing import Iterable
 
 from tool.ranking import suggest_angle
+from tool.profiles import active_profile as _active_profile
+
+# Profile-aware brief branding (comms keeps "Sara's Morning Brief").
+_IS_MKT = _active_profile().key == "marketing"
+_BRIEF_TITLE = "Marketing Brief" if _IS_MKT else "Sara's Morning Brief"
+_FOOTER_NOTE = (
+    "Zero automation of any LinkedIn account. Bright Data = licensed "
+    "logged-off surface, separate dataset.<br>Claude found and prepared; "
+    "you close." if _IS_MKT else
+    "Zero automation of Sara's LinkedIn account. Bright Data = licensed "
+    "logged-off surface, separate dataset.<br>Claude found and prepared. "
+    "Sara closes.")
 
 
 def _esc(s: str | None) -> str:
@@ -55,7 +67,7 @@ def render_html(ranked: list[dict], source_report: dict, now_str: str,
 
     return f"""<!doctype html>
 <html><head><meta charset="utf-8"></head><body style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:720px;margin:0 auto;padding:20px;color:#111;">
-<h2 style="margin:0 0 4px 0;">Sara's Morning Brief · {_esc(now_str)}</h2>
+<h2 style="margin:0 0 4px 0;">{_esc(_BRIEF_TITLE)} · {_esc(now_str)}</h2>
 <div style="color:#666;font-size:13px;margin-bottom:18px;">
   Coverage: {_esc(covered_days)}. Ranked by fee-value × signal strength. UK primary.
 </div>
@@ -74,8 +86,7 @@ def render_html(ranked: list[dict], source_report: dict, now_str: str,
 <hr style="margin:28px 0;border:none;border-top:1px solid #ddd;">
 <div style="color:#888;font-size:12px;">
   Sources queried today: {sources_summary}<br>
-  Zero automation of Sara's LinkedIn account. Bright Data = licensed logged-off surface, separate dataset.<br>
-  Claude found and prepared. Sara closes.
+  {_FOOTER_NOTE}
 </div>
 </body></html>
 """
@@ -84,7 +95,7 @@ def render_html(ranked: list[dict], source_report: dict, now_str: str,
 def render_plaintext(ranked: list[dict], now_str: str, covered_days: str,
                      predictive_text: str = "") -> str:
     lines = [
-        f"Sara's Morning Brief · {now_str}",
+        f"{_BRIEF_TITLE} · {now_str}",
         f"Coverage: {covered_days}. Ranked by fee-value × signal strength. UK primary.",
         "",
         "Call these 5 first",
