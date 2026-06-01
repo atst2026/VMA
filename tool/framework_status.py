@@ -18,7 +18,8 @@ import threading
 from contextlib import contextmanager
 from pathlib import Path
 
-STATE_DIR = Path(__file__).resolve().parent / "state"
+from tool.state_paths import state_root
+STATE_DIR = state_root()
 STATUS_FILE = STATE_DIR / "framework_status.json"
 VALID = {"active", "followed_up", "dismissed"}
 

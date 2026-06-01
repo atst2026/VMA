@@ -34,7 +34,8 @@ from tool.peers import peers_for, detect_sector
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 log = logging.getLogger("reverse_match")
 
-STATE_DIR = _REPO_ROOT / "tool" / "state"
+from tool.state_paths import state_root
+STATE_DIR = state_root()
 STATE_DIR.mkdir(parents=True, exist_ok=True)
 
 

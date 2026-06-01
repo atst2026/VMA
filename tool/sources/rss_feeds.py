@@ -123,6 +123,22 @@ RSS_SOURCES = [
     ("tech_eu",         "Tech.eu",               "news", "EU", 0.7, 100),
 ]
 
+# Marketing desk (FIRST DRAFT): swap the comms/PR + comms-sector trade-press
+# rows for marketing trade press; the generic lanes (RNS, regulators,
+# tenders, jobs, funding) are shared. Selected by the active profile, so the
+# comms list above is untouched.
+from tool.profiles import active_profile as _active_profile
+if _active_profile().key == "marketing":
+    _COMMS_TRADE_KEYS = {
+        "corpcomms", "ragan", "prmoment", "cipr_influence",
+        "inside_housing", "utility_week", "pharmaphorum", "fierce_biotech",
+    }
+    RSS_SOURCES = [r for r in RSS_SOURCES if r[0] not in _COMMS_TRADE_KEYS] + [
+        ("marketing_week", "Marketing Week", "trade_press", "UK", 1.0),
+        ("the_drum",       "The Drum",       "trade_press", "UK", 1.0),
+        ("marketing_beat", "Marketing Beat", "trade_press", "UK", 0.9),
+    ]
+
 
 def fetch_all() -> list[dict]:
     out: list[dict] = []

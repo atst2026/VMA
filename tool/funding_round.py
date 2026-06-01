@@ -41,8 +41,8 @@ from typing import Iterable
 
 log = logging.getLogger("brief.funding")
 
-STATE_DIR = Path(__file__).resolve().parent / "state"
-
+from tool.state_paths import state_root
+STATE_DIR = state_root()
 # £20m+ is the plan's threshold: below it a dedicated senior in-house
 # comms hire is statistically unlikely (agency/contractor instead).
 MIN_GBP_M = 20.0

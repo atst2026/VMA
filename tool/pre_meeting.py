@@ -38,9 +38,8 @@ log = logging.getLogger("brief.pre_meeting")
 log.setLevel(logging.INFO)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 
-STATE_DIR = Path(__file__).resolve().parent / "state"
-
-
+from tool.state_paths import state_root
+STATE_DIR = state_root()
 @dataclass
 class PrepBrief:
     account: str

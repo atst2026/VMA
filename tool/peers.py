@@ -8,6 +8,8 @@ this file.
 from __future__ import annotations
 import re
 
+from tool.profiles import active_profile
+
 # Sector -> ordered list of UK-listed or UK-major employers
 SECTOR_PEERS: dict[str, list[str]] = {
     "financial_services": [
@@ -258,7 +260,7 @@ def peers_for(name: str, k: int = 15) -> tuple[list[str], str | None]:
 # report). Config-only — no new feeds, no signals added or removed; it
 # only shifts ranking emphasis so hot-sector opportunities surface
 # higher and cold-sector ones lower.
-SECTOR_HEAT: dict[str, float] = {
+_COMMS_SECTOR_HEAT: dict[str, float] = {
     "financial_services":      1.30,   # hot: Consumer Duty, IR, change comms
     "pharma_healthcare":       1.30,   # hot: pipeline + restructuring comms
     "energy_utilities":        1.30,   # hot: water special-admin, transition
@@ -270,6 +272,29 @@ SECTOR_HEAT: dict[str, float] = {
     # unclassified — the account-relevance gate already ensures the
     # company is on the watchlist, so unknown sector is not penalised.
 }
+
+# FIRST DRAFT — marketing's hot sectors are nearly the inverse of comms:
+# consumer/retail, tech and media spend hardest on brand & growth
+# leadership, while heavy-regulated/industrial sectors are cooler. Review
+# with the marketing team.
+_MARKETING_SECTOR_HEAT: dict[str, float] = {
+    "retail_consumer":         1.35,   # hot: brand, growth, ecommerce, DTC
+    "technology":              1.20,   # hot: growth/performance/product marketing
+    "media_telecoms":          1.20,   # hot: brand & audience marketing
+    "financial_services":      1.05,   # challenger/fintech brand marketing
+    "real_estate":             0.95,
+    "transport_logistics":     0.90,
+    "pharma_healthcare":       0.85,
+    "public_sector_charities": 0.85,
+    "energy_utilities":        0.80,
+    "industrial_manufacturing": 0.75,  # cold: B2B, marketing-light
+    # neutral (1.0): professional_services, international, unclassified.
+}
+
+SECTOR_HEAT: dict[str, float] = (
+    _MARKETING_SECTOR_HEAT if active_profile().key == "marketing"
+    else _COMMS_SECTOR_HEAT
+)
 
 
 def sector_heat_multiplier(name: str) -> float:

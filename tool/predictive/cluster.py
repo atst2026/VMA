@@ -19,7 +19,8 @@ from dateutil import parser as dateparse
 from tool.predictive import patterns as P
 from tool.predictive.detector import TriggerEvent, _parse_date
 
-STATE_DIR = Path(__file__).resolve().parent.parent / "state"
+from tool.state_paths import state_root
+STATE_DIR = state_root()
 STATE_DIR.mkdir(parents=True, exist_ok=True)
 JOBS_LOG = STATE_DIR / "predictive_jobs.json"
 

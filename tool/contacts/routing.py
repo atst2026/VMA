@@ -103,6 +103,41 @@ ROLE_SLOT_DISPLAY = {
     "ir_director":               "Head of Investor Relations",
 }
 
+# Profile override (FIRST DRAFT). Comms keeps the live chains above;
+# marketing routes the same events to marketing seats (cmo / head_of_brand
+# / head_of_marketing), keeping the universal C-suite fallbacks. Marketing
+# contacts aren't seeded yet, so an unseeded slot falls through to a role
+# search for the right title — which is exactly what we want for marketing.
+from tool.profiles import active_profile as _active_profile
+if _active_profile().key == "marketing":
+    TRIGGER_ROLE_CHAIN = {
+        "comms_leader_departure":  ("cmo", "head_of_marketing", "head_of_brand", "ceo"),
+        "ic_platform_rfp":         ("head_of_marketing", "cmo", "ceo"),
+        "ipo_listing":             ("cmo", "head_of_brand", "cfo", "ceo"),
+        "ceo_change":              ("cmo", "head_of_marketing", "ceo"),
+        "mna":                     ("cmo", "head_of_brand", "ceo"),
+        "regulator_action":        ("cmo", "head_of_marketing", "ceo"),
+        "regulator_probe_early":   ("cmo", "head_of_marketing", "ceo"),
+        "crisis_event":            ("cmo", "head_of_marketing", "ceo"),
+        "profit_warning":          ("cmo", "cfo", "ceo"),
+        "contract_loss":           ("cmo", "head_of_marketing", "ceo"),
+        "chair_change":            ("cmo", "ceo"),
+        "cfo_change":              ("cfo", "cmo", "ceo"),
+        "ir_director_change":      ("ir_director", "cmo", "ceo"),
+        "chro_change":             ("chro", "cmo", "ceo"),
+        "restructure":             ("cmo", "head_of_marketing", "ceo"),
+        "press_velocity_spike":    ("cmo", "head_of_marketing"),
+        "job_ad_cluster":          ("head_of_marketing", "cmo", "ceo"),
+    }
+    DEFAULT_CHAIN = ("cmo", "head_of_marketing", "head_of_brand", "ceo")
+    ROLE_SLOT_DISPLAY = {
+        **ROLE_SLOT_DISPLAY,
+        "cmo":               "Chief Marketing Officer",
+        "head_of_marketing": "Head of Marketing",
+        "head_of_brand":     "Head of Brand",
+        "head_of_growth":    "Head of Growth",
+    }
+
 
 def role_priority_for_trigger(trigger_key: str) -> tuple[str, ...]:
     """Return the ordered role-slot priority list for a given trigger."""
