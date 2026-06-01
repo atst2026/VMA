@@ -441,8 +441,9 @@ def refresh_latest_brief_from_github() -> dict:
                   if a.get("name") in ("morning-brief", "fortnightly-sweep")
                   and not a.get("expired")]
         if not wanted:
+            _wf = "VMA Marketing Brief" if _IS_MKT else "Sara's Morning Brief"
             return {"ok": False, "detail": "No recent brief/sweep artifact found on GitHub Actions. "
-                                            "Trigger a brief manually: Actions tab → 'Sara's Morning Brief' → Run workflow."}
+                                            f"Trigger a brief manually: Actions tab → '{_wf}' → Run workflow."}
         latest = wanted[0]
         zip_url = latest["archive_download_url"]
         r2 = requests.get(zip_url, headers=_github_headers(), timeout=30)
@@ -501,7 +502,7 @@ def refresh_latest_brief_from_github() -> dict:
                        "script crashed between rendering and saving the signals JSON.")
         elif leads_n == 0:
             detail += (" ⚠ Today's brief found 0 leads (dedup filtered everything, "
-                       "or no new jobs matched Sara's criteria).")
+                       "or no new jobs matched the desk's criteria).")
         return {"ok": True, "detail": detail, "leads": leads_n, "predictors": predictors_n,
                 "artifact_name": latest.get("name"), "artifact_created_at": latest.get("created_at"),
                 "files": file_list}
@@ -639,19 +640,32 @@ def _assign_opportunity_tiers(items: list[dict], floor: float = 0.20) -> None:
 
 
 # ---- Outreach message drafting -----------------------------------------
-# Default copy Sara approved. Same message for every lead and every
-# predictor — she just edits the (Name) placeholder per recipient.
-_DEFAULT_OUTREACH = (
-    "Hi (Name), I'm Sara from VMA Group.\n\n"
-    "We specialise in executive search and recruitment across corporate "
-    "communications, internal comms and marketing. I'd love to grab a "
-    "coffee in the next couple of weeks to introduce VMA Group and share "
-    "what we're seeing in the market. I've attached our brochure in case "
-    "it's useful.\n\n"
-    "Would be great to connect.\n\n"
-    "Best,\n"
-    "Sara"
-)
+# Default outreach copy. Same message for every lead and every predictor —
+# just edit the (Name) placeholder per recipient. Profile-aware specialism
+# line; comms keeps the message Sara approved.
+if PROFILE.key == "marketing":
+    _DEFAULT_OUTREACH = (
+        "Hi (Name), I'm (Your name) from VMA Group.\n\n"
+        "We specialise in executive search and recruitment across marketing, "
+        "brand and growth leadership. I'd love to grab a coffee in the next "
+        "couple of weeks to introduce VMA Group and share what we're seeing "
+        "in the market. I've attached our brochure in case it's useful.\n\n"
+        "Would be great to connect.\n\n"
+        "Best,\n"
+        "(Your name)"
+    )
+else:
+    _DEFAULT_OUTREACH = (
+        "Hi (Name), I'm Sara from VMA Group.\n\n"
+        "We specialise in executive search and recruitment across corporate "
+        "communications, internal comms and marketing. I'd love to grab a "
+        "coffee in the next couple of weeks to introduce VMA Group and share "
+        "what we're seeing in the market. I've attached our brochure in case "
+        "it's useful.\n\n"
+        "Would be great to connect.\n\n"
+        "Best,\n"
+        "Sara"
+    )
 
 
 def _display_role(title: str) -> str:
@@ -4685,7 +4699,7 @@ document.addEventListener('click', async (event) => {
 //
 // After the brief lands, also re-parses the fresh latest_signals.json
 // for cascade moves so Hire Watch picks up any senior comms
-// appointments in today's news without Sara having to click Re-scan.
+// appointments in today's news without anyone having to click Re-scan.
 async function refreshBrief() {
   const btn = document.getElementById('refresh-btn');
   if (!btn) return;
