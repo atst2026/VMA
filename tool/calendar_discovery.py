@@ -75,6 +75,16 @@ _FW_RELEVANT = re.compile(
     r"\b(executive search|senior|leadership|director|recruitment framework|"
     r"managed service|comms|communications|corporate affairs|public sector)\b",
     re.I)
+# Marketing desk (FIRST DRAFT): surface marketing/brand/creative framework
+# notices instead of the comms ones. Selected by the active profile below.
+_FW_RELEVANT_MARKETING = re.compile(
+    r"\b(executive search|senior|leadership|director|recruitment framework|"
+    r"managed service|marketing|brand|creative|advertising|media buying|"
+    r"digital|communications|public sector)\b",
+    re.I)
+from tool.profiles import active_profile as _active_profile
+if _active_profile().key == "marketing":
+    _FW_RELEVANT = _FW_RELEVANT_MARKETING
 # Drop obvious non-comms commodity recruitment (clinical/teaching agency
 # staffing) — keep leadership/exec-search framework signals.
 _FW_EXCLUDE = re.compile(

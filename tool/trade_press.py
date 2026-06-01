@@ -60,7 +60,7 @@ MAX_EVENTS_KEEP = 200       # cap stored events so the panel stays usable
 # parser; "homepage_html" hits an editorial index page and pulls
 # article anchors. Missing/broken sources are skipped silently so one
 # publisher killing their feed doesn't take the whole scour down.
-SOURCES = [
+_COMMS_SOURCES = [
     {"key": "corpcomms", "name": "CorpComms Magazine",
      "url":  "https://www.corpcommsmagazine.co.uk/feed/",
      "kind": "rss"},
@@ -74,6 +74,27 @@ SOURCES = [
      "url":  "https://www.campaignlive.co.uk/news",
      "kind": "homepage_html"},
 ]
+
+# Marketing desk (FIRST DRAFT) — UK marketing trade press. Graceful-skip if
+# a feed path moves (same as the comms set). Review with the marketing team.
+_MARKETING_SOURCES = [
+    {"key": "marketing_week", "name": "Marketing Week",
+     "url":  "https://www.marketingweek.com/feed/",
+     "kind": "rss"},
+    {"key": "the_drum", "name": "The Drum",
+     "url":  "https://www.thedrum.com/rss.xml",
+     "kind": "rss"},
+    {"key": "marketing_beat", "name": "Marketing Beat",
+     "url":  "https://www.marketingbeat.co.uk/feed/",
+     "kind": "rss"},
+    {"key": "campaign_uk", "name": "Campaign UK",
+     "url":  "https://www.campaignlive.co.uk/news",
+     "kind": "homepage_html"},
+]
+
+from tool.profiles import active_profile as _active_profile
+SOURCES = (_MARKETING_SOURCES if _active_profile().key == "marketing"
+           else _COMMS_SOURCES)
 
 # Hook-type classification — drives the opener template. Order matters:
 # first match wins.

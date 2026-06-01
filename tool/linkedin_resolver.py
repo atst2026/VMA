@@ -215,9 +215,45 @@ ROLE_FOR_PREDICTOR_TRIGGER = {
     "job_ad_cluster":         "Head of HR",
 }
 
+# Profile override (FIRST DRAFT). Comms keeps the live mappings above;
+# marketing routes the specialism-specific events to marketing seats. The
+# universal C-suite triggers (CEO/CFO/Chair/CHRO/IR) are unchanged.
+from tool.profiles import active_profile as _active_profile
+_DEFAULT_ROLE = "Head of Communications"
+if _active_profile().key == "marketing":
+    _DEFAULT_ROLE = "Head of Marketing"
+    ROLE_FOR_LEAD_KIND = {
+        "job":                "Head of Marketing",
+        "rns":                "Head of Marketing",
+        "filing":             "Head of Marketing",
+        "regulator":          "Head of Marketing",
+        "procurement":        "Head of Marketing",
+        "trade_press":        "Head of Marketing",
+        "leadership_change":  "Head of Marketing",
+    }
+    ROLE_FOR_PREDICTOR_TRIGGER = {
+        "ceo_change":             "Chief Executive Officer",
+        "chro_change":            "Chief People Officer",
+        "chair_change":           "Chair",
+        "cfo_change":             "Chief Financial Officer",
+        "ir_director_change":     "Head of Investor Relations",
+        "comms_leader_departure": "Chief Marketing Officer",
+        "ic_platform_rfp":        "Head of Marketing",
+        "ipo_listing":            "Chief Financial Officer",
+        "contract_loss":          "Head of Marketing",
+        "regulator_action":       "Head of Marketing",
+        "regulator_probe_early":  "Head of Marketing",
+        "crisis_event":           "Head of Marketing",
+        "profit_warning":         "Head of Investor Relations",
+        "mna":                    "Chief Marketing Officer",
+        "restructure":            "Chief Marketing Officer",
+        "press_velocity_spike":   "Head of Marketing",
+        "job_ad_cluster":         "Head of Marketing",
+    }
+
 
 def role_for_lead(signal: dict) -> str:
-    return ROLE_FOR_LEAD_KIND.get(signal.get("kind", ""), "Head of Communications")
+    return ROLE_FOR_LEAD_KIND.get(signal.get("kind", ""), _DEFAULT_ROLE)
 
 
 def role_for_predictor(predictor: dict) -> str:
@@ -232,7 +268,7 @@ def role_for_predictor(predictor: dict) -> str:
               "job_ad_cluster"):
         if k in keys:
             return ROLE_FOR_PREDICTOR_TRIGGER[k]
-    return "Head of Communications"
+    return _DEFAULT_ROLE
 
 
 # ---- Hiring-contacts integration -------------------------------------

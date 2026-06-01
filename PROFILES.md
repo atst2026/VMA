@@ -111,10 +111,26 @@ These marketing values live next to their detector (as `_MARKETING_*`
 constants) rather than in `marketing.py`, because they mirror comms data that
 also lives in those modules. They're all marked **FIRST DRAFT** for review.
 
-**Still comms-only for now** (next, "Phase 3b"): the trade-press warm-call
-feeds, the contact role-routing (CCO → CMO), and the framework-discovery
-keywords. (Full state-namespace isolation is now done; a marketing-specific
-company watchlist is intentionally left shared for now.)
+### The "who to call" layer (3b-tail)
+
+The contact-resolution layer is profile-aware too, so a marketing lead suggests
+a marketing seat (CMO / Head of Marketing / Head of Brand) instead of a comms
+one — even before any marketing contacts are seeded, since an unseeded slot
+falls through to a role search for the right title:
+
+| Layer | File |
+|---|---|
+| Per-lead "who reports into" ladder | `tool/hiring_manager.py` |
+| Lead-kind / predictor-trigger → target role | `tool/linkedin_resolver.py` |
+| Trigger → ordered contact-slot chain + display labels | `tool/contacts/routing.py` |
+| Trade-press warm-call feeds | `tool/trade_press.py` |
+| General-scour trade feeds | `tool/sources/rss_feeds.py` (+ marketing feed URLs in `config.SOURCES`) |
+| Framework-discovery keywords | `tool/calendar_discovery.py` |
+
+**Intentionally shared** (not per-profile): the company **watchlist /
+account universe** — both desks pitch the same large UK employers, so it stays
+one list (and one Bright Data budget) until a marketing-specific universe is
+worth curating with the marketing team.
 
 ## ⚠ Marketing is a first draft
 

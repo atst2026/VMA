@@ -29,6 +29,8 @@ from __future__ import annotations
 
 import re
 
+from tool.profiles import active_profile
+
 # Roster role-slots (tool/contacts) the inferred manager maps onto, in
 # fall-through order. Slots absent from the roster are skipped harmlessly.
 _DIRECTOR_SLOTS = ("cco", "head_of_corporate_affairs", "head_of_comms")
@@ -52,6 +54,26 @@ _JUNIOR_TOKENS = (
     "advisor", "consultant", "coordinator", "co-ordinator", "assistant",
     "business partner", "partner",
 )
+
+# --- Profile-aware role labels + slots ---------------------------------
+# Comms keeps the live values above; marketing (FIRST DRAFT) maps the same
+# seniority-up ladder onto marketing seats. Editing the marketing branch
+# re-tunes the marketing "who to call" — review with the marketing team.
+_MKT = active_profile().key == "marketing"
+if _MKT:
+    _DIRECTOR_SLOTS = ("cmo", "head_of_brand", "head_of_marketing")
+    _CCO_SLOTS = ("cmo", "head_of_brand")
+    _HEAD_IC_SLOTS = ("head_of_marketing", "cmo")
+    _COMMS_TOKENS = (
+        "marketing", "brand", "growth", "ecommerce", "e-commerce",
+        "demand generation", "performance marketing", "crm", "digital marketing",
+    )
+    _IC_TOKENS = ()   # no internal-comms concept in marketing
+_DIRECTOR_ROLE = "Marketing Director" if _MKT else "Director of Communications"
+_HEAD_IC_ROLE = "Head of Marketing" if _MKT else "Head of Internal Communications"
+_SENIOR_ROLE = "Chief Marketing Officer" if _MKT else "Chief Communications Officer"
+_DEFAULT_ROLE = "Head of Marketing" if _MKT else "Head of Communications"
+_LEADERSHIP_ROLE = "Marketing leadership" if _MKT else "Communications leadership"
 
 # "reporting to / reports into the <Title>" — capture the title phrase.
 _REPORTING_RX = re.compile(
@@ -143,21 +165,21 @@ def infer_hiring_manager(title: str, summary: str = "",
 
     if is_ic and ("head of" in t or is_senior):
         # Head of Internal Comms -> Director of Comms / Corp Affairs / CCO
-        return _result("Director of Communications", _DIRECTOR_SLOTS, 0.7)
+        return _result(_DIRECTOR_ROLE, _DIRECTOR_SLOTS, 0.7)
     if is_ic:
         # IC Manager / Specialist / Officer -> Head of Internal Comms
-        return _result("Head of Internal Communications", _HEAD_IC_SLOTS, 0.7)
+        return _result(_HEAD_IC_ROLE, _HEAD_IC_SLOTS, 0.7)
     if is_comms and is_senior:
         # Comms Director / Head of Corporate Affairs -> CCO
-        return _result("Chief Communications Officer", _CCO_SLOTS, 0.65)
+        return _result(_SENIOR_ROLE, _CCO_SLOTS, 0.65)
     if is_comms and (is_junior or "head of" in t):
         # Corporate / general Comms Manager -> Director of Communications
-        return _result("Director of Communications", _DIRECTOR_SLOTS, 0.7)
+        return _result(_DIRECTOR_ROLE, _DIRECTOR_SLOTS, 0.7)
     if is_comms:
-        return _result("Director of Communications", _DIRECTOR_SLOTS, 0.5)
+        return _result(_DIRECTOR_ROLE, _DIRECTOR_SLOTS, 0.5)
 
-    # No comms signal in the title — generic fallback.
-    return _result("Head of Communications", _CCO_SLOTS, 0.3, basis="default")
+    # No specialism signal in the title — generic fallback.
+    return _result(_DEFAULT_ROLE, _CCO_SLOTS, 0.3, basis="default")
 
 
 def _result(manager_title: str, slots: tuple, confidence: float,
@@ -231,7 +253,8 @@ _APPOINTEE_RX = [
     re.compile(r"new\s+(?:CCO|CEO|CHRO|chief|head of[^.]+)\s+is\s+"
                r"([A-Z][a-z]+(?:\s[A-Z][a-z]+)+)"),
 ]
-_COMMS_SLOTS = ("cco", "head_of_corporate_affairs", "head_of_comms", "chro")
+_COMMS_SLOTS = (("cmo", "head_of_brand", "head_of_marketing", "chro") if _MKT
+                else ("cco", "head_of_corporate_affairs", "head_of_comms", "chro"))
 # Per-company structure -> the slot to put first for a comms vacancy.
 # Other slots in the original priority list fall through after.
 _STRUCTURE_LEADS = {
@@ -308,13 +331,13 @@ def resolve_lead_contact(signal: dict, contacts: dict | None = None) -> dict:
         if appointee:
             preset_name = appointee
             title, slots, base_conf, basis = (
-                "Communications leadership", _COMMS_SLOTS, 0.6, "appointee")
+                _LEADERSHIP_ROLE, _COMMS_SLOTS, 0.6, "appointee")
         else:
             title, slots, base_conf, basis = (
-                "Head of Communications", _COMMS_SLOTS, 0.4, "role_heuristic")
+                _DEFAULT_ROLE, _COMMS_SLOTS, 0.4, "role_heuristic")
     else:
         title, slots, base_conf, basis = (
-            "Head of Communications", _COMMS_SLOTS, 0.45, "role_heuristic")
+            _DEFAULT_ROLE, _COMMS_SLOTS, 0.45, "role_heuristic")
 
     name, linkedin_url, confidence = preset_name, None, base_conf
     stale = False

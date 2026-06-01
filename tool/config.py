@@ -131,6 +131,12 @@ SOURCES = {
     # if a path moves; live reachability is verified in GitHub Actions.
     "prmoment": "https://www.prmoment.com/feed",
     "cipr_influence": "https://influenceonline.co.uk/feed/",
+    # Marketing-desk trade press (used when VMA_PROFILE=marketing; the
+    # marketing rss_feeds rows reference these keys). Standard WordPress /
+    # CMS feeds; graceful-skip if a path moves, like every feed here.
+    "marketing_week": "https://www.marketingweek.com/feed/",
+    "the_drum": "https://www.thedrum.com/rss.xml",
+    "marketing_beat": "https://www.marketingbeat.co.uk/feed/",
     # Phase 3.9 — sector trade feeds. These deepen coverage of the
     # hot sectors (housing/real-estate, pharma, utilities) so the
     # predictor + following/contract-end detectors see sector moves
