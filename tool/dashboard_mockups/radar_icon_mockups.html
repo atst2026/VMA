@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VMA — radar / scanner icon mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     Radar / scanner icon mockups for the dashboard.
+     Each option is shown in BOTH real contexts, with the live CSS:
+       - sidebar rail pill (42x42, .ri.active)  — 20px icon, --ink
+       - title tile (78px, .radar-ic)           — 38px icon, --vma navy
+     Chrome + variables copied verbatim from tool/dashboard.py.
+     ============================================================ */
+  :root{
+    --ink:#1F1F1F; --muted:#5F6368; --vma:#3E5C84; --bg:#f7f9fc;
+    --shadow-md:0 6px 22px rgba(60,64,67,.08),0 1px 3px rgba(60,64,67,.04);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Inter",-apple-system,system-ui,sans-serif;padding:34px 30px 60px;}
+  h1{font-family:"Newsreader",Georgia,serif;font-weight:500;font-size:26px;margin:0 0 6px;}
+  .lede{color:var(--muted);font-size:13.5px;margin:0 0 30px;max-width:720px;line-height:1.55;}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px;}
+  .opt{background:#fff;border:1px solid rgba(60,64,67,.10);border-radius:16px;
+    box-shadow:var(--shadow-md);padding:18px 18px 20px;}
+  .opt.current{border-color:rgba(62,92,132,.35);background:#fbfcfe;}
+  .opt h2{font-size:13px;font-weight:600;margin:0 0 2px;letter-spacing:.01em;}
+  .opt .num{font-family:"Newsreader",serif;color:var(--vma);font-weight:500;}
+  .opt .desc{font-size:11.5px;color:var(--muted);margin:0 0 16px;line-height:1.5;min-height:32px;}
+  .row{display:flex;align-items:center;gap:22px;}
+
+  /* --- sidebar context --- */
+  .rail-demo{display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .ri{width:42px;height:42px;border-radius:12px;border:none;background:rgba(31,31,31,.07);
+    color:var(--ink);display:grid;place-items:center;}
+  .ri svg{width:20px;height:20px;}
+  .micro{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+
+  /* --- title context --- */
+  .title-demo{display:flex;align-items:center;gap:13px;}
+  .radar-ic{width:78px;height:78px;border-radius:18px;display:grid;place-items:center;
+    color:var(--vma);background:rgba(62,92,132,.09);flex-shrink:0;}
+  .radar-ic svg{width:38px;height:38px;}
+  .brand-title{font-family:"Newsreader",Georgia,serif;font-weight:400;font-size:19px;
+    letter-spacing:-.01em;color:var(--ink);}
+
+  /* line-art defaults to match the dashboard's stroke style */
+  svg.ic{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+  .radar-ic svg.ic{stroke-width:1.7;}
+
+  /* animations */
+  .spin{transform-origin:12px 12px;animation:spin 6s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .spin-slow{transform-origin:12px 12px;animation:spin 9s linear infinite;}
+  .sweepwedge{transform-origin:12px 12px;animation:spin 4.5s linear infinite;}
+  .ping > *{transform-origin:12px 12px;animation:ping 2.6s ease-out infinite;opacity:0;}
+  .ping > *:nth-child(2){animation-delay:.8s;} .ping > *:nth-child(3){animation-delay:1.6s;}
+  @keyframes ping{0%{transform:scale(.25);opacity:.9;}80%,100%{transform:scale(1);opacity:0;}}
+  .wave > *{transform-origin:5px 19px;animation:wv 2.4s ease-out infinite;opacity:0;}
+  .wave > *:nth-child(2){animation-delay:.7s;} .wave > *:nth-child(3){animation-delay:1.4s;}
+  @keyframes wv{0%{opacity:0;transform:scale(.4);}40%{opacity:.95;}100%{opacity:0;transform:scale(1.05);}}
+  .scanY{animation:scanY 2.6s ease-in-out infinite;}
+  @keyframes scanY{0%,100%{transform:translateY(-5px);}50%{transform:translateY(5px);}}
+  .blip{animation:blip 2.6s ease-in-out infinite;}
+  @keyframes blip{0%,55%,100%{opacity:.15;}65%,80%{opacity:1;}}
+  .note{margin-top:34px;font-size:12px;color:var(--muted);line-height:1.6;}
+</style>
+</head>
+<body>
+  <h1>Radar / scanner icon — options</h1>
+  <p class="lede">Each option shown in both live contexts: the <b>sidebar rail</b> pill (42×42, active state) and the <b>“Market Opportunities Radar” title</b> tile (78px navy). Hover/look for the live animation. Option 1 is the current icon, for comparison.</p>
+
+  <div class="grid">
+
+    <!-- 1 · CURRENT -->
+    <div class="opt current">
+      <h2><span class="num">01</span> &nbsp;Current — spinning target</h2>
+      <p class="desc">Today’s icon: a dish arc + two rings + centre dot. Reads as a bullseye.</p>
+      <div class="row">
+        <div class="rail-demo">
+          <span class="ri"><svg class="ic" viewBox="0 0 24 24"><g class="spin"><path d="M12 12 L12 3.2 A8.8 8.8 0 1 1 5.6 6"/><circle cx="12" cy="12" r="3.4"/><circle cx="12" cy="12" r="8.8" opacity=".4"/></g></svg></span>
+          <span class="micro">sidebar</span>
+        </div>
+        <div class="title-demo">
+          <span class="radar-ic"><svg class="ic" viewBox="0 0 24 24"><g class="spin"><path d="M12 12 L12 3.2 A8.8 8.8 0 1 1 5.6 6"/><circle cx="12" cy="12" r="3.4"/><circle cx="12" cy="12" r="8.8" opacity=".35"/></g></svg></span>
+          <span class="brand-title">Market Opportunities Radar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 · RADAR SWEEP + BLIPS -->
+    <div class="opt">
+      <h2><span class="num">02</span> &nbsp;Radar sweep + blips</h2>
+      <p class="desc">A proper radar scope: faint grid rings, a rotating sweep line, and contacts that blink as the beam passes.</p>
+      <div class="row">
+        <div class="rail-demo">
+          <span class="ri"><svg class="ic" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="9" opacity=".3"/><circle cx="12" cy="12" r="4.5" opacity=".3"/>
+            <line class="spin" x1="12" y1="12" x2="12" y2="3" stroke-width="2"/>
+            <circle class="blip" cx="16" cy="8.5" r="1.3" fill="currentColor" stroke="none"/>
+          </svg></span>
+          <span class="micro">sidebar</span>
+        </div>
+        <div class="title-demo">
+          <span class="radar-ic"><svg class="ic" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="9" opacity=".3"/><circle cx="12" cy="12" r="4.5" opacity=".3"/>
+            <line class="spin" x1="12" y1="12" x2="12" y2="3" stroke-width="2"/>
+            <circle class="blip" cx="16" cy="8.5" r="1.3" fill="currentColor" stroke="none"/>
+          </svg></span>
+          <span class="brand-title">Market Opportunities Radar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 · SONAR PING -->
+    <div class="opt">
+      <h2><span class="num">03</span> &nbsp;Sonar ping</h2>
+      <p class="desc">A centre point emitting expanding rings — “actively scanning / broadcasting”. Minimal and modern.</p>
+      <div class="row">
+        <div class="rail-demo">
+          <span class="ri"><svg class="ic" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/>
+            <g class="ping"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="10"/></g>
+          </svg></span>
+          <span class="micro">sidebar</span>
+        </div>
+        <div class="title-demo">
+          <span class="radar-ic"><svg class="ic" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/>
+            <g class="ping"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="10"/></g>
+          </svg></span>
+          <span class="brand-title">Market Opportunities Radar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 · TARGET LOCK / RETICLE -->
+    <div class="opt">
+      <h2><span class="num">04</span> &nbsp;Target lock</h2>
+      <p class="desc">Corner brackets closing on a centre dot — “locked onto an opportunity”. Crisp, non-circular.</p>
+      <div class="row">
+        <div class="rail-demo">
+          <span class="ri"><svg class="ic" viewBox="0 0 24 24">
+            <path d="M4 8 V4 H8"/><path d="M16 4 H20 V8"/><path d="M20 16 V20 H16"/><path d="M8 20 H4 V16"/>
+            <circle cx="12" cy="12" r="2.4"/>
+          </svg></span>
+          <span class="micro">sidebar</span>
+        </div>
+        <div class="title-demo">
+          <span class="radar-ic"><svg class="ic" viewBox="0 0 24 24">
+            <path d="M4 8 V4 H8"/><path d="M16 4 H20 V8"/><path d="M20 16 V20 H16"/><path d="M8 20 H4 V16"/>
+            <circle cx="12" cy="12" r="2.4"/>
+          </svg></span>
+          <span class="brand-title">Market Opportunities Radar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 · SATELLITE DISH -->
+    <div class="opt">
+      <h2><span class="num">05</span> &nbsp;Satellite dish</h2>
+      <p class="desc">A dish pointed at the sky with signal arcs — literal “scanning the market”. Distinctive silhouette.</p>
+      <div class="row">
+        <div class="rail-demo">
+          <span class="ri"><svg class="ic" viewBox="0 0 24 24">
+            <path d="M3 18 a7 7 0 0 1 7 -7 l-3.5 3.5 z" fill="currentColor" stroke="none" opacity=".18"/>
+            <path d="M3.5 17.5 a7 7 0 0 1 6.5 -6.7"/><circle cx="6.7" cy="14.3" r="1"/>
+            <line x1="9.3" y1="14.6" x2="14" y2="19.3"/><circle cx="14.5" cy="19.6" r="1.4"/>
+            <g class="wave"><path d="M13 9 a6 6 0 0 1 5 5"/><path d="M13 9 a6 6 0 0 1 5 5"/><path d="M13 9 a6 6 0 0 1 5 5"/></g>
+          </svg></span>
+          <span class="micro">sidebar</span>
+        </div>
+        <div class="title-demo">
+          <span class="radar-ic"><svg class="ic" viewBox="0 0 24 24">
+            <path d="M3 18 a7 7 0 0 1 7 -7 l-3.5 3.5 z" fill="currentColor" stroke="none" opacity=".15"/>
+            <path d="M3.5 17.5 a7 7 0 0 1 6.5 -6.7"/><circle cx="6.7" cy="14.3" r="1"/>
+            <line x1="9.3" y1="14.6" x2="14" y2="19.3"/><circle cx="14.5" cy="19.6" r="1.4"/>
+            <g class="wave"><path d="M13 9 a6 6 0 0 1 5 5"/><path d="M13 9 a6 6 0 0 1 5 5"/><path d="M13 9 a6 6 0 0 1 5 5"/></g>
+          </svg></span>
+          <span class="brand-title">Market Opportunities Radar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6 · SCANNING MAGNIFIER -->
+    <div class="opt">
+      <h2><span class="num">06</span> &nbsp;Scanning lens</h2>
+      <p class="desc">A magnifier over data bars with a scan line tracking up/down — “searching the market”.</p>
+      <div class="row">
+        <div class="rail-demo">
+          <span class="ri"><svg class="ic" viewBox="0 0 24 24">
+            <circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.2" y1="15.2" x2="20" y2="20"/>
+            <g class="scanY"><line x1="7.5" y1="11.5" x2="7.5" y2="9"/><line x1="10.5" y1="11.5" x2="10.5" y2="7.5"/><line x1="13.5" y1="11.5" x2="13.5" y2="9.5"/></g>
+          </svg></span>
+          <span class="micro">sidebar</span>
+        </div>
+        <div class="title-demo">
+          <span class="radar-ic"><svg class="ic" viewBox="0 0 24 24">
+            <circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.2" y1="15.2" x2="20" y2="20"/>
+            <g class="scanY"><line x1="7.5" y1="11.5" x2="7.5" y2="9"/><line x1="10.5" y1="11.5" x2="10.5" y2="7.5"/><line x1="13.5" y1="11.5" x2="13.5" y2="9.5"/></g>
+          </svg></span>
+          <span class="brand-title">Market Opportunities Radar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7 · SWEEP WEDGE -->
+    <div class="opt">
+      <h2><span class="num">07</span> &nbsp;Sweep wedge</h2>
+      <p class="desc">A filled radar wedge rotating inside a single ring — the cleanest read of “a radar sweeping”.</p>
+      <div class="row">
+        <div class="rail-demo">
+          <span class="ri"><svg class="ic" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="9" opacity=".35"/>
+            <path class="sweepwedge" d="M12 12 L12 3 A9 9 0 0 1 19.8 7.5 Z" fill="currentColor" stroke="none" opacity=".55"/>
+            <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+          </svg></span>
+          <span class="micro">sidebar</span>
+        </div>
+        <div class="title-demo">
+          <span class="radar-ic"><svg class="ic" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="9" opacity=".35"/>
+            <path class="sweepwedge" d="M12 12 L12 3 A9 9 0 0 1 19.8 7.5 Z" fill="currentColor" stroke="none" opacity=".5"/>
+            <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+          </svg></span>
+          <span class="brand-title">Market Opportunities Radar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8 · GLOBE SCAN -->
+    <div class="opt">
+      <h2><span class="num">08</span> &nbsp;Globe scan</h2>
+      <p class="desc">A globe with meridians and a horizontal scan line — “scanning the whole market”. Slow rotation.</p>
+      <div class="row">
+        <div class="rail-demo">
+          <span class="ri"><svg class="ic" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="9"/>
+            <g class="spin-slow"><ellipse cx="12" cy="12" rx="4" ry="9" opacity=".5"/></g>
+            <line x1="3" y1="12" x2="21" y2="12" opacity=".5"/>
+            <line class="scanY" x1="3.6" y1="9" x2="20.4" y2="9" stroke-width="2"/>
+          </svg></span>
+          <span class="micro">sidebar</span>
+        </div>
+        <div class="title-demo">
+          <span class="radar-ic"><svg class="ic" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="9"/>
+            <g class="spin-slow"><ellipse cx="12" cy="12" rx="4" ry="9" opacity=".5"/></g>
+            <line x1="3" y1="12" x2="21" y2="12" opacity=".5"/>
+            <line class="scanY" x1="3.6" y1="9" x2="20.4" y2="9" stroke-width="2"/>
+          </svg></span>
+          <span class="brand-title">Market Opportunities Radar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9 · SIGNAL TOWER -->
+    <div class="opt">
+      <h2><span class="num">09</span> &nbsp;Signal tower</h2>
+      <p class="desc">A broadcast mast emitting waves both sides — “picking up market signals”. Reads instantly at small size.</p>
+      <div class="row">
+        <div class="rail-demo">
+          <span class="ri"><svg class="ic" viewBox="0 0 24 24">
+            <line x1="12" y1="9" x2="12" y2="20"/><circle cx="12" cy="8" r="1.6" fill="currentColor" stroke="none"/>
+            <path d="M8 5.5 a6 6 0 0 0 0 7" opacity=".85"/><path d="M16 5.5 a6 6 0 0 1 0 7" opacity=".85"/>
+            <path d="M5.5 3.5 a9 9 0 0 0 0 11" opacity=".4"/><path d="M18.5 3.5 a9 9 0 0 1 0 11" opacity=".4"/>
+            <path d="M9 18 h6"/>
+          </svg></span>
+          <span class="micro">sidebar</span>
+        </div>
+        <div class="title-demo">
+          <span class="radar-ic"><svg class="ic" viewBox="0 0 24 24">
+            <line x1="12" y1="9" x2="12" y2="20"/><circle cx="12" cy="8" r="1.6" fill="currentColor" stroke="none"/>
+            <path d="M8 5.5 a6 6 0 0 0 0 7" opacity=".85"/><path d="M16 5.5 a6 6 0 0 1 0 7" opacity=".85"/>
+            <path d="M5.5 3.5 a9 9 0 0 0 0 11" opacity=".4"/><path d="M18.5 3.5 a9 9 0 0 1 0 11" opacity=".4"/>
+            <path d="M9 18 h6"/>
+          </svg></span>
+          <span class="brand-title">Market Opportunities Radar</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="note">All icons are line-art on <code>viewBox 0 0 24 24</code>, <code>stroke="currentColor"</code> — so they inherit the rail’s ink colour and the title’s VMA navy with no extra styling, exactly like the current icon. Tell me which number you like and I’ll wire it into <code>tool/dashboard.py</code> (both the rail button and the title tile).</p>
+</body>
+</html>
