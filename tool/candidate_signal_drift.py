@@ -43,9 +43,8 @@ from pathlib import Path
 
 log = logging.getLogger("brief.candidate_drift")
 
-STATE_DIR = Path(__file__).resolve().parent / "state"
-
-
+from tool.state_paths import state_root
+STATE_DIR = state_root()
 # ----- helpers --------------------------------------------------------
 def _parse_iso_date(s: str) -> date | None:
     if not s:

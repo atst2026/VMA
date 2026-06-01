@@ -17,7 +17,8 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-STATE_DIR = Path(__file__).resolve().parent / "state"
+from tool.state_paths import state_root
+STATE_DIR = state_root()
 LOG_FILE = STATE_DIR / "report_log.json"
 _MAX = 100
 

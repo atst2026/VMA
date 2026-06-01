@@ -45,7 +45,8 @@ from typing import Iterable
 
 log = logging.getLogger("brief.trade_press")
 
-STATE_DIR = Path(__file__).resolve().parent / "state"
+from tool.state_paths import state_root
+STATE_DIR = state_root()
 EVENTS_FILE = STATE_DIR / "trade_press_events.json"
 SUPPRESS_FILE = STATE_DIR / "trade_press_suppression.json"
 TRACKED_FILE = STATE_DIR / "trade_press_tracked.json"   # canonical contact list

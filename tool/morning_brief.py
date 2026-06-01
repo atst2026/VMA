@@ -37,7 +37,8 @@ from tool import predictor_pipeline
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 log = logging.getLogger("brief")
 
-STATE_DIR = Path(__file__).resolve().parent / "state"
+from tool.state_paths import state_root
+STATE_DIR = state_root()
 STATE_DIR.mkdir(parents=True, exist_ok=True)
 
 

@@ -21,7 +21,8 @@ from tool.sources._http import signal_id
 
 log = logging.getLogger("brief.velocity")
 
-STATE_DIR = Path(__file__).resolve().parent.parent / "state"
+from tool.state_paths import state_root
+STATE_DIR = state_root()
 STATE_DIR.mkdir(parents=True, exist_ok=True)
 STATE_FILE = STATE_DIR / "rns_velocity_state.json"
 

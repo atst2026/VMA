@@ -22,7 +22,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-STATE_DIR = Path(__file__).resolve().parent / "state"
+from tool.state_paths import state_root
+STATE_DIR = state_root()
 DIVISIONAL_FILE = STATE_DIR / "divisional_contacts.json"
 
 # Phrases in a lead's title/summary that signal a divisional role even

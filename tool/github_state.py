@@ -40,6 +40,20 @@ BRANCH = os.environ.get("GITHUB_STATE_BRANCH", "dashboard-state")
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
+def _ns(repo_path: str) -> str:
+    """Namespace a repo state path by the active profile, mirroring
+    state_paths.state_root(): comms/default keeps ``tool/state/…``; every
+    other profile gets ``tool/state/<key>/…``. So both the remote
+    dashboard-state branch and the local hydrate path stay isolated per
+    desk, with zero change for comms."""
+    from tool.profiles import DEFAULT_PROFILE_KEY, active_profile
+    key = active_profile().key
+    prefix = "tool/state/"
+    if key != DEFAULT_PROFILE_KEY and repo_path.startswith(prefix):
+        return prefix + key + "/" + repo_path[len(prefix):]
+    return repo_path
+
+
 def _enabled() -> bool:
     return bool(GITHUB_TOKEN)
 
@@ -54,7 +68,7 @@ def _headers() -> dict:
 
 def _contents_url(repo_path: str) -> str:
     return (f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}"
-            f"/contents/{repo_path}")
+            f"/contents/{_ns(repo_path)}")
 
 
 def _get_remote(repo_path: str) -> tuple[str | None, str | None]:
@@ -91,7 +105,7 @@ def hydrate(repo_paths: list[str]) -> None:
         except Exception:
             log.info("github_state: remote %s not valid JSON — skip", repo_path)
             continue
-        local = REPO_ROOT / repo_path
+        local = REPO_ROOT / _ns(repo_path)
         try:
             local.parent.mkdir(parents=True, exist_ok=True)
             local.write_text(text, encoding="utf-8")

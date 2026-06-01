@@ -68,6 +68,23 @@ Same code, different profile → different taxonomy and a separate state
 namespace (`tool/state/` vs `tool/state/marketing/`). Set each service's
 `VMA_PROFILE_URLS` to the other's URL so the chooser cross-links them.
 
+Every state-writing module resolves its directory through `state_root()`, and
+`github_state` namespaces the persisted dashboard-state paths the same way, so
+the two desks' working data (leads, triage, predictors, candidate watch,
+dedup, calendar pipeline …) never collide. The **account universe** is shared
+on purpose — `hiring_contacts.json`, the Companies House watchlist and the
+LinkedIn-resolver cache stay at the comms root so both desks reuse one set of
+target companies/contacts (and one Bright Data budget).
+
+## Nightly runs
+
+`.github/workflows/morning-brief.yml` runs the comms brief; a separate
+`.github/workflows/marketing-brief.yml` runs the marketing brief
+(`VMA_PROFILE=marketing`, 15 min later) into the marketing namespace. Kept as
+two files so the marketing run can never affect Sara's live comms job. Both
+emails are off (dashboard is the surface); the marketing job never commits the
+shared contacts.
+
 ## Email
 
 The daily morning-brief email is **off by default**
@@ -95,9 +112,9 @@ constants) rather than in `marketing.py`, because they mirror comms data that
 also lives in those modules. They're all marked **FIRST DRAFT** for review.
 
 **Still comms-only for now** (next, "Phase 3b"): the trade-press warm-call
-feeds, the contact role-routing (CCO → CMO), the framework-discovery keywords,
-full state-namespace isolation across every module, and a marketing-specific
-company watchlist (today both desks share the same account universe).
+feeds, the contact role-routing (CCO → CMO), and the framework-discovery
+keywords. (Full state-namespace isolation is now done; a marketing-specific
+company watchlist is intentionally left shared for now.)
 
 ## ⚠ Marketing is a first draft
 
