@@ -50,7 +50,15 @@ if _env_file.exists():
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 log = logging.getLogger("dashboard")
 
-STATE_DIR = _REPO_ROOT / "tool" / "state"
+# This dashboard serves one profile per process, selected by VMA_PROFILE
+# (default: comms). State lives in that profile's namespace: comms uses the
+# legacy root tool/state/ (so Sara's tool is unaffected); other profiles get
+# tool/state/<key>/. See tool/profiles/ and tool/state_paths.py.
+from tool.profiles import UPCOMING_PROFILES, active_profile, all_profiles
+from tool.state_paths import state_root
+
+PROFILE = active_profile()
+STATE_DIR = state_root()
 STATE_DIR.mkdir(parents=True, exist_ok=True)
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
@@ -964,7 +972,123 @@ def _landing_signals(limit: int = 4) -> list[dict]:
     return random.sample(pool, limit)
 
 
+# ---- Landing chooser (Comms / Marketing) --------------------------------
+# The front door. One tile per live profile (from the registry) plus a
+# "coming soon" tile for each announced-but-not-yet-built specialism
+# (profiles.UPCOMING_PROFILES). A new specialism appears here the instant
+# its profile is registered — no template change needed.
+_PROFILE_BLURBS = {
+    "comms": "Senior in-house Communications leads, predictors & BD intelligence.",
+    "marketing": "Senior Marketing & Brand leads — same engine, in build.",
+}
+
+_CHOOSER_CSS = (
+    ":root{--steel:#3F5E83;--deep:#1A3D7C;--ink:#1f2733;--muted:#6b7689;"
+    "--line:rgba(31,39,51,.12);}*{box-sizing:border-box;}"
+    "body{margin:0;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"
+    "'Segoe UI',Roboto,Arial,sans-serif;color:var(--ink);"
+    "background:radial-gradient(1200px 600px at 50% -10%,#eef3fb 0%,#f7f9fc 55%,#fbfcfe 100%);"
+    "display:flex;flex-direction:column;align-items:center;justify-content:center;"
+    "padding:40px 20px;}"
+    ".logo{width:62px;height:auto;border-radius:8px;box-shadow:0 6px 20px rgba(26,61,124,.18);}"
+    "h1{font-size:24px;font-weight:700;letter-spacing:.2px;margin:18px 0 4px;color:var(--deep);}"
+    ".sub{color:var(--muted);font-size:14px;margin:0 0 32px;text-align:center;"
+    "max-width:520px;line-height:1.5;}"
+    ".grid{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;width:100%;max-width:720px;}"
+    ".card{flex:1 1 280px;max-width:330px;background:#fff;border:1px solid var(--line);"
+    "border-radius:16px;padding:26px 24px;text-decoration:none;color:inherit;display:block;"
+    "transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease;"
+    "box-shadow:0 1px 2px rgba(16,24,40,.04);}"
+    ".card:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(26,61,124,.14);"
+    "border-color:var(--steel);}.card.soon{opacity:.72;}"
+    ".card.soon:hover{transform:none;box-shadow:0 1px 2px rgba(16,24,40,.04);border-color:var(--line);}"
+    ".dot{width:10px;height:10px;border-radius:50%;background:var(--steel);display:inline-block;"
+    "margin-right:8px;vertical-align:middle;}.card.soon .dot{background:#c2c9d6;}"
+    ".label{font-size:19px;font-weight:700;color:var(--deep);margin:0;display:flex;align-items:center;}"
+    ".blurb{color:var(--muted);font-size:13.5px;line-height:1.5;margin:10px 0 18px;}"
+    ".go{font-size:13px;font-weight:600;color:var(--steel);}"
+    ".pill{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.4px;"
+    "text-transform:uppercase;color:#8a93a5;background:#eef1f6;border-radius:999px;padding:4px 10px;}"
+    ".foot{margin-top:34px;color:#9aa3b2;font-size:12px;}a{color:var(--steel);}"
+)
+
+_CHOOSER_TEMPLATE = (
+    "<!doctype html><html lang=en><head><meta charset=utf-8>"
+    "<meta name=viewport content='width=device-width, initial-scale=1'>"
+    "<title>VMA Intelligence</title><style>" + _CHOOSER_CSS + "</style></head><body>"
+    "<div class=logo>{{ logo|safe }}</div>"
+    "<h1>VMA Intelligence</h1>"
+    "<p class=sub>Choose a desk. Each runs the same engine and nightly scan, "
+    "tuned to its own specialism.</p>"
+    "<div class=grid>{% for c in cards %}"
+    "<a class='card {{ '' if c.live else 'soon' }}' href='{{ c.href }}'>"
+    "<p class=label><span class=dot></span>{{ c.label }}</p>"
+    "<p class=blurb>{{ c.blurb }}</p>"
+    "{% if c.live %}<span class=go>Open &rarr;</span>"
+    "{% else %}<span class=pill>Coming soon</span>{% endif %}</a>"
+    "{% endfor %}</div>"
+    "<div class=foot>One codebase &middot; one nightly scan &middot; separate desks</div>"
+    "</body></html>"
+)
+
+_COMING_SOON_TEMPLATE = (
+    "<!doctype html><html lang=en><head><meta charset=utf-8>"
+    "<meta name=viewport content='width=device-width, initial-scale=1'>"
+    "<title>{{ label }} &mdash; coming soon &middot; VMA Intelligence</title>"
+    "<style>" + _CHOOSER_CSS + "</style></head><body>"
+    "<div class=logo>{{ logo|safe }}</div>"
+    "<h1>{{ label }} desk</h1>"
+    "<p class=sub>The {{ label }} desk is in build. It runs the same engine as "
+    "Comms &mdash; the same nightly scan, ranking and dashboard &mdash; tuned to "
+    "{{ label|lower }} roles, target companies and trade press.</p>"
+    "<span class=pill>Coming soon</span>"
+    "<p class=foot><a href='/'>&larr; Back</a></p>"
+    "</body></html>"
+)
+
+
+def _chooser_cards() -> list[dict]:
+    """Tiles for the chooser: every live profile, then any announced-but-
+    not-live specialism as a 'coming soon' tile."""
+    cards: list[dict] = []
+    seen = set()
+    for p in all_profiles():
+        cards.append({
+            "key": p.key, "label": p.label, "live": True,
+            "href": "/comms" if p.key == "comms" else f"/{p.key}",
+            "blurb": _PROFILE_BLURBS.get(p.key, f"Open the {p.label} desk."),
+        })
+        seen.add(p.key)
+    for key, label in UPCOMING_PROFILES:
+        if key in seen:
+            continue
+        cards.append({
+            "key": key, "label": label, "live": False, "href": f"/{key}",
+            "blurb": _PROFILE_BLURBS.get(key, "In build — launching soon."),
+        })
+    return cards
+
+
 @app.route("/")
+@_auth_required
+def chooser():
+    """Front door — pick a desk (Comms live; Marketing coming soon)."""
+    return render_template_string(
+        _CHOOSER_TEMPLATE, cards=_chooser_cards(), logo=_VMA_LOGO_SVG,
+    )
+
+
+@app.route("/marketing")
+@_auth_required
+def marketing_coming_soon():
+    """Placeholder for the Marketing desk until its profile is authored
+    (Phase 2). Replaced by the real landing once marketing goes live."""
+    return render_template_string(
+        _COMING_SOON_TEMPLATE, logo=_VMA_LOGO_SVG, label="Marketing",
+    )
+
+
+@app.route("/comms")
 @_auth_required
 def landing():
     """Gemini-clone landing — verbatim ground-truth CSS captured from

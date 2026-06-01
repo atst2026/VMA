@@ -30,6 +30,14 @@ _REGISTRY: dict[str, Profile] = {
     COMMS.key: COMMS,
 }
 
+# Specialisms that are announced but not yet live. The landing-page chooser
+# shows these as "coming soon" doors so the split is visible before the
+# profile exists. Move an entry into _REGISTRY (and delete it here) the
+# moment its profile is authored.
+UPCOMING_PROFILES: list[tuple[str, str]] = [
+    ("marketing", "Marketing"),
+]
+
 
 def all_profiles() -> list[Profile]:
     """Every registered profile, in registration order (drives the

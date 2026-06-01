@@ -35,6 +35,29 @@ excludes, and the brief's recipient / test inbox.
 source URLs, ATS seeds, the dedup aggregator lists, geography weighting,
 user-agent, the sweep window, and API-key wiring.
 
+## State isolation (per profile)
+
+Each profile keeps its runtime state in its own directory so two profiles
+never read or overwrite each other's data. `tool/state_paths.state_root()`
+resolves it:
+
+- **comms** (default) → the legacy root `tool/state/` — Sara's tool is
+  completely unaffected.
+- **any other profile** → `tool/state/<key>/`.
+
+A process serves one profile, chosen by `VMA_PROFILE`. An *unregistered*
+`VMA_PROFILE` falls back to comms (so a typo never spins up an orphan state
+dir); namespacing kicks in the moment the profile is registered.
+
+## The landing chooser
+
+`/` is the front door — a tile per **live** profile plus a "coming soon"
+tile for each entry in `UPCOMING_PROFILES`. Today: **Comms** (live, → the
+existing dashboard) and **Marketing** (coming soon). The comms landing now
+lives at `/comms`; `/dashboard` is unchanged (Sara's bookmark still works).
+When the marketing profile is registered, its door goes live automatically —
+no template change.
+
 ## Adding the Marketing profile (later phases)
 
 1. Create `tool/profiles/marketing.py` with a `Profile(key="marketing", …)`
