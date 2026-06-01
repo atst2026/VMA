@@ -691,6 +691,75 @@ TRIGGERS = [CEO_CHANGE, CHAIR_CHANGE, CHRO_CHANGE, CFO_CHANGE,
             PERSONAL_BRAND_VELOCITY, NED_TRUSTEE_APPOINTMENT]
 BY_KEY = {t.key: t for t in TRIGGERS}
 
+# Marketing desk (FIRST DRAFT): the trigger DETECTION (regex patterns) is
+# universal and unchanged; only the comms-flavoured who_to_call + implication
+# narrative shown in the Pre-Market panel is rewritten to marketing. Review
+# with the marketing team.
+from tool.profiles import active_profile as _active_profile
+if _active_profile().key == "marketing":
+    _MKT_COPY = {
+        "ceo_change": ("CMO / Marketing Director",
+            "External CEO/MD change at {company}. Incoming CEOs typically reset "
+            "the brand/growth agenda within 6 months; a marketing-leadership "
+            "refresh commonly follows in 6–12 weeks."),
+        "chair_change": ("CEO office / CMO",
+            "New Chair at {company}. Board-level change commonly prompts a "
+            "brand/marketing strategy review within 8–16 weeks."),
+        "chro_change": ("CMO / Head of Marketing",
+            "New CHRO at {company}. Function reviews often reach marketing; a "
+            "marketing-team reshape can follow within 8–16 weeks."),
+        "mna": ("CMO of acquirer; Head of Brand at both sides",
+            "M&A involving {company}. Brand integration and rebrand work drives "
+            "senior marketing hires across both sides within 3–6 months."),
+        "activist_stake": ("CMO / Head of Brand — brand & growth repositioning",
+            "Activist stake in {company}. Repositioning and value-narrative work "
+            "open a senior brand/marketing brief."),
+        "pe_acquisition": ("Incoming CMO under new ownership; Head of Growth",
+            "PE acquisition of {company}. New owners commonly refresh the "
+            "marketing/growth leadership in the first 6 months."),
+        "regulator_action": ("CMO / Head of Brand — brand-trust & customer-marketing rebuild",
+            "Regulator action against {company}. Brand-trust repair and "
+            "customer-marketing capacity open a permanent marketing brief."),
+        "regulator_probe_early": ("CMO / Head of Brand",
+            "Early regulatory probe at {company}. Brand-reputation workstreams "
+            "ramp ahead of the live period — secure the retained brief early."),
+        "crisis_event": ("CMO / Head of Brand — brand-trust rebuild",
+            "Crisis event at {company}. Brand-trust and customer-marketing "
+            "rebuild typically drives a permanent senior marketing hire."),
+        "profit_warning": ("CMO / Head of Growth — demand & retention reset",
+            "Profit warning at {company}. Demand-generation and retention resets "
+            "open a senior growth/marketing brief."),
+        "restructure": ("CMO / Head of Marketing",
+            "Restructure / strategic review at {company}. Marketing is commonly "
+            "reorganised — a senior marketing brief often follows."),
+        "cfo_change": ("CMO / Head of Growth",
+            "New CFO at {company}. Budget and efficiency resets commonly reshape "
+            "the marketing/growth leadership."),
+        "ir_director_change": ("CMO / Head of Brand",
+            "New IR Director at {company}. Investor-narrative refreshes are often "
+            "paired with brand/corporate-marketing hires."),
+        "comms_leader_departure": ("CEO office / CMO — the marketing seat is open NOW",
+            "Senior marketing leader has left {company}. The vacated seat is a "
+            "live replacement search."),
+        "ic_platform_rfp": ("CMO / Head of Marketing",
+            "Marketing / CRM platform activity at {company} signals a senior "
+            "marketing hire in 6–12 weeks."),
+        "ipo_listing": ("CFO office — brand + investor-marketing hires go in pre-admission",
+            "{company} heading to IPO. Brand and investor-marketing capacity is "
+            "built pre-admission."),
+        "contract_loss": ("Head of Marketing / CMO — reposition + demand defence",
+            "Material contract loss at {company}. Repositioning and demand "
+            "defence open a senior marketing brief."),
+        "press_velocity_spike": ("Head of Marketing / CMO",
+            "Press-velocity spike at {company} — heightened market activity often "
+            "precedes a senior marketing hire."),
+    }
+    for _k, (_w, _i) in _MKT_COPY.items():
+        _t = BY_KEY.get(_k)
+        if _t is not None:
+            _t.who_to_call = _w
+            _t.implication = _i
+
 # Comms / corporate-affairs role context. The detector requires one of
 # these to be present before firing the person-centric soft triggers
 # (personal_brand_velocity, ned_trustee_appointment) — so they only fire
@@ -766,6 +835,24 @@ MID_RX = re.compile(
     r"communications lead|pr lead|content lead)\b",
     re.IGNORECASE,
 )
+
+# Marketing desk (FIRST DRAFT): the job-ad cluster detector ("2+ mid-level
+# roles and no senior") keys off these. Swap to marketing roles so a cluster
+# of mid-level marketing hires is what's detected. Comms regexes above are
+# untouched.
+if _active_profile().key == "marketing":
+    SENIOR_RX = re.compile(
+        r"\b(head of|director of|chief marketing|cmo|vp marketing|"
+        r"vice president marketing|brand director|head of brand|head of growth|"
+        r"global head of|group head of)\b",
+        re.IGNORECASE,
+    )
+    MID_RX = re.compile(
+        r"\b(marketing manager|brand manager|senior marketing|senior brand|"
+        r"growth manager|digital marketing manager|product marketing manager|"
+        r"campaign manager|crm manager|content manager|marketing lead)\b",
+        re.IGNORECASE,
+    )
 
 
 def is_senior_comms(title: str) -> bool:

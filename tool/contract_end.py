@@ -71,9 +71,15 @@ _END_RX = re.compile(
     re.IGNORECASE,
 )
 
-_WHO = ("CCO / Director of Corporate Affairs — change & transition "
-        "comms capacity is reviewed in the recompete window; pitch "
-        "interim/retained before the internal scramble.")
+_COMMS_WHO = ("CCO / Director of Corporate Affairs — change & transition "
+              "comms capacity is reviewed in the recompete window; pitch "
+              "interim/retained before the internal scramble.")
+# Marketing desk (FIRST DRAFT): the recompete window's marketing angle.
+_MARKETING_WHO = ("CMO / Head of Marketing — bid, brand & customer-marketing "
+                  "capacity is reviewed in the recompete window; pitch the "
+                  "retained search before the internal scramble.")
+from tool.profiles import active_profile as _active_profile
+_WHO = (_MARKETING_WHO if _active_profile().key == "marketing" else _COMMS_WHO)
 
 
 def _norm(s: str) -> str:

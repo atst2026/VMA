@@ -71,6 +71,12 @@ try:
 except Exception:
     PROFILE_URLS = {}
 
+# Profile-aware UI labels (forms, empty-states). Comms keeps its wording.
+_IS_MKT = PROFILE.key == "marketing"
+DEFAULT_ROLE_LABEL = "Head of Marketing" if _IS_MKT else "Head of Internal Communications"
+SEAT_FALLBACK = "senior marketing seat" if _IS_MKT else "senior comms seat"
+EXAMPLE_ROLE = "Head of Marketing" if _IS_MKT else "Head of Internal Communications"
+
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 GITHUB_OWNER = os.environ.get("GITHUB_OWNER", "atst2026")
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "VMA")
@@ -947,7 +953,7 @@ def _landing_signal_pool() -> list[dict]:
         from tool import predictor_pipeline
         for p in predictor_pipeline.all_predictors():
             comp = _short(p.get("company") or "", 22)
-            seat = _short(p.get("role") or p.get("seat") or "senior comms seat", 24)
+            seat = _short(p.get("role") or p.get("seat") or SEAT_FALLBACK, 24)
             if comp:
                 pool.append({"label": comp + " · " + seat, "kind": "gold"})
     except Exception:
@@ -1211,6 +1217,8 @@ def index():
         _fw_counts[fw.get("triage", "active")] = _fw_counts.get(fw.get("triage", "active"), 0) + 1
     return render_template_string(
         TEMPLATE,
+        example_role=EXAMPLE_ROLE,
+        profile_label=PROFILE.label,
         leads=leads,
         predictors=predictors,
         funding_events=funding_events,
@@ -1293,7 +1301,7 @@ def api_pitch_pack():
     data = _safe_json_body()
     inputs = {
         "account_name": (data.get("account_name") or "").strip(),
-        "role": (data.get("role") or "Head of Internal Communications").strip(),
+        "role": (data.get("role") or DEFAULT_ROLE_LABEL).strip(),
         # Hard-coded to "preview" — emails for non-brief reports are
         # disabled. HTML is still generated, uploaded as a workflow
         # artifact, and surfaced via Recent Reports.
@@ -4115,7 +4123,7 @@ TEMPLATE = r"""
                 <label for="pp-account">Account name</label>
                 <input id="pp-account" name="account_name" placeholder="e.g. Unilever" required>
                 <label for="pp-role">Role</label>
-                <input id="pp-role" name="role" placeholder="e.g. Head of Internal Communications" required>
+                <input id="pp-role" name="role" placeholder="e.g. {{ example_role }}" required>
                 <button type="submit">Run</button>
                 <button type="submit" class="send" title="Run"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
                 <div class="status" id="pitch-status"></div>
@@ -4132,7 +4140,7 @@ TEMPLATE = r"""
                 <label for="rm-company">Current company</label>
                 <input id="rm-company" name="current_company" placeholder="e.g. Vodafone" required>
                 <label for="rm-title">Current title</label>
-                <input id="rm-title" name="current_title" placeholder="e.g. Head of Internal Communications" required>
+                <input id="rm-title" name="current_title" placeholder="e.g. {{ example_role }}" required>
                 <button type="submit">Run</button>
                 <button type="submit" class="send" title="Run"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
                 <div class="status" id="rm-status"></div>
