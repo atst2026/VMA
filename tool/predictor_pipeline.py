@@ -65,11 +65,12 @@ def save_pipeline(pipeline: dict) -> None:
 
 def _predicted_role_for(stk: Stack) -> str:
     """Map the stack's strongest trigger to the senior role most likely
-    being hired. Mirrors linkedin_resolver.role_for_predictor but kept
-    here to avoid a circular import."""
+    being hired. Profile-aware: comms desk -> comms seats, marketing desk
+    -> marketing seats. Resolved per call (not import) so it's correct in
+    the single dashboard process and in each desk's brief."""
     keys = {e.trigger_key for e in stk.events}
     # Order = priority; first match wins
-    role_map = [
+    comms_map = [
         ("comms_leader_departure", "Head of Communications"),
         ("ic_platform_rfp",        "Head of Internal Communications"),
         ("ipo_listing",            "Corporate Affairs Director"),
@@ -92,10 +93,40 @@ def _predicted_role_for(stk: Stack) -> str:
         ("personal_brand_velocity","Head of Communications (succession watch)"),
         ("job_ad_cluster",         "Head of Internal Communications"),
     ]
+    marketing_map = [
+        ("comms_leader_departure", "Chief Marketing Officer"),
+        ("ic_platform_rfp",        "Head of Marketing"),
+        ("ipo_listing",            "Brand / Corporate Marketing Director"),
+        ("ceo_change",             "Chief Marketing Officer"),
+        ("pe_acquisition",         "Brand Director (new ownership)"),
+        ("activist_stake",         "Crisis / Brand-Trust Director"),
+        ("mna",                    "Brand-Integration Director"),
+        ("regulator_action",       "Brand-Trust / Customer Marketing Lead"),
+        ("regulator_probe_early",  "Brand-Trust / Customer Marketing Lead"),
+        ("crisis_event",           "Brand-Trust / Customer Marketing Lead"),
+        ("profit_warning",         "Head of Demand Generation"),
+        ("contract_loss",          "Head of Marketing"),
+        ("chair_change",           "Chief Marketing Officer"),
+        ("cfo_change",             "Head of Marketing (ROI/efficiency)"),
+        ("ir_director_change",     "Brand / Investor Marketing"),
+        ("chro_change",            "Head of Marketing"),
+        ("restructure",            "Chief Marketing Officer"),
+        ("press_velocity_spike",   "Head of Brand"),
+        ("ned_trustee_appointment","Head of Marketing (succession watch)"),
+        ("personal_brand_velocity","Head of Marketing (succession watch)"),
+        ("job_ad_cluster",         "Head of Marketing"),
+    ]
+    try:
+        from tool.profiles import active_profile
+        is_marketing = active_profile().key == "marketing"
+    except Exception:
+        is_marketing = False
+    role_map = marketing_map if is_marketing else comms_map
+    default = "Senior Marketing hire" if is_marketing else "Senior Comms hire"
     for key, role in role_map:
         if key in keys:
             return role
-    return "Senior Comms hire"
+    return default
 
 
 def _imminence_mult(window_weeks: tuple | None) -> float:
