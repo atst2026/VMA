@@ -40,8 +40,16 @@ from typing import Iterable
 
 from tool.contacts.schema import ContactCard, ContactEntry
 from tool.contacts.resolver import classify_title
+from tool.contacts.store import get_contact, core_company_key
 
 log = logging.getLogger("brief.contacts.auto_update")
+
+
+def _core_indexed(snapshot: dict) -> dict:
+    """Index a CH snapshot by core company name so card keys that differ
+    only by legal suffix / region still match the snapshot — the SAME
+    lenient rule the runtime reader (store.get_contact) uses."""
+    return {core_company_key(k): v for k, v in (snapshot or {}).items()}
 
 
 # Pattern to pull an officer name from a CH departure event's evidence:
@@ -120,12 +128,12 @@ def expire_departed_contacts(contacts: dict[str, ContactCard],
             continue
         departed_name = _ch_name_to_display(m.group("name"))
 
-        # Find matching contact card by company name (case-insensitive)
-        card = None
-        for k, v in contacts.items():
-            if k.strip().lower() == company.lower():
-                card = v
-                break
+        # Find matching contact card using the SAME lenient matcher the
+        # runtime reader uses, so a departure for 'HSBC' still expires a
+        # card keyed 'HSBC Holdings plc'. Expiry is the safe direction
+        # (worst case: a slot falls back to a role-search), so erring
+        # toward a match here cannot surface a wrong name.
+        card = get_contact(contacts, company)
         if card is None:
             continue   # company not in our table
 
@@ -158,8 +166,10 @@ def populate_new_appointments(contacts: dict[str, ContactCard],
     now = datetime.now(timezone.utc)
     now_iso = now.isoformat()
 
+    snap_index = _core_indexed(ch_snapshot)
     for company, card in contacts.items():
-        snapshot_for_company = ch_snapshot.get(company) or {}
+        snapshot_for_company = (ch_snapshot.get(company)
+                                or snap_index.get(core_company_key(company)) or {})
         officers = snapshot_for_company.get("officers") or []
         for officer in officers:
             if officer.get("resigned_on"):
@@ -210,8 +220,10 @@ def refresh_confirmed_entries(contacts: dict[str, ContactCard],
     refreshed = 0
     now_iso = datetime.now(timezone.utc).isoformat()
 
+    snap_index = _core_indexed(ch_snapshot)
     for company, card in contacts.items():
-        snapshot_for_company = ch_snapshot.get(company) or {}
+        snapshot_for_company = (ch_snapshot.get(company)
+                                or snap_index.get(core_company_key(company)) or {})
         officers = snapshot_for_company.get("officers") or []
         active_officer_names = [
             _ch_name_to_display(o.get("name") or "")

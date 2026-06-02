@@ -36,7 +36,14 @@ from tool.contacts.resolver import resolve
 
 log = logging.getLogger("brief.contacts.seeder")
 
-STATE_DIR = Path(__file__).resolve().parent.parent / "state"
+# Profile-namespaced like the rest of the state layer (comms -> tool/state/,
+# marketing -> tool/state/marketing/), so a marketing seed audit never lands
+# in the comms dir.
+from tool.state_paths import state_root as _seed_state_root
+
+
+def _state_dir() -> Path:
+    return _seed_state_root()
 
 
 # ---- Adversarial sample (~30 entries, all known awkward cases) -----
@@ -87,8 +94,18 @@ ADVERSARIAL_SAMPLE = [
 # excluded from the bulk seed — they're sparse, low signal/noise, and
 # don't justify the API spend on the initial pass. They'll get filled
 # in opportunistically by the re-verify queue when triggered.
-SEED_ROLE_SLOTS = ("ceo", "chair", "cfo", "cco", "chro", "gc",
-                   "head_of_comms", "head_of_corporate_affairs")
+# Profile-aware: each desk seeds its own slots. Universal C-suite
+# (ceo/chair/cfo/chro) for both; comms-specific for comms, marketing-
+# specific for marketing. Sparse slots (head_of_ic / ir_director for comms,
+# head_of_growth for marketing) are deliberately left to opportunistic
+# re-verify rather than the bulk seed, to save lookups.
+from tool.profiles import active_profile as _active_profile_seed
+if _active_profile_seed().key == "marketing":
+    SEED_ROLE_SLOTS = ("ceo", "chair", "cfo", "cmo", "chro",
+                       "head_of_marketing", "head_of_brand")
+else:
+    SEED_ROLE_SLOTS = ("ceo", "chair", "cfo", "cco", "chro", "gc",
+                       "head_of_comms", "head_of_corporate_affairs")
 
 
 def _all_watchlist() -> list[str]:
@@ -122,7 +139,7 @@ def _make_fetch():
 
 def _audit_path(when: datetime) -> Path:
     ts = when.strftime("%Y%m%d_%H%M")
-    return STATE_DIR / f"seed_audit_{ts}.json"
+    return _state_dir() / f"seed_audit_{ts}.json"
 
 
 def run_dry_run() -> dict:

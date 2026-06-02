@@ -16,23 +16,36 @@ from pathlib import Path
 from tool.contacts.schema import (
     ContactCard, ContactEntry, ResolutionRecord, ReverifyEntry,
 )
+from tool.state_paths import state_root
 
 log = logging.getLogger("brief.contacts")
 
-STATE_DIR = Path(__file__).resolve().parent.parent / "state"
-STATE_DIR.mkdir(parents=True, exist_ok=True)
 
-CONTACTS_FILE = STATE_DIR / "hiring_contacts.json"
-RESOLUTION_LOG_FILE = STATE_DIR / "contact_resolution_log.jsonl"
-REVERIFY_QUEUE_FILE = STATE_DIR / "contact_reverify_queue.json"
+# Resolved PER CALL (not at import) so the single dashboard process can
+# serve both desks: each call follows the active profile —
+# comms/default -> tool/state/, marketing -> tool/state/marketing/ (see
+# state_paths). Previously these were hardcoded to tool/state/, so the
+# marketing desk read the COMMS contact graph while its flags/feedback
+# wrote to the namespaced dir — an inconsistent split.
+def _contacts_file() -> Path:
+    return state_root() / "hiring_contacts.json"
+
+
+def _resolution_log_file() -> Path:
+    return state_root() / "contact_resolution_log.jsonl"
+
+
+def _reverify_queue_file() -> Path:
+    return state_root() / "contact_reverify_queue.json"
 
 
 # ---- Contacts table -----------------------------------------------------
 def load_contacts() -> dict[str, ContactCard]:
-    if not CONTACTS_FILE.exists():
+    f = _contacts_file()
+    if not f.exists():
         return {}
     try:
-        data = json.loads(CONTACTS_FILE.read_text())
+        data = json.loads(f.read_text())
     except Exception as e:
         log.warning("hiring_contacts.json unreadable (%s) — treating as empty", e)
         return {}
@@ -44,7 +57,7 @@ def load_contacts() -> dict[str, ContactCard]:
 
 def save_contacts(contacts: dict[str, ContactCard]) -> None:
     payload = {c: card.to_jsonable() for c, card in contacts.items()}
-    CONTACTS_FILE.write_text(json.dumps(payload, indent=2))
+    _contacts_file().write_text(json.dumps(payload, indent=2))
 
 
 def _normalise_company(name: str) -> str:
@@ -66,6 +79,15 @@ def _core_company(name: str) -> str:
     s = _LEGAL_SUFFIX_RX.sub("", s)
     s = re.sub(r"[^a-z0-9 &]", " ", s)
     return re.sub(r"\s+", " ", s).strip()
+
+
+def core_company_key(name: str) -> str:
+    """Public alias for the core-name normaliser behind get_contact. Lets
+    other modules (e.g. auto_update) match companies the SAME lenient way
+    the runtime reader does, instead of a divergent exact-string match that
+    silently fails to expire a departed person when the card key carries a
+    legal suffix the event doesn't ('HSBC Holdings plc' vs 'HSBC')."""
+    return _core_company(name)
 
 
 def get_contact(contacts: dict[str, ContactCard], company: str) -> ContactCard | None:
@@ -99,15 +121,16 @@ def upsert_contact(contacts: dict[str, ContactCard], company: str,
 # ---- Resolution log (append-only jsonl) ---------------------------------
 def append_resolution_log(record: ResolutionRecord) -> None:
     line = json.dumps(record.to_jsonable(), ensure_ascii=False)
-    with RESOLUTION_LOG_FILE.open("a") as f:
+    with _resolution_log_file().open("a") as f:
         f.write(line + "\n")
 
 
 def iter_resolution_log():
     """Stream the resolution log. Used by analysis scripts."""
-    if not RESOLUTION_LOG_FILE.exists():
+    log_file = _resolution_log_file()
+    if not log_file.exists():
         return
-    with RESOLUTION_LOG_FILE.open() as f:
+    with log_file.open() as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -120,10 +143,11 @@ def iter_resolution_log():
 
 # ---- Re-verify queue ----------------------------------------------------
 def load_reverify_queue() -> list[ReverifyEntry]:
-    if not REVERIFY_QUEUE_FILE.exists():
+    f = _reverify_queue_file()
+    if not f.exists():
         return []
     try:
-        data = json.loads(REVERIFY_QUEUE_FILE.read_text())
+        data = json.loads(f.read_text())
     except Exception:
         return []
     out = []
@@ -148,7 +172,7 @@ def save_reverify_queue(queue: list[ReverifyEntry]) -> None:
         }
         for e in queue
     ]
-    REVERIFY_QUEUE_FILE.write_text(json.dumps(payload, indent=2))
+    _reverify_queue_file().write_text(json.dumps(payload, indent=2))
 
 
 def queue_for_reverify(queue: list[ReverifyEntry], company: str,

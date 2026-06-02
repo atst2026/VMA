@@ -158,7 +158,7 @@ def pick_contact_for_trigger(card, trigger_key: str):
     chain = role_priority_for_trigger(trigger_key)
     for slot in chain:
         entry = card.get(slot)
-        if entry and entry.is_fresh():
+        if entry and entry.is_fresh() and entry.meets_named_confidence():
             return entry, slot
     return None, chain[0]
 

@@ -24,12 +24,29 @@ ROLE_SLOTS = (
     "head_of_corporate_affairs",
     "head_of_ic",                # Head of Internal Communications
     "ir_director",
+    # Marketing-desk slots (active when VMA_PROFILE=marketing). Stored for
+    # both desks harmlessly — comms routing chains never request them,
+    # marketing chains do. Without these the marketing desk could never
+    # store, classify or seed a named marketing contact.
+    "cmo",                       # Chief Marketing Officer (full title only)
+    "head_of_marketing",
+    "head_of_brand",
+    "head_of_growth",
 )
 
 # Maximum age of a contact entry before it's considered stale. Beyond
 # this, we surface the Recruiter-search fallback instead of the named
 # contact (and the entry is queued for re-verification).
 FRESHNESS_DAYS = 120
+
+# Minimum stored confidence for an entry to surface as a NAMED contact.
+# Below this, the entry is treated like a miss and the UI falls back to a
+# role-search ("verified or fallback" — naming a weak guess is worse than a
+# search). Set conservatively: the live curated graph floors at 0.70, and
+# Companies House / RNS / auto-populated entries are 0.85–0.92, so 0.70
+# keeps every genuinely-sourced contact and drops only the speculative
+# single-scrape sources (e.g. bright_data at 0.55). Tighten via feedback.
+MIN_NAMED_CONFIDENCE = 0.70
 
 # How long to wait before retrying an entity that's failed 3 resolution
 # attempts in a row. Distinct from CACHE_TTL_DAYS in linkedin_resolver.
@@ -77,7 +94,25 @@ class ContactEntry:
         except Exception:
             return False
         now = as_of or datetime.now(timezone.utc)
-        return (now - v) < timedelta(days=FRESHNESS_DAYS)
+        # Coerce naive timestamps (hand-edited / externally-written entries)
+        # to UTC so a tz-aware minus tz-naive subtraction can't raise. The
+        # earlier try/except wrapped only the parse, not this subtraction,
+        # so a naive verified_at used to throw an uncaught TypeError and
+        # crash the caller (resolve_lead_contact / best_named_contact).
+        if v.tzinfo is None:
+            v = v.replace(tzinfo=timezone.utc)
+        if now.tzinfo is None:
+            now = now.replace(tzinfo=timezone.utc)
+        try:
+            return (now - v) < timedelta(days=FRESHNESS_DAYS)
+        except Exception:
+            return False
+
+    def meets_named_confidence(self) -> bool:
+        """True if this entry is strong enough to surface as a NAMED
+        contact (vs falling back to a role-search). The single, shared
+        named-tier gate used by every runtime reader."""
+        return (self.confidence or 0.0) >= MIN_NAMED_CONFIDENCE
 
 
 @dataclass
