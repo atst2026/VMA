@@ -3553,7 +3553,10 @@ TEMPLATE = r"""
     .rail .ri.active { background: rgba(31,31,31,.07); color: var(--ink); }
     /* VMA logo pinned to the bottom of the rail — same 42x42 faded-navy
        square + radius as the nav icons, holding the navy logo tile. */
-    .rail .rail-logo { margin-top: auto; margin-bottom: -13px; width: 42px; height: 42px; border-radius: 12px;
+    /* Recent-Reports download icon sits at the bottom of the rail, just
+       above the VMA logo (margin-top:auto pushes it + the logo down). */
+    .rail .ri-bottom { margin-top: auto; }
+    .rail .rail-logo { margin-top: 12px; margin-bottom: -13px; width: 42px; height: 42px; border-radius: 12px;
       overflow: hidden; flex-shrink: 0; position: relative; display: grid; place-items: center;
       background: rgba(62,92,132,.09); }
     .rail .rail-logo svg { display: block; width: 100%; height: 100%; border-radius: 12px; }
@@ -3670,6 +3673,10 @@ TEMPLATE = r"""
     #agent .agent-wrap { flex: 1; min-height: 0; overflow-y: auto; max-width: 900px; margin: 0 auto;
       padding: 40px 24px; text-align: center; display: flex; flex-direction: column;
       align-items: center; justify-content: center; }
+    #reports .reports-wrap { flex: 1; min-height: 0; overflow-y: auto; max-width: 760px; margin: 0 auto;
+      padding: 40px 24px; text-align: center; display: flex; flex-direction: column;
+      align-items: center; }
+    #reports .ea-hero { margin-bottom: 26px; }
     .ea-hero { text-align: center; }
     .cc-bigicon { width: 78px; height: 78px; border-radius: 18px; margin: 0 auto 22px; display: grid;
       place-items: center; color: var(--vma); background: rgba(62,92,132,.09); }
@@ -3750,12 +3757,6 @@ TEMPLATE = r"""
     #agent .chip .i { color: var(--ink-2); font-size: 13px; }
     #agent .chip.active { background: var(--ink); color: #fff; border-color: var(--ink); }
     #agent .chip.active .i { color: #fff; }
-    /* Claude-style: no text box sits there by default. The composer (its
-       input / forms) is hidden until a pill is clicked — clicking a pill
-       reveals the ability to type. The default view is just the clean pills. */
-    #agent .composer[data-mode="free"] { display: none; }
-    /* When a pill IS active the chips sit just under the revealed form. */
-    #agent .composer:not([data-mode="free"]) + .chips { margin-top: 14px; }
 
     /* Candidate Watch + Recent Reports moved onto page 2 — keep them in a
        centred column under the composer; reuse their existing .action-card
@@ -3885,6 +3886,7 @@ TEMPLATE = r"""
   <button class="ri active" id="nav-leads" data-tip="Market Opportunities Radar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" opacity=".4"/><path d="M12 12 L12 3 A9 9 0 0 1 19.8 7.5 Z" fill="currentColor" stroke="none" opacity=".55"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></button>
   <button class="ri" id="nav-agent" data-tip="Personal Assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7.5" width="17" height="13" rx="5"/><path d="M12 7.5V4.6"/><circle cx="12" cy="3.4" r="1.2"/><circle cx="9" cy="14" r="1.65" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.65" fill="currentColor" stroke="none"/></svg></button>
   <button class="ri" id="nav-cal" data-tip="BD Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></button>
+  <button class="ri ri-bottom" id="nav-reports" data-tip="Recent Reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
   <span class="rail-logo" data-tip="VMA Group"></span>
 </aside>
 
@@ -4208,15 +4210,6 @@ TEMPLATE = r"""
         <button class="chip" data-cap="sweep"><span class="i">⟲</span>Sweep</button>
       </div>
 
-      <!-- Recent Reports — reinstated: see + download reports generated in the
-           last 48h. The loader (loadRecentReports) already populates #recent-reports. -->
-      <div class="action-card recent-card" id="recent-card">
-        <button class="rr-clear" onclick="clearRecentReports(this)">Clear</button>
-        <h3>Recent Reports</h3>
-        <div id="recent-reports"></div>
-        <div class="rr-empty" id="rr-empty">No reports yet — generate one above and it'll appear here to download.</div>
-      </div>
-
 
     </div>
   </section>
@@ -4313,6 +4306,23 @@ TEMPLATE = r"""
         </div>
       </div>
 
+    </div>
+  </section>
+
+  <!-- ===== PAGE 4 · RECENT REPORTS (opened by the sidebar download icon) ===== -->
+  <section class="page" id="reports">
+    <div class="reports-wrap">
+      <div class="ea-hero">
+        <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+        <h1 class="gemini-title">Recent Reports</h1>
+        <div class="cc-sub">Reports you've generated in the last 48 hours — download any of them here.</div>
+      </div>
+      <div class="action-card recent-card" id="recent-card">
+        <button class="rr-clear" onclick="clearRecentReports(this)">Clear</button>
+        <h3>Recent Reports</h3>
+        <div id="recent-reports"></div>
+        <div class="rr-empty" id="rr-empty">No reports yet — generate one from the Personal Assistant and it'll appear here to download.</div>
+      </div>
     </div>
   </section>
 
@@ -5717,7 +5727,7 @@ async function loadRecentReports() {
     document.querySelectorAll('.page').forEach(function (s) {
       s.classList.toggle('active', s.id === page);
     });
-    var map = { leads: 'nav-leads', agent: 'nav-agent', cal: 'nav-cal' };
+    var map = { leads: 'nav-leads', agent: 'nav-agent', cal: 'nav-cal', reports: 'nav-reports' };
     Object.keys(map).forEach(function (k) {
       var b = document.getElementById(map[k]);
       if (b) b.classList.toggle('active', k === page);
@@ -5726,9 +5736,12 @@ async function loadRecentReports() {
   var nl = document.getElementById('nav-leads');
   var na = document.getElementById('nav-agent');
   var nc = document.getElementById('nav-cal');
+  var nr = document.getElementById('nav-reports');
   if (nl) nl.onclick = function () { render('leads'); };
   if (na) na.onclick = function () { render('agent'); };
   if (nc) nc.onclick = function () { render('cal'); };
+  // Sidebar download icon → the separate Recent Reports page (refresh list).
+  if (nr) nr.onclick = function () { render('reports'); if (typeof loadRecentReports === 'function') loadRecentReports(); };
   render('leads');
 
   // --- composer morph: chips toggle which MOVED form is visible ---
