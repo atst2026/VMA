@@ -23,7 +23,13 @@ on:
           - preview
 
 permissions:
-  contents: read   # marketing run never commits the shared hiring_contacts
+  contents: write   # persist the marketing state NAMESPACE to the dashboard-state
+                    # branch, exactly like the comms brief — so the dashboard can
+                    # hydrate marketing leads/predictors on every cold start instead
+                    # of relying on a live artifact pull. SAFE for comms: every write
+                    # is namespaced by github_state._ns() to tool/state/marketing/**,
+                    # and this workflow has NO git-commit-to-main step, so it can never
+                    # touch comms' files or the shared hiring_contacts on main.
 
 jobs:
   brief:
