@@ -239,6 +239,14 @@ PULSES: list[dict] = (
 )
 
 
+def _pulses_baseline() -> list[dict]:
+    """The curated pulse baseline for the ACTIVE profile, resolved per-call —
+    so the single dashboard process serves the right desk's pulses per
+    request (PULSES above is pinned at import for the env-pinned brief)."""
+    return (_MARKETING_PULSES if active_profile().key == "marketing"
+            else _COMMS_PULSES)
+
+
 def _parse(d: str) -> date:
     return datetime.strptime(d, "%Y-%m-%d").date()
 
@@ -283,7 +291,7 @@ def active_pulses(today: Optional[date] = None,
     if today is None:
         today = date.today()
 
-    source_list = PULSES if entries is None else entries
+    source_list = _pulses_baseline() if entries is None else entries
     out: list[dict] = []
     for p in source_list:
         try:
@@ -367,7 +375,7 @@ def load_pulses(limit: int = 10) -> list[dict]:
 # Each entry's date + source link was verified against the organiser's own
 # 2026 listing (May 2026). Events with no firm public 2026 ceremony date, or
 # whose date has already passed, are deliberately omitted rather than guessed.
-INDUSTRY_EVENTS: list[dict] = [
+_COMMS_EVENTS: list[dict] = [
     {
         "key": "cipr_excellence_2026",
         "name": "CIPR Excellence Awards",
@@ -439,6 +447,66 @@ INDUSTRY_EVENTS: list[dict] = [
     },
 ]
 
+# Marketing desk (FIRST DRAFT) — UK marketing industry events / awards.
+# Review with the marketing team; dates are typical 2026 windows.
+_MARKETING_EVENTS: list[dict] = [
+    {
+        "key": "marketing_week_masters_2026",
+        "name": "Marketing Week Awards / Masters",
+        "event_date": "2026-10-14",
+        "action_window": ("2026-08-14", "2026-10-14"),
+        "location": "London",
+        "focus": "external",
+        "why_now": "Flagship UK marketing awards; senior in-house marketing "
+                   "judges + finalists = a direct relationship route.",
+        "source": "https://www.marketingweek.com/",
+    },
+    {
+        "key": "festival_of_marketing_2026",
+        "name": "Festival of Marketing",
+        "event_date": "2026-10-07",
+        "action_window": ("2026-08-07", "2026-10-07"),
+        "location": "London",
+        "focus": "external",
+        "why_now": "Major UK marketing-leadership gathering; CMO / brand / "
+                   "growth speakers and attendees concentrated in two days.",
+        "source": "https://www.festivalofmarketing.com/",
+    },
+    {
+        "key": "the_drum_awards_2026",
+        "name": "The Drum Awards",
+        "event_date": "2026-11-18",
+        "action_window": ("2026-09-18", "2026-11-18"),
+        "location": "London",
+        "focus": "external",
+        "why_now": "Cross-discipline marketing & creative awards; shortlist "
+                   "window is the strongest outreach hook to senior finalists.",
+        "source": "https://www.thedrum.com/awards",
+    },
+    {
+        "key": "dma_awards_2026",
+        "name": "DMA Awards",
+        "event_date": "2026-12-02",
+        "action_window": ("2026-10-02", "2026-12-02"),
+        "location": "London",
+        "focus": "external",
+        "why_now": "Data & CRM / customer-marketing awards; reaches the "
+                   "performance & lifecycle marketing leadership cohort.",
+        "source": "https://dma.org.uk/awards",
+    },
+]
+
+INDUSTRY_EVENTS: list[dict] = (
+    _MARKETING_EVENTS if active_profile().key == "marketing" else _COMMS_EVENTS
+)
+
+
+def _events_baseline() -> list[dict]:
+    """The industry-events baseline for the ACTIVE profile, resolved
+    per-call (INDUSTRY_EVENTS above is pinned at import for the brief)."""
+    return (_MARKETING_EVENTS if active_profile().key == "marketing"
+            else _COMMS_EVENTS)
+
 
 def active_events(today: Optional[date] = None,
                   lookahead_days: int = 180,
@@ -452,7 +520,7 @@ def active_events(today: Optional[date] = None,
     with the same live date math; defaults to the curated baseline."""
     if today is None:
         today = date.today()
-    source_list = INDUSTRY_EVENTS if entries is None else entries
+    source_list = _events_baseline() if entries is None else entries
     out: list[dict] = []
     for e in source_list:
         try:

@@ -38,9 +38,9 @@ log = logging.getLogger("brief.pre_meeting")
 log.setLevel(logging.INFO)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 
-from tool.state_paths import state_root
+from tool.state_paths import state_dir, state_root
 from tool.profiles import active_profile as _active_profile
-STATE_DIR = state_root()
+STATE_DIR = state_dir()
 
 # Profile-aware nouns for the generated pre-meeting copy.
 _MKT = _active_profile().key == "marketing"

@@ -37,8 +37,8 @@ from pathlib import Path
 
 log = logging.getLogger("brief.mpc")
 
-from tool.state_paths import state_root
-STATE_DIR = state_root()
+from tool.state_paths import state_dir, state_root
+STATE_DIR = state_dir()
 # Predictor trigger keys that represent a distress event. The MPC
 # distress-tier hook is now sourced from these predictor events (in
 # latest_predictive.json) rather than the retired standalone

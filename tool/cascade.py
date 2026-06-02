@@ -50,11 +50,11 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 from tool.profiles import active_profile
-from tool.state_paths import state_root
+from tool.state_paths import state_dir, state_root
 
 log = logging.getLogger("brief.cascade")
 
-STATE_DIR = state_root()
+STATE_DIR = state_dir()
 EVENTS_FILE = STATE_DIR / "cascade_events.json"
 SUPPRESS_FILE = STATE_DIR / "cascade_suppression.json"
 

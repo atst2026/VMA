@@ -29,8 +29,8 @@ from tool.predictive.stacker import Stack
 
 log = logging.getLogger("brief.pipeline")
 
-from tool.state_paths import state_root
-STATE_DIR = state_root()
+from tool.state_paths import state_dir, state_root
+STATE_DIR = state_dir()
 STATE_DIR.mkdir(parents=True, exist_ok=True)
 PIPELINE_FILE = STATE_DIR / "predictor_pipeline.json"
 

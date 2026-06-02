@@ -42,8 +42,8 @@ from typing import Iterable
 
 log = logging.getLogger("brief.contract_end")
 
-from tool.state_paths import state_root
-STATE_DIR = state_root()
+from tool.state_paths import state_dir, state_root
+STATE_DIR = state_dir()
 # Forward-looking contract-end / re-tender / hand-over phrasing. Each
 # alternative is self-contained (contract-context noun + window verb)
 # so it is high-precision against noisy procurement text. Deliberately

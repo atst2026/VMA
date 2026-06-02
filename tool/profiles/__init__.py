@@ -54,7 +54,28 @@ def get_profile(key: str | None) -> Profile:
 
 
 def active_profile() -> Profile:
-    """The profile selected by VMA_PROFILE (default: comms)."""
+    """The active profile.
+
+    Resolution order:
+      1. A per-REQUEST override (``flask.g.vma_profile``) — this is how the
+         single dashboard process serves BOTH desks (one URL → /comms, the
+         other → /marketing). Only consulted inside a live web request.
+      2. ``VMA_PROFILE`` env var — how a single-profile process (the brief,
+         or a per-profile deploy) pins itself.
+      3. Default (comms).
+    """
+    # 1. request-scoped override (dashboard serving multiple desks)
+    try:
+        from flask import g, has_request_context
+        if has_request_context():
+            key = getattr(g, "vma_profile", None)
+            if key:
+                p = _REGISTRY.get(str(key).strip().lower())
+                if p is not None:
+                    return p
+    except Exception:
+        pass
+    # 2/3. env var, else default
     key = (os.environ.get("VMA_PROFILE") or DEFAULT_PROFILE_KEY).strip().lower()
     p = _REGISTRY.get(key)
     if p is None:

@@ -43,8 +43,8 @@ from pathlib import Path
 
 log = logging.getLogger("brief.candidate_drift")
 
-from tool.state_paths import state_root
-STATE_DIR = state_root()
+from tool.state_paths import state_dir, state_root
+STATE_DIR = state_dir()
 # ----- helpers --------------------------------------------------------
 def _parse_iso_date(s: str) -> date | None:
     if not s:
