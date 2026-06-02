@@ -216,7 +216,8 @@ def _query_rns(company: str, role_slot: str) -> tuple[list[CandidateRecord], Sou
     )
     import json
     from pathlib import Path
-    state_dir = Path(state_file).resolve().parent.parent / "state"
+    from tool.state_paths import state_root
+    state_dir = state_root()   # profile-namespaced, like the rest of state
     candidates = []
     matched = False
     for fname in ("latest_signals.json", "latest_sweep_signals.json"):

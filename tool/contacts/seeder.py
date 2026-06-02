@@ -36,7 +36,14 @@ from tool.contacts.resolver import resolve
 
 log = logging.getLogger("brief.contacts.seeder")
 
-STATE_DIR = Path(__file__).resolve().parent.parent / "state"
+# Profile-namespaced like the rest of the state layer (comms -> tool/state/,
+# marketing -> tool/state/marketing/), so a marketing seed audit never lands
+# in the comms dir.
+from tool.state_paths import state_root as _seed_state_root
+
+
+def _state_dir() -> Path:
+    return _seed_state_root()
 
 
 # ---- Adversarial sample (~30 entries, all known awkward cases) -----
@@ -132,7 +139,7 @@ def _make_fetch():
 
 def _audit_path(when: datetime) -> Path:
     ts = when.strftime("%Y%m%d_%H%M")
-    return STATE_DIR / f"seed_audit_{ts}.json"
+    return _state_dir() / f"seed_audit_{ts}.json"
 
 
 def run_dry_run() -> dict:
