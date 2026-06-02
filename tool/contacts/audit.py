@@ -96,11 +96,12 @@ def check_slot_consistency():
     from tool.contacts import routing
     from tool.profiles import active_profile
 
-    targeted = set()
+    # "targeted" = slots a routing chain can actually REQUEST at runtime.
+    # ROLE_SLOT_DISPLAY is cosmetic (labels only) and intentionally excluded,
+    # or it would over-count slots the chains never ask for.
+    targeted = set(routing.DEFAULT_CHAIN)
     for chain in routing.TRIGGER_ROLE_CHAIN.values():
         targeted.update(chain)
-    targeted.update(routing.DEFAULT_CHAIN)
-    targeted.update(routing.ROLE_SLOT_DISPLAY.keys())
 
     storable = set(ROLE_SLOTS)
     producible = set(ROLE_TITLE_PATTERNS.keys())

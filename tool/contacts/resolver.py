@@ -95,6 +95,33 @@ ROLE_TITLE_PATTERNS = {
         r"ir director|investor relations director)\b",
         re.IGNORECASE,
     ),
+    # --- Marketing-desk slots ---------------------------------------
+    # Bare "CMO" is deliberately excluded (collides with Chief Medical /
+    # Manufacturing Officer) — full title only, mirroring how the comms
+    # profile handles the "CCO" ambiguity.
+    "cmo": re.compile(
+        r"\b(?:chief marketing officer|chief marketing and growth officer|"
+        r"chief growth officer|chief brand officer|chief customer officer)\b",
+        re.IGNORECASE,
+    ),
+    "head_of_brand": re.compile(
+        r"\b(?:head of brand(?: marketing)?|brand director|"
+        r"director of brand|brand marketing director)\b",
+        re.IGNORECASE,
+    ),
+    "head_of_growth": re.compile(
+        r"\b(?:head of growth|vp growth|head of digital marketing|"
+        r"digital marketing director|head of performance marketing|"
+        r"performance marketing director|head of demand generation|"
+        r"head of acquisition|head of paid media)\b",
+        re.IGNORECASE,
+    ),
+    "head_of_marketing": re.compile(
+        r"\b(?:head of marketing(?: communications)?|marketing director|"
+        r"director of marketing|vp marketing|vice president of marketing|"
+        r"group marketing director|marketing and communications director)\b",
+        re.IGNORECASE,
+    ),
 }
 
 
@@ -106,6 +133,10 @@ def classify_title(title: str) -> str | None:
     priority = (
         "head_of_corporate_affairs", "head_of_ic", "head_of_comms",
         "ir_director", "gc", "cfo", "chro", "cco", "chair", "ceo",
+        # Marketing slots last so comms classification is byte-for-byte
+        # unchanged; among themselves, specific (growth/brand, which embed
+        # "... marketing director") before the generic head_of_marketing.
+        "head_of_growth", "head_of_brand", "head_of_marketing", "cmo",
     )
     for slot in priority:
         if ROLE_TITLE_PATTERNS[slot].search(title):

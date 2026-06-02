@@ -24,6 +24,14 @@ ROLE_SLOTS = (
     "head_of_corporate_affairs",
     "head_of_ic",                # Head of Internal Communications
     "ir_director",
+    # Marketing-desk slots (active when VMA_PROFILE=marketing). Stored for
+    # both desks harmlessly — comms routing chains never request them,
+    # marketing chains do. Without these the marketing desk could never
+    # store, classify or seed a named marketing contact.
+    "cmo",                       # Chief Marketing Officer (full title only)
+    "head_of_marketing",
+    "head_of_brand",
+    "head_of_growth",
 )
 
 # Maximum age of a contact entry before it's considered stale. Beyond

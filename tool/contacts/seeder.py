@@ -87,8 +87,18 @@ ADVERSARIAL_SAMPLE = [
 # excluded from the bulk seed — they're sparse, low signal/noise, and
 # don't justify the API spend on the initial pass. They'll get filled
 # in opportunistically by the re-verify queue when triggered.
-SEED_ROLE_SLOTS = ("ceo", "chair", "cfo", "cco", "chro", "gc",
-                   "head_of_comms", "head_of_corporate_affairs")
+# Profile-aware: each desk seeds its own slots. Universal C-suite
+# (ceo/chair/cfo/chro) for both; comms-specific for comms, marketing-
+# specific for marketing. Sparse slots (head_of_ic / ir_director for comms,
+# head_of_growth for marketing) are deliberately left to opportunistic
+# re-verify rather than the bulk seed, to save lookups.
+from tool.profiles import active_profile as _active_profile_seed
+if _active_profile_seed().key == "marketing":
+    SEED_ROLE_SLOTS = ("ceo", "chair", "cfo", "cmo", "chro",
+                       "head_of_marketing", "head_of_brand")
+else:
+    SEED_ROLE_SLOTS = ("ceo", "chair", "cfo", "cco", "chro", "gc",
+                       "head_of_comms", "head_of_corporate_affairs")
 
 
 def _all_watchlist() -> list[str]:
