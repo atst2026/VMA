@@ -36,8 +36,11 @@ from __future__ import annotations
 import json
 import logging
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
+
+from tool import bd_retention
 
 log = logging.getLogger("brief.funding")
 
@@ -46,6 +49,10 @@ STATE_DIR = state_dir()
 # £20m+ is the plan's threshold: below it a dedicated senior in-house
 # comms hire is statistically unlikely (agency/contractor instead).
 MIN_GBP_M = 20.0
+
+# Hard cap on the rolling funding store (bd_retention ages rows out at
+# 30/90 days, so this is just a belt-and-braces bound on growth).
+MAX_FUNDING_KEEP = 200
 
 _CO = r"([A-Z][\w&.\-' ]{1,45}?)"
 
@@ -301,8 +308,9 @@ def detect_funding(signals: Iterable[dict]) -> list[dict]:
     return out
 
 
-def load_funding(limit: int = 30) -> list[dict]:
-    """Dashboard accessor. Reads latest_funding.json. No external calls."""
+def _raw_load() -> list[dict]:
+    """Read the persisted funding store verbatim — no UK gate, no limit,
+    no expiry. Used by record_and_merge to carry first_seen forward."""
     path = STATE_DIR / "latest_funding.json"
     if not path.exists():
         return []
@@ -311,12 +319,67 @@ def load_funding(limit: int = 30) -> list[dict]:
     except Exception as e:
         log.info("latest_funding.json parse failed: %s", e)
         return []
-    if not isinstance(data, list):
+    return data if isinstance(data, list) else []
+
+
+def record_and_merge(detected: list[dict],
+                     now_iso: str | None = None) -> list[dict]:
+    """Merge today's freshly-detected funding rounds into the persisted
+    rolling store, stamping ``first_seen`` on first sight and carrying it
+    forward thereafter, then age the store out under the shared BD-Leads
+    rule (tool.bd_retention): a round drops 30 days after it was first
+    presented, or 90 days once Sara marks it followed-up.
+
+    Mirrors the predictor pipeline: a round persists for its whole window
+    even once its underlying news has aged out of the daily detection, so
+    the Funding rows in the BD Leads panel clear on the same fixed
+    schedule as every other BD lead rather than blinking out the moment
+    the headline stops trending. Returns the merged, aged store; the
+    caller writes it to latest_funding.json."""
+    from tool.funding_status import funding_id, get_statuses
+    now_iso = now_iso or datetime.now(timezone.utc).isoformat()
+    statuses = get_statuses()
+
+    merged: dict[str, dict] = {}
+    # Existing store first — keeps each round's original first_seen and
+    # retains rounds whose news has dropped out of today's detection.
+    for r in _raw_load():
+        if not isinstance(r, dict):
+            continue
+        fid = funding_id(r)
+        r.setdefault("fid", fid)
+        r.setdefault("first_seen", now_iso)
+        merged[fid] = r
+    # Today's detections refresh the row's content but never reset its
+    # first_seen (the presentation clock keeps running).
+    for r in detected:
+        if not isinstance(r, dict):
+            continue
+        fid = funding_id(r)
+        first_seen = (merged.get(fid) or {}).get("first_seen", now_iso)
+        merged[fid] = {**r, "fid": fid, "first_seen": first_seen}
+
+    kept = [r for r in merged.values()
+            if not bd_retention.is_expired(r.get("first_seen"),
+                                           statuses.get(r.get("fid"), "active"))]
+    # Newest presentation first, then a hard cap on store growth.
+    kept.sort(key=lambda r: r.get("first_seen") or "", reverse=True)
+    return kept[:MAX_FUNDING_KEEP]
+
+
+def load_funding(limit: int = 30) -> list[dict]:
+    """Dashboard accessor. Reads the rolling funding store. No external
+    calls. Applies the UK gate and the BD-Leads retention window so a
+    lapsed round disappears from every tab even before the next brief
+    prunes the store."""
+    data = _raw_load()
+    if not data:
         return []
+    from tool.funding_status import funding_id, get_statuses
+    statuses = get_statuses()
     # Defensive UK gate: filter any rows persisted before the detector
-    # gained the geo gate (state is regenerated each brief, but a stale
-    # snapshot shouldn't show off-patch rounds). Currency is re-derived
-    # from the stored amount string; geo from the stored evidence text.
+    # gained the geo gate. Currency is re-derived from the stored amount
+    # string; geo from the stored evidence text.
     uk: list[dict] = []
     for r in data:
         if not isinstance(r, dict):
@@ -324,8 +387,13 @@ def load_funding(limit: int = 30) -> list[dict]:
         amt = str(r.get("amount") or "")
         cur = "£" if amt[:1] == "£" else ("€" if amt[:1] == "€" else "$")
         text = f"{r.get('evidence') or ''} {r.get('company') or ''}"
-        if _is_uk_relevant(text, cur):
-            uk.append(r)
+        if not _is_uk_relevant(text, cur):
+            continue
+        fid = r.get("fid") or funding_id(r)
+        if bd_retention.is_expired(r.get("first_seen"),
+                                   statuses.get(fid, "active")):
+            continue  # past its 30d/90d window — gone from every tab
+        uk.append(r)
     return uk[:limit]
 
 

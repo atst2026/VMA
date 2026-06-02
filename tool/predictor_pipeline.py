@@ -5,25 +5,29 @@ SNAPSHOT — only items that fired in that day's scan. For low-volume
 signals (which is what predictive triggers are, by nature) that meant
 most mornings showed 0–2 items and Sara had no continuous pipeline.
 
-This module persists every predictor that fires across a rolling 30-day
-window, with status tracking (active / followed_up / dismissed). The
-morning email then renders the daily DELTA (newly first-seen items
-since yesterday), while the dashboard renders the full active pipeline.
+This module persists every predictor that fires, with status tracking
+(active / followed_up / dismissed). The morning email then renders the
+daily DELTA (newly first-seen items since yesterday), while the
+dashboard renders the full pipeline.
 
 Each predictor is keyed by normalised company name, so the same
 company that fires multiple days in a row updates last_seen instead
 of duplicating.
 
-Followed-up entries are kept indefinitely as Sara's record; everything
-else ages out 30 days after last_seen.
+Retention follows the shared BD-Leads dashboard rule (tool.bd_retention):
+a predictor drops 30 days after it was first presented (first_seen), or
+90 days if Sara has marked it followed-up. The durable triage overlay
+(predictor_status) is authoritative for that followed-up carve-out, so a
+followed-up lead is never aged out on the shorter clock.
 """
 from __future__ import annotations
 import json
 import logging
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
+from tool import bd_retention
 from tool.predictive.render import window_for_stack
 from tool.predictive.stacker import Stack
 
@@ -34,11 +38,18 @@ STATE_DIR = state_dir()
 STATE_DIR.mkdir(parents=True, exist_ok=True)
 PIPELINE_FILE = STATE_DIR / "predictor_pipeline.json"
 
-# 90-day forward-prediction horizon (matches "PREDICTED BRIEFS (next
-# 90 days)" in the spec). Predictors stay live for 90 days from
-# first_seen — long enough for a 6-12wk CEO-cascade hire to land or
-# a 3-month M&A integration hire to fire.
-ROLLING_WINDOW_DAYS = 90
+
+def _status_overlay() -> dict:
+    """The durable triage overlay (predictor_status.json) — authoritative
+    over the ephemeral pipeline ``status`` field, so a followed-up /
+    dismissed decision survives a redeploy and drives retention correctly.
+    Fail-safe to empty on any error: a degraded overlay must never change
+    a retention decision (we then fall back to the pipeline status)."""
+    try:
+        from tool import predictor_status
+        return predictor_status.get_statuses() or {}
+    except Exception:
+        return {}
 
 
 def _pid(company: str) -> str:
@@ -198,7 +209,7 @@ def upsert(ranked_stacks: list[tuple[Stack, float]]) -> dict:
             predictors[pid] = entry
             updated_items.append(entry)
 
-    aged = age_out(pipeline, ROLLING_WINDOW_DAYS)
+    aged = age_out(pipeline)
     purged = purge_off_watchlist(pipeline)
 
     # Refresh seeded contact names on EVERY active pipeline entry, not just
@@ -377,31 +388,27 @@ def purge_off_watchlist(pipeline: dict) -> int:
     return removed
 
 
-def age_out(pipeline: dict, max_days: int = ROLLING_WINDOW_DAYS) -> int:
-    """Remove predictors whose FIRST_SEEN is older than max_days, UNLESS
-    they're status=followed_up (kept indefinitely as Sara's record).
+def age_out(pipeline: dict) -> int:
+    """Remove predictors past their BD-Leads dashboard-retention window
+    (tool.bd_retention): 30 days after FIRST_SEEN, or 90 days for
+    followed-up entries (Sara's working record).
 
-    Using first_seen (not last_seen) means a predictor stays live for
-    the full 90-day forward-prediction window from when it first fired
-    — even if the underlying signal stops generating fresh evidence.
-    A CEO change reported 60 days ago is still active because the
-    cascade hire is typically 6-12 weeks out.
+    Using first_seen (not last_seen) anchors the clock to when the lead
+    was first presented, so a predictor stays live for its whole window
+    even if the underlying signal stops generating fresh evidence — a CEO
+    change reported 25 days ago is still actionable because the cascade
+    hire is typically 6-12 weeks out. The durable triage overlay is
+    authoritative for the followed-up carve-out so a followed-up lead is
+    never dropped on the shorter clock just because the ephemeral pipeline
+    status lagged a redeploy. Returns the count removed.
     """
-    cutoff = datetime.now(timezone.utc) - timedelta(days=max_days)
     removed = 0
     predictors = pipeline.get("predictors") or {}
+    overlay = _status_overlay()
     for pid, entry in list(predictors.items()):
-        if entry.get("status") == "followed_up":
-            continue
-        try:
-            first_seen = datetime.fromisoformat(
-                entry.get("first_seen")
-                or entry.get("last_seen")
-                or "1970-01-01T00:00:00+00:00"
-            )
-        except Exception:
-            continue
-        if first_seen < cutoff:
+        status = overlay.get(pid) or entry.get("status") or "active"
+        anchor = entry.get("first_seen") or entry.get("last_seen")
+        if bd_retention.is_expired(anchor, status):
             del predictors[pid]
             removed += 1
     return removed
@@ -440,9 +447,18 @@ def all_predictors() -> list[dict]:
     # canonical name (legacy 'Brown' -> 'Brown-Forman') — even before
     # the next morning brief persists the purge. In-memory only (no save
     # here); followed_up entries are always kept untouched.
+    overlay = _status_overlay()
     kept: list[dict] = []
     for p in items:
-        if p.get("status") == "followed_up":
+        pid = p.get("pid") or _pid(p.get("company", ""))
+        status = overlay.get(pid) or p.get("status") or "active"
+        # Dashboard retention: hide a lead past its window (30d default /
+        # 90d followed-up) on every tab, even before the next brief
+        # physically prunes it from the pipeline.
+        if bd_retention.is_expired(p.get("first_seen") or p.get("last_seen"),
+                                   status):
+            continue
+        if status == "followed_up":
             kept.append(p)
             continue
         if _is_poisoned_aggregate(p):
