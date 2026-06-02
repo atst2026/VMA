@@ -1264,7 +1264,7 @@ def _render_dashboard():
         example_role=_default_role_label(),
         profile_label=active_profile().label,
         radar_title=("Marketing Radar" if active_profile().key == "marketing"
-                     else "Comms Radar"),
+                     else "Communications Radar"),
         leads=leads,
         predictors=predictors,
         funding_events=funding_events,
@@ -3756,13 +3756,19 @@ TEMPLATE = r"""
     #agent .agent-wrap { flex: 1; min-height: 0; overflow-y: auto; max-width: 900px; margin: 0 auto;
       padding: 40px 24px; text-align: center; display: flex; flex-direction: column;
       align-items: center; justify-content: center; }
+    /* Centred both axes, exactly like #agent and #cal. */
     #reports .reports-wrap { flex: 1; min-height: 0; overflow-y: auto; max-width: 1380px; margin: 0 auto;
       padding: 24px 40px; text-align: center; display: flex; flex-direction: column;
-      align-items: stretch; }
+      align-items: center; justify-content: center; }
     #reports .ea-hero { margin-bottom: 16px; }
     /* "a bit shorter": trim the hero icon's footprint on the reports page only. */
     #reports .cc-bigicon { width: 60px; height: 60px; margin-bottom: 14px; }
     #reports .cc-bigicon svg { width: 30px; height: 30px; }
+    /* White card: an explicit, consistent size (it used to shrink-wrap its
+       content when empty). 20% shorter than the 360px action-card (-> 288px)
+       and a good deal wider, centred under the hero. */
+    #reports .recent-card { width: min(1080px, 92vw); max-width: none; height: 288px;
+      margin: 0 auto; }
     .ea-hero { text-align: center; }
     .cc-bigicon { width: 78px; height: 78px; border-radius: 18px; margin: 0 auto 22px; display: grid;
       place-items: center; color: var(--vma); background: rgba(62,92,132,.09); }
@@ -3771,7 +3777,11 @@ TEMPLATE = r"""
       letter-spacing: -.01em; color: var(--ink); text-align: center; }
     .cc-sub { font-size: 13.5px; color: var(--muted); margin-top: 11px; }
     /* Agent page: full-size hero sits just above the centred composer pill. */
-    #agent .ea-hero { margin-bottom: 26px; }
+    /* Balanced flex regions above + below the composer so the PILL itself
+       sits at the exact vertical centre (the hero hugs it from above, the
+       chips from below). Doesn't touch the composer's own size. */
+    #agent .ea-hero { margin-bottom: 26px; flex: 1 1 0; min-height: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
 
     /* COMPOSER PILL — verbatim spec from approved mockup. */
     .composer { box-sizing: content-box; width: 672px; max-width: 100%; background: #fff;
@@ -3841,7 +3851,7 @@ TEMPLATE = r"""
       border-left: 2px solid #C93B2B; display: block; }
 
     /* chips below the pill (scoped to #agent so it never hits the predictor .chips) */
-    #agent .chips { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; margin-top: 22px; max-width: 600px; }
+    #agent .chips { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; align-content: flex-start; margin-top: 22px; max-width: 600px; flex: 1 1 0; min-height: 0; }
     #agent .chip { display: inline-flex; align-items: center; gap: 8px; background: transparent;
       border: 1px solid var(--border); border-radius: 11px; padding: 10px 14px; font: 500 13px/1 "Inter", sans-serif;
       color: var(--ink); transition: all .14s; cursor: pointer; }
