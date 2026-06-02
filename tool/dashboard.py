@@ -3750,6 +3750,12 @@ TEMPLATE = r"""
     #agent .chip .i { color: var(--ink-2); font-size: 13px; }
     #agent .chip.active { background: var(--ink); color: #fff; border-color: var(--ink); }
     #agent .chip.active .i { color: #fff; }
+    /* Claude-style: no text box sits there by default. The composer (its
+       input / forms) is hidden until a pill is clicked — clicking a pill
+       reveals the ability to type. The default view is just the clean pills. */
+    #agent .composer[data-mode="free"] { display: none; }
+    /* When a pill IS active the chips sit just under the revealed form. */
+    #agent .composer:not([data-mode="free"]) + .chips { margin-top: 14px; }
 
     /* Candidate Watch + Recent Reports moved onto page 2 — keep them in a
        centred column under the composer; reuse their existing .action-card
