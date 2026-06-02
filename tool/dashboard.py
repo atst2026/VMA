@@ -3693,8 +3693,8 @@ TEMPLATE = r"""
     #agent .agent-wrap { flex: 1; min-height: 0; overflow-y: auto; max-width: 900px; margin: 0 auto;
       padding: 40px 24px; text-align: center; display: flex; flex-direction: column;
       align-items: center; justify-content: center; }
-    #reports .reports-wrap { flex: 1; min-height: 0; overflow-y: auto; max-width: 880px; margin: 0 auto;
-      padding: 40px 24px; text-align: center; display: flex; flex-direction: column;
+    #reports .reports-wrap { flex: 1; min-height: 0; overflow-y: auto; max-width: 1100px; margin: 0 auto;
+      padding: 40px 32px; text-align: center; display: flex; flex-direction: column;
       align-items: stretch; }
     #reports .ea-hero { margin-bottom: 26px; }
     .ea-hero { text-align: center; }
@@ -3722,16 +3722,12 @@ TEMPLATE = r"""
       font-family: "Inter", system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       font-size: 16px; line-height: 22.4px; font-weight: 430; color: rgb(11,11,11); }
     .cinput::placeholder { color: var(--dim); }
-    /* Collapsed prompt (free mode): the pill shows this clean prompt — no
-       text box — until you click it, then the input appears + is focused. */
-    .cinput-cta { display: none; width: 100%; text-align: left; background: transparent;
-      border: none; cursor: text; padding: 0; color: var(--dim);
-      font-family: "Inter", system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      font-size: 16px; line-height: 22.4px; font-weight: 430; }
-    .composer[data-mode="free"] .cinput { display: none; }
-    .composer[data-mode="free"] .cinput-cta { display: block; }
-    .composer.typing[data-mode="free"] .cinput-cta { display: none; }
-    .composer.typing[data-mode="free"] .cinput { display: block; }
+    /* Free mode = a compact, Claude-style single-line input: the prompt and
+       the send button sit on ONE row, so it's a clean input — not a tall
+       block. (Chip forms keep the taller column layout.) */
+    .composer[data-mode="free"] .inner { flex-direction: row; align-items: center; gap: 8px; margin: 8px 8px 8px 16px; }
+    .composer[data-mode="free"] .cform { min-height: auto; max-height: none; overflow: visible; padding: 0; flex: 1 1 auto; }
+    .composer[data-mode="free"] .cfoot { flex: 0 0 auto; }
     .cf-head { display: flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 600; color: var(--ink); }
     .cf-head .cf-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--blue); }
     .cf-desc { font-size: 12.5px; color: var(--muted); margin-top: 7px; line-height: 1.5; }
@@ -4162,10 +4158,8 @@ TEMPLATE = r"""
         <div class="inner">
           <div class="cform" data-cform>
 
-            <!-- DEFAULT: a clean prompt (no text box). Clicking it reveals the
-                 input so you can type — like the Claude pills. -->
-            <button type="button" class="cinput-cta" id="cinput-cta">Ask the assistant to build a report…</button>
-            <input class="cinput" id="cprompt" placeholder="What report shall I build? (e.g. “pitch pack for Unilever”)">
+            <!-- DEFAULT free-text prompt — clean Claude-style single-line input -->
+            <input class="cinput" id="cprompt" placeholder="How can I help you today?">
 
             <!-- PITCH PACK -->
             <div class="cap-form" data-cap="pitch">
@@ -5775,7 +5769,6 @@ async function loadRecentReports() {
 
     function showFree() {
       composer.dataset.mode = 'free';
-      composer.classList.remove('typing');   // back to the collapsed prompt
       capForms.forEach(function (f) { f.classList.remove('active'); });
       var ch = agent.querySelector('.cap-choose'); if (ch) ch.remove();   // clear any chooser
       if (cprompt) cprompt.style.display = '';
@@ -5798,14 +5791,6 @@ async function loadRecentReports() {
         if (composer.dataset.mode === cap) showFree(); else showCap(cap);
       });
     });
-    // Click the collapsed prompt -> reveal the input and focus it (Claude-style).
-    var cinputCta = document.getElementById('cinput-cta');
-    if (cinputCta) {
-      cinputCta.addEventListener('click', function () {
-        composer.classList.add('typing');
-        if (cprompt) { cprompt.style.display = ''; try { cprompt.focus(); } catch (e) {} }
-      });
-    }
     // ----- Free-text router: type a request any way you like and the
     // composer works out which report you mean, fills the matching form from
     // your words, and runs it. Restores the natural-language entry we had
