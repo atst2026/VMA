@@ -105,7 +105,7 @@ def detect_contract_end(signals: Iterable[dict]) -> list[dict]:
     """
     from tool.account_match import classify_account
     from tool.advisory import advisory_for
-    from tool.predictive.detector import extract_company
+    from tool.predictive.detector import extract_company, extract_named_employer
     try:
         from tool.peers import detect_sector
     except Exception:
@@ -126,7 +126,9 @@ def detect_contract_end(signals: Iterable[dict]) -> list[dict]:
         # a well-formed off-watchlist employer (extracted from the notice)
         # is a genuine broader-market re-tender window, capped to medium
         # confidence. Off-universe noise still drops (classify returns None).
-        company, acct_tier = classify_account(extract_company(title, summary), text)
+        candidate = (extract_named_employer(title, summary)
+                     or extract_company(title, summary))
+        company, acct_tier = classify_account(candidate, text)
         if not company:
             continue
 

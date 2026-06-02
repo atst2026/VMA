@@ -116,6 +116,62 @@ def extract_company(title: str, summary: str = "") -> str:
     return ""
 
 
+# ---- Named-employer extraction (off-watchlist public/charity/HE/housing) -
+# extract_company() only resolves RNS-suffix names (… plc / Ltd) or curated
+# peers — so the highest-value LOW-COMPETITION segment (housing
+# associations, universities, councils, NHS trusts) is invisible: those orgs
+# carry no corporate suffix and aren't on the watchlist, so their names are
+# never even pulled from a news headline, and the event drops at the
+# no-company stage before the account gate ever sees it. This extractor
+# pulls those names, anchored on unambiguous UK org-type tails (each
+# preceded by >=1 capitalised proper-noun word) plus the "University of X"
+# form. High-precision by construction, and only ever a CANDIDATE — it is
+# always re-validated by account_match.classify_account, so a rare
+# over-capture is dropped downstream, never surfaced.
+_NE_LEAD = r"(?:[A-Z][A-Za-z0-9&'’.\-]+\.?\s+){1,4}"
+_NE_SUFFIX_RX = re.compile(
+    r"\b(" + _NE_LEAD +
+    r"(?:NHS Foundation Trust|NHS Trust|"
+    r"(?:Borough|County|City|District|Metropolitan|Parish) Council|"
+    r"Housing Association|Housing Group|"
+    r"Multi[- ]Academy Trust|Academy Trust|"
+    r"University|College))\b"
+)
+_NE_PREFIX_RX = re.compile(
+    r"\b(University of [A-Z][A-Za-z'’.\-]+(?:\s+[A-Z][A-Za-z'’.\-]+){0,2})\b"
+)
+# Leading determiners / pronouns / origin markers to strip off a captured
+# span ("The Riverside Housing Association" -> "Riverside Housing
+# Association", "former Tesco …" never reaches here as a lead anyway).
+_NE_LEAD_STOP = {
+    "the", "a", "an", "its", "his", "her", "their", "our", "new",
+    "former", "ex", "incoming", "outgoing", "at", "of", "for", "and",
+}
+
+
+def extract_named_employer(title: str, summary: str = "") -> str:
+    """Best-effort extraction of a UK public-body / charity / HE / housing
+    employer name from a news headline. Returns "" if none found. Prefers
+    the 'University of X' form, then the suffix-anchored form. The result
+    is a CANDIDATE only — callers re-validate via classify_account."""
+    text = f"{title} . {summary}"
+    best = ""
+    for rx in (_NE_PREFIX_RX, _NE_SUFFIX_RX):
+        m = rx.search(text)
+        if not m:
+            continue
+        span = (m.group(1) or "").strip(" .,'’\"-")
+        words = span.split()
+        while words and words[0].lower() in _NE_LEAD_STOP:
+            words.pop(0)
+        span = " ".join(words)
+        # Require >=2 tokens so a bare tail ('Council', 'University') can
+        # never qualify on its own.
+        if len(words) >= 2 and len(span) >= 6 and len(span) > len(best):
+            best = span
+    return best
+
+
 def _tier_from_source_label(label: str) -> str:
     low = (label or "").lower()
     if "rns" in low or "investegate" in low:
@@ -168,11 +224,14 @@ def detect_events(signals: Iterable[dict]) -> list[TriggerEvent]:
         if not hits:
             continue
         pattern_hits += 1
-        candidate = (s.get("company") or "").strip() or extract_company(title, summary)
-        if not candidate:
-            rejected_no_company += 1
-            log.info("drop (no company): %r [%s]", title[:100], s.get("source", ""))
-            continue
+        # Candidate chain: structured company (most reliable) → named-employer
+        # extractor (public/charity/HE/housing orgs the strict extractor
+        # misses) → strict RNS-suffix/peer extractor.
+        candidate = (
+            (s.get("company") or "").strip()
+            or extract_named_employer(title, summary)
+            or extract_company(title, summary)
+        )
         # Account-relevance gate, now TIERED (text-first). A watchlist name
         # appearing as the headline subject scores full weight; a
         # well-formed off-watchlist employer is admitted as a broader-market
@@ -181,14 +240,26 @@ def detect_events(signals: Iterable[dict]) -> list[TriggerEvent]:
         # "Three arrested…", 'SSE' from a Nano Dimension story, the EQS wire
         # prefix — because mis-extracted PEER names are watchlist members and
         # are barred from the off-watchlist path (they must earn the
-        # watchlist tier via a real subject match). Fail-open if the
-        # watchlist can't load. Use the resolved canonical name so display +
-        # downstream contact-matching are consistent.
+        # watchlist tier via a real subject match).
+        #
+        # Crucially, this runs EVEN WITH an empty candidate: the watchlist
+        # scan is text-based, so a curated account that is the headline
+        # subject still resolves at full weight even when no extractor could
+        # name it (universities / NHS trusts / housing assocs carry no plc
+        # suffix and aren't peers). The old no-company gate dropped those
+        # before the scan ran — silently losing watchlist coverage that was
+        # deliberately added. A candidate is only required for the
+        # off-watchlist path. Fail-open if the watchlist can't load; the
+        # resolved canonical name keeps display + contact-matching consistent.
         company, acct_tier = classify_account(candidate, title, summary)
         if not company:
-            rejected_off_universe += 1
-            log.info("drop (off-universe): %s — %r [%s]",
-                     candidate, title[:90], s.get("source", ""))
+            if not candidate:
+                rejected_no_company += 1
+                log.info("drop (no company): %r [%s]", title[:100], s.get("source", ""))
+            else:
+                rejected_off_universe += 1
+                log.info("drop (off-universe): %s — %r [%s]",
+                         candidate, title[:90], s.get("source", ""))
             continue
         if acct_tier == "off_watchlist":
             admitted_off_watchlist += 1
