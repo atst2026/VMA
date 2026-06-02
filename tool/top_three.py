@@ -59,8 +59,8 @@ from pathlib import Path
 
 log = logging.getLogger("brief.top_three")
 
-from tool.state_paths import state_root
-STATE_DIR = state_root()
+from tool.state_paths import state_dir, state_root
+STATE_DIR = state_dir()
 STATE_FILE = STATE_DIR / "top_three_state.json"
 
 # How many actions to surface. Three is deliberate (forces ranking).

@@ -26,8 +26,8 @@ from tool.predictive.stacker import stack as stack_events
 from tool.ranking import rank
 from tool.render import render_html, render_plaintext
 
-from tool.state_paths import state_root
-STATE_DIR = state_root()
+from tool.state_paths import state_dir, state_root
+STATE_DIR = state_dir()
 STATE_DIR.mkdir(parents=True, exist_ok=True)
 
 

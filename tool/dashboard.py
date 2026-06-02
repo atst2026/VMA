@@ -30,7 +30,7 @@ from pathlib import Path
 
 import re
 import requests
-from flask import Flask, jsonify, redirect, render_template_string, request, Response
+from flask import Flask, g, jsonify, make_response, redirect, render_template_string, request, Response
 from urllib.parse import quote_plus
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -55,10 +55,10 @@ log = logging.getLogger("dashboard")
 # legacy root tool/state/ (so Sara's tool is unaffected); other profiles get
 # tool/state/<key>/. See tool/profiles/ and tool/state_paths.py.
 from tool.profiles import active_profile
-from tool.state_paths import state_root
+from tool.state_paths import state_dir, state_root
 
 PROFILE = active_profile()
-STATE_DIR = state_root()
+STATE_DIR = state_dir()
 STATE_DIR.mkdir(parents=True, exist_ok=True)
 # Optional map of profile-key -> absolute dashboard URL, so the chooser can
 # link sibling desks that run as their own instances (same codebase, own
@@ -71,11 +71,19 @@ try:
 except Exception:
     PROFILE_URLS = {}
 
-# Profile-aware UI labels (forms, empty-states). Comms keeps its wording.
-_IS_MKT = PROFILE.key == "marketing"
-DEFAULT_ROLE_LABEL = "Head of Marketing" if _IS_MKT else "Head of Internal Communications"
-SEAT_FALLBACK = "senior marketing seat" if _IS_MKT else "senior comms seat"
-EXAMPLE_ROLE = "Head of Marketing" if _IS_MKT else "Head of Internal Communications"
+# Per-REQUEST profile helpers. This single process serves BOTH desks
+# (/comms and /marketing), so anything profile-dependent resolves per
+# request via active_profile() (which honours the request-scoped override).
+def _is_mkt() -> bool:
+    return active_profile().key == "marketing"
+
+
+def _default_role_label() -> str:
+    return "Head of Marketing" if _is_mkt() else "Head of Internal Communications"
+
+
+def _seat_fallback() -> str:
+    return "senior marketing seat" if _is_mkt() else "senior comms seat"
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 GITHUB_OWNER = os.environ.get("GITHUB_OWNER", "atst2026")
@@ -437,11 +445,15 @@ def refresh_latest_brief_from_github() -> dict:
         if r.status_code != 200:
             return {"ok": False, "detail": f"Artifact list: HTTP {r.status_code}"}
         artifacts = r.json().get("artifacts", [])
+        # Per-desk artifact: the marketing brief uploads "marketing-brief";
+        # comms uploads "morning-brief" (+ the manual "fortnightly-sweep").
+        _wanted_names = (("marketing-brief",) if _is_mkt()
+                         else ("morning-brief", "fortnightly-sweep"))
         wanted = [a for a in artifacts
-                  if a.get("name") in ("morning-brief", "fortnightly-sweep")
+                  if a.get("name") in _wanted_names
                   and not a.get("expired")]
         if not wanted:
-            _wf = "VMA Marketing Brief" if _IS_MKT else "Sara's Morning Brief"
+            _wf = "VMA Marketing Brief" if _is_mkt() else "Sara's Morning Brief"
             return {"ok": False, "detail": "No recent brief/sweep artifact found on GitHub Actions. "
                                             f"Trigger a brief manually: Actions tab → '{_wf}' → Run workflow."}
         latest = wanted[0]
@@ -643,19 +655,20 @@ def _assign_opportunity_tiers(items: list[dict], floor: float = 0.20) -> None:
 # Default outreach copy. Same message for every lead and every predictor —
 # just edit the (Name) placeholder per recipient. Profile-aware specialism
 # line; comms keeps the message Sara approved.
-if PROFILE.key == "marketing":
-    _DEFAULT_OUTREACH = (
-        "Hi (Name), I'm (Your name) from VMA Group.\n\n"
-        "We specialise in executive search and recruitment across marketing, "
-        "brand and growth leadership. I'd love to grab a coffee in the next "
-        "couple of weeks to introduce VMA Group and share what we're seeing "
-        "in the market. I've attached our brochure in case it's useful.\n\n"
-        "Would be great to connect.\n\n"
-        "Best,\n"
-        "(Your name)"
-    )
-else:
-    _DEFAULT_OUTREACH = (
+def _default_outreach() -> str:
+    """Default predictor-outreach copy for the active desk (per request)."""
+    if active_profile().key == "marketing":
+        return (
+            "Hi (Name), I'm (Your name) from VMA Group.\n\n"
+            "We specialise in executive search and recruitment across marketing, "
+            "brand and growth leadership. I'd love to grab a coffee in the next "
+            "couple of weeks to introduce VMA Group and share what we're seeing "
+            "in the market. I've attached our brochure in case it's useful.\n\n"
+            "Would be great to connect.\n\n"
+            "Best,\n"
+            "(Your name)"
+        )
+    return (
         "Hi (Name), I'm Sara from VMA Group.\n\n"
         "We specialise in executive search and recruitment across corporate "
         "communications, internal comms and marketing. I'd love to grab a "
@@ -703,7 +716,7 @@ def draft_outreach_for_lead(signal: dict) -> str:
 
 
 def draft_outreach_for_predictor(_predictor: dict) -> str:
-    return _DEFAULT_OUTREACH
+    return _default_outreach()
 
 
 def _people_search(keywords: str) -> str:
@@ -967,7 +980,7 @@ def _landing_signal_pool() -> list[dict]:
         from tool import predictor_pipeline
         for p in predictor_pipeline.all_predictors():
             comp = _short(p.get("company") or "", 22)
-            seat = _short(p.get("role") or p.get("seat") or SEAT_FALLBACK, 24)
+            seat = _short(p.get("role") or p.get("seat") or _seat_fallback(), 24)
             if comp:
                 pool.append({"label": comp + " · " + seat, "kind": "gold"})
     except Exception:
@@ -1047,25 +1060,38 @@ _DESK_INFO_TEMPLATE = (
 )
 
 
+@app.before_request
+def _resolve_desk_profile():
+    """Pick the desk (profile) for THIS request from the vma_profile cookie,
+    defaulting to comms. The /comms and /marketing entry routes override this
+    and set the cookie, so every subsequent page + API call from that desk's
+    pages stays on the same desk. One process, both desks."""
+    key = (request.cookies.get("vma_profile") or "comms").strip().lower()
+    g.vma_profile = key if key in ("comms", "marketing") else "comms"
+
+
+def _desk_response(profile_key: str):
+    """Render the dashboard for `profile_key` and pin the desk cookie so the
+    page's API calls resolve to the same desk."""
+    g.vma_profile = profile_key
+    resp = make_response(_render_dashboard())
+    resp.set_cookie("vma_profile", profile_key, samesite="Lax")
+    return resp
+
+
+@app.route("/comms")
+@_auth_required
+def comms_desk():
+    """Comms desk — the landing 'Comms · Launch App' pill lands here."""
+    return _desk_response("comms")
+
+
 @app.route("/marketing")
 @_auth_required
 def marketing_desk():
-    """The Marketing desk. If this process serves marketing, hand off to the
-    dashboard; if a sibling marketing instance is configured, redirect there;
-    otherwise explain that the desk is live and runs as its own instance."""
-    if PROFILE.key == "marketing":
-        return redirect("/dashboard")
-    if PROFILE_URLS.get("marketing"):
-        return redirect(PROFILE_URLS["marketing"])
-    return render_template_string(
-        _DESK_INFO_TEMPLATE, logo=_VMA_LOGO_SVG, label="Marketing",
-        message=("The Marketing desk is live and runs as its own instance off "
-                 "the same codebase — same engine, nightly scan, ranking and "
-                 "dashboard, tuned to marketing roles. Deploy it with "
-                 "VMA_PROFILE=marketing and point the chooser at it via "
-                 "VMA_PROFILE_URLS."),
-        pill="Separate instance",
-    )
+    """Marketing desk — the landing 'Marketing · Launch App' pill lands here.
+    Same site, same process, marketing profile."""
+    return _desk_response("marketing")
 
 
 @app.route("/")
@@ -1088,20 +1114,22 @@ def landing():
     random.shuffle(shown)
     if len(shown) < 4:
         shown = pool[:4]
-    # Each launch pill points at that desk: the desk THIS process serves is
-    # local (/dashboard); the sibling desk uses VMA_PROFILE_URLS (its own
-    # instance) or falls back to the /marketing handoff page.
-    comms_href = "/dashboard" if PROFILE.key == "comms" else (PROFILE_URLS.get("comms") or "/dashboard")
-    marketing_href = "/dashboard" if PROFILE.key == "marketing" else (PROFILE_URLS.get("marketing") or "/marketing")
+    # Both desks live on THIS instance: the pills just switch desk.
     return render_template_string(
         LANDING_TEMPLATE, signals=shown, signal_pool=pool,
-        comms_href=comms_href, marketing_href=marketing_href,
+        comms_href="/comms", marketing_href="/marketing",
     )
 
 
 @app.route("/dashboard")
 @_auth_required
 def index():
+    """Dashboard for the desk chosen by the vma_profile cookie (default
+    comms) — so Sara's existing /dashboard bookmark is unchanged."""
+    return _render_dashboard()
+
+
+def _render_dashboard():
     # Keep a long-running process in sync with the morning brief: pull the
     # latest dashboard-state when our data isn't from today (bounded), so we
     # never serve boot-time-stale data until a manual refresh.
@@ -1177,8 +1205,8 @@ def index():
         _fw_counts[fw.get("triage", "active")] = _fw_counts.get(fw.get("triage", "active"), 0) + 1
     return render_template_string(
         TEMPLATE,
-        example_role=EXAMPLE_ROLE,
-        profile_label=PROFILE.label,
+        example_role=_default_role_label(),
+        profile_label=active_profile().label,
         leads=leads,
         predictors=predictors,
         funding_events=funding_events,
@@ -1261,7 +1289,7 @@ def api_pitch_pack():
     data = _safe_json_body()
     inputs = {
         "account_name": (data.get("account_name") or "").strip(),
-        "role": (data.get("role") or DEFAULT_ROLE_LABEL).strip(),
+        "role": (data.get("role") or _default_role_label()).strip(),
         # Hard-coded to "preview" — emails for non-brief reports are
         # disabled. HTML is still generated, uploaded as a workflow
         # artifact, and surfaced via Recent Reports.

@@ -49,24 +49,31 @@ A process serves one profile, chosen by `VMA_PROFILE`. An *unregistered*
 `VMA_PROFILE` falls back to comms (so a typo never spins up an orphan state
 dir); namespacing kicks in the moment the profile is registered.
 
-## The landing chooser
+## The landing page (one site, both desks)
 
-`/` is the front door — a tile per **live** profile plus a "coming soon"
-tile for each entry in `UPCOMING_PROFILES`. Today **Comms** and **Marketing**
-are both live. The comms landing lives at `/comms`; `/dashboard` is unchanged
-(Sara's bookmark still works).
+`/` is the existing landing page with two launch pills: **Comms · Launch App**
+→ `/comms`, and **Marketing · Launch App** → `/marketing`. Both desks live on
+the **same instance and process**.
 
-Each tile links to that desk's dashboard. A process serves its **own** desk
-locally; **sibling** desks are linked via `VMA_PROFILE_URLS` (a JSON map of
-`{key: absolute_url}`), since each profile runs as its own instance.
+The desk is carried **per request** by a `vma_profile` cookie (default comms):
+- `/comms` and `/marketing` render the dashboard for that desk and set the
+  cookie, so every page + API call from there stays on the same desk.
+- `/dashboard` (Sara's existing bookmark) follows the cookie, defaulting to
+  comms — so it's unchanged.
 
-## Two desks, one codebase (deployment)
+`active_profile()` resolves this per-request override (via Flask's request
+context) and otherwise falls back to the `VMA_PROFILE` env var — so the
+*brief* (a single-profile process) still pins itself with the env var, while
+the *dashboard* serves both desks from one process.
 
-`render.yaml` defines two free web services off this same repo: `vma-dashboard`
-(`VMA_PROFILE=comms`) and `vma-marketing-dashboard` (`VMA_PROFILE=marketing`).
-Same code, different profile → different taxonomy and a separate state
-namespace (`tool/state/` vs `tool/state/marketing/`). Set each service's
-`VMA_PROFILE_URLS` to the other's URL so the chooser cross-links them.
+## One service, both desks (deployment)
+
+`render.yaml` defines a **single** free web service (`vma-dashboard`,
+`VMA_PROFILE=comms` as the default desk). It serves Comms at `/comms` /
+`/dashboard` and Marketing at `/marketing`. Each desk keeps its own state
+namespace (`tool/state/` vs `tool/state/marketing/`) and its own nightly brief
+workflow; the dashboard reads each desk's data from that desk's
+Actions artifact / state-branch namespace.
 
 Every state-writing module resolves its directory through `state_root()`, and
 `github_state` namespaces the persisted dashboard-state paths the same way, so

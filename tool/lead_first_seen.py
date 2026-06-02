@@ -47,8 +47,8 @@ from pathlib import Path
 
 from dateutil import parser as dateparse
 
-from tool.state_paths import state_root
-STATE_DIR = state_root()
+from tool.state_paths import state_dir, state_root
+STATE_DIR = state_dir()
 SEEN_FILE = STATE_DIR / "lead_first_seen.json"
 RETENTION_DAYS = 7
 

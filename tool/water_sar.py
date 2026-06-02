@@ -46,8 +46,8 @@ from typing import Iterable
 
 log = logging.getLogger("brief.water_sar")
 
-from tool.state_paths import state_root
-STATE_DIR = state_root()
+from tool.state_paths import state_dir, state_root
+STATE_DIR = state_dir()
 # The fixed universe the Special Administration Regime can apply to:
 # regulated water & sewerage (WaSCs) and water-only (WoCs) companies in
 # England & Wales. Canonical name -> alias regex alternation. Low base

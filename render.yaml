@@ -1,19 +1,22 @@
-# Render Blueprint — auto-configures the dashboards when this repo is connected.
+# Render Blueprint — auto-configures the dashboard when this repo is connected.
 # https://render.com/docs/blueprint-spec
 #
-# Two desks, ONE codebase and ONE repo: each service runs the same code with a
-# different VMA_PROFILE, and therefore its own role taxonomy + its own state
-# namespace (comms -> tool/state/, marketing -> tool/state/marketing/). The
-# landing chooser links them via VMA_PROFILE_URLS (set each to the other's URL
-# in the Render dashboard once both services exist).
+# ONE service, BOTH desks. The dashboard serves Comms and Marketing from the
+# same instance: the landing page's two pills go to /comms and /marketing,
+# and the desk is carried per-request (a cookie) so one process renders
+# either desk and its APIs. No second service to deploy.
+#
+# Each desk still keeps its own state namespace (comms -> tool/state/,
+# marketing -> tool/state/marketing/) and its own nightly brief workflow
+# (.github/workflows/morning-brief.yml and marketing-brief.yml), which
+# publish each desk's data to the dashboard-state branch / Actions artifacts.
 
 services:
-  # --- Comms desk (default profile) -------------------------------------
   - type: web
     name: vma-dashboard
     runtime: python
     plan: free
-    region: frankfurt        # closest EU region; Sara's in the UK
+    region: frankfurt        # closest EU region; the team's in the UK
     branch: main
     rootDir: .
     buildCommand: "pip install -r requirements.txt"
@@ -24,50 +27,17 @@ services:
         value: "3.11"
       - key: PYTHONPATH
         value: "."
+      # Default desk for a request with no desk cookie (e.g. Sara's existing
+      # /dashboard bookmark). The /comms and /marketing pills override it.
       - key: VMA_PROFILE
         value: comms
       - key: GITHUB_OWNER
         value: atst2026
       - key: GITHUB_REPO
         value: VMA
-      # The three below are set in the Render dashboard (NOT in this file) so
-      # secrets don't end up in git. VMA_PROFILE_URLS is the JSON map the
-      # chooser uses to link the Marketing desk, e.g.
-      #   {"marketing":"https://vma-marketing-dashboard.onrender.com"}
+      # Set in the Render dashboard (NOT in this file) so secrets don't end
+      # up in git.
       - key: GITHUB_TOKEN
         sync: false
       - key: DASHBOARD_PASSWORD
-        sync: false
-      - key: VMA_PROFILE_URLS
-        sync: false
-
-  # --- Marketing desk (same code, marketing profile) --------------------
-  - type: web
-    name: vma-marketing-dashboard
-    runtime: python
-    plan: free
-    region: frankfurt
-    branch: main
-    rootDir: .
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn -w 1 -t 60 -b 0.0.0.0:$PORT tool.dashboard:app"
-    autoDeploy: true
-    envVars:
-      - key: PYTHON_VERSION
-        value: "3.11"
-      - key: PYTHONPATH
-        value: "."
-      - key: VMA_PROFILE
-        value: marketing
-      - key: GITHUB_OWNER
-        value: atst2026
-      - key: GITHUB_REPO
-        value: VMA
-      # VMA_PROFILE_URLS here should point back at the Comms desk, e.g.
-      #   {"comms":"https://vma-dashboard.onrender.com"}
-      - key: GITHUB_TOKEN
-        sync: false
-      - key: DASHBOARD_PASSWORD
-        sync: false
-      - key: VMA_PROFILE_URLS
         sync: false

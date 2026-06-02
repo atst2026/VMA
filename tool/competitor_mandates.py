@@ -29,8 +29,8 @@ from pathlib import Path
 
 log = logging.getLogger("brief.competitor_mandates")
 
-from tool.state_paths import state_root
-STATE_DIR = state_root()
+from tool.state_paths import state_dir, state_root
+STATE_DIR = state_dir()
 TRACKER_FILE = STATE_DIR / "competitor_mandates.json"
 SIGNALS_FILE = STATE_DIR / "latest_signals.json"
 

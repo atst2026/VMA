@@ -5,8 +5,8 @@ import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from tool.state_paths import state_root
-STATE_DIR = state_root()
+from tool.state_paths import state_dir, state_root
+STATE_DIR = state_dir()
 STATE_DIR.mkdir(parents=True, exist_ok=True)
 SEEN_FILE = STATE_DIR / "seen.json"
 TTL_DAYS = 14

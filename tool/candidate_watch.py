@@ -31,8 +31,8 @@ from pathlib import Path
 
 log = logging.getLogger("brief.candidate_watch")
 
-from tool.state_paths import state_root
-STATE_DIR = state_root()
+from tool.state_paths import state_dir, state_root
+STATE_DIR = state_dir()
 WATCH_FILE = STATE_DIR / "candidate_watch.json"
 
 # fcntl is POSIX-only. On Windows we fall back to thread-only locking,
