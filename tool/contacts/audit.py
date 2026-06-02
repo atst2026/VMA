@@ -360,6 +360,26 @@ def check_state_namespacing():
     return ("state namespacing", PASS, "contact store is profile-namespaced")
 
 
+def check_button_rendered():
+    """The contact button + feedback chips must actually be RENDERED in the
+    dashboard template — not merely computed server-side. (They were attached
+    to every signal but never emitted in the UI, so the button was invisible
+    to Sara. This guards against that regressing.)"""
+    dash = (TOOL_DIR / "dashboard.py").read_text()
+    renders_button = "contact-open" in dash and "s.linkedin.url" in dash
+    renders_feedback = "contactFeedback(" in dash and "contact-feedback" in dash
+    if renders_button and renders_feedback:
+        return ("button rendered", PASS,
+                "contact LinkedIn button + feedback chips render in the template")
+    missing = []
+    if not renders_button:
+        missing.append("LinkedIn button")
+    if not renders_feedback:
+        missing.append("feedback chips")
+    return ("button rendered", FAIL,
+            f"contact UI computed server-side but NOT rendered: {missing}")
+
+
 CHECKS = [
     check_smoke_resolvers,
     check_slot_consistency,
@@ -371,6 +391,7 @@ CHECKS = [
     check_surface_inheritance,
     check_region_signal_availability,
     check_state_namespacing,
+    check_button_rendered,
 ]
 
 
