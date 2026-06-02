@@ -17,10 +17,22 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from tool.state_paths import state_dir, state_root
-STATE_DIR = state_dir()
-LOG_FILE = STATE_DIR / "report_log.json"
+from tool.state_paths import state_root
 _MAX = 100
+
+
+# The report log is SHARED across desks: the report artifacts it annotates are
+# shared (the report workflows aren't desk-specific), so the comms and marketing
+# desks read/write ONE log at the comms root. Resolved per call — NOT frozen at
+# import — so it can never drift to whatever namespace happened to be active
+# when the module first loaded (the bug that blanked Company/Name after a
+# cold start).
+def _dir() -> Path:
+    return state_root("comms")
+
+
+def _log_file() -> Path:
+    return _dir() / "report_log.json"
 
 try:
     import fcntl
@@ -33,8 +45,8 @@ _LOCK = threading.Lock()
 
 @contextmanager
 def _locked():
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
-    lock_path = LOG_FILE.with_suffix(".lock")
+    _dir().mkdir(parents=True, exist_ok=True)
+    lock_path = _log_file().with_suffix(".lock")
     with _LOCK:
         fd = None
         if _HAVE_FCNTL:
@@ -49,10 +61,11 @@ def _locked():
 
 
 def _load() -> list[dict]:
-    if not LOG_FILE.exists():
+    lf = _log_file()
+    if not lf.exists():
         return []
     try:
-        d = json.loads(LOG_FILE.read_text())
+        d = json.loads(lf.read_text())
         return d if isinstance(d, list) else []
     except Exception:
         return []
@@ -72,16 +85,17 @@ def add(report_type: str, company: str, name: str, artifact: str) -> None:
             })
             rows = rows[:_MAX]
             payload = json.dumps(rows, indent=2)
-            STATE_DIR.mkdir(parents=True, exist_ok=True)
+            d = _dir()
+            d.mkdir(parents=True, exist_ok=True)
             tmp = tempfile.NamedTemporaryFile(
                 mode="w", encoding="utf-8", suffix=".tmp",
-                dir=str(STATE_DIR), delete=False)
+                dir=str(d), delete=False)
             try:
                 tmp.write(payload)
                 tmp.flush()
                 os.fsync(tmp.fileno())
                 tmp.close()
-                os.replace(tmp.name, str(LOG_FILE))
+                os.replace(tmp.name, str(_log_file()))
             except Exception:
                 try:
                     os.unlink(tmp.name)
@@ -91,7 +105,8 @@ def add(report_type: str, company: str, name: str, artifact: str) -> None:
         try:
             from tool import github_state
             github_state.push_async("tool/state/report_log.json", payload,
-                                    "state: log generated report")
+                                    "state: log generated report",
+                                    namespaced=False)
         except Exception:
             pass
     except Exception:
@@ -105,16 +120,17 @@ def clear_log() -> None:
     try:
         with _locked():
             payload = "[]"
-            STATE_DIR.mkdir(parents=True, exist_ok=True)
+            d = _dir()
+            d.mkdir(parents=True, exist_ok=True)
             tmp = tempfile.NamedTemporaryFile(
                 mode="w", encoding="utf-8", suffix=".tmp",
-                dir=str(STATE_DIR), delete=False)
+                dir=str(d), delete=False)
             try:
                 tmp.write(payload)
                 tmp.flush()
                 os.fsync(tmp.fileno())
                 tmp.close()
-                os.replace(tmp.name, str(LOG_FILE))
+                os.replace(tmp.name, str(_log_file()))
             except Exception:
                 try:
                     os.unlink(tmp.name)
@@ -124,7 +140,8 @@ def clear_log() -> None:
         try:
             from tool import github_state
             github_state.push_async("tool/state/report_log.json", payload,
-                                    "state: clear report log")
+                                    "state: clear report log",
+                                    namespaced=False)
         except Exception:
             pass
     except Exception:
