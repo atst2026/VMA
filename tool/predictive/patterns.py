@@ -864,3 +864,36 @@ def is_midlevel_comms(title: str) -> bool:
     if is_senior_comms(t):
         return False
     return bool(MID_RX.search(t))
+
+
+# ---- Per-specialism trigger relevance -----------------------------------
+# Not every company trigger predicts a hire in every specialism: a regulator
+# probe, an IR-director change, a CHRO change, a crisis or an activist stake
+# signal a COMMS / reputation / IR hire — not a marketing one. So the marketing
+# desk should NOT surface those as BD leads. Comms keeps the full trigger set
+# (unchanged); marketing keeps only triggers that plausibly precede a MARKETING
+# hire. FIRST DRAFT — review with the marketing team.
+_MARKETING_TRIGGER_KEYS = {
+    "ceo_change",              # new CEO resets the brand / growth agenda
+    "mna",                     # brand integration / rebrand
+    "pe_acquisition",          # new owners refresh marketing & growth
+    "ipo_listing",             # brand + investor-marketing build pre-admission
+    "comms_leader_departure",  # = marketing-leader departure (profile regex)
+    "restructure",             # marketing function reorganised
+    "press_velocity_spike",    # brand / share-of-voice surge
+    "job_ad_cluster",          # cluster of mid-level marketing ads → senior hire
+    "profit_warning",          # demand / retention reset → growth hire
+    "contract_loss",           # demand & brand defence
+    "personal_brand_velocity", # candidate signal (specialism-agnostic)
+    "ned_trustee_appointment", # candidate signal (specialism-agnostic)
+}
+
+
+def relevant_trigger_keys():
+    """Trigger keys relevant to the ACTIVE specialism, or None (= keep all,
+    comms-unchanged). Marketing drops the comms/IR/governance-only triggers so
+    its pre-market BD leads are marketing-specific."""
+    from tool.profiles import active_profile
+    if active_profile().key == "marketing":
+        return set(_MARKETING_TRIGGER_KEYS)
+    return None

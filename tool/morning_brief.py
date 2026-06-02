@@ -271,6 +271,18 @@ def main() -> int:
     # ch_events list from that earlier call is reused here as part of
     # the all-events combination for the predictor pipeline.
     all_events = trigger_events + cluster_events + ch_events + velocity_events
+    # Specialism relevance: marketing keeps only triggers that predict a
+    # MARKETING hire (comms keeps all). So a regulator / IR / governance
+    # trigger surfaces as a comms BD lead but NOT a marketing one — the
+    # marketing desk's pre-market leads are marketing-specific.
+    from tool.predictive import patterns as _ppat
+    _relevant = _ppat.relevant_trigger_keys()
+    if _relevant is not None:
+        _before = len(all_events)
+        all_events = [e for e in all_events
+                      if getattr(e, "trigger_key", None) in _relevant]
+        log.info("Trigger relevance filter (%s): %d → %d events",
+                 config._PROFILE.key, _before, len(all_events))
     stacks = stack_events(all_events)
     ranked_stacks = pr.rank(stacks)
     log.info(
