@@ -1278,8 +1278,11 @@ def api_refresh():
 @app.route("/api/dispatch/brief", methods=["POST"])
 @_auth_required
 def api_dispatch_brief():
-    """Trigger a fresh morning-brief workflow run in preview mode.
-    Preview = no email sent; just generates the artifact for refresh."""
+    """Trigger a fresh brief run for the ACTIVE desk: the marketing desk
+    dispatches the marketing brief, comms dispatches the comms brief. Email
+    is off globally, so this just refreshes that desk's dashboard data."""
+    if active_profile().key == "marketing":
+        return jsonify(trigger_workflow("marketing-brief.yml", {"mode": "send"}))
     return jsonify(trigger_workflow("morning-brief.yml", {"mode": "preview"}))
 
 
