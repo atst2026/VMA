@@ -3769,7 +3769,7 @@ TEMPLATE = r"""
     .cc-bigicon svg { width: 38px; height: 38px; }
     .gemini-title { font-family: "Newsreader", Georgia, serif; font-weight: 400; font-size: 34px;
       letter-spacing: -.01em; color: var(--ink); text-align: center; }
-    .cc-sub { font-size: 11.5px; color: var(--muted); margin-top: 11px; }
+    .cc-sub { font-size: 13.5px; color: var(--muted); margin-top: 11px; }
     /* Agent page: full-size hero sits just above the centred composer pill. */
     #agent .ea-hero { margin-bottom: 26px; }
 
