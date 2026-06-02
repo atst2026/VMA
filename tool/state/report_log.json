@@ -1,58 +1,9 @@
 [
   {
-    "ts": "2026-06-01T08:48:18.551110+00:00",
-    "type": "Reverse Match",
-    "company": "PA Consulting",
-    "name": "Molly Cutler",
-    "artifact": "reverse-match"
-  },
-  {
-    "ts": "2026-05-31T15:16:51.498273+00:00",
+    "ts": "2026-06-02T00:37:09.900683+00:00",
     "type": "Pre-meeting Brief",
-    "company": "Unilever",
-    "name": "Unilever",
-    "artifact": "pre-meeting-brief"
-  },
-  {
-    "ts": "2026-05-30T15:48:02.963943+00:00",
-    "type": "Pre-meeting Brief",
-    "company": "HSBC UK",
+    "company": "Nicky Fishwick",
     "name": "",
     "artifact": "pre-meeting-brief"
-  },
-  {
-    "ts": "2026-05-30T15:12:38.354138+00:00",
-    "type": "Pitch Pack",
-    "company": "HSBC UK",
-    "name": "",
-    "artifact": "pitch-pack"
-  },
-  {
-    "ts": "2026-05-30T12:19:39.129541+00:00",
-    "type": "Pitch Pack",
-    "company": "HSBC UK I",
-    "name": "",
-    "artifact": "pitch-pack"
-  },
-  {
-    "ts": "2026-05-29T21:35:21.643449+00:00",
-    "type": "Pre-meeting Brief",
-    "company": "HSBC UK",
-    "name": "Lexi Meens",
-    "artifact": "pre-meeting-brief"
-  },
-  {
-    "ts": "2026-05-29T21:35:10.949873+00:00",
-    "type": "Pitch Pack",
-    "company": "HBSC UK",
-    "name": "",
-    "artifact": "pitch-pack"
-  },
-  {
-    "ts": "2026-05-29T21:34:22.659021+00:00",
-    "type": "Reverse Match",
-    "company": "PA Consulting",
-    "name": "Molly Cutler",
-    "artifact": "reverse-match"
   }
 ]
