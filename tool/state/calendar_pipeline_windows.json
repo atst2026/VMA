@@ -17,10 +17,10 @@
       "confidence": "high",
       "source": "FCA Consumer Duty (PRIN 2A) \u2014 annual board report, recurring 31 July cadence.",
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
-      "last_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
-      "dismissed_at": null
+      "dismissed_at": null,
+      "last_seen": "2026-06-02T09:52:11.014386+00:00"
     },
     "uk_srs_2026": {
       "key": "uk_srs_2026",
@@ -42,10 +42,10 @@
       "confidence": "medium",
       "source": "DBT/FRC UK SRS endorsement programme + FCA consultation on listed-company sustainability disclosure, 2026.",
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
-      "last_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
-      "dismissed_at": null
+      "dismissed_at": null,
+      "last_seen": "2026-06-02T09:52:11.014386+00:00"
     },
     "mog_post_sr_2026": {
       "key": "mog_post_sr_2026",
@@ -64,10 +64,10 @@
       "confidence": "medium",
       "source": "HM Treasury Spending Review 2025 settlements \u2192 departmental delivery-plan / reorganisation cycle, FY2026/27.",
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
-      "last_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
-      "dismissed_at": null
+      "dismissed_at": null,
+      "last_seen": "2026-06-02T09:52:11.014386+00:00"
     },
     "agm_reporting_2026": {
       "key": "agm_reporting_2026",
@@ -89,10 +89,10 @@
       "confidence": "high",
       "source": "Companies Act annual-report + Listing Rules AGM cycle (December year-ends), 2026.",
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
-      "last_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
-      "dismissed_at": null
+      "dismissed_at": null,
+      "last_seen": "2026-06-02T09:52:11.014386+00:00"
     },
     "gender_pay_gap_2026": {
       "key": "gender_pay_gap_2026",
@@ -113,10 +113,10 @@
       "confidence": "high",
       "source": "Equality Act 2010 (Gender Pay Gap Information) Regulations 2017 \u2014 annual 4 Apr / 30 Mar deadlines.",
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
-      "last_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
-      "dismissed_at": null
+      "dismissed_at": null,
+      "last_seen": "2026-06-02T09:52:11.014386+00:00"
     },
     "nhs_planning_2026": {
       "key": "nhs_planning_2026",
@@ -135,10 +135,10 @@
       "confidence": "medium",
       "source": "NHS England operational planning guidance + FY2026/27 cycle.",
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
-      "last_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
-      "dismissed_at": null
+      "dismissed_at": null,
+      "last_seen": "2026-06-02T09:52:11.014386+00:00"
     },
     "he_clearing_2026": {
       "key": "he_clearing_2026",
@@ -157,10 +157,10 @@
       "confidence": "medium",
       "source": "UCAS Clearing cycle + academic year 2026/27.",
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
-      "last_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
-      "dismissed_at": null
+      "dismissed_at": null,
+      "last_seen": "2026-06-02T09:52:11.014386+00:00"
     },
     "pw_70a28958c3025030": {
       "key": "pw_70a28958c3025030",
@@ -181,10 +181,10 @@
       "url": "https://www.fca.org.uk/news/press-releases/firms-have-improved-must-do-more-prevent-sanctions-breaches",
       "discovered": true,
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
-      "last_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
-      "dismissed_at": null
+      "dismissed_at": null,
+      "last_seen": "2026-06-02T09:52:11.014386+00:00"
     },
     "pw_01bfae8c6aa87557": {
       "key": "pw_01bfae8c6aa87557",
@@ -205,10 +205,10 @@
       "url": "https://www.fca.org.uk/news/press-releases/review-financial-promotion-approvers-finds-some-firms-need-raise-standards",
       "discovered": true,
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
-      "last_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
-      "dismissed_at": null
+      "dismissed_at": null,
+      "last_seen": "2026-06-02T09:52:11.014386+00:00"
     },
     "pw_0f0511d5803afdb0": {
       "key": "pw_0f0511d5803afdb0",
@@ -229,10 +229,10 @@
       "url": "https://www.fca.org.uk/news/news-stories/vacancies-open-fca-smaller-business-practitioner-panel",
       "discovered": true,
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
-      "last_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
-      "dismissed_at": null
+      "dismissed_at": null,
+      "last_seen": "2026-06-02T09:52:11.014386+00:00"
     },
     "pw_e58da72b53caddd7": {
       "key": "pw_e58da72b53caddd7",
@@ -253,10 +253,10 @@
       "url": "https://www.fca.org.uk/news/statements/our-response-treasurys-policy-statement-consumer-credit-act-reform",
       "discovered": true,
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
-      "last_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
-      "dismissed_at": null
+      "dismissed_at": null,
+      "last_seen": "2026-06-02T09:52:11.014386+00:00"
     },
     "pw_6c91d76e227e42d5": {
       "key": "pw_6c91d76e227e42d5",
@@ -277,10 +277,10 @@
       "url": "https://www.fca.org.uk/news/press-releases/fca-and-bank-england-set-out-shared-vision-tokenisation-uk-wholesale-markets",
       "discovered": true,
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
-      "last_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
-      "dismissed_at": null
+      "dismissed_at": null,
+      "last_seen": "2026-06-02T09:52:11.014386+00:00"
     },
     "pw_c582984787432f29": {
       "key": "pw_c582984787432f29",
@@ -301,10 +301,10 @@
       "url": "https://www.fca.org.uk/news/press-releases/fca-announces-new-appointments-executive-team",
       "discovered": true,
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
-      "last_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
-      "dismissed_at": null
+      "dismissed_at": null,
+      "last_seen": "2026-06-02T09:52:11.014386+00:00"
     },
     "pw_85f7c69a68321d7c": {
       "key": "pw_85f7c69a68321d7c",
@@ -325,10 +325,10 @@
       "url": "https://www.fca.org.uk/news/press-releases/fca-reviews-whether-investment-firms-are-doing-enough-support-bereaved-customers",
       "discovered": true,
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
-      "last_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
-      "dismissed_at": null
+      "dismissed_at": null,
+      "last_seen": "2026-06-02T09:52:11.014386+00:00"
     },
     "pw_19c62c84bd6f5750": {
       "key": "pw_19c62c84bd6f5750",
@@ -349,10 +349,10 @@
       "url": "https://www.fca.org.uk/news/speeches/laying-foundation-confidence",
       "discovered": true,
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
-      "last_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
-      "dismissed_at": null
+      "dismissed_at": null,
+      "last_seen": "2026-06-02T09:52:11.014386+00:00"
     },
     "pw_efea75eb0405032f": {
       "key": "pw_efea75eb0405032f",
@@ -373,10 +373,10 @@
       "url": "https://www.fca.org.uk/news/news-stories/restrictions-imposed-kingscrown-finance-limited",
       "discovered": true,
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
-      "last_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
-      "dismissed_at": null
+      "dismissed_at": null,
+      "last_seen": "2026-06-02T09:52:11.014386+00:00"
     },
     "pw_16a67affcf59699f": {
       "key": "pw_16a67affcf59699f",
@@ -398,11 +398,35 @@
       "url": "https://www.gov.uk/government/publications/scs-secondary-paid-employment-details-2025-to-2026",
       "discovered": true,
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
-      "last_seen": "2026-06-02T00:36:54.254305+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null,
+      "last_seen": "2026-06-02T09:52:11.014386+00:00"
+    },
+    "pw_3c77c5ef8933b00f": {
+      "key": "pw_3c77c5ef8933b00f",
+      "name": "Ofgem: Preparation and submission of Smart Metering Deployment Plans",
+      "window": [
+        "2026-06-02",
+        "2026-08-25"
+      ],
+      "legal_date": "2026-08-25",
+      "sectors": [
+        "energy_utilities"
+      ],
+      "seat": "Head of Regulatory / Corporate Communications",
+      "angle": "Ofgem obligation creates a dated comms-capacity build-up in the regulated cohort \u2014 pitch the retained brief before it's advertised.",
+      "scope_note": "Ofgem-regulated firms in scope of this notice.",
+      "confidence": "medium",
+      "source": "Ofgem \u2014 Information for energy suppliers on the expectations and requirements for the pr",
+      "url": "https://www.ofgem.gov.uk/guidance/preparation-and-submission-smart-metering-deployment-plans",
+      "discovered": true,
+      "first_seen": "2026-06-02T09:52:11.014386+00:00",
+      "last_seen": "2026-06-02T09:52:11.014386+00:00",
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null
     }
   },
-  "updated_at": "2026-06-02T00:36:54.254896+00:00"
+  "updated_at": "2026-06-02T09:52:11.015023+00:00"
 }
