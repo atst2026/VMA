@@ -3275,19 +3275,27 @@ TEMPLATE = r"""
       color: var(--text-muted);
       font: 500 11px/1 "JetBrains Mono", monospace;
     }
+    /* Download icon button — sized like the other icon controls, with a
+       faded square that appears on hover and deepens on click. */
     .rr2-icon {
-      width: 26px; height: 26px; border-radius: 6px;
-      border: 1px solid rgba(66, 133, 244, 0.25); background: var(--teal-soft);
-      color: var(--teal, #4285F4); text-decoration: none;
+      width: 28px; height: 28px; border-radius: 6px;
+      border: none; background: transparent;
+      color: var(--text-muted); text-decoration: none;
       display: inline-flex; align-items: center; justify-content: center;
-      font-size: 13px;
-      transition: border-color .12s, background .12s;
+      cursor: pointer;
+      transition: background .12s, color .12s;
     }
-    .rr2-icon:hover { border-color: var(--teal, #4285F4); background: rgba(66, 133, 244, 0.16); }
+    .rr2-icon:hover { background: rgba(60, 64, 67, 0.10); color: var(--navy, #1F1F1F); }
+    .rr2-icon:active { background: rgba(60, 64, 67, 0.18); }
+    .rr2-icon svg { width: 16px; height: 16px; display: block; }
     .rr2-gen {
       color: var(--text-muted); font-size: 10.5px;
       font-style: italic;
     }
+    /* Standalone Recent Reports card on the Personal Assistant page. */
+    .recent-card { margin: 20px auto 0; max-width: 640px; width: 100%; }
+    .rr-empty { color: var(--text-muted); font-size: 11.5px; padding: 8px 0 2px; }
+    .recent-card #recent-reports:not(:empty) + .rr-empty { display: none; }
 
     .action-card label {
       display: block;
@@ -3742,6 +3750,12 @@ TEMPLATE = r"""
     #agent .chip .i { color: var(--ink-2); font-size: 13px; }
     #agent .chip.active { background: var(--ink); color: #fff; border-color: var(--ink); }
     #agent .chip.active .i { color: #fff; }
+    /* Claude-style: no text box sits there by default. The composer (its
+       input / forms) is hidden until a pill is clicked — clicking a pill
+       reveals the ability to type. The default view is just the clean pills. */
+    #agent .composer[data-mode="free"] { display: none; }
+    /* When a pill IS active the chips sit just under the revealed form. */
+    #agent .composer:not([data-mode="free"]) + .chips { margin-top: 14px; }
 
     /* Candidate Watch + Recent Reports moved onto page 2 — keep them in a
        centred column under the composer; reuse their existing .action-card
@@ -4192,6 +4206,15 @@ TEMPLATE = r"""
         <button class="chip" data-cap="reverse"><span class="i">↗</span>Reverse Match</button>
         <button class="chip" data-cap="premeeting"><span class="i">◷</span>Pre-meeting</button>
         <button class="chip" data-cap="sweep"><span class="i">⟲</span>Sweep</button>
+      </div>
+
+      <!-- Recent Reports — reinstated: see + download reports generated in the
+           last 48h. The loader (loadRecentReports) already populates #recent-reports. -->
+      <div class="action-card recent-card" id="recent-card">
+        <button class="rr-clear" onclick="clearRecentReports(this)">Clear</button>
+        <h3>Recent Reports</h3>
+        <div id="recent-reports"></div>
+        <div class="rr-empty" id="rr-empty">No reports yet — generate one above and it'll appear here to download.</div>
       </div>
 
 
@@ -5652,7 +5675,11 @@ async function loadRecentReports() {
       if (x.id) {
         const dl = '/api/output/view?artifact=' +
           encodeURIComponent(x.artifact) + '&id=' + encodeURIComponent(x.id) + '&download=1';
-        action = '<a class="rr2-icon" href="' + dl + '" title="Download">⬇</a>';
+        action = '<a class="rr2-icon" href="' + dl + '" title="Download" download>' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>' +
+          '<polyline points="7 10 12 15 17 10"/>' +
+          '<line x1="12" y1="15" x2="12" y2="3"/></svg></a>';
       } else {
         action = '<span class="rr2-gen">generating…</span>';
       }
