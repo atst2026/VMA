@@ -28,6 +28,21 @@ def _tier_multiplier(events: list[TriggerEvent]) -> float:
     return 0.7
 
 
+# Broader-market (off-watchlist) discount. A genuine lead at an employer
+# outside the curated ~550-name watchlist is admitted (recall), but scores
+# below an equivalent core-watchlist account so the latter always ranks
+# first. A stack counts as watchlist if ANY of its events resolved to a
+# curated account.
+OFF_WATCHLIST_MULT = 0.6
+
+
+def _account_multiplier(events: list[TriggerEvent]) -> float:
+    for e in events:
+        if getattr(e, "account_tier", "watchlist") == "watchlist":
+            return 1.0
+    return OFF_WATCHLIST_MULT
+
+
 def _freshness(latest: datetime) -> float:
     """Daily mode: 1.0 if <=7d; 0.8 if 7-21d; 0 if >21d.
     Sweep mode (VMA_SWEEP_DAYS=14): 1.0 across the whole window so older
@@ -85,6 +100,7 @@ def score_stack(stk: Stack) -> float:
         _trigger_weight_for_stack(stk.events)
         * _stack_multiplier(stk.depth)
         * _tier_multiplier(stk.events)
+        * _account_multiplier(stk.events)
         * _geo_multiplier(stk.company)
         * sector_heat_multiplier(stk.company)
         * fresh,

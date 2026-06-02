@@ -126,10 +126,17 @@ def opportunity_value(score: float, window_weeks: tuple | None = None) -> float:
 
 def _serialise_stack(stk: Stack, score: float, now_iso: str) -> dict:
     w = window_for_stack(stk)
+    account_tier = (
+        "watchlist"
+        if any(getattr(e, "account_tier", "watchlist") == "watchlist"
+               for e in stk.events)
+        else "off_watchlist"
+    )
     return {
         "company": stk.company,
         "score": score,
         "depth": stk.depth,
+        "account_tier": account_tier,
         "predicted_role": _predicted_role_for(stk),
         "window_weeks_min": w[0] if w else None,
         "window_weeks_max": w[1] if w else None,
@@ -228,7 +235,7 @@ def upsert(ranked_stacks: list[tuple[Stack, float]]) -> dict:
 
     total_active = sum(1 for p in predictors.values() if p.get("status") == "active")
     log.info("pipeline: %d new, %d updated, %d aged out, %d purged "
-             "(off-watchlist), %d active total",
+             "(off-universe / unnamed), %d active total",
              len(new_items), len(updated_items), aged, purged, total_active)
     return {
         "new": new_items,
@@ -267,16 +274,24 @@ def _is_poisoned_aggregate(entry: dict) -> bool:
 
 def _regate(entry: dict) -> str | None:
     """Re-validate a persisted predictor against the CURRENT account gate
-    over its OWN evidence (the same text-first check detect_events
-    applies to fresh signals). Returns the RESOLVED CANONICAL name (so
-    callers can also fix a stale display name, e.g. legacy 'Brown' ->
-    'Brown-Forman'), or None if it no longer resolves (caller drops).
+    over its OWN evidence (the same tiered check detect_events applies to
+    fresh signals). Returns the RESOLVED CANONICAL name (so callers can
+    also fix a stale display name, e.g. legacy 'Brown' -> 'Brown-Forman'),
+    or None if it no longer resolves (caller drops).
+
+    Tier-aware: a broader-market (off_watchlist) entry was admitted off
+    the watchlist BY DESIGN, so it is kept as long as it is still a
+    well-formed employer name — it must NOT be purged for failing the
+    watchlist subject scan. Watchlist (and legacy, tier-less) entries are
+    still re-validated text-first, which is what evicts pre-fix garbage
+    ('EQS', 'Capita' from 'Capital Signs…', 'Three UK' from 'Three
+    arrested…').
 
     Fail-open: returns a sentinel (truthy, != any real name) if the gate
     can't run / errors, so a degraded watchlist never empties or rewrites
     the pipeline."""
     try:
-        from tool.account_match import resolve_account
+        from tool.account_match import classify_account, _is_named_employer
     except Exception:
         return _SENTINEL_FAILOPEN
     company = (entry.get("company") or "").strip()
@@ -290,7 +305,10 @@ def _regate(entry: dict) -> str | None:
                 parts.append(str(tl))
     text = " . ".join(parts) or company
     try:
-        return resolve_account(company, text)
+        if (entry.get("account_tier") or "watchlist") == "off_watchlist":
+            return company if (company and _is_named_employer(company)) else None
+        name, _tier = classify_account(company, text)
+        return name
     except Exception:
         return _SENTINEL_FAILOPEN  # never nuke the pipeline on a gate error
 
