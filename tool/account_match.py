@@ -242,3 +242,158 @@ def resolve_account(company: str | None, *texts: str) -> str | None:
             if pat.search(original) and _has_bare_occurrence(pat, original):
                 return name
     return None
+
+
+# --- Off-watchlist admission (recall widening) --------------------------
+# The curated watchlist is a high-precision GATE today: an event whose
+# company isn't one of the ~550 named accounts is dropped outright. That
+# deliberately trades away recall in exactly the segment where the
+# LEAST-contested (most genuine) comms briefs live — mid-market PE-backed
+# firms, large charities, NHS bodies, housing associations, universities,
+# scale-ups past Series B. `classify_account` turns the binary gate into a
+# TIERED one: a watchlist subject scores full weight; a well-formed
+# off-watchlist EMPLOYER is admitted at a downstream discount (a genuine
+# but broader-market lead); only off-universe noise (garbage extractions,
+# regulators-as-actor, bare common words) is still dropped. This is the
+# same philosophy funding_round.py already uses for scale-ups — replace
+# the watchlist gate with structural precision gates when the genuine
+# population is, by definition, off-list.
+
+# Corporate legal-form / size markers — a name carrying one of these is a
+# real, substantial employer (it runs a comms function worth a retained
+# search) even when it isn't on the curated watchlist.
+_EMPLOYER_SUFFIX_RX = re.compile(
+    r"\b(plc|p\.l\.c\.|limited|ltd|group|holdings|llp|inc|incorporated|"
+    r"corp|corporation|llc|company|ag|s\.a\.|sa|n\.v\.|nv|gmbh|b\.v\.|bv|"
+    r"spa|oy|oyj)\b",
+    re.IGNORECASE,
+)
+# Public-sector / charity / HE / housing markers — these orgs all run a
+# senior comms / corporate-affairs function and are exactly the
+# under-covered, low-competition segment the FTSE-skewed watchlist misses.
+_PUBLIC_BODY_RX = re.compile(
+    r"\b(council|borough|county|university|college|academy|"
+    r"nhs|hospital|healthcare|trust|foundation|housing association|"
+    r"housing|association|authority|agency|ministry|department|"
+    r"directorate|commission|institute|federation|society|charity|"
+    r"partnership|co-?operative|cooperative|mutual|network|alliance|"
+    r"institution)\b",
+    re.IGNORECASE,
+)
+
+_WATCHLIST_NORM_SET: set[str] | None = None
+_PEER_NORM_SET: set[str] | None = None
+
+
+def _watchlist_norm_set() -> set[str]:
+    global _WATCHLIST_NORM_SET
+    if _WATCHLIST_NORM_SET is None:
+        _WATCHLIST_NORM_SET = {n for n in (_norm(x) for x in _load_watchlist_names()) if n}
+    return _WATCHLIST_NORM_SET
+
+
+def _peer_norm_set() -> set[str]:
+    """Curated peer names under peers' own suffix-stripping normaliser, for
+    EXACT membership. Imported directly from peers (no lxml dependency), so
+    this still bars peer names even in a degraded environment where the
+    account_match watchlist loader (which pulls in companies_house) can't
+    load."""
+    global _PEER_NORM_SET
+    if _PEER_NORM_SET is None:
+        s: set[str] = set()
+        try:
+            from tool.peers import SECTOR_PEERS, _normalise as peer_norm
+            for names in SECTOR_PEERS.values():
+                for c in names:
+                    pn = peer_norm(c)
+                    if pn:
+                        s.add(pn)
+        except Exception:
+            pass
+        _PEER_NORM_SET = s
+    return _PEER_NORM_SET
+
+
+def _is_watchlist_member(name: str) -> bool:
+    """True if `name` is (or clearly maps to) a curated watchlist account.
+    Such names must EARN the watchlist tier via a text-first SUBJECT match
+    (resolve_account); they are deliberately NOT eligible for the
+    off-watchlist path, so a mis-extracted peer name — 'Three UK' from
+    'Three arrested…', 'Capita' from 'Capital Signs…' — can never sneak in
+    as a broader-market lead.
+
+    Uses EXACT matching against the curated names (the account_match
+    watchlist, plus the peers list under its suffix-stripping normaliser)
+    with a length-guarded substring fallback. Deliberately does NOT use
+    peers.detect_sector — its substring matcher is too loose ('RS Group' ->
+    'rs' matches inside 'Rive**rs**ide'), which would wrongly bar genuine
+    off-watchlist employers."""
+    n = _norm(name)
+    if not n:
+        return False
+    wl = _watchlist_norm_set()
+    if n in wl:
+        return True
+    for w in wl:
+        if w and min(len(w), len(n)) >= 4 and (w in n or n in w):
+            return True
+    try:
+        from tool.peers import _normalise as peer_norm
+        if peer_norm(name) in _peer_norm_set():
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def _is_named_employer(name: str) -> bool:
+    """High-precision 'is this a real, substantial employer name?' test for
+    off-watchlist admission. Accepts a name carrying a corporate legal-form
+    suffix (… plc / Ltd / Group) or a public-body / charity / HE / housing
+    marker, plus well-formed multi-word proper names. Rejects regulators
+    (the ACTOR, not the hiring subject, in a probe headline), bare common
+    English words, and short / garbage fragments — the classes the
+    text-first watchlist gate was built to suppress."""
+    if not name:
+        return False
+    n = _norm(name)
+    if len(n) < 3:
+        return False
+    if n in _REGULATOR_EXCLUDE or n in _ENGLISH_WORD_NAMES:
+        return False
+    if _EMPLOYER_SUFFIX_RX.search(name) or _PUBLIC_BODY_RX.search(name):
+        return True
+    # Multi-word proper name (>=2 tokens, has a capitalised token, of
+    # reasonable length). Single bare tokens with no employer marker are
+    # rejected — too ambiguous to admit without resurrecting extractor
+    # noise.
+    tokens = n.split()
+    if len(tokens) >= 2 and len(n) >= 6 and any(w[:1].isupper() for w in name.split()):
+        return True
+    return False
+
+
+def classify_account(candidate: str | None, *texts: str) -> tuple[str | None, str]:
+    """Tiered account resolution — the recall-widening replacement for the
+    binary `resolve_account` gate.
+
+    Returns (resolved_name, tier):
+      • (canonical_watchlist_name, "watchlist") — a watchlist company is the
+        text-first SUBJECT of the event. Full score downstream.
+      • (clean_employer_name, "off_watchlist") — no watchlist subject, but
+        `candidate` is a well-formed real employer NOT on the watchlist.
+        Admitted at a downstream discount: a genuine but broader-market
+        lead.
+      • (None, "") — off-universe noise / garbage: dropped.
+
+    Fail-open: if the watchlist can't load, degrades to the old ungated
+    behaviour (returns the candidate as 'watchlist')."""
+    if not _load_watchlist_names():
+        return ((candidate or None), "watchlist")  # fail open: ungated
+    name = resolve_account(None, *texts)
+    if name:
+        return name, "watchlist"
+    cand = (candidate or "").strip()
+    if cand and not _is_watchlist_member(cand) and _is_named_employer(cand):
+        return cand, "off_watchlist"
+    return None, ""

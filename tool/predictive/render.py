@@ -27,6 +27,13 @@ def _stack_descriptor(stk: Stack) -> str:
     return f"stacked ({joined})" if stk.depth >= 2 else f"single ({labels[0]})"
 
 
+def _account_note(stk: Stack) -> str:
+    """Broader-market tag for off-watchlist stacks (a genuine lead outside
+    the curated watchlist). Empty for core-watchlist accounts."""
+    tiers = {getattr(e, "account_tier", "watchlist") for e in stk.events}
+    return "" if "watchlist" in tiers else " · broader-market"
+
+
 def window_for_stack(stk: Stack) -> tuple[int, int] | None:
     """Pick the narrowest predicted-hire window across the stack's triggers.
     Stacked signals usually imply a narrower, earlier window."""
@@ -157,7 +164,7 @@ def render_html(ranked: list[tuple[Stack, float]], limit: int = 5,
         blocks.append(f"""
         <div style="padding:12px 0;border-bottom:1px solid #e5e5e5;">
             <div style="font-weight:600;font-size:15px;">
-                {i}. {_ESC(stk.company)} · {descriptor}
+                {i}. {_ESC(stk.company)}{_account_note(stk)} · {descriptor}
             </div>
             <div style="color:#111;font-size:13px;margin-top:6px;">
                 {implication}
@@ -203,7 +210,7 @@ def render_text(ranked: list[tuple[Stack, float]], limit: int = 5,
         lines.append(f"  {new_count} new today · {total_active} active in pipeline: {DASHBOARD_URL}")
         lines.append("")
     for i, (stk, sc) in enumerate(ranked[:limit], 1):
-        lines.append(f"{i}. {stk.company} · {_stack_descriptor(stk)}")
+        lines.append(f"{i}. {stk.company}{_account_note(stk)} · {_stack_descriptor(stk)}")
         lines.append(f"   {_implication(stk)}")
         for e in sorted(stk.events, key=lambda x: x.published, reverse=True)[:3]:
             lines.append(f"     • {e.trigger_label}: {e.evidence}")

@@ -22,11 +22,13 @@ Precision by construction (per the strict detection-engine filter):
   * Every end/transition phrase below bakes in the contract-context
     noun (contract / framework / concession / tender / project /
     programme), so a bare "ends" can never fire.
-  * The resolved company must be on Sara's watchlist. We resolve the
-    whole signal text via account_match.resolve_account (text-first,
-    fail-closed when company=None): unlike the directional vacated-seat
-    case, a contract-end event legitimately concerns whichever watchlist
-    party is named — incumbent OR buyer — so either is a valid lead.
+  * The company is resolved via account_match.classify_account (tiered):
+    a watchlist party named in the text (incumbent OR buyer — either is a
+    valid lead) is a high-confidence core lead; a well-formed off-watchlist
+    employer extracted from the notice is a genuine broader-market
+    re-tender window, capped to medium confidence; off-universe noise still
+    drops. This widens recall into the under-covered public-sector / HE /
+    housing segment without re-opening the door to garbage extractions.
 
 No external calls. Runs over the RAW scoured signals (the Find a Tender
 RSS, Investegate RNS, GDELT and trade press are already fetched every
@@ -101,8 +103,9 @@ def detect_contract_end(signals: Iterable[dict]) -> list[dict]:
     Each record: {company, event, evidence, url, source, sector,
     confidence}.
     """
-    from tool.account_match import resolve_account
+    from tool.account_match import classify_account
     from tool.advisory import advisory_for
+    from tool.predictive.detector import extract_company
     try:
         from tool.peers import detect_sector
     except Exception:
@@ -119,9 +122,11 @@ def detect_contract_end(signals: Iterable[dict]) -> list[dict]:
         if not text or not _END_RX.search(text):
             continue
 
-        # Text-first watchlist resolution; company=None so it fails
-        # CLOSED (returns None) rather than echoing a garbage string.
-        company = resolve_account(None, text)
+        # Tiered resolution: a watchlist subject in the text is a core lead;
+        # a well-formed off-watchlist employer (extracted from the notice)
+        # is a genuine broader-market re-tender window, capped to medium
+        # confidence. Off-universe noise still drops (classify returns None).
+        company, acct_tier = classify_account(extract_company(title, summary), text)
         if not company:
             continue
 
@@ -130,15 +135,20 @@ def detect_contract_end(signals: Iterable[dict]) -> list[dict]:
             continue
         seen.add(key)
 
+        confidence = _confidence(s.get("source", ""))
+        if acct_tier == "off_watchlist" and confidence == "high":
+            confidence = "medium"   # broader-market: never top-confidence
+
         out.append({
-            "company":    company,
-            "event":      "Contract-end / re-tender window",
-            "evidence":   (title[:200] or summary[:200]),
-            "url":        s.get("url", ""),
-            "source":     s.get("source", ""),
-            "sector":     detect_sector(company) or "",
-            "advisory":   advisory_for("contract_end"),
-            "confidence": _confidence(s.get("source", "")),
+            "company":      company,
+            "event":        "Contract-end / re-tender window",
+            "evidence":     (title[:200] or summary[:200]),
+            "url":          s.get("url", ""),
+            "source":       s.get("source", ""),
+            "sector":       detect_sector(company) or "",
+            "account_tier": acct_tier,
+            "advisory":     advisory_for("contract_end"),
+            "confidence":   confidence,
         })
 
     out.sort(key=lambda r: (r["confidence"] != "high", r["company"]))

@@ -27,6 +27,7 @@ class TriggerEvent:
     published: datetime                     # when the event was published
     raw_signal_id: str = ""                 # provenance
     tier_hint: str = "listed"               # "listed" | "covered" | "other"
+    account_tier: str = "watchlist"         # "watchlist" | "off_watchlist"
 
 
 # ---- Company extraction from signal titles -----------------------------
@@ -151,12 +152,13 @@ def detect_events(signals: Iterable[dict]) -> list[TriggerEvent]:
 
     events: list[TriggerEvent] = []
     rejected_no_company = 0
-    rejected_off_watchlist = 0
+    rejected_off_universe = 0
+    admitted_off_watchlist = 0
     rejected_subthreshold_regulator = 0
     rejected_contract_loss_immaterial = 0
     pattern_hits = 0
 
-    from tool.account_match import resolve_account
+    from tool.account_match import classify_account
 
     for s in signals:
         title = s.get("title") or ""
@@ -166,25 +168,30 @@ def detect_events(signals: Iterable[dict]) -> list[TriggerEvent]:
         if not hits:
             continue
         pattern_hits += 1
-        company = (s.get("company") or "").strip() or extract_company(title, summary)
-        if not company:
+        candidate = (s.get("company") or "").strip() or extract_company(title, summary)
+        if not candidate:
             rejected_no_company += 1
             log.info("drop (no company): %r [%s]", title[:100], s.get("source", ""))
             continue
-        # Account-relevance gate (text-first). Kills predictor noise the
-        # extractor created: 'Three UK' from "Three arrested…", 'SSE'
-        # from a Nano Dimension story, plus off-universe news (EQS wire,
-        # Fnac Darty, Nestlé France). A watchlist name must actually
-        # appear in the headline/evidence. Fail-open if the watchlist
-        # can't load. Use the resolved canonical name so display +
+        # Account-relevance gate, now TIERED (text-first). A watchlist name
+        # appearing as the headline subject scores full weight; a
+        # well-formed off-watchlist employer is admitted as a broader-market
+        # lead (discounted in the ranker); off-universe noise still drops.
+        # This still kills the extractor's false positives — 'Three UK' from
+        # "Three arrested…", 'SSE' from a Nano Dimension story, the EQS wire
+        # prefix — because mis-extracted PEER names are watchlist members and
+        # are barred from the off-watchlist path (they must earn the
+        # watchlist tier via a real subject match). Fail-open if the
+        # watchlist can't load. Use the resolved canonical name so display +
         # downstream contact-matching are consistent.
-        resolved = resolve_account(company, title, summary)
-        if not resolved:
-            rejected_off_watchlist += 1
-            log.info("drop (off-watchlist): %s — %r [%s]",
-                     company, title[:90], s.get("source", ""))
+        company, acct_tier = classify_account(candidate, title, summary)
+        if not company:
+            rejected_off_universe += 1
+            log.info("drop (off-universe): %s — %r [%s]",
+                     candidate, title[:90], s.get("source", ""))
             continue
-        company = resolved
+        if acct_tier == "off_watchlist":
+            admitted_off_watchlist += 1
         for trigger in hits:
             if trigger.key == "regulator_action":
                 amt = P.extract_gbp_amount_millions(body)
@@ -233,14 +240,16 @@ def detect_events(signals: Iterable[dict]) -> list[TriggerEvent]:
                 published=_parse_date(s.get("published", "")),
                 raw_signal_id=s.get("id", ""),
                 tier_hint=_tier_from_source_label(s.get("source", "")),
+                account_tier=acct_tier,
             ))
 
     log.info(
-        "detect_events summary: %d items matched patterns, %d events emitted, "
-        "%d dropped no-company, %d dropped off-watchlist, "
-        "%d dropped regulator-subthreshold, %d dropped contract-loss-immaterial",
-        pattern_hits, len(events), rejected_no_company,
-        rejected_off_watchlist,
+        "detect_events summary: %d items matched patterns, %d events emitted "
+        "(%d off-watchlist/broader-market), %d dropped no-company, "
+        "%d dropped off-universe, %d dropped regulator-subthreshold, "
+        "%d dropped contract-loss-immaterial",
+        pattern_hits, len(events), admitted_off_watchlist, rejected_no_company,
+        rejected_off_universe,
         rejected_subthreshold_regulator, rejected_contract_loss_immaterial,
     )
     return events
