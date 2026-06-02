@@ -90,6 +90,29 @@ def test_watchlist_member_detection():
     assert not _is_watchlist_member("Riverside Housing Association")
 
 
+# ---- detect_sector: word-boundary fix (no regression) ------------------
+
+def test_detect_sector_no_self_detection_regression():
+    from tool.peers import detect_sector, COMPANY_TO_SECTOR
+    missing = [c for c in COMPANY_TO_SECTOR if detect_sector(c) is None]
+    assert missing == [], f"curated names no longer self-detect: {missing[:5]}"
+
+
+def test_detect_sector_preserves_legit_variants():
+    from tool.peers import detect_sector
+    assert detect_sector("Barclays UK") == "financial_services"
+    assert detect_sector("Lloyds Bank") == "financial_services"   # stem match
+    assert detect_sector("Sky") == "media_telecoms"
+    assert detect_sector("BP") == "energy_utilities"
+
+
+def test_detect_sector_no_midword_false_positive():
+    # 'RS Group' -> 'rs' must not match mid-word inside 'Rive[rs]ide'.
+    from tool.peers import detect_sector
+    assert detect_sector("Riverside Housing Association") is None
+    assert detect_sector("Camden Borough Council") is None
+
+
 # ---- ranker: off-watchlist discount ------------------------------------
 
 def _evt(trigger_key, company, account_tier):
