@@ -1263,6 +1263,8 @@ def _render_dashboard():
         TEMPLATE,
         example_role=_default_role_label(),
         profile_label=active_profile().label,
+        radar_title=("Marketing Radar" if active_profile().key == "marketing"
+                     else "Comms Radar"),
         leads=leads,
         predictors=predictors,
         funding_events=funding_events,
@@ -3636,9 +3638,11 @@ TEMPLATE = r"""
        above the VMA logo (margin-top:auto pushes it + the logo down). */
     .rail .ri-bottom { margin-top: auto; }
     .rail .rail-logo { margin-top: 12px; margin-bottom: -13px; width: 42px; height: 42px; border-radius: 12px;
+      cursor: pointer; text-decoration: none; transition: transform .12s, box-shadow .12s;
       overflow: hidden; flex-shrink: 0; position: relative; display: grid; place-items: center;
       background: rgba(62,92,132,.09); }
     .rail .rail-logo svg { display: block; width: 100%; height: 100%; border-radius: 12px; }
+    .rail .rail-logo:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(31,55,124,.22); }
     .rail [data-tip]:hover::after { content: attr(data-tip); position: absolute; left: 54px; top: 50%;
       transform: translateY(-50%); background: var(--ink); color: #fff; font: 500 11px/1 "Inter", sans-serif;
       padding: 6px 9px; border-radius: 7px; white-space: nowrap; z-index: 5; box-shadow: var(--shadow-md); }
@@ -3654,13 +3658,13 @@ TEMPLATE = r"""
       background: radial-gradient(ellipse 78% 150% at 50% -8%,
         #a8c8e6 0%, #bdd3e9 14%, #d2e1ee 32%, #e8eff6 56%, #f4f7fb 76%, rgba(247,249,252,0) 100%); }
     .wm-head .brand { display: inline-flex; align-items: center; gap: 14px; }
-    .brand-title { font-family: "Newsreader", Georgia, serif; font-weight: 400; font-size: 30px;
+    .brand-title { font-family: "Newsreader", Georgia, serif; font-weight: 400; font-size: 34px;
       letter-spacing: -.01em; color: var(--ink); }
-    /* radar icon at the end of the "Market Opportunities Radar" title — line-art
-       dish + dome with a slow sweep, in the brand navy. */
-    /* radar icon at the end of the "Market Opportunities Radar" title — matches
-       the BD-Calendar page hero tile exactly: same 78px faded-navy square,
-       same radius + svg size, with a slow sweep on the dish. */
+    /* radar icon at the end of the desk radar title (Comms / Marketing Radar)
+       — line-art dish + dome with a slow sweep, in the brand navy. */
+    /* radar icon at the end of the desk radar title — matches the BD-Calendar
+       page hero tile exactly: same 78px faded-navy square, same radius + svg
+       size, with a slow sweep on the dish. */
     .radar-ic { width: 78px; height: 78px; border-radius: 18px; display: grid; place-items: center;
       color: var(--vma); background: rgba(62,92,132,.09); flex-shrink: 0; align-self: center; }
     .radar-ic svg { width: 38px; height: 38px; transform-origin: center; animation: radar-spin 6s linear infinite; }
@@ -3752,17 +3756,20 @@ TEMPLATE = r"""
     #agent .agent-wrap { flex: 1; min-height: 0; overflow-y: auto; max-width: 900px; margin: 0 auto;
       padding: 40px 24px; text-align: center; display: flex; flex-direction: column;
       align-items: center; justify-content: center; }
-    #reports .reports-wrap { flex: 1; min-height: 0; overflow-y: auto; max-width: 1280px; margin: 0 auto;
-      padding: 40px 40px; text-align: center; display: flex; flex-direction: column;
+    #reports .reports-wrap { flex: 1; min-height: 0; overflow-y: auto; max-width: 1380px; margin: 0 auto;
+      padding: 24px 40px; text-align: center; display: flex; flex-direction: column;
       align-items: stretch; }
-    #reports .ea-hero { margin-bottom: 26px; }
+    #reports .ea-hero { margin-bottom: 16px; }
+    /* "a bit shorter": trim the hero icon's footprint on the reports page only. */
+    #reports .cc-bigicon { width: 60px; height: 60px; margin-bottom: 14px; }
+    #reports .cc-bigicon svg { width: 30px; height: 30px; }
     .ea-hero { text-align: center; }
     .cc-bigicon { width: 78px; height: 78px; border-radius: 18px; margin: 0 auto 22px; display: grid;
       place-items: center; color: var(--vma); background: rgba(62,92,132,.09); }
     .cc-bigicon svg { width: 38px; height: 38px; }
     .gemini-title { font-family: "Newsreader", Georgia, serif; font-weight: 400; font-size: 34px;
       letter-spacing: -.01em; color: var(--ink); text-align: center; }
-    .cc-sub { font-size: 13.5px; color: var(--muted); margin-top: 11px; }
+    .cc-sub { font-size: 11.5px; color: var(--muted); margin-top: 11px; }
     /* Agent page: full-size hero sits just above the centred composer pill. */
     #agent .ea-hero { margin-bottom: 26px; }
 
@@ -3935,7 +3942,7 @@ TEMPLATE = r"""
       #leads .row .panel-body { flex: 1; min-height: 0; overflow-y: auto;
         max-height: none; -webkit-overflow-scrolling: touch; }
       .wm-head { padding: 26px 0 18px; }
-      .brand-title { font-size: 22px; }
+      .brand-title { font-size: 27px; }
       #leads .refresh-bar { flex-wrap: wrap; gap: 10px; }
 
       /* page 2 — assistant: natural scroll, full-width composer */
@@ -3968,19 +3975,19 @@ TEMPLATE = r"""
 
 <!-- LEFT RAIL — page switcher. Active state toggled by render() (additive JS). -->
 <aside class="rail">
-  <button class="ri active" id="nav-leads" data-tip="Market Opportunities Radar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" opacity=".4"/><path d="M12 12 L12 3 A9 9 0 0 1 19.8 7.5 Z" fill="currentColor" stroke="none" opacity=".55"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></button>
+  <button class="ri active" id="nav-leads" data-tip="{{ radar_title }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" opacity=".4"/><path d="M12 12 L12 3 A9 9 0 0 1 19.8 7.5 Z" fill="currentColor" stroke="none" opacity=".55"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></button>
   <button class="ri" id="nav-agent" data-tip="Personal Assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7.5" width="17" height="13" rx="5"/><path d="M12 7.5V4.6"/><circle cx="12" cy="3.4" r="1.2"/><circle cx="9" cy="14" r="1.65" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.65" fill="currentColor" stroke="none"/></svg></button>
   <button class="ri" id="nav-cal" data-tip="BD Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></button>
   <button class="ri ri-bottom" id="nav-reports" data-tip="Recent Reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
-  <span class="rail-logo" data-tip="VMA Group"></span>
+  <a class="rail-logo" href="/" data-tip="VMA Group — home" aria-label="VMA Group — back to home"></a>
 </aside>
 
 <div class="stage">
 
-  <!-- ===== PAGE 1 · MARKET INTELLIGENCE RADAR (leads + pre-market) ===== -->
+  <!-- ===== PAGE 1 · DESK RADAR — Comms / Marketing (leads + pre-market) ===== -->
   <section class="page active" id="leads">
     <div class="wm-head">
-      <div class="brand"><span class="brand-title">Market Opportunities Radar</span><span class="radar-ic" title="Live — scanning the market for opportunities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" opacity=".35"/><path d="M12 12 L12 3 A9 9 0 0 1 19.8 7.5 Z" fill="currentColor" stroke="none" opacity=".5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></span></div>
+      <div class="brand"><span class="brand-title">{{ radar_title }}</span><span class="radar-ic" title="Live — scanning the market for opportunities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" opacity=".35"/><path d="M12 12 L12 3 A9 9 0 0 1 19.8 7.5 Z" fill="currentColor" stroke="none" opacity=".5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></span></div>
     </div>
 
     <div class="container">
