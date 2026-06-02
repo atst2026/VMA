@@ -1833,27 +1833,31 @@ LANDING_TEMPLATE = r"""
     width:535px;max-width:90vw;flex-wrap:wrap;
   }
   .pill{
+    position:relative;
     background:rgb(255,255,255);border:none;border-radius:26px;
     box-shadow:0 2px 8px -2px rgba(0,0,0,0.16);
-    padding:0 18px;flex:1 1 200px;min-width:0;height:52px;max-width:none;
-    display:flex;align-items:center;justify-content:center;gap:12px;
+    padding:0 40px;flex:1 1 200px;min-width:0;height:52px;max-width:none;
+    display:flex;align-items:center;justify-content:center;
     text-decoration:none;color:rgb(31,31,31);cursor:pointer;
     transition:transform .15s ease, box-shadow .15s ease;
   }
   .pill:hover{transform:translateY(-1px);box-shadow:0 6px 16px -2px rgba(0,0,0,.18);}
 
-  /* Live pulse dot — actively vibrating + glowing.
-     The dot itself throbs (scale + brightness) while a ::before
-     pseudo-element radiates an expanding ring outward. */
+  /* Live pulse dot — actively vibrating + glowing. Absolutely positioned on
+     the OUTER edge of each pill (left dot on the left pill, right dot on the
+     right pill) so the label stays perfectly centred. The dot itself throbs
+     while a ::before pseudo-element radiates an expanding ring outward. */
   .dot{
-    position:relative;
+    position:absolute;top:50%;margin-top:-5.5px;
     width:11px;height:11px;border-radius:50%;
-    background:#9FD181;flex-shrink:0;
+    background:#9FD181;
     box-shadow:
       0 0 10px rgba(159,209,129,.85),
       inset 0 0 3px rgba(255,255,255,.4);
     animation:dot-throb 1.8s ease-in-out infinite;
   }
+  .pill.dot-left .dot{left:18px;}
+  .pill.dot-right .dot{right:18px;}
   .dot::before{
     content:"";position:absolute;
     inset:-3px;border-radius:50%;
@@ -1877,7 +1881,6 @@ LANDING_TEMPLATE = r"""
   }
 
   .lbl{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;letter-spacing:.26em;text-transform:uppercase;font-weight:500;}
-  .arrow{color:#5F6368;font-size:18px;line-height:1;margin-left:6px;}
 
   @media (max-width:720px){
     .stage{gap:24px;}
@@ -1928,15 +1931,13 @@ LANDING_TEMPLATE = r"""
       <div class="logo-tile"></div>
     </div>
     <div class="pill-row">
-      <a class="pill" href="{{ comms_href }}">
+      <a class="pill dot-left" href="{{ comms_href }}">
         <span class="dot"></span>
-        <span class="lbl">Comms &middot; Launch App</span>
-        <span class="arrow">&rarr;</span>
+        <span class="lbl">Communications</span>
       </a>
-      <a class="pill" href="{{ marketing_href }}">
+      <a class="pill dot-right" href="{{ marketing_href }}">
         <span class="dot"></span>
-        <span class="lbl">Marketing &middot; Launch App</span>
-        <span class="arrow">&rarr;</span>
+        <span class="lbl">Marketing</span>
       </a>
     </div>
   </div>

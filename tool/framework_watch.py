@@ -24,6 +24,8 @@ from __future__ import annotations
 import logging
 from datetime import date, datetime
 
+from tool.profiles import active_profile
+
 log = logging.getLogger("brief.frameworks")
 
 # How long before expiry the re-procurement window typically opens — the
@@ -122,6 +124,39 @@ def _months_between(a: date, b: date) -> float:
     return (b.year - a.year) * 12 + (b.month - a.month) + (b.day - a.day) / 30.0
 
 
+# These public-sector exec-search frameworks (CCS, NHS, NDA, devolved gov)
+# are GENERIC — they cover senior leadership across functions, marketing
+# included. Only the AD-facing copy is specialism-flavoured, so on the
+# marketing desk we re-word it. Ordered specific → general.
+_MKT_COPY_SUBS = [
+    ("comms/corporate-affairs leadership", "marketing & brand leadership"),
+    ("comms & corporate affairs", "marketing & brand"),
+    ("comms-leadership", "marketing-leadership"),
+    ("senior comms", "senior marketing"),
+    ("comms search framework", "marketing search framework"),
+    ("comms roles", "marketing roles"),
+    ("corporate-affairs", "brand"),
+    ("corporate affairs", "brand"),
+    ("comms", "marketing"),
+]
+
+
+def _specialism_copy(fw: dict) -> dict:
+    """On the marketing desk, re-word the comms-flavoured AD copy to
+    marketing. The framework itself is unchanged (it covers marketing
+    leadership too)."""
+    if active_profile().key != "marketing":
+        return fw
+    out = dict(fw)
+    for field in ("ad_title", "ad_desc", "scope", "notes"):
+        v = out.get(field)
+        if isinstance(v, str):
+            for a, b in _MKT_COPY_SUBS:
+                v = v.replace(a, b).replace(a.capitalize(), b.capitalize())
+            out[field] = v
+    return out
+
+
 def load_frameworks(today: date | None = None,
                     entries: list[dict] | None = None) -> list[dict]:
     """Return the watched frameworks decorated with refresh-window status.
@@ -138,6 +173,7 @@ def load_frameworks(today: date | None = None,
     source_list = FRAMEWORKS if entries is None else entries
     out: list[dict] = []
     for fw in source_list:
+        fw = _specialism_copy(fw)
         exp = _parse(fw.get("expiry_date"))
         # Drop from the dashboard once it's been expired beyond the grace
         # window — a stale "EXPIRED" row is just noise after that.
