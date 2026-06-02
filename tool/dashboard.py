@@ -3801,11 +3801,17 @@ TEMPLATE = r"""
        Scoped to .composer .cform so it never touches other inputs/labels. */
     .composer .cform label { display: block; font: 600 9.5px/1 "JetBrains Mono", monospace;
       letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); margin: 15px 0 7px; }
-    .composer .cform input, .composer .cform select, .composer .cform textarea {
+    /* :not(.cinput) — restyle ONLY the moved pack-form fields to the boxed
+       cf-* look. The free-text prompt (.cinput) is also an <input> inside
+       .composer .cform, and this selector outranks `.cinput`, so without the
+       exclusion it drew a bordered box around the free-text field. Excluding
+       it keeps the prompt borderless/transparent (Claude/ChatGPT/Gemini-style)
+       while the pack forms keep their boxes. No sizing of the pill changes. */
+    .composer .cform input:not(.cinput), .composer .cform select, .composer .cform textarea {
       width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 10px;
       font: 400 13.5px/1.3 "Inter", sans-serif; color: var(--ink); background: #fff; }
     .composer .cform input::placeholder { color: var(--dim); }
-    .composer .cform input:focus, .composer .cform select:focus, .composer .cform textarea:focus {
+    .composer .cform input:not(.cinput):focus, .composer .cform select:focus, .composer .cform textarea:focus {
       outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(66,133,244,.12); }
     /* hide the original full-width Run buttons; the corner arrow submits instead */
     .composer .cform form > button[type="submit"]:not(.send) { display: none; }
