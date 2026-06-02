@@ -390,7 +390,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 {note_banner}
 <h2 style="margin:0 0 4px 0;">Retained Pitch Pack - {_esc(target)}</h2>
 <div style="color:#666;font-size:13px;margin-bottom:18px;">
-  Role: {_esc(role)} · Generated {_esc(datetime.now().strftime('%a %d %b %Y · %H:%M'))} · For Sara Tehrani, VMA Group
+  Role: {_esc(role)} · Generated {_esc(datetime.now().strftime('%a %d %b %Y · %H:%M'))} · VMA Group
 </div>
 <hr style="border:none;border-top:2px solid #3D5A82;margin:14px 0 24px;">
 
