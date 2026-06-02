@@ -872,6 +872,7 @@ _HYDRATE_PATHS = [
     "tool/state/report_log.json",
     "tool/state/predictor_status.json",
     "tool/state/contact_flags.json",
+    "tool/state/contact_feedback.json",
     "tool/state/cascade_events.json",
     "tool/state/cascade_suppression.json",
     "tool/state/top_three_state.json",
@@ -1522,6 +1523,34 @@ def api_contacts_flag():
         return jsonify({"ok": False, "detail": "company, slot and name required"}), 400
     ok = contact_flags.flag(company, slot, name)
     return jsonify({"ok": ok})
+
+
+@app.route("/api/contacts/feedback", methods=["POST"])
+@_auth_required
+def api_contacts_feedback():
+    """Sara labels a surfaced contact: correct / responded / moved / wrong.
+    Feeds the success metric (§4.5); moved/wrong also drive suppression."""
+    from tool import contact_feedback
+    data = _safe_json_body()
+    company = (data.get("company") or "").strip()
+    slot = (data.get("slot") or "").strip()
+    name = (data.get("name") or "").strip()
+    signal = (data.get("signal") or "").strip().lower()
+    if not (company and slot and name and signal):
+        return jsonify({"ok": False, "detail": "company, slot, name, signal required"}), 400
+    ok = contact_feedback.record(company, slot, name, signal)
+    if not ok:
+        return jsonify({"ok": False, "detail": f"invalid signal {signal!r}"}), 400
+    return jsonify({"ok": True})
+
+
+@app.route("/api/contacts/accuracy", methods=["GET"])
+@_auth_required
+def api_contacts_accuracy():
+    """The §4.5 success metric (% correct person) over captured feedback
+    for the active desk."""
+    from tool import contact_feedback
+    return jsonify(contact_feedback.accuracy_metric())
 
 
 # ---------------------------------------------------------------------------

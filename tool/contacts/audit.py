@@ -270,17 +270,26 @@ def check_positive_feedback_capture():
     """The §4.5 success metric is '% marked correct person'. We can only
     measure 80% if there's a positive-signal capture. Today only the
     negative 'wrong person' flag exists."""
-    dash = (TOOL_DIR / "dashboard.py").read_text().lower()
-    has_negative = "contacts/flag" in dash or "contact_flags" in dash
-    has_positive = any(tok in dash for tok in (
-        "contacts/correct", "contacts/responded", "mark_correct",
-        "correct_person", "contact_responded"))
-    if has_negative and not has_positive:
+    dash = (TOOL_DIR / "dashboard.py").read_text()
+    dash_l = dash.lower()
+    has_negative = "contacts/flag" in dash_l
+    has_positive = "contacts/feedback" in dash_l or "contact_feedback" in dash_l
+    # Durability: the capture file must be boot-hydrated or Render's
+    # ephemeral disk loses every label on redeploy.
+    hydrated = "contact_feedback.json" in dash
+    fb = TOOL_DIR / "contact_feedback.py"
+    has_metric = fb.exists() and "def accuracy_metric" in fb.read_text()
+    if has_positive and hydrated and has_metric:
+        return ("feedback capture", PASS,
+                "correct/responded/moved capture + accuracy_metric (§4.5) + "
+                "boot-hydrated for durability")
+    if has_positive:
+        return ("feedback capture", WARN,
+                f"capture present but hydrated={hydrated} has_metric={has_metric}")
+    if has_negative:
         return ("feedback capture", WARN,
                 "only the negative 'wrong person' flag exists — no 'correct/"
                 "responded' capture, so the 80% metric has no data source yet")
-    if has_positive:
-        return ("feedback capture", PASS, "positive-feedback capture present")
     return ("feedback capture", WARN, "no contact feedback capture found at all")
 
 
@@ -332,6 +341,25 @@ def check_region_signal_availability():
             f"job_has_loc={job_has_loc} stack_has_loc={stack_has_loc}")
 
 
+def check_state_namespacing():
+    """The contact graph store should be profile-namespaced like the rest
+    of the state layer (render.yaml: 'marketing -> tool/state/marketing/').
+    If store.py uses a hardcoded tool/state/ while contact_flags /
+    contact_feedback use state_dir(), the marketing desk reads the COMMS
+    graph yet writes its flags/feedback to a different (namespaced) dir —
+    an inconsistent split. (Comms/default is unaffected: state_root()
+    resolves to tool/state/ for it either way.)"""
+    store_src = (TOOL_DIR / "contacts" / "store.py").read_text()
+    uses_namespaced = "state_paths" in store_src or "state_dir(" in store_src
+    uses_hardcoded = 'parent.parent / "state"' in store_src
+    if uses_hardcoded and not uses_namespaced:
+        return ("state namespacing", WARN,
+                "contacts/store.py hardcodes tool/state/ (NOT profile-namespaced) "
+                "while contact_flags/contact_feedback use state_dir() — marketing "
+                "reads the comms graph but writes feedback to tool/state/marketing/")
+    return ("state namespacing", PASS, "contact store is profile-namespaced")
+
+
 CHECKS = [
     check_smoke_resolvers,
     check_slot_consistency,
@@ -342,6 +370,7 @@ CHECKS = [
     check_positive_feedback_capture,
     check_surface_inheritance,
     check_region_signal_availability,
+    check_state_namespacing,
 ]
 
 
