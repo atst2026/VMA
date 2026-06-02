@@ -317,10 +317,17 @@ def _find_output_artifact(name: str, since_iso: str) -> dict | None:
         since = datetime.now(timezone.utc) - timedelta(minutes=30)
     # Small slack so clock skew between us and GitHub can't hide a hit.
     cutoff = since - timedelta(seconds=90)
+    # Filter by artifact NAME server-side (and scan a wide page) so the
+    # just-finished report can't be crowded out of the window by unrelated
+    # artifacts — nightly briefs, the OTHER desk's runs, earlier reports. The
+    # old unfiltered per_page=40 let a busy repo bury the report past the page,
+    # so the poll never saw it even though Recent Reports (per_page=100) did:
+    # the "report is downloadable, but the loading tab never completes" bug.
     url = (f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}"
-           f"/actions/artifacts?per_page=40")
+           f"/actions/artifacts")
     try:
-        r = requests.get(url, headers=_github_headers(), timeout=15)
+        r = requests.get(url, headers=_github_headers(),
+                         params={"name": name, "per_page": 100}, timeout=15)
         if r.status_code != 200:
             return None
         cands = []
