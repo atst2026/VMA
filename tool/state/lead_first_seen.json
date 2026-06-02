@@ -688,5 +688,90 @@
     "anchor": "2026-05-20",
     "first_seen": "2026-06-02",
     "expired": true
+  },
+  "a439d75c342ff00e": {
+    "anchor": "2026-06-02",
+    "first_seen": "2026-06-02",
+    "expired": false
+  },
+  "49924a64e8fa2118": {
+    "anchor": "2026-06-02",
+    "first_seen": "2026-06-02",
+    "expired": false
+  },
+  "3b471975fc751e39": {
+    "anchor": "2026-06-02",
+    "first_seen": "2026-06-02",
+    "expired": false
+  },
+  "d2bcfa29e9db65e0": {
+    "anchor": "2026-06-02",
+    "first_seen": "2026-06-02",
+    "expired": false
+  },
+  "2ad5bfe433e2f54a": {
+    "anchor": "2026-06-02",
+    "first_seen": "2026-06-02",
+    "expired": false
+  },
+  "95301be4cee976ab": {
+    "anchor": "2026-06-02",
+    "first_seen": "2026-06-02",
+    "expired": false
+  },
+  "3423e241cb7baa67": {
+    "anchor": "2026-06-01",
+    "first_seen": "2026-06-02",
+    "expired": false
+  },
+  "4335c10d3b809177": {
+    "anchor": "2026-06-02",
+    "first_seen": "2026-06-02",
+    "expired": false
+  },
+  "c1662d60162ee5c9": {
+    "anchor": "2026-06-02",
+    "first_seen": "2026-06-02",
+    "expired": false
+  },
+  "c37e4aa87d0340c1": {
+    "anchor": "2026-06-02",
+    "first_seen": "2026-06-02",
+    "expired": false
+  },
+  "9c7e70c4785a1799": {
+    "anchor": "2026-06-02",
+    "first_seen": "2026-06-02",
+    "expired": false
+  },
+  "28bfbe072b8370e6": {
+    "anchor": "2026-06-02",
+    "first_seen": "2026-06-02",
+    "expired": false
+  },
+  "939a826e7b9a2892": {
+    "anchor": "2026-06-02",
+    "first_seen": "2026-06-02",
+    "expired": false
+  },
+  "5990a6f67ce81d64": {
+    "anchor": "2026-06-02",
+    "first_seen": "2026-06-02",
+    "expired": false
+  },
+  "6b3cd9ae616540a1": {
+    "anchor": "2026-06-02",
+    "first_seen": "2026-06-02",
+    "expired": false
+  },
+  "4421e718a7b5cb72": {
+    "anchor": "2026-06-02",
+    "first_seen": "2026-06-02",
+    "expired": false
+  },
+  "1aa2395879d53b99": {
+    "anchor": "2026-06-02",
+    "first_seen": "2026-06-02",
+    "expired": false
   }
 }
