@@ -3292,10 +3292,30 @@ TEMPLATE = r"""
       color: var(--text-muted); font-size: 10.5px;
       font-style: italic;
     }
-    /* Standalone Recent Reports card on the Personal Assistant page. */
-    .recent-card { margin: 20px auto 0; max-width: 640px; width: 100%; }
-    .rr-empty { color: var(--text-muted); font-size: 11.5px; padding: 8px 0 2px; }
+    /* Recent Reports page: full-width table (Type · Company · Name · Created · Report). */
+    .recent-card { margin: 20px auto 0; max-width: 100%; width: 100%; text-align: left; }
+    .rr-empty { color: var(--text-muted); font-size: 12px; padding: 10px 0 2px; }
     .recent-card #recent-reports:not(:empty) + .rr-empty { display: none; }
+    .rr-table { width: 100%; border-collapse: collapse; }
+    .rr-table th {
+      text-align: left; font-size: 10px; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--text-dim, #80868b);
+      font-weight: 700; padding: 6px 0 9px; border-bottom: 1px solid var(--border);
+    }
+    .rr-table td {
+      padding: 12px 0; border-bottom: 1px solid var(--border);
+      font-size: 12.5px; vertical-align: middle; color: var(--navy, #1F1F1F);
+    }
+    .rr-table th:not(:first-child), .rr-table td:not(:first-child) { padding-left: 22px; }
+    .rr-table tr:last-child td { border-bottom: none; }
+    .rr-table tr:hover td { background: rgba(60, 64, 67, 0.035); }
+    .rr-type { font-weight: 600; white-space: nowrap; }
+    .rr-when { color: var(--text-muted); white-space: nowrap; font-size: 11.5px; }
+    .rr-muted { color: var(--text-dim, #aab); }
+    .rr-acts { text-align: right; white-space: nowrap; }
+    .rr-acts a { vertical-align: middle; }
+    .rr-acts a + a { margin-left: 8px; }
+    .rr-gen { color: var(--text-muted); font-size: 10.5px; font-style: italic; }
 
     .action-card label {
       display: block;
@@ -3673,9 +3693,9 @@ TEMPLATE = r"""
     #agent .agent-wrap { flex: 1; min-height: 0; overflow-y: auto; max-width: 900px; margin: 0 auto;
       padding: 40px 24px; text-align: center; display: flex; flex-direction: column;
       align-items: center; justify-content: center; }
-    #reports .reports-wrap { flex: 1; min-height: 0; overflow-y: auto; max-width: 760px; margin: 0 auto;
+    #reports .reports-wrap { flex: 1; min-height: 0; overflow-y: auto; max-width: 880px; margin: 0 auto;
       padding: 40px 24px; text-align: center; display: flex; flex-direction: column;
-      align-items: center; }
+      align-items: stretch; }
     #reports .ea-hero { margin-bottom: 26px; }
     .ea-hero { text-align: center; }
     .cc-bigicon { width: 78px; height: 78px; border-radius: 18px; margin: 0 auto 22px; display: grid;
@@ -3702,6 +3722,16 @@ TEMPLATE = r"""
       font-family: "Inter", system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       font-size: 16px; line-height: 22.4px; font-weight: 430; color: rgb(11,11,11); }
     .cinput::placeholder { color: var(--dim); }
+    /* Collapsed prompt (free mode): the pill shows this clean prompt — no
+       text box — until you click it, then the input appears + is focused. */
+    .cinput-cta { display: none; width: 100%; text-align: left; background: transparent;
+      border: none; cursor: text; padding: 0; color: var(--dim);
+      font-family: "Inter", system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 16px; line-height: 22.4px; font-weight: 430; }
+    .composer[data-mode="free"] .cinput { display: none; }
+    .composer[data-mode="free"] .cinput-cta { display: block; }
+    .composer.typing[data-mode="free"] .cinput-cta { display: none; }
+    .composer.typing[data-mode="free"] .cinput { display: block; }
     .cf-head { display: flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 600; color: var(--ink); }
     .cf-head .cf-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--blue); }
     .cf-desc { font-size: 12.5px; color: var(--muted); margin-top: 7px; line-height: 1.5; }
@@ -4132,8 +4162,10 @@ TEMPLATE = r"""
         <div class="inner">
           <div class="cform" data-cform>
 
-            <!-- DEFAULT free-text prompt (shown when no chip is active) -->
-            <input class="cinput" id="cprompt" placeholder="Tell me what to make…">
+            <!-- DEFAULT: a clean prompt (no text box). Clicking it reveals the
+                 input so you can type — like the Claude pills. -->
+            <button type="button" class="cinput-cta" id="cinput-cta">Ask the assistant to build a report…</button>
+            <input class="cinput" id="cprompt" placeholder="What report shall I build? (e.g. “pitch pack for Unilever”)">
 
             <!-- PITCH PACK -->
             <div class="cap-form" data-cap="pitch">
@@ -5649,59 +5681,48 @@ async function clearRecentReports(btn) {
 async function loadRecentReports() {
   const body = document.getElementById('recent-reports');
   if (!body) return;
-  // Detail = company / candidate name when we have it, else the
-  // report's own type label as the primary line. Either way we render
-  // at weight 500 so it doesn't compete with the h3.
-  const inlineDetail = (x) => {
-    const parts = [];
-    if (x.company && x.company !== '—') parts.push(x.company);
-    if (x.name) parts.push(x.name);
-    return parts.join(' · ');
-  };
+  const empty = document.getElementById('rr-empty');
+  const DL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>' +
+    '<polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
   try {
     const r = await fetch('/api/output/recent');
     const j = await r.json();
     if (!j.rows || !j.rows.length) {
       body.innerHTML = '';
+      if (empty) empty.style.display = '';
       return;
     }
+    if (empty) empty.style.display = 'none';
     const now = Date.now();
-    const out = [];
-    const rows = j.rows.slice(0, 30);
-    for (let i = 0; i < rows.length; i++) {
-      const x = rows[i];
+    const out = ['<table class="rr-table"><thead><tr>' +
+      '<th>Type</th><th>Company</th><th>Name</th><th>Created</th>' +
+      '<th class="rr-acts">Report</th></tr></thead><tbody>'];
+    for (const x of j.rows.slice(0, 30)) {
       const t = new Date(x.ts).getTime();
       const mins = Math.max(0, Math.round((now - t) / 60000));
-      const ago = mins < 1 ? 'now'
-                : mins < 60 ? mins + 'm'
-                : mins < 1440 ? Math.round(mins / 60) + 'h'
-                : Math.round(mins / 1440) + 'd';
-      const detail = inlineDetail(x);
-      // No <strong> wrap — CSS .rr2-name gives the right weight.
-      const namePart = detail
-        ? '<span class="rr2-primary">' + esc(detail) + '</span> · <span class="rr2-type">' + esc(x.type) + '</span>'
-        : '<span class="rr2-primary">' + esc(x.type) + '</span>';
-      let action;
+      const ago = mins < 1 ? 'just now'
+                : mins < 60 ? mins + ' min ago'
+                : mins < 1440 ? Math.round(mins / 60) + 'h ago'
+                : Math.round(mins / 1440) + 'd ago';
+      let acts;
       if (x.id) {
-        const dl = '/api/output/view?artifact=' +
-          encodeURIComponent(x.artifact) + '&id=' + encodeURIComponent(x.id) + '&download=1';
-        action = '<a class="rr2-icon" href="' + dl + '" title="Download" download>' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-          '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>' +
-          '<polyline points="7 10 12 15 17 10"/>' +
-          '<line x1="12" y1="15" x2="12" y2="3"/></svg></a>';
+        const base = '/api/output/view?artifact=' +
+          encodeURIComponent(x.artifact) + '&id=' + encodeURIComponent(x.id);
+        acts = '<a class="btn-mini" href="' + base + '" target="_blank" rel="noopener noreferrer">View</a>' +
+          '<a class="rr2-icon" href="' + base + '&download=1" title="Download" download>' + DL_SVG + '</a>';
       } else {
-        action = '<span class="rr2-gen">generating…</span>';
+        acts = '<span class="rr-gen">generating…</span>';
       }
       out.push(
-        '<div class="rr2">' +
-          '<span class="rr2-num">' + (i + 1) + '</span>' +
-          '<span class="rr2-name">' + namePart + '</span>' +
-          '<span class="rr2-age">' + esc(ago) + '</span>' +
-          action +
-        '</div>'
+        '<tr><td class="rr-type">' + esc(x.type) + '</td>' +
+        '<td>' + (x.company && x.company !== '—' ? esc(x.company) : '<span class="rr-muted">—</span>') + '</td>' +
+        '<td>' + (x.name ? esc(x.name) : '<span class="rr-muted">—</span>') + '</td>' +
+        '<td class="rr-when">' + esc(ago) + '</td>' +
+        '<td class="rr-acts">' + acts + '</td></tr>'
       );
     }
+    out.push('</tbody></table>');
     body.innerHTML = out.join('');
   } catch (e) {
     body.innerHTML = '<div class="empty compact">Could not load recent reports.</div>';
@@ -5754,6 +5775,7 @@ async function loadRecentReports() {
 
     function showFree() {
       composer.dataset.mode = 'free';
+      composer.classList.remove('typing');   // back to the collapsed prompt
       capForms.forEach(function (f) { f.classList.remove('active'); });
       var ch = agent.querySelector('.cap-choose'); if (ch) ch.remove();   // clear any chooser
       if (cprompt) cprompt.style.display = '';
@@ -5776,6 +5798,14 @@ async function loadRecentReports() {
         if (composer.dataset.mode === cap) showFree(); else showCap(cap);
       });
     });
+    // Click the collapsed prompt -> reveal the input and focus it (Claude-style).
+    var cinputCta = document.getElementById('cinput-cta');
+    if (cinputCta) {
+      cinputCta.addEventListener('click', function () {
+        composer.classList.add('typing');
+        if (cprompt) { cprompt.style.display = ''; try { cprompt.focus(); } catch (e) {} }
+      });
+    }
     // ----- Free-text router: type a request any way you like and the
     // composer works out which report you mean, fills the matching form from
     // your words, and runs it. Restores the natural-language entry we had
