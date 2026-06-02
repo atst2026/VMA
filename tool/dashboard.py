@@ -3306,7 +3306,10 @@ TEMPLATE = r"""
       padding: 12px 0; border-bottom: 1px solid var(--border);
       font-size: 12.5px; vertical-align: middle; color: var(--navy, #1F1F1F);
     }
-    .rr-table th:not(:first-child), .rr-table td:not(:first-child) { padding-left: 22px; }
+    .rr-table th:not(:first-child), .rr-table td:not(:first-child) { padding-left: 44px; }
+    /* Let the Company / Name columns take the slack so columns breathe. */
+    .rr-table th:nth-child(2), .rr-table th:nth-child(3) { width: 28%; }
+    .rr-table th:nth-child(1) { width: 18%; }
     .rr-table tr:last-child td { border-bottom: none; }
     .rr-table tr:hover td { background: rgba(60, 64, 67, 0.035); }
     .rr-type { font-weight: 600; white-space: nowrap; }
@@ -3693,8 +3696,8 @@ TEMPLATE = r"""
     #agent .agent-wrap { flex: 1; min-height: 0; overflow-y: auto; max-width: 900px; margin: 0 auto;
       padding: 40px 24px; text-align: center; display: flex; flex-direction: column;
       align-items: center; justify-content: center; }
-    #reports .reports-wrap { flex: 1; min-height: 0; overflow-y: auto; max-width: 1100px; margin: 0 auto;
-      padding: 40px 32px; text-align: center; display: flex; flex-direction: column;
+    #reports .reports-wrap { flex: 1; min-height: 0; overflow-y: auto; max-width: 1280px; margin: 0 auto;
+      padding: 40px 40px; text-align: center; display: flex; flex-direction: column;
       align-items: stretch; }
     #reports .ea-hero { margin-bottom: 26px; }
     .ea-hero { text-align: center; }
@@ -3722,12 +3725,6 @@ TEMPLATE = r"""
       font-family: "Inter", system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       font-size: 16px; line-height: 22.4px; font-weight: 430; color: rgb(11,11,11); }
     .cinput::placeholder { color: var(--dim); }
-    /* Free mode = a compact, Claude-style single-line input: the prompt and
-       the send button sit on ONE row, so it's a clean input — not a tall
-       block. (Chip forms keep the taller column layout.) */
-    .composer[data-mode="free"] .inner { flex-direction: row; align-items: center; gap: 8px; margin: 8px 8px 8px 16px; }
-    .composer[data-mode="free"] .cform { min-height: auto; max-height: none; overflow: visible; padding: 0; flex: 1 1 auto; }
-    .composer[data-mode="free"] .cfoot { flex: 0 0 auto; }
     .cf-head { display: flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 600; color: var(--ink); }
     .cf-head .cf-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--blue); }
     .cf-desc { font-size: 12.5px; color: var(--muted); margin-top: 7px; line-height: 1.5; }
@@ -4158,8 +4155,8 @@ TEMPLATE = r"""
         <div class="inner">
           <div class="cform" data-cform>
 
-            <!-- DEFAULT free-text prompt — clean Claude-style single-line input -->
-            <input class="cinput" id="cprompt" placeholder="How can I help you today?">
+            <!-- DEFAULT free-text prompt (shown when no chip is active) -->
+            <input class="cinput" id="cprompt" placeholder="Tell me what to make…">
 
             <!-- PITCH PACK -->
             <div class="cap-form" data-cap="pitch">
