@@ -14,10 +14,10 @@
       "portal": "https://www.crowncommercial.gov.uk",
       "notes": "GP impact modest (\u00a35\u201320k/search) but defines where VMA can compete on central-gov exec search.",
       "first_seen": "2026-06-02T00:36:59.391578+00:00",
-      "last_seen": "2026-06-02T00:36:59.391578+00:00",
       "status": "active",
       "followed_up_at": null,
-      "dismissed_at": null
+      "dismissed_at": null,
+      "last_seen": "2026-06-02T09:52:16.485860+00:00"
     },
     "nhs_rm6380_workforce_alliance": {
       "key": "nhs_rm6380_workforce_alliance",
@@ -33,10 +33,10 @@
       "portal": "https://www.crowncommercial.gov.uk",
       "notes": "Health-sector comms-leadership searches; verify lot coverage for comms roles.",
       "first_seen": "2026-06-02T00:36:59.391578+00:00",
-      "last_seen": "2026-06-02T00:36:59.391578+00:00",
       "status": "active",
       "followed_up_at": null,
-      "dismissed_at": null
+      "dismissed_at": null,
+      "last_seen": "2026-06-02T09:52:16.485860+00:00"
     },
     "nda_shared_services_lot6": {
       "key": "nda_shared_services_lot6",
@@ -52,10 +52,10 @@
       "portal": "https://www.gov.uk/government/organisations/nuclear-decommissioning-authority",
       "notes": "Niche but high-value; confirm Lot 6 scope covers comms/corporate-affairs leadership.",
       "first_seen": "2026-06-02T00:36:59.391578+00:00",
-      "last_seen": "2026-06-02T00:36:59.391578+00:00",
       "status": "active",
       "followed_up_at": null,
-      "dismissed_at": null
+      "dismissed_at": null,
+      "last_seen": "2026-06-02T09:52:16.485860+00:00"
     },
     "devolved_gov_exec_search": {
       "key": "devolved_gov_exec_search",
@@ -71,11 +71,11 @@
       "portal": "https://www.publiccontractsscotland.gov.uk",
       "notes": "Track each administration's own portal; references vary by nation.",
       "first_seen": "2026-06-02T00:36:59.391578+00:00",
-      "last_seen": "2026-06-02T00:36:59.391578+00:00",
       "status": "active",
       "followed_up_at": null,
-      "dismissed_at": null
+      "dismissed_at": null,
+      "last_seen": "2026-06-02T09:52:16.485860+00:00"
     }
   },
-  "updated_at": "2026-06-02T00:36:59.392186+00:00"
+  "updated_at": "2026-06-02T09:52:16.486389+00:00"
 }
