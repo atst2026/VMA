@@ -5883,17 +5883,24 @@ async function loadRecentReports() {
     // reveals the pre-filled form so the user can confirm (after an ambiguous
     // prompt where they picked the type).
     function fillAndShow(cap, text, submit) {
+      // Detect the job title FIRST, then read names/companies from the text
+      // with the title removed — so a title is never read as a person or a
+      // company. Same concept for every report type.
+      var title = extractTitle(text) || extractRole(text);
+      var lean = stripPhrase(text, title);
       if (cap === 'pitch') {
-        setField('pp-account', extractAccount(text)); setField('pp-role', extractRole(text));
+        setField('pp-account', extractAccount(lean)); setField('pp-role', title);
       } else if (cap === 'reverse') {
-        // candidate name (after match/for), their company (after at/from), title
-        setField('rm-name', extractCandidate(text));
-        setField('rm-company', extractCompany(text));
-        setField('rm-title', extractRole(text));
+        // their company (after at/from), then the candidate name from what's
+        // left once the title AND company are out of the way.
+        var company = extractCompany(lean);
+        setField('rm-company', company);
+        setField('rm-name', extractCandidate(stripPhrase(lean, company)));
+        setField('rm-title', title);
       } else if (cap === 'premeeting') {
         // account = who you're meeting (after for/at); contact = person (after with)
-        setField('pm-account', phraseAfter(text, ['for', 'at', 'about']) || extractAccount(text));
-        var withName = phraseAfter(text, ['with']);
+        setField('pm-account', phraseAfter(lean, ['for', 'at', 'about']) || extractAccount(lean));
+        var withName = phraseAfter(lean, ['with']);
         if (withName) setField('pm-contact', withName);
       } else if (cap === 'sweep') {
         var d = (text.match(/(\d+)\s*days?/) || [])[1]; setField('sw-days', d || '14');
@@ -5977,6 +5984,52 @@ async function loadRecentReports() {
         if (out.length) return titleCase(out.join(' ').trim());
       }
       return '';
+    }
+    // ---- title-aware entity extraction -----------------------------------
+    // A job title can appear in ANY order ("marketing & comms director
+    // heather kirkman", "heather kirkman, comms director", "director of
+    // marketing") and must NEVER be mistaken for a person's name or a
+    // company. So we detect the TITLE first, then read the name / company
+    // from the text with the title removed. This is the shared concept behind
+    // every report the pill builds — not just Reverse Match.
+    var ROLE = /^(head|director|dir|chief|vp|svp|evp|manager|mgr|lead|officer|cmo|cco|ceo|cfo|cto|coo|president|partner|principal|executive|exec|controller)$/i;
+    var SPEC = /^(communications?|comms|marketing|brand|branding|affairs|relations|engagement|corporate|digital|content|pr|reputation|campaigns?|growth|demand|product|sales|public|advertising|press|media)$/i;
+    var MOD  = /^(senior|snr|sr|global|group|interim|deputy|regional|national|internal|external|associate|assistant|junior|acting|of|and|the|for|in|&|emea|uk|us|international|strategic|strategy)$/i;
+    var SMALLWORD = /^(of|and|the|for|in|&)$/i;
+    function cleanWord(w) { return w.replace(/[^A-Za-z&'’-]/g, ''); }
+    function extractTitle(text) {
+      var words = text.split(/\s+/);
+      var best = '';
+      var i = 0;
+      while (i < words.length) {
+        var b = cleanWord(words[i]);
+        if (ROLE.test(b) || SPEC.test(b)) {
+          var j = i, hasRole = false, hasSpec = false, run = [];
+          while (j < words.length) {
+            var bj = cleanWord(words[j]);
+            if (ROLE.test(bj) || SPEC.test(bj) || MOD.test(bj)) {
+              run.push(words[j].replace(/[,.;:]+$/, ''));
+              if (ROLE.test(bj)) hasRole = true;
+              if (SPEC.test(bj)) hasSpec = true;
+              j++;
+            } else break;
+          }
+          while (run.length && SMALLWORD.test(cleanWord(run[run.length - 1]))) run.pop();
+          while (run.length && SMALLWORD.test(cleanWord(run[0]))) run.shift();
+          if (run.length && (hasRole || (hasSpec && run.length >= 2))) {
+            var cand = run.join(' ');
+            if (cand.length > best.length) best = cand;
+          }
+          i = (j > i) ? j : i + 1;
+        } else i++;
+      }
+      if (!best) return '';
+      return titleCase(best).replace(/\b(Of|And|The|For|In)\b/g, function (w) { return w.toLowerCase(); });
+    }
+    function stripPhrase(text, phrase) {
+      if (!phrase) return text;
+      var rx = new RegExp('\\b' + phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'ig');
+      return text.replace(rx, ' ').replace(/\s+/g, ' ').trim();
     }
     function extractAccount(text) {
       // company/account: after for/at/with/about, else first capitalised run
