@@ -77,7 +77,19 @@ class ContactEntry:
         except Exception:
             return False
         now = as_of or datetime.now(timezone.utc)
-        return (now - v) < timedelta(days=FRESHNESS_DAYS)
+        # Coerce naive timestamps (hand-edited / externally-written entries)
+        # to UTC so a tz-aware minus tz-naive subtraction can't raise. The
+        # earlier try/except wrapped only the parse, not this subtraction,
+        # so a naive verified_at used to throw an uncaught TypeError and
+        # crash the caller (resolve_lead_contact / best_named_contact).
+        if v.tzinfo is None:
+            v = v.replace(tzinfo=timezone.utc)
+        if now.tzinfo is None:
+            now = now.replace(tzinfo=timezone.utc)
+        try:
+            return (now - v) < timedelta(days=FRESHNESS_DAYS)
+        except Exception:
+            return False
 
 
 @dataclass
