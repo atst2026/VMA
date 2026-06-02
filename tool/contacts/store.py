@@ -68,6 +68,15 @@ def _core_company(name: str) -> str:
     return re.sub(r"\s+", " ", s).strip()
 
 
+def core_company_key(name: str) -> str:
+    """Public alias for the core-name normaliser behind get_contact. Lets
+    other modules (e.g. auto_update) match companies the SAME lenient way
+    the runtime reader does, instead of a divergent exact-string match that
+    silently fails to expire a departed person when the card key carries a
+    legal suffix the event doesn't ('HSBC Holdings plc' vs 'HSBC')."""
+    return _core_company(name)
+
+
 def get_contact(contacts: dict[str, ContactCard], company: str) -> ContactCard | None:
     """Case-insensitive lookup. Exact (normalised) match wins; if none, fall
     back to a core-name match so e.g. "HSBC UK" resolves to the "HSBC" card."""
