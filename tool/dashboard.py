@@ -855,43 +855,72 @@ _register_json_error_handlers(app)
 # Render's filesystem is ephemeral — pull the durably-stored copies of
 # the dashboard-written state files into local state before serving, so
 # a redeploy/cold-start keeps dismissed leads and the watch roster.
-def _boot_state_hydrate():
+_HYDRATE_PATHS = [
+    "tool/state/candidate_watch.json",
+    "tool/state/lead_status.json",
+    "tool/state/lead_first_seen.json",
+    "tool/state/funding_status.json",
+    "tool/state/framework_status.json",
+    "tool/state/pulse_dismissed.json",
+    "tool/state/report_log.json",
+    "tool/state/predictor_status.json",
+    "tool/state/contact_flags.json",
+    "tool/state/cascade_events.json",
+    "tool/state/cascade_suppression.json",
+    "tool/state/top_three_state.json",
+    # Morning-brief outputs — pulled on cold-start so the
+    # dashboard shows leads + predictors + funding immediately
+    # on opening, not just after Daily Refresh.
+    "tool/state/latest_signals.json",
+    "tool/state/latest_predictive.json",
+    "tool/state/latest_funding.json",
+    "tool/state/predictor_pipeline.json",
+    # BD-Calendar auto-update pipelines (curated baseline +
+    # auto-discovered placement windows / events / frameworks).
+    "tool/state/calendar_pipeline_windows.json",
+    "tool/state/calendar_pipeline_events.json",
+    "tool/state/calendar_pipeline_frameworks.json",
+]
+
+
+def _hydrate_active() -> None:
+    """Restore the ACTIVE desk's state namespace from the dashboard-state
+    branch. github_state._ns() namespaces every path by the active profile,
+    so comms restores tool/state/… and marketing restores
+    tool/state/marketing/… — each desk only ever touches its own files."""
     try:
         from tool import github_state
-        github_state.hydrate([
-            "tool/state/candidate_watch.json",
-            "tool/state/lead_status.json",
-            "tool/state/lead_first_seen.json",
-            "tool/state/funding_status.json",
-            "tool/state/framework_status.json",
-            "tool/state/pulse_dismissed.json",
-            "tool/state/report_log.json",
-            "tool/state/predictor_status.json",
-            "tool/state/contact_flags.json",
-            "tool/state/cascade_events.json",
-            "tool/state/cascade_suppression.json",
-            "tool/state/top_three_state.json",
-            # Morning-brief outputs — pulled on cold-start so the
-            # dashboard shows leads + predictors + funding immediately
-            # on opening, not just after Daily Refresh.
-            "tool/state/latest_signals.json",
-            "tool/state/latest_predictive.json",
-            "tool/state/latest_funding.json",
-            "tool/state/predictor_pipeline.json",
-            # BD-Calendar auto-update pipelines (curated baseline +
-            # auto-discovered placement windows / events / frameworks).
-            "tool/state/calendar_pipeline_windows.json",
-            "tool/state/calendar_pipeline_events.json",
-            "tool/state/calendar_pipeline_frameworks.json",
-        ])
+        github_state.hydrate(list(_HYDRATE_PATHS))
     except Exception as e:
         log.warning("state hydrate skipped: %s", e)
+
+
+def _boot_state_hydrate():
+    """At cold start, restore EVERY desk's namespace — comms AND marketing —
+    not just the env default. Both desks are served from this one process, so
+    the marketing namespace must be hydrated too; without it a Render
+    free-tier spin-down left the marketing desk empty/stale (zero live jobs,
+    last-known BD leads) until a manual refresh. We pin VMA_PROFILE per pass
+    so _ns() targets the right namespace. Safe to mutate the env here: this
+    runs once at import, single-threaded, before any request is served, and
+    the original value is restored afterwards."""
+    from tool.profiles import all_profiles
+    _prev = os.environ.get("VMA_PROFILE")
+    try:
+        for p in all_profiles():
+            os.environ["VMA_PROFILE"] = p.key
+            _hydrate_active()
+    finally:
+        if _prev is None:
+            os.environ.pop("VMA_PROFILE", None)
+        else:
+            os.environ["VMA_PROFILE"] = _prev
 
 
 _boot_state_hydrate()
 
 
-_LAST_STATE_REFRESH = None  # datetime of the last stale re-hydrate attempt
+_LAST_STATE_REFRESH: dict[str, datetime] = {}  # per-DESK last stale re-hydrate
 
 
 def _brief_is_today() -> bool:
@@ -920,19 +949,27 @@ def _refresh_state_if_stale() -> None:
     dashboard-state branch, whose pipeline copy can lag the artifact).
     Bounded to once / 10 minutes so a pre-brief window never hammers the
     API. Restores leads + predictors + funding together."""
-    global _LAST_STATE_REFRESH
     if _brief_is_today():
         return
     now = datetime.now(timezone.utc)
-    if _LAST_STATE_REFRESH and (now - _LAST_STATE_REFRESH) < timedelta(minutes=10):
+    # Per-DESK throttle: comms and marketing share this ONE process, so a
+    # single shared timer let busy comms traffic (or a keep-warm pinger)
+    # consume the 10-min budget and permanently starve the marketing desk's
+    # recovery pull — leaving it on stale boot data. Key the throttle by desk
+    # so each recovers independently.
+    key = active_profile().key
+    last = _LAST_STATE_REFRESH.get(key)
+    if last and (now - last) < timedelta(minutes=10):
         return
-    _LAST_STATE_REFRESH = now
+    _LAST_STATE_REFRESH[key] = now
     try:
         if GITHUB_TOKEN:
             res = refresh_latest_brief_from_github()
-            log.info("auto stale-refresh: %s", res.get("detail", res))
+            log.info("auto stale-refresh [%s]: %s", key, res.get("detail", res))
         else:
-            _boot_state_hydrate()
+            # No token to pull the live artifact — restore THIS desk's
+            # namespace from the durable state branch instead.
+            _hydrate_active()
     except Exception as e:
         log.warning("auto stale-refresh failed: %s", e)
 
@@ -1070,12 +1107,31 @@ def _resolve_desk_profile():
     g.vma_profile = key if key in ("comms", "marketing") else "comms"
 
 
+@app.after_request
+def _no_store(resp):
+    """Every page and API response is LIVE, per-desk data — never let a
+    browser (especially mobile Safari/Chrome, which cache aggressively and
+    don't truly purge on pull-to-refresh) replay a stale copy after a deploy
+    or a desk switch. This is the difference behind 'laptop shows the fix but
+    my phone still shows the old data'. No effect on the comms desk beyond
+    guaranteeing it always renders the latest server state."""
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Expires"] = "0"
+    return resp
+
+
 def _desk_response(profile_key: str):
     """Render the dashboard for `profile_key` and pin the desk cookie so the
     page's API calls resolve to the same desk."""
     g.vma_profile = profile_key
     resp = make_response(_render_dashboard())
-    resp.set_cookie("vma_profile", profile_key, samesite="Lax")
+    # Persist the desk choice (max_age) + pin path so it survives a phone
+    # backgrounding the tab / opening from a home-screen shortcut — otherwise
+    # a dropped session cookie sends the desk's own API calls back to the
+    # comms default. Identical for both desks, so comms is unaffected.
+    resp.set_cookie("vma_profile", profile_key, samesite="Lax",
+                    path="/", max_age=60 * 60 * 24 * 180)
     return resp
 
 
