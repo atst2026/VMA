@@ -216,6 +216,13 @@ def _normalise(name: str) -> str:
     return s.strip()
 
 
+def _starts_at_boundary(needle: str, hay: str) -> bool:
+    """True if `needle` occurs in `hay` beginning at a word boundary."""
+    if not needle or not hay:
+        return False
+    return re.search(r"(?<!\w)" + re.escape(needle), hay) is not None
+
+
 def detect_sector(name: str) -> str | None:
     """Best-effort sector detection. Direct match first, then fuzzy."""
     if not name:
@@ -223,14 +230,21 @@ def detect_sector(name: str) -> str | None:
     n = _normalise(name)
     if not n:
         return None
-    # Exact lookup against normalised hardcoded list
+    # Exact lookup against normalised hardcoded list. Every curated name
+    # self-detects here, so the fuzzy fallback below can only ever affect
+    # partial / variant queries — never a curated company's own sector.
     for known, sector in COMPANY_TO_SECTOR.items():
         if _normalise(known) == n:
             return sector
-    # Substring match (e.g. "Barclays UK" matches "Barclays")
+    # Word-boundary-anchored containment (e.g. "Barclays UK" matches
+    # "Barclays"; "Lloyds Bank" matches "Lloyds Banking Group"). Anchoring
+    # the match to a token boundary stops a stripped short stem — "RS Group"
+    # -> "rs" — from matching MID-WORD inside an unrelated employer
+    # ("Rive[rs]ide Housing Association"), which used to mis-assign a sector
+    # (and its heat multiplier) to off-watchlist leads.
     for known, sector in COMPANY_TO_SECTOR.items():
         k = _normalise(known)
-        if k and (k in n or n in k):
+        if k and (_starts_at_boundary(k, n) or _starts_at_boundary(n, k)):
             return sector
     return None
 
