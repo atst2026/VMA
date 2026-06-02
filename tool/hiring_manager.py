@@ -442,6 +442,11 @@ def best_named_contact(company: str, slots: tuple,
         key = f"{company}::{slot}"
         if flagged.get(key, {}).get("name") == entry.name:
             continue   # user flagged this exact person as wrong
+        # Conservative named-tier gate: a sub-threshold entry is a weak /
+        # speculative match — skip it entirely (don't even keep it as a
+        # stale fallback), so the lead falls through to a role-search.
+        if not entry.meets_named_confidence():
+            continue
         if entry.is_fresh():
             return {
                 "name": entry.name,

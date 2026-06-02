@@ -31,6 +31,15 @@ ROLE_SLOTS = (
 # contact (and the entry is queued for re-verification).
 FRESHNESS_DAYS = 120
 
+# Minimum stored confidence for an entry to surface as a NAMED contact.
+# Below this, the entry is treated like a miss and the UI falls back to a
+# role-search ("verified or fallback" — naming a weak guess is worse than a
+# search). Set conservatively: the live curated graph floors at 0.70, and
+# Companies House / RNS / auto-populated entries are 0.85–0.92, so 0.70
+# keeps every genuinely-sourced contact and drops only the speculative
+# single-scrape sources (e.g. bright_data at 0.55). Tighten via feedback.
+MIN_NAMED_CONFIDENCE = 0.70
+
 # How long to wait before retrying an entity that's failed 3 resolution
 # attempts in a row. Distinct from CACHE_TTL_DAYS in linkedin_resolver.
 COOL_OFF_DAYS = 30
@@ -90,6 +99,12 @@ class ContactEntry:
             return (now - v) < timedelta(days=FRESHNESS_DAYS)
         except Exception:
             return False
+
+    def meets_named_confidence(self) -> bool:
+        """True if this entry is strong enough to surface as a NAMED
+        contact (vs falling back to a role-search). The single, shared
+        named-tier gate used by every runtime reader."""
+        return (self.confidence or 0.0) >= MIN_NAMED_CONFIDENCE
 
 
 @dataclass

@@ -342,11 +342,12 @@ def resolve_named_contact_for_lead(signal: dict, contacts: dict | None = None) -
     if card is None:
         return None
     entry = card.get(slot)
-    # Lead-side: walk a short fallback if the primary slot is missing
-    if entry is None or not entry.is_fresh():
+    # Lead-side: walk a short fallback if the primary slot is missing or
+    # below the named-tier confidence floor (same gate as every reader).
+    if entry is None or not entry.is_fresh() or not entry.meets_named_confidence():
         for fallback in ("cco", "head_of_comms", "chro", "ceo"):
             cand = card.get(fallback)
-            if cand and cand.is_fresh():
+            if cand and cand.is_fresh() and cand.meets_named_confidence():
                 entry = cand
                 slot = fallback
                 break

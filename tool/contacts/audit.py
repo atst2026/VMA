@@ -173,25 +173,35 @@ def check_company_match_consistency():
 # Check 4 — the display gate uses confidence, not just freshness
 # --------------------------------------------------------------------------
 def check_confidence_gate():
-    """A fresh-but-low-confidence entry should NOT be surfaced as a named
-    contact. Today best_named_contact returns the first fresh entry
-    regardless of confidence, so a weak guess displays as if verified."""
+    """A fresh-but-low-confidence entry must NOT surface as a named contact
+    in EITHER runtime reader — jobs/signals (best_named_contact) and
+    predictors (routing.pick_contact_for_trigger). Otherwise a weak guess
+    displays as if verified, on whichever path the lead arrives by."""
     from tool.contacts.schema import ContactEntry
     from tool.contacts.store import upsert_contact
+    from tool.contacts.routing import pick_contact_for_trigger
     from tool import hiring_manager as hm
 
     fresh = datetime.now(timezone.utc).isoformat()
     contacts = {}
-    upsert_contact(contacts, "TestCo", "cco", ContactEntry(
+    card = upsert_contact(contacts, "TestCo", "cco", ContactEntry(
         name="Weak Guess", role_title="comms person", role_slot="cco",
         verified_at=fresh, confidence=0.15))
 
+    leaks = []
     nc = hm.best_named_contact("TestCo", ("cco",), contacts=contacts)
     if nc and nc.get("name") == "Weak Guess":
+        leaks.append("best_named_contact (jobs/signals)")
+    entry, _slot = pick_contact_for_trigger(card, "comms_leader_departure")
+    if entry is not None and getattr(entry, "name", "") == "Weak Guess":
+        leaks.append("pick_contact_for_trigger (predictors)")
+
+    if leaks:
         return ("confidence gate", FAIL,
-                "best_named_contact returned a fresh 0.15-confidence name as a "
-                "verified contact — display is freshness-gated, not confidence-gated")
-    return ("confidence gate", PASS, "low-confidence fresh entry was withheld")
+                f"a fresh 0.15-confidence guess surfaced as a named contact via "
+                f"{leaks} — display is freshness-gated, not confidence-gated")
+    return ("confidence gate", PASS,
+            "low-confidence fresh entry withheld in both runtime readers")
 
 
 # --------------------------------------------------------------------------
