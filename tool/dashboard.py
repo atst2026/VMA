@@ -3767,7 +3767,7 @@ TEMPLATE = r"""
     /* White card: an explicit, consistent size (it used to shrink-wrap its
        content when empty). 20% shorter than the 360px action-card (-> 288px)
        and a good deal wider, centred under the hero. */
-    #reports .recent-card { width: min(1080px, 92vw); max-width: none; height: 288px;
+    #reports .recent-card { width: min(972px, 92vw); max-width: none; height: 288px;
       margin: 0 auto; }
     .ea-hero { text-align: center; }
     .cc-bigicon { width: 78px; height: 78px; border-radius: 18px; margin: 0 auto 22px; display: grid;
@@ -3777,11 +3777,7 @@ TEMPLATE = r"""
       letter-spacing: -.01em; color: var(--ink); text-align: center; }
     .cc-sub { font-size: 13.5px; color: var(--muted); margin-top: 11px; }
     /* Agent page: full-size hero sits just above the centred composer pill. */
-    /* Balanced flex regions above + below the composer so the PILL itself
-       sits at the exact vertical centre (the hero hugs it from above, the
-       chips from below). Doesn't touch the composer's own size. */
-    #agent .ea-hero { margin-bottom: 26px; flex: 1 1 0; min-height: 0;
-      display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+    #agent .ea-hero { margin-bottom: 26px; }
 
     /* COMPOSER PILL — verbatim spec from approved mockup. */
     .composer { box-sizing: content-box; width: 672px; max-width: 100%; background: #fff;
@@ -3851,7 +3847,7 @@ TEMPLATE = r"""
       border-left: 2px solid #C93B2B; display: block; }
 
     /* chips below the pill (scoped to #agent so it never hits the predictor .chips) */
-    #agent .chips { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; align-content: flex-start; margin-top: 22px; max-width: 600px; flex: 1 1 0; min-height: 0; }
+    #agent .chips { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; margin-top: 22px; max-width: 600px; }
     #agent .chip { display: inline-flex; align-items: center; gap: 8px; background: transparent;
       border: 1px solid var(--border); border-radius: 11px; padding: 10px 14px; font: 500 13px/1 "Inter", sans-serif;
       color: var(--ink); transition: all .14s; cursor: pointer; }
