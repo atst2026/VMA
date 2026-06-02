@@ -1,0 +1,113 @@
+{
+  "items": {
+    "cipr_excellence_2026": {
+      "key": "cipr_excellence_2026",
+      "name": "CIPR Excellence Awards",
+      "event_date": "2026-07-01",
+      "action_window": [
+        "2026-05-01",
+        "2026-07-01"
+      ],
+      "location": "Royal Lancaster Hotel, London",
+      "focus": "external",
+      "why_now": "UK PR practitioner gold standard (42nd year); 145 orgs across 33 categories. Senior in-house comms judges + finalists = a direct relationship route.",
+      "source": "https://awards.cipr.co.uk/",
+      "first_seen": "2026-06-02T00:36:58.503840+00:00",
+      "last_seen": "2026-06-02T00:36:58.503840+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "communicate_ic_engagement_live_2026": {
+      "key": "communicate_ic_engagement_live_2026",
+      "name": "Internal Communications & Engagement Live",
+      "event_date": "2026-07-08",
+      "action_window": [
+        "2026-05-08",
+        "2026-07-08"
+      ],
+      "location": "The Brewery, London",
+      "focus": "internal",
+      "why_now": "One-day UK IC conference; delegates + speakers skew Head of IC / Director of IC at large UK employers.",
+      "source": "https://www.communicatemagazine.com/conference/internal-communications-and-engagement-live-2026/",
+      "first_seen": "2026-06-02T00:36:58.503840+00:00",
+      "last_seen": "2026-06-02T00:36:58.503840+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "ioic_awards_2026": {
+      "key": "ioic_awards_2026",
+      "name": "IoIC Awards",
+      "event_date": "2026-09-17",
+      "action_window": [
+        "2026-07-17",
+        "2026-09-17"
+      ],
+      "location": "London",
+      "focus": "internal",
+      "why_now": "Premier UK internal-comms awards. Finalists = visible Heads of IC and IC Directors at large UK employers.",
+      "source": "https://www.ioic.org.uk/awards.html",
+      "first_seen": "2026-06-02T00:36:58.503840+00:00",
+      "last_seen": "2026-06-02T00:36:58.503840+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "icco_global_summit_2026": {
+      "key": "icco_global_summit_2026",
+      "name": "ICCO Global Summit",
+      "event_date": "2026-11-11",
+      "action_window": [
+        "2026-09-11",
+        "2026-11-11"
+      ],
+      "location": "Milan",
+      "focus": "external",
+      "why_now": "International Communications Consultancy Organisation annual summit (11-13 Nov). Consultancy CEOs + senior in-house clients attend; relationship-building venue.",
+      "source": "https://iccopr.com/globalsummit/",
+      "first_seen": "2026-06-02T00:36:58.503840+00:00",
+      "last_seen": "2026-06-02T00:36:58.503840+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "cipr_conference_2026": {
+      "key": "cipr_conference_2026",
+      "name": "CIPR Annual Conference",
+      "event_date": "2026-11-18",
+      "action_window": [
+        "2026-09-18",
+        "2026-11-18"
+      ],
+      "location": "London",
+      "focus": "external",
+      "why_now": "Theme: Organisational Resilience. Speaker line-up is a tier-1 list of senior in-house comms leaders; pre-event outreach has a clear hook.",
+      "source": "https://cipr.co.uk/CIPR/CIPR/Network/Events_/Annual_conference.aspx",
+      "first_seen": "2026-06-02T00:36:58.503840+00:00",
+      "last_seen": "2026-06-02T00:36:58.503840+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "european_excellence_2026": {
+      "key": "european_excellence_2026",
+      "name": "European Excellence Awards",
+      "event_date": "2026-12-11",
+      "action_window": [
+        "2026-10-11",
+        "2026-12-11"
+      ],
+      "location": "Europe",
+      "focus": "mixed",
+      "why_now": "Pan-EU comms awards. UK + EU CCO attendance; useful for European-headquartered briefs landing in London offices.",
+      "source": "https://www.excellence-awards.com/",
+      "first_seen": "2026-06-02T00:36:58.503840+00:00",
+      "last_seen": "2026-06-02T00:36:58.503840+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    }
+  },
+  "updated_at": "2026-06-02T00:36:58.504380+00:00"
+}
