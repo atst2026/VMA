@@ -1,0 +1,408 @@
+{
+  "items": {
+    "fca_consumer_duty_2026": {
+      "key": "fca_consumer_duty_2026",
+      "name": "FCA Consumer Duty \u2014 annual board-report ramp",
+      "window": [
+        "2026-04-01",
+        "2026-07-31"
+      ],
+      "legal_date": "2026-07-31",
+      "sectors": [
+        "financial_services"
+      ],
+      "seat": "Head of Regulatory / Customer Communications (Consumer Duty board report + remediation comms)",
+      "angle": "FS firms must lay an annual Consumer Duty board report by 31 Jul; the Q2 run-up is a repeatable retained-search window for the permanent regulatory-comms seat \u2014 pitch before they advertise.",
+      "scope_note": "FCA-regulated retail financial-services firms (banks, insurers, asset & wealth managers).",
+      "confidence": "high",
+      "source": "FCA Consumer Duty (PRIN 2A) \u2014 annual board report, recurring 31 July cadence.",
+      "first_seen": "2026-06-02T00:36:54.254305+00:00",
+      "last_seen": "2026-06-02T00:36:54.254305+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "uk_srs_2026": {
+      "key": "uk_srs_2026",
+      "name": "UK SRS \u2014 first sustainability-reporting build-up",
+      "window": [
+        "2026-01-01",
+        "2026-12-31"
+      ],
+      "legal_date": "2026 (endorsement + FCA listed-issuer CP)",
+      "sectors": [
+        "financial_services",
+        "energy_utilities",
+        "pharma_healthcare",
+        "industrial_manufacturing"
+      ],
+      "seat": "Head of Sustainability / ESG & Corporate-Reporting Communications",
+      "angle": "UK SRS (IFRS S1/S2) endorsement + FCA listed-issuer consultation land in 2026; large issuers build sustainability-reporting comms ahead of the first mandatory cycle \u2014 get the retained brief before the rush hire.",
+      "scope_note": "FTSE-weight UK-listed issuers in the high-exposure sectors (financials, energy/utilities, pharma, industrials).",
+      "confidence": "medium",
+      "source": "DBT/FRC UK SRS endorsement programme + FCA consultation on listed-company sustainability disclosure, 2026.",
+      "first_seen": "2026-06-02T00:36:54.254305+00:00",
+      "last_seen": "2026-06-02T00:36:54.254305+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "mog_post_sr_2026": {
+      "key": "mog_post_sr_2026",
+      "name": "Machinery-of-government \u2014 post-Spending-Review reshuffle",
+      "window": [
+        "2026-04-01",
+        "2026-12-31"
+      ],
+      "legal_date": "FY2026/27 departmental delivery cycle",
+      "sectors": [
+        "public_sector_charities"
+      ],
+      "seat": "Director of Communications (GCS) \u2014 transition & change communications",
+      "angle": "Spending Review 2025 settlements drive 2026/27 departmental restructures; GCS comms-leadership and transition-comms briefs open as departments and ALBs reorganise \u2014 be ahead of the GCS recruitment cycle.",
+      "scope_note": "UK central-government departments and major ALBs (plus large charities exposed to the same funding cycle).",
+      "confidence": "medium",
+      "source": "HM Treasury Spending Review 2025 settlements \u2192 departmental delivery-plan / reorganisation cycle, FY2026/27.",
+      "first_seen": "2026-06-02T00:36:54.254305+00:00",
+      "last_seen": "2026-06-02T00:36:54.254305+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "agm_reporting_2026": {
+      "key": "agm_reporting_2026",
+      "name": "UK annual-report & AGM season",
+      "window": [
+        "2026-02-01",
+        "2026-06-30"
+      ],
+      "legal_date": "Dec-year-end reporting + AGM cycle, 2026",
+      "sectors": [
+        "financial_services",
+        "energy_utilities",
+        "industrial_manufacturing",
+        "pharma_healthcare"
+      ],
+      "seat": "Head of Investor Relations / Corporate-Reporting & Governance Communications",
+      "angle": "Dec-year-end issuers publish annual reports Feb\u2013Apr and run AGMs Apr\u2013Jun; the run-up is a repeatable retained-search window for the permanent IR/corporate-reporting comms seat \u2014 pitch before the crunch.",
+      "scope_note": "FTSE-weight Dec-year-end UK-listed issuers (financials, energy/utilities, industrials, pharma).",
+      "confidence": "high",
+      "source": "Companies Act annual-report + Listing Rules AGM cycle (December year-ends), 2026.",
+      "first_seen": "2026-06-02T00:36:54.254305+00:00",
+      "last_seen": "2026-06-02T00:36:54.254305+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "gender_pay_gap_2026": {
+      "key": "gender_pay_gap_2026",
+      "name": "Gender Pay Gap \u2014 reporting & scrutiny window",
+      "window": [
+        "2026-03-01",
+        "2026-06-30"
+      ],
+      "legal_date": "2026-04-04 (private) / 2026-03-30 (public)",
+      "sectors": [
+        "financial_services",
+        "public_sector_charities",
+        "retail_consumer"
+      ],
+      "seat": "Head of Internal / DEI Communications (gender-pay narrative + scrutiny response)",
+      "angle": "Statutory GPG reports land Mar\u2013Apr; the publication & media-scrutiny window is a repeatable retained-search window for the permanent internal/DEI-comms seat.",
+      "scope_note": "UK employers with 250+ staff (statutory GPG reporters).",
+      "confidence": "high",
+      "source": "Equality Act 2010 (Gender Pay Gap Information) Regulations 2017 \u2014 annual 4 Apr / 30 Mar deadlines.",
+      "first_seen": "2026-06-02T00:36:54.254305+00:00",
+      "last_seen": "2026-06-02T00:36:54.254305+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "nhs_planning_2026": {
+      "key": "nhs_planning_2026",
+      "name": "NHS operational-planning & restructure round",
+      "window": [
+        "2026-01-01",
+        "2026-05-31"
+      ],
+      "legal_date": "NHS England 2026/27 operational planning + Apr FY",
+      "sectors": [
+        "public_sector_charities"
+      ],
+      "seat": "Director of Communications \u2014 NHS transition & change communications",
+      "angle": "NHS planning guidance + ICB/trust restructures cluster Q1 into the new financial year; comms-leadership and change-comms briefs open before the recruitment cycle.",
+      "scope_note": "NHS trusts, ICBs and arm's-length bodies.",
+      "confidence": "medium",
+      "source": "NHS England operational planning guidance + FY2026/27 cycle.",
+      "first_seen": "2026-06-02T00:36:54.254305+00:00",
+      "last_seen": "2026-06-02T00:36:54.254305+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "he_clearing_2026": {
+      "key": "he_clearing_2026",
+      "name": "Higher-Education clearing & new-intake comms",
+      "window": [
+        "2026-06-15",
+        "2026-09-30"
+      ],
+      "legal_date": "UCAS Clearing Jul\u2013Aug; academic year starts Sep 2026",
+      "sectors": [
+        "public_sector_charities"
+      ],
+      "seat": "Head of Communications / Student Recruitment & Marketing Communications",
+      "angle": "Clearing + new-intake drive a predictable HE comms & marketing capacity surge; secure the retained brief before the summer scramble.",
+      "scope_note": "UK universities and higher-education providers.",
+      "confidence": "medium",
+      "source": "UCAS Clearing cycle + academic year 2026/27.",
+      "first_seen": "2026-06-02T00:36:54.254305+00:00",
+      "last_seen": "2026-06-02T00:36:54.254305+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "pw_70a28958c3025030": {
+      "key": "pw_70a28958c3025030",
+      "name": "FCA: Firms have improved but must do more to prevent sanctions breaches",
+      "window": [
+        "2026-06-02",
+        "2026-08-20"
+      ],
+      "legal_date": "2026-08-20",
+      "sectors": [
+        "financial_services"
+      ],
+      "seat": "Head of Regulatory / Corporate Communications",
+      "angle": "FCA obligation creates a dated comms-capacity build-up in the regulated cohort \u2014 pitch the retained brief before it's advertised.",
+      "scope_note": "FCA-regulated firms in scope of this notice.",
+      "confidence": "medium",
+      "source": "FCA \u2014 Financial firms have made progress in preventing sanctions breaches \u2013 with \u00a337bn",
+      "url": "https://www.fca.org.uk/news/press-releases/firms-have-improved-must-do-more-prevent-sanctions-breaches",
+      "discovered": true,
+      "first_seen": "2026-06-02T00:36:54.254305+00:00",
+      "last_seen": "2026-06-02T00:36:54.254305+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "pw_01bfae8c6aa87557": {
+      "key": "pw_01bfae8c6aa87557",
+      "name": "FCA: Review of financial promotion approvers finds some firms need to raise standards",
+      "window": [
+        "2026-06-02",
+        "2026-08-19"
+      ],
+      "legal_date": "2026-08-19",
+      "sectors": [
+        "financial_services"
+      ],
+      "seat": "Head of Regulatory / Corporate Communications",
+      "angle": "FCA obligation creates a dated comms-capacity build-up in the regulated cohort \u2014 pitch the retained brief before it's advertised.",
+      "scope_note": "FCA-regulated firms in scope of this notice.",
+      "confidence": "medium",
+      "source": "FCA \u2014 Firms that approve financial promotions should be doing more to protect consumer",
+      "url": "https://www.fca.org.uk/news/press-releases/review-financial-promotion-approvers-finds-some-firms-need-raise-standards",
+      "discovered": true,
+      "first_seen": "2026-06-02T00:36:54.254305+00:00",
+      "last_seen": "2026-06-02T00:36:54.254305+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "pw_0f0511d5803afdb0": {
+      "key": "pw_0f0511d5803afdb0",
+      "name": "FCA: Vacancies open for FCA Smaller Business Practitioner Panel",
+      "window": [
+        "2026-06-02",
+        "2026-06-28"
+      ],
+      "legal_date": "2026-06-28",
+      "sectors": [
+        "financial_services"
+      ],
+      "seat": "Head of Regulatory / Corporate Communications",
+      "angle": "FCA obligation creates a dated comms-capacity build-up in the regulated cohort \u2014 pitch the retained brief before it's advertised.",
+      "scope_note": "FCA-regulated firms in scope of this notice.",
+      "confidence": "medium",
+      "source": "FCA \u2014 We\u2019re inviting applications from senior practitioners at smaller regulated firms",
+      "url": "https://www.fca.org.uk/news/news-stories/vacancies-open-fca-smaller-business-practitioner-panel",
+      "discovered": true,
+      "first_seen": "2026-06-02T00:36:54.254305+00:00",
+      "last_seen": "2026-06-02T00:36:54.254305+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "pw_e58da72b53caddd7": {
+      "key": "pw_e58da72b53caddd7",
+      "name": "FCA: Our response to the Treasury\u2019s policy statement on Consumer Credit Act reform",
+      "window": [
+        "2026-06-02",
+        "2026-08-10"
+      ],
+      "legal_date": "2026-08-10",
+      "sectors": [
+        "financial_services"
+      ],
+      "seat": "Head of Regulatory / Corporate Communications",
+      "angle": "FCA obligation creates a dated comms-capacity build-up in the regulated cohort \u2014 pitch the retained brief before it's advertised.",
+      "scope_note": "FCA-regulated firms in scope of this notice.",
+      "confidence": "medium",
+      "source": "FCA \u2014 The Treasury has published its policy statement today on reform of the Consumer ",
+      "url": "https://www.fca.org.uk/news/statements/our-response-treasurys-policy-statement-consumer-credit-act-reform",
+      "discovered": true,
+      "first_seen": "2026-06-02T00:36:54.254305+00:00",
+      "last_seen": "2026-06-02T00:36:54.254305+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "pw_6c91d76e227e42d5": {
+      "key": "pw_6c91d76e227e42d5",
+      "name": "FCA: FCA and Bank of England set out shared vision for tokenisation in UK wholesale markets",
+      "window": [
+        "2026-06-02",
+        "2026-07-03"
+      ],
+      "legal_date": "2026-07-03",
+      "sectors": [
+        "financial_services"
+      ],
+      "seat": "Head of Regulatory / Corporate Communications",
+      "angle": "FCA obligation creates a dated comms-capacity build-up in the regulated cohort \u2014 pitch the retained brief before it's advertised.",
+      "scope_note": "FCA-regulated firms in scope of this notice.",
+      "confidence": "medium",
+      "source": "FCA \u2014 UK financial firms can adopt tokenisation and distributed ledger technology (DLT",
+      "url": "https://www.fca.org.uk/news/press-releases/fca-and-bank-england-set-out-shared-vision-tokenisation-uk-wholesale-markets",
+      "discovered": true,
+      "first_seen": "2026-06-02T00:36:54.254305+00:00",
+      "last_seen": "2026-06-02T00:36:54.254305+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "pw_c582984787432f29": {
+      "key": "pw_c582984787432f29",
+      "name": "FCA: FCA announces new appointments to executive team",
+      "window": [
+        "2026-06-02",
+        "2026-08-05"
+      ],
+      "legal_date": "2026-08-05",
+      "sectors": [
+        "financial_services"
+      ],
+      "seat": "Head of Regulatory / Corporate Communications",
+      "angle": "FCA obligation creates a dated comms-capacity build-up in the regulated cohort \u2014 pitch the retained brief before it's advertised.",
+      "scope_note": "FCA-regulated firms in scope of this notice.",
+      "confidence": "medium",
+      "source": "FCA \u2014 The FCA has announced 2 permanent appointments to its executive team, strengthen",
+      "url": "https://www.fca.org.uk/news/press-releases/fca-announces-new-appointments-executive-team",
+      "discovered": true,
+      "first_seen": "2026-06-02T00:36:54.254305+00:00",
+      "last_seen": "2026-06-02T00:36:54.254305+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "pw_85f7c69a68321d7c": {
+      "key": "pw_85f7c69a68321d7c",
+      "name": "FCA: FCA reviews whether investment firms are doing enough to support bereaved customers",
+      "window": [
+        "2026-06-02",
+        "2026-08-05"
+      ],
+      "legal_date": "2026-08-05",
+      "sectors": [
+        "financial_services"
+      ],
+      "seat": "Head of Regulatory / Corporate Communications",
+      "angle": "FCA obligation creates a dated comms-capacity build-up in the regulated cohort \u2014 pitch the retained brief before it's advertised.",
+      "scope_note": "FCA-regulated firms in scope of this notice.",
+      "confidence": "medium",
+      "source": "FCA \u2014 The FCA is reviewing how consumer investment firms support bereaved customers an",
+      "url": "https://www.fca.org.uk/news/press-releases/fca-reviews-whether-investment-firms-are-doing-enough-support-bereaved-customers",
+      "discovered": true,
+      "first_seen": "2026-06-02T00:36:54.254305+00:00",
+      "last_seen": "2026-06-02T00:36:54.254305+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "pw_19c62c84bd6f5750": {
+      "key": "pw_19c62c84bd6f5750",
+      "name": "FCA: Laying the foundation for confidence",
+      "window": [
+        "2026-06-02",
+        "2026-08-03"
+      ],
+      "legal_date": "2026-08-03",
+      "sectors": [
+        "financial_services"
+      ],
+      "seat": "Head of Regulatory / Corporate Communications",
+      "angle": "FCA obligation creates a dated comms-capacity build-up in the regulated cohort \u2014 pitch the retained brief before it's advertised.",
+      "scope_note": "FCA-regulated firms in scope of this notice.",
+      "confidence": "medium",
+      "source": "FCA \u2014 Speech by Sarah Pritchard, deputy chief executive, at the Investment Association",
+      "url": "https://www.fca.org.uk/news/speeches/laying-foundation-confidence",
+      "discovered": true,
+      "first_seen": "2026-06-02T00:36:54.254305+00:00",
+      "last_seen": "2026-06-02T00:36:54.254305+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "pw_efea75eb0405032f": {
+      "key": "pw_efea75eb0405032f",
+      "name": "FCA: Restrictions imposed on Kingscrown Finance Limited",
+      "window": [
+        "2026-06-02",
+        "2026-08-03"
+      ],
+      "legal_date": "2026-08-03",
+      "sectors": [
+        "financial_services"
+      ],
+      "seat": "Head of Regulatory / Corporate Communications",
+      "angle": "FCA obligation creates a dated comms-capacity build-up in the regulated cohort \u2014 pitch the retained brief before it's advertised.",
+      "scope_note": "FCA-regulated firms in scope of this notice.",
+      "confidence": "medium",
+      "source": "FCA \u2014 Kingscrown Finance Limited (Kingscrown) has stopped onboarding new customers or ",
+      "url": "https://www.fca.org.uk/news/news-stories/restrictions-imposed-kingscrown-finance-limited",
+      "discovered": true,
+      "first_seen": "2026-06-02T00:36:54.254305+00:00",
+      "last_seen": "2026-06-02T00:36:54.254305+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "pw_16a67affcf59699f": {
+      "key": "pw_16a67affcf59699f",
+      "name": "CMA: Transparency data: SCS secondary paid employment details 2025 to 2026",
+      "window": [
+        "2026-06-02",
+        "2026-08-21"
+      ],
+      "legal_date": "2026-08-21",
+      "sectors": [
+        "financial_services",
+        "energy_utilities"
+      ],
+      "seat": "Head of Regulatory / Corporate Communications",
+      "angle": "CMA obligation creates a dated comms-capacity build-up in the regulated cohort \u2014 pitch the retained brief before it's advertised.",
+      "scope_note": "CMA-regulated firms in scope of this notice.",
+      "confidence": "medium",
+      "source": "CMA \u2014 Secondary paid employment held by Senior Civil Service (SCS) members during the ",
+      "url": "https://www.gov.uk/government/publications/scs-secondary-paid-employment-details-2025-to-2026",
+      "discovered": true,
+      "first_seen": "2026-06-02T00:36:54.254305+00:00",
+      "last_seen": "2026-06-02T00:36:54.254305+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    }
+  },
+  "updated_at": "2026-06-02T00:36:54.254896+00:00"
+}
