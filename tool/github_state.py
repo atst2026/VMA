@@ -66,15 +66,16 @@ def _headers() -> dict:
     }
 
 
-def _contents_url(repo_path: str) -> str:
+def _contents_url(repo_path: str, namespaced: bool = True) -> str:
+    path = _ns(repo_path) if namespaced else repo_path
     return (f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}"
-            f"/contents/{_ns(repo_path)}")
+            f"/contents/{path}")
 
 
-def _get_remote(repo_path: str) -> tuple[str | None, str | None]:
+def _get_remote(repo_path: str, namespaced: bool = True) -> tuple[str | None, str | None]:
     """Return (text, sha) for repo_path on BRANCH, or (None, None)."""
     try:
-        r = requests.get(_contents_url(repo_path), headers=_headers(),
+        r = requests.get(_contents_url(repo_path, namespaced), headers=_headers(),
                           params={"ref": BRANCH}, timeout=12)
         if r.status_code == 404:
             return None, None
@@ -114,12 +115,16 @@ def hydrate(repo_paths: list[str]) -> None:
             log.info("github_state: could not write local %s: %s", repo_path, e)
 
 
-def push(repo_path: str, text: str, message: str) -> bool:
+def push(repo_path: str, text: str, message: str, namespaced: bool = True) -> bool:
     """Commit `text` to repo_path on BRANCH. Best-effort; returns False
-    (never raises) when disabled or on any error."""
+    (never raises) when disabled or on any error.
+
+    namespaced=False writes to the literal repo_path (no per-profile
+    sub-directory) — for state that is SHARED across desks, e.g. the report
+    log that annotates the shared report artifacts."""
     if not _enabled():
         return False
-    _remote, sha = _get_remote(repo_path)
+    _remote, sha = _get_remote(repo_path, namespaced)
     body = {
         "message": message,
         "content": base64.b64encode(text.encode("utf-8")).decode("ascii"),
@@ -128,7 +133,7 @@ def push(repo_path: str, text: str, message: str) -> bool:
     if sha:
         body["sha"] = sha
     try:
-        r = requests.put(_contents_url(repo_path), headers=_headers(),
+        r = requests.put(_contents_url(repo_path, namespaced), headers=_headers(),
                           json=body, timeout=15)
         if r.status_code in (200, 201):
             return True
@@ -140,7 +145,7 @@ def push(repo_path: str, text: str, message: str) -> bool:
         return False
 
 
-def push_async(repo_path: str, text: str, message: str) -> None:
+def push_async(repo_path: str, text: str, message: str, namespaced: bool = True) -> None:
     """Fire-and-forget push on a daemon thread. Keeps the durable-state
     write completely off the request path: adding/dismissing is an
     instant local operation; GitHub persistence happens in the
@@ -149,5 +154,6 @@ def push_async(repo_path: str, text: str, message: str) -> None:
         return
     import threading
     threading.Thread(
-        target=push, args=(repo_path, text, message), daemon=True,
+        target=push, args=(repo_path, text, message),
+        kwargs={"namespaced": namespaced}, daemon=True,
     ).start()
