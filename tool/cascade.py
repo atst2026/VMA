@@ -49,6 +49,7 @@ from dataclasses import dataclass, field, asdict
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+from tool import bd_retention
 from tool.profiles import active_profile
 from tool.state_paths import state_dir, state_root
 
@@ -60,10 +61,10 @@ SUPPRESS_FILE = STATE_DIR / "cascade_suppression.json"
 
 SUPPRESS_DAYS = 90
 MAX_EVENTS_KEEP = 200
-# Once Sara has triaged an event (followed-up or dismissed on every
-# active side), keep it on the board this long as a record, then drop
-# it. Active / untriaged events are never auto-removed.
-TRIAGED_RETENTION_DAYS = 30
+# Dashboard retention follows the shared BD-Leads rule (tool.bd_retention):
+# a cascade move drops 30 days after it was first presented (detected_at),
+# or 90 days if it's been followed up on either side. See event_bucket /
+# purge_expired below.
 
 # Senior titles that count as cascade-worthy moves. Lower-cased,
 # substring-matched against the article title. Order doesn't matter;
@@ -544,55 +545,34 @@ def _is_suppressed_key(key: str, suppression: dict) -> bool:
     return (datetime.now(timezone.utc) - last) < timedelta(days=SUPPRESS_DAYS)
 
 
-def _event_settled_at(e: dict) -> datetime | None:
-    """When an event became fully triaged — every real side (status !=
-    'n/a') is followed-up / called / dismissed and none is still
-    'active'. Returns the LATEST per-side triage stamp (the moment it
-    fully settled), or None if any side is still active. Falls back to
-    detected_at for events triaged before stamps were recorded."""
-    sides: list[str] = []
-    for side in ("old_co", "new_co"):
-        st = e.get(f"{side}_status", "active")
-        if st == "n/a":
-            continue
-        if st == "active":
-            return None  # still actionable on this side
-        sides.append(side)
-    if not sides:
-        return None  # both sides n/a (shouldn't happen) — leave it
-    stamps: list[datetime] = []
-    for side in sides:
-        iso = e.get(f"{side}_status_at")
-        if not iso:
-            continue
-        try:
-            stamps.append(datetime.fromisoformat(iso))
-        except ValueError:
-            pass
-    if stamps:
-        return max(stamps)
-    # Pre-retention-feature record: no per-side stamp. Fall back to
-    # detected_at so it still ages out rather than lingering forever.
-    iso = e.get("detected_at")
-    if iso:
-        try:
-            return datetime.fromisoformat(iso)
-        except ValueError:
-            return None
-    return None
+def event_bucket(e: dict) -> str:
+    """Roll a two-sided cascade event up to a single dashboard triage
+    bucket — 'active', 'followed_up' or 'dismissed' — matching the BD
+    Leads / Hire Watch filter pills. An event is active while either real
+    (status != 'n/a') side is still active; followed-up once a side has
+    been called / followed-up and none stays active; dismissed only when
+    every real side is dismissed. Single source of truth shared by the
+    dashboard render and the retention filter."""
+    sides = [e.get("old_co_status", "active"), e.get("new_co_status", "active")]
+    sides = [s for s in sides if s != "n/a"]
+    if any(s == "active" for s in sides):
+        return "active"
+    if any(s in ("called", "followed_up") for s in sides):
+        return "followed_up"
+    if sides and all(s == "dismissed" for s in sides):
+        return "dismissed"
+    return "active"
 
 
-def purge_triaged(events: list[dict],
-                  days: int = TRIAGED_RETENTION_DAYS) -> tuple[list[dict], int]:
-    """Drop events fully triaged (followed-up / dismissed on every active
-    side) more than `days` ago. Active events are always kept. Returns
-    (kept_events, removed_count)."""
-    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+def purge_expired(events: list[dict]) -> tuple[list[dict], int]:
+    """Drop events past their BD-Leads dashboard-retention window
+    (tool.bd_retention), anchored on detected_at (when the move was first
+    presented): 30 days for active / dismissed events, 90 days once
+    followed up on either side. Returns (kept_events, removed_count)."""
     kept: list[dict] = []
     removed = 0
     for e in events:
-        settled = _event_settled_at(e)
-        if settled is not None and settled < cutoff:
+        if bd_retention.is_expired(e.get("detected_at"), event_bucket(e)):
             removed += 1
             continue
         kept.append(e)
@@ -633,22 +613,27 @@ def _watchlist_first(events: list[dict]) -> list[dict]:
 
 def list_active() -> list[dict]:
     """Events where at least one side (old-co or new-co) still has an
-    active BD action. Hides fully-triaged events; filters legacy junk so it
-    can't leak into the Top-3 builder. Watchlist/high-confidence first."""
+    active BD action. Hides fully-triaged and retention-expired events;
+    filters legacy junk so it can't leak into the Top-3 builder.
+    Watchlist/high-confidence first."""
     out = []
     for e in _load_events():
         old_st = e.get("old_co_status", "active")
         new_st = e.get("new_co_status", "active")
-        if (old_st == "active" or new_st == "active") and _event_kept(e):
-            out.append(e)
+        if (old_st != "active" and new_st != "active") or not _event_kept(e):
+            continue
+        if bd_retention.is_expired(e.get("detected_at"), event_bucket(e)):
+            continue  # past its 30-day window — gone from every tab
+        out.append(e)
     return _watchlist_first(out)
 
 
 def list_all() -> list[dict]:
-    # Hide events triaged > TRIAGED_RETENTION_DAYS ago immediately on the
-    # read path (the daily scour persists the actual removal). Mirrors
-    # predictor_pipeline.all_predictors' in-memory filtering.
-    kept, _ = purge_triaged(_load_events())
+    # Hide retention-expired events (30d default / 90d followed-up, from
+    # detected_at) immediately on the read path — the daily scour persists
+    # the actual removal. Mirrors predictor_pipeline.all_predictors'
+    # in-memory filtering.
+    kept, _ = purge_expired(_load_events())
     return _watchlist_first([e for e in kept if _event_kept(e)])
 
 
@@ -859,7 +844,7 @@ def scour(signals: list[dict] | None = None) -> dict:
             suppression[supp_key] = _now_iso()
             new_count += 1
 
-        events, purged = purge_triaged(events)
+        events, purged = purge_expired(events)
         if new_count or purged:
             _save_events(events)
         if new_count:

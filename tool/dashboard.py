@@ -604,9 +604,20 @@ def load_latest_predictive() -> list[dict]:
                 data = []
 
     from tool.advisory import advisory_for
-    from tool import predictor_status
+    from tool import predictor_status, bd_retention
     _ps_overlay = predictor_status.get_statuses()
     today = datetime.now(timezone.utc).date().isoformat()
+    # Apply the BD-Leads retention window up front (30d default / 90d
+    # followed-up, anchored on first_seen) using the durable overlay's
+    # effective status — so a lapsed predictor is gone from every tab even
+    # if it reached here via the latest_predictive.json fallback (which
+    # all_predictors' own filter doesn't cover).
+    def _eff_status(p: dict) -> str:
+        pid = p.get("pid") or predictor_pipeline._pid(p.get("company", ""))
+        return _ps_overlay.get(pid) or p.get("status") or "active"
+    data = [p for p in data
+            if not bd_retention.is_expired(
+                p.get("first_seen") or p.get("last_seen"), _eff_status(p))]
     for p_item in data:
         first_seen = p_item.get("first_seen") or ""
         p_item["is_new"] = first_seen.startswith(today)
@@ -1205,18 +1216,8 @@ def _render_dashboard():
     # can switch between Active / Followed up / Dismissed in-browser.
     # Each event gets an aggregate "cs_bucket" based on its sides.
     raw_cascade = cascade.list_all()
-    def _bucket(e):
-        sides = [e.get("old_co_status", "active"),
-                 e.get("new_co_status", "active")]
-        sides = [s for s in sides if s != "n/a"]
-        if any(s == "active" for s in sides):
-            return "active"
-        if any(s in ("called", "followed_up") for s in sides):
-            return "followed_up"
-        if sides and all(s == "dismissed" for s in sides):
-            return "dismissed"
-        return "active"
-    cascade_events = [{**e, "cs_bucket": _bucket(e)} for e in raw_cascade]
+    cascade_events = [{**e, "cs_bucket": cascade.event_bucket(e)}
+                      for e in raw_cascade]
     cs_counts = {
         "active":      sum(1 for e in cascade_events if e["cs_bucket"] == "active"),
         "followed_up": sum(1 for e in cascade_events if e["cs_bucket"] == "followed_up"),
@@ -4065,7 +4066,9 @@ TEMPLATE = r"""
       </div>
     </div>
 
-    <!-- PREDICTOR PIPELINE (rolling 90-day forward window, auto-populated) -->
+    <!-- BD LEADS (predictors + funding rounds; auto-populated. Each lead
+         clears 30 days after it's first presented, or 90 days once
+         followed up — see tool/bd_retention.py) -->
     <div class="panel">
       <div class="panel-header">
         <h2>BD Leads</h2>

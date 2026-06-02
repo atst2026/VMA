@@ -466,13 +466,19 @@ def main() -> int:
     # scoured). Distinct population from the IPO_LISTING predictor.
     try:
         from tool import funding_round as _fund
-        funding_feed = _fund.detect_funding(signals)
+        detected = _fund.detect_funding(signals)
+        # Merge into the rolling store: persist each round for its whole
+        # BD-Leads window (30d, or 90d once followed up) and age the rest
+        # out, so Funding clears on the same schedule as every other BD
+        # lead instead of vanishing when its headline stops trending.
+        funding_feed = _fund.record_and_merge(detected)
         _funding_payload = json.dumps(funding_feed, indent=2, default=str)
         (STATE_DIR / "latest_funding.json").write_text(_funding_payload)
         _persist_state("tool/state/latest_funding.json", _funding_payload,
                        "state: morning-brief latest_funding.json")
-        log.info("Funding-Round: %d record(s) from %d raw signals",
-                 len(funding_feed), len(signals))
+        log.info("Funding-Round: %d detected, %d in rolling store "
+                 "from %d raw signals",
+                 len(detected), len(funding_feed), len(signals))
     except Exception as e:
         log.info("funding-round detector failed: %s", e)
 
