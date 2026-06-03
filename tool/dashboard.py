@@ -1212,6 +1212,295 @@ def index():
     return _render_dashboard()
 
 
+# ---------------------------------------------------------------------------
+# Marketing / Communications Radar — the console layout that replaces the old
+# two-panel #leads page. The BD Leads and Live Jobs views are one dense,
+# aligned grid (the design Sara signed off on). Rendered entirely client-side
+# from a server-injected snapshot (window.MR_BD / window.MR_JOBS) so it never
+# collides with — and degrades gracefully alongside — the legacy panel JS,
+# which stays in the DOM (hidden) so its refresh/triage handlers keep their
+# elements. All classes are mr-prefixed and the styles self-contained.
+# ---------------------------------------------------------------------------
+
+MR_CSS = r"""
+.mr-wrap{max-width:1160px;margin:0 auto;
+  --ink:#101626;--ink2:#3C4043;--muted:#5a6577;--dim:#9AA0A6;--vma:#3E5C84;
+  --blue:#4285F4;--blue-deep:#1A3D7C;--blue-wash:#E8F0FE;--clay:#D97757;
+  --hairline:rgba(16,22,38,.07);--elevated:#F4F7FC;--mrborder:rgba(60,64,67,.12)}
+/* Hide the legacy two-panel + specialist rows; keep them in the DOM so the
+   old refresh/triage handlers still find their elements. Dev footer stays. */
+#leads .container>.row{display:none!important}
+.mr-sub{text-align:center;font:500 10px/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:12px 0 20px;display:flex;gap:8px;align-items:center;justify-content:center}
+.mr-sub .mr-spk{color:var(--clay);display:inline-flex}.mr-sub .mr-spk svg{width:12px;height:12px}
+.mr-bar{display:flex;align-items:center;gap:7px;margin-bottom:13px;flex-wrap:wrap}
+.mr-spacer{flex:1}
+.mr-pgtabs{display:inline-flex;gap:22px;align-items:center}
+.mr-pgtab{font:600 13.5px/1 "Inter",sans-serif;color:var(--muted);background:none;border:none;cursor:pointer;padding:5px 0;position:relative;display:inline-flex;align-items:center;gap:7px;transition:.13s}.mr-pgtab svg{width:15px;height:15px;opacity:.85}.mr-pgtab:hover{color:var(--ink2)}
+.mr-pgtab.on{color:var(--ink)}.mr-pgtab.on::after{content:"";position:absolute;left:0;right:0;bottom:-7px;height:2px;background:var(--blue-deep);border-radius:2px}
+.mr-filt{position:relative}
+.mr-filtbtn{display:inline-flex;align-items:center;gap:7px;font:600 11.5px/1 "Inter",sans-serif;color:var(--ink2);background:#fff;border:1px solid var(--mrborder);border-radius:9px;padding:8px 11px;cursor:pointer}.mr-filtbtn>svg{width:15px;height:15px}.mr-filtbtn .mr-lbl{color:var(--blue-deep)}.mr-filtbtn .mr-cv{width:13px;height:13px;color:var(--dim)}.mr-filtbtn:hover{background:var(--elevated)}
+.mr-filtmenu{display:none;position:absolute;top:calc(100% + 6px);right:0;background:#fff;border:1px solid var(--mrborder);border-radius:11px;box-shadow:0 10px 28px rgba(31,55,124,.14);padding:6px;min-width:196px;z-index:20}.mr-filtmenu.open{display:block}
+.mr-filtmenu button{display:flex;width:100%;align-items:center;gap:8px;border:none;background:transparent;font:600 12px/1 "Inter",sans-serif;color:var(--ink2);padding:9px 10px;border-radius:8px;cursor:pointer;text-align:left}.mr-filtmenu button:hover{background:var(--elevated)}.mr-filtmenu button.on{background:var(--blue-wash);color:var(--blue-deep)}
+.mr-filtmenu .mr-mc{margin-left:auto;font:600 9px/1 "JetBrains Mono",monospace;background:rgba(31,31,31,.07);color:var(--ink2);padding:2px 6px;border-radius:9999px}.mr-filtmenu button.on .mr-mc{background:#fff;color:var(--blue-deep)}
+.mr-tp{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:7px;font:600 10.5px/1.5 "Inter",sans-serif;white-space:nowrap}.mr-tp::before{content:"";width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.mr-tp.lead{background:#e9effb;color:#1d4ed8}.mr-tp.lead::before{background:#3b82f6}.mr-tp.fund{background:#e7f3ec;color:#1e7a41}.mr-tp.fund::before{background:#34A853}.mr-tp.restr{background:#edf0f4;color:#46556e}.mr-tp.restr::before{background:#6b7689}.mr-tp.warn{background:#fdecdb;color:#b5530e}.mr-tp.warn::before{background:#D97A2B}.mr-tp.mna{background:#efe9fb;color:#6b3fb5}.mr-tp.mna::before{background:#8B5CF6}.mr-tp.people{background:#ddf3f0;color:#0e7c74}.mr-tp.people::before{background:#12A594}
+.mr-sc{display:inline-flex;align-items:center;justify-content:center;padding:3px 9px;font:700 9.5px/1.6 "Inter",sans-serif;letter-spacing:.04em;text-transform:uppercase;border-radius:7px;white-space:nowrap}
+.mr-sc.high{color:#2e7d50;background:#e7f3ec}.mr-sc.med{color:#8a5a00;background:#fff4e0}.mr-sc.low{color:#6b7686;background:#eef1f5}
+.mr-wb{font:600 9px/1.6 "JetBrains Mono",monospace;padding:2px 6px;border-radius:4px;background:rgba(14,40,69,.05);color:#1A3D7C;white-space:nowrap;text-align:center}
+.mr-badge{font:500 10px/1.4 "Inter",sans-serif;background:var(--elevated);border:1px solid var(--mrborder);border-radius:6px;padding:3px 8px;color:var(--ink2);white-space:nowrap;text-align:center}
+.mr-newp{font:700 7.5px/1 "Inter",sans-serif;letter-spacing:.06em;color:#1d4ed8;background:#e9effb;padding:2px 4px;border-radius:3px;vertical-align:middle}
+.mr-srcl{color:var(--dim);margin-left:4px;text-decoration:none;display:inline-flex;vertical-align:middle}.mr-srcl svg{width:11px;height:11px}.mr-srcl:hover{color:var(--blue-deep)}
+.mr-dl{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:28px;padding:0 9px;border-radius:7px;color:#fff;background:#1A3D7C;cursor:pointer;border:none;font:600 11px/1 "Inter",sans-serif;transition:.13s}.mr-dl svg{width:14px;height:14px}.mr-dl.icon{width:28px;padding:0}.mr-dl:hover{background:#15336a}.mr-dl.busy{background:#6b7689}.mr-dl.done{background:#1e7a41}
+.mr-io{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:28px;padding:0 9px;border-radius:7px;color:var(--blue-deep);cursor:pointer;border:1px solid var(--mrborder);background:#fff;font:600 11px/1 "Inter",sans-serif}.mr-io.icon{width:28px;padding:0}.mr-io svg{width:14px;height:14px}.mr-io:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
+.mr-io.tfu:hover{background:#e7f3ec;color:#1e7a41;border-color:#bfe3cd}.mr-io.tdis:hover{background:#fdecea;color:#c0392b;border-color:#f0c5bd}
+.mr-toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:#101626;color:#fff;font:600 12px/1 "Inter",sans-serif;padding:11px 16px;border-radius:10px;box-shadow:0 8px 26px rgba(0,0,0,.2);opacity:0;transition:.25s;z-index:2000;display:flex;gap:8px;align-items:center;pointer-events:none}.mr-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}.mr-toast .mr-spk svg{width:14px;height:14px}
+@keyframes mrspin{to{transform:rotate(360deg)}}.mr-spin{display:inline-flex;width:14px;height:14px;animation:mrspin .7s linear infinite}
+.mr-aibrief .mr-gen{font-size:12.5px;color:var(--ink2);line-height:1.55}
+#mr-rows{border:1px solid var(--hairline);border-radius:13px;background:rgba(255,255,255,.62);overflow:hidden}
+.mr-rsum{display:grid;align-items:center;gap:11px}
+.mr-gbd{grid-template-columns:24px 150px 126px 158px minmax(90px,1fr) 82px 56px 76px auto}
+.mr-gjobs{grid-template-columns:24px 156px minmax(150px,1fr) 118px 52px auto}
+.mr-row{border-bottom:1px solid var(--hairline);transition:.2s;display:block}.mr-row:last-child{border-bottom:none}.mr-row.gone{height:0!important;opacity:0;border:none;overflow:hidden}
+.mr-row.top .mr-rsum{box-shadow:inset 3px 0 0 var(--blue)}
+.mr-rsum{padding:11px 14px;cursor:pointer}.mr-rsum:hover{background:var(--elevated)}
+.mr-rsum>*{min-width:0}
+.mr-rk{font:700 11px/1 "JetBrains Mono",monospace;color:var(--dim);text-align:center}
+.mr-co{font-weight:700;color:#0c1326;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mr-seat{color:var(--muted);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mr-jt{color:var(--ink);font-weight:600;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mr-why{color:#54607a;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mr-tp,.mr-sc,.mr-wb,.mr-badge{justify-self:start}
+.mr-pcell{justify-self:center}
+.mr-racts{display:inline-flex;gap:6px;align-items:center;justify-self:end}
+.mr-rdet{max-height:0;opacity:0;overflow:hidden;transition:.25s;padding:0 14px 0 49px}.mr-row.open .mr-rdet{max-height:240px;opacity:1;padding:2px 14px 15px 49px}
+.mr-badge-st{font:700 8px/1 "Inter",sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:3px 6px;border-radius:4px}.mr-badge-st.followed_up{background:rgba(34,139,87,.12);color:#1e7a41}.mr-badge-st.dismissed{background:rgba(120,120,120,.1);color:#888}
+.mr-empty{padding:40px;text-align:center;color:var(--dim)}
+"""
+
+MR_JS = r"""
+(function(){
+  var IC={
+    dl:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7.5 10.5 12 15l4.5-4.5"/><path d="M5 20h14"/></svg>',
+    arr:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>',
+    check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>',
+    x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    undo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a9 9 0 1 1-2 5.7"/><path d="M3 4v5h5"/></svg>',
+    funnel:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.2V19l-4 2v-7.8z"/></svg>',
+    chevd:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+    radar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" opacity=".4"/><path d="M12 12 L12 3 A9 9 0 0 1 19.8 7.5 Z" fill="currentColor" stroke="none" opacity=".55"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>',
+    jobs:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7.5" width="18" height="12.5" rx="2.2"/><path d="M8 7.5V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1.5"/><path d="M3 12.5h18"/></svg>',
+    spark:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.4 5L18 8.5l-4.6 1.5L12 15l-1.4-5L6 8.5 10.6 7 12 2z"/></svg>',
+    spin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9"/></svg>'};
+  var root=document.getElementById('mr');
+  if(!root) return;
+  var BD=(window.MR_BD||[]).map(function(l,i){l._id='b'+i;l.opp=+l.opp||0;l.status=l.status||'active';return l;});
+  var JOBS=(window.MR_JOBS||[]).map(function(l,i){l._id='j'+i;l.idtype='job';l.status=l.status||'active';return l;});
+  var BYID={};BD.concat(JOBS).forEach(function(l){BYID[l._id]=l;});
+  var page='bd',filter='active',open={};
+  function $(id){return document.getElementById(id);}
+  function esc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  function active(){return page==='bd'?BD:JOBS;}
+  function tp(l){return '<span class="mr-tp '+l.key+'">'+esc(l.type)+'</span>';}
+  function sc(l){return '<span class="mr-sc '+l.st+'">'+l.st+'</span>';}
+  function wb(l){return '<span class="mr-wb">'+esc(l.win)+'</span>';}
+  function newp(l){return l.isNew?' <span class="mr-newp">NEW</span>':'';}
+  function srcl(l){return l.url?'<a class="mr-srcl" href="'+esc(l.url)+'" target="_blank" rel="noopener" title="Open source">'+IC.arr+'</a>':'';}
+  function toast(m){var t=$('mr-toast');if(!t)return;t.innerHTML='<span class="mr-spk">'+IC.spark+'</span> '+esc(m);t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},2400);}
+  function match(l){if(filter==='active')return l.status==='active';if(filter==='new')return l.isNew&&l.status==='active';if(filter==='followed_up')return l.status==='followed_up';if(filter==='dismissed')return l.status==='dismissed';return true;}
+  function sortd(a){if(page==='jobs')return a.sort(function(x,y){return (y.isNew-x.isNew)||x.co.localeCompare(y.co);});return a.sort(function(x,y){return y.opp-x.opp;});}
+  function stbadge(l){return l.status!=='active'?'<span class="mr-badge-st '+l.status+'">'+(l.status==='followed_up'?'✓ followed up':'dismissed')+'</span>':'';}
+  function triBtns(l){return l.status==='active'
+    ?'<button class="mr-io icon tfu" data-act="tri" data-id="'+l._id+'" data-st="followed_up" title="Followed up">'+IC.check+'</button><button class="mr-io icon tdis" data-act="tri" data-id="'+l._id+'" data-st="dismissed" title="Dismiss">'+IC.x+'</button>'
+    :'<button class="mr-io icon" data-act="tri" data-id="'+l._id+'" data-st="active" title="Restore">'+IC.undo+'</button>';}
+  function brief(l){var b=l.brief||(l.seat+' likely within '+l.win+'.');return esc(b)+' '+srcl(l);}
+  function bdRow(l,idx){var top=(idx===0&&filter==='active');
+    return '<div class="mr-row '+(open[l._id]?'open ':'')+(top?'top':'')+'" data-id="'+l._id+'">'
+     +'<div class="mr-rsum mr-gbd" data-act="toggle" data-id="'+l._id+'">'
+     +'<span class="mr-rk">'+(idx+1)+'</span><span class="mr-co">'+esc(l.co)+newp(l)+'</span>'+tp(l)
+     +'<span class="mr-seat">'+esc(l.seat)+'</span><span class="mr-why">'+esc(l.why)+'</span>'+wb(l)+sc(l)
+     +'<span class="mr-pcell"><button class="mr-dl icon" data-act="pitch" data-id="'+l._id+'" title="Pitch pack">'+IC.dl+'</button></span>'
+     +'<span class="mr-racts">'+(filter==='all'?stbadge(l):'')+triBtns(l)+'</span></div>'
+     +'<div class="mr-rdet"><div class="mr-aibrief"><div class="mr-gen">'+brief(l)+'</div></div></div></div>';}
+  function jobRow(l,idx){
+    return '<div class="mr-row" data-id="'+l._id+'">'
+     +'<div class="mr-rsum mr-gjobs" data-act="openjob" data-id="'+l._id+'" title="Open job posting">'
+     +'<span class="mr-rk">'+(idx+1)+'</span><span class="mr-co">'+esc(l.co)+newp(l)+'</span>'
+     +'<span class="mr-jt">'+esc(l.jt)+'</span><span class="mr-badge">'+esc(l.source)+'</span><span class="mr-badge">'+esc(l.geo)+'</span>'
+     +'<span class="mr-racts">'+(filter==='all'?stbadge(l):'')+triBtns(l)+'</span></div></div>';}
+  function setc(id,v){var e=$(id);if(e)e.textContent=v;}
+  function updateSub(){var ds=active();var a=ds.filter(function(l){return l.status==='active';}).length;var n=ds.filter(function(l){return l.isNew&&l.status==='active';}).length;var s=$('mr-sub');if(s)s.innerHTML='<span class="mr-spk">'+IC.spark+'</span>'+(page==='bd'?(a+' active · '+n+' new today'):(a+' live roles · '+n+' new today'));}
+  function counts(){var ds=active();function c(f){return ds.filter(f).length;}
+    setc('mr-m-active',c(function(l){return l.status==='active';}));
+    setc('mr-m-new',c(function(l){return l.isNew&&l.status==='active';}));
+    setc('mr-m-fu',c(function(l){return l.status==='followed_up';}));
+    setc('mr-m-dis',c(function(l){return l.status==='dismissed';}));
+    var lbl={active:'Active','new':'New today',followed_up:'Followed up',dismissed:'Dismissed',all:'All'}[filter];
+    setc('mr-filtlbl',lbl);updateSub();}
+  function render(){var arr=sortd(active().filter(match));var box=$('mr-rows');if(!box)return;
+    if(!arr.length){box.innerHTML='<div class="mr-empty">Nothing here. Pick another filter.</div>';counts();return;}
+    box.innerHTML=arr.map(function(l,i){return page==='bd'?bdRow(l,i):jobRow(l,i);}).join('');counts();}
+  function toggle(id){if(open[id]){delete open[id];}else{open[id]=1;}render();}
+  function openjob(id){var l=BYID[id];if(l&&l.url){window.open(l.url,'_blank','noopener');}else{toast('No posting link'+(l?' for '+l.co:''));}}
+  function setPage(pg){page=pg;filter='active';open={};
+    var tabs=root.querySelectorAll('.mr-pgtab');for(var i=0;i<tabs.length;i++){tabs[i].classList.toggle('on',tabs[i].getAttribute('data-pg')===pg);}
+    var fb=document.querySelectorAll('#mr-filtmenu [data-act="filt"]');for(var j=0;j<fb.length;j++){fb[j].classList.toggle('on',fb[j].getAttribute('data-f')==='active');}
+    render();}
+  function setFilter(f,btn){filter=f;var fb=document.querySelectorAll('#mr-filtmenu [data-act="filt"]');for(var i=0;i<fb.length;i++){fb[i].classList.toggle('on',fb[i]===btn);}var m=$('mr-filtmenu');if(m)m.classList.remove('open');render();}
+  function triage(id,st){var l=BYID[id];if(!l)return;var prev=l.status;l.status=st;
+    var row=document.querySelector('#mr-rows .mr-row[data-id="'+id+'"]');
+    var hide=(filter==='active'||filter==='new')&&st!=='active';
+    if(hide&&row){row.style.height=row.offsetHeight+'px';requestAnimationFrame(function(){row.classList.add('gone');});setTimeout(render,240);}else{render();}
+    toast(l.co+(st==='dismissed'?' dismissed':(st==='followed_up'?' marked followed up':' restored')));
+    var url,body;
+    if(l.idtype==='funding'){url='/api/funding/mark';body={fid:l.rid,status:st};}
+    else if(l.idtype==='job'){url='/api/lead/'+encodeURIComponent(l.rid)+'/status';body={status:st};}
+    else{url='/api/predictor/'+encodeURIComponent(l.rid)+'/status';body={status:st};}
+    fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){return r.json();}).then(function(j){if(!j||j.ok===false){l.status=prev;toast('Could not save status');render();}}).catch(function(){l.status=prev;});}
+  function prepTab(){var w=window.open('','_blank');if(w){w.document.write('<!doctype html><meta charset="utf-8"><title>Preparing pitch pack…</title><style>body{font-family:Inter,system-ui,sans-serif;background:#f7f9fc;color:#1F1F1F;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0}.b{text-align:center;padding:24px}.s{width:30px;height:30px;border:3px solid rgba(66,133,244,.2);border-top-color:#4285F4;border-radius:50%;margin:0 auto 16px;animation:r .8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}p{font-size:13px;color:#5F6368;max-width:340px;line-height:1.55}</style><div class="b"><div class="s"></div><h3>Preparing the pitch pack…</h3><p>A few minutes. Keep this tab open — it loads automatically when ready.</p></div>');}return w;}
+  function pitch(id,btn){if(btn.classList.contains('busy'))return;var l=BYID[id];if(!l)return;
+    var win=prepTab();var orig=btn.innerHTML;btn.classList.add('busy');btn.innerHTML='<span class="mr-spin">'+IC.spin+'</span>';
+    function fail(msg){if(win&&!win.closed)win.close();btn.classList.remove('busy');btn.innerHTML=orig;toast(msg||'Pitch dispatch failed');}
+    fetch('/api/dispatch/pitch-pack',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({account_name:l.co,role:l.pitchRole||'',trigger:l.pitchTrigger||''})})
+      .then(function(r){return r.json();}).then(function(j){
+        if(!j||!j.ok||!j.artifact||!j.dispatched_at){fail(j&&j.detail);return;}
+        toast('Generating pitch pack for '+l.co+'…');
+        var qs='artifact='+encodeURIComponent(j.artifact)+'&since='+encodeURIComponent(j.dispatched_at);
+        var started=Date.now();var MAX=25*60*1000;
+        (function poll(){
+          if(Date.now()-started>MAX){fail('Pitch pack timed out');return;}
+          fetch('/api/output/status?'+qs).then(function(r){return r.json();}).then(function(s){
+            if(s&&s.ready&&s.id){var v='/api/output/view?artifact='+encodeURIComponent(j.artifact)+'&id='+encodeURIComponent(s.id);if(win&&!win.closed)win.location=v;btn.classList.remove('busy');btn.classList.add('done');btn.innerHTML=IC.dl;setTimeout(function(){btn.classList.remove('done');btn.innerHTML=orig;},2200);}
+            else{setTimeout(poll,12000);}
+          }).catch(function(){setTimeout(poll,12000);});
+        })();
+      }).catch(function(){fail();});}
+  root.innerHTML='<div class="mr-bar"><div class="mr-pgtabs">'
+   +'<button class="mr-pgtab on" data-act="pg" data-pg="bd">'+IC.radar+'BD Leads</button>'
+   +'<button class="mr-pgtab" data-act="pg" data-pg="jobs">'+IC.jobs+'Live Jobs</button></div>'
+   +'<span class="mr-spacer"></span>'
+   +'<div class="mr-filt"><button class="mr-filtbtn" data-act="filtbtn">'+IC.funnel+'<span class="mr-lbl" id="mr-filtlbl">Active</span><span class="mr-cv">'+IC.chevd+'</span></button>'
+   +'<div class="mr-filtmenu" id="mr-filtmenu">'
+   +'<button data-act="filt" data-f="active" class="on">Active <span class="mr-mc" id="mr-m-active"></span></button>'
+   +'<button data-act="filt" data-f="new">New today <span class="mr-mc" id="mr-m-new"></span></button>'
+   +'<button data-act="filt" data-f="followed_up">Followed up <span class="mr-mc" id="mr-m-fu"></span></button>'
+   +'<button data-act="filt" data-f="dismissed">Dismissed <span class="mr-mc" id="mr-m-dis"></span></button>'
+   +'<button data-act="filt" data-f="all">All</button></div></div></div>'
+   +'<div id="mr-rows"></div>';
+  root.addEventListener('click',function(e){
+    var a=e.target.closest('[data-act]');if(!a||!root.contains(a))return;
+    var act=a.getAttribute('data-act');var id=a.getAttribute('data-id');
+    if(act==='tri'){e.stopPropagation();triage(id,a.getAttribute('data-st'));return;}
+    if(act==='pitch'){e.stopPropagation();pitch(id,a);return;}
+    if(act==='toggle'){toggle(id);return;}
+    if(act==='openjob'){openjob(id);return;}
+    if(act==='pg'){setPage(a.getAttribute('data-pg'));return;}
+    if(act==='filtbtn'){e.stopPropagation();var m=$('mr-filtmenu');if(m)m.classList.toggle('open');return;}
+    if(act==='filt'){e.stopPropagation();setFilter(a.getAttribute('data-f'),a);return;}
+  });
+  document.addEventListener('click',function(e){var m=$('mr-filtmenu');if(m&&!e.target.closest('.mr-filt'))m.classList.remove('open');});
+  render();
+})();
+"""
+
+
+# trigger_key -> (pill label, colour key). Colour keys map to .mr-tp.<key>.
+_MR_TRIGGER = {
+    "ceo_change":       ("Leadership",       "lead"),
+    "cfo_change":       ("CFO change",       "lead"),
+    "chro_change":      ("CHRO change",      "people"),
+    "restructure":      ("Restructure",      "restr"),
+    "regulator_action": ("Regulator action", "warn"),
+    "profit_warning":   ("Profit warning",   "warn"),
+    "mna":              ("M&A",              "mna"),
+    "job_ad_cluster":   ("Hiring cluster",   "lead"),
+}
+
+
+def _mr_st(strength: str | None) -> str:
+    """Map the predictor/funding strength band to the 3-state signal pill."""
+    return {"high": "high", "medium": "med", "low": "low"}.get(
+        (strength or "low"), "low")
+
+
+def _mr_domain(url: str | None) -> str:
+    try:
+        from urllib.parse import urlparse
+        net = urlparse(url or "").netloc or ""
+        return net[4:] if net.startswith("www.") else net
+    except Exception:
+        return ""
+
+
+def _build_mr_rows(premarket_rows, leads, role_label):
+    """Project the live predictor/funding/lead data onto the flat row shape
+    the Radar console renders (BD Leads + Live Jobs). Pre-sorted upstream by
+    opportunity value; we just carry _opp through for a stable client sort."""
+    today = datetime.now(timezone.utc).date().isoformat()
+    bd = []
+    for row in premarket_rows:
+        if row.get("_kind") == "funding":
+            amount = (row.get("amount") or "").strip()
+            rnd = (row.get("round") or "").strip()
+            why = (amount + (" " + rnd if rnd else "")).strip() or "Funding round"
+            brief = (row.get("evidence") or "")[:220]
+            if row.get("investor"):
+                brief = (brief + " · led by " + row["investor"]).strip(" ·")
+            url = row.get("url") or ""
+            first_seen = row.get("first_seen") or ""
+            bd.append({
+                "co": row.get("company") or "—",
+                "isNew": 1 if first_seen.startswith(today) else 0,
+                "type": "Funding", "key": "fund",
+                "seat": role_label, "why": why,
+                "brief": brief or "Funding round — senior build-out likely.",
+                "url": url, "src": _mr_domain(url),
+                "win": row.get("window") or "~3–6 mo",
+                "st": _mr_st(row.get("strength")),
+                "opp": row.get("_opp") or 0.0,
+                "idtype": "funding", "rid": row.get("fid") or "",
+                "status": row.get("status", "active"),
+                "pitchRole": role_label,
+                "pitchTrigger": f"a recent {why} funding round at {row.get('company') or ''}".strip(),
+            })
+        else:
+            evs = row.get("events") or []
+            ev0 = evs[0] if (evs and isinstance(evs[0], dict)) else {}
+            tkey = ev0.get("trigger_key")
+            tlabel = (ev0.get("trigger_label") or "").strip()
+            typ, key = _MR_TRIGGER.get(tkey, (tlabel or "Signal", "lead"))
+            why = tlabel or typ
+            brief = (ev0.get("evidence") or "")[:220] or row.get("advisory") or why
+            url = ev0.get("url") or ""
+            seat = row.get("predicted_role") or role_label
+            bd.append({
+                "co": row.get("company") or "—",
+                "isNew": 1 if row.get("is_new") else 0,
+                "type": typ, "key": key,
+                "seat": seat, "why": why, "brief": brief,
+                "url": url, "src": _mr_domain(url),
+                "win": row.get("window_label") or "",
+                "st": _mr_st(row.get("strength")),
+                "opp": row.get("_opp") or 0.0,
+                "idtype": "predictor", "rid": row.get("pid") or "",
+                "status": row.get("status", "active"),
+                "pitchRole": row.get("predicted_role") or "",
+                "pitchTrigger": row.get("pitch_trigger") or "",
+            })
+    jobs = []
+    for s in leads:
+        jobs.append({
+            "co": s.get("company") or "—",
+            "isNew": 1 if s.get("is_new") else 0,
+            "jt": s.get("title") or "",
+            "source": s.get("source") or "",
+            "geo": s.get("geo") or "",
+            "url": s.get("url") or "",
+            "rid": s.get("lead_id") or "",
+            "status": s.get("status", "active"),
+        })
+    return bd, jobs
+
+
 def _render_dashboard():
     # Keep a long-running process in sync with the morning brief: pull the
     # latest dashboard-state when our data isn't from today (bounded), so we
@@ -1276,12 +1565,18 @@ def _render_dashboard():
     _fw_counts = {"active": 0, "followed_up": 0, "dismissed": 0}
     for fw in framework_events:
         _fw_counts[fw.get("triage", "active")] = _fw_counts.get(fw.get("triage", "active"), 0) + 1
+    _mr_bd, _mr_jobs = _build_mr_rows(premarket_rows, leads,
+                                      _default_role_label())
     return render_template_string(
         TEMPLATE,
         example_role=_default_role_label(),
         profile_label=active_profile().label,
         radar_title=("Marketing Radar" if active_profile().key == "marketing"
                      else "Communications Radar"),
+        mr_css=MR_CSS,
+        mr_js=MR_JS,
+        mr_bd=_mr_bd,
+        mr_jobs=_mr_jobs,
         leads=leads,
         predictors=predictors,
         funding_events=funding_events,
@@ -4059,7 +4354,20 @@ TEMPLATE = r"""
     </div>
     {% endif %}
 
-  <!-- LEADS + PREDICTORS -->
+  <!-- ===== MARKETING / COMMUNICATIONS RADAR CONSOLE (BD Leads + Live Jobs) =====
+       The live, signed-off layout. Rendered client-side from the injected
+       snapshot below; the legacy panels (next sibling .row) stay in the DOM
+       but are hidden by MR_CSS so their refresh/triage JS keeps its nodes. -->
+  <style>{{ mr_css|safe }}</style>
+  <div class="mr-wrap">
+    <div class="mr-sub" id="mr-sub"></div>
+    <div id="mr"></div>
+  </div>
+  <div class="mr-toast" id="mr-toast"></div>
+  <script>window.MR_BD={{ mr_bd|tojson }};window.MR_JOBS={{ mr_jobs|tojson }};</script>
+  <script>{{ mr_js|safe }}</script>
+
+  <!-- LEADS + PREDICTORS (legacy panels — hidden; retained for refresh JS) -->
   <div class="row">
 
     <!-- TODAY'S LEADS -->
