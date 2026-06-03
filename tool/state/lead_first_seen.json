@@ -713,5 +713,50 @@
     "anchor": "2026-05-20",
     "first_seen": "2026-06-03",
     "expired": true
+  },
+  "9fa8882e5e074432": {
+    "anchor": "2026-06-03",
+    "first_seen": "2026-06-03",
+    "expired": false
+  },
+  "313e3e7621d99a1c": {
+    "anchor": "2026-06-02",
+    "first_seen": "2026-06-03",
+    "expired": false
+  },
+  "1a25299df57fe7de": {
+    "anchor": "2026-06-02",
+    "first_seen": "2026-06-03",
+    "expired": false
+  },
+  "aaab95c37e4a801e": {
+    "anchor": "2026-06-02",
+    "first_seen": "2026-06-03",
+    "expired": false
+  },
+  "24255d9da2f86315": {
+    "anchor": "2026-06-03",
+    "first_seen": "2026-06-03",
+    "expired": false
+  },
+  "f1d7a698fdc0a5d1": {
+    "anchor": "2026-06-03",
+    "first_seen": "2026-06-03",
+    "expired": false
+  },
+  "5780cb7267168a95": {
+    "anchor": "2026-06-03",
+    "first_seen": "2026-06-03",
+    "expired": false
+  },
+  "109e95360fcfe665": {
+    "anchor": "2026-06-02",
+    "first_seen": "2026-06-03",
+    "expired": false
+  },
+  "47913db182a1f951": {
+    "anchor": "2026-06-02",
+    "first_seen": "2026-06-03",
+    "expired": false
   }
 }
