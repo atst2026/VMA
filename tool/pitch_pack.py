@@ -350,29 +350,48 @@ _PERSONA_ALIASES = {
 }
 
 
-def _persona_opener(persona: str, role: str, target: str) -> str:
-    """Return a one-line audience reframe, or '' for none/unknown persona."""
+def _fee_vs_cost_phrase(fee_low: int, fee_high: int, cov_total: int) -> str:
+    """The single most CFO-converting line: the fee set against the cost of the
+    empty seat, in one sentence. '' if either number is missing."""
+    if not (cov_total and fee_high):
+        return ""
+    ratio = fee_high / cov_total
+    rel = ("under half" if ratio <= 0.5
+           else "around two-thirds" if ratio <= 0.7 else "a fraction of")
+    return (f"the retained fee ({_fmt_gbp(fee_low)}–{_fmt_gbp(fee_high)}) is {rel} the "
+            f"{_fmt_gbp(cov_total)} an empty seat costs")
+
+
+def _persona_opener(persona: str, role: str, target: str,
+                    fee_low: int = 0, fee_high: int = 0, cov_total: int = 0) -> str:
+    """A tailored opening paragraph that BOTH frames the pack for the reader and
+    pays off that frame (the research's point: a swappable opener + reordered
+    emphasis, not a banner the body ignores). '' for none/unknown persona."""
     key = _PERSONA_ALIASES.get((persona or "").strip().lower())
+    if not key:
+        return ""
     role_l = (role or f"senior {_NOUN} leader").strip()
-    tmpl = {
-        "ceo": (f"For the chief executive: this is about a {role_l} who can act as genuine "
-                f"strategic counsel to you and the board, and protect {target}'s reputation "
-                "through the period ahead — run discreetly and at pace."),
-        "cfo": (f"For finance: what the empty seat is costing (Section 3), how a retained fee "
-                "compares with a contingent scramble or a failed hire, and the rebate and "
-                "replacement guarantee that de-risk the spend (Section 9)."),
-        "incoming": (f"For an incoming leader: how we help you build the team around you quickly "
-                     "and credibly in your first 6–12 months — a calibrated shortlist that lets "
-                     "you look decisive to the board fast."),
-        "hr": (f"For HR and Talent: a rigorous, externally-run search that complements your "
-               "in-house team rather than competing with it — the discretion and passive reach "
-               "an internal process can't carry, with a clear methodology and guarantee."),
-    }.get(key, "")
-    return tmpl
+    if key == "cfo":
+        fvc = _fee_vs_cost_phrase(fee_low, fee_high, cov_total)
+        money = f" — {fvc} (Section 3)" if fvc else " (Section 3)"
+        return (f"For finance: the case is in the numbers{money}, and the rebate and "
+                "replacement guarantee (Section 9) cap the downside of a wrong hire.")
+    return {
+        "ceo": (f"For the chief executive: a board-level appointment — a {role_l} who acts as "
+                f"strategic counsel and protects {target}'s reputation through the period ahead, "
+                "with the search run discreetly and at pace."),
+        "incoming": ("For an incoming leader: your first 6–12 months — we build the team beneath "
+                     "you quickly and credibly (a senior placement typically opens 2–4 follow-on "
+                     "hires), with a shortlist that lets you show the board early wins."),
+        "hr": ("For HR and Talent: this runs alongside your in-house team, not over it — the "
+               "passive reach and discretion an internal search can't carry, on a defined "
+               "methodology with a replacement guarantee."),
+    }[key]
 
 
-def _persona_html(persona: str, role: str, target: str) -> str:
-    opener = _persona_opener(persona, role, target)
+def _persona_html(persona: str, role: str, target: str,
+                  fee_low: int = 0, fee_high: int = 0, cov_total: int = 0) -> str:
+    opener = _persona_opener(persona, role, target, fee_low, fee_high, cov_total)
     if not opener:
         return ""
     return (
@@ -388,7 +407,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
                 annual_report=None, curated_priorities: list[str] | None = None,
                 peer_label: str = "", peer_source: str = "sector",
                 sector_context: list[str] | None = None,
-                persona: str = "") -> str:
+                persona: str = "", trigger_context: str = "") -> str:
     low, high, matched = salary_band
     mid = (low + high) // 2
     total_comp_mid = estimate_total_comp(mid)
@@ -580,7 +599,20 @@ def render_html(target: str, role: str, ch_snapshot: dict,
     if mode == "test":
         note_banner = "<div style='background:#fff3cd;border:1px solid #ffeaa7;padding:8px;margin-bottom:16px;font-size:13px;'>⚠️ TEST PACK - generated for Amir's review. Do not send to client.</div>"
 
-    persona_html = _persona_html(persona, role, target)
+    persona_html = _persona_html(persona, role, target, fee_low, fee_high, cov_total)
+    # The fee-vs-cost juxtaposition — the line a finance reader converts on —
+    # rendered in §3 for every reader (the CFO persona block leads with it too).
+    _fvc = _fee_vs_cost_phrase(fee_low, fee_high, cov_total)
+    fee_vs_cost_html = (
+        f"<div style='font-size:13px;color:#1A3D7C;font-weight:600;margin-top:8px;'>"
+        f"Put together: {_fvc} — small against the problem it solves.</div>" if _fvc else "")
+    # §8 "why now" leads with the specific live event when one is supplied
+    # (PITCH_TRIGGER) — e.g. Diageo's 6 Aug Strategy Update — so the argument is
+    # concrete, not generic, and ties back to Section 2.
+    why_now_event_li = (
+        f"<li><strong>{_esc(trigger_context)}</strong> — and no {_esc(role)} in seat to own it; "
+        "the cost of that gap runs from today, not from when you start looking.</li>"
+        if trigger_context else "")
     salary_period = datetime.now().strftime("%B %Y")
     cov_weeks = cov.get("weeks", TIME_TO_PRODUCTIVE_WEEKS) if isinstance(cov, dict) else TIME_TO_PRODUCTIVE_WEEKS
     # Section 4 intro — relevant when we have a real cohort; honest prompt when
@@ -698,6 +730,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
       </ul>
       <div style='font-weight:600;margin:2px 0 4px;'>Why now, not when the market picks up</div>
       <ul style='padding-left:18px;margin:0;'>
+        {why_now_event_li}
         <li>The cost-of-vacancy clock (Section 3) runs every week the seat is open; notice periods mean ~{cov_weeks} weeks to a productive start even on a fast search</li>
         <li>In a quieter market the strongest leaders are reachable precisely because fewer firms are hunting them — "wait until it picks up" is backwards; the window is now</li>
       </ul>
@@ -725,6 +758,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
   Base salary assumed: <strong>{_fmt_gbp(mid)}</strong> (est. total comp <strong>{_fmt_gbp(total_comp_mid)}</strong>). Override if the brief is at a different level.
 </div>
 {cov_html}
+{fee_vs_cost_html}
 
 <h3 style="margin:18px 0 6px 0;">4. Talent universe — {_esc(universe_label)}</h3>
 {reframe_html}
@@ -765,13 +799,16 @@ def render_text(target: str, role: str, ch_snapshot: dict,
                 annual_report=None, curated_priorities: list[str] | None = None,
                 peer_label: str = "", peer_source: str = "sector",
                 sector_context: list[str] | None = None,
-                persona: str = "") -> str:
+                persona: str = "", trigger_context: str = "") -> str:
     low, high, matched = salary_band
     mid = (low + high) // 2
     total_comp_mid = estimate_total_comp(mid)
     universe_label = peer_label or (
         sector.replace("_", " ").title() if sector else "Sector unclear")
     _proof = _load_proof()
+    _fee_low = int(round(0.28 * total_comp_mid, -2))
+    _fee_high = int(round(0.33 * total_comp_mid, -2))
+    _cov_total = cov.get("total") if isinstance(cov, dict) else None
     lines = []
     if _proof_incomplete(_proof):
         lines += ["#" * 60,
@@ -782,15 +819,12 @@ def render_text(target: str, role: str, ch_snapshot: dict,
         f"Retained Pitch Pack - {target}",
         f"Role: {role}  ·  Generated {datetime.now().strftime('%a %d %b %Y · %H:%M')}",
         "=" * 60, ""]
-    _persona_line = _persona_opener(persona, role, target)
+    _persona_line = _persona_opener(persona, role, target, _fee_low, _fee_high, _cov_total or 0)
     if _persona_line:
         for _seg in textwrap.wrap(_persona_line, 72):
             lines.append(_seg)
         lines.append("")
     lines += ["1. ACCOUNT SNAPSHOT"]
-    _fee_low = int(round(0.28 * total_comp_mid, -2))
-    _fee_high = int(round(0.33 * total_comp_mid, -2))
-    _cov_total = cov.get("total") if isinstance(cov, dict) else None
     lines.append(f"   Sector: {universe_label}")
     lines.append(f"   Indicative retained fee: £{_fee_low:,}–£{_fee_high:,} "
                  f"(28–33% of est. first-year total comp ≈ £{total_comp_mid:,}; base + bonus/LTIP)")
@@ -842,6 +876,10 @@ def render_text(target: str, role: str, ch_snapshot: dict,
             lines.append(f"   {_seg}")
     for k, v in _cov_lines.items():
         lines.append(f"   {k:<58}  £{v:>10,}")
+    _fvc = _fee_vs_cost_phrase(_fee_low, _fee_high, _cov_total or 0)
+    if _fvc:
+        for _seg in textwrap.wrap(f"Put together: {_fvc} - small against the problem it solves.", 72):
+            lines.append(f"   {_seg}")
     _salary_period = datetime.now().strftime("%B %Y")
     if peer_source == "generic":
         lines += ["", f"4. TALENT UNIVERSE ({universe_label})",
@@ -916,7 +954,13 @@ def render_text(target: str, role: str, ch_snapshot: dict,
               "   - Exclusivity unlocks ~3x the passive universe a contingent firm will work",
               "   - Milestone fees align priority — not racing six firms on the same role",
               f"   - Senior {_NOUN} placements open 2-4 downstream hires over 12-18 months",
-              "   Why now, not when the market picks up:",
+              "   Why now, not when the market picks up:"]
+    if trigger_context:
+        _ev = (f"{trigger_context} - and no {role} in seat to own it; "
+               "the cost of that gap runs from today.")
+        for _i, _seg in enumerate(textwrap.wrap(_ev, 68)):
+            lines.append(f"   - {_seg}" if _i == 0 else f"     {_seg}")
+    lines += [
               f"   - Cost-of-vacancy clock runs weekly; ~{_cov_weeks} wks to a productive start",
               "   - In a quiet market the best leaders are reachable because fewer firms hunt",
               "     them — 'wait until it picks up' is backwards; the window is now",
@@ -1023,7 +1067,8 @@ def main() -> int:
     persona = (os.environ.get("PITCH_PERSONA") or "").strip()
     _render_kw = dict(annual_report=annual_rep, curated_priorities=curated_priorities,
                       peer_label=peer_meta["label"], peer_source=peer_meta["source"],
-                      sector_context=sector_ctx, persona=persona)
+                      sector_context=sector_ctx, persona=persona,
+                      trigger_context=trigger_context)
     html_out = render_html(target, role, ch, news, peers, sector, sal, cov, mode,
                             **_render_kw)
     text_out = render_text(target, role, ch, news, peers, sector, sal, cov,
