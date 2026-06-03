@@ -1230,9 +1230,15 @@ MR_CSS = r"""
 /* Hide the legacy two-panel + specialist rows; keep them in the DOM so the
    old refresh/triage handlers still find their elements. Dev footer stays. */
 #leads .container>.row{display:none!important}
+/* The page is a fixed 100vh flex column with overflow:hidden (the old layout
+   scrolled inside each panel-body). Make the #leads container the scroll
+   region so the whole BD Leads / Live Jobs list is reachable. */
+#leads.page.active{min-height:0}
+#leads .container{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden}
+@media (max-width:640px){#leads .container{overflow:visible;min-height:auto}}
 .mr-sub{text-align:center;font:500 10px/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:12px 0 20px;display:flex;gap:8px;align-items:center;justify-content:center}
 .mr-sub .mr-spk{color:var(--clay);display:inline-flex}.mr-sub .mr-spk svg{width:12px;height:12px}
-.mr-bar{display:flex;align-items:center;gap:7px;margin-bottom:13px;flex-wrap:wrap}
+.mr-bar{display:flex;align-items:center;gap:7px;margin-bottom:13px;flex-wrap:wrap;position:sticky;top:0;z-index:6;background:rgb(253,252,252);padding:8px 0 9px}
 .mr-spacer{flex:1}
 .mr-pgtabs{display:inline-flex;gap:22px;align-items:center}
 .mr-pgtab{font:600 13.5px/1 "Inter",sans-serif;color:var(--muted);background:none;border:none;cursor:pointer;padding:5px 0;position:relative;display:inline-flex;align-items:center;gap:7px;transition:.13s}.mr-pgtab svg{width:15px;height:15px;opacity:.85}.mr-pgtab:hover{color:var(--ink2)}
@@ -1246,8 +1252,8 @@ MR_CSS = r"""
 .mr-tp.lead{background:#e9effb;color:#1d4ed8}.mr-tp.lead::before{background:#3b82f6}.mr-tp.fund{background:#e7f3ec;color:#1e7a41}.mr-tp.fund::before{background:#34A853}.mr-tp.restr{background:#edf0f4;color:#46556e}.mr-tp.restr::before{background:#6b7689}.mr-tp.warn{background:#fdecdb;color:#b5530e}.mr-tp.warn::before{background:#D97A2B}.mr-tp.mna{background:#efe9fb;color:#6b3fb5}.mr-tp.mna::before{background:#8B5CF6}.mr-tp.people{background:#ddf3f0;color:#0e7c74}.mr-tp.people::before{background:#12A594}
 .mr-sc{display:inline-flex;align-items:center;justify-content:center;padding:3px 9px;font:700 9.5px/1.6 "Inter",sans-serif;letter-spacing:.04em;text-transform:uppercase;border-radius:7px;white-space:nowrap}
 .mr-sc.high{color:#2e7d50;background:#e7f3ec}.mr-sc.med{color:#8a5a00;background:#fff4e0}.mr-sc.low{color:#6b7686;background:#eef1f5}
-.mr-wb{font:600 9px/1.6 "JetBrains Mono",monospace;padding:2px 6px;border-radius:4px;background:rgba(14,40,69,.05);color:#1A3D7C;white-space:nowrap;text-align:center}
-.mr-badge{font:500 10px/1.4 "Inter",sans-serif;background:var(--elevated);border:1px solid var(--mrborder);border-radius:6px;padding:3px 8px;color:var(--ink2);white-space:nowrap;text-align:center}
+.mr-wb{font:600 9px/1.6 "JetBrains Mono",monospace;padding:2px 6px;border-radius:4px;background:rgba(14,40,69,.05);color:#1A3D7C;white-space:nowrap;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.mr-badge{font:500 10px/1.4 "Inter",sans-serif;background:var(--elevated);border:1px solid var(--mrborder);border-radius:6px;padding:3px 8px;color:var(--ink2);white-space:nowrap;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .mr-newp{font:700 7.5px/1 "Inter",sans-serif;letter-spacing:.06em;color:#1d4ed8;background:#e9effb;padding:2px 4px;border-radius:3px;vertical-align:middle}
 .mr-srcl{color:var(--dim);margin-left:4px;text-decoration:none;display:inline-flex;vertical-align:middle}.mr-srcl svg{width:11px;height:11px}.mr-srcl:hover{color:var(--blue-deep)}
 .mr-dl{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:28px;padding:0 9px;border-radius:7px;color:#fff;background:#1A3D7C;cursor:pointer;border:none;font:600 11px/1 "Inter",sans-serif;transition:.13s}.mr-dl svg{width:14px;height:14px}.mr-dl.icon{width:28px;padding:0}.mr-dl:hover{background:#15336a}.mr-dl.busy{background:#6b7689}.mr-dl.done{background:#1e7a41}
@@ -1259,7 +1265,7 @@ MR_CSS = r"""
 #mr-rows{border:1px solid var(--hairline);border-radius:13px;background:rgba(255,255,255,.62);overflow:hidden}
 .mr-rsum{display:grid;align-items:center;gap:11px}
 .mr-gbd{grid-template-columns:24px 150px 126px 158px minmax(90px,1fr) 82px 56px 76px auto}
-.mr-gjobs{grid-template-columns:24px 156px minmax(150px,1fr) 118px 52px auto}
+.mr-gjobs{grid-template-columns:24px 156px minmax(150px,1fr) 118px 52px 44px auto}
 .mr-row{border-bottom:1px solid var(--hairline);transition:.2s;display:block}.mr-row:last-child{border-bottom:none}.mr-row.gone{height:0!important;opacity:0;border:none;overflow:hidden}
 .mr-row.top .mr-rsum{box-shadow:inset 3px 0 0 var(--blue)}
 .mr-rsum{padding:11px 14px;cursor:pointer}.mr-rsum:hover{background:var(--elevated)}
@@ -1281,6 +1287,7 @@ MR_JS = r"""
 (function(){
   var IC={
     dl:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7.5 10.5 12 15l4.5-4.5"/><path d="M5 20h14"/></svg>',
+    copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',
     arr:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>',
     check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>',
     x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
@@ -1326,7 +1333,12 @@ MR_JS = r"""
      +'<div class="mr-rsum mr-gjobs" data-act="openjob" data-id="'+l._id+'" title="Open job posting">'
      +'<span class="mr-rk">'+(idx+1)+'</span><span class="mr-co">'+esc(l.co)+newp(l)+'</span>'
      +'<span class="mr-jt">'+esc(l.jt)+'</span><span class="mr-badge">'+esc(l.source)+'</span><span class="mr-badge">'+esc(l.geo)+'</span>'
+     +'<span class="mr-pcell"><button class="mr-io icon" data-act="copy" data-id="'+l._id+'" title="Copy outreach">'+IC.copy+'</button></span>'
      +'<span class="mr-racts">'+(filter==='all'?stbadge(l):'')+triBtns(l)+'</span></div></div>';}
+  function copyOutreach(id){var l=BYID[id];if(!l)return;var t=l.outreach||'';
+    try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t);}
+      else{var ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();document.execCommand('copy');document.body.removeChild(ta);}}catch(e){}
+    toast(t?('Outreach copied for '+l.co):('No outreach draft for '+l.co));}
   function setc(id,v){var e=$(id);if(e)e.textContent=v;}
   function updateSub(){var ds=active();var a=ds.filter(function(l){return l.status==='active';}).length;var n=ds.filter(function(l){return l.isNew&&l.status==='active';}).length;var s=$('mr-sub');if(s)s.innerHTML='<span class="mr-spk">'+IC.spark+'</span>'+(page==='bd'?(a+' active · '+n+' new today'):(a+' live roles · '+n+' new today'));}
   function counts(){var ds=active();function c(f){return ds.filter(f).length;}
@@ -1391,6 +1403,7 @@ MR_JS = r"""
     var act=a.getAttribute('data-act');var id=a.getAttribute('data-id');
     if(act==='tri'){e.stopPropagation();triage(id,a.getAttribute('data-st'));return;}
     if(act==='pitch'){e.stopPropagation();pitch(id,a);return;}
+    if(act==='copy'){e.stopPropagation();copyOutreach(id);return;}
     if(act==='toggle'){toggle(id);return;}
     if(act==='openjob'){openjob(id);return;}
     if(act==='pg'){setPage(a.getAttribute('data-pg'));return;}
@@ -1431,6 +1444,27 @@ def _mr_domain(url: str | None) -> str:
         return ""
 
 
+def _mr_compact_window(text: str | None) -> str:
+    """Pull just the duration out of a window string so it fits the compact
+    grid badge. Funding rows carry 'Senior-comms window ~6 mo' — we want the
+    '~6 mo', not the prose (which overflowed into the signal column)."""
+    import re
+    raw = (text or "").strip()
+    m = re.search(r'~?\s*\d[\d\s–\-]*\s*(?:wks?|weeks?|mos?|months?)',
+                  raw, re.I)
+    if m:
+        return m.group(0).strip()
+    return raw or "~6 mo"
+
+
+def _mr_clean_source(text: str | None) -> str:
+    """Trim the verbose parenthetical off a job source so the badge fits, e.g.
+    'Adzuna (Indeed + aggregator)' -> 'Adzuna', 'LinkedIn Jobs (public)' ->
+    'LinkedIn Jobs'."""
+    s = (text or "").split(" (")[0].strip()
+    return s[:22]
+
+
 def _build_mr_rows(premarket_rows, leads, role_label):
     """Project the live predictor/funding/lead data onto the flat row shape
     the Radar console renders (BD Leads + Live Jobs). Pre-sorted upstream by
@@ -1454,7 +1488,7 @@ def _build_mr_rows(premarket_rows, leads, role_label):
                 "seat": role_label, "why": why,
                 "brief": brief or "Funding round — senior build-out likely.",
                 "url": url, "src": _mr_domain(url),
-                "win": row.get("window") or "~3–6 mo",
+                "win": _mr_compact_window(row.get("window")),
                 "st": _mr_st(row.get("strength")),
                 "opp": row.get("_opp") or 0.0,
                 "idtype": "funding", "rid": row.get("fid") or "",
@@ -1492,9 +1526,12 @@ def _build_mr_rows(premarket_rows, leads, role_label):
             "co": s.get("company") or "—",
             "isNew": 1 if s.get("is_new") else 0,
             "jt": s.get("title") or "",
-            "source": s.get("source") or "",
+            "source": _mr_clean_source(s.get("source")),
             "geo": s.get("geo") or "",
             "url": s.get("url") or "",
+            # The real, desk-correct outreach draft (draft_outreach_for_lead) —
+            # copied by the outreach icon on the row.
+            "outreach": s.get("outreach") or "",
             "rid": s.get("lead_id") or "",
             "status": s.get("status", "active"),
         })
