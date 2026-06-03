@@ -344,6 +344,25 @@ def test_fee_vs_cost_phrase_ratio_bands():
     assert _fee_vs_cost_phrase(0, 0, 0) == ""
 
 
+def test_bd_lead_trigger_anchors_pack():
+    # Wiring contract: the dashboard derives "a recent <trigger> at <company>"
+    # from a BD lead's strongest event and passes it as trigger_context; the
+    # pack must anchor BOTH the cost-of-vacancy and the §7 "why now" to it.
+    from tool import pitch_pack as pp, peers
+    company, role = "Centrica", "Head of Communications"
+    trigger = "a recent CEO change at Centrica"
+    pm = peers.pitch_peers_for(company)
+    sal = pp._salary_band(role)
+    cov = pp.cost_of_vacancy(role, (sal[0] + sal[1]) // 2, trigger_context=trigger)
+    assert trigger in cov["headline"]
+    ch = {"found": True, "resolved": {"company_number": "X", "company_status": "active"}}
+    html = pp.render_html(company, role, ch, [], pm["peers"],
+                          peers.detect_sector(company), sal, cov, "preview",
+                          peer_label=pm["label"], peer_source=pm["source"],
+                          trigger_context=trigger)
+    assert trigger in html and "own it" in html
+
+
 def test_section8_event_wired_when_trigger_supplied():
     from tool import pitch_pack as pp, peers
     from tool.pre_meeting import _load_curated_priorities
