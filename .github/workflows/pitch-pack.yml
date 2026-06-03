@@ -87,7 +87,17 @@ jobs:
           # Two patterns rather than {html,txt} brace expansion - actions/
           # upload-artifact@v4's minimatch does not expand braces, so the
           # brace form was matching zero files and uploading nothing.
+          #
+          # The ** forms cover the per-DESK state dirs: the comms/default desk
+          # writes to tool/state/ but every other profile (marketing) writes to
+          # tool/state/<profile>/ (see tool/state_paths.py). Without the **
+          # patterns a marketing-desk pitch ran green but uploaded ZERO files,
+          # so the dashboard poll never found the artifact and the button was
+          # stuck on "Generating…". ** matches zero or more dirs, so these also
+          # cover the root-level comms files.
           path: |
             tool/state/pitch_pack_*.html
             tool/state/pitch_pack_*.txt
+            tool/state/**/pitch_pack_*.html
+            tool/state/**/pitch_pack_*.txt
           if-no-files-found: warn
