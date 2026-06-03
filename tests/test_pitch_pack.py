@@ -198,3 +198,72 @@ def test_render_generic_guard_hides_ftse_list():
     assert pm["source"] == "generic"
     assert "Barclays" not in html and "BP" not in html
     assert "not auto-detected" in html.lower()
+
+
+# ---- proof section, §8 reframe, backstage cleanup, currency -------------
+
+def test_proof_section_present_and_guarded():
+    html, _ = _render("Diageo", role="Head of Internal Communications")
+    assert "Track record" in html and "why VMA" in html
+    assert "specialist communications" in html.lower()   # true positioning line
+    # placements ship as placeholders -> the "complete before sending" guard fires
+    assert "vma_proof.json" in html
+
+
+def test_proof_loader_profile_aware_and_placeholders():
+    from tool.pitch_pack import _load_proof, _is_placeholder
+    proof = _load_proof()
+    assert proof.get("positioning")
+    assert any(_is_placeholder(p) for p in proof.get("placements", []))
+
+
+def test_no_client_language_mirror_section():
+    html, _ = _render("Diageo", role="Head of Internal Communications")
+    assert "Client language to mirror" not in html
+    assert "lift these recurring phrases" not in html.lower()
+    assert "2b." not in html
+
+
+def test_section2_has_no_pipeline_confessions():
+    for tgt, cur in [("Diageo", True), ("Mondelez", False)]:
+        html, _ = _render(tgt, curated=cur)
+        low = html.lower()
+        assert "extraction unavailable" not in low
+        assert "check trade press manually" not in low
+        assert "no annual report quotes available" not in low
+
+
+def test_section8_targets_real_competition():
+    html, _ = _render("Diageo", role="Head of Internal Communications")
+    assert "Why external retained search now" in html
+    low = html.lower()
+    assert "in-house" in low                       # not the contingent-only fight
+    assert "discretion" in low or "confidential" in low
+    assert "wait until it picks up" in low         # the do-nothing reframe
+
+
+def test_diageo_curated_is_current():
+    from tool.pre_meeting import _load_curated_priorities
+    pr = " ".join(_load_curated_priorities("Diageo")).lower()
+    assert "accelerate" in pr            # current cost programme
+    assert "dave lewis" in pr            # current CEO
+    assert "destocking shock" not in pr  # stale 2023-24 framing removed
+
+
+def test_text_render_has_proof_and_why_now_no_mirror():
+    from tool import pitch_pack as pp, peers
+    from tool.pre_meeting import _load_curated_priorities
+    role = "Head of Internal Communications"
+    pm = peers.pitch_peers_for("Diageo", k=15)
+    sal = pp._salary_band(role)
+    cov = pp.cost_of_vacancy(role, (sal[0] + sal[1]) // 2)
+    ch = {"found": True, "resolved": {"company_number": "X", "company_status": "active"}}
+    txt = pp.render_text("Diageo", role, ch, [], pm["peers"],
+                         peers.detect_sector("Diageo"), sal, cov,
+                         annual_report=None,
+                         curated_priorities=_load_curated_priorities("Diageo"),
+                         peer_label=pm["label"], peer_source=pm["source"])
+    assert "7. TRACK RECORD" in txt
+    assert "8. WHY EXTERNAL RETAINED SEARCH NOW" in txt
+    assert "9. RISK-MITIGATION TERMS" in txt
+    assert "CLIENT LANGUAGE TO MIRROR" not in txt

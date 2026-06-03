@@ -280,6 +280,44 @@ def _fmt_gbp(n: int) -> str:
     return f"£{n:,.0f}"
 
 
+def _prep_html(text: str) -> str:
+    """A clearly-INTERNAL prep note — visually distinct so it can't be mistaken
+    for client copy. Used only for the few legitimate Sara-only cues; the pack
+    otherwise reads as a client-facing document (no backstage instructions)."""
+    return (
+        "<div style='font-size:11px;color:#9a6b00;background:rgba(255,193,7,0.08);"
+        "border-left:2px solid #d39e00;padding:5px 9px;border-radius:3px;margin-top:6px;'>"
+        f"▸ <em>Prep note — remove before sending:</em> {_esc(text)}</div>"
+    )
+
+
+# ---- Proof / track record (config-driven) ----------------------------
+# Retained search is a trust purchase: "who have you placed?" is the most-asked
+# question in a pitch and the pack had no answer. VMA's real, approved
+# credentials live in tool/state/vma_proof.json; here we load the active
+# profile's slice and detect unfilled [placeholders] so the pack can guard a
+# half-finished proof section instead of sending invented stats.
+_PROOF_FILE = _REPO_ROOT / "tool" / "state" / "vma_proof.json"
+
+
+def _load_proof() -> dict:
+    """Load VMA's proof points for the active profile (comms/marketing).
+    Returns {} on any error so the section degrades gracefully."""
+    try:
+        import json
+        data = json.loads(_PROOF_FILE.read_text())
+        key = "marketing" if _MKT else "comms"
+        return data.get(key) or {}
+    except Exception as e:
+        log.info("vma_proof load failed: %s", e)
+        return {}
+
+
+def _is_placeholder(s: str) -> bool:
+    """A proof value still carrying [...] is an unfilled placeholder."""
+    return "[" in (s or "") and "]" in (s or "")
+
+
 def render_html(target: str, role: str, ch_snapshot: dict,
                 news: list[dict], peers: list[str], sector: str | None,
                 salary_band: tuple[int, int, str],
@@ -314,17 +352,18 @@ def render_html(target: str, role: str, ch_snapshot: dict,
             "UK entity not resolved (non-UK-registered or trading-name only).</div>"
         )
 
-    # Section 2 dual mode:
-    #   (a) Bespoke — quotes from the target's most recent annual report
-    #   (b) Fallback — GDELT headlines, labelled "Recent market context"
-    # The labelling difference tells Sara whether to trust this section
-    # as the bespoke edge of the pack or as defensible filler.
+    # Section 2 — "Why this matters now". Clean, client-facing copy whatever the
+    # source (bespoke annual-report quote > curated priorities > recent press >
+    # sector-level context). No backstage confessions about the extraction
+    # pipeline ("extraction unavailable", "check trade press manually") — the
+    # buyer doesn't need to know how the line was sourced; the content stands.
+    # The only internal cue is a clearly-marked prep note where one is genuinely
+    # warranted (sector-level fallback / nothing resolved).
     if annual_report and annual_report.quotes:
         section2_heading = "2. Why this matters now"
         section2_subline = (
-            f"Strategic context from {_esc(target)}'s annual report filed "
-            f"{_esc(annual_report.filing_date)}. Pick the quote that best "
-            f"matches the brief context; delete the rest before sending."
+            f"In {_esc(target)}'s own words, from their {_esc(annual_report.filing_date)} "
+            f"annual report:"
         )
         quote_items = []
         for q in annual_report.quotes:
@@ -345,9 +384,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
         section2_heading = "2. Why this matters now"
         news_html = (
             "<div style='font-size:13px;color:#555;margin-bottom:8px;'>"
-            f"Publicly stated strategic priorities for {_esc(target)} (curated from their "
-            "latest public reporting — live annual-report extraction unavailable for this "
-            "entity). Pick the one that best matches the brief:"
+            f"{_esc(target)}'s publicly stated strategic priorities:"
             "</div>"
             "<ul style='padding-left:18px;font-size:13px;'>"
             + "".join(f"<li style='margin-bottom:8px;'>{_esc(p)}</li>" for p in curated_priorities)
@@ -357,8 +394,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
         section2_heading = "2. Recent market context"
         news_html = (
             "<div style='font-size:13px;color:#555;margin-bottom:8px;'>"
-            "Generic news context (annual report quote extraction unavailable for this company - "
-            "consider adding a bespoke strategic line in your cover note):"
+            f"Recent coverage of {_esc(target)}:"
             "</div>"
             "<ul style='padding-left:18px;font-size:13px;'>"
         )
@@ -366,57 +402,32 @@ def render_html(target: str, role: str, ch_snapshot: dict,
             news_html += f"<li><a href='{_esc(a.get('url',''))}'>{_esc(a.get('title',''))}</a> <span style='color:#888;'>· {_esc(a.get('seendate','')[:8])}</span></li>"
         news_html += "</ul>"
     elif sector_context:
-        # Never blank, never defeatist: a sector/cohort-level read of what's
-        # pulling senior comms/marketing leaders into the market right now.
-        # Clearly labelled as sector-level so Sara adds a bespoke line.
+        # Never blank: a sector/cohort-level read of what's pulling senior
+        # comms/marketing leaders into the market now. Presented as clean copy;
+        # the only internal note flags it as sector-level so Sara adds a line.
         section2_heading = "2. Why this matters now"
         news_html = (
             "<div style='font-size:13px;color:#555;margin-bottom:8px;'>"
-            f"We couldn't extract {_esc(target)}'s own annual-report language, so this is "
-            f"<strong>sector-level</strong> context — what's driving senior {_NOUN} demand "
-            f"across {_esc(universe_label)} right now. Add one company-specific line before "
-            "sending:"
+            f"What's driving senior {_NOUN} demand across {_esc(universe_label)} right now:"
             "</div>"
             "<ul style='padding-left:18px;font-size:13px;'>"
             + "".join(f"<li style='margin-bottom:8px;'>{_esc(c)}</li>" for c in sector_context)
             + "</ul>"
+            + _prep_html(f"Sector-level context — add one {target}-specific line from "
+                         "their latest results to make this bespoke.")
         )
     else:
         section2_heading = "2. Why this matters now"
-        news_html = (
-            "<div style='font-size:13px;color:#555;'>"
-            f"No company-specific or sector context resolved for {_esc(target)}. "
-            "Add a strategic line from their latest results or a recent trade-press story "
-            "before sending — this section is the bespoke edge of the pack.</div>"
-        )
+        news_html = _prep_html(
+            f"No company or sector context resolved for {target} — add a strategic line "
+            "from their latest results or recent trade press before sending.")
 
-    # ---- Client-language mirroring (drop-in vocabulary) ----------------
-    # Mine the client's own public-comms phrasing (annual-report quotes +
-    # recent press) and surface the recurring lines for Sara to echo.
-    from tool import client_language as _cl
-    _corpus = [q.text for q in annual_report.quotes] if (annual_report and annual_report.quotes) else []
-    if not _corpus and curated_priorities:
-        _corpus += list(curated_priorities)
-    _corpus += [a.get("title", "") for a in (news or [])[:30]]
-    _mirror = _cl.mirror_phrases(_corpus, top_n=8)
-    if _mirror:
-        _mi = "".join(
-            "<li style='margin-bottom:8px;'>"
-            f"<span style='font-weight:600;color:#1A3D7C;'>{_esc(m['phrase'])}</span>"
-            f"<div style='font-size:11px;color:#777;margin-top:2px;'>e.g. &ldquo;{_esc(m['example'])}&rdquo;</div>"
-            "</li>"
-            for m in _mirror
-        )
-        client_lang_html = (
-            "<div style='font-size:13px;color:#555;margin-bottom:8px;'>"
-            "Echo the client&rsquo;s own framing &mdash; the same methodology in their "
-            "language converts materially better than generic search vocabulary. "
-            "Lift these recurring phrases into your cover note and outreach:"
-            "</div>"
-            f"<ul style='padding-left:18px;font-size:13px;'>{_mi}</ul>"
-        )
-    else:
-        client_lang_html = ""
+    # NOTE: the old "2b. Client language to mirror" block has been removed. It
+    # was a backstage instruction ("lift these phrases into your cover note")
+    # that should never be visible to the client, and it surfaced mangled
+    # fragments. Client-language mirroring is a tool for Sara's own prep, not
+    # content for the buyer — it does not belong in the client-facing pack.
+    client_lang_html = ""
 
     # Peer market map. The affinity cohort gives a tight, relevant move-from
     # set (brand houses for a drinks brand, not grocers). If only the generic
@@ -528,6 +539,84 @@ def render_html(target: str, role: str, ch_snapshot: dict,
         "</div>"
     )
 
+    # ---- Section 7: Proof / track record (the trust/conversion section) ----
+    proof = _load_proof()
+    proof_bits: list[str] = []
+    proof_has_placeholder = False
+
+    def _flag(*vals):
+        nonlocal proof_has_placeholder
+        if any(_is_placeholder(v) for v in vals):
+            proof_has_placeholder = True
+
+    positioning = (proof.get("positioning") or "").strip()
+    if positioning:
+        proof_bits.append(
+            f"<div style='font-size:13px;color:#333;margin-bottom:8px;'>{_esc(positioning)}</div>")
+    stats = [s for s in (proof.get("stats") or []) if s]
+    if stats:
+        _flag(*stats)
+        proof_bits.append(
+            "<div style='font-size:12px;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;'>Track record</div>"
+            "<ul style='padding-left:18px;font-size:13px;'>"
+            + "".join(f"<li>{_esc(s)}</li>" for s in stats) + "</ul>")
+    placements = [p for p in (proof.get("placements") or []) if p]
+    if placements:
+        _flag(*placements)
+        proof_bits.append(
+            "<div style='font-size:12px;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;'>Selected comparable placements (anonymised)</div>"
+            "<ul style='padding-left:18px;font-size:13px;'>"
+            + "".join(f"<li>{_esc(p)}</li>" for p in placements) + "</ul>")
+    consultant = proof.get("consultant") or {}
+    c_name, c_bio = (consultant.get("name") or "").strip(), (consultant.get("bio") or "").strip()
+    if c_name or c_bio:
+        _flag(c_name, c_bio)
+        proof_bits.append(
+            f"<div style='font-size:13px;color:#333;margin-top:8px;'><strong>{_esc(c_name)}</strong>"
+            f"{(' — ' + _esc(c_bio)) if c_bio else ''}</div>")
+    testimonial = proof.get("testimonial") or {}
+    t_q, t_a = (testimonial.get("quote") or "").strip(), (testimonial.get("attrib") or "").strip()
+    if t_q:
+        _flag(t_q, t_a)
+        proof_bits.append(
+            "<div style='font-size:13px;font-style:italic;color:#222;border-left:3px solid #3D5A82;"
+            f"padding:4px 12px;margin-top:8px;'>“{_esc(t_q)}”"
+            f"<div style='font-size:11px;color:#888;font-style:normal;margin-top:2px;'>— {_esc(t_a)}</div></div>")
+    if proof_has_placeholder:
+        proof_bits.append(_prep_html(
+            "Complete VMA's proof points in tool/state/vma_proof.json (the [bracketed] items) — "
+            "this is the section a retained buyer weighs most. Placeholders are showing."))
+    proof_html = "".join(proof_bits) if proof_bits else _prep_html(
+        "Add VMA proof points in tool/state/vma_proof.json — track record, comparable "
+        "placements, consultant bio, testimonial.")
+
+    # ---- Section 8: Why external retained search NOW ----------------------
+    # The real competition in a down market isn't contingent rivals — it's the
+    # client doing it in-house, on LinkedIn, or not at all. This answers all
+    # three: why external, why retained, why now.
+    why_now_html = f"""
+    <div style='font-size:13px;color:#333;'>
+      <div style='font-weight:600;margin:2px 0 4px;'>Why an external search, not in-house</div>
+      <ul style='padding-left:18px;margin:0 0 10px;'>
+        <li><strong>Reach:</strong> the strongest {_NOUN} leaders aren't applying — they're in seat elsewhere and won't answer a job ad or an approach with your name on it. Reaching them is the job.</li>
+        <li><strong>Discretion:</strong> a named third party runs the search confidentially — essential when an incumbent is still in post or the brief is sensitive.</li>
+        <li><strong>Brand-neutral approach:</strong> we can sound out your competitors' people with your name off the table until they're warm, which an in-house team structurally can't.</li>
+        <li><strong>Calibration:</strong> a benchmarked, market-mapped longlist — not whoever happens to apply — assessed against the brief before you spend interview time.</li>
+      </ul>
+      <div style='font-weight:600;margin:2px 0 4px;'>Why retained, not contingent</div>
+      <ul style='padding-left:18px;margin:0 0 10px;'>
+        <li>Exclusivity unlocks deeper passive outreach (~3× the universe a contingent firm will work)</li>
+        <li>Milestone fees align our priority with yours — we're not racing six firms on the same role</li>
+        <li>Senior {_NOUN} placements typically open 2–4 downstream hires ({_DOWNSTREAM_EXAMPLES}) over 12–18 months, so retained positions VMA for the full pipeline, not just the headline role</li>
+      </ul>
+      <div style='font-weight:600;margin:2px 0 4px;'>Why now, not when the market picks up</div>
+      <ul style='padding-left:18px;margin:0;'>
+        <li>The cost-of-vacancy clock (Section 3) runs every week the seat is open; notice periods mean ~{cov_weeks} weeks to a productive start even on a fast search</li>
+        <li>In a quieter market the strongest leaders are reachable precisely because fewer firms are hunting them — "wait until it picks up" is backwards; the window is now</li>
+      </ul>
+    </div>
+    """
+
     return f"""<!doctype html>
 <html><head><meta charset="utf-8"></head><body style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px;color:#111;">
 {note_banner}
@@ -542,7 +631,6 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 
 <h3 style="margin:18px 0 6px 0;">{section2_heading}</h3>
 {news_html}
-{('<h3 style="margin:18px 0 6px 0;">2b. Client language to mirror</h3>' + client_lang_html) if client_lang_html else ''}
 
 <h3 style="margin:18px 0 6px 0;">3. Cost of vacancy</h3>
 <div style='font-size:13px;color:#444;margin-bottom:6px;'>
@@ -568,15 +656,13 @@ def render_html(target: str, role: str, ch_snapshot: dict,
   Versus contingent at 22–25% of base only.
 </div>
 
-<h3 style="margin:18px 0 6px 0;">7. Why retained over contingent</h3>
-<ul style='padding-left:18px;font-size:13px;color:#333;'>
-  <li>Exclusivity unlocks deeper passive-candidate outreach (~3× larger universe vs contingent)</li>
-  <li>Milestone fees align our priority with yours, so we're not racing 6 other firms on the same role</li>
-  <li>Pre-agreed methodology removes 8–10 hours of back-and-forth at submission stage</li>
-  <li>Senior {_NOUN} placements typically open 2-4 downstream hires ({_DOWNSTREAM_EXAMPLES}) over the following 12-18 months, so a retained engagement positions VMA Group for the full pipeline, not just the headline role</li>
-</ul>
+<h3 style="margin:18px 0 6px 0;">7. Track record — why VMA</h3>
+{proof_html}
 
-<h3 style="margin:18px 0 6px 0;">8. Risk-mitigation terms</h3>
+<h3 style="margin:18px 0 6px 0;">8. Why external retained search now</h3>
+{why_now_html}
+
+<h3 style="margin:18px 0 6px 0;">9. Risk-mitigation terms</h3>
 <div style='font-size:13px;color:#333;'>
   Standard rebate schedule, off-limits clause, exclusivity period, and replacement guarantee per VMA Group's terms of engagement, provided separately as part of the contract pack.
 </div>
@@ -619,43 +705,32 @@ def render_text(target: str, role: str, ch_snapshot: dict,
         lines.append("   UK entity not resolved (non-UK-registered or trading-name only).")
 
     if annual_report and annual_report.quotes:
-        lines += ["", f"2. WHY THIS MATTERS NOW (annual report filed {annual_report.filing_date})"]
-        lines.append("   Pick the quote that best matches the brief context.")
+        lines += ["", f"2. WHY THIS MATTERS NOW  ({target}'s own words, {annual_report.filing_date} annual report)"]
         for q in annual_report.quotes:
             lines.append(f"   - \"{q.text}\"")
             lines.append(f"     [{q.heading}, p.{q.page}]")
     elif curated_priorities:
-        lines += ["", f"2. WHY THIS MATTERS NOW (publicly stated priorities for {target})"]
-        lines.append("   Curated from their latest public reporting (live annual-report extraction unavailable).")
+        lines += ["", f"2. WHY THIS MATTERS NOW  ({target}'s publicly stated strategic priorities)"]
         for p in curated_priorities:
             lines.append(f"   - {p}")
     elif news:
-        lines += ["", "2. RECENT MARKET CONTEXT (generic, no annual report quotes available)"]
+        lines += ["", f"2. RECENT MARKET CONTEXT  (recent coverage of {target})"]
         for a in news[:5]:
             lines.append(f"   - {a.get('title','')} ({a.get('seendate','')[:8]})")
             lines.append(f"     {a.get('url','')}")
     elif sector_context:
-        lines += ["", "2. WHY THIS MATTERS NOW (sector-level — add a company-specific line)",
+        lines += ["", "2. WHY THIS MATTERS NOW",
                   f"   What's driving senior {_NOUN} demand across {universe_label}:"]
         for c in sector_context:
             lines.append(f"   - {c}")
+        lines.append(f"   [prep note - remove before sending: add one {target}-specific line.]")
     else:
         lines += ["", "2. WHY THIS MATTERS NOW",
-                  f"   No company or sector context resolved for {target} — add a strategic",
-                  "   line from their latest results or recent trade press before sending."]
+                  f"   [prep note - remove before sending: no context resolved for {target};",
+                  "    add a strategic line from their latest results or recent trade press.]"]
 
-    from tool import client_language as _cl
-    _corpus = [q.text for q in annual_report.quotes] if (annual_report and annual_report.quotes) else []
-    if not _corpus and curated_priorities:
-        _corpus += list(curated_priorities)
-    _corpus += [a.get("title", "") for a in (news or [])[:30]]
-    _mirror = _cl.mirror_phrases(_corpus, top_n=8)
-    if _mirror:
-        lines += ["", "2b. CLIENT LANGUAGE TO MIRROR",
-                  "   Echo the client's own framing — converts better than generic search vocab."]
-        for m in _mirror:
-            lines.append(f"   - {m['phrase']}")
-            lines.append(f"     e.g. \"{m['example']}\"")
+    # (The old "2b. Client language to mirror" block is removed — it was a
+    # backstage instruction that should never appear in the client-facing pack.)
 
     _cov_lines = cov.get("lines", {}) if isinstance(cov, dict) else {}
     _cov_headline = cov.get("headline", "") if isinstance(cov, dict) else ""
@@ -691,15 +766,58 @@ def render_text(target: str, role: str, ch_snapshot: dict,
               f"   (6 wks is brief-to-offer; with notice periods plan ~{_cov_weeks} wks to a",
               "    productive start — the cost-of-vacancy window, which is why starting now matters)",
               "", "Retained fee: 28–33% of first-year total comp (vs 22–25% contingent on base only).",
+              ""]
+
+    # 7. Proof / track record (config-driven; flags unfilled placeholders).
+    _proof = _load_proof()
+    _ph = False
+    lines.append("7. TRACK RECORD — WHY VMA")
+    _pos = (_proof.get("positioning") or "").strip()
+    if _pos:
+        for _seg in textwrap.wrap(_pos, 72):
+            lines.append(f"   {_seg}")
+    for s in (_proof.get("stats") or []):
+        _ph = _ph or _is_placeholder(s)
+        lines.append(f"   - {s}")
+    _pl = [p for p in (_proof.get("placements") or []) if p]
+    if _pl:
+        lines.append("   Selected comparable placements (anonymised):")
+        for p in _pl:
+            _ph = _ph or _is_placeholder(p)
+            lines.append(f"     - {p}")
+    _c = _proof.get("consultant") or {}
+    if _c.get("name") or _c.get("bio"):
+        _ph = _ph or _is_placeholder(_c.get("name", "")) or _is_placeholder(_c.get("bio", ""))
+        lines.append(f"   {(_c.get('name') or '').strip()} — {(_c.get('bio') or '').strip()}")
+    _t = _proof.get("testimonial") or {}
+    if _t.get("quote"):
+        _ph = _ph or _is_placeholder(_t.get("quote", "")) or _is_placeholder(_t.get("attrib", ""))
+        lines.append(f"   \"{(_t.get('quote') or '').strip()}\" — {(_t.get('attrib') or '').strip()}")
+    if _ph or not _proof:
+        lines += ["   [prep note - remove before sending: complete VMA's proof points in",
+                  "    tool/state/vma_proof.json (the [bracketed] items) — the section a",
+                  "    retained buyer weighs most.]"]
+
+    # 8. Why external retained search NOW (the real competition: in-house / wait).
+    lines += ["",
+              "8. WHY EXTERNAL RETAINED SEARCH NOW",
+              "   Why external, not in-house:",
+              f"   - Reach: the strongest {_NOUN} leaders aren't applying — they're in seat",
+              "     elsewhere and won't answer a job ad or an approach with your name on it",
+              "   - Discretion: a named third party runs the search confidentially",
+              "   - Brand-neutral approach: sound out competitors' people with your name off",
+              "     the table until they're warm — an in-house team structurally can't",
+              "   - Calibration: a benchmarked, market-mapped longlist, not whoever applies",
+              "   Why retained, not contingent:",
+              "   - Exclusivity unlocks ~3x the passive universe a contingent firm will work",
+              "   - Milestone fees align priority — not racing six firms on the same role",
+              f"   - Senior {_NOUN} placements open 2-4 downstream hires over 12-18 months",
+              "   Why now, not when the market picks up:",
+              f"   - Cost-of-vacancy clock runs weekly; ~{_cov_weeks} wks to a productive start",
+              "   - In a quiet market the best leaders are reachable because fewer firms hunt",
+              "     them — 'wait until it picks up' is backwards; the window is now",
               "",
-              "7. WHY RETAINED",
-              "   - Exclusivity unlocks ~3x larger passive universe",
-              "   - Milestone fees align priority",
-              "   - Pre-agreed methodology removes 8-10 hrs of back-and-forth",
-              f"   - Senior {_NOUN} placements typically open 2-4 downstream hires over",
-              "     12-18 months, so retained positions VMA Group for the full pipeline",
-              "",
-              "8. RISK-MITIGATION TERMS",
+              "9. RISK-MITIGATION TERMS",
               "   Standard rebate schedule, off-limits clause, exclusivity period, and",
               "   replacement guarantee per VMA Group's terms of engagement, provided",
               "   separately as part of the contract pack."]
