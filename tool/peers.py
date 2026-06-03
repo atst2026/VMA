@@ -260,12 +260,174 @@ GENERIC_FALLBACK: list[str] = [
 
 
 def peers_for(name: str, k: int = 15) -> tuple[list[str], str | None]:
-    """Return (peer list, detected sector or None)."""
+    """Return (peer list, detected sector or None).
+
+    This is the RANKER-facing peer/sector resolver (also used by
+    reverse_match). It is deliberately left alone — the Pitch Pack uses
+    pitch_peers_for() below for a sharper talent universe without
+    disturbing sector_heat / the ranker."""
     sector = detect_sector(name)
     if sector:
         peers = [c for c in SECTOR_PEERS[sector] if _normalise(c) != _normalise(name)]
         return peers[:k], sector
     return GENERIC_FALLBACK[:k], None
+
+
+# ---- Pitch-Pack talent universe: cross-sector affinity cohorts ----------
+# The broad ranking sectors (SECTOR_PEERS) are right for the ranker but too
+# coarse for a client-facing "where your candidates sit" list: retail_consumer
+# lumps a global drinks brand (Diageo) in with grocers (Greggs, B&Q), so a
+# Diageo pitch was shown the wrong move-from set. These affinity groups are a
+# Pitch-Pack-ONLY refinement — they do NOT touch SECTOR_PEERS, COMPANY_TO_SECTOR
+# or SECTOR_HEAT, so the ranker and predictor pipeline are unaffected.
+#
+# Insertion order = match priority (a company in two cohorts takes the first).
+# Each member list is curated most-comparable-first, UK-major ahead of global,
+# since Sara recruits UK-primary.
+PITCH_AFFINITY_GROUPS: "dict[str, dict]" = {
+    "global_consumer_brands": {
+        "label": "Global consumer brands & FMCG",
+        "members": [
+            "Unilever", "Reckitt", "Diageo", "Haleon", "Associated British Foods",
+            "Britvic", "Premier Foods", "Tate & Lyle", "Imperial Brands",
+            "British American Tobacco", "Cranswick", "Greencore",
+            "Pernod Ricard", "Anheuser-Busch InBev", "Heineken", "Carlsberg",
+            "Mondelez", "PepsiCo", "Coca-Cola HBC", "Nestle", "Mars",
+            "Kraft Heinz", "Procter & Gamble", "L'Oreal", "Estee Lauder",
+            "Danone", "Kellanova",
+        ],
+    },
+    "premium_luxury": {
+        "label": "Premium & luxury brands",
+        "members": [
+            "Burberry", "Mulberry", "Watches of Switzerland", "Ted Baker",
+            "Selfridges", "Harrods", "Liberty London", "Fortnum & Mason",
+            "LVMH", "Kering", "Hermes", "Richemont",
+        ],
+    },
+    "grocery_retail": {
+        "label": "Grocery & high-street retail",
+        "members": [
+            "Tesco", "Sainsbury's", "Marks & Spencer", "Asda Group",
+            "Morrisons Supermarkets", "Co-operative Group", "Waitrose",
+            "Iceland Foods", "Next", "Boots", "Currys", "WH Smith", "Greggs",
+            "B&Q", "Kingfisher", "Halfords", "Wickes", "Pets at Home", "Dunelm",
+            "Frasers Group", "JD Sports", "Card Factory",
+        ],
+    },
+    "hospitality_leisure": {
+        "label": "Hospitality, leisure & eating-out",
+        "members": [
+            "Whitbread", "Compass Group", "Mitchells & Butlers", "Greene King",
+            "JD Wetherspoon", "Stonegate Pub Company", "Domino's Pizza Group",
+            "Costa Coffee", "Pret a Manger", "Hollywood Bowl Group", "Rank Group",
+            "Entain", "Flutter Entertainment",
+        ],
+    },
+    "uk_banks": {
+        "label": "UK banks & building societies",
+        "members": [
+            "Barclays", "HSBC", "Lloyds Banking Group", "NatWest Group",
+            "Santander UK", "Nationwide Building Society", "Standard Chartered",
+            "Virgin Money UK", "TSB Bank", "Metro Bank", "Close Brothers",
+            "Investec",
+        ],
+    },
+    "insurers": {
+        "label": "Insurers & protection",
+        "members": [
+            "Aviva", "Legal & General", "Prudential", "Phoenix Group",
+            "Admiral Group", "Direct Line Group", "RSA Insurance", "Beazley",
+            "Hiscox", "Just Group", "Lancashire Holdings", "Saga",
+        ],
+    },
+    "asset_wealth_managers": {
+        "label": "Asset & wealth management",
+        "members": [
+            "Schroders", "M&G", "abrdn", "St James's Place", "Quilter",
+            "Hargreaves Lansdown", "Janus Henderson", "Jupiter Fund Management",
+            "Liontrust Asset Management", "Rathbones Group", "AJ Bell",
+            "3i Group", "Intermediate Capital Group", "Bridgepoint",
+        ],
+    },
+    "fintech_challengers": {
+        "label": "Fintech & challenger finance",
+        "members": [
+            "Monzo", "Starling Bank", "Wise", "Revolut", "GoCardless",
+            "Funding Circle", "Atom Bank", "Tide Bank", "Checkout.com",
+            "IG Group", "Plus500", "CMC Markets",
+        ],
+    },
+    "telecoms": {
+        "label": "Telecoms & connectivity",
+        "members": [
+            "BT Group", "Vodafone", "Virgin Media O2", "Three UK", "Sky UK",
+            "TalkTalk",
+        ],
+    },
+    "broadcast_media": {
+        "label": "Broadcast & media",
+        "members": [
+            "ITV", "Channel 4", "BBC", "Sky UK", "STV Group", "Reach plc",
+            "Future plc", "Guardian Media Group", "Daily Mail and General Trust",
+            "Bauer Media", "Informa", "RELX", "Pearson", "Bloomsbury Publishing",
+        ],
+    },
+}
+
+# company (normalised) -> affinity group key. First group wins (insertion order).
+PITCH_COMPANY_TO_AFFINITY: dict[str, str] = {}
+for _gkey, _gdef in PITCH_AFFINITY_GROUPS.items():
+    for _co in _gdef["members"]:
+        PITCH_COMPANY_TO_AFFINITY.setdefault(_normalise(_co), _gkey)
+
+
+def _affinity_key_for(name: str) -> str | None:
+    """Resolve a company to its Pitch-Pack affinity cohort, or None."""
+    n = _normalise(name)
+    if not n:
+        return None
+    grp = PITCH_COMPANY_TO_AFFINITY.get(n)
+    if grp:
+        return grp
+    # Boundary-anchored containment (same discipline as detect_sector) so
+    # "Diageo plc" / "Diageo GB" resolve, without matching mid-word.
+    for member_norm, g in PITCH_COMPANY_TO_AFFINITY.items():
+        if member_norm and (_starts_at_boundary(member_norm, n)
+                            or _starts_at_boundary(n, member_norm)):
+            return g
+    return None
+
+
+def pitch_peers_for(name: str, k: int = 15) -> dict:
+    """Pitch-Pack talent universe — a sharper 'where your candidates sit'
+    list than the ranker's sector peers.
+
+    Resolution order:
+      1. AFFINITY cohort (cross-sector) — so a global drinks brand is shown
+         other brand houses, not grocers.
+      2. SECTOR peers — the existing list, when the sector is already coherent
+         (e.g. energy_utilities).
+      3. GENERIC — flagged so the Pitch Pack can REFUSE to show an irrelevant
+         FTSE list (Barclays/BP) to an off-sector account (e.g. a charity).
+
+    Returns {"peers", "label", "key", "source"} where source ∈
+    {"affinity", "sector", "generic"} and key is the affinity/sector key
+    (None when generic) — used to look up sector_context for Section 2."""
+    grp = _affinity_key_for(name)
+    if grp:
+        n = _normalise(name)
+        members = [c for c in PITCH_AFFINITY_GROUPS[grp]["members"]
+                   if _normalise(c) != n]
+        return {"peers": members[:k], "label": PITCH_AFFINITY_GROUPS[grp]["label"],
+                "key": grp, "source": "affinity"}
+    sector = detect_sector(name)
+    if sector:
+        peers = [c for c in SECTOR_PEERS[sector] if _normalise(c) != _normalise(name)]
+        return {"peers": peers[:k], "label": sector.replace("_", " ").title(),
+                "key": sector, "source": "sector"}
+    return {"peers": GENERIC_FALLBACK[:k], "label": "Large UK employers",
+            "key": None, "source": "generic"}
 
 
 # Phase 1.3: sector-heat re-weighting. Detection emphasis is biased

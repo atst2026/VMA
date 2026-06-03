@@ -24,6 +24,7 @@ import html
 import logging
 import os
 import sys
+import textwrap
 from datetime import datetime
 from pathlib import Path
 
@@ -34,7 +35,7 @@ if str(_REPO_ROOT) not in sys.path:
 from tool import config
 from tool import annual_report as ar
 from tool.email_send import send as email_send
-from tool.peers import peers_for, detect_sector
+from tool.peers import pitch_peers_for, detect_sector
 from tool.sources import companies_house, gdelt
 from tool.sources._http import get
 
@@ -46,7 +47,9 @@ STATE_DIR = state_dir()
 STATE_DIR.mkdir(parents=True, exist_ok=True)
 
 
-# ---- Salary benchmarks by role tier (UK, April 2026 market) -----------
+# ---- Salary benchmarks by role tier (UK senior market baseline) -------
+# Hand-maintained reference bands; the rendered pack stamps the current
+# month/year, so refresh these periodically to keep that label honest.
 # These are sensible defaults from Sara's plan + market knowledge. Sara
 # can override any of these in the pitch pack before sending.
 SALARY_BANDS_GBP = {
@@ -107,32 +110,101 @@ def _salary_band(role: str) -> tuple[int, int, str]:
     return *SALARY_BANDS_GBP[_DEFAULT_BAND_KEY], f"{_DEFAULT_BAND_KEY} (default)"
 
 
-# ---- Cost of vacancy: simple defensible template ---------------------
-# Senior comms searches typically run 14–18 weeks brief-to-placement
-# (retained, named-longlist). We use 16 weeks as the COV assumption —
-# more defensible than the previous 12-week figure and produces a
-# stronger retained argument.
-COV_WEEKS = 16
+# ---- Timeline: reconcile "cost of an empty seat" with the methodology -
+# The retained SEARCH is ~6 weeks brief-to-offer — the part VMA controls
+# (Section 6). A senior hire then serves notice (typically ~3 months at this
+# level), so the seat is effectively unfilled until someone is in and
+# productive ~18 weeks out, and every week the brief is delayed adds on top.
+# Cost-of-vacancy is measured over time-to-productive; the 6-week methodology
+# is the controllable search window. This removes the old 16-vs-6-week
+# contradiction the pack used to print on the same page.
+SEARCH_WEEKS = 6
+NOTICE_WEEKS = 12
+TIME_TO_PRODUCTIVE_WEEKS = SEARCH_WEEKS + NOTICE_WEEKS  # ~18
+
+# Interim senior-cover day-rate the client bears during the gap (UK, 2026).
+INTERIM_DAY_RATE_GBP = 700
+
+# Base -> estimated first-year TOTAL comp (base + typical bonus/LTIP). The
+# retained fee is quoted on total comp (Section 6), so the headline fee in
+# Section 1 must be too — the old pack computed it on base only, which both
+# contradicted Section 6 and anchored the client BELOW VMA's real number.
+BONUS_LTIP_UPLIFT = 1.20
 
 
-def cost_of_vacancy(role: str, salary_midpoint: int) -> dict:
-    """The £ cost to the CLIENT of leaving the permanent seat empty —
-    the business case for engaging the retained search now (NOT a
-    recommendation to place an interim; interim is off-product):
-    - Productivity loss while the seat is unfilled (16 weeks)
-    - Stop-gap cover the client bears during the gap (~£600/day equiv.)
-    - Risk premium for a rushed bad hire (~30% of first-year salary)
-    Returns a dict of {label: amount}.
+def estimate_total_comp(base_midpoint: int) -> int:
+    """Estimated first-year total compensation from a base midpoint
+    (base + typical 10-25% bonus/LTIP at senior FTSE-listed level)."""
+    return int(round(base_midpoint * BONUS_LTIP_UPLIFT, -2))
+
+
+def _comms_cov_headline(role: str, trigger_context: str) -> str:
+    role_l = (role or "comms leader").strip()
+    if trigger_context:
+        return (f"With {trigger_context} and no {role_l} in seat, the cost of the "
+                "gap isn't lost admin time — it's reputational: a mishandled "
+                "disclosure, a slow crisis response, or a media and stakeholder "
+                "moment landing with no senior owner. That exposure runs every week "
+                "the seat is open.")
+    return ("For a comms function the cost of an empty seat isn't lost admin time — "
+            "it's reputational: a mishandled disclosure, a slow crisis response, or "
+            "a media and stakeholder moment landing with no senior owner. That "
+            "exposure runs every week the seat is open, which is what a retained "
+            "search is bought to close quickly.")
+
+
+def _marketing_cov_headline(role: str, trigger_context: str) -> str:
+    role_l = (role or "marketing leader").strip()
+    if trigger_context:
+        return (f"With {trigger_context} and no {role_l} in seat, the cost of the "
+                "gap is commercial, not administrative: demand generation stalls, "
+                "campaigns and launches slip, and pipeline that should be building "
+                "simply isn't. Every quarter the seat is open is a quarter of "
+                "deferred growth.")
+    return ("For a marketing function the cost of an empty seat is commercial, not "
+            "administrative: demand generation stalls, campaigns and launches slip, "
+            "and brand momentum decays. Every quarter the seat is open is a quarter "
+            "of deferred pipeline and growth — which is what a retained search is "
+            "bought to protect.")
+
+
+def cost_of_vacancy(role: str, salary_midpoint: int, *,
+                    frame: str | None = None,
+                    trigger_context: str = "") -> dict:
+    """The cost to the CLIENT of leaving the permanent seat empty — the
+    business case for engaging the retained search now. Function-split by
+    the buyer's value frame (the persuasion, not just the arithmetic):
+
+      * comms     -> reputational / event risk is the headline cost
+      * marketing -> deferred pipeline / growth is the headline cost
+
+    Both carry the same two defensible £ components — interim cover for the
+    gap, and the cost of getting the hire wrong — measured over time-to-
+    productive (~18 wks), NOT the old hand-wavy productivity multiplier. Pass
+    `trigger_context` (e.g. "half-year results eight weeks out") to anchor the
+    headline to the specific live event behind a BD lead; it falls back to a
+    frame-generic line when none is supplied.
+
+    Returns {"frame", "headline", "lines": {label: £}, "total", "weeks",
+    "total_comp"}.
     """
-    productivity = int(salary_midpoint * 1.5 * (COV_WEEKS / 52))
-    gap_cover = 600 * 5 * COV_WEEKS
-    bad_hire_risk = int(salary_midpoint * 0.30)
-    return {
-        f"Lost productivity ({COV_WEEKS} wks vacant)": productivity,
-        f"Stop-gap cover during the vacancy ({COV_WEEKS} wks)": gap_cover,
-        "Rushed bad-hire downside risk (30% salary)": bad_hire_risk,
-        "Cost of leaving the seat empty": productivity + gap_cover + bad_hire_risk,
+    frame = frame or ("marketing" if _MKT else "comms")
+    weeks = TIME_TO_PRODUCTIVE_WEEKS
+    total_comp = estimate_total_comp(salary_midpoint)
+    interim = INTERIM_DAY_RATE_GBP * 5 * weeks
+    rushed = int(round(total_comp * 0.30, -2))
+    cover_label = ("Interim marketing-leadership cover" if frame == "marketing"
+                   else "Interim senior-comms cover")
+    lines = {
+        f"{cover_label} (~{weeks} wks to a productive start)": interim,
+        "Exposure of a rushed/wrong hire (replacement + re-search, ~30% of total comp)": rushed,
     }
+    total = sum(lines.values())
+    lines["Cost of leaving the seat empty"] = total
+    headline = (_marketing_cov_headline(role, trigger_context) if frame == "marketing"
+                else _comms_cov_headline(role, trigger_context))
+    return {"frame": frame, "headline": headline, "lines": lines,
+            "total": total, "weeks": weeks, "total_comp": total_comp}
 
 
 # ---- Recent news lookups ---------------------------------------------
@@ -212,9 +284,17 @@ def render_html(target: str, role: str, ch_snapshot: dict,
                 news: list[dict], peers: list[str], sector: str | None,
                 salary_band: tuple[int, int, str],
                 cov: dict, mode: str,
-                annual_report=None, curated_priorities: list[str] | None = None) -> str:
+                annual_report=None, curated_priorities: list[str] | None = None,
+                peer_label: str = "", peer_source: str = "sector",
+                sector_context: list[str] | None = None) -> str:
     low, high, matched = salary_band
     mid = (low + high) // 2
+    total_comp_mid = estimate_total_comp(mid)
+    # Display label for the talent universe / sector field. The affinity
+    # cohort (e.g. "Global consumer brands & FMCG") is sharper than the broad
+    # ranker sector; fall back to the sector label, then a neutral note.
+    universe_label = peer_label or (
+        sector.replace("_", " ").title() if sector else "Sector unclear")
 
     # CH is demoted to a small audit footnote — the company number and street
     # address aren't useful to an AD pitching. The AD-useful snapshot (sector /
@@ -285,9 +365,30 @@ def render_html(target: str, role: str, ch_snapshot: dict,
         for a in news[:5]:
             news_html += f"<li><a href='{_esc(a.get('url',''))}'>{_esc(a.get('title',''))}</a> <span style='color:#888;'>· {_esc(a.get('seendate','')[:8])}</span></li>"
         news_html += "</ul>"
+    elif sector_context:
+        # Never blank, never defeatist: a sector/cohort-level read of what's
+        # pulling senior comms/marketing leaders into the market right now.
+        # Clearly labelled as sector-level so Sara adds a bespoke line.
+        section2_heading = "2. Why this matters now"
+        news_html = (
+            "<div style='font-size:13px;color:#555;margin-bottom:8px;'>"
+            f"We couldn't extract {_esc(target)}'s own annual-report language, so this is "
+            f"<strong>sector-level</strong> context — what's driving senior {_NOUN} demand "
+            f"across {_esc(universe_label)} right now. Add one company-specific line before "
+            "sending:"
+            "</div>"
+            "<ul style='padding-left:18px;font-size:13px;'>"
+            + "".join(f"<li style='margin-bottom:8px;'>{_esc(c)}</li>" for c in sector_context)
+            + "</ul>"
+        )
     else:
-        section2_heading = "2. Recent market context"
-        news_html = "<div style='color:#888;'>No strategic-report quotes available and no GDELT coverage - check trade press manually.</div>"
+        section2_heading = "2. Why this matters now"
+        news_html = (
+            "<div style='font-size:13px;color:#555;'>"
+            f"No company-specific or sector context resolved for {_esc(target)}. "
+            "Add a strategic line from their latest results or a recent trade-press story "
+            "before sending — this section is the bespoke edge of the pack.</div>"
+        )
 
     # ---- Client-language mirroring (drop-in vocabulary) ----------------
     # Mine the client's own public-comms phrasing (annual-report quotes +
@@ -317,30 +418,46 @@ def render_html(target: str, role: str, ch_snapshot: dict,
     else:
         client_lang_html = ""
 
-    # Peer market map
-    sector_label = sector.replace("_", " ").title() if sector else "Detected sector unclear - generic FTSE list"
-    peer_html = "<ol style='padding-left:18px;font-size:13px;'>"
-    for p in peers:
-        peer_html += f"<li>{_esc(p)}</li>"
-    peer_html += "</ol>"
+    # Peer market map. The affinity cohort gives a tight, relevant move-from
+    # set (brand houses for a drinks brand, not grocers). If only the generic
+    # FTSE fallback resolved, REFUSE to show it — an irrelevant list ("your
+    # candidates sit at BP") damages credibility more than an honest prompt.
+    if peer_source == "generic":
+        peer_html = (
+            "<div style='font-size:13px;color:#a3690a;background:rgba(255,193,7,0.10);"
+            "border-left:3px solid #d39e00;padding:8px 12px;border-radius:4px;'>"
+            f"Sector not auto-detected for {_esc(target)} — the talent universe needs "
+            "tailoring to this brief before sending. (Naming the right 12-15 comparable "
+            "employers here is the section a sophisticated client reads most closely.)</div>"
+        )
+        reframe_html = ""
+    else:
+        peer_html = "<ol style='padding-left:18px;font-size:13px;'>"
+        for p in peers:
+            peer_html += f"<li>{_esc(p)}</li>"
+        peer_html += "</ol>"
+        reframe_html = (
+            "<div style='font-size:12.5px;color:#444;background:rgba(61,90,130,0.05);"
+            "border-left:3px solid #3D5A82;padding:8px 12px;border-radius:4px;margin-bottom:10px;'>"
+            f"If the read on this brief is that the market's quiet — it isn't scarce, it's "
+            f"<em>placed</em>. The {len(peers)} named employers below are where a "
+            f"{_esc(matched)} sits today; the constraint is reaching them before a competitor "
+            f"does, which is exactly what a retained search buys. See the cost of vacancy above "
+            f"for what waiting carries."
+            "</div>"
+        )
 
-    # Dead-market reframe — handles the "there's no one out there" objection
-    # with the data we already compute (the named universe + cost of vacancy).
-    reframe_html = (
-        "<div style='font-size:12.5px;color:#444;background:rgba(61,90,130,0.05);"
-        "border-left:3px solid #3D5A82;padding:8px 12px;border-radius:4px;margin-bottom:10px;'>"
-        f"If the read on this brief is that the market's quiet — it isn't scarce, it's "
-        f"<em>placed</em>. The {len(peers)} named employers below are where a "
-        f"{_esc(matched)} sits today; the constraint is reaching them before a competitor "
-        f"does, which is exactly what a retained search buys. See the cost of vacancy above "
-        f"for what waiting carries."
-        "</div>"
+    # COV: buyer-shaped headline narrative + the defensible £ breakdown.
+    cov_lines = cov.get("lines", {}) if isinstance(cov, dict) else {}
+    cov_headline = cov.get("headline", "") if isinstance(cov, dict) else ""
+    cov_html = (
+        "<div style='font-size:13px;color:#333;margin-bottom:8px;'>"
+        f"{_esc(cov_headline)}</div>"
+        if cov_headline else ""
     )
-
-    # COV breakdown
-    cov_html = "<table style='border-collapse:collapse;font-size:13px;'>"
-    for k, v in cov.items():
-        bold = "font-weight:600;" if "Total" in k else ""
+    cov_html += "<table style='border-collapse:collapse;font-size:13px;'>"
+    for k, v in cov_lines.items():
+        bold = "font-weight:600;" if "leaving the seat empty" in k.lower() else ""
         cov_html += f"<tr><td style='padding:4px 12px 4px 0;{bold}'>{_esc(k)}</td><td style='text-align:right;{bold}'>{_fmt_gbp(v)}</td></tr>"
     cov_html += "</table>"
 
@@ -359,17 +476,20 @@ def render_html(target: str, role: str, ch_snapshot: dict,
     # ---- Account snapshot (§1): what they are, what the mandate is worth,
     # the urgency, and the downstream pipeline — built from data we already
     # compute, replacing the bare CH number/address. ----
-    sector_disp = sector_label if sector else "Sector unclear — confirm before pitching"
-    fee_low = int(round(0.28 * mid, -2))
-    fee_high = int(round(0.33 * mid, -2))
-    cov_total = next((v for k, v in cov.items()
-                      if "leaving the seat empty" in k.lower() or k.lower().startswith("total")), None)
+    sector_disp = universe_label
+    # Fee on ESTIMATED TOTAL COMP (base + bonus/LTIP) — the same basis Section
+    # 6 quotes, so the headline number no longer contradicts it or anchors the
+    # client below VMA's real fee.
+    fee_low = int(round(0.28 * total_comp_mid, -2))
+    fee_high = int(round(0.33 * total_comp_mid, -2))
+    cov_total = cov.get("total") if isinstance(cov, dict) else None
     snapshot_html = (
         "<div style='display:flex;flex-wrap:wrap;gap:14px 30px;font-size:13px;margin-bottom:10px;'>"
         f"<div><span style='color:#888;'>Sector</span><br><strong>{_esc(sector_disp)}</strong></div>"
         "<div><span style='color:#888;'>Indicative retained fee</span><br>"
         f"<strong>{_fmt_gbp(fee_low)}–{_fmt_gbp(fee_high)}</strong> "
-        "<span style='color:#888;font-size:11px;'>(28–33% of base; more with bonus/LTIP)</span></div>"
+        "<span style='color:#888;font-size:11px;'>(28–33% of est. first-year total comp — "
+        f"base + typical bonus/LTIP; total comp ≈ {_fmt_gbp(total_comp_mid)})</span></div>"
         + (("<div><span style='color:#888;'>Cost of an empty seat</span><br>"
             f"<strong>{_fmt_gbp(cov_total)}</strong> "
             "<span style='color:#888;font-size:11px;'>(see Section 3)</span></div>") if cov_total else "")
@@ -384,6 +504,29 @@ def render_html(target: str, role: str, ch_snapshot: dict,
     note_banner = ""
     if mode == "test":
         note_banner = "<div style='background:#fff3cd;border:1px solid #ffeaa7;padding:8px;margin-bottom:16px;font-size:13px;'>⚠️ TEST PACK - generated for Amir's review. Do not send to client.</div>"
+
+    salary_period = datetime.now().strftime("%B %Y")
+    cov_weeks = cov.get("weeks", TIME_TO_PRODUCTIVE_WEEKS) if isinstance(cov, dict) else TIME_TO_PRODUCTIVE_WEEKS
+    # Section 4 intro — relevant when we have a real cohort; honest prompt when
+    # only the generic fallback resolved (peer_html already carries the warning).
+    if peer_source == "generic":
+        universe_intro = ""
+    else:
+        universe_intro = (
+            "<div style='font-size:13px;color:#555;margin-bottom:6px;'>"
+            f"Where the candidate pool sits — the realistic move-from set for a "
+            f"{_esc(matched)}-level hire across {_esc(universe_label.lower())}.</div>"
+        )
+    # Reconcile the 6-week search with the cost-of-vacancy window so the pack
+    # never again bills "16 weeks vacant" next to "offer by week 6".
+    methodology_note = (
+        "<div style='font-size:12px;color:#888;margin-top:6px;'>"
+        f"The 6-week timeline is brief-to-offer — the part a retained search controls. "
+        f"Senior notice periods then apply, so plan ~{cov_weeks} weeks to a productive "
+        f"start; the cost of vacancy in Section 3 is measured over that period, which is "
+        f"why every week of delay compounds and starting the search now matters."
+        "</div>"
+    )
 
     return f"""<!doctype html>
 <html><head><meta charset="utf-8"></head><body style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px;color:#111;">
@@ -403,24 +546,23 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 
 <h3 style="margin:18px 0 6px 0;">3. Cost of vacancy</h3>
 <div style='font-size:13px;color:#444;margin-bottom:6px;'>
-  Mid-range salary assumed: <strong>{_fmt_gbp(mid)}</strong>. Override if the brief is at a different level.
+  Base salary assumed: <strong>{_fmt_gbp(mid)}</strong> (est. total comp <strong>{_fmt_gbp(total_comp_mid)}</strong>). Override if the brief is at a different level.
 </div>
 {cov_html}
 
-<h3 style="margin:18px 0 6px 0;">4. Talent universe ({_esc(sector_label)})</h3>
+<h3 style="margin:18px 0 6px 0;">4. Talent universe — {_esc(universe_label)}</h3>
 {reframe_html}
-<div style='font-size:13px;color:#555;margin-bottom:6px;'>
-  Where the candidate pool sits. These 15 named employers represent the realistic move-from set for a {_esc(matched)}-level hire in this sector.
-</div>
+{universe_intro}
 {peer_html}
 
 <h3 style="margin:18px 0 6px 0;">5. Salary benchmark</h3>
 <div style='font-size:13px;'>
-  UK April 2026 range for <strong>{_esc(matched)}</strong>: <strong>{_fmt_gbp(low)}–{_fmt_gbp(high)}</strong> base, plus 10–25% bonus / LTIP at FTSE-listed level.
+  UK {_esc(salary_period)} range for <strong>{_esc(matched)}</strong>: <strong>{_fmt_gbp(low)}–{_fmt_gbp(high)}</strong> base, plus 10–25% bonus / LTIP at FTSE-listed level (est. total comp ≈ <strong>{_fmt_gbp(total_comp_mid)}</strong>).
 </div>
 
 <h3 style="margin:18px 0 6px 0;">6. 6-week retained methodology</h3>
 {methodology_html}
+{methodology_note}
 <div style='font-size:12px;color:#888;margin-top:6px;'>
   Retained fee: 28–33% of first-year total comp, in thirds at engagement / shortlist / accepted offer.
   Versus contingent at 22–25% of base only.
@@ -446,23 +588,26 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 def render_text(target: str, role: str, ch_snapshot: dict,
                 news: list[dict], peers: list[str], sector: str | None,
                 salary_band: tuple[int, int, str], cov: dict,
-                annual_report=None, curated_priorities: list[str] | None = None) -> str:
+                annual_report=None, curated_priorities: list[str] | None = None,
+                peer_label: str = "", peer_source: str = "sector",
+                sector_context: list[str] | None = None) -> str:
     low, high, matched = salary_band
     mid = (low + high) // 2
+    total_comp_mid = estimate_total_comp(mid)
+    universe_label = peer_label or (
+        sector.replace("_", " ").title() if sector else "Sector unclear")
     lines = [
         f"Retained Pitch Pack - {target}",
         f"Role: {role}  ·  Generated {datetime.now().strftime('%a %d %b %Y · %H:%M')}",
         "=" * 60, "",
         "1. ACCOUNT SNAPSHOT",
     ]
-    _sector_disp = (sector.replace("_", " ").title() if sector
-                    else "Sector unclear — confirm before pitching")
-    _fee_low = int(round(0.28 * mid, -2))
-    _fee_high = int(round(0.33 * mid, -2))
-    _cov_total = next((v for k, v in cov.items()
-                       if "leaving the seat empty" in k.lower() or k.lower().startswith("total")), None)
-    lines.append(f"   Sector: {_sector_disp}")
-    lines.append(f"   Indicative retained fee: £{_fee_low:,}–£{_fee_high:,} (28–33% of base; more with bonus/LTIP)")
+    _fee_low = int(round(0.28 * total_comp_mid, -2))
+    _fee_high = int(round(0.33 * total_comp_mid, -2))
+    _cov_total = cov.get("total") if isinstance(cov, dict) else None
+    lines.append(f"   Sector: {universe_label}")
+    lines.append(f"   Indicative retained fee: £{_fee_low:,}–£{_fee_high:,} "
+                 f"(28–33% of est. first-year total comp ≈ £{total_comp_mid:,}; base + bonus/LTIP)")
     if _cov_total:
         lines.append(f"   Cost of an empty seat: £{_cov_total:,} (see section 3)")
     lines.append(f"   Pipeline: a senior {_NOUN} placement typically opens 2–4 follow-on hires over 12–18 months.")
@@ -489,9 +634,15 @@ def render_text(target: str, role: str, ch_snapshot: dict,
         for a in news[:5]:
             lines.append(f"   - {a.get('title','')} ({a.get('seendate','')[:8]})")
             lines.append(f"     {a.get('url','')}")
+    elif sector_context:
+        lines += ["", "2. WHY THIS MATTERS NOW (sector-level — add a company-specific line)",
+                  f"   What's driving senior {_NOUN} demand across {universe_label}:"]
+        for c in sector_context:
+            lines.append(f"   - {c}")
     else:
-        lines += ["", "2. RECENT MARKET CONTEXT"]
-        lines.append("   No annual report quotes or press coverage surfaced.")
+        lines += ["", "2. WHY THIS MATTERS NOW",
+                  f"   No company or sector context resolved for {target} — add a strategic",
+                  "   line from their latest results or recent trade press before sending."]
 
     from tool import client_language as _cl
     _corpus = [q.text for q in annual_report.quotes] if (annual_report and annual_report.quotes) else []
@@ -506,24 +657,39 @@ def render_text(target: str, role: str, ch_snapshot: dict,
             lines.append(f"   - {m['phrase']}")
             lines.append(f"     e.g. \"{m['example']}\"")
 
-    lines += ["", "3. COST OF VACANCY", f"   Mid-salary assumed: £{mid:,}"]
-    for k, v in cov.items():
-        lines.append(f"   {k:<42}  £{v:>10,}")
-    sector_label = sector.replace("_", " ").title() if sector else "Generic FTSE"
-    lines += ["", f"4. TALENT UNIVERSE ({sector_label})",
-              f"   If the brief reads as a quiet market: the profile isn't scarce, it's placed.",
-              f"   The {len(peers)} named employers below are where a {matched} sits today —",
-              f"   reaching them before a competitor does is what a retained search buys."]
-    for i, p in enumerate(peers, 1):
-        lines.append(f"   {i:>2}. {p}")
+    _cov_lines = cov.get("lines", {}) if isinstance(cov, dict) else {}
+    _cov_headline = cov.get("headline", "") if isinstance(cov, dict) else ""
+    _cov_weeks = cov.get("weeks", TIME_TO_PRODUCTIVE_WEEKS) if isinstance(cov, dict) else TIME_TO_PRODUCTIVE_WEEKS
+    lines += ["", "3. COST OF VACANCY",
+              f"   Base £{mid:,} (est. total comp £{total_comp_mid:,})."]
+    if _cov_headline:
+        for _seg in textwrap.wrap(_cov_headline, 72):
+            lines.append(f"   {_seg}")
+    for k, v in _cov_lines.items():
+        lines.append(f"   {k:<58}  £{v:>10,}")
+    _salary_period = datetime.now().strftime("%B %Y")
+    if peer_source == "generic":
+        lines += ["", f"4. TALENT UNIVERSE ({universe_label})",
+                  f"   Sector not auto-detected for {target} — name the right 12-15 comparable",
+                  "   employers for this brief before sending (the section clients read closely)."]
+    else:
+        lines += ["", f"4. TALENT UNIVERSE — {universe_label}",
+                  f"   If the brief reads as a quiet market: the profile isn't scarce, it's placed.",
+                  f"   The {len(peers)} named employers below are where a {matched} sits today —",
+                  f"   reaching them before a competitor does is what a retained search buys."]
+        for i, p in enumerate(peers, 1):
+            lines.append(f"   {i:>2}. {p}")
     lines += ["", "5. SALARY BENCHMARK",
-              f"   UK April 2026 range for {matched}: £{low:,}–£{high:,} base + 10–25% bonus/LTIP",
+              f"   UK {_salary_period} range for {matched}: £{low:,}–£{high:,} base + 10–25% bonus/LTIP",
+              f"   (est. first-year total comp ≈ £{total_comp_mid:,})",
               "", "6. 6-WEEK METHODOLOGY",
               "   Wk 1   Briefing + market pack                       (1/3 on engagement)",
               "   Wk 2–3 Universe mapped + longlist of named candidates",
               "   Wk 3–4 Outreach + shortlist of 5–7                  (1/3 on shortlist)",
               "   Wk 4–5 Client interviews + finals",
               "   Wk 6   Offer + onboarding handover                  (1/3 on accepted offer)",
+              f"   (6 wks is brief-to-offer; with notice periods plan ~{_cov_weeks} wks to a",
+              "    productive start — the cost-of-vacancy window, which is why starting now matters)",
               "", "Retained fee: 28–33% of first-year total comp (vs 22–25% contingent on base only).",
               "",
               "7. WHY RETAINED",
@@ -561,7 +727,12 @@ def main() -> int:
 
     ch = companies_house.company_events(target)
     news = recent_news_for(target)
-    peers, sector = peers_for(target, k=15)
+    # Pitch-Pack talent universe: affinity cohort > sector > guarded generic.
+    peer_meta = pitch_peers_for(target, k=15)
+    peers = peer_meta["peers"]
+    sector = detect_sector(target)
+    log.info("talent universe: source=%s label=%r (%d peers)",
+             peer_meta["source"], peer_meta["label"], len(peers))
 
     # Annual report quote extraction (best-effort; falls back to GDELT if it
     # can't reach the PDF or scores no quotes). Adds ~10–30sec to pack
@@ -594,7 +765,12 @@ def main() -> int:
             log.warning("Bad salary override (min=%r max=%r); using auto-detected band",
                         override_min, override_max)
     mid = (sal[0] + sal[1]) // 2
-    cov = cost_of_vacancy(role, mid)
+    # Optional event anchor (e.g. "half-year results eight weeks out"). Manual
+    # packs leave it blank (frame-generic headline); a pack fired FROM a BD lead
+    # can pass the trigger via PITCH_TRIGGER so the cost-of-vacancy speaks to the
+    # specific live event — the comms COV and the lead are the same seam.
+    trigger_context = (os.environ.get("PITCH_TRIGGER") or "").strip()
+    cov = cost_of_vacancy(role, mid, trigger_context=trigger_context)
 
     # Curated-priorities fallback: if the live annual-report extraction came
     # back empty (subsidiary filings carry no strategic narrative, scanned
@@ -608,10 +784,25 @@ def main() -> int:
         except Exception as e:
             log.info("curated-priorities fallback failed: %s", e)
 
+    # Sector/cohort strategic context — the never-blank final rung for Section 2
+    # when neither the annual report nor curated priorities resolve.
+    sector_ctx = None
+    if not (annual_rep and annual_rep.quotes) and not curated_priorities:
+        try:
+            from tool import sector_context as _sc
+            sector_ctx = _sc.strategic_context(
+                peer_meta.get("key"),
+                "marketing" if _MKT else "comms")
+        except Exception as e:
+            log.info("sector-context fallback failed: %s", e)
+
+    _render_kw = dict(annual_report=annual_rep, curated_priorities=curated_priorities,
+                      peer_label=peer_meta["label"], peer_source=peer_meta["source"],
+                      sector_context=sector_ctx)
     html_out = render_html(target, role, ch, news, peers, sector, sal, cov, mode,
-                            annual_report=annual_rep, curated_priorities=curated_priorities)
+                            **_render_kw)
     text_out = render_text(target, role, ch, news, peers, sector, sal, cov,
-                            annual_report=annual_rep, curated_priorities=curated_priorities)
+                            **_render_kw)
 
     safe = "".join(c if c.isalnum() else "_" for c in target.lower())[:40]
     stamp = datetime.now().strftime("%Y%m%d_%H%M")
