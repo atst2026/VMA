@@ -23,6 +23,7 @@ from __future__ import annotations
 import html
 import logging
 import os
+import re as _re
 import sys
 import textwrap
 from datetime import datetime
@@ -357,6 +358,161 @@ def _persona_html(persona: str, role: str, target: str,
         f"{_esc(opener)}</div>")
 
 
+# --------------------------------------------------------------------------
+# Output house-style: no em dashes (an AI tell), British spelling. Applied to
+# the FINAL html/text so it also catches dynamic external text (news / annual-
+# report excerpts), not only our own copy.
+# --------------------------------------------------------------------------
+def _de_em_dash(text: str) -> str:
+    if not text:
+        return text
+    # Spaced em dash reads as an appositive/parenthetical -> comma.
+    text = _re.sub(r"\s+—\s+", ", ", text)
+    # Any remaining em dash / horizontal bar -> hyphen.
+    text = _re.sub(r"[—―]", "-", text)
+    # Tidy artefacts (" ," / doubled commas).
+    text = _re.sub(r"\s+,", ",", text)
+    text = _re.sub(r",\s*,", ",", text)
+    return text
+
+
+# American -> British. Deliberately excludes words that also appear in CSS or
+# markup (color, center, program) so we never corrupt styles, classes or URLs.
+_BRITISH = {
+    "organize": "organise", "organizes": "organises", "organized": "organised",
+    "organizing": "organising", "organization": "organisation",
+    "organizations": "organisations", "organizational": "organisational",
+    "optimize": "optimise", "optimizes": "optimises", "optimized": "optimised",
+    "optimizing": "optimising", "optimization": "optimisation",
+    "prioritize": "prioritise", "prioritizes": "prioritises",
+    "prioritized": "prioritised", "prioritizing": "prioritising",
+    "prioritization": "prioritisation",
+    "specialize": "specialise", "specialized": "specialised",
+    "specializing": "specialising", "specialization": "specialisation",
+    "recognize": "recognise", "recognizes": "recognises",
+    "recognized": "recognised", "recognizing": "recognising",
+    "realize": "realise", "realizes": "realises", "realized": "realised",
+    "realizing": "realising", "realization": "realisation",
+    "maximize": "maximise", "maximized": "maximised", "maximizing": "maximising",
+    "minimize": "minimise", "minimized": "minimised", "minimizing": "minimising",
+    "analyze": "analyse", "analyzes": "analyses", "analyzed": "analysed",
+    "analyzing": "analysing",
+    "capitalize": "capitalise", "capitalized": "capitalised",
+    "capitalizing": "capitalising", "capitalization": "capitalisation",
+    "emphasize": "emphasise", "emphasized": "emphasised",
+    "emphasizing": "emphasising",
+    "summarize": "summarise", "summarized": "summarised",
+    "customize": "customise", "customized": "customised",
+    "standardize": "standardise", "standardized": "standardised",
+    "categorize": "categorise", "categorized": "categorised",
+    "utilize": "utilise", "utilized": "utilised", "utilization": "utilisation",
+    "modernize": "modernise", "modernized": "modernised",
+    "behavior": "behaviour", "behaviors": "behaviours",
+    "behavioral": "behavioural", "favor": "favour", "favors": "favours",
+    "favored": "favoured", "favorite": "favourite", "favorable": "favourable",
+    "labor": "labour", "labors": "labours", "honor": "honour",
+    "honored": "honoured", "defense": "defence", "offense": "offence",
+    "catalog": "catalogue", "catalogs": "catalogues", "dialog": "dialogue",
+    "analog": "analogue", "fulfill": "fulfil", "fulfills": "fulfils",
+    "fulfillment": "fulfilment", "enrollment": "enrolment",
+    "modeling": "modelling", "modeled": "modelled", "traveled": "travelled",
+    "traveling": "travelling", "canceled": "cancelled",
+    "canceling": "cancelling", "labeled": "labelled", "labeling": "labelling",
+    "fiber": "fibre", "theater": "theatre",
+}
+_BRITISH_RX = _re.compile(
+    r"\b(" + "|".join(sorted(_BRITISH, key=len, reverse=True)) + r")\b",
+    _re.IGNORECASE)
+
+
+def _to_british(text: str) -> str:
+    if not text:
+        return text
+
+    def _repl(m):
+        w = m.group(0)
+        br = _BRITISH.get(w.lower())
+        if not br:
+            return w
+        if w.isupper():
+            return br.upper()
+        if w[0].isupper():
+            return br[0].upper() + br[1:]
+        return br
+    return _BRITISH_RX.sub(_repl, text)
+
+
+def _sanitise_output(text: str, is_html: bool) -> str:
+    """Apply house-style to the final output. For HTML, href/src values are
+    masked first so a word inside a link URL (e.g. a news slug) is never
+    rewritten and the link can't break."""
+    if not text:
+        return text
+    saved: list[str] = []
+
+    def _mask(m):
+        saved.append(m.group(0))
+        return f"\x00{len(saved) - 1}\x00"
+    if is_html:
+        # Protect link URLs and meta values (logo/domain) from rewriting.
+        text = _re.sub(r'(?:href|src|content)="[^"]*"', _mask, text)
+    # Protect bare URLs (the plain-text build prints article links inline).
+    text = _re.sub(r"https?://\S+", _mask, text)
+    text = _de_em_dash(text)
+    text = _to_british(text)
+    if saved:
+        text = _re.sub(r"\x00(\d+)\x00", lambda m: saved[int(m.group(1))], text)
+    return text
+
+
+def _guess_domain(name: str) -> str:
+    """Cheap fallback domain when the lookup is unavailable: strip common
+    company suffixes and punctuation. Imperfect, but a wrong guess just yields
+    a logo that fails to load and is hidden client-side (never a broken icon)."""
+    base = (name or "").strip().lower()
+    _sufs = (" group", " holdings", " holding", " plc", " ltd", " limited",
+             " inc", " llp", " uk", " & co", " company")
+    changed = True
+    while changed:  # strip stacked suffixes, e.g. "... Group plc"
+        changed = False
+        for suf in _sufs:
+            if base.endswith(suf):
+                base = base[:-len(suf)].strip()
+                changed = True
+    base = base.replace(" & ", " and ")
+    base = _re.sub(r"[^a-z0-9]", "", base)
+    return f"{base}.com" if base else ""
+
+
+def resolve_company_logo(name: str) -> dict:
+    """Best-effort: resolve the target's domain + logo URL so the pack can show
+    their mark alongside VMA's. Never raises; returns {} on any failure so a
+    missing logo simply falls back to VMA-only (the prior behaviour). Runs at
+    generation time (the workflow has network); the resulting <img> is loaded
+    by the reader's browser with an onerror fallback chain."""
+    name = (name or "").strip()
+    if not name:
+        return {}
+    domain = logo = ""
+    try:
+        import requests
+        r = requests.get(
+            "https://autocomplete.clearbit.com/v1/companies/suggest",
+            params={"query": name}, timeout=6)
+        if r.status_code == 200:
+            arr = r.json()
+            if isinstance(arr, list) and arr:
+                domain = (arr[0].get("domain") or "").strip()
+                logo = (arr[0].get("logo") or "").strip()
+    except Exception as e:  # network blocked / service down / bad JSON
+        log.info("company_logo lookup failed for %r: %s", name, e)
+    if not domain:
+        domain = _guess_domain(name)
+    if not logo and domain:
+        logo = f"https://logo.clearbit.com/{domain}"
+    return {"domain": domain, "logo": logo} if (domain or logo) else {}
+
+
 def render_html(target: str, role: str, ch_snapshot: dict,
                 news: list[dict], peers: list[str], sector: str | None,
                 salary_band: tuple[int, int, str],
@@ -364,7 +520,8 @@ def render_html(target: str, role: str, ch_snapshot: dict,
                 annual_report=None, curated_priorities: list[str] | None = None,
                 peer_label: str = "", peer_source: str = "sector",
                 sector_context: list[str] | None = None,
-                persona: str = "", trigger_context: str = "") -> str:
+                persona: str = "", trigger_context: str = "",
+                company_logo: dict | None = None) -> str:
     low, high, matched = salary_band
     mid = (low + high) // 2
     total_comp_mid = estimate_total_comp(mid)
@@ -626,12 +783,22 @@ def render_html(target: str, role: str, ch_snapshot: dict,
     </div>
     """
 
+    # The target's logo travels with the artifact as <meta> tags; the
+    # dashboard skin reads them and renders the company mark alongside VMA's.
+    _logo = company_logo or {}
+    _brand_meta = ""
+    if _logo.get("logo") or _logo.get("domain"):
+        _brand_meta = (
+            f'<meta name="pp-company" content="{_esc(target)}">'
+            f'<meta name="pp-logo" content="{_esc(_logo.get("logo", ""))}">'
+            f'<meta name="pp-domain" content="{_esc(_logo.get("domain", ""))}">')
+
     return f"""<!doctype html>
-<html><head><meta charset="utf-8"></head><body style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px;color:#111;">
+<html><head><meta charset="utf-8">{_brand_meta}</head><body style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px;color:#111;">
 {note_banner}
 <h2 style="margin:0 0 4px 0;">Retained Pitch Pack - {_esc(target)}</h2>
 <div style="color:#666;font-size:13px;margin-bottom:18px;">
-  Role: {_esc(role)} · Generated {_esc(datetime.now().strftime('%a %d %b %Y · %H:%M'))} · VMA Group
+  Role: {_esc(role)}
 </div>
 <hr style="border:none;border-top:2px solid #3D5A82;margin:14px 0 24px;">
 {persona_html}
@@ -695,7 +862,7 @@ def render_text(target: str, role: str, ch_snapshot: dict,
     _cov_total = cov.get("total") if isinstance(cov, dict) else None
     lines = [
         f"Retained Pitch Pack - {target}",
-        f"Role: {role}  ·  Generated {datetime.now().strftime('%a %d %b %Y · %H:%M')}",
+        f"Role: {role}",
         "=" * 60, ""]
     _persona_line = _persona_opener(persona, role, target, _fee_low, _fee_high, _cov_total or 0)
     if _persona_line:
@@ -911,14 +1078,20 @@ def main() -> int:
     # Optional audience persona (ceo / cfo / incoming / hr) — reframes the
     # opening for the reader. Manual packs can leave it blank.
     persona = (os.environ.get("PITCH_PERSONA") or "").strip()
+    _logo = resolve_company_logo(target)
     _render_kw = dict(annual_report=annual_rep, curated_priorities=curated_priorities,
                       peer_label=peer_meta["label"], peer_source=peer_meta["source"],
                       sector_context=sector_ctx, persona=persona,
                       trigger_context=trigger_context)
     html_out = render_html(target, role, ch, news, peers, sector, sal, cov, mode,
-                            **_render_kw)
+                            company_logo=_logo, **_render_kw)
     text_out = render_text(target, role, ch, news, peers, sector, sal, cov,
                             **_render_kw)
+
+    # House-style the final output: no em dashes, British spelling (also
+    # catches dynamic news / annual-report text). HTML link URLs are protected.
+    html_out = _sanitise_output(html_out, is_html=True)
+    text_out = _sanitise_output(text_out, is_html=False)
 
     safe = "".join(c if c.isalnum() else "_" for c in target.lower())[:40]
     stamp = datetime.now().strftime("%Y%m%d_%H%M")

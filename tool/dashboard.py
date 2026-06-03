@@ -385,11 +385,13 @@ _REPORT_SKIN = (
     'background:#fff!important;color:#1F1F1F!important;font-size:14px!important;'
     'line-height:1.62!important;border-radius:14px;position:relative;'
     'box-shadow:0 10px 28px rgba(31,55,124,.10),0 2px 6px rgba(31,55,124,.06);}'
-    '.vma-brand{position:absolute;top:30px;right:52px;width:56px;'
-    'height:auto;line-height:0;}'
-    '.vma-brand svg{display:block;width:100%;height:auto;}'
+    '.vma-brand{position:absolute;top:30px;right:52px;display:flex;'
+    'align-items:center;gap:12px;line-height:0;}'
+    '.vma-brand svg{display:block;width:54px;height:auto;}'
+    '.co-brand{height:38px;width:auto;max-width:108px;object-fit:contain;'
+    'border-radius:6px;}'
     'body>h1:first-of-type,body>h2:first-of-type,'
-    'body>h1:first-of-type+div,body>h2:first-of-type+div{padding-right:92px;}'
+    'body>h1:first-of-type+div,body>h2:first-of-type+div{padding-right:188px;}'
     'h1,h2,h3,h4{font-family:"Crimson Pro",Georgia,serif;color:#1F1F1F;'
     'line-height:1.25;font-weight:600;}'
     'body>h1:first-child,body>h2:first-child{font-size:26px;color:#1A3D7C;'
@@ -422,11 +424,38 @@ _VMA_LOGO_SVG = (
 _BRAND_DIV = '<body><div class="vma-brand">' + _VMA_LOGO_SVG + '</div>'
 
 
+def _brand_div_for(html: str) -> str:
+    """Build the top-right brand block. If the report embedded a company logo
+    (pitch packs carry <meta name="pp-logo"/pp-domain>), show the company mark
+    to the LEFT of the VMA mark, with a browser-side fallback chain so a
+    missing/blocked logo is hidden rather than shown as a broken image."""
+    import re
+    m = re.search(r'<meta name="pp-logo" content="([^"]*)"', html, re.I)
+    logo = (m.group(1) if m else "").strip()
+    m2 = re.search(r'<meta name="pp-domain" content="([^"]*)"', html, re.I)
+    domain = (m2.group(1) if m2 else "").strip()
+    if not (logo or domain):
+        return _BRAND_DIV
+    primary = logo or f"https://logo.clearbit.com/{domain}"
+    fav = (f"https://www.google.com/s2/favicons?domain={domain}&amp;sz=128"
+           if domain else "")
+    # primary -> favicon -> hide (so a blocked/absent logo never shows broken).
+    if fav:
+        onerr = ("if(!this.dataset.f){this.dataset.f=1;this.src='"
+                 + fav.replace("&amp;", "&") + "';}else{this.style.display='none';}")
+    else:
+        onerr = "this.style.display='none'"
+    co_img = (f'<img class="co-brand" src="{primary}" alt="" '
+              f'onerror="{onerr}">')
+    return ('<body><div class="vma-brand">' + co_img + _VMA_LOGO_SVG + '</div>')
+
+
 def _skin_report_html(html: str) -> str:
     """Strip the generator's inline body style and inject the reader
     skin, so the served report is on-brand and readable."""
     import re
-    html = re.sub(r"<body[^>]*>", lambda _m: _BRAND_DIV,
+    brand = _brand_div_for(html)
+    html = re.sub(r"<body[^>]*>", lambda _m: brand,
                    html, count=1, flags=re.I)
     if re.search(r"</head>", html, re.I):
         return re.sub(r"</head>", _REPORT_SKIN + "</head>", html,
@@ -1236,7 +1265,7 @@ MR_CSS = r"""
 #leads.page.active{min-height:0}
 #leads .container{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden}
 @media (max-width:640px){#leads .container{overflow:visible;min-height:auto}}
-.mr-sub{text-align:center;font:500 10px/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:12px 0 20px;display:flex;gap:8px;align-items:center;justify-content:center}
+.mr-sub{text-align:center;font:500 10px/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:0 0 13px;display:flex;gap:8px;align-items:center;justify-content:center}
 .mr-sub .mr-spk{color:var(--clay);display:inline-flex}.mr-sub .mr-spk svg{width:12px;height:12px}
 .mr-bar{display:flex;align-items:center;gap:7px;margin-bottom:13px;flex-wrap:wrap;position:sticky;top:0;z-index:6;background:rgb(253,252,252);padding:8px 0 9px}
 .mr-spacer{flex:1}
@@ -1255,7 +1284,7 @@ MR_CSS = r"""
 .mr-wb{font:600 9px/1.6 "JetBrains Mono",monospace;padding:2px 6px;border-radius:4px;background:rgba(14,40,69,.05);color:#1A3D7C;white-space:nowrap;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .mr-badge{font:500 10px/1.4 "Inter",sans-serif;background:var(--elevated);border:1px solid var(--mrborder);border-radius:6px;padding:3px 8px;color:var(--ink2);white-space:nowrap;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .mr-newp{font:700 7.5px/1 "Inter",sans-serif;letter-spacing:.06em;color:#1d4ed8;background:#e9effb;padding:2px 4px;border-radius:3px;vertical-align:middle}
-.mr-srcl{color:var(--dim);margin-left:4px;text-decoration:none;display:inline-flex;vertical-align:middle}.mr-srcl svg{width:11px;height:11px}.mr-srcl:hover{color:var(--blue-deep)}
+.mr-srcl{display:inline-flex;align-items:center;gap:5px;margin-left:8px;color:var(--blue-deep);text-decoration:none;font:600 11px/1 "Inter",sans-serif;padding:4px 9px;border:1px solid var(--mrborder);border-radius:7px;background:#fff;vertical-align:middle;white-space:nowrap}.mr-srcl svg{width:13px;height:13px}.mr-srcl:hover{background:var(--blue-wash);border-color:var(--blue)}
 .mr-dl{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:28px;padding:0 9px;border-radius:7px;color:#fff;background:#1A3D7C;cursor:pointer;border:none;font:600 11px/1 "Inter",sans-serif;transition:.13s}.mr-dl svg{width:14px;height:14px}.mr-dl.icon{width:28px;padding:0}.mr-dl:hover{background:#15336a}.mr-dl.busy{background:#6b7689}.mr-dl.done{background:#1e7a41}
 .mr-io{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:28px;padding:0 9px;border-radius:7px;color:var(--blue-deep);cursor:pointer;border:1px solid var(--mrborder);background:#fff;font:600 11px/1 "Inter",sans-serif}.mr-io.icon{width:28px;padding:0}.mr-io svg{width:14px;height:14px}.mr-io:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
 .mr-io.tfu:hover{background:#e7f3ec;color:#1e7a41;border-color:#bfe3cd}.mr-io.tdis:hover{background:#fdecea;color:#c0392b;border-color:#f0c5bd}
@@ -1289,6 +1318,7 @@ MR_JS = r"""
     dl:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7.5 10.5 12 15l4.5-4.5"/><path d="M5 20h14"/></svg>',
     copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',
     arr:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>',
+    ext:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>',
     check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>',
     x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
     undo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a9 9 0 1 1-2 5.7"/><path d="M3 4v5h5"/></svg>',
@@ -1311,7 +1341,7 @@ MR_JS = r"""
   function sc(l){return '<span class="mr-sc '+l.st+'">'+l.st+'</span>';}
   function wb(l){return '<span class="mr-wb">'+esc(l.win)+'</span>';}
   function newp(l){return l.isNew?' <span class="mr-newp">NEW</span>':'';}
-  function srcl(l){return l.url?'<a class="mr-srcl" href="'+esc(l.url)+'" target="_blank" rel="noopener" title="Open source">'+IC.arr+'</a>':'';}
+  function srcl(l){return l.url?'<a class="mr-srcl" href="'+esc(l.url)+'" target="_blank" rel="noopener">'+IC.ext+'<span>View source</span></a>':'';}
   function toast(m){var t=$('mr-toast');if(!t)return;t.innerHTML='<span class="mr-spk">'+IC.spark+'</span> '+esc(m);t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},2400);}
   function match(l){if(filter==='active')return l.status==='active';if(filter==='new')return l.isNew&&l.status==='active';if(filter==='followed_up')return l.status==='followed_up';if(filter==='dismissed')return l.status==='dismissed';return true;}
   function sortd(a){if(page==='jobs')return a.sort(function(x,y){return (y.isNew-x.isNew)||x.co.localeCompare(y.co);});return a.sort(function(x,y){return y.opp-x.opp;});}
@@ -1397,6 +1427,7 @@ MR_JS = r"""
    +'<button data-act="filt" data-f="followed_up">Followed up <span class="mr-mc" id="mr-m-fu"></span></button>'
    +'<button data-act="filt" data-f="dismissed">Dismissed <span class="mr-mc" id="mr-m-dis"></span></button>'
    +'<button data-act="filt" data-f="all">All</button></div></div></div>'
+   +'<div class="mr-sub" id="mr-sub"></div>'
    +'<div id="mr-rows"></div>';
   root.addEventListener('click',function(e){
     var a=e.target.closest('[data-act]');if(!a||!root.contains(a))return;
@@ -1452,9 +1483,11 @@ def _mr_compact_window(text: str | None) -> str:
     raw = (text or "").strip()
     m = re.search(r'~?\s*\d[\d\s–\-]*\s*(?:wks?|weeks?|mos?|months?)',
                   raw, re.I)
-    if m:
-        return m.group(0).strip()
-    return raw or "~6 mo"
+    s = m.group(0).strip() if m else (raw or "~6 months")
+    # Expand abbreviations to full words ("~6 mo" -> "~6 months").
+    s = re.sub(r'\bmos?\b', 'months', s, flags=re.I)
+    s = re.sub(r'\bwks?\b', 'weeks', s, flags=re.I)
+    return s
 
 
 def _mr_clean_source(text: str | None) -> str:
@@ -4397,7 +4430,6 @@ TEMPLATE = r"""
        but are hidden by MR_CSS so their refresh/triage JS keeps its nodes. -->
   <style>{{ mr_css|safe }}</style>
   <div class="mr-wrap">
-    <div class="mr-sub" id="mr-sub"></div>
     <div id="mr"></div>
   </div>
   <div class="mr-toast" id="mr-toast"></div>
