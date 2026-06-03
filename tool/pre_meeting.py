@@ -282,7 +282,12 @@ def _load_curated_priorities(company: str) -> list[str]:
     'Holdings plc' so 'HSBC Holdings PLC' resolves to the 'HSBC' entry."""
     global _TIER_A_PRIORITIES_CACHE
     if _TIER_A_PRIORITIES_CACHE is None:
-        path = STATE_DIR / "tier_a_strategic_priorities.json"
+        # Company strategic priorities are SHARED account data (like the
+        # watchlist / contact universe) — the same facts about Diageo serve a
+        # comms or a marketing pitch. Read from the canonical comms root for
+        # every desk, not the profile-namespaced dir (where the marketing desk
+        # would otherwise find no file and lose the curated Section 2).
+        path = state_root("comms") / "tier_a_strategic_priorities.json"
         try:
             _TIER_A_PRIORITIES_CACHE = json.loads(path.read_text())
         except Exception as e:

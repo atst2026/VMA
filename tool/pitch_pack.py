@@ -376,9 +376,11 @@ def _persona_opener(persona: str, role: str, target: str,
         money = f" — {fvc} (Section 3)" if fvc else " (Section 3)"
         return (f"For finance: the case is in the numbers{money}, and the rebate and "
                 "replacement guarantee (Section 9) cap the downside of a wrong hire.")
+    _ceo_value = ("drives brand, growth and customer demand" if _MKT
+                  else f"protects {target}'s reputation")
     return {
         "ceo": (f"For the chief executive: a board-level appointment — a {role_l} who acts as "
-                f"strategic counsel and protects {target}'s reputation through the period ahead, "
+                f"strategic counsel and {_ceo_value} through the period ahead, "
                 "with the search run discreetly and at pace."),
         "incoming": ("For an incoming leader: your first 6–12 months — we build the team beneath "
                      "you quickly and credibly (a senior placement typically opens 2–4 follow-on "
