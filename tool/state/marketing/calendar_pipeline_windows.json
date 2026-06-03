@@ -21,7 +21,7 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-03T00:10:34.856911+00:00"
+      "last_seen": "2026-06-03T10:32:11.492165+00:00"
     },
     "marketing_budget_reset_2026": {
       "key": "marketing_budget_reset_2026",
@@ -46,7 +46,7 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-03T00:10:34.856911+00:00"
+      "last_seen": "2026-06-03T10:32:11.492165+00:00"
     },
     "pw_70a28958c3025030": {
       "key": "pw_70a28958c3025030",
@@ -70,7 +70,7 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-03T00:10:34.856911+00:00"
+      "last_seen": "2026-06-03T10:32:11.492165+00:00"
     },
     "pw_01bfae8c6aa87557": {
       "key": "pw_01bfae8c6aa87557",
@@ -94,7 +94,7 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-03T00:10:34.856911+00:00"
+      "last_seen": "2026-06-03T10:32:11.492165+00:00"
     },
     "pw_0f0511d5803afdb0": {
       "key": "pw_0f0511d5803afdb0",
@@ -118,7 +118,7 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-03T00:10:34.856911+00:00"
+      "last_seen": "2026-06-03T10:32:11.492165+00:00"
     },
     "pw_e58da72b53caddd7": {
       "key": "pw_e58da72b53caddd7",
@@ -142,7 +142,7 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-03T00:10:34.856911+00:00"
+      "last_seen": "2026-06-03T10:32:11.492165+00:00"
     },
     "pw_6c91d76e227e42d5": {
       "key": "pw_6c91d76e227e42d5",
@@ -166,7 +166,7 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-03T00:10:34.856911+00:00"
+      "last_seen": "2026-06-03T10:32:11.492165+00:00"
     },
     "pw_c582984787432f29": {
       "key": "pw_c582984787432f29",
@@ -190,7 +190,7 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-03T00:10:34.856911+00:00"
+      "last_seen": "2026-06-03T10:32:11.492165+00:00"
     },
     "pw_85f7c69a68321d7c": {
       "key": "pw_85f7c69a68321d7c",
@@ -214,7 +214,7 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-03T00:10:34.856911+00:00"
+      "last_seen": "2026-06-03T10:32:11.492165+00:00"
     },
     "pw_19c62c84bd6f5750": {
       "key": "pw_19c62c84bd6f5750",
@@ -287,7 +287,7 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-03T00:10:34.856911+00:00"
+      "last_seen": "2026-06-03T10:32:11.492165+00:00"
     },
     "pw_3c77c5ef8933b00f": {
       "key": "pw_3c77c5ef8933b00f",
@@ -332,10 +332,10 @@
       "url": "https://www.fca.org.uk/news/statements/open-banking-launch-uk-payments-initiative-scheme",
       "discovered": true,
       "first_seen": "2026-06-03T00:10:34.856911+00:00",
-      "last_seen": "2026-06-03T00:10:34.856911+00:00",
       "status": "active",
       "followed_up_at": null,
-      "dismissed_at": null
+      "dismissed_at": null,
+      "last_seen": "2026-06-03T10:32:11.492165+00:00"
     },
     "pw_6dd8eaaf0295b80d": {
       "key": "pw_6dd8eaaf0295b80d",
@@ -357,11 +357,85 @@
       "url": "https://www.gov.uk/government/publications/annual-report-on-concurrency-2026",
       "discovered": true,
       "first_seen": "2026-06-03T00:10:34.856911+00:00",
-      "last_seen": "2026-06-03T00:10:34.856911+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null,
+      "last_seen": "2026-06-03T10:32:11.492165+00:00"
+    },
+    "pw_fc6df6bf51c1cc25": {
+      "key": "pw_fc6df6bf51c1cc25",
+      "name": "Ofgem: Market compliance review: prepayment meter installations",
+      "window": [
+        "2026-06-03",
+        "2026-08-26"
+      ],
+      "legal_date": "2026-08-26",
+      "sectors": [
+        "energy_utilities"
+      ],
+      "seat": "Head of Brand / Customer Marketing",
+      "angle": "Ofgem obligation creates a dated brand/customer-marketing-capacity build-up in the regulated cohort \u2014 pitch the retained brief before it's advertised.",
+      "scope_note": "Ofgem-regulated firms in scope of this notice.",
+      "confidence": "medium",
+      "source": "Ofgem \u2014 Findings of our review of the installation of prepayment meters without househol",
+      "url": "https://www.ofgem.gov.uk/transparency-document/market-compliance-review-prepayment-meter-installations",
+      "discovered": true,
+      "first_seen": "2026-06-03T10:32:11.492165+00:00",
+      "last_seen": "2026-06-03T10:32:11.492165+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "pw_1713fa75ec56aa2d": {
+      "key": "pw_1713fa75ec56aa2d",
+      "name": "CMA: CMA secures fairer deal for publishers and improves Google search services in UK",
+      "window": [
+        "2026-06-03",
+        "2026-08-26"
+      ],
+      "legal_date": "2026-08-26",
+      "sectors": [
+        "financial_services",
+        "energy_utilities"
+      ],
+      "seat": "Head of Brand / Customer Marketing",
+      "angle": "CMA obligation creates a dated brand/customer-marketing-capacity build-up in the regulated cohort \u2014 pitch the retained brief before it's advertised.",
+      "scope_note": "CMA-regulated firms in scope of this notice.",
+      "confidence": "medium",
+      "source": "CMA \u2014 Conduct requirement introduced today gives publishers more control and stronger ",
+      "url": "https://www.gov.uk/government/news/cma-secures-fairer-deal-for-publishers-and-improves-google-search-services-in-uk",
+      "discovered": true,
+      "first_seen": "2026-06-03T10:32:11.492165+00:00",
+      "last_seen": "2026-06-03T10:32:11.492165+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "pw_0d8a5a5a6779836c": {
+      "key": "pw_0d8a5a5a6779836c",
+      "name": "CMA: Google\u2019s general search services: proposed conduct requirements",
+      "window": [
+        "2026-06-03",
+        "2026-08-26"
+      ],
+      "legal_date": "2026-08-26",
+      "sectors": [
+        "financial_services",
+        "energy_utilities"
+      ],
+      "seat": "Head of Brand / Customer Marketing",
+      "angle": "CMA obligation creates a dated brand/customer-marketing-capacity build-up in the regulated cohort \u2014 pitch the retained brief before it's advertised.",
+      "scope_note": "CMA-regulated firms in scope of this notice.",
+      "confidence": "medium",
+      "source": "CMA \u2014 The Competition and Markets Authority (CMA) is inviting comments on proposals fo",
+      "url": "https://www.gov.uk/government/consultations/googles-general-search-services-proposed-conduct-requirements",
+      "discovered": true,
+      "first_seen": "2026-06-03T10:32:11.492165+00:00",
+      "last_seen": "2026-06-03T10:32:11.492165+00:00",
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null
     }
   },
-  "updated_at": "2026-06-03T00:10:34.857534+00:00"
+  "updated_at": "2026-06-03T10:32:11.492848+00:00"
 }
