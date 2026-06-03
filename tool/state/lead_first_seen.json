@@ -167,7 +167,7 @@
   "d8e7446f2818a969": {
     "anchor": "2026-05-27",
     "first_seen": "2026-06-02",
-    "expired": false
+    "expired": true
   },
   "6e28672b0dde9b9f": {
     "anchor": "2026-05-26",
@@ -267,7 +267,7 @@
   "0d5d1e12d43c07fe": {
     "anchor": "2026-05-27",
     "first_seen": "2026-06-02",
-    "expired": false
+    "expired": true
   },
   "1557b753e5c0d8e1": {
     "anchor": "2026-05-12",
