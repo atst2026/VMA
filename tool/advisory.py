@@ -161,16 +161,19 @@ _ADVISORY_MARKETING: dict[str, str] = {
                                    "benchmarking ahead of the new-year plan.",
 }
 
-from tool.profiles import active_profile as _active_profile
-if _active_profile().key == "marketing":
-    _DEFAULT = _DEFAULT_MARKETING
-    _ADVISORY = _ADVISORY_MARKETING
-
-
 def advisory_for(context: str | None) -> str:
-    """Return the advisory framing for an event class. Unknown / missing
-    context falls back to the generic capability-review + market-map
-    line (never empty — every surfaced signal has an advisory path)."""
+    """Return the advisory framing for an event class. Profile-aware and
+    resolved PER CALL (not at import) so the single dashboard process,
+    which serves both desks per-request, returns marketing advisories on
+    the marketing desk and comms advisories on the comms desk. Unknown /
+    missing context falls back to the generic line (never empty)."""
+    try:
+        from tool.profiles import active_profile
+        is_marketing = active_profile().key == "marketing"
+    except Exception:
+        is_marketing = False
+    table = _ADVISORY_MARKETING if is_marketing else _ADVISORY
+    default = _DEFAULT_MARKETING if is_marketing else _DEFAULT
     if not context:
-        return _DEFAULT
-    return _ADVISORY.get(str(context).strip().lower(), _DEFAULT)
+        return default
+    return table.get(str(context).strip().lower(), default)

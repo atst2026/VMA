@@ -3782,21 +3782,6 @@ TEMPLATE = r"""
       border-radius: 6px; padding: 4px 9px; font: 500 10.5px/1.3 "Inter"; color: var(--ink-2); }
     #leads .item .outreach-text { display: none; }   /* mockup is copy-only, no inline outreach */
     #leads .item .item-actions { margin-top: 9px; margin-left: 27px; gap: 7px; }
-    /* Contact row: the LinkedIn button + resolved name/confidence + the
-       feedback chips that feed the §4.5 success metric. */
-    .contact-row { margin-top: 8px; margin-left: 27px; display: flex;
-      align-items: center; gap: 8px; flex-wrap: wrap; font: 500 11px/1.3 "Inter"; }
-    .contact-name { color: var(--muted); }
-    .contact-conf { color: var(--blue-deep); font-weight: 700; }
-    .contact-stale { color: #A33A22; font-weight: 600; }
-    .contact-feedback { display: inline-flex; gap: 4px; }
-    .fb-btn { font: 500 10px/1 "Inter"; padding: 4px 8px; border-radius: 6px;
-      border: 1px solid var(--border); background: #fff; color: var(--muted);
-      cursor: pointer; }
-    .fb-btn:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
-    .fb-btn.ghost:hover { background: #fbecea; color: #A33A22; border-color: #e7b9b1; }
-    .fb-btn:disabled { opacity: .5; cursor: default; }
-    .fb-done { font: 600 10px/1 "Inter"; color: #1A7F37; align-self: center; }
     #leads .btn-mini { font: 500 10.5px/1 "Inter"; padding: 6px 11px; border-radius: 7px;
       border: 1px solid var(--border); background: #fff; color: var(--blue-deep);
       letter-spacing: 0; gap: 5px; }
@@ -4091,22 +4076,6 @@ TEMPLATE = r"""
                 <span class="badge">{{ s.geo }}</span>
               </div>
               <pre class="outreach-text">{{ s.outreach }}</pre>
-              {% if s.linkedin and s.linkedin.url %}
-              <div class="contact-row">
-                <a class="btn-mini contact-open" href="{{ s.linkedin.url | safe_url }}" target="_blank" rel="noopener noreferrer">{% if s.contact and s.contact.name %}🔗 Open {{ s.contact.name }}{% else %}🔍 Find contact on LinkedIn{% endif %}</a>
-                {% if s.contact and s.contact.name %}
-                  <span class="contact-name">{% if s.contact.title %}{{ s.contact.title }}{% endif %}{% if s.contact.confidence %} · <span class="contact-conf">{{ (s.contact.confidence * 100)|round|int }}%</span>{% endif %}{% if s.contact.stale %} · <span class="contact-stale">verify — may have moved</span>{% endif %}</span>
-                  {% if s.contact.slot %}
-                  <span class="contact-feedback" data-company="{{ s.company }}" data-slot="{{ s.contact.slot }}" data-name="{{ s.contact.name }}">
-                    <button class="fb-btn" type="button" onclick="contactFeedback(this,'correct')" title="Right person">✓ right</button>
-                    <button class="fb-btn" type="button" onclick="contactFeedback(this,'responded')" title="They replied">↩ replied</button>
-                    <button class="fb-btn ghost" type="button" onclick="contactFeedback(this,'moved')" title="They've moved on">moved</button>
-                    <button class="fb-btn ghost" type="button" onclick="contactFeedback(this,'wrong')" title="Wrong person">wrong</button>
-                  </span>
-                  {% endif %}
-                {% endif %}
-              </div>
-              {% endif %}
               <div class="item-actions">
                 <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
                 {% if s.status == 'active' %}
@@ -4206,12 +4175,6 @@ TEMPLATE = r"""
                 </div>
                 {% if p.advisory %}<div class="advisory-line">{{ p.advisory }}</div>{% endif %}
                 <pre class="outreach-text">{{ p.outreach }}</pre>
-                {% if p.linkedin and p.linkedin.url %}
-                <div class="contact-row">
-                  <a class="btn-mini contact-open" href="{{ p.linkedin.url | safe_url }}" target="_blank" rel="noopener noreferrer">🔗 {{ p.linkedin.label or 'Find contact on LinkedIn' }}</a>
-                  {% if p.seeded_contact_name %}<span class="contact-name">{{ p.seeded_contact_name }}{% if p.seeded_contact_role %} · {{ p.seeded_contact_role }}{% endif %}</span>{% endif %}
-                </div>
-                {% endif %}
                 <div class="item-actions">
                   {% if p.status == 'active' %}
                     <button class="btn-mini status-action" data-status="followed_up" type="button">✓ Mark followed up</button>
@@ -5806,33 +5769,6 @@ async function flagContact(e, link, company, slot, name) {
     }
   } catch (err) {
     link.textContent = 'wrong?';
-    alert('Network error: ' + err.message);
-  }
-}
-
-// Contact feedback chips (✓ right / ↩ replied / moved / wrong) -> the
-// §4.5 success metric via /api/contacts/feedback. Reads company/slot/name
-// from the .contact-feedback wrapper's data-* attributes.
-async function contactFeedback(btn, signal) {
-  const box = btn.closest('.contact-feedback');
-  if (!box) return;
-  const company = box.dataset.company, slot = box.dataset.slot, name = box.dataset.name;
-  box.querySelectorAll('.fb-btn').forEach(b => b.disabled = true);
-  try {
-    const r = await fetch('/api/contacts/feedback', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ company, slot, name, signal }),
-    });
-    const j = await r.json();
-    if (j.ok) {
-      const done = (signal === 'wrong' || signal === 'moved') ? 'flagged' : 'thanks ✓';
-      box.insertAdjacentHTML('beforeend', '<span class="fb-done">' + done + '</span>');
-    } else {
-      box.querySelectorAll('.fb-btn').forEach(b => b.disabled = false);
-      alert(j.detail || 'Could not record feedback.');
-    }
-  } catch (err) {
-    box.querySelectorAll('.fb-btn').forEach(b => b.disabled = false);
     alert('Network error: ' + err.message);
   }
 }
