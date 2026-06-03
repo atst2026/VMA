@@ -10,7 +10,9 @@
     "sector": "",
     "window": "Senior-comms window ~6 mo",
     "advisory": "Advisory: comms-function design-for-scale + benchmarking; build the senior-comms market map ahead of the ~6-month hire.",
-    "confidence": "high"
+    "confidence": "high",
+    "fid": "cd20c2e9a1f0b0d1",
+    "first_seen": "2026-06-03T10:24:21.052086+00:00"
   },
   {
     "company": "Geordie AI",
@@ -23,7 +25,9 @@
     "sector": "",
     "window": "Senior-comms window ~6 mo",
     "advisory": "Advisory: comms-function design-for-scale + benchmarking; build the senior-comms market map ahead of the ~6-month hire.",
-    "confidence": "high"
+    "confidence": "high",
+    "fid": "1f1270dfe2ca623e",
+    "first_seen": "2026-06-03T10:24:21.052086+00:00"
   },
   {
     "company": "Head of Communications . We've",
@@ -36,6 +40,53 @@
     "sector": "",
     "window": "Senior-comms window ~6 mo",
     "advisory": "Advisory: comms-function design-for-scale + benchmarking; build the senior-comms market map ahead of the ~6-month hire.",
-    "confidence": "medium"
+    "confidence": "medium",
+    "fid": "8dbbdc7d5842eb3c",
+    "first_seen": "2026-06-03T10:24:21.052086+00:00"
+  },
+  {
+    "company": "OQC",
+    "round": "Series C",
+    "amount": "\u00a3260m",
+    "evidence": "OQC raises \u00a3260m in Europe\u2019s largest private quantum round",
+    "investor": "",
+    "url": "https://www.uktech.news/quantum/oqc-raises-260m-in-europes-largest-ever-private-quantum-computing-round-20260603",
+    "source": "UKTN",
+    "sector": "",
+    "window": "Senior-comms window ~6 mo",
+    "advisory": "Advisory: comms-function design-for-scale + benchmarking; build the senior-comms market map ahead of the ~6-month hire.",
+    "confidence": "high",
+    "fid": "5db5519bd2c2dc78",
+    "first_seen": "2026-06-03T10:24:21.052086+00:00"
+  },
+  {
+    "company": "Oxford Quantum Circuits",
+    "round": "funding round",
+    "amount": "\u00a3260m",
+    "evidence": "Oxford Quantum Circuits lands \u201ccoming-of-age\u201d \u00a3260M funding round",
+    "investor": "",
+    "url": "https://tech.eu/2026/06/03/oxford-quantum-circuits-lands-coming-of-age-ps260m-funding-round/",
+    "source": "Tech.eu",
+    "sector": "",
+    "window": "Senior-comms window ~6 mo",
+    "advisory": "Advisory: comms-function design-for-scale + benchmarking; build the senior-comms market map ahead of the ~6-month hire.",
+    "confidence": "high",
+    "fid": "b923d7b6cec9c39a",
+    "first_seen": "2026-06-03T10:24:21.052086+00:00"
+  },
+  {
+    "company": "Gigaton",
+    "round": "Series A",
+    "amount": "$26m",
+    "evidence": "Gigaton lands $26M to scale autonomous industrial control",
+    "investor": "Plural",
+    "url": "https://tech.eu/2026/06/03/gigaton-lands-26m-to-scale-autonomous-industrial-control/",
+    "source": "Tech.eu",
+    "sector": "",
+    "window": "Senior-comms window ~6 mo",
+    "advisory": "Advisory: comms-function design-for-scale + benchmarking; build the senior-comms market map ahead of the ~6-month hire.",
+    "confidence": "medium",
+    "fid": "4f031527833ef9a7",
+    "first_seen": "2026-06-03T10:24:21.052086+00:00"
   }
 ]
