@@ -465,54 +465,6 @@ def _sanitise_output(text: str, is_html: bool) -> str:
     return text
 
 
-def _guess_domain(name: str) -> str:
-    """Cheap fallback domain when the lookup is unavailable: strip common
-    company suffixes and punctuation. Imperfect, but a wrong guess just yields
-    a logo that fails to load and is hidden client-side (never a broken icon)."""
-    base = (name or "").strip().lower()
-    _sufs = (" group", " holdings", " holding", " plc", " ltd", " limited",
-             " inc", " llp", " uk", " & co", " company")
-    changed = True
-    while changed:  # strip stacked suffixes, e.g. "... Group plc"
-        changed = False
-        for suf in _sufs:
-            if base.endswith(suf):
-                base = base[:-len(suf)].strip()
-                changed = True
-    base = base.replace(" & ", " and ")
-    base = _re.sub(r"[^a-z0-9]", "", base)
-    return f"{base}.com" if base else ""
-
-
-def resolve_company_logo(name: str) -> dict:
-    """Best-effort: resolve the target's domain + logo URL so the pack can show
-    their mark alongside VMA's. Never raises; returns {} on any failure so a
-    missing logo simply falls back to VMA-only (the prior behaviour). Runs at
-    generation time (the workflow has network); the resulting <img> is loaded
-    by the reader's browser with an onerror fallback chain."""
-    name = (name or "").strip()
-    if not name:
-        return {}
-    domain = logo = ""
-    try:
-        import requests
-        r = requests.get(
-            "https://autocomplete.clearbit.com/v1/companies/suggest",
-            params={"query": name}, timeout=6)
-        if r.status_code == 200:
-            arr = r.json()
-            if isinstance(arr, list) and arr:
-                domain = (arr[0].get("domain") or "").strip()
-                logo = (arr[0].get("logo") or "").strip()
-    except Exception as e:  # network blocked / service down / bad JSON
-        log.info("company_logo lookup failed for %r: %s", name, e)
-    if not domain:
-        domain = _guess_domain(name)
-    if not logo and domain:
-        logo = f"https://logo.clearbit.com/{domain}"
-    return {"domain": domain, "logo": logo} if (domain or logo) else {}
-
-
 def render_html(target: str, role: str, ch_snapshot: dict,
                 news: list[dict], peers: list[str], sector: str | None,
                 salary_band: tuple[int, int, str],
@@ -520,8 +472,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
                 annual_report=None, curated_priorities: list[str] | None = None,
                 peer_label: str = "", peer_source: str = "sector",
                 sector_context: list[str] | None = None,
-                persona: str = "", trigger_context: str = "",
-                company_logo: dict | None = None) -> str:
+                persona: str = "", trigger_context: str = "") -> str:
     low, high, matched = salary_band
     mid = (low + high) // 2
     total_comp_mid = estimate_total_comp(mid)
@@ -783,18 +734,8 @@ def render_html(target: str, role: str, ch_snapshot: dict,
     </div>
     """
 
-    # The target's logo travels with the artifact as <meta> tags; the
-    # dashboard skin reads them and renders the company mark alongside VMA's.
-    _logo = company_logo or {}
-    _brand_meta = ""
-    if _logo.get("logo") or _logo.get("domain"):
-        _brand_meta = (
-            f'<meta name="pp-company" content="{_esc(target)}">'
-            f'<meta name="pp-logo" content="{_esc(_logo.get("logo", ""))}">'
-            f'<meta name="pp-domain" content="{_esc(_logo.get("domain", ""))}">')
-
     return f"""<!doctype html>
-<html><head><meta charset="utf-8">{_brand_meta}</head><body style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px;color:#111;">
+<html><head><meta charset="utf-8"></head><body style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px;color:#111;">
 {note_banner}
 <h2 style="margin:0 0 4px 0;">Retained Pitch Pack - {_esc(target)}</h2>
 <div style="color:#666;font-size:13px;margin-bottom:18px;">
@@ -1078,13 +1019,12 @@ def main() -> int:
     # Optional audience persona (ceo / cfo / incoming / hr) — reframes the
     # opening for the reader. Manual packs can leave it blank.
     persona = (os.environ.get("PITCH_PERSONA") or "").strip()
-    _logo = resolve_company_logo(target)
     _render_kw = dict(annual_report=annual_rep, curated_priorities=curated_priorities,
                       peer_label=peer_meta["label"], peer_source=peer_meta["source"],
                       sector_context=sector_ctx, persona=persona,
                       trigger_context=trigger_context)
     html_out = render_html(target, role, ch, news, peers, sector, sal, cov, mode,
-                            company_logo=_logo, **_render_kw)
+                            **_render_kw)
     text_out = render_text(target, role, ch, news, peers, sector, sal, cov,
                             **_render_kw)
 
