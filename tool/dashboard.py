@@ -2240,7 +2240,7 @@ LANDING_TEMPLATE = r"""
 <title>VMA Group</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Google+Sans:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   /* ============================================================
      L1 — VMA logo over the Gemini ground-truth halo, with a market-
@@ -2289,8 +2289,8 @@ LANDING_TEMPLATE = r"""
   /* signal chips — recruitment / market triggers the scanner surfaces */
   .sig{position:absolute;z-index:4;display:inline-flex;align-items:center;gap:6px;
     background:#fff;border:1px solid rgba(60,64,67,.12);border-radius:9999px;
-    padding:6px 11px 6px 8px;font-family:"Google Sans","Inter",Arial,sans-serif;
-    font-size:11.5px;font-weight:600;color:#1A3D7C;white-space:nowrap;
+    padding:6px 11px 6px 8px;font-family:"Inter",-apple-system,system-ui,sans-serif;
+    font-size:11.5px;font-weight:600;color:#1F1F1F;white-space:nowrap;
     max-width:248px;box-shadow:0 6px 18px rgba(31,55,124,.12);opacity:0;transform:scale(.8);
     animation:sigpop 7s ease-in-out infinite;}
   .sig b{font-weight:inherit;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -2357,7 +2357,7 @@ LANDING_TEMPLATE = r"""
     100%{transform:scale(3.4);opacity:0;}
   }
 
-  .lbl{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;letter-spacing:.26em;text-transform:uppercase;font-weight:500;}
+  .lbl{font-family:"Inter",-apple-system,system-ui,sans-serif;font-size:15px;letter-spacing:-.01em;text-transform:none;font-weight:600;color:#1F1F1F;}
 
   @media (max-width:720px){
     .stage{gap:24px;}
