@@ -350,3 +350,65 @@ def test_diageo_dividend_reset_current():
     from tool.pre_meeting import _load_curated_priorities
     pr = " ".join(_load_curated_priorities("Diageo")).lower()
     assert "dividend" in pr      # the Feb-2026 reset, now reflected
+
+
+# ---- final pass: persona variants, fee-vs-cost, §8 event, §2 currency ----
+
+def test_all_four_persona_variants_distinct():
+    from tool.pitch_pack import _persona_opener
+    outs = {p: _persona_opener(p, "Head of Communications", "Diageo", 36000, 42000, 101700)
+            for p in ("ceo", "cfo", "incoming", "hr")}
+    assert all(outs.values())                 # all four produce copy
+    assert len(set(outs.values())) == 4       # and all distinct
+    assert "chief executive" in outs["ceo"].lower()
+    assert "team" in outs["incoming"].lower()
+    assert "in-house" in outs["hr"].lower()
+
+
+def test_cfo_persona_pays_off_fee_vs_cost():
+    from tool.pitch_pack import _persona_opener
+    out = _persona_opener("cfo", "Head of Communications", "Diageo",
+                          36100, 42600, 101700)
+    assert "£36,100" in out and "£101,700" in out   # the juxtaposition, in the opener
+    assert "under half" in out
+
+
+def test_fee_vs_cost_line_present_for_every_reader():
+    # The juxtaposition is in §3 regardless of persona.
+    html, _ = _render("Diageo", role="Head of Internal Communications")
+    assert "Put together:" in html
+    assert "£101,700" in html and "an empty seat costs" in html
+
+
+def test_fee_vs_cost_phrase_ratio_bands():
+    from tool.pitch_pack import _fee_vs_cost_phrase
+    assert "under half" in _fee_vs_cost_phrase(36100, 42600, 101700)
+    assert _fee_vs_cost_phrase(0, 0, 0) == ""
+
+
+def test_section8_event_wired_when_trigger_supplied():
+    from tool import pitch_pack as pp, peers
+    from tool.pre_meeting import _load_curated_priorities
+    role = "Head of Internal Communications"
+    pm = peers.pitch_peers_for("Diageo", k=15)
+    sal = pp._salary_band(role)
+    cov = pp.cost_of_vacancy(role, (sal[0] + sal[1]) // 2)
+    ch = {"found": True, "resolved": {"company_number": "X", "company_status": "active"}}
+    ev = "a new-CEO Strategy Update to shareholders and employees on 6 August 2026"
+    html = pp.render_html("Diageo", role, ch, [], pm["peers"],
+                          peers.detect_sector("Diageo"), sal, cov, "preview",
+                          curated_priorities=_load_curated_priorities("Diageo"),
+                          peer_label=pm["label"], peer_source=pm["source"],
+                          trigger_context=ev)
+    assert "6 August 2026" in html and "own it" in html
+
+
+def test_diageo_section2_corrections():
+    from tool.pre_meeting import _load_curated_priorities
+    pr = " ".join(_load_curated_priorities("Diageo"))
+    assert "1 January 2026" in pr        # CEO start date
+    assert "6 August 2026" in pr         # Strategy Update timing (wires §8)
+    assert "c.$300m" in pr               # in-year savings (not just the $625m total)
+    assert "c.$625m" in pr               # programme total, kept alongside
+    assert "halved the dividend" in pr   # stated precisely, not "reset"
+    assert "50-cent floor" in pr
