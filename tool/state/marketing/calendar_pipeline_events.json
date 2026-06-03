@@ -1,0 +1,77 @@
+{
+  "items": {
+    "marketing_week_masters_2026": {
+      "key": "marketing_week_masters_2026",
+      "name": "Marketing Week Awards / Masters",
+      "event_date": "2026-10-14",
+      "action_window": [
+        "2026-08-14",
+        "2026-10-14"
+      ],
+      "location": "London",
+      "focus": "external",
+      "why_now": "Flagship UK marketing awards; senior in-house marketing judges + finalists = a direct relationship route.",
+      "source": "https://www.marketingweek.com/",
+      "first_seen": "2026-06-02T00:51:31.181569+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null,
+      "last_seen": "2026-06-03T00:10:38.334178+00:00"
+    },
+    "festival_of_marketing_2026": {
+      "key": "festival_of_marketing_2026",
+      "name": "Festival of Marketing",
+      "event_date": "2026-10-07",
+      "action_window": [
+        "2026-08-07",
+        "2026-10-07"
+      ],
+      "location": "London",
+      "focus": "external",
+      "why_now": "Major UK marketing-leadership gathering; CMO / brand / growth speakers and attendees concentrated in two days.",
+      "source": "https://www.festivalofmarketing.com/",
+      "first_seen": "2026-06-02T00:51:31.181569+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null,
+      "last_seen": "2026-06-03T00:10:38.334178+00:00"
+    },
+    "the_drum_awards_2026": {
+      "key": "the_drum_awards_2026",
+      "name": "The Drum Awards",
+      "event_date": "2026-11-18",
+      "action_window": [
+        "2026-09-18",
+        "2026-11-18"
+      ],
+      "location": "London",
+      "focus": "external",
+      "why_now": "Cross-discipline marketing & creative awards; shortlist window is the strongest outreach hook to senior finalists.",
+      "source": "https://www.thedrum.com/awards",
+      "first_seen": "2026-06-02T00:51:31.181569+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null,
+      "last_seen": "2026-06-03T00:10:38.334178+00:00"
+    },
+    "dma_awards_2026": {
+      "key": "dma_awards_2026",
+      "name": "DMA Awards",
+      "event_date": "2026-12-02",
+      "action_window": [
+        "2026-10-02",
+        "2026-12-02"
+      ],
+      "location": "London",
+      "focus": "external",
+      "why_now": "Data & CRM / customer-marketing awards; reaches the performance & lifecycle marketing leadership cohort.",
+      "source": "https://dma.org.uk/awards",
+      "first_seen": "2026-06-02T00:51:31.181569+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null,
+      "last_seen": "2026-06-03T00:10:38.334178+00:00"
+    }
+  },
+  "updated_at": "2026-06-03T00:10:38.334764+00:00"
+}
