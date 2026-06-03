@@ -24,7 +24,8 @@
     "testimonial": {
       "quote": "[Short client testimonial about a VMA-led comms search]",
       "attrib": "[Job title, sector - anonymised if needed]"
-    }
+    },
+    "salary_benchmark": "[Cite VMA's own data, e.g. VMA 2026 Communications Salary Guide, n=...]"
   },
   "marketing": {
     "positioning": "VMA Group is a specialist marketing, brand and digital search firm - this is the market we work in every day, not a generalist desk picking up a marketing brief between others.",
@@ -45,6 +46,7 @@
     "testimonial": {
       "quote": "[Short client testimonial about a VMA-led marketing search]",
       "attrib": "[Job title, sector - anonymised if needed]"
-    }
+    },
+    "salary_benchmark": "[Cite VMA's own data, e.g. VMA 2026 Marketing Salary Guide, n=...]"
   }
 }

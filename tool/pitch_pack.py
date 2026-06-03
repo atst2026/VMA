@@ -196,8 +196,9 @@ def cost_of_vacancy(role: str, salary_midpoint: int, *,
     cover_label = ("Interim marketing-leadership cover" if frame == "marketing"
                    else "Interim senior-comms cover")
     lines = {
-        f"{cover_label} (~{weeks} wks to a productive start)": interim,
-        "Exposure of a rushed/wrong hire (replacement + re-search, ~30% of total comp)": rushed,
+        f"{cover_label} (~{weeks} wks @ ~£{INTERIM_DAY_RATE_GBP}/day)": interim,
+        ("Exposure of a rushed/wrong hire (conservative 30% of total comp — "
+         "senior mis-hires commonly run materially higher)"): rushed,
     }
     total = sum(lines.values())
     lines["Cost of leaving the seat empty"] = total
@@ -318,13 +319,76 @@ def _is_placeholder(s: str) -> bool:
     return "[" in (s or "") and "]" in (s or "")
 
 
+def _proof_incomplete(proof: dict | None = None) -> bool:
+    """True if VMA's evidence proof points aren't filled in (file missing, or
+    any stat/placement/consultant/testimonial field still a [placeholder]).
+    The positioning line is true today, so it doesn't count — it's the
+    *evidence* that must be real before a pack is client-ready."""
+    if proof is None:
+        proof = _load_proof()
+    if not proof:
+        return True
+    fields = list(proof.get("stats") or []) + list(proof.get("placements") or [])
+    c, t = proof.get("consultant") or {}, proof.get("testimonial") or {}
+    fields += [c.get("name", ""), c.get("bio", ""),
+               t.get("quote", ""), t.get("attrib", "")]
+    if not (proof.get("stats") or proof.get("placements")):
+        return True
+    return any(_is_placeholder(f) for f in fields)
+
+
+# ---- Persona tailoring -----------------------------------------------
+# The body of the pack is common; the OPENING reframes it for the specific
+# reader (the research's fifth point). Selected by PITCH_PERSONA so a pack
+# fired from a lead — or the dashboard — can pin the audience. Body unchanged.
+_PERSONA_ALIASES = {
+    "ceo": "ceo", "chief executive": "ceo", "chair": "ceo", "chairman": "ceo", "board": "ceo",
+    "cfo": "cfo", "finance": "cfo", "fd": "cfo",
+    "incoming": "incoming", "incoming leader": "incoming", "new leader": "incoming",
+    "cco": "incoming", "cmo": "incoming",
+    "hr": "hr", "hrd": "hr", "chro": "hr", "talent": "hr", "people": "hr",
+}
+
+
+def _persona_opener(persona: str, role: str, target: str) -> str:
+    """Return a one-line audience reframe, or '' for none/unknown persona."""
+    key = _PERSONA_ALIASES.get((persona or "").strip().lower())
+    role_l = (role or f"senior {_NOUN} leader").strip()
+    tmpl = {
+        "ceo": (f"For the chief executive: this is about a {role_l} who can act as genuine "
+                f"strategic counsel to you and the board, and protect {target}'s reputation "
+                "through the period ahead — run discreetly and at pace."),
+        "cfo": (f"For finance: what the empty seat is costing (Section 3), how a retained fee "
+                "compares with a contingent scramble or a failed hire, and the rebate and "
+                "replacement guarantee that de-risk the spend (Section 9)."),
+        "incoming": (f"For an incoming leader: how we help you build the team around you quickly "
+                     "and credibly in your first 6–12 months — a calibrated shortlist that lets "
+                     "you look decisive to the board fast."),
+        "hr": (f"For HR and Talent: a rigorous, externally-run search that complements your "
+               "in-house team rather than competing with it — the discretion and passive reach "
+               "an internal process can't carry, with a clear methodology and guarantee."),
+    }.get(key, "")
+    return tmpl
+
+
+def _persona_html(persona: str, role: str, target: str) -> str:
+    opener = _persona_opener(persona, role, target)
+    if not opener:
+        return ""
+    return (
+        "<div style='font-size:13px;color:#1A3D7C;background:rgba(61,90,130,0.06);"
+        "border-left:3px solid #3D5A82;padding:9px 13px;border-radius:4px;margin-bottom:16px;'>"
+        f"{_esc(opener)}</div>")
+
+
 def render_html(target: str, role: str, ch_snapshot: dict,
                 news: list[dict], peers: list[str], sector: str | None,
                 salary_band: tuple[int, int, str],
                 cov: dict, mode: str,
                 annual_report=None, curated_priorities: list[str] | None = None,
                 peer_label: str = "", peer_source: str = "sector",
-                sector_context: list[str] | None = None) -> str:
+                sector_context: list[str] | None = None,
+                persona: str = "") -> str:
     low, high, matched = salary_band
     mid = (low + high) // 2
     total_comp_mid = estimate_total_comp(mid)
@@ -516,6 +580,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
     if mode == "test":
         note_banner = "<div style='background:#fff3cd;border:1px solid #ffeaa7;padding:8px;margin-bottom:16px;font-size:13px;'>⚠️ TEST PACK - generated for Amir's review. Do not send to client.</div>"
 
+    persona_html = _persona_html(persona, role, target)
     salary_period = datetime.now().strftime("%B %Y")
     cov_weeks = cov.get("weeks", TIME_TO_PRODUCTIVE_WEEKS) if isinstance(cov, dict) else TIME_TO_PRODUCTIVE_WEEKS
     # Section 4 intro — relevant when we have a real cohort; honest prompt when
@@ -590,6 +655,28 @@ def render_html(target: str, role: str, ch_snapshot: dict,
         "Add VMA proof points in tool/state/vma_proof.json — track record, comparable "
         "placements, consultant bio, testimonial.")
 
+    # GATE, don't garnish: while the proof points are unfilled the pack is not
+    # client-ready, so the whole document is stamped DRAFT — not a small box
+    # next to one section that a human has to remember to delete.
+    proof_incomplete = proof_has_placeholder or _proof_incomplete(proof)
+    draft_banner = ""
+    if proof_incomplete:
+        draft_banner = (
+            "<div style='background:#b3261e;color:#fff;padding:11px 15px;margin-bottom:16px;"
+            "border-radius:5px;font-size:13px;font-weight:600;line-height:1.4;'>"
+            "DRAFT — NOT FOR CLIENT. VMA's proof points (Section 7) are unfilled. "
+            "Complete <code style='color:#ffe3e0;'>tool/state/vma_proof.json</code> with real, "
+            "approved figures before this pack goes to a client.</div>")
+
+    # Salary benchmark: cite VMA's own data if provided, else hedge — never
+    # assert an unsourced range (a sharp reward/HR buyer will poke it).
+    _sal_src = (proof.get("salary_benchmark") or "").strip()
+    if _sal_src and not _is_placeholder(_sal_src):
+        salary_source_html = f" <span style='color:#888;'>Source: {_esc(_sal_src)}.</span>"
+    else:
+        salary_source_html = (" <span style='color:#888;'>Indicative — confirm against VMA's "
+                              "latest salary benchmarking before quoting.</span>")
+
     # ---- Section 8: Why external retained search NOW ----------------------
     # The real competition in a down market isn't contingent rivals — it's the
     # client doing it in-house, on LinkedIn, or not at all. This answers all
@@ -619,13 +706,14 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 
     return f"""<!doctype html>
 <html><head><meta charset="utf-8"></head><body style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px;color:#111;">
+{draft_banner}
 {note_banner}
 <h2 style="margin:0 0 4px 0;">Retained Pitch Pack - {_esc(target)}</h2>
 <div style="color:#666;font-size:13px;margin-bottom:18px;">
   Role: {_esc(role)} · Generated {_esc(datetime.now().strftime('%a %d %b %Y · %H:%M'))} · VMA Group
 </div>
 <hr style="border:none;border-top:2px solid #3D5A82;margin:14px 0 24px;">
-
+{persona_html}
 <h3 style="margin:18px 0 6px 0;">1. Account snapshot</h3>
 {snapshot_html}
 
@@ -645,7 +733,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 
 <h3 style="margin:18px 0 6px 0;">5. Salary benchmark</h3>
 <div style='font-size:13px;'>
-  UK {_esc(salary_period)} range for <strong>{_esc(matched)}</strong>: <strong>{_fmt_gbp(low)}–{_fmt_gbp(high)}</strong> base, plus 10–25% bonus / LTIP at FTSE-listed level (est. total comp ≈ <strong>{_fmt_gbp(total_comp_mid)}</strong>).
+  UK {_esc(salary_period)} range for <strong>{_esc(matched)}</strong>: <strong>{_fmt_gbp(low)}–{_fmt_gbp(high)}</strong> base, plus 10–25% bonus / LTIP at FTSE-listed level (est. total comp ≈ <strong>{_fmt_gbp(total_comp_mid)}</strong>).{salary_source_html}
 </div>
 
 <h3 style="margin:18px 0 6px 0;">6. 6-week retained methodology</h3>
@@ -676,18 +764,30 @@ def render_text(target: str, role: str, ch_snapshot: dict,
                 salary_band: tuple[int, int, str], cov: dict,
                 annual_report=None, curated_priorities: list[str] | None = None,
                 peer_label: str = "", peer_source: str = "sector",
-                sector_context: list[str] | None = None) -> str:
+                sector_context: list[str] | None = None,
+                persona: str = "") -> str:
     low, high, matched = salary_band
     mid = (low + high) // 2
     total_comp_mid = estimate_total_comp(mid)
     universe_label = peer_label or (
         sector.replace("_", " ").title() if sector else "Sector unclear")
-    lines = [
+    _proof = _load_proof()
+    lines = []
+    if _proof_incomplete(_proof):
+        lines += ["#" * 60,
+                  "DRAFT - NOT FOR CLIENT. VMA's proof points (Section 7) are unfilled.",
+                  "Complete tool/state/vma_proof.json with real figures before sending.",
+                  "#" * 60, ""]
+    lines += [
         f"Retained Pitch Pack - {target}",
         f"Role: {role}  ·  Generated {datetime.now().strftime('%a %d %b %Y · %H:%M')}",
-        "=" * 60, "",
-        "1. ACCOUNT SNAPSHOT",
-    ]
+        "=" * 60, ""]
+    _persona_line = _persona_opener(persona, role, target)
+    if _persona_line:
+        for _seg in textwrap.wrap(_persona_line, 72):
+            lines.append(_seg)
+        lines.append("")
+    lines += ["1. ACCOUNT SNAPSHOT"]
     _fee_low = int(round(0.28 * total_comp_mid, -2))
     _fee_high = int(round(0.33 * total_comp_mid, -2))
     _cov_total = cov.get("total") if isinstance(cov, dict) else None
@@ -754,9 +854,13 @@ def render_text(target: str, role: str, ch_snapshot: dict,
                   f"   reaching them before a competitor does is what a retained search buys."]
         for i, p in enumerate(peers, 1):
             lines.append(f"   {i:>2}. {p}")
+    _sal_src = (_proof.get("salary_benchmark") or "").strip()
+    _sal_note = (f"Source: {_sal_src}." if (_sal_src and not _is_placeholder(_sal_src))
+                 else "Indicative - confirm against VMA's latest salary benchmarking before quoting.")
     lines += ["", "5. SALARY BENCHMARK",
               f"   UK {_salary_period} range for {matched}: £{low:,}–£{high:,} base + 10–25% bonus/LTIP",
               f"   (est. first-year total comp ≈ £{total_comp_mid:,})",
+              f"   {_sal_note}",
               "", "6. 6-WEEK METHODOLOGY",
               "   Wk 1   Briefing + market pack                       (1/3 on engagement)",
               "   Wk 2–3 Universe mapped + longlist of named candidates",
@@ -914,9 +1018,12 @@ def main() -> int:
         except Exception as e:
             log.info("sector-context fallback failed: %s", e)
 
+    # Optional audience persona (ceo / cfo / incoming / hr) — reframes the
+    # opening for the reader. Manual packs can leave it blank.
+    persona = (os.environ.get("PITCH_PERSONA") or "").strip()
     _render_kw = dict(annual_report=annual_rep, curated_priorities=curated_priorities,
                       peer_label=peer_meta["label"], peer_source=peer_meta["source"],
-                      sector_context=sector_ctx)
+                      sector_context=sector_ctx, persona=persona)
     html_out = render_html(target, role, ch, news, peers, sector, sal, cov, mode,
                             **_render_kw)
     text_out = render_text(target, role, ch, news, peers, sector, sal, cov,
@@ -926,6 +1033,18 @@ def main() -> int:
     stamp = datetime.now().strftime("%Y%m%d_%H%M")
     (STATE_DIR / f"pitch_pack_{safe}_{stamp}.html").write_text(html_out)
     (STATE_DIR / f"pitch_pack_{safe}_{stamp}.txt").write_text(text_out)
+
+    # GATE the live client send: if VMA's proof points (Section 7) are unfilled,
+    # the pack is not client-ready — refuse to send rather than email a pack
+    # with placeholder credentials. preview/test still render (DRAFT-stamped)
+    # so Sara can review the structure.
+    if mode == "send" and _proof_incomplete():
+        log.error("Refusing to send %r: VMA proof points incomplete "
+                  "(tool/state/vma_proof.json).", target)
+        print("\n✗ NOT SENT — VMA's proof points (Section 7) are unfilled. "
+              "Complete tool/state/vma_proof.json with real, approved figures, "
+              "then resend.")
+        return 2
 
     if mode in ("send", "test") and getattr(config, "NON_BRIEF_EMAIL_ENABLED", False):
         to = config.TEST_RECIPIENT if mode == "test" else config.RECIPIENT

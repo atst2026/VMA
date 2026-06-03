@@ -267,3 +267,86 @@ def test_text_render_has_proof_and_why_now_no_mirror():
     assert "8. WHY EXTERNAL RETAINED SEARCH NOW" in txt
     assert "9. RISK-MITIGATION TERMS" in txt
     assert "CLIENT LANGUAGE TO MIRROR" not in txt
+
+
+# ---- gate (not garnish), persona, evidence-or-hedge --------------------
+
+def _complete_proof():
+    return {
+        "positioning": "VMA Group is a specialist communications search firm.",
+        "stats": ["40 senior comms mandates delivered in 24 months",
+                  "82% completed within 7 weeks", "2 in 3 still in role at 3 years"],
+        "placements": ["Group Head of Communications, FTSE-100 consumer brand house"],
+        "consultant": {"name": "Jane Doe", "bio": "12 years in comms search"},
+        "testimonial": {"quote": "They reached people we couldn't.", "attrib": "HRD, FTSE-100"},
+        "salary_benchmark": "VMA 2026 Communications Salary Guide, n=420",
+    }
+
+
+def test_proof_incomplete_gates_by_default():
+    from tool.pitch_pack import _proof_incomplete
+    assert _proof_incomplete() is True          # seeded file is all placeholders
+
+
+def test_proof_complete_detection(monkeypatch):
+    from tool import pitch_pack as pp
+    monkeypatch.setattr(pp, "_load_proof", _complete_proof)
+    assert pp._proof_incomplete() is False
+
+
+def test_draft_banner_present_when_incomplete():
+    html, _ = _render("Diageo", role="Head of Internal Communications")
+    assert "DRAFT — NOT FOR CLIENT" in html      # gated, not just garnished
+
+
+def test_draft_banner_absent_when_proof_complete(monkeypatch):
+    from tool import pitch_pack as pp
+    monkeypatch.setattr(pp, "_load_proof", _complete_proof)
+    html, _ = _render("Diageo", role="Head of Internal Communications")
+    assert "DRAFT — NOT FOR CLIENT" not in html
+    assert "still in role at 3 years" in html                       # real stat renders
+    assert "VMA 2026 Communications Salary Guide" in html           # salary now cited
+    assert "vma_proof.json" not in html                             # no guard note
+
+
+def test_persona_opener_maps_and_defaults():
+    from tool.pitch_pack import _persona_opener
+    assert "finance" in _persona_opener("cfo", "Head of Communications", "Diageo").lower()
+    assert "chief executive" in _persona_opener("ceo", "X", "Y").lower()
+    assert "in-house" in _persona_opener("hrd", "X", "Y").lower()   # alias hrd->hr
+    assert _persona_opener("", "X", "Y") == ""
+    assert _persona_opener("nonsense", "X", "Y") == ""
+
+
+def test_persona_renders_in_pack():
+    from tool import pitch_pack as pp, peers
+    from tool.pre_meeting import _load_curated_priorities
+    role = "Head of Internal Communications"
+    pm = peers.pitch_peers_for("Diageo", k=15)
+    sal = pp._salary_band(role)
+    cov = pp.cost_of_vacancy(role, (sal[0] + sal[1]) // 2)
+    ch = {"found": True, "resolved": {"company_number": "X", "company_status": "active"}}
+    html = pp.render_html("Diageo", role, ch, [], pm["peers"],
+                          peers.detect_sector("Diageo"), sal, cov, "preview",
+                          curated_priorities=_load_curated_priorities("Diageo"),
+                          peer_label=pm["label"], peer_source=pm["source"], persona="ceo")
+    assert "chief executive" in html.lower()
+
+
+def test_cov_labels_are_evidenced():
+    from tool.pitch_pack import cost_of_vacancy, INTERIM_DAY_RATE_GBP
+    keys = " ".join(cost_of_vacancy("Head of Communications", 110_000,
+                                    frame="comms")["lines"].keys()).lower()
+    assert f"@ ~£{INTERIM_DAY_RATE_GBP}/day".lower() in keys   # interim rate shown
+    assert "conservative 30%" in keys                          # bad-hire floor framed
+
+
+def test_salary_hedged_when_unsourced():
+    html, _ = _render("Diageo", role="Head of Internal Communications")
+    assert "confirm against VMA's latest salary benchmarking" in html
+
+
+def test_diageo_dividend_reset_current():
+    from tool.pre_meeting import _load_curated_priorities
+    pr = " ".join(_load_curated_priorities("Diageo")).lower()
+    assert "dividend" in pr      # the Feb-2026 reset, now reflected
