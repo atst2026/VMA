@@ -39,6 +39,10 @@ on:
         description: "Optional reader persona (ceo | cfo | incoming | hr)."
         required: false
         default: ""
+      token:
+        description: "Internal: unique id from the dashboard so each dispatch maps to its own artifact (prevents a second pitch resolving to the previous one)."
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -83,7 +87,10 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pitch-pack
+          # Per-dispatch name so the dashboard poll resolves to THIS run's
+          # artifact, never a previous pitch pack's. Falls back to the plain
+          # name for a manual run with no token.
+          name: ${{ github.event.inputs.token != '' && format('pitch-pack-{0}', github.event.inputs.token) || 'pitch-pack' }}
           # Two patterns rather than {html,txt} brace expansion - actions/
           # upload-artifact@v4's minimatch does not expand braces, so the
           # brace form was matching zero files and uploading nothing.

@@ -197,6 +197,21 @@ _ARTIFACT_LABEL = {
 }
 
 
+def _artifact_label(name: str | None) -> str | None:
+    """Human label for an artifact name. Pitch packs carry a per-dispatch
+    suffix ('pitch-pack-<token>') so each dispatch maps to its own artifact
+    and a second dispatch can't resolve to the first one's; match by prefix."""
+    if not name:
+        return None
+    if name == "pitch-pack" or name.startswith("pitch-pack-"):
+        return "Pitch Pack"
+    return _ARTIFACT_LABEL.get(name)
+
+
+def _is_report_artifact(name: str | None) -> bool:
+    return _artifact_label(name) is not None
+
+
 def _artifact_index() -> dict:
     """{artifact_name: [(created_dt, id), …] newest-first}. One API call."""
     if not GITHUB_TOKEN:
@@ -210,7 +225,7 @@ def _artifact_index() -> dict:
         idx: dict = {}
         for a in r.json().get("artifacts", []):
             nm = a.get("name")
-            if nm not in _ARTIFACT_LABEL or a.get("expired"):
+            if not _is_report_artifact(nm) or a.get("expired"):
                 continue
             try:
                 created = datetime.fromisoformat(
@@ -238,7 +253,7 @@ def _delete_report_artifacts() -> dict:
         if r.status_code != 200:
             return {"deleted": 0, "failed": 0}
         for a in r.json().get("artifacts", []):
-            if a.get("name") not in _ARTIFACT_LABEL:
+            if not _is_report_artifact(a.get("name")):
                 continue
             try:
                 d = requests.delete(
@@ -296,7 +311,7 @@ def _recent_reports(hours: int = 48) -> list[dict]:
             if _id in used or created < cutoff:
                 continue
             out.append({
-                "type": _ARTIFACT_LABEL.get(art, art), "company": "",
+                "type": _artifact_label(art) or art, "company": "",
                 "name": "", "artifact": art,
                 "ts": created.isoformat(), "id": _id,
             })
@@ -1265,7 +1280,7 @@ MR_CSS = r"""
 #leads.page.active{min-height:0}
 #leads .container{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden}
 @media (max-width:640px){#leads .container{overflow:visible;min-height:auto}}
-.mr-sub{text-align:center;font:500 10px/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:0 0 13px;display:flex;gap:8px;align-items:center;justify-content:center}
+.mr-sub{text-align:left;font:500 10px/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:0 0 13px;padding-left:2px;display:flex;gap:8px;align-items:center;justify-content:flex-start}
 .mr-sub .mr-spk{color:var(--clay);display:inline-flex}.mr-sub .mr-spk svg{width:12px;height:12px}
 .mr-bar{display:flex;align-items:center;gap:7px;margin-bottom:13px;flex-wrap:wrap;position:sticky;top:0;z-index:6;background:rgb(253,252,252);padding:8px 0 9px}
 .mr-spacer{flex:1}
@@ -1294,7 +1309,7 @@ MR_CSS = r"""
 #mr-rows{border:1px solid var(--hairline);border-radius:13px;background:rgba(255,255,255,.62);overflow:hidden}
 .mr-rsum{display:grid;align-items:center;gap:11px}
 .mr-gbd{grid-template-columns:24px 150px 126px 158px minmax(90px,1fr) 82px 56px 76px auto}
-.mr-gjobs{grid-template-columns:24px 156px minmax(150px,1fr) 118px 52px 44px auto}
+.mr-gjobs{grid-template-columns:28px minmax(180px,1fr) minmax(220px,1.7fr) 160px 72px 46px auto}
 .mr-row{border-bottom:1px solid var(--hairline);transition:.2s;display:block}.mr-row:last-child{border-bottom:none}.mr-row.gone{height:0!important;opacity:0;border:none;overflow:hidden}
 .mr-row.top .mr-rsum{box-shadow:inset 3px 0 0 var(--blue)}
 .mr-rsum{padding:11px 14px;cursor:pointer}.mr-rsum:hover{background:var(--elevated)}
@@ -1730,6 +1745,13 @@ def api_dispatch_brief():
 @_auth_required
 def api_pitch_pack():
     data = _safe_json_body()
+    # Unique per-dispatch id: the workflow names its artifact
+    # "pitch-pack-<token>" so each dispatch maps to its OWN artifact. Without
+    # it, every pack uploaded the same "pitch-pack" name and a second dispatch
+    # could resolve to the first one's artifact (clock-skew slack window) —
+    # which showed the previous company's pack for a different lead.
+    import uuid
+    token = uuid.uuid4().hex[:10]
     inputs = {
         "account_name": (data.get("account_name") or "").strip(),
         "role": (data.get("role") or _default_role_label()).strip(),
@@ -1748,6 +1770,7 @@ def api_pitch_pack():
         # and (optionally) tailors the opener to a reader persona.
         "trigger": (data.get("trigger") or "").strip(),
         "persona": (data.get("persona") or "").strip(),
+        "token": token,
     }
     if not inputs["account_name"]:
         return jsonify({"ok": False, "detail": "Account name required"}), 400
@@ -1760,7 +1783,7 @@ def api_pitch_pack():
                 return jsonify({"ok": False,
                                 "detail": f"{k} must be a whole number (e.g. 95000)"}), 400
     res = trigger_workflow("pitch-pack.yml", inputs)
-    res["artifact"] = _WORKFLOW_ARTIFACT["pitch-pack.yml"]
+    res["artifact"] = f"{_WORKFLOW_ARTIFACT['pitch-pack.yml']}-{token}"
     if res.get("ok"):
         from tool import report_log
         report_log.add("Pitch Pack", inputs["account_name"],
