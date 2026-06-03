@@ -31,6 +31,14 @@ on:
         description: "Desk profile (comms | marketing). Set by the dashboard from the active desk."
         required: false
         default: "comms"
+      trigger:
+        description: "Optional event anchor (e.g. 'a recent CEO change at Diageo'). Set when fired from a BD lead."
+        required: false
+        default: ""
+      persona:
+        description: "Optional reader persona (ceo | cfo | incoming | hr)."
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -65,6 +73,8 @@ jobs:
           PITCH_ROLE: ${{ github.event.inputs.role }}
           PITCH_SALARY_MIN: ${{ github.event.inputs.salary_min }}
           PITCH_SALARY_MAX: ${{ github.event.inputs.salary_max }}
+          PITCH_TRIGGER: ${{ github.event.inputs.trigger }}
+          PITCH_PERSONA: ${{ github.event.inputs.persona }}
         run: |
           set -x
           python -m tool.pitch_pack "${{ github.event.inputs.account_name }}" "${{ github.event.inputs.mode }}"

@@ -292,51 +292,6 @@ def _prep_html(text: str) -> str:
     )
 
 
-# ---- Proof / track record (config-driven) ----------------------------
-# Retained search is a trust purchase: "who have you placed?" is the most-asked
-# question in a pitch and the pack had no answer. VMA's real, approved
-# credentials live in tool/state/vma_proof.json; here we load the active
-# profile's slice and detect unfilled [placeholders] so the pack can guard a
-# half-finished proof section instead of sending invented stats.
-_PROOF_FILE = _REPO_ROOT / "tool" / "state" / "vma_proof.json"
-
-
-def _load_proof() -> dict:
-    """Load VMA's proof points for the active profile (comms/marketing).
-    Returns {} on any error so the section degrades gracefully."""
-    try:
-        import json
-        data = json.loads(_PROOF_FILE.read_text())
-        key = "marketing" if _MKT else "comms"
-        return data.get(key) or {}
-    except Exception as e:
-        log.info("vma_proof load failed: %s", e)
-        return {}
-
-
-def _is_placeholder(s: str) -> bool:
-    """A proof value still carrying [...] is an unfilled placeholder."""
-    return "[" in (s or "") and "]" in (s or "")
-
-
-def _proof_incomplete(proof: dict | None = None) -> bool:
-    """True if VMA's evidence proof points aren't filled in (file missing, or
-    any stat/placement/consultant/testimonial field still a [placeholder]).
-    The positioning line is true today, so it doesn't count — it's the
-    *evidence* that must be real before a pack is client-ready."""
-    if proof is None:
-        proof = _load_proof()
-    if not proof:
-        return True
-    fields = list(proof.get("stats") or []) + list(proof.get("placements") or [])
-    c, t = proof.get("consultant") or {}, proof.get("testimonial") or {}
-    fields += [c.get("name", ""), c.get("bio", ""),
-               t.get("quote", ""), t.get("attrib", "")]
-    if not (proof.get("stats") or proof.get("placements")):
-        return True
-    return any(_is_placeholder(f) for f in fields)
-
-
 # ---- Persona tailoring -----------------------------------------------
 # The body of the pack is common; the OPENING reframes it for the specific
 # reader (the research's fifth point). Selected by PITCH_PERSONA so a pack
@@ -638,80 +593,12 @@ def render_html(target: str, role: str, ch_snapshot: dict,
         "</div>"
     )
 
-    # ---- Section 7: Proof / track record (the trust/conversion section) ----
-    proof = _load_proof()
-    proof_bits: list[str] = []
-    proof_has_placeholder = False
+    # Salary benchmark: hedge rather than assert an unsourced range (a sharp
+    # reward/HR buyer will poke it).
+    salary_source_html = (" <span style='color:#888;'>Indicative — confirm against VMA's "
+                          "latest salary benchmarking before quoting.</span>")
 
-    def _flag(*vals):
-        nonlocal proof_has_placeholder
-        if any(_is_placeholder(v) for v in vals):
-            proof_has_placeholder = True
-
-    positioning = (proof.get("positioning") or "").strip()
-    if positioning:
-        proof_bits.append(
-            f"<div style='font-size:13px;color:#333;margin-bottom:8px;'>{_esc(positioning)}</div>")
-    stats = [s for s in (proof.get("stats") or []) if s]
-    if stats:
-        _flag(*stats)
-        proof_bits.append(
-            "<div style='font-size:12px;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;'>Track record</div>"
-            "<ul style='padding-left:18px;font-size:13px;'>"
-            + "".join(f"<li>{_esc(s)}</li>" for s in stats) + "</ul>")
-    placements = [p for p in (proof.get("placements") or []) if p]
-    if placements:
-        _flag(*placements)
-        proof_bits.append(
-            "<div style='font-size:12px;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;'>Selected comparable placements (anonymised)</div>"
-            "<ul style='padding-left:18px;font-size:13px;'>"
-            + "".join(f"<li>{_esc(p)}</li>" for p in placements) + "</ul>")
-    consultant = proof.get("consultant") or {}
-    c_name, c_bio = (consultant.get("name") or "").strip(), (consultant.get("bio") or "").strip()
-    if c_name or c_bio:
-        _flag(c_name, c_bio)
-        proof_bits.append(
-            f"<div style='font-size:13px;color:#333;margin-top:8px;'><strong>{_esc(c_name)}</strong>"
-            f"{(' — ' + _esc(c_bio)) if c_bio else ''}</div>")
-    testimonial = proof.get("testimonial") or {}
-    t_q, t_a = (testimonial.get("quote") or "").strip(), (testimonial.get("attrib") or "").strip()
-    if t_q:
-        _flag(t_q, t_a)
-        proof_bits.append(
-            "<div style='font-size:13px;font-style:italic;color:#222;border-left:3px solid #3D5A82;"
-            f"padding:4px 12px;margin-top:8px;'>“{_esc(t_q)}”"
-            f"<div style='font-size:11px;color:#888;font-style:normal;margin-top:2px;'>— {_esc(t_a)}</div></div>")
-    if proof_has_placeholder:
-        proof_bits.append(_prep_html(
-            "Complete VMA's proof points in tool/state/vma_proof.json (the [bracketed] items) — "
-            "this is the section a retained buyer weighs most. Placeholders are showing."))
-    proof_html = "".join(proof_bits) if proof_bits else _prep_html(
-        "Add VMA proof points in tool/state/vma_proof.json — track record, comparable "
-        "placements, consultant bio, testimonial.")
-
-    # GATE, don't garnish: while the proof points are unfilled the pack is not
-    # client-ready, so the whole document is stamped DRAFT — not a small box
-    # next to one section that a human has to remember to delete.
-    proof_incomplete = proof_has_placeholder or _proof_incomplete(proof)
-    draft_banner = ""
-    if proof_incomplete:
-        draft_banner = (
-            "<div style='background:#b3261e;color:#fff;padding:11px 15px;margin-bottom:16px;"
-            "border-radius:5px;font-size:13px;font-weight:600;line-height:1.4;'>"
-            "DRAFT — NOT FOR CLIENT. VMA's proof points (Section 7) are unfilled. "
-            "Complete <code style='color:#ffe3e0;'>tool/state/vma_proof.json</code> with real, "
-            "approved figures before this pack goes to a client.</div>")
-
-    # Salary benchmark: cite VMA's own data if provided, else hedge — never
-    # assert an unsourced range (a sharp reward/HR buyer will poke it).
-    _sal_src = (proof.get("salary_benchmark") or "").strip()
-    if _sal_src and not _is_placeholder(_sal_src):
-        salary_source_html = f" <span style='color:#888;'>Source: {_esc(_sal_src)}.</span>"
-    else:
-        salary_source_html = (" <span style='color:#888;'>Indicative — confirm against VMA's "
-                              "latest salary benchmarking before quoting.</span>")
-
-    # ---- Section 8: Why external retained search NOW ----------------------
+    # ---- Section 7: Why external retained search NOW ----------------------
     # The real competition in a down market isn't contingent rivals — it's the
     # client doing it in-house, on LinkedIn, or not at all. This answers all
     # three: why external, why retained, why now.
@@ -741,7 +628,6 @@ def render_html(target: str, role: str, ch_snapshot: dict,
 
     return f"""<!doctype html>
 <html><head><meta charset="utf-8"></head><body style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px;color:#111;">
-{draft_banner}
 {note_banner}
 <h2 style="margin:0 0 4px 0;">Retained Pitch Pack - {_esc(target)}</h2>
 <div style="color:#666;font-size:13px;margin-bottom:18px;">
@@ -780,13 +666,10 @@ def render_html(target: str, role: str, ch_snapshot: dict,
   Versus contingent at 22–25% of base only.
 </div>
 
-<h3 style="margin:18px 0 6px 0;">7. Track record — why VMA</h3>
-{proof_html}
-
-<h3 style="margin:18px 0 6px 0;">8. Why external retained search now</h3>
+<h3 style="margin:18px 0 6px 0;">7. Why external retained search now</h3>
 {why_now_html}
 
-<h3 style="margin:18px 0 6px 0;">9. Risk-mitigation terms</h3>
+<h3 style="margin:18px 0 6px 0;">8. Risk-mitigation terms</h3>
 <div style='font-size:13px;color:#333;'>
   Standard rebate schedule, off-limits clause, exclusivity period, and replacement guarantee per VMA Group's terms of engagement, provided separately as part of the contract pack.
 </div>
@@ -807,17 +690,10 @@ def render_text(target: str, role: str, ch_snapshot: dict,
     total_comp_mid = estimate_total_comp(mid)
     universe_label = peer_label or (
         sector.replace("_", " ").title() if sector else "Sector unclear")
-    _proof = _load_proof()
     _fee_low = int(round(0.28 * total_comp_mid, -2))
     _fee_high = int(round(0.33 * total_comp_mid, -2))
     _cov_total = cov.get("total") if isinstance(cov, dict) else None
-    lines = []
-    if _proof_incomplete(_proof):
-        lines += ["#" * 60,
-                  "DRAFT - NOT FOR CLIENT. VMA's proof points (Section 7) are unfilled.",
-                  "Complete tool/state/vma_proof.json with real figures before sending.",
-                  "#" * 60, ""]
-    lines += [
+    lines = [
         f"Retained Pitch Pack - {target}",
         f"Role: {role}  ·  Generated {datetime.now().strftime('%a %d %b %Y · %H:%M')}",
         "=" * 60, ""]
@@ -894,9 +770,7 @@ def render_text(target: str, role: str, ch_snapshot: dict,
                   f"   reaching them before a competitor does is what a retained search buys."]
         for i, p in enumerate(peers, 1):
             lines.append(f"   {i:>2}. {p}")
-    _sal_src = (_proof.get("salary_benchmark") or "").strip()
-    _sal_note = (f"Source: {_sal_src}." if (_sal_src and not _is_placeholder(_sal_src))
-                 else "Indicative - confirm against VMA's latest salary benchmarking before quoting.")
+    _sal_note = "Indicative - confirm against VMA's latest salary benchmarking before quoting."
     lines += ["", "5. SALARY BENCHMARK",
               f"   UK {_salary_period} range for {matched}: £{low:,}–£{high:,} base + 10–25% bonus/LTIP",
               f"   (est. first-year total comp ≈ £{total_comp_mid:,})",
@@ -912,39 +786,9 @@ def render_text(target: str, role: str, ch_snapshot: dict,
               "", "Retained fee: 28–33% of first-year total comp (vs 22–25% contingent on base only).",
               ""]
 
-    # 7. Proof / track record (config-driven; flags unfilled placeholders).
-    _proof = _load_proof()
-    _ph = False
-    lines.append("7. TRACK RECORD — WHY VMA")
-    _pos = (_proof.get("positioning") or "").strip()
-    if _pos:
-        for _seg in textwrap.wrap(_pos, 72):
-            lines.append(f"   {_seg}")
-    for s in (_proof.get("stats") or []):
-        _ph = _ph or _is_placeholder(s)
-        lines.append(f"   - {s}")
-    _pl = [p for p in (_proof.get("placements") or []) if p]
-    if _pl:
-        lines.append("   Selected comparable placements (anonymised):")
-        for p in _pl:
-            _ph = _ph or _is_placeholder(p)
-            lines.append(f"     - {p}")
-    _c = _proof.get("consultant") or {}
-    if _c.get("name") or _c.get("bio"):
-        _ph = _ph or _is_placeholder(_c.get("name", "")) or _is_placeholder(_c.get("bio", ""))
-        lines.append(f"   {(_c.get('name') or '').strip()} — {(_c.get('bio') or '').strip()}")
-    _t = _proof.get("testimonial") or {}
-    if _t.get("quote"):
-        _ph = _ph or _is_placeholder(_t.get("quote", "")) or _is_placeholder(_t.get("attrib", ""))
-        lines.append(f"   \"{(_t.get('quote') or '').strip()}\" — {(_t.get('attrib') or '').strip()}")
-    if _ph or not _proof:
-        lines += ["   [prep note - remove before sending: complete VMA's proof points in",
-                  "    tool/state/vma_proof.json (the [bracketed] items) — the section a",
-                  "    retained buyer weighs most.]"]
-
-    # 8. Why external retained search NOW (the real competition: in-house / wait).
-    lines += ["",
-              "8. WHY EXTERNAL RETAINED SEARCH NOW",
+    # 7. Why external retained search NOW (the real competition: in-house / wait).
+    lines += [
+              "7. WHY EXTERNAL RETAINED SEARCH NOW",
               "   Why external, not in-house:",
               f"   - Reach: the strongest {_NOUN} leaders aren't applying — they're in seat",
               "     elsewhere and won't answer a job ad or an approach with your name on it",
@@ -967,7 +811,7 @@ def render_text(target: str, role: str, ch_snapshot: dict,
               "   - In a quiet market the best leaders are reachable because fewer firms hunt",
               "     them — 'wait until it picks up' is backwards; the window is now",
               "",
-              "9. RISK-MITIGATION TERMS",
+              "8. RISK-MITIGATION TERMS",
               "   Standard rebate schedule, off-limits clause, exclusivity period, and",
               "   replacement guarantee per VMA Group's terms of engagement, provided",
               "   separately as part of the contract pack."]
@@ -1080,18 +924,6 @@ def main() -> int:
     stamp = datetime.now().strftime("%Y%m%d_%H%M")
     (STATE_DIR / f"pitch_pack_{safe}_{stamp}.html").write_text(html_out)
     (STATE_DIR / f"pitch_pack_{safe}_{stamp}.txt").write_text(text_out)
-
-    # GATE the live client send: if VMA's proof points (Section 7) are unfilled,
-    # the pack is not client-ready — refuse to send rather than email a pack
-    # with placeholder credentials. preview/test still render (DRAFT-stamped)
-    # so Sara can review the structure.
-    if mode == "send" and _proof_incomplete():
-        log.error("Refusing to send %r: VMA proof points incomplete "
-                  "(tool/state/vma_proof.json).", target)
-        print("\n✗ NOT SENT — VMA's proof points (Section 7) are unfilled. "
-              "Complete tool/state/vma_proof.json with real, approved figures, "
-              "then resend.")
-        return 2
 
     if mode in ("send", "test") and getattr(config, "NON_BRIEF_EMAIL_ENABLED", False):
         to = config.TEST_RECIPIENT if mode == "test" else config.RECIPIENT

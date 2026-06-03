@@ -634,6 +634,14 @@ def load_latest_predictive() -> list[dict]:
         p_item["advisory"] = advisory_for(
             evs[0].get("trigger_key") if evs and isinstance(evs[0], dict) else None
         )
+        # Event phrase for a one-click, event-anchored Pitch Pack from this
+        # lead — flows through as PITCH_TRIGGER so the pack's cost-of-vacancy
+        # and "why now" lead with this specific trigger.
+        _ev0 = evs[0] if (evs and isinstance(evs[0], dict)) else {}
+        _lbl = (_ev0.get("trigger_label") or "").strip()
+        _co = (p_item.get("company") or "").strip()
+        p_item["pitch_trigger"] = (f"a recent {_lbl} at {_co}" if (_lbl and _co)
+                                   else (f"a recent {_lbl}" if _lbl else ""))
         # Opportunity value (signal strength × imminence). The Low/Med/High
         # tier is assigned later relative to the whole Pre-Market panel
         # (see _assign_opportunity_tiers) so it can't collapse to all-Low.
@@ -1370,6 +1378,11 @@ def api_pitch_pack():
         # renders with marketing salary bands / COV frame / sector context /
         # personas — not the comms default the workflow would otherwise use.
         "profile": active_profile().key,
+        # Optional, set when fired from a BD lead: anchors the pack's
+        # cost-of-vacancy + "why now" to the lead's specific trigger event,
+        # and (optionally) tailors the opener to a reader persona.
+        "trigger": (data.get("trigger") or "").strip(),
+        "persona": (data.get("persona") or "").strip(),
     }
     if not inputs["account_name"]:
         return jsonify({"ok": False, "detail": "Account name required"}), 400
@@ -4180,6 +4193,11 @@ TEMPLATE = r"""
                 {% if p.advisory %}<div class="advisory-line">{{ p.advisory }}</div>{% endif %}
                 <pre class="outreach-text">{{ p.outreach }}</pre>
                 <div class="item-actions">
+                  <button class="btn-mini lead-pitch-btn" type="button"
+                          data-company="{{ p.company }}"
+                          data-role="{{ p.predicted_role or '' }}"
+                          data-trigger="{{ p.pitch_trigger or '' }}"
+                          title="Generate a retained pitch pack for this account, anchored to this trigger">◆ Pitch pack</button>
                   {% if p.status == 'active' %}
                     <button class="btn-mini status-action" data-status="followed_up" type="button">✓ Mark followed up</button>
                     <button class="btn-mini status-action ghost" data-status="dismissed" type="button">✕ Dismiss</button>
@@ -4740,7 +4758,9 @@ document.addEventListener('click', async (event) => {
     if (actions) {
       const copy = actions.querySelector('.copy-outreach');
       const linkedin = actions.querySelector('a.btn-mini');
+      const pitch = actions.querySelector('.lead-pitch-btn');
       actions.innerHTML = '';
+      if (pitch) actions.appendChild(pitch);
       if (copy) actions.appendChild(copy);
       if (linkedin) actions.appendChild(linkedin);
       if (newStatus === 'active') {
@@ -4768,6 +4788,78 @@ document.addEventListener('click', async (event) => {
     btn.disabled = false;
     btn.textContent = orig;
   }
+});
+
+// One-click Pitch Pack from a BD lead. Dispatches the same pitch-pack
+// workflow the Executive Assistant uses, pre-filled with the lead's company,
+// predicted role and trigger event (so the pack's cost-of-vacancy and
+// "why now" anchor to this specific signal), then opens the report when ready.
+document.addEventListener('click', async (event) => {
+  const btn = event.target.closest('.lead-pitch-btn');
+  if (!btn) return;
+  const company = (btn.dataset.company || '').trim();
+  if (!company) { alert('No company on this lead.'); return; }
+  const payload = {
+    account_name: company,
+    role: (btn.dataset.role || '').trim(),
+    trigger: (btn.dataset.trigger || '').trim(),
+  };
+  // Open the result tab now, inside the click gesture, so it isn't blocked.
+  const win = window.open('', '_blank');
+  if (win) {
+    win.document.write(
+      '<!doctype html><meta charset="utf-8"><title>Preparing pitch pack…</title>' +
+      '<style>body{font-family:Inter,system-ui,sans-serif;background:#f7f9fc;color:#1F1F1F;' +
+      'display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0}' +
+      '.b{text-align:center;padding:24px}.s{width:30px;height:30px;border:3px solid rgba(66,133,244,.20);' +
+      'border-top-color:#4285F4;border-radius:50%;margin:0 auto 16px;animation:r .8s linear infinite}' +
+      '@keyframes r{to{transform:rotate(360deg)}}p{font-size:13px;color:#5F6368;max-width:340px;line-height:1.55}</style>' +
+      '<div class="b"><div class="s"></div><h3>Preparing the pitch pack…</h3>' +
+      '<p>A few minutes. Keep this tab open — it loads automatically when ready.</p></div>');
+  }
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Generating…';
+  let j;
+  try {
+    const r = await fetch('/api/dispatch/pitch-pack', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    j = await r.json();
+  } catch (e) {
+    if (win && !win.closed) win.close();
+    btn.disabled = false; btn.textContent = orig;
+    alert('Pitch pack dispatch failed: ' + e.message); return;
+  }
+  if (!j.ok || !j.artifact || !j.dispatched_at) {
+    if (win && !win.closed) win.close();
+    btn.disabled = false; btn.textContent = orig;
+    alert(j.detail || 'Pitch pack dispatch failed.'); return;
+  }
+  btn.textContent = 'Generating… (~2 min)';
+  if (typeof loadRecentReports === 'function') loadRecentReports();
+  const qs = 'artifact=' + encodeURIComponent(j.artifact) +
+             '&since=' + encodeURIComponent(j.dispatched_at);
+  const started = Date.now(); const MAX_MS = 25 * 60 * 1000;
+  const poll = async () => {
+    if (Date.now() - started > MAX_MS) {
+      if (win && !win.closed) win.close();
+      btn.disabled = false; btn.textContent = '◆ Pitch pack'; return;
+    }
+    let s;
+    try { const rr = await fetch('/api/output/status?' + qs); s = await rr.json(); }
+    catch (e) { s = { ready: false }; }
+    if (s.ready && s.id) {
+      const viewUrl = '/api/output/view?artifact=' + encodeURIComponent(j.artifact) +
+                      '&id=' + encodeURIComponent(s.id);
+      if (win && !win.closed) win.location = viewUrl;
+      btn.disabled = false; btn.textContent = '✓ Pitch pack';
+      if (typeof loadRecentReports === 'function') loadRecentReports();
+      return;
+    }
+    setTimeout(poll, 12000);
+  };
+  setTimeout(poll, 12000);
 });
 
 // Lead triage: mark followed up / dismiss / restore (mirrors predictors,

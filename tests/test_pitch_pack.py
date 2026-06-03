@@ -202,21 +202,15 @@ def test_render_generic_guard_hides_ftse_list():
     assert "not auto-detected" in html.lower()
 
 
-# ---- proof section, §8 reframe, backstage cleanup, currency -------------
+# ---- §7 reframe, backstage cleanup, currency ---------------------------
 
-def test_proof_section_present_and_guarded():
+def test_no_proof_section_or_gate():
+    # Section 7 "Track record / proof" and the DRAFT gate were removed — the
+    # pack no longer depends on hand-maintained VMA credentials data.
     html, _ = _render("Diageo", role="Head of Internal Communications")
-    assert "Track record" in html and "why VMA" in html
-    assert "specialist communications" in html.lower()   # true positioning line
-    # placements ship as placeholders -> the "complete before sending" guard fires
-    assert "vma_proof.json" in html
-
-
-def test_proof_loader_profile_aware_and_placeholders():
-    from tool.pitch_pack import _load_proof, _is_placeholder
-    proof = _load_proof()
-    assert proof.get("positioning")
-    assert any(_is_placeholder(p) for p in proof.get("placements", []))
+    assert "Track record" not in html
+    assert "vma_proof.json" not in html
+    assert "DRAFT — NOT FOR CLIENT" not in html
 
 
 def test_no_client_language_mirror_section():
@@ -252,7 +246,7 @@ def test_diageo_curated_is_current():
     assert "destocking shock" not in pr  # stale 2023-24 framing removed
 
 
-def test_text_render_has_proof_and_why_now_no_mirror():
+def test_text_render_sections_and_no_mirror():
     from tool import pitch_pack as pp, peers
     from tool.pre_meeting import _load_curated_priorities
     role = "Head of Internal Communications"
@@ -265,51 +259,13 @@ def test_text_render_has_proof_and_why_now_no_mirror():
                          annual_report=None,
                          curated_priorities=_load_curated_priorities("Diageo"),
                          peer_label=pm["label"], peer_source=pm["source"])
-    assert "7. TRACK RECORD" in txt
-    assert "8. WHY EXTERNAL RETAINED SEARCH NOW" in txt
-    assert "9. RISK-MITIGATION TERMS" in txt
+    assert "TRACK RECORD" not in txt                       # proof section gone
+    assert "7. WHY EXTERNAL RETAINED SEARCH NOW" in txt
+    assert "8. RISK-MITIGATION TERMS" in txt
     assert "CLIENT LANGUAGE TO MIRROR" not in txt
 
 
-# ---- gate (not garnish), persona, evidence-or-hedge --------------------
-
-def _complete_proof():
-    return {
-        "positioning": "VMA Group is a specialist communications search firm.",
-        "stats": ["40 senior comms mandates delivered in 24 months",
-                  "82% completed within 7 weeks", "2 in 3 still in role at 3 years"],
-        "placements": ["Group Head of Communications, FTSE-100 consumer brand house"],
-        "consultant": {"name": "Jane Doe", "bio": "12 years in comms search"},
-        "testimonial": {"quote": "They reached people we couldn't.", "attrib": "HRD, FTSE-100"},
-        "salary_benchmark": "VMA 2026 Communications Salary Guide, n=420",
-    }
-
-
-def test_proof_incomplete_gates_by_default():
-    from tool.pitch_pack import _proof_incomplete
-    assert _proof_incomplete() is True          # seeded file is all placeholders
-
-
-def test_proof_complete_detection(monkeypatch):
-    from tool import pitch_pack as pp
-    monkeypatch.setattr(pp, "_load_proof", _complete_proof)
-    assert pp._proof_incomplete() is False
-
-
-def test_draft_banner_present_when_incomplete():
-    html, _ = _render("Diageo", role="Head of Internal Communications")
-    assert "DRAFT — NOT FOR CLIENT" in html      # gated, not just garnished
-
-
-def test_draft_banner_absent_when_proof_complete(monkeypatch):
-    from tool import pitch_pack as pp
-    monkeypatch.setattr(pp, "_load_proof", _complete_proof)
-    html, _ = _render("Diageo", role="Head of Internal Communications")
-    assert "DRAFT — NOT FOR CLIENT" not in html
-    assert "still in role at 3 years" in html                       # real stat renders
-    assert "VMA 2026 Communications Salary Guide" in html           # salary now cited
-    assert "vma_proof.json" not in html                             # no guard note
-
+# ---- persona, evidence-or-hedge ----------------------------------------
 
 def test_persona_opener_maps_and_defaults():
     from tool.pitch_pack import _persona_opener
@@ -388,6 +344,25 @@ def test_fee_vs_cost_phrase_ratio_bands():
     assert _fee_vs_cost_phrase(0, 0, 0) == ""
 
 
+def test_bd_lead_trigger_anchors_pack():
+    # Wiring contract: the dashboard derives "a recent <trigger> at <company>"
+    # from a BD lead's strongest event and passes it as trigger_context; the
+    # pack must anchor BOTH the cost-of-vacancy and the §7 "why now" to it.
+    from tool import pitch_pack as pp, peers
+    company, role = "Centrica", "Head of Communications"
+    trigger = "a recent CEO change at Centrica"
+    pm = peers.pitch_peers_for(company)
+    sal = pp._salary_band(role)
+    cov = pp.cost_of_vacancy(role, (sal[0] + sal[1]) // 2, trigger_context=trigger)
+    assert trigger in cov["headline"]
+    ch = {"found": True, "resolved": {"company_number": "X", "company_status": "active"}}
+    html = pp.render_html(company, role, ch, [], pm["peers"],
+                          peers.detect_sector(company), sal, cov, "preview",
+                          peer_label=pm["label"], peer_source=pm["source"],
+                          trigger_context=trigger)
+    assert trigger in html and "own it" in html
+
+
 def test_section8_event_wired_when_trigger_supplied():
     from tool import pitch_pack as pp, peers
     from tool.pre_meeting import _load_curated_priorities
@@ -448,7 +423,6 @@ def test_marketing_profile_end_to_end():
         "assert 'productivity' not in h\n"
         "assert _load_curated_priorities('Diageo'), 'curated must load under marketing'\n"
         "assert 'brand' in pp._persona_opener('ceo', role, 'Diageo').lower()\n"
-        "assert pp._load_proof().get('positioning','').lower().startswith('vma group is a specialist marketing')\n"
         "assert (85000, 130000, 'head of marketing') == pp._salary_band(role)\n"
         "print('MARKETING_OK')\n"
     )
