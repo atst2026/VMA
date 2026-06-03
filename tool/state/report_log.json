@@ -1,5 +1,12 @@
 [
   {
+    "ts": "2026-06-03T21:55:19.764814+00:00",
+    "type": "Pitch Pack",
+    "company": "OQC",
+    "name": "",
+    "artifact": "pitch-pack"
+  },
+  {
     "ts": "2026-06-03T21:53:52.859436+00:00",
     "type": "Pitch Pack",
     "company": "Oxford Quantum Circuits",
