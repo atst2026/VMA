@@ -11,9 +11,11 @@
   * the reconciled 6-week-vs-time-to-productive timeline.
 """
 import os
+import subprocess
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _REPO)
 
 
 # ---- affinity talent universe ------------------------------------------
@@ -412,3 +414,45 @@ def test_diageo_section2_corrections():
     assert "c.$625m" in pr               # programme total, kept alongside
     assert "halved the dividend" in pr   # stated precisely, not "reset"
     assert "50-cent floor" in pr
+
+
+# ---- cross-profile: must work for BOTH comms and marketing -------------
+
+def test_curated_priorities_shared_across_desks():
+    # Company strategic priorities are shared account data — they must resolve
+    # for any desk (the bug: marketing read its namespaced dir and found none).
+    from tool.pre_meeting import _load_curated_priorities
+    assert _load_curated_priorities("Diageo")        # works in the default (comms) run
+
+
+def test_graceful_degradation_no_blank_section2():
+    # A non-marquee name pypdf can't parse, not curated -> sector context if a
+    # cohort/sector resolves, else an honest prep note; never the old dead-end.
+    html, pm = _render("Pets at Home", role="Head of Communications", curated=False)
+    assert "check trade press manually" not in html.lower()
+    assert "Why this matters now" in html            # not blank
+
+
+def test_marketing_profile_end_to_end():
+    """Render path under VMA_PROFILE=marketing (separate process, since the
+    profile is fixed at import). Everything must be marketing-shaped."""
+    code = (
+        "import tool.pitch_pack as pp\n"
+        "from tool.pre_meeting import _load_curated_priorities\n"
+        "role = pp._DEFAULT_ROLE\n"
+        "assert role == 'Head of Marketing', role\n"
+        "cov = pp.cost_of_vacancy(role, 110000)\n"
+        "assert cov['frame'] == 'marketing'\n"
+        "h = cov['headline'].lower()\n"
+        "assert ('pipeline' in h or 'growth' in h or 'demand' in h)\n"
+        "assert 'productivity' not in h\n"
+        "assert _load_curated_priorities('Diageo'), 'curated must load under marketing'\n"
+        "assert 'brand' in pp._persona_opener('ceo', role, 'Diageo').lower()\n"
+        "assert pp._load_proof().get('positioning','').lower().startswith('vma group is a specialist marketing')\n"
+        "assert (85000, 130000, 'head of marketing') == pp._salary_band(role)\n"
+        "print('MARKETING_OK')\n"
+    )
+    env = {**os.environ, "VMA_PROFILE": "marketing", "PYTHONPATH": _REPO}
+    r = subprocess.run([sys.executable, "-c", code], env=env,
+                       cwd=_REPO, capture_output=True, text=True)
+    assert "MARKETING_OK" in r.stdout, (r.stdout + "\n" + r.stderr)

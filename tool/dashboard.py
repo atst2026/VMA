@@ -1366,6 +1366,10 @@ def api_pitch_pack():
         "mode": "preview",
         "salary_min": (data.get("salary_min") or "").strip(),
         "salary_max": (data.get("salary_max") or "").strip(),
+        # Pin the pack to the desk that dispatched it, so a marketing-desk pitch
+        # renders with marketing salary bands / COV frame / sector context /
+        # personas — not the comms default the workflow would otherwise use.
+        "profile": active_profile().key,
     }
     if not inputs["account_name"]:
         return jsonify({"ok": False, "detail": "Account name required"}), 400
