@@ -1259,7 +1259,7 @@ MR_CSS = r"""
 .mr-pgtab{font:600 13.5px/1 "Inter",sans-serif;color:var(--muted);background:none;border:none;cursor:pointer;padding:5px 0;position:relative;display:inline-flex;align-items:center;gap:7px;transition:.13s}.mr-pgtab svg{width:15px;height:15px;opacity:.85}.mr-pgtab:hover{color:var(--ink2)}
 .mr-pgtab.on{color:var(--ink)}.mr-pgtab.on::after{content:"";position:absolute;left:0;right:0;bottom:-7px;height:2px;background:var(--blue-deep);border-radius:2px}
 .mr-filt{position:relative}
-.mr-filtbtn{display:inline-flex;align-items:center;gap:7px;font:600 12px/1 "Inter",sans-serif;color:var(--ink);background:#fff;border:1px solid var(--mrborder);border-radius:9px;padding:8px 11px;cursor:pointer}.mr-filtbtn>svg{width:15px;height:15px}.mr-filtbtn .mr-lbl{color:var(--ink)}.mr-filtbtn .mr-cv{width:13px;height:13px;color:var(--dim)}.mr-filtbtn:hover{background:var(--elevated)}
+.mr-filtbtn{display:inline-flex;align-items:center;gap:7px;font:600 12px/1 "Inter",sans-serif;color:var(--ink);background:#fff;border:1px solid var(--mrborder);border-radius:9px;height:34px;padding:0 12px;cursor:pointer}.mr-filtbtn>svg{width:15px;height:15px}.mr-filtbtn .mr-lbl{color:var(--ink)}.mr-filtbtn .mr-cv{width:13px;height:13px;color:var(--dim)}.mr-filtbtn:hover{background:var(--elevated)}
 .mr-filtmenu{display:none;position:absolute;top:calc(100% + 6px);right:0;background:#fff;border:1px solid var(--mrborder);border-radius:11px;box-shadow:0 10px 28px rgba(31,55,124,.14);padding:6px;min-width:196px;z-index:20}.mr-filtmenu.open{display:block}
 .mr-filtmenu button{display:flex;width:100%;align-items:center;gap:8px;border:none;background:transparent;font:600 12px/1 "Inter",sans-serif;color:var(--ink2);padding:9px 10px;border-radius:8px;cursor:pointer;text-align:left}.mr-filtmenu button:hover{background:var(--elevated)}.mr-filtmenu button.on{background:var(--blue-wash);color:var(--blue-deep)}
 .mr-filtmenu .mr-mc{margin-left:auto;font:600 9px/1 "JetBrains Mono",monospace;background:rgba(31,31,31,.07);color:var(--ink2);padding:2px 6px;border-radius:9999px}.mr-filtmenu button.on .mr-mc{background:#fff;color:var(--blue-deep)}
@@ -4179,7 +4179,7 @@ TEMPLATE = r"""
     #reports .ea-hero { margin-bottom: 16px; }
     /* "a bit shorter": trim the hero icon's footprint on the reports page only. */
     #reports .cc-bigicon { width: 60px; height: 60px; margin-bottom: 14px; }
-    #reports .cc-bigicon svg { width: 30px; height: 30px; }
+    #reports .cc-bigicon svg { width: 42px; height: 42px; }
     /* White card: an explicit, consistent size (it used to shrink-wrap its
        content when empty). 20% shorter than the 360px action-card (-> 288px)
        and a good deal wider, centred under the hero. */
@@ -4188,10 +4188,10 @@ TEMPLATE = r"""
     .ea-hero { text-align: center; }
     .cc-bigicon { width: 78px; height: 78px; border-radius: 18px; margin: 0 auto 22px; display: grid;
       place-items: center; color: #1F1F1F; background: transparent; }
-    .cc-bigicon svg { width: 38px; height: 38px; }
+    .cc-bigicon svg { width: 52px; height: 52px; }
     .gemini-title { font-family: "Newsreader", Georgia, serif; font-weight: 400; font-size: 34px;
       letter-spacing: -.01em; color: var(--ink); text-align: center; }
-    .cc-sub { font-size: 13.5px; color: var(--muted); margin-top: 11px; }
+    .cc-sub { font-size: 15px; color: var(--muted); margin-top: 11px; }
     /* Agent page: full-size hero sits just above the centred composer pill. */
     #agent .ea-hero { margin-bottom: 26px; }
 
@@ -4290,10 +4290,11 @@ TEMPLATE = r"""
       transition: box-shadow .16s, border-color .16s, transform .16s; text-align: left; width: 100%; }
     .cc-card:hover { box-shadow: var(--shadow-md); border-color: var(--border-hi); transform: translateY(-1px); }
     .cc-card .ci { width: 44px; height: 44px; border-radius: 12px; background: var(--elevated); display: grid;
-      place-items: center; color: var(--vma); flex-shrink: 0; font-size: 18px; }
+      place-items: center; color: #1F1F1F; flex-shrink: 0; font-size: 18px; }
+    .cc-card .ci svg { width: 22px; height: 22px; }
     .cc-card .cx { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-    .cc-card .ct { font-size: 15px; font-weight: 600; color: var(--ink); }
-    .cc-card .cd { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+    .cc-card .ct { font-size: 16px; font-weight: 600; color: var(--ink); }
+    .cc-card .cd { font-size: 14px; color: var(--muted); margin-top: 3px; }
     .cc-card .cbadge { font: 600 9px/1 "JetBrains Mono", monospace; letter-spacing: .06em; text-transform: uppercase;
       color: #fff; background: var(--blue); padding: 4px 8px; border-radius: 9999px; flex-shrink: 0; }
     .cc-card .cbadge:empty { display: none; }
@@ -4308,7 +4309,8 @@ TEMPLATE = r"""
     .bd-modal .mh { flex: none; display: flex; align-items: center; gap: 11px; padding: 15px 18px;
       border-bottom: 1px solid var(--hairline); }
     .bd-modal .mh-ic { width: 34px; height: 34px; border-radius: 10px; background: var(--elevated);
-      color: var(--vma); display: grid; place-items: center; font-size: 15px; flex-shrink: 0; }
+      color: #1F1F1F; display: grid; place-items: center; font-size: 15px; flex-shrink: 0; }
+    .bd-modal .mh-ic svg { width: 18px; height: 18px; }
     .bd-modal .mh-t { font-size: 15px; font-weight: 600; flex: 1; }
     .bd-modal .mh-x { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border);
       background: #fff; color: var(--muted); cursor: pointer; }
@@ -4372,7 +4374,7 @@ TEMPLATE = r"""
         display: block; }
       #agent .ea-hero { margin-bottom: 20px; }
       .cc-bigicon { width: 60px; height: 60px; border-radius: 15px; margin-bottom: 16px; }
-      .cc-bigicon svg { width: 30px; height: 30px; }
+      .cc-bigicon svg { width: 44px; height: 44px; }
       .gemini-title { font-size: 27px; }
       .composer { width: 100%; }
       .composer .inner { margin: 12px; }
@@ -4397,7 +4399,7 @@ TEMPLATE = r"""
 
 <!-- LEFT RAIL — page switcher. Active state toggled by render() (additive JS). -->
 <aside class="rail">
-  <button class="ri active" id="nav-leads" data-tip="{{ radar_title }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" opacity=".4"/><path d="M12 12 L12 3 A9 9 0 0 1 19.8 7.5 Z" fill="currentColor" stroke="none" opacity=".55"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></button>
+  <button class="ri active" id="nav-leads" data-tip="{{ radar_title }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 12 L12 3 A9 9 0 0 1 19.8 7.5 Z" fill="currentColor" stroke="none" opacity=".2"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></button>
   <button class="ri" id="nav-agent" data-tip="Personal Assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7.5" width="17" height="13" rx="5"/><path d="M12 7.5V4.6"/><circle cx="12" cy="3.4" r="1.2"/><circle cx="9" cy="14" r="1.65" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.65" fill="currentColor" stroke="none"/></svg></button>
   <button class="ri" id="nav-cal" data-tip="BD Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></button>
   <button class="ri ri-bottom" id="nav-reports" data-tip="Recent Reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
@@ -4409,7 +4411,7 @@ TEMPLATE = r"""
   <!-- ===== PAGE 1 · DESK RADAR — Comms / Marketing (leads + pre-market) ===== -->
   <section class="page active" id="leads">
     <div class="wm-head">
-      <div class="brand"><span class="brand-title">{{ radar_title }}</span><span class="radar-ic" title="Live — scanning the market for opportunities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" opacity=".35"/><path d="M12 12 L12 3 A9 9 0 0 1 19.8 7.5 Z" fill="currentColor" stroke="none" opacity=".5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></span></div>
+      <div class="brand"><span class="brand-title">{{ radar_title }}</span><span class="radar-ic" title="Live — scanning the market for opportunities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 12 L12 3 A9 9 0 0 1 19.8 7.5 Z" fill="currentColor" stroke="none" opacity=".2"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></span></div>
     </div>
 
     <div class="container">
@@ -4756,9 +4758,9 @@ TEMPLATE = r"""
         <div class="cc-sub">The business-development moves that run on key dates.</div>
       </div>
       <div class="cc-cards">
-        <button class="cc-card" data-open="windows"><span class="ci">◴</span><span class="cx"><span class="ct">Placement Windows</span><span class="cd">Statutory hiring windows that open on a known calendar.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
-        <button class="cc-card" data-open="events"><span class="ci">▦</span><span class="cx"><span class="ct">Events &amp; Networking</span><span class="cd">Awards, summits and networking dates worth showing up to.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
-        <button class="cc-card" data-open="frameworks"><span class="ci">❏</span><span class="cx"><span class="ct">Framework Eligibility</span><span class="cd">Public-sector frameworks where VMA can bid.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
+        <button class="cc-card" data-open="windows"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg></span><span class="cx"><span class="ct">Placement Windows</span><span class="cd">Statutory hiring windows that open on a known calendar.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
+        <button class="cc-card" data-open="events"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 17l-5.2 2.6 1-5.8L3.5 9.7l5.9-.9z"/></svg></span><span class="cx"><span class="ct">Events &amp; Networking</span><span class="cd">Awards, summits and networking dates worth showing up to.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
+        <button class="cc-card" data-open="frameworks"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 13h7M8.5 16.5h4.5"/></svg></span><span class="cx"><span class="ct">Framework Eligibility</span><span class="cd">Public-sector frameworks where VMA can bid.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
       </div>
     </div>
 
@@ -6586,9 +6588,9 @@ async function loadRecentReports() {
   var mt = document.getElementById('bd-mt');
   var mx = document.getElementById('bd-mx');
   var BDMETA = {
-    windows:    { ic: '◴', t: 'Placement Windows' },
-    events:     { ic: '▦', t: 'Events & Networking' },
-    frameworks: { ic: '❏', t: 'Framework Eligibility' }
+    windows:    { ic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg>', t: 'Placement Windows' },
+    events:     { ic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 17l-5.2 2.6 1-5.8L3.5 9.7l5.9-.9z"/></svg>', t: 'Events & Networking' },
+    frameworks: { ic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 13h7M8.5 16.5h4.5"/></svg>', t: 'Framework Eligibility' }
   };
   var openKey = null;
   function panelFor(key) { return host ? host.querySelector('[data-bd="' + key + '"]') : null; }
@@ -6599,7 +6601,7 @@ async function loadRecentReports() {
       var prev = mb.querySelector('[data-bd="' + openKey + '"]');
       if (prev && host) host.appendChild(prev);
     }
-    if (mic) mic.textContent = meta.ic;
+    if (mic) mic.innerHTML = meta.ic;
     if (mt) mt.textContent = meta.t;
     mb.appendChild(panel);            // relocate the live panel into the modal
     openKey = key;
