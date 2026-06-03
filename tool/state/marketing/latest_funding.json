@@ -1,0 +1,32 @@
+[
+  {
+    "company": "IMU Biosciences",
+    "round": "Series A",
+    "amount": "\u00a340m",
+    "evidence": "IMU Biosciences raises \u00a340m to change disease diagnosis",
+    "investor": "IQ Capital",
+    "url": "https://www.uktech.news/biotech/imu-biosciences-raises-40m-to-change-how-diseases-are-diagnosed-20260602",
+    "source": "UKTN",
+    "sector": "",
+    "window": "Senior-comms window ~6 mo",
+    "advisory": "Advisory: marketing-function design-for-scale + benchmarking; build the senior-marketing market map ahead of the ~6-month hire.",
+    "confidence": "high",
+    "fid": "cd20c2e9a1f0b0d1",
+    "first_seen": "2026-06-03T00:11:06.674735+00:00"
+  },
+  {
+    "company": "Geordie AI",
+    "round": "Series A",
+    "amount": "\u00a322.3m",
+    "evidence": "Geordie AI raises \u00a322.3m for security and governance platform for AI agents",
+    "investor": "Balderton",
+    "url": "https://www.uktech.news/ai/geordie-ai-raises-22-3m-for-security-and-governance-platform-for-ai-agents-20260601",
+    "source": "UKTN",
+    "sector": "",
+    "window": "Senior-comms window ~6 mo",
+    "advisory": "Advisory: marketing-function design-for-scale + benchmarking; build the senior-marketing market map ahead of the ~6-month hire.",
+    "confidence": "high",
+    "fid": "1f1270dfe2ca623e",
+    "first_seen": "2026-06-03T00:11:06.674735+00:00"
+  }
+]
