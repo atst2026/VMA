@@ -17,7 +17,7 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-03T10:24:17.030824+00:00"
+      "last_seen": "2026-06-04T09:16:07.861735+00:00"
     },
     "nhs_rm6380_workforce_alliance": {
       "key": "nhs_rm6380_workforce_alliance",
@@ -36,7 +36,7 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-03T10:24:17.030824+00:00"
+      "last_seen": "2026-06-04T09:16:07.861735+00:00"
     },
     "nda_shared_services_lot6": {
       "key": "nda_shared_services_lot6",
@@ -55,7 +55,7 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-03T10:24:17.030824+00:00"
+      "last_seen": "2026-06-04T09:16:07.861735+00:00"
     },
     "devolved_gov_exec_search": {
       "key": "devolved_gov_exec_search",
@@ -74,8 +74,8 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-03T10:24:17.030824+00:00"
+      "last_seen": "2026-06-04T09:16:07.861735+00:00"
     }
   },
-  "updated_at": "2026-06-03T10:24:17.031408+00:00"
+  "updated_at": "2026-06-04T09:16:07.862249+00:00"
 }
