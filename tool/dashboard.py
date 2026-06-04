@@ -1332,8 +1332,7 @@ MR_CSS = r"""
 .mr-play{color:var(--ink2);background:rgba(62,92,132,.05);border-left:2px solid var(--vma);border-radius:5px;padding:7px 10px;display:block;font-size:12px;line-height:1.55}
 .mr-chase{font:700 9px/1.5 "JetBrains Mono",monospace;letter-spacing:.02em;color:#46556e;background:#edf0f4;padding:2px 7px;border-radius:6px}.mr-chase.soon{color:#b5530e;background:#fdecdb}
 .mr-acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.mr-actbtn{display:inline-flex;align-items:center;gap:6px;font:600 11px/1 "Inter",sans-serif;color:var(--ink);background:#fff;border:1px solid var(--mrborder);border-radius:8px;padding:8px 12px;cursor:pointer;transition:.13s}.mr-actbtn svg{width:14px;height:14px}.mr-actbtn:hover{background:var(--elevated);border-color:var(--dim)}
-.mr-actbtn.primary{background:var(--blue-deep);color:#fff;border-color:var(--blue-deep)}.mr-actbtn.primary:hover{background:#16336a;border-color:#16336a}.mr-actbtn.primary svg{opacity:.95}
+.mr-actbtn{display:inline-flex;align-items:center;gap:7px;font:500 12.5px/1 "Inter",sans-serif;color:var(--ink2);background:#fff;border:1px solid var(--mrborder);border-radius:10px;padding:8px 14px;cursor:pointer;transition:.13s}.mr-actbtn svg{width:15px;height:15px;opacity:.85}.mr-actbtn:hover{background:var(--elevated);border-color:var(--dim)}
 .mr-actbtn.busy{color:var(--dim)}.mr-actbtn.done{color:#1e7a41;border-color:#bfe3cd;background:#f3faf5}
 .mr-playwrap:not(.on){display:none}
 .mr-playbox{min-height:1.2em}
@@ -1348,7 +1347,7 @@ MR_CSS = r"""
 .mr-aibrief .mr-gen{font-size:12.5px;color:var(--ink2);line-height:1.55}
 #mr-rows{border:1px solid var(--hairline);border-radius:13px;background:rgba(255,255,255,.62);overflow:hidden}
 .mr-rsum{display:grid;align-items:center;gap:11px}
-.mr-gbd{grid-template-columns:24px 150px 132px 158px minmax(90px,1fr) 82px 56px auto}
+.mr-gbd{grid-template-columns:24px 150px 126px 158px minmax(90px,1fr) 82px 104px auto}
 .mr-gjobs{grid-template-columns:28px minmax(180px,1fr) minmax(220px,1.7fr) 160px 72px 46px auto}
 .mr-row{border-bottom:1px solid var(--hairline);transition:.2s;display:block}.mr-row:last-child{border-bottom:none}.mr-row.gone{height:0!important;opacity:0;border:none;overflow:hidden}
 .mr-row.top .mr-rsum{box-shadow:inset 3px 0 0 var(--blue)}
@@ -1413,7 +1412,7 @@ MR_JS = r"""
     var anti2=(l.anti||[]).filter(function(x){return x!=='competing_recruiter';});
     var acts='<div class="mr-acts">'
       +(hasSrc?'<button class="mr-actbtn" data-act="viewsrc" data-id="'+l._id+'">'+IC.ext+'View sources</button>':'')
-      +'<button class="mr-actbtn primary" data-act="pitch" data-id="'+l._id+'">'+IC.dl+'Generate pitch</button>'
+      +'<button class="mr-actbtn" data-act="pitch" data-id="'+l._id+'">'+IC.dl+'Generate pitch</button>'
       +(l.opener?'<button class="mr-actbtn" data-act="draft" data-id="'+l._id+'">'+IC.spark+'Draft opener</button>':'')
       +'</div>';
     return '<div class="mr-doss">'
@@ -1713,6 +1712,17 @@ def _build_mr_rows(premarket_rows, leads, role_label):
                 brief = (brief + " · led by " + row["investor"]).strip(" ·")
             url = row.get("url") or ""
             first_seen = row.get("first_seen") or ""
+            # Funding rows don't pass through the predictor outreach step, so
+            # synthesise the opener here too — otherwise the dossier's "Draft
+            # opener" button has nothing to type and goes missing.
+            if not row.get("outreach"):
+                row["outreach"] = draft_outreach_for_predictor({
+                    "company": row.get("company"),
+                    "predicted_role": role_label,
+                    "window_label": _mr_compact_window(row.get("window")),
+                    "events": [{"trigger_key": "funding", "trigger_label": why,
+                                "evidence": row.get("evidence") or ""}],
+                })
             bd.append({
                 "co": row.get("company") or "—",
                 "isNew": 1 if first_seen.startswith(today) else 0,
