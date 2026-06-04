@@ -95,6 +95,17 @@ _FIT_HIGH = 7            # 0-10 threshold for "High FIT"
 # Sources we treat as Tier-1 direct verification.
 _TIER1 = ("companieshouse", "rns", "londonstockexchange", "lse",
           "regulatory", "gov.uk", "official", "/rns")
+# Credible outlets: a major raise reported by the FT, or a posting on a real
+# board, is not an unconfirmed inference — it's corroboration-grade on its own.
+_TIER2 = ("ft.com", "bloomberg", "reuters", "sky.com", "sky news", "thetimes",
+          "telegraph", "theguardian", "guardian", "bbc.", "cityam", "city am",
+          "standard.co.uk", "prweek", "campaign", "marketingweek", "techcrunch",
+          "sifted", "insidermedia", "businesslive", "linkedin", "indeed",
+          "greenhouse", "lever", "workable", "drapers", "retailgazette",
+          "investegate")
+# Triggers that are an announcement / posting, not an inferred scrape: they are
+# verifiable by construction, so a lone one is corroboration-grade (not Tier-3).
+_EVENT_GRADE = {"funding", "ipo_listing", "job_ad_cluster", "ic_platform_rfp"}
 
 # Anti-triggers — multiplicative suppression / hard caps (Layer 4). These are
 # the cases that *should* score high on raw signal but shouldn't convert: a
@@ -198,12 +209,16 @@ def _recency_mult(age_days: float, decay: str) -> float:
 
 
 def _confidence(event: dict, independent_sources: int) -> tuple[str, float]:
-    """Layer 3. Tier 1 verified (filing / official / listed) x1.0;
-    Tier 2 multi-source consensus (2+ independent) x0.6; Tier 3 single x0.3."""
+    """Layer 3. Tier 1 verified (filing / official / listed) x1.0; Tier 2
+    corroboration-grade (2+ independent sources, OR a credible named outlet,
+    OR an announcement/posting trigger) x0.6; Tier 3 lone unconfirmed scrape
+    x0.3. The Tier-2 widening stops a real raise reported by the FT being
+    treated as an unconfirmed rumour and crushed to 0.3."""
     blob = " ".join(str(event.get(k) or "").lower() for k in ("url", "source", "tier"))
     if any(s in blob for s in _TIER1) or (event.get("tier") or "").lower() == "listed":
         return ("verified", 1.0)
-    if independent_sources >= 2:
+    if (independent_sources >= 2 or any(s in blob for s in _TIER2)
+            or event.get("trigger_key") in _EVENT_GRADE):
         return ("corroborated", 0.6)
     return ("single-source", 0.3)
 
@@ -321,17 +336,17 @@ def _access(triggers: list[dict], warm: bool, contact_name: str | None) -> tuple
     highest-value data integration still missing (see README/notes)."""
     fams = {t["family"] for t in triggers}
     if "access" in fams:
-        angle = "a live RFP / platform re-tender is underway"
+        angle = "A live RFP / platform re-tender is underway"
     elif "leadership" in fams:
-        angle = "a new leader just landed, so the supplier relationship is open"
+        angle = "A new leader has just landed, so the supplier relationship is open"
     elif "demand" in fams:
-        angle = "the build-out a change of this size implies, before the role is briefed out"
+        angle = "A senior build-out usually follows a move of this size, before the role is briefed out"
     else:
-        angle = "reachable on the trigger above before the role is briefed out"
+        angle = "Reachable on the trigger above, before the role is briefed out"
     if warm:
         nm = f" ({contact_name})" if contact_name else ""
-        return ("warm", f"Warm — VMA has a contact on file{nm}; {angle}.")
-    return ("cold", f"Cold — no VMA relationship on file; {angle}.")
+        return ("warm", f"Warm — VMA has a contact on file{nm}. {angle}.")
+    return ("cold", f"Cold — no VMA relationship on file. {angle}.")
 
 
 def _scale(triggers: list[dict]) -> str:
