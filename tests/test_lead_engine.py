@@ -145,6 +145,24 @@ def test_aged_lead_slides_down():
     assert aged["signal"] < fresh["signal"]
 
 
+# ---- confidence calibration: credible / event-grade signals aren't crushed ----
+def test_funding_from_credible_outlet_is_not_single_source():
+    lead = LE.score_lead({"company": "NewCo", "amount": "£260m", "round": "Series C",
+                          "url": "https://www.ft.com/x", "source": "FT",
+                          "first_seen": _iso(1)}, "funding", "comms")
+    assert lead["triggers"][0]["confidence"] in ("verified", "corroborated")
+    assert lead["signal"] >= 3.0           # medium, not the old 1.5
+    assert lead["signal_band"] in ("medium", "high")
+
+
+def test_event_grade_funding_corroborated_even_obscure_source():
+    lead = LE.score_lead({"company": "NewCo", "amount": "£260m", "round": "Series C",
+                          "url": "https://obscureblog.example/x", "source": "blog",
+                          "first_seen": _iso(1)}, "funding", "comms")
+    assert lead["triggers"][0]["confidence"] == "corroborated"
+    assert lead["signal"] >= 3.0
+
+
 # ---- dossier fields ----
 def test_dossier_fields_present():
     lead = LE.score_lead(_pred(events=[_ev("ceo_change", 1)]))
@@ -206,7 +224,7 @@ def test_access_cold_when_no_relationship():
     lead = LE.score_lead(_pred(events=[_ev("ceo_change", 1)]))
     assert lead["relationship"] == "cold"
     assert lead["access"] == "cold"
-    assert "new leader just landed" in lead["access_text"]
+    assert "new leader has just landed" in lead["access_text"]
 
 
 def test_warm_via_contact_on_file_flag():

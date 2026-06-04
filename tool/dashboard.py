@@ -756,8 +756,59 @@ def draft_outreach_for_lead(signal: dict) -> str:
     )
 
 
-def draft_outreach_for_predictor(_predictor: dict) -> str:
-    return _default_outreach()
+def draft_outreach_for_predictor(predictor: dict) -> str:
+    """A lead-SPECIFIC opener synthesised from this predictor's own signals —
+    the trigger, the predicted seat, the window and the scale — so the play
+    matches the diagnosis instead of a generic coffee-and-brochure. British, no
+    em dashes. Falls back to the default only if there's nothing to work with."""
+    p = predictor or {}
+    try:
+        mkt = active_profile().key == "marketing"
+    except Exception:
+        mkt = False
+    fn = "marketing" if mkt else "communications"
+    company = (p.get("company") or "").strip()
+    if not company:
+        return _default_outreach()
+    seat = (p.get("predicted_role")
+            or ("a senior marketing hire" if mkt else "a senior comms hire")).strip()
+    window = (p.get("window_label") or "the coming weeks").strip()
+    evs = [e for e in (p.get("events") or []) if isinstance(e, dict)]
+    ev0 = evs[0] if evs else {}
+    key = ev0.get("trigger_key") or ""
+    label = (ev0.get("trigger_label") or "").strip().lower()
+    evidence = " ".join((e.get("evidence") or "") for e in evs).lower()
+    midlevel = (key == "job_ad_cluster" or "no senior" in evidence
+                or "mid-level" in evidence or "mid level" in evidence)
+
+    if midlevel:
+        obs = (f"I noticed {company} is hiring across {fn} at mid level but "
+               f"hasn't posted a senior {fn} hire yet.")
+        insight = (f"That usually means the function is being built from the "
+                   f"middle, and the senior mandate ({seat}) tends to follow "
+                   f"within {window}.")
+        offer = ("We would map that senior search before it is briefed out, and "
+                 "can help with the mid-level hiring you are running now.")
+    elif key in ("ceo_change", "chro_change", "chair_change",
+                 "comms_leader_departure", "cfo_change", "ir_director_change"):
+        obs = f"I saw the recent leadership change at {company} ({label or 'a senior appointment'})."
+        insight = (f"A change at that level usually reshapes the {fn} team within "
+                   f"{window}, and {seat} is often the first senior appointment.")
+        offer = (f"We place senior {fn} leaders on a retained basis and would map "
+                 "the market for that seat before the search goes live.")
+    elif key in ("funding", "ipo_listing"):
+        obs = f"I saw {company}'s recent {label or 'raise'}."
+        insight = (f"A step up of that size usually triggers a {fn} build-out "
+                   f"within {window}, with {seat} the senior hire that lands it.")
+        offer = "We would want to map that search early, before it is briefed out."
+    else:
+        obs = f"I saw the recent {label or 'development'} at {company}."
+        insight = (f"Events like this usually open a senior {fn} mandate ({seat}) "
+                   f"within {window}.")
+        offer = (f"We place senior {fn} leaders on a retained basis and would value "
+                 "a short conversation before the role goes live.")
+    ask = "Worth a brief call this week? Happy to share who is moving in the market right now."
+    return f"Hi (Name),\n\n{obs} {insight}\n\n{offer} {ask}\n\nBest,\n(Your name)"
 
 
 def _people_search(keywords: str) -> str:
@@ -1549,6 +1600,61 @@ def _mr_clean_source(text: str | None) -> str:
     return s[:22]
 
 
+def _dedupe_rows(rows):
+    """Entity resolution for the board: collapse rows that are the SAME company
+    appearing under different names — e.g. an acronym and its full name
+    (OQC == Oxford Quantum Circuits), or a row that re-detected the same event.
+    Without this the board shows three near-identical rows for one account,
+    which is the first thing an AD sees and the fastest way to lose their trust.
+    Keeps the highest-opportunity row per entity and shows its fullest name."""
+    import re as _re
+
+    def _norm(s):
+        n = _re.sub(r"[^a-z0-9 ]", " ", (s or "").lower())
+        n = _re.sub(r"\b(group|holdings?|plc|ltd|limited|inc|llp|uk|co|the)\b", " ", n)
+        return _re.sub(r"\s+", " ", n).strip()
+
+    def _acr(s):
+        ws = [w for w in _re.sub(r"[^A-Za-z0-9 ]", " ", (s or "")).split() if w]
+        return "".join(w[0] for w in ws).lower()
+
+    groups = []  # each: {"rows": [...], "names": set()}
+
+    def _match(name):
+        n = _norm(name); nn = n.replace(" ", ""); a = _acr(name)
+        words = len(name.split())
+        for gi, g in enumerate(groups):
+            for gname in g["names"]:
+                gn = _norm(gname); gnn = gn.replace(" ", ""); ga = _acr(gname)
+                if n and n == gn:
+                    return gi
+                # a short token equal to the initials of a multi-word name
+                if 2 <= len(nn) <= 5 and nn == ga and len(gname.split()) >= 2:
+                    return gi
+                if 2 <= len(gnn) <= 5 and gnn == a and words >= 2:
+                    return gi
+        return -1
+
+    for r in rows:
+        name = r.get("company") or ""
+        gi = _match(name)
+        if gi < 0:
+            groups.append({"rows": [r], "names": {name}})
+        else:
+            groups[gi]["rows"].append(r)
+            groups[gi]["names"].add(name)
+
+    out = []
+    for g in groups:
+        best = max(g["rows"], key=lambda x: x.get("_opp") or 0.0)
+        if len(g["rows"]) > 1:
+            best = dict(best)  # don't mutate the original
+            best["company"] = max(g["names"], key=len)  # fullest display name
+        out.append(best)
+    out.sort(key=lambda d: d.get("_opp") or 0.0, reverse=True)
+    return out
+
+
 def _mr_lead_fields(row):
     """Flatten the two-axis lead_engine output onto the console row (comms
     desk). Empty dict when absent (marketing desk / no lead) so the row falls
@@ -1724,6 +1830,8 @@ def _render_dashboard():
     _mr_cal = lead_outcomes.calibration()
     premarket_rows = sorted(predictors + funding_events,
                             key=lambda d: d.get("_opp") or 0.0, reverse=True)
+    # Entity resolution: one row per company (OQC == Oxford Quantum Circuits).
+    premarket_rows = _dedupe_rows(premarket_rows)
     from tool import framework_status as _fws
     _fwst = _fws.get_statuses()
     # `status` already holds the refresh-window state (refresh_window/live);
