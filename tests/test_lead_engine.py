@@ -21,12 +21,13 @@ def _ev(key, days_ago=1, url="prweek.com", label=None, tier="covered", evidence=
 
 # ---- FIT axis ----
 def test_fit_watchlist_uk_onpatch_is_core():
-    pts, band = LE.fit_score("Tesco", "watchlist")
+    pts, band, why = LE.fit_score("Tesco", "watchlist")
     assert pts >= 7 and band == "core"
+    assert why.startswith("Core")
 
 
 def test_fit_off_watchlist_is_not_core():
-    pts, band = LE.fit_score("Some Tiny Startup Ltd", "off_watchlist")
+    pts, band, why = LE.fit_score("Some Tiny Startup Ltd", "off_watchlist")
     assert band in ("adjacent", "out")
     assert pts < 7
 
@@ -104,6 +105,51 @@ def test_administration_caps_to_monitor():
     lead = LE.score_lead(_pred(events=[_ev("crisis_event", 1, url="companieshouse.gov.uk",
                                            evidence="company enters administration")]))
     assert lead["action"] == "monitor"
+
+
+def test_in_house_team_suppresses_and_demotes():
+    """The false-positive case: funded + hiring, but they just built it in-house."""
+    clean = LE.score_lead(_pred(events=[_ev("funding", 1, url="companieshouse.gov.uk"),
+                                        _ev("job_ad_cluster", 1, url="ft.com")]))
+    inhouse = LE.score_lead(_pred(events=[
+        _ev("funding", 1, url="companieshouse.gov.uk",
+            evidence="raise; grown a 25-person in-house comms team"),
+        _ev("job_ad_cluster", 1, url="ft.com")]))
+    assert "in_house_team" in inhouse["anti_triggers"]
+    assert inhouse["signal"] < clean["signal"]
+    assert clean["action"] == "call_today"
+    assert inhouse["action"] != "call_today"
+
+
+# ---- CORROBORATION as a gate ----
+def test_single_source_cannot_call_today():
+    same = LE.score_lead(_pred(events=[_ev("chro_change", 1, url="ft.com"),
+                                       _ev("job_ad_cluster", 1, url="ft.com")]))
+    assert same["corroborated"] is False
+    assert same["action"] != "call_today"
+
+
+def test_route_gate_blocks_uncorroborated_high_signal():
+    assert LE._route(9, 8.0, False, corroborated=False) == "investigate"
+    assert LE._route(9, 8.0, False, corroborated=True) == "call_today"
+
+
+# ---- decay is behavioural, not just a formula (re-scored each render) ----
+def test_aged_lead_slides_down():
+    fresh = LE.score_lead(_pred(events=[_ev("chro_change", 2, url="companieshouse.gov.uk"),
+                                        _ev("job_ad_cluster", 2, url="ft.com")]))
+    aged = LE.score_lead(_pred(events=[_ev("chro_change", 200, url="companieshouse.gov.uk"),
+                                       _ev("job_ad_cluster", 200, url="ft.com")]))
+    assert fresh["action"] == "call_today"
+    assert aged["action"] != "call_today"
+    assert aged["signal"] < fresh["signal"]
+
+
+# ---- dossier fields ----
+def test_dossier_fields_present():
+    lead = LE.score_lead(_pred(events=[_ev("ceo_change", 1)]))
+    assert lead["who_to_call"]
+    assert lead["fit_why"].startswith(("Core", "Adjacent", "Out"))
 
 
 # ---- FUNDING kind ----
