@@ -93,8 +93,17 @@ def test_mr_lead_fields_carries_sources_and_opener():
     f = d._mr_lead_fields(pred)
     assert f["opener"]                                            # Draft opener has text
     assert f["stack"] and any(t.get("url") for t in f["stack"])   # View sources has URLs
-    assert f["sig"] is not None                                  # scan banner high-intent count
     # the removed "fodder" fields no longer ship to the client
-    for gone in ("prize", "chaseBy", "competitive", "proof", "objection", "corro",
+    for gone in ("prize", "chaseBy", "competitive", "proof", "objection", "corro", "sig",
                  "whoToCall", "access", "scale", "outcome", "fit", "fitWhy", "relationship"):
         assert gone not in f
+
+
+def test_why_now_explains_rather_than_repeats():
+    comms = d._why_now("ceo_change", False, "Chief Communications Officer", "6-12 weeks")
+    assert "comms" in comms.lower() and len(comms) > 40   # a real thesis, not "CEO change"
+    assert comms != "CEO change"
+    assert "—" not in comms and "–" not in comms          # house style
+    mkt = d._why_now("funding", True, "CMO", "3-6 months")
+    assert "marketing" in mkt.lower()
+    assert d._why_now("totally_unknown_key", False, "X", "soon")  # fallback never blank
