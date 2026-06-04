@@ -3120,7 +3120,6 @@ TEMPLATE = r"""
     .rr-when { color: var(--text-muted); white-space: nowrap; font-size: 11.5px; }
     .rr-muted { color: var(--text-dim); }
     .rr-acts { text-align: left; white-space: nowrap; }
-    .rr-acts a { margin-left: 6px; }
     .rr-gen { color: var(--text-muted); font-size: 11px; font-style: italic; }
     @media (max-width: 900px) {
       .row { grid-template-columns: 1fr; }
