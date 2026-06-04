@@ -1333,6 +1333,12 @@ MR_CSS = r"""
 .mr-dk{display:grid;grid-template-columns:82px 1fr;gap:12px;align-items:baseline;font-size:12px;color:var(--ink2);line-height:1.5}
 .mr-dlab{font:600 8.5px/1.6 "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
 .mr-play{color:var(--ink2);background:rgba(62,92,132,.05);border-left:2px solid var(--vma);border-radius:5px;padding:7px 10px;display:block;font-size:12px;line-height:1.55}
+.mr-chase{font:700 9px/1.5 "JetBrains Mono",monospace;letter-spacing:.02em;color:#46556e;background:#edf0f4;padding:2px 7px;border-radius:6px}.mr-chase.soon{color:#b5530e;background:#fdecdb}
+.mr-vd{font:700 8.5px/1.6 "Inter",sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:6px;margin-right:7px}
+.mr-vd.vd-open{color:#1e7a41;background:#e7f3ec}.mr-vd.vd-contested{color:#8a5a00;background:#fff4e0}.mr-vd.vd-locked{color:#c0392b;background:#fdecea}
+.mr-vma{color:var(--ink2);background:rgba(26,61,124,.05);border-left:2px solid var(--blue-deep);border-radius:5px;padding:7px 10px;display:block;font-size:12px;line-height:1.55}
+.mr-obj{color:var(--ink2);background:rgba(217,119,87,.06);border-left:2px solid var(--clay);border-radius:5px;padding:7px 10px;display:block;font-size:12px;line-height:1.55}.mr-obj b{color:var(--ink)}
+.mr-basis{display:block;color:var(--dim);font:500 10.5px/1.45 "Inter",sans-serif;margin-top:3px}
 .mr-cal{display:flex;gap:8px;align-items:center;background:rgba(217,119,87,.08);border:1px solid rgba(217,119,87,.25);border-radius:11px;padding:10px 14px;margin:0 0 13px;font-size:11.5px;color:#8a4a2f;line-height:1.45}
 .mr-cal .mr-spk2{color:var(--clay);display:inline-flex;flex-shrink:0}.mr-cal .mr-spk2 svg{width:13px;height:13px}
 .mr-ocrow{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}
@@ -1415,6 +1421,7 @@ MR_JS = r"""
     :'<button class="mr-io icon" data-act="tri" data-id="'+l._id+'" data-st="active" title="Restore">'+IC.undo+'</button>';}
   function ab(l){return l.action?'<span class="mr-ab ab-'+l.action+'">'+esc(l.actionLabel)+'</span>':sc(l);}
   function dk(lab,val){return '<div class="mr-dk"><span class="mr-dlab">'+lab+'</span><span>'+val+'</span></div>';}
+  function vd(c){var m={open:'Open lane',contested:'Contested',locked:'Locked'};return c&&c.verdict?'<span class="mr-vd vd-'+c.verdict+'">'+(m[c.verdict]||c.verdict)+'</span>':'';}
   function renderCal(){var e=$('mr-cal');if(!e)return;
     if(CAL.calibrating){e.style.display='';e.innerHTML='<span class="mr-spk2">'+IC.spark+'</span> Calibrating — scores are provisional defaults until ~'+(CAL.target||50)+' outcomes are logged ('+(CAL.logged||0)+' so far). Mark Called / Converted / Dead on a lead to teach the model.';}
     else{e.style.display='none';}}
@@ -1440,13 +1447,19 @@ MR_JS = r"""
       +(l.conflict?'<span class="mr-anti">⚠ competing recruiter</span>':'')
       +(l.relationship?'<span class="mr-rel rel-'+l.relationship+'">'+l.relationship+'</span>':'')
       +(l.scale?'<span class="mr-lm">'+esc(l.scale)+'</span>':'')
+      +(l.prize&&l.prize.fee?'<span class="mr-lm" title="'+esc(l.prize.summary||'')+'">Prize <b>'+esc(l.prize.fee)+'</b></span>':'')
+      +(l.chaseBy&&l.chaseBy.label?'<span class="mr-chase'+(l.chaseBy.days<=3?' soon':'')+'" title="'+esc(l.chaseBy.rationale||'')+'">'+esc(l.chaseBy.label)+'</span>':'')
       +(anti2.length?'<span class="mr-anti">⚠ '+esc(anti2.join(' · '))+'</span>':'')+'</div>'
       +dk('Why now',esc(l.why)+' '+srcl(l))
       +(stack?dk('Evidence','<span class="mr-stack">'+stack+'</span>'):'')
+      +(l.prize&&l.prize.summary?dk('Prize',esc(l.prize.summary)+'<span class="mr-basis">'+esc(l.prize.basis||'')+'</span>'):'')
       +(who?dk('Who to call',who):'')
+      +(l.competitive&&l.competitive.summary?dk('Competitive',vd(l.competitive)+esc(l.competitive.summary)):'')
       +(l.access?dk('Access',esc(l.access)):'')
       +(l.fitWhy?dk('Fit',esc(l.fitWhy)):'')
+      +(l.proof&&l.proof.angle?dk('Why VMA','<span class="mr-vma">'+esc(l.proof.angle)+(l.proof.vs_incumbent?' '+esc(l.proof.vs_incumbent):'')+'</span>'):'')
       +(l.opener?dk('The play','<span class="mr-play">'+esc(l.opener)+'</span>'):'')
+      +(l.objection&&l.objection.likely?dk('If they push back','<span class="mr-obj"><b>"'+esc(l.objection.likely)+'"</b> '+esc(l.objection.counter)+'</span>'):'')
       +ocBtns(l)
       +'</div>';}
   function bdRow(l,idx){var top=(idx===0&&filter==='active');
@@ -1691,6 +1704,13 @@ def _mr_lead_fields(row):
         "anti": L.get("anti_triggers") or [],
         "outcome": row.get("outcome") or "",
         "opener": row.get("outreach") or "",
+        # The "work it" layer: deal size, competitive position, why-VMA proof,
+        # the likely objection, and a chase-by date (lead_engine).
+        "prize": L.get("prize") or {},
+        "competitive": L.get("competitive") or {},
+        "proof": L.get("proof") or {},
+        "objection": L.get("objection") or {},
+        "chaseBy": L.get("chase_by") or {},
         "stack": [{"label": t.get("label"), "confidence": t.get("confidence"),
                    "age": t.get("age_days"), "url": t.get("url") or "",
                    "src": _mr_domain(t.get("url")) or (t.get("source") or "")}

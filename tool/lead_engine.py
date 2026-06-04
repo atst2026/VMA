@@ -20,7 +20,7 @@ the marketing taxonomy is a separate table.
 from __future__ import annotations
 
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 # --------------------------------------------------------------------------
 # Layer 1 — SIGNAL taxonomy (comms desk). raw_pts per the research, mapped
@@ -360,8 +360,8 @@ def _access(triggers: list[dict], warm: bool, contact_name: str | None) -> tuple
         angle = "Reachable on the trigger above, before the role is briefed out"
     if warm:
         nm = f" ({contact_name})" if contact_name else ""
-        return ("warm", f"Warm — VMA has a contact on file{nm}. {angle}.")
-    return ("cold", f"Cold — no VMA relationship on file. {angle}.")
+        return ("warm", f"Warm: VMA has a contact on file{nm}. {angle}.")
+    return ("cold", f"Cold: no VMA relationship on file. {angle}.")
 
 
 def _scale(triggers: list[dict]) -> str:
@@ -407,6 +407,152 @@ def _route(fit_pts: int, signal: float, cap: bool, corroborated: bool) -> str:
     return "monitor"
 
 
+# --------------------------------------------------------------------------
+# The "work it" layer — what an AD needs to CONVERT a lead, not just open it.
+# Each of these answers a qualifying question an AD asks before/while chasing:
+# how big is the prize, who else is in, why VMA wins it, what objection it
+# hits, and by when to chase. Everything is desk-aware (comms / marketing) and
+# scrupulously honest about what the engine knows from scraped data versus what
+# the AD confirms on the call — guesses are labelled, never asserted.
+# --------------------------------------------------------------------------
+
+# Indicative recruitment-fee bands (GBP) by seniority. A senior retained search
+# on a ~£100-150k seat bills ~28-33% of total comp; a mid-level placement bills
+# materially less. Deliberately COARSE ranges, surfaced as "indicative, confirm
+# on the call" — they let an AD rank the week by expected value, which a bare
+# "build-out (role cluster)" does not. Same order of magnitude across both desks.
+_FEE_SENIOR = (25_000, 45_000)     # one senior retained search
+_FEE_MID = (9_000, 18_000)         # per mid-level placement
+
+
+def _fmt_fee(low: int, high: int) -> str:
+    return f"£{low // 1000}k-£{high // 1000}k"
+
+
+def _prize(triggers: list[dict], desk: str) -> dict:
+    """Size and shape of the prize: how many roles, at what level, worth what
+    fee. A job-ad cluster implies mid-level hiring already underway plus an
+    unfilled senior mandate (3+ roles); a lone leadership move is a single
+    senior search. Fees are indicative ranges the AD confirms against the brief."""
+    noun = "marketing" if (desk or "comms").lower() == "marketing" else "comms"
+    keys = {t.get("key") for t in triggers}
+    cluster = "job_ad_cluster" in keys
+    multi = sum(1 for t in triggers if t.get("family") == "demand") >= 2
+    mids = 2 if cluster else (1 if multi else 0)
+    roles = 1 + mids
+    low = _FEE_SENIOR[0] + mids * _FEE_MID[0]
+    high = _FEE_SENIOR[1] + mids * _FEE_MID[1]
+    if mids:
+        plus = "+" if cluster else ""
+        mix = f"1 senior + {mids}{plus} mid-level {noun}"
+        roles_label = f"{roles}{plus} roles"
+    else:
+        mix = f"single senior {noun} search"
+        roles_label = "1 senior role"
+    return {
+        "roles": roles, "mix": mix, "fee": _fmt_fee(low, high),
+        "fee_low": low, "fee_high": high,
+        "summary": f"{roles_label}: {mix}. Indicative {_fmt_fee(low, high)} in fees.",
+        "basis": "Indicative: fee scales with the exact level and salary; confirm the brief on the call.",
+    }
+
+
+def _competitive(anti_flags: list[str], item: dict) -> dict:
+    """Who else is in — the thing that most often kills a chase. Surfaces what
+    the engine can detect (an incumbent agency from exclusive-retainer language,
+    an in-house TA team) and is honest that PSL status is rarely scrapeable, so
+    it prompts the AD to confirm rather than asserting VMA is or isn't on it."""
+    locked = "competitor_lock" in anti_flags
+    in_house = "in_house_team" in anti_flags
+    psl_raw = item.get("psl_status")
+    if psl_raw in (True, "on", "yes"):
+        psl = "on VMA's PSL"
+    elif psl_raw in (False, "off", "no"):
+        psl = "not on the PSL (confirm)"
+    else:
+        psl = "PSL status unknown (confirm on call)"
+    incumbent = ("incumbent agency likely (exclusive-retainer language detected)"
+                 if locked else "no incumbent agency detected (confirm on call)")
+    ta = ("active in-house TA / team detected" if in_house
+          else "in-house TA strength unknown (confirm)")
+    verdict = "locked" if locked else ("contested" if in_house else "open")
+    return {"psl": psl, "incumbent": incumbent, "internal_ta": ta,
+            "verdict": verdict, "summary": f"{psl} · {incumbent} · {ta}"}
+
+
+def _proof(desk: str, competitive: dict) -> dict:
+    """The convert-not-just-contact proof. The opener gets the meeting; the AD
+    wins the mandate on the second conversation by being specific about why VMA.
+    We give the credible category angle and PROMPT the AD to cite a comparable
+    placement — we never invent a specific one (that would be a fabricated claim
+    the AD might repeat)."""
+    mkt = (desk or "comms").lower() == "marketing"
+    practice = ("marketing, brand and growth leadership" if mkt
+                else "corporate communications and internal comms leadership")
+    noun = "marketing" if mkt else "comms"
+    angle = (f"VMA runs senior {noun} searches on a retained basis across {practice}. "
+             f"Lead with a comparable recent VMA placement at this level and sector as the proof point.")
+    if (competitive or {}).get("verdict") in ("contested", "locked"):
+        vs = ("Against an in-house team or an incumbent agency: retained buys a market-mapped "
+              "longlist assessed against the brief, passive reach into leaders who will not answer "
+              "an ad, and an off-limits and replacement guarantee a CV-race supplier will not carry.")
+    else:
+        vs = "Open lane: be first and frame the brief before a competitor or an in-house hire does."
+    return {"angle": angle, "vs_incumbent": vs}
+
+
+def _objection(relationship: str, anti_flags: list[str],
+               triggers: list[dict], desk: str) -> dict:
+    """The predictable pushback for this lead type, with a one-line counter, so
+    the AD is armed for the moment the call gets hard. Branches on what we know:
+    an incumbent, an in-house team, a cold leadership/demand open, or a warm
+    follow-up."""
+    noun = "marketing" if (desk or "comms").lower() == "marketing" else "comms"
+    fams = {t.get("family") for t in triggers}
+    if "competitor_lock" in anti_flags:
+        return {"likely": "It is already with an agency.",
+                "counter": ("Understood. Is that retained or contingent? Retained gives you a "
+                            "market-mapped longlist and off-limits protection a CV race will not, "
+                            "so a parallel view is worth it before you commit.")}
+    if "in_house_team" in anti_flags or (relationship == "cold" and "leadership" in fams):
+        return {"likely": f"We handle {noun} hiring in-house.",
+                "counter": ("Fine for BAU roles. This is a senior, discreet search where the "
+                            "strongest leaders are in seat elsewhere and will not answer your ad, "
+                            "which is the reach an in-house team cannot carry.")}
+    if "demand" in fams and relationship == "cold":
+        return {"likely": "We are not hiring at that level yet.",
+                "counter": ("That is exactly the moment, because the senior mandate tends to follow "
+                            "a move like this. Mapping the market early costs you nothing, and we "
+                            "share who is moving right now.")}
+    return {"likely": "Now is not the right time.",
+            "counter": ("No problem. A short market map now means you are ready the day it is, "
+                        "rather than starting cold under time pressure.")}
+
+
+def _chase_by(triggers: list[dict]) -> dict:
+    """Timing handle for the chase itself. The mandate WINDOW says when the role
+    opens; this says when to FOLLOW UP if the first call goes to voicemail,
+    derived from the decay model: an event signal's freshness fades within a
+    week, a leadership signal holds but the first-mover edge fades within ~3
+    weeks. Without it, a decaying lead just sits in the queue."""
+    if not triggers:
+        return {}
+    best = min(triggers, key=lambda t: t.get("age_days") if t.get("age_days") is not None else 9999)
+    age = best.get("age_days") or 0
+    slow = best.get("family") == "leadership"
+    window = 21 if slow else 7
+    days_left = window - int(age)
+    if days_left <= 0:
+        days_left = 2          # lapsed: chase within a couple of days or lose it
+    target = (datetime.now(timezone.utc) + timedelta(days=days_left)).date()
+    rel = "today" if days_left == 0 else f"in {days_left} day" + ("" if days_left == 1 else "s")
+    rationale = ("leadership signal holds, but the first-mover edge fades within ~3 weeks" if slow
+                 else "event signal, freshness fades within a week")
+    return {"date": target.isoformat(),
+            "label": f"Chase by {target.day} {target.strftime('%b')}",
+            "days": days_left, "rel": rel, "rationale": rationale}
+
+
 def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict:
     """Score one BD lead on the two-axis model. `item` is a persisted
     predictor dict, or a funding event when kind='funding'. `desk` selects the
@@ -446,7 +592,7 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
         if conflict:
             # Out of ICP by conflict, regardless of sector/size/UK.
             fit_pts, fit_band = 2, "out"
-            fit_why = "Out — competing recruiter / staffing firm (likely conflict)"
+            fit_why = "Out: competing recruiter / staffing firm (likely conflict)"
         signal, triggers = _signal(events, fallback, taxonomy)
         anti_flags, anti_mult, cap = _anti_triggers(events)
         if conflict:
@@ -464,6 +610,10 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
         # compute). contact_on_file is set by the caller from the contacts store.
         warm = bool(name or item.get("contact_on_file"))
         access_key, access_text = _access(triggers, warm, name)
+        relationship = "warm" if warm else "cold"
+        # The "work it" layer — deal size, competitive position, the proof, the
+        # likely objection, and a chase-by date (see the helpers above).
+        competitive = _competitive(anti_flags, item)
         return {
             "fit": fit_pts, "fit_band": fit_band, "fit_why": fit_why,
             "signal": signal,
@@ -471,7 +621,7 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
                             else "medium" if signal >= 3 else "low"),
             "action": action, "action_label": _ACTION_LABEL[action],
             "access": access_key, "access_text": access_text,
-            "relationship": "warm" if warm else "cold",
+            "relationship": relationship,
             "scale": _scale(triggers),
             "conflict": conflict,
             "who_to_call": _who_to_call(triggers, name, name_role, who_map, who_default),
@@ -479,6 +629,11 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
             "corroboration": len(triggers), "corroborated": corroborated,
             "anti_triggers": anti_flags,
             "triggers": triggers,
+            "prize": _prize(triggers, desk),
+            "competitive": competitive,
+            "proof": _proof(desk, competitive),
+            "objection": _objection(relationship, anti_flags, triggers, desk),
+            "chase_by": _chase_by(triggers),
         }
     except Exception:
         return {"fit": 0, "fit_band": "out", "fit_why": "", "signal": 0.0,
@@ -487,4 +642,6 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
                 "scale": "single senior search", "conflict": False,
                 "who_to_call": _WHO_DEFAULT,
                 "who_url": "", "corroboration": 0, "corroborated": False,
-                "anti_triggers": [], "triggers": []}
+                "anti_triggers": [], "triggers": [],
+                "prize": {}, "competitive": {}, "proof": {},
+                "objection": {}, "chase_by": {}}
