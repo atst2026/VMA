@@ -189,14 +189,39 @@ def test_funding_event_synthesises_demand_trigger():
     assert lead["signal"] > 0
 
 
-# ---- ACCESS angle ----
-def test_access_contact_known_when_seeded():
+# ---- ACCESS: warm / cold relationship + who-to-call ----
+def test_access_warm_when_contact_on_file():
     item = _pred(events=[_ev("chro_change", 1)])
     item["seeded_contact_name"] = "Jane Doe"
+    item["seeded_contact_role"] = "Group HRD"
     lead = LE.score_lead(item)
-    assert lead["access"] == "contact_known"
+    assert lead["relationship"] == "warm"
+    assert lead["access"] == "warm"
+    assert "contact on file" in lead["access_text"]
+    # who-to-call resolves to the NAME, not just the role
+    assert lead["who_to_call"].startswith("Jane Doe")
 
 
-def test_access_new_supplier_on_leadership():
+def test_access_cold_when_no_relationship():
     lead = LE.score_lead(_pred(events=[_ev("ceo_change", 1)]))
-    assert lead["access"] == "new_supplier"
+    assert lead["relationship"] == "cold"
+    assert lead["access"] == "cold"
+    assert "new leader just landed" in lead["access_text"]
+
+
+def test_warm_via_contact_on_file_flag():
+    item = _pred(events=[_ev("ceo_change", 1)])
+    item["contact_on_file"] = True
+    assert LE.score_lead(item)["relationship"] == "warm"
+
+
+def test_scale_build_out_on_cluster():
+    lead = LE.score_lead(_pred(events=[_ev("chro_change", 1), _ev("job_ad_cluster", 1, url="ft.com")]))
+    assert "build-out" in lead["scale"]
+    single = LE.score_lead(_pred(events=[_ev("ceo_change", 1)]))
+    assert single["scale"] == "single senior search"
+
+
+def test_chro_buyer_is_comms_owner_not_just_chro():
+    lead = LE.score_lead(_pred(events=[_ev("chro_change", 1)]))
+    assert "CCO" in lead["who_to_call"]  # comms mandate owner, CHRO is the door
