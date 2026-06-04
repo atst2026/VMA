@@ -129,9 +129,12 @@ def test_single_source_cannot_call_today():
     assert same["action"] != "call_today"
 
 
-def test_route_gate_blocks_uncorroborated_high_signal():
-    assert LE._route(9, 8.0, False, corroborated=False) == "investigate"
-    assert LE._route(9, 8.0, False, corroborated=True) == "call_today"
+def test_assess_gate_blocks_uncorroborated_active_lead():
+    # An active hiring cluster only reaches Call today once corroborated.
+    base = dict(fit_band="core", demand_now=True, n_dim=1, cap=False, conflict=False,
+                contradiction=False, too_fresh=False, quality_trigger=True, stack_req=3)
+    assert LE._assess(**{**base, "corroborated": False})[1] != "call_today"
+    assert LE._assess(**{**base, "corroborated": True}) == ("strong", "call_today")
 
 
 # ---- decay is behavioural, not just a formula (re-scored each render) ----
@@ -260,3 +263,129 @@ def test_scale_build_out_on_cluster():
 def test_chro_buyer_is_comms_owner_not_just_chro():
     lead = LE.score_lead(_pred(events=[_ev("chro_change", 1)]))
     assert "CCO" in lead["who_to_call"]  # comms mandate owner, CHRO is the door
+
+
+# ====================================================================
+# The CONJUNCTION model (v3) — strength is a stack, not a single trigger.
+# ====================================================================
+
+# ---- active hiring NOW is the strongest pre-contact signal ----
+def test_active_corroborated_cluster_is_strong_call_today():
+    lead = LE.score_lead(_pred(events=[
+        _ev("ceo_change", 4, url="companieshouse.gov.uk"),
+        _ev("job_ad_cluster", 5, url="ft.com")]))
+    assert lead["strength"] == "strong"
+    assert lead["action"] == "call_today"
+    assert lead["stack"]                       # the narrative stack is populated
+
+
+# ---- a lone, fresh anticipatory trigger is PREMATURE (8-12 week hold) ----
+def test_lone_fresh_leadership_is_premature_not_call_today():
+    lead = LE.score_lead(_pred(events=[_ev("ceo_change", 4, url="companieshouse.gov.uk")]))
+    assert lead["premature"] is True
+    assert lead["strength"] == "premature"
+    assert lead["action"] != "call_today"
+    assert "8 to 12 weeks" in lead["why_now"]
+
+
+def test_lone_fresh_funding_is_premature():
+    lead = LE.score_lead({"company": "NewCo", "amount": "£260m", "round": "Series C",
+                          "url": "https://www.ft.com/x", "first_seen": _iso(4)}, "funding")
+    assert lead["premature"] is True
+    assert lead["action"] != "call_today"
+
+
+# ---- a MATURED anticipatory stack reaches strong ----
+def test_matured_leadership_plus_funding_stacks_to_strong():
+    lead = LE.score_lead(_pred(events=[
+        _ev("ceo_change", 30, url="companieshouse.gov.uk"),
+        _ev("funding", 28, url="ft.com")]))
+    assert lead["premature"] is False
+    assert lead["n_pro"] >= 3
+    assert lead["strength"] == "strong"
+    assert lead["action"] == "call_today"
+
+
+# ---- negative scoring: contradictions force a WATCH ----
+def test_funding_and_layoffs_conflict_is_a_watch():
+    lead = LE.score_lead(_pred(events=[
+        _ev("funding", 3, url="ft.com", evidence="£40m raise"),
+        _ev("job_ad_cluster", 3, url="indeed.com", evidence="redundancies announced")]))
+    assert lead["financial"]["direction"] == "conflicting"
+    assert lead["strength"] == "watch"
+    assert lead["action"] == "monitor"
+    assert any("cuts" in c for c in lead["contradictions"])
+
+
+def test_in_house_posture_blocks_an_otherwise_active_lead():
+    lead = LE.score_lead(_pred(events=[
+        _ev("funding", 3, url="companieshouse.gov.uk", evidence="£40m raise"),
+        _ev("job_ad_cluster", 3, url="ft.com", evidence="grown a 25-person in-house comms team")]))
+    assert lead["posture"]["direction"] == "internal"
+    assert lead["action"] != "call_today"
+
+
+# ---- decayed signals drop out of the stack ----
+def test_decayed_signals_do_not_count_toward_the_stack():
+    aged = LE.score_lead(_pred(events=[
+        _ev("ceo_change", 200, url="companieshouse.gov.uk"),
+        _ev("job_ad_cluster", 200, url="ft.com")]))
+    assert aged["n_pro"] == 0
+    assert aged["action"] != "call_today"
+
+
+# ---- financial direction detection (the stem-regex bug fix) ----
+def test_financial_direction_reads_cuts_and_growth():
+    cut = LE._financial_direction(
+        [{"evidence": "redundancies and a cost-cutting programme", "trigger_label": ""}], [])
+    assert cut["has_anti"] and cut["direction"] == "anti"
+    grow = LE._financial_direction(
+        [{"evidence": "£40m raise to fund expansion", "trigger_label": ""}], [])
+    assert grow["has_pro"] and grow["direction"] == "pro"
+
+
+# ---- posture detection ----
+def test_posture_internal_on_talent_acquisition_language():
+    p = LE._posture({}, [{"key": "job_ad_cluster",
+                          "label": "hiring a Head of Talent Acquisition", "evidence": ""}], [])
+    assert p["direction"] == "internal"
+
+
+def test_posture_external_on_active_cluster():
+    p = LE._posture({}, [{"key": "job_ad_cluster", "label": "3 comms roles", "evidence": "", "age_days": 5}], [])
+    assert p["direction"] == "external"
+
+
+def test_posture_seeded_psl_off_is_internal():
+    p = LE._posture({"psl_status": "closed"}, [{"key": "job_ad_cluster", "label": "", "evidence": ""}], [])
+    assert p["direction"] == "internal"
+
+
+# ---- market state raises the bar in a contraction ----
+def test_market_state_is_contracting_now():
+    ms = LE._market_state()
+    assert ms["state"] == "contracting"
+    assert ms["stack_req"] == 3              # lone triggers must stack harder
+
+
+# ---- the why-now narrative articulates the conjunction, both desks ----
+def test_why_now_names_the_stack_for_a_strong_lead():
+    for desk in ("comms", "marketing"):
+        lead = LE.score_lead(_pred(events=[
+            _ev("ceo_change", 4, url="companieshouse.gov.uk"),
+            _ev("job_ad_cluster", 5, url="ft.com")]), desk=desk)
+        wn = lead["why_now"]
+        assert wn and "—" not in wn and "–" not in wn       # house style
+        assert "stacks" in wn or "team build" in wn
+
+
+def test_assess_pure_router_branches():
+    base = dict(fit_band="core", demand_now=False, n_dim=0, corroborated=True,
+                cap=False, conflict=False, contradiction=False, too_fresh=False,
+                quality_trigger=True, stack_req=3)
+    assert LE._assess(**{**base, "cap": True})[0] == "parked"
+    assert LE._assess(**{**base, "contradiction": True})[0] == "watch"
+    assert LE._assess(**{**base, "demand_now": True}) == ("strong", "call_today")
+    assert LE._assess(**{**base, "too_fresh": True})[0] == "premature"
+    assert LE._assess(**{**base, "n_dim": 2}) == ("strong", "call_today")  # matured stack
+    assert LE._assess(**base)[0] == "promising"                            # lone core trigger
