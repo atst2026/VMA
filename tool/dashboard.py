@@ -1282,6 +1282,14 @@ MR_CSS = r"""
 .mr-dk{display:grid;grid-template-columns:82px 1fr;gap:12px;align-items:baseline;font-size:12px;color:var(--ink2);line-height:1.5}
 .mr-dlab{font:600 8.5px/1.6 "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
 .mr-play{color:var(--ink2);background:rgba(62,92,132,.05);border-left:2px solid var(--vma);border-radius:5px;padding:7px 10px;display:block;font-size:12px;line-height:1.55}
+.mr-cal{display:flex;gap:8px;align-items:center;background:rgba(217,119,87,.08);border:1px solid rgba(217,119,87,.25);border-radius:11px;padding:10px 14px;margin:0 0 13px;font-size:11.5px;color:#8a4a2f;line-height:1.45}
+.mr-cal .mr-spk2{color:var(--clay);display:inline-flex;flex-shrink:0}.mr-cal .mr-spk2 svg{width:13px;height:13px}
+.mr-ocrow{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}
+.mr-oc{font:600 10px/1 "Inter",sans-serif;border:1px solid var(--mrborder);background:#fff;color:var(--ink2);border-radius:7px;padding:5px 11px;cursor:pointer;transition:.12s}.mr-oc:hover{background:var(--elevated)}
+.mr-oc.on.oc-called{background:var(--blue-wash);color:var(--blue-deep);border-color:var(--blue)}
+.mr-oc.on.oc-converted{background:#e7f3ec;color:#1e7a41;border-color:#bfe3cd}
+.mr-oc.on.oc-dead{background:#fdecea;color:#c0392b;border-color:#f0c5bd}
+.mr-prov{font:600 8px/1.6 "JetBrains Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-left:4px}
 .mr-wb{font:600 9px/1.6 "JetBrains Mono",monospace;padding:2px 6px;border-radius:4px;background:rgba(14,40,69,.05);color:#1A3D7C;white-space:nowrap;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .mr-badge{font:500 10px/1.4 "Inter",sans-serif;background:var(--elevated);border:1px solid var(--mrborder);border-radius:6px;padding:3px 8px;color:var(--ink);white-space:nowrap;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .mr-newp{font:700 7.5px/1 "Inter",sans-serif;letter-spacing:.06em;color:#1d4ed8;background:#e9effb;padding:2px 4px;border-radius:3px;vertical-align:middle}
@@ -1334,6 +1342,7 @@ MR_JS = r"""
   var BD=(window.MR_BD||[]).map(function(l,i){l._id='b'+i;l.opp=+l.opp||0;l.status=l.status||'active';return l;});
   var JOBS=(window.MR_JOBS||[]).map(function(l,i){l._id='j'+i;l.idtype='job';l.status=l.status||'active';return l;});
   var BYID={};BD.concat(JOBS).forEach(function(l){BYID[l._id]=l;});
+  var CAL=window.MR_CAL||{};
   var page='bd',filter='active',open={};
   function $(id){return document.getElementById(id);}
   function esc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -1352,6 +1361,17 @@ MR_JS = r"""
     :'<button class="mr-io icon" data-act="tri" data-id="'+l._id+'" data-st="active" title="Restore">'+IC.undo+'</button>';}
   function ab(l){return l.action?'<span class="mr-ab ab-'+l.action+'">'+esc(l.actionLabel)+'</span>':sc(l);}
   function dk(lab,val){return '<div class="mr-dk"><span class="mr-dlab">'+lab+'</span><span>'+val+'</span></div>';}
+  function renderCal(){var e=$('mr-cal');if(!e)return;
+    if(CAL.calibrating){e.style.display='';e.innerHTML='<span class="mr-spk2">'+IC.spark+'</span> Calibrating — scores are provisional defaults until ~'+(CAL.target||50)+' outcomes are logged ('+(CAL.logged||0)+' so far). Mark Called / Converted / Dead on a lead to teach the model.';}
+    else{e.style.display='none';}}
+  function ocBtns(l){var cur=l.outcome||'';
+    function b(o,lab){return '<button class="mr-oc'+(cur===o?' on oc-'+o:'')+'" data-act="outc" data-id="'+l._id+'" data-oc="'+o+'">'+lab+'</button>';}
+    return dk('Outcome','<span class="mr-ocrow">'+b('called','Called')+b('converted','Converted')+b('dead','Dead')+'<span class="mr-prov">weights provisional</span></span>');}
+  function mrOutcome(id,oc){var l=BYID[id];if(!l)return;var prev=l.outcome||'';var next=(prev===oc?'':oc);l.outcome=next;render();
+    var snap={co:l.co,fit:l.fit,signal:l.sig,action:l.action,corroboration:l.corro,triggers:(l.stack||[]).map(function(t){return {label:t.label,confidence:t.confidence};})};
+    fetch('/api/lead/outcome',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:l.rid,outcome:next,snapshot:snap})})
+      .then(function(r){return r.json();}).then(function(j){if(j&&j.ok){if(typeof j.logged==='number'){CAL.logged=j.logged;CAL.calibrating=j.calibrating;renderCal();}toast(l.co+(next?(' marked '+next):' outcome cleared'));}else{l.outcome=prev;render();}})
+      .catch(function(){l.outcome=prev;render();});}
   function brief(l){
     var b=l.brief||(l.seat+' likely within '+l.win+'.');
     if(!l.action) return '<div class="mr-gen2">'+esc(b)+' '+srcl(l)+'</div>';
@@ -1368,6 +1388,7 @@ MR_JS = r"""
       +(l.access?dk('Access',esc(l.access)):'')
       +(l.fitWhy?dk('Fit',esc(l.fitWhy)):'')
       +(l.opener?dk('The play','<span class="mr-play">'+esc(l.opener)+'</span>'):'')
+      +ocBtns(l)
       +'</div>';}
   function bdRow(l,idx){var top=(idx===0&&filter==='active');
     return '<div class="mr-row '+(open[l._id]?'open ':'')+(top?'top':'')+'" data-id="'+l._id+'">'
@@ -1449,6 +1470,7 @@ MR_JS = r"""
    +'<button data-act="filt" data-f="followed_up">Followed up <span class="mr-mc" id="mr-m-fu"></span></button>'
    +'<button data-act="filt" data-f="dismissed">Dismissed <span class="mr-mc" id="mr-m-dis"></span></button>'
    +'<button data-act="filt" data-f="all">All</button></div></div></div>'
+   +'<div class="mr-cal" id="mr-cal" style="display:none"></div>'
    +'<div id="mr-rows"></div>';
   root.addEventListener('click',function(e){
     var a=e.target.closest('[data-act]');if(!a||!root.contains(a))return;
@@ -1461,10 +1483,11 @@ MR_JS = r"""
     if(act==='pg'){e.stopPropagation();setPage(a.getAttribute('data-pg'));return;}
     if(act==='pgbtn'){e.stopPropagation();var pm=$('mr-pgmenu');if(pm)pm.classList.toggle('open');var fm0=$('mr-filtmenu');if(fm0)fm0.classList.remove('open');return;}
     if(act==='filtbtn'){e.stopPropagation();var m=$('mr-filtmenu');if(m)m.classList.toggle('open');var pm0=$('mr-pgmenu');if(pm0)pm0.classList.remove('open');return;}
+    if(act==='outc'){e.stopPropagation();mrOutcome(id,a.getAttribute('data-oc'));return;}
     if(act==='filt'){e.stopPropagation();setFilter(a.getAttribute('data-f'),a);return;}
   });
   document.addEventListener('click',function(e){var inside=e.target.closest('.mr-filt');['mr-pgmenu','mr-filtmenu'].forEach(function(mid){var m=$(mid);if(m&&(!inside||!inside.contains(m)))m.classList.remove('open');});});
-  render();
+  renderCal();render();
 })();
 """
 
@@ -1534,6 +1557,7 @@ def _mr_lead_fields(row):
         "access": L.get("access_text"), "whoToCall": L.get("who_to_call"),
         "corro": L.get("corroboration"),
         "anti": L.get("anti_triggers") or [],
+        "outcome": row.get("outcome") or "",
         "opener": (row.get("outreach") or "")[:320],
         "stack": [{"label": t.get("label"), "confidence": t.get("confidence"),
                    "age": t.get("age_days"), "url": t.get("url") or "",
@@ -1668,12 +1692,16 @@ def _render_dashboard():
     # Two-axis Fit x Signal scoring (lead_engine), desk-aware (comms +
     # marketing taxonomies). Additive: attaches a `lead` sub-dict, changes
     # nothing else about ordering or the existing fields.
-    from tool import lead_engine
+    from tool import lead_engine, lead_outcomes
     _desk = active_profile().key
+    _outc = lead_outcomes.get_all()
     for _p in predictors:
         _p["lead"] = lead_engine.score_lead(_p, "predictor", _desk)
+        _p["outcome"] = _outc.get(_p.get("pid"))
     for _f in funding_events:
         _f["lead"] = lead_engine.score_lead(_f, "funding", _desk)
+        _f["outcome"] = _outc.get(_f.get("fid"))
+    _mr_cal = lead_outcomes.calibration()
     premarket_rows = sorted(predictors + funding_events,
                             key=lambda d: d.get("_opp") or 0.0, reverse=True)
     from tool import framework_status as _fws
@@ -1699,6 +1727,7 @@ def _render_dashboard():
         radar_title=("Marketing Radar" if active_profile().key == "marketing"
                      else "Communications Radar"),
         mr_css=MR_CSS,
+        mr_cal=_mr_cal,
         mr_js=MR_JS,
         mr_bd=_mr_bd,
         mr_jobs=_mr_jobs,
@@ -1762,6 +1791,23 @@ def api_lead_status(lead_id: str):
     if not ok:
         return jsonify({"ok": False, "detail": "could not set status"}), 400
     return jsonify({"ok": True, "lead_id": lead_id, "status": status})
+
+
+@app.route("/api/lead/outcome", methods=["POST"])
+@_auth_required
+def api_lead_outcome():
+    """Record the calibration outcome (called / converted / dead, or '' to
+    clear) for a lead, with the engine snapshot that led to it."""
+    from tool import lead_outcomes
+    data = _safe_json_body()
+    lid = (data.get("id") or "").strip()
+    outcome = (data.get("outcome") or "").strip().lower()
+    if not lid:
+        return jsonify({"ok": False, "detail": "id required"}), 400
+    if not lead_outcomes.record(lid, outcome, data.get("snapshot")):
+        return jsonify({"ok": False, "detail": "invalid outcome"}), 400
+    return jsonify({"ok": True, "id": lid, "outcome": outcome,
+                    **lead_outcomes.calibration()})
 
 
 @app.route("/api/refresh", methods=["POST"])
@@ -4498,7 +4544,7 @@ TEMPLATE = r"""
     <div id="mr"></div>
   </div>
   <div class="mr-toast" id="mr-toast"></div>
-  <script>window.MR_BD={{ mr_bd|tojson }};window.MR_JOBS={{ mr_jobs|tojson }};</script>
+  <script>window.MR_BD={{ mr_bd|tojson }};window.MR_JOBS={{ mr_jobs|tojson }};window.MR_CAL={{ mr_cal|tojson }};</script>
   <script>{{ mr_js|safe }}</script>
 
   <!-- LEADS + PREDICTORS (legacy panels — hidden; retained for refresh JS) -->
