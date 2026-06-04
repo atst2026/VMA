@@ -73,3 +73,25 @@ def test_opener_synthesises_leadership_lead():
 def test_opener_falls_back_without_company():
     op = d.draft_outreach_for_predictor({"events": []})
     assert isinstance(op, str) and op  # default, never blank
+
+
+# ---- the "work it" layer flows engine -> console row -------------------
+def test_mr_lead_fields_carries_work_it_layer():
+    from datetime import datetime, timezone, timedelta
+    from tool import lead_engine as LE
+    fresh = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+    pred = {"company": "Tesco", "account_tier": "watchlist", "last_seen": fresh,
+            "events": [
+                {"trigger_key": "chro_change", "trigger_label": "CHRO change",
+                 "url": "companieshouse.gov.uk", "source": "companieshouse.gov.uk",
+                 "published": fresh, "evidence": ""},
+                {"trigger_key": "job_ad_cluster", "trigger_label": "Job-ad cluster",
+                 "url": "ft.com", "source": "ft.com", "published": fresh, "evidence": ""},
+            ]}
+    pred["lead"] = LE.score_lead(pred)
+    f = d._mr_lead_fields(pred)
+    assert f["prize"]["fee"].startswith("£")
+    assert f["competitive"]["verdict"] in ("open", "contested", "locked")
+    assert f["proof"]["angle"]
+    assert f["objection"]["likely"]
+    assert f["chaseBy"]["label"].startswith("Chase by")

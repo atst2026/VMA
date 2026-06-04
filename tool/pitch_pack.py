@@ -723,6 +723,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
       <ul style='padding-left:18px;margin:0 0 10px;'>
         <li>Exclusivity unlocks deeper passive outreach (~3× the universe a contingent firm will work)</li>
         <li>Milestone fees align our priority with yours — we're not racing six firms on the same role</li>
+        <li>If you already have a supplier: retained means a market-mapped longlist assessed against the brief, not a CV race, plus the off-limits protection and replacement guarantee an ad-hoc supplier rarely carries</li>
         <li>Senior {_NOUN} placements typically open 2–4 downstream hires ({_DOWNSTREAM_EXAMPLES}) over 12–18 months, so retained positions VMA for the full pipeline, not just the headline role</li>
       </ul>
       <div style='font-weight:600;margin:2px 0 4px;'>Why now, not when the market picks up</div>
@@ -907,6 +908,9 @@ def render_text(target: str, role: str, ch_snapshot: dict,
               "   Why retained, not contingent:",
               "   - Exclusivity unlocks ~3x the passive universe a contingent firm will work",
               "   - Milestone fees align priority — not racing six firms on the same role",
+              "   - If you already have a supplier: retained is a market-mapped longlist, not a",
+              "     CV race, with off-limits protection and a replacement guarantee an ad-hoc",
+              "     supplier rarely carries",
               f"   - Senior {_NOUN} placements open 2-4 downstream hires over 12-18 months",
               "   Why now, not when the market picks up:"]
     if trigger_context:
