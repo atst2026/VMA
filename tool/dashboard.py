@@ -3119,7 +3119,7 @@ TEMPLATE = r"""
     .rr-type { font-weight: 600; white-space: nowrap; }
     .rr-when { color: var(--text-muted); white-space: nowrap; font-size: 11.5px; }
     .rr-muted { color: var(--text-dim); }
-    .rr-acts { text-align: right; white-space: nowrap; }
+    .rr-acts { text-align: left; white-space: nowrap; }
     .rr-acts a { margin-left: 6px; }
     .rr-gen { color: var(--text-muted); font-size: 11px; font-style: italic; }
     @media (max-width: 900px) {
@@ -4125,7 +4125,7 @@ TEMPLATE = r"""
     .rr-type { font-weight: 600; white-space: nowrap; }
     .rr-when { color: var(--text-muted); white-space: nowrap; font-size: 11.5px; }
     .rr-muted { color: var(--text-dim, #aab); }
-    .rr-acts { text-align: right; white-space: nowrap; }
+    .rr-acts { text-align: left; white-space: nowrap; }
     /* Vertically centre the View button and the download icon (different
        heights) reliably, instead of relying on inline vertical-align. */
     .rr-actwrap { display: inline-flex; align-items: center; gap: 8px; vertical-align: middle; }
