@@ -1332,10 +1332,6 @@ MR_CSS = r"""
 .mr-acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:11px 0 2px}
 .mr-actbtn{display:inline-flex;align-items:center;gap:6px;font:500 11.5px/1 "Inter",sans-serif;color:var(--ink);background:#fff;border:1px solid var(--mrborder);border-radius:9px;padding:6px 11px;cursor:pointer;transition:.13s}.mr-actbtn svg{width:14px;height:14px;flex-shrink:0}.mr-actbtn:hover{background:var(--elevated);border-color:var(--dim)}
 .mr-actbtn.busy{color:var(--dim)}.mr-actbtn.done{color:#1e7a41;border-color:#bfe3cd;background:#f3faf5}
-.mr-scan{display:inline-flex;align-items:center;gap:7px;margin-left:14px;font:500 12px/1.4 "Inter",sans-serif;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:560px}
-.mr-scan .mr-scan-spk{color:var(--clay);display:inline-flex;flex-shrink:0}.mr-scan .mr-scan-spk svg{width:13px;height:13px}
-.mr-scan.typing .mr-scan-tx::after{content:"";display:inline-block;width:6px;height:12px;background:var(--clay);margin-left:2px;vertical-align:-2px;animation:mrblink .85s steps(1) infinite}
-@keyframes mrblink{50%{opacity:0}}
 .mr-playwrap:not(.on){display:none}
 .mr-playbox{min-height:1.2em}
 .mr-wb{font:600 9px/1.6 "JetBrains Mono",monospace;padding:2px 6px;border-radius:4px;background:rgba(14,40,69,.05);color:#1A3D7C;white-space:nowrap;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis}
@@ -1343,11 +1339,11 @@ MR_CSS = r"""
 .mr-newp{font:700 7.5px/1 "Inter",sans-serif;letter-spacing:.06em;color:#1d4ed8;background:#e9effb;padding:2px 4px;border-radius:3px;vertical-align:middle}
 .mr-srcl{display:inline-flex;align-items:center;gap:5px;margin-left:8px;color:var(--blue-deep);text-decoration:none;font:600 11px/1 "Inter",sans-serif;padding:4px 9px;border:1px solid var(--mrborder);border-radius:7px;background:#fff;vertical-align:middle;white-space:nowrap}.mr-srcl svg{width:13px;height:13px}.mr-srcl:hover{background:var(--blue-wash);border-color:var(--blue)}
 .mr-io{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:28px;padding:0 9px;border-radius:7px;color:var(--ink);cursor:pointer;border:1px solid var(--mrborder);background:#fff;font:600 11px/1 "Inter",sans-serif}.mr-io.icon{width:28px;padding:0}.mr-io svg{width:14px;height:14px}.mr-io:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
-.mr-io.tfu:hover{background:#e7f3ec;color:#1e7a41;border-color:#bfe3cd}.mr-io.tdis:hover{background:#fdecea;color:#c0392b;border-color:#f0c5bd}
+.mr-io.tfu:hover{background:#e7f3ec;color:#1e7a41;border-color:#bfe3cd}.mr-io.tdis:hover,.mr-io.trm:hover{background:#fdecea;color:#c0392b;border-color:#f0c5bd}
 .mr-toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:#101626;color:#fff;font:600 12px/1 "Inter",sans-serif;padding:11px 16px;border-radius:10px;box-shadow:0 8px 26px rgba(0,0,0,.2);opacity:0;transition:.25s;z-index:2000;display:flex;gap:8px;align-items:center;pointer-events:none}.mr-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}.mr-toast .mr-spk svg{width:14px;height:14px}
 @keyframes mrspin{to{transform:rotate(360deg)}}.mr-spin{display:inline-flex;width:14px;height:14px;animation:mrspin .7s linear infinite}
 .mr-aibrief .mr-gen{font-size:12.5px;color:var(--ink2);line-height:1.55}
-#mr-rows{border:1px solid var(--hairline);border-radius:13px;background:rgba(255,255,255,.62);overflow:hidden}
+#mr-rows{border:1px solid var(--hairline);border-radius:13px;background:rgba(255,255,255,.62);overflow:hidden;width:100%;box-sizing:border-box}
 .mr-rsum{display:grid;align-items:center;gap:11px}
 .mr-gbd{grid-template-columns:24px 150px 126px 158px minmax(90px,1fr) 82px 104px auto}
 .mr-gjobs{grid-template-columns:28px minmax(180px,1fr) minmax(220px,1.7fr) 160px 72px 46px auto}
@@ -1385,6 +1381,7 @@ MR_JS = r"""
     spark:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l1.7 6.3L20 12l-6.3 1.7L12 20l-1.7-6.3L4 12l6.3-1.7L12 4z"/></svg>',
     sources:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17"/><path d="M12 3.5c2.4 2.3 2.4 14.7 0 17M12 3.5c-2.4 2.3-2.4 14.7 0 17"/></svg>',
     pitch:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5z"/><path d="M13.5 3v5.5H19"/><path d="M9.2 13l.55 1.65 1.65.55-1.65.55L9.2 17.4l-.55-1.65L7 15.2l1.65-.55z" fill="currentColor" stroke="none"/></svg>',
+    trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M10 11v6M14 11v6"/></svg>',
     spin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9"/></svg>'};
   var root=document.getElementById('mr');
   if(!root) return;
@@ -1404,9 +1401,12 @@ MR_JS = r"""
   function match(l){if(filter==='active')return l.status==='active';if(filter==='new')return l.isNew&&l.status==='active';if(filter==='followed_up')return l.status==='followed_up';if(filter==='dismissed')return l.status==='dismissed';return true;}
   function sortd(a){if(page==='jobs')return a.sort(function(x,y){return (y.isNew-x.isNew)||x.co.localeCompare(y.co);});return a.sort(function(x,y){return y.opp-x.opp;});}
   function stbadge(l){return l.status!=='active'?'<span class="mr-badge-st '+l.status+'">'+(l.status==='followed_up'?'✓ followed up':'dismissed')+'</span>':'';}
-  function triBtns(l){return l.status==='active'
-    ?'<button class="mr-io icon tfu" data-act="tri" data-id="'+l._id+'" data-st="followed_up" title="Followed up">'+IC.check+'</button><button class="mr-io icon tdis" data-act="tri" data-id="'+l._id+'" data-st="dismissed" title="Dismiss">'+IC.x+'</button>'
-    :'<button class="mr-io icon" data-act="tri" data-id="'+l._id+'" data-st="active" title="Restore">'+IC.undo+'</button>';}
+  function triBtns(l){if(l.status==='active')
+    return '<button class="mr-io icon tfu" data-act="tri" data-id="'+l._id+'" data-st="followed_up" title="Followed up">'+IC.check+'</button><button class="mr-io icon tdis" data-act="tri" data-id="'+l._id+'" data-st="dismissed" title="Dismiss">'+IC.x+'</button>';
+    // Non-active: Restore, plus (BD only) Remove entirely — a permanent
+    // delete that tombstones the account so it never relists.
+    var rm=(page==='bd')?'<button class="mr-io icon trm" data-act="remove" data-id="'+l._id+'" title="Remove entirely (never relist)">'+IC.trash+'</button>':'';
+    return '<button class="mr-io icon" data-act="tri" data-id="'+l._id+'" data-st="active" title="Restore">'+IC.undo+'</button>'+rm;}
   function ab(l){return l.action?'<span class="mr-ab ab-'+l.action+'">'+esc(l.actionLabel)+'</span>':sc(l);}
   function dk(lab,val){return '<div class="mr-dk"><span class="mr-dlab">'+lab+'</span><span>'+val+'</span></div>';}
   function brief(l){
@@ -1424,7 +1424,7 @@ MR_JS = r"""
       +(anti2.length?'<span class="mr-anti">⚠ '+esc(anti2.join(' · '))+'</span>':'')+'</div>':'';
     return '<div class="mr-doss">'
       +warn
-      +dk('Why now',esc(l.why))
+      +dk('Why now',esc(l.whyNow||l.why))
       +acts
       +(l.opener?'<div class="mr-dk mr-playwrap'+(l.drafted?' on':'')+'"><span class="mr-dlab">The play</span><span class="mr-play mr-playbox">'+(l.drafted?esc(l.opener):'')+'</span></div>':'')
       +'</div>';}
@@ -1456,6 +1456,11 @@ MR_JS = r"""
     if(box._typing)return;box._typing=true;
     var t=l.opener,i=0;box.textContent='';
     (function tick(){i+=2;box.textContent=t.slice(0,i);if(i<t.length){setTimeout(tick,16);}else{box.textContent=t;box._typing=false;}})();}
+  function removeEntirely(id){var l=BYID[id];if(!l)return;
+    if(!window.confirm('Remove '+l.co+' entirely? It will be deleted from the radar and never relisted, even if a new signal fires.'))return;
+    var arr=(page==='bd'?BD:JOBS),ix=arr.indexOf(l);if(ix>=0)arr.splice(ix,1);delete BYID[id];
+    render();toast(l.co+' removed entirely');
+    fetch('/api/bd/remove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({company:l.co})}).catch(function(){});}
   function copyOutreach(id){var l=BYID[id];if(!l)return;var t=l.outreach||'';
     try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t);}
       else{var ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();document.execCommand('copy');document.body.removeChild(ta);}}catch(e){}
@@ -1468,18 +1473,6 @@ MR_JS = r"""
     setc('mr-m-dis',c(function(l){return l.status==='dismissed';}));
     var lbl={active:'Active','new':'New today',followed_up:'Followed up',dismissed:'Dismissed',all:'All'}[filter];
     setc('mr-filtlbl',lbl);}
-  function scanText(){var ds=active(),isJobs=(page==='jobs');
-    var nw=ds.filter(function(l){return l.isNew&&l.status==='active';}).length;
-    var noun=isJobs?'job':'lead';
-    var t='Scanning the market...... '+nw+' new '+noun+(nw===1?'':'s')+' found today.';
-    if(!isJobs&&nw>0){var hi=ds.filter(function(l){return l.isNew&&l.status==='active'&&(l.action==='call_today'||(+l.sig)>=6);}).length;
-      t+='  '+hi+' of them high-intent trigger'+(hi===1?'':'s')+'.';}
-    return t;}
-  function typeScan(){var e=$('mr-scan');if(!e)return;var txt=scanText();
-    if(e._t)clearTimeout(e._t);
-    e.innerHTML='<span class="mr-scan-spk">'+IC.spark+'</span><span class="mr-scan-tx"></span>';
-    var tx=e.querySelector('.mr-scan-tx'),i=0;e.classList.add('typing');
-    (function tick(){i+=1;tx.textContent=txt.slice(0,i);if(i<txt.length){e._t=setTimeout(tick,24);}else{e.classList.remove('typing');}})();}
   function render(){var arr=sortd(active().filter(match));var box=$('mr-rows');if(!box)return;
     if(!arr.length){box.innerHTML='<div class="mr-empty">Nothing here. Pick another filter.</div>';counts();return;}
     box.innerHTML=arr.map(function(l,i){return page==='bd'?bdRow(l,i):jobRow(l,i);}).join('');counts();}
@@ -1490,7 +1483,7 @@ MR_JS = r"""
     var pm=$('mr-pgmenu');if(pm){pm.classList.remove('open');var pb=pm.querySelectorAll('[data-act="pg"]');for(var i=0;i<pb.length;i++){pb[i].classList.toggle('on',pb[i].getAttribute('data-pg')===pg);}}
     var fb=document.querySelectorAll('#mr-filtmenu [data-act="filt"]');for(var j=0;j<fb.length;j++){fb[j].classList.toggle('on',fb[j].getAttribute('data-f')==='active');}
     var fm=$('mr-filtmenu');if(fm)fm.classList.remove('open');
-    render();typeScan();}
+    render();}
   function setFilter(f,btn){filter=f;var fb=document.querySelectorAll('#mr-filtmenu [data-act="filt"]');for(var i=0;i<fb.length;i++){fb[i].classList.toggle('on',fb[i]===btn);}var m=$('mr-filtmenu');if(m)m.classList.remove('open');render();}
   function triage(id,st){var l=BYID[id];if(!l)return;var prev=l.status;l.status=st;
     var row=document.querySelector('#mr-rows .mr-row[data-id="'+id+'"]');
@@ -1525,7 +1518,6 @@ MR_JS = r"""
    +'<div class="mr-filtmenu" id="mr-pgmenu">'
    +'<button data-act="pg" data-pg="bd" class="on">BD Leads</button>'
    +'<button data-act="pg" data-pg="jobs">Live Jobs</button></div></div>'
-   +'<span class="mr-scan" id="mr-scan"></span>'
    +'<span class="mr-spacer"></span>'
    +'<div class="mr-filt"><button class="mr-filtbtn" data-act="filtbtn">'+IC.funnel+'<span class="mr-lbl" id="mr-filtlbl">Active</span><span class="mr-cv">'+IC.chevd+'</span></button>'
    +'<div class="mr-filtmenu" id="mr-filtmenu">'
@@ -1539,6 +1531,7 @@ MR_JS = r"""
     var a=e.target.closest('[data-act]');if(!a||!root.contains(a))return;
     var act=a.getAttribute('data-act');var id=a.getAttribute('data-id');
     if(act==='tri'){e.stopPropagation();triage(id,a.getAttribute('data-st'));return;}
+    if(act==='remove'){e.stopPropagation();removeEntirely(id);return;}
     if(act==='pitch'){e.stopPropagation();pitch(id,a);return;}
     if(act==='viewsrc'){e.stopPropagation();viewSources(id);return;}
     if(act==='draft'){e.stopPropagation();draftOpener(id);return;}
@@ -1551,7 +1544,7 @@ MR_JS = r"""
     if(act==='filt'){e.stopPropagation();setFilter(a.getAttribute('data-f'),a);return;}
   });
   document.addEventListener('click',function(e){var inside=e.target.closest('.mr-filt');['mr-pgmenu','mr-filtmenu'].forEach(function(mid){var m=$(mid);if(m&&(!inside||!inside.contains(m)))m.classList.remove('open');});});
-  render();typeScan();
+  render();
 })();
 """
 
@@ -1697,7 +1690,6 @@ def _mr_lead_fields(row):
         return {}
     return {
         "action": L.get("action"), "actionLabel": L.get("action_label"),
-        "sig": L.get("signal"),                 # used by the scan banner's high-intent count
         "conflict": L.get("conflict") or False,
         "anti": L.get("anti_triggers") or [],
         "opener": row.get("outreach") or "",
@@ -1709,11 +1701,45 @@ def _mr_lead_fields(row):
     }
 
 
+# Why there's a hiring opportunity now — a concise demand thesis per trigger
+# (NOT a repeat of the trigger label). Desk-aware; British, no em dashes.
+def _why_now(trigger_key: str | None, mkt: bool, seat: str | None, window: str | None) -> str:
+    fn = "marketing" if mkt else "comms"
+    w = (window or "the coming weeks").strip()
+    seat = (seat or f"a senior {fn} hire").strip()
+    M = {
+        "ceo_change": f"A new CEO usually resets the {fn} function within {w}, and {seat} is often the first senior appointment, before the role is advertised.",
+        "cfo_change": f"A new CFO typically reviews IR and financial {fn}, so a senior hire tends to follow within {w}.",
+        "chro_change": f"New people leadership often reshapes internal {fn}; the senior mandate tends to follow within {w}.",
+        "chair_change": f"A new chair usually reviews board and governance {fn}, opening a senior seat within {w}.",
+        "comms_leader_departure": f"The senior {fn} seat has just been vacated, so the replacement search tends to open within {w}.",
+        "ir_director_change": f"An IR / Corporate Affairs change opens a senior {fn} mandate within {w}.",
+        "funding": f"A raise of this size funds a senior {fn} build-out, usually within {w}, with {seat} the hire that lands it.",
+        "ipo_listing": f"A listing needs senior IR and Corporate Affairs leadership in place, usually within {w}.",
+        "job_ad_cluster": f"Mid-level {fn} hiring is already underway with no senior owner yet, so the senior mandate ({seat}) tends to follow within {w}.",
+        "mna": f"Post-deal integration needs senior corporate-affairs leadership to land the change, usually within {w}.",
+        "pe_acquisition": f"A take-private typically rebuilds the {fn} leadership for the new owners within {w}.",
+        "activist_stake": f"Activist pressure forces an investor-narrative reset, opening a senior {fn} mandate within {w}.",
+        "restructure": f"A restructure reshapes the {fn} function, opening a senior seat within {w}.",
+        "crisis_event": f"A live reputational event needs a senior {fn} owner, so the permanent hire tends to follow within {w}.",
+        "regulator_action": f"Regulatory action raises the reputation-comms bar, and a senior hire tends to follow within {w}.",
+        "regulator_probe_early": f"An early regulatory probe raises the reputation-comms bar, and a senior hire often follows within {w}.",
+        "profit_warning": f"A profit warning drives an IR / Corporate Affairs reset, opening a senior seat within {w}.",
+        "contract_loss": f"A major contract loss triggers a change and stakeholder-{fn} rebuild within {w}.",
+        "ic_platform_rfp": f"An internal-comms platform re-tender usually precedes a senior internal-comms hire within {w}.",
+    }
+    return M.get(trigger_key or "") or f"This usually opens a senior {fn} mandate ({seat}) within {w}."
+
+
 def _build_mr_rows(premarket_rows, leads, role_label):
     """Project the live predictor/funding/lead data onto the flat row shape
     the Radar console renders (BD Leads + Live Jobs). Pre-sorted upstream by
     opportunity value; we just carry _opp through for a stable client sort."""
     today = datetime.now(timezone.utc).date().isoformat()
+    try:
+        _mkt = active_profile().key == "marketing"
+    except Exception:
+        _mkt = False
     bd = []
     for row in premarket_rows:
         if row.get("_kind") == "funding":
@@ -1741,6 +1767,7 @@ def _build_mr_rows(premarket_rows, leads, role_label):
                 "isNew": 1 if first_seen.startswith(today) else 0,
                 "type": "Funding", "key": "fund",
                 "seat": role_label, "why": why,
+                "whyNow": _why_now("funding", _mkt, role_label, _mr_compact_window(row.get("window"))),
                 "brief": brief or "Funding round — senior build-out likely.",
                 "url": url, "src": _mr_domain(url),
                 "win": _mr_compact_window(row.get("window")),
@@ -1766,7 +1793,9 @@ def _build_mr_rows(premarket_rows, leads, role_label):
                 "co": row.get("company") or "—",
                 "isNew": 1 if row.get("is_new") else 0,
                 "type": typ, "key": key,
-                "seat": seat, "why": why, "brief": brief,
+                "seat": seat, "why": why,
+                "whyNow": _why_now(tkey, _mkt, seat, row.get("window_label")),
+                "brief": brief,
                 "url": url, "src": _mr_domain(url),
                 "win": row.get("window_label") or "",
                 "st": _mr_st(row.get("strength")),
@@ -1876,6 +1905,13 @@ def _render_dashboard():
                             key=lambda d: d.get("_opp") or 0.0, reverse=True)
     # Entity resolution: one row per company (OQC == Oxford Quantum Circuits).
     premarket_rows = _dedupe_rows(premarket_rows)
+    # Permanent suppression: a lead "removed entirely" never relists, even if a
+    # fresh event re-detected the same company.
+    from tool import bd_tombstone
+    _tomb = bd_tombstone.get_all()
+    if _tomb:
+        premarket_rows = [r for r in premarket_rows
+                          if not bd_tombstone.is_tombstoned(r.get("company"), _tomb)]
     from tool import framework_status as _fws
     _fwst = _fws.get_statuses()
     # `status` already holds the refresh-window state (refresh_window/live);
@@ -1949,6 +1985,22 @@ def api_predictor_status(pid: str):
     predictor_status.set_status(pid, status)
     predictor_pipeline.set_status(pid, status)
     return jsonify({"ok": True, "pid": pid, "status": status})
+
+
+@app.route("/api/bd/remove", methods=["POST"])
+@_auth_required
+def api_bd_remove():
+    """Remove a BD lead ENTIRELY: tombstone the account so it never relists
+    on the radar (a harder action than dismiss, which only parks it for its
+    retention window). Suppression is by normalised company name."""
+    from tool import bd_tombstone
+    data = _safe_json_body()
+    company = (data.get("company") or "").strip()
+    if not company:
+        return jsonify({"ok": False, "detail": "company required"}), 400
+    if not bd_tombstone.add(company):
+        return jsonify({"ok": False, "detail": "could not record"}), 400
+    return jsonify({"ok": True, "company": company})
 
 
 @app.route("/api/lead/<lead_id>/status", methods=["POST"])
