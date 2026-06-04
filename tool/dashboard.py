@@ -1334,22 +1334,9 @@ MR_CSS = r"""
 .mr-dlab{font:600 8.5px/1.6 "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
 .mr-play{color:var(--ink2);background:rgba(62,92,132,.05);border-left:2px solid var(--vma);border-radius:5px;padding:7px 10px;display:block;font-size:12px;line-height:1.55}
 .mr-chase{font:700 9px/1.5 "JetBrains Mono",monospace;letter-spacing:.02em;color:#46556e;background:#edf0f4;padding:2px 7px;border-radius:6px}.mr-chase.soon{color:#b5530e;background:#fdecdb}
-.mr-vd{font:700 8.5px/1.6 "Inter",sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:6px;margin-right:7px}
-.mr-vd.vd-open{color:#1e7a41;background:#e7f3ec}.mr-vd.vd-contested{color:#8a5a00;background:#fff4e0}.mr-vd.vd-locked{color:#c0392b;background:#fdecea}
-.mr-vma{color:var(--ink2);background:rgba(26,61,124,.05);border-left:2px solid var(--blue-deep);border-radius:5px;padding:7px 10px;display:block;font-size:12px;line-height:1.55}
-.mr-obj{color:var(--ink2);background:rgba(217,119,87,.06);border-left:2px solid var(--clay);border-radius:5px;padding:7px 10px;display:block;font-size:12px;line-height:1.55}.mr-obj b{color:var(--ink)}
 .mr-basis{display:block;color:var(--dim);font:500 10.5px/1.45 "Inter",sans-serif;margin-top:3px}
-.mr-cal{display:flex;gap:8px;align-items:center;background:rgba(217,119,87,.08);border:1px solid rgba(217,119,87,.25);border-radius:11px;padding:10px 14px;margin:0 0 13px;font-size:11.5px;color:#8a4a2f;line-height:1.45}
-.mr-cal .mr-spk2{color:var(--clay);display:inline-flex;flex-shrink:0}.mr-cal .mr-spk2 svg{width:13px;height:13px}
-.mr-ocrow{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}
-.mr-oc{font:600 10px/1 "Inter",sans-serif;border:1px solid var(--mrborder);background:#fff;color:var(--ink2);border-radius:7px;padding:5px 11px;cursor:pointer;transition:.12s}.mr-oc:hover{background:var(--elevated)}
-.mr-oc.on.oc-called{background:var(--blue-wash);color:var(--blue-deep);border-color:var(--blue)}
-.mr-oc.on.oc-converted{background:#e7f3ec;color:#1e7a41;border-color:#bfe3cd}
-.mr-oc.on.oc-dead{background:#fdecea;color:#c0392b;border-color:#f0c5bd}
-.mr-prov{font:600 8px/1.6 "JetBrains Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-left:4px}
 .mr-rel{font:700 8.5px/1.6 "Inter",sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:6px}
 .mr-rel.rel-warm{color:#1e7a41;background:#e7f3ec}.mr-rel.rel-cold{color:#6b7686;background:#eef1f5}
-.mr-wholink{color:var(--blue-deep);text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:5px}.mr-wholink svg{width:11px;height:11px;opacity:.6}.mr-wholink:hover{text-decoration:underline}
 .mr-wb{font:600 9px/1.6 "JetBrains Mono",monospace;padding:2px 6px;border-radius:4px;background:rgba(14,40,69,.05);color:#1A3D7C;white-space:nowrap;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .mr-badge{font:500 10px/1.4 "Inter",sans-serif;background:var(--elevated);border:1px solid var(--mrborder);border-radius:6px;padding:3px 8px;color:var(--ink);white-space:nowrap;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .mr-newp{font:700 7.5px/1 "Inter",sans-serif;letter-spacing:.06em;color:#1d4ed8;background:#e9effb;padding:2px 4px;border-radius:3px;vertical-align:middle}
@@ -1402,7 +1389,6 @@ MR_JS = r"""
   var BD=(window.MR_BD||[]).map(function(l,i){l._id='b'+i;l.opp=+l.opp||0;l.status=l.status||'active';return l;});
   var JOBS=(window.MR_JOBS||[]).map(function(l,i){l._id='j'+i;l.idtype='job';l.status=l.status||'active';return l;});
   var BYID={};BD.concat(JOBS).forEach(function(l){BYID[l._id]=l;});
-  var CAL=window.MR_CAL||{};
   var page='bd',filter='active',open={};
   function $(id){return document.getElementById(id);}
   function esc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -1421,24 +1407,11 @@ MR_JS = r"""
     :'<button class="mr-io icon" data-act="tri" data-id="'+l._id+'" data-st="active" title="Restore">'+IC.undo+'</button>';}
   function ab(l){return l.action?'<span class="mr-ab ab-'+l.action+'">'+esc(l.actionLabel)+'</span>':sc(l);}
   function dk(lab,val){return '<div class="mr-dk"><span class="mr-dlab">'+lab+'</span><span>'+val+'</span></div>';}
-  function vd(c){var m={open:'Open lane',contested:'Contested',locked:'Locked'};return c&&c.verdict?'<span class="mr-vd vd-'+c.verdict+'">'+(m[c.verdict]||c.verdict)+'</span>':'';}
-  function renderCal(){var e=$('mr-cal');if(!e)return;
-    if(CAL.calibrating){e.style.display='';e.innerHTML='<span class="mr-spk2">'+IC.spark+'</span> Calibrating — scores are provisional defaults until ~'+(CAL.target||50)+' outcomes are logged ('+(CAL.logged||0)+' so far). Mark Called / Converted / Dead on a lead to teach the model.';}
-    else{e.style.display='none';}}
-  function ocBtns(l){var cur=l.outcome||'';
-    function b(o,lab){return '<button class="mr-oc'+(cur===o?' on oc-'+o:'')+'" data-act="outc" data-id="'+l._id+'" data-oc="'+o+'">'+lab+'</button>';}
-    return dk('Outcome','<span class="mr-ocrow">'+b('called','Called')+b('converted','Converted')+b('dead','Dead')+'<span class="mr-prov">weights provisional</span></span>');}
-  function mrOutcome(id,oc){var l=BYID[id];if(!l)return;var prev=l.outcome||'';var next=(prev===oc?'':oc);l.outcome=next;render();
-    var snap={co:l.co,fit:l.fit,signal:l.sig,action:l.action,corroboration:l.corro,triggers:(l.stack||[]).map(function(t){return {label:t.label,confidence:t.confidence};})};
-    fetch('/api/lead/outcome',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:l.rid,outcome:next,snapshot:snap})})
-      .then(function(r){return r.json();}).then(function(j){if(j&&j.ok){if(typeof j.logged==='number'){CAL.logged=j.logged;CAL.calibrating=j.calibrating;renderCal();}toast(l.co+(next?(' marked '+next):' outcome cleared'));}else{l.outcome=prev;render();}})
-      .catch(function(){l.outcome=prev;render();});}
   function brief(l){
     var b=l.brief||(l.seat+' likely within '+l.win+'.');
     if(!l.action) return '<div class="mr-gen2">'+esc(b)+' '+srcl(l)+'</div>';
     var stack=(l.stack||[]).map(function(t){var inner=esc(t.label)+(t.confidence?' <i>'+t.confidence+'</i>':'')+(t.age!=null?' <em>'+t.age+'d</em>':'');
       return t.url?'<a class="mr-st1 lk" href="'+esc(t.url)+'" target="_blank" rel="noopener" title="'+esc(t.src||'source')+'">'+inner+' '+IC.ext+'</a>':'<span class="mr-st1">'+inner+'</span>';}).join('');
-    var who=l.whoToCall?(l.whoUrl?'<a class="mr-wholink" href="'+esc(l.whoUrl)+'" target="_blank" rel="noopener">'+esc(l.whoToCall)+' '+IC.ext+'</a>':esc(l.whoToCall)):'';
     var anti2=(l.anti||[]).filter(function(x){return x!=='competing_recruiter';});
     return '<div class="mr-doss">'
       +'<div class="mr-drow"><span class="mr-ab ab-'+l.action+'">'+esc(l.actionLabel)+'</span>'
@@ -1446,21 +1419,14 @@ MR_JS = r"""
       +(l.corro?'<span class="mr-lm">'+l.corro+' signal'+(l.corro>1?'s':'')+'</span>':'')
       +(l.conflict?'<span class="mr-anti">⚠ competing recruiter</span>':'')
       +(l.relationship?'<span class="mr-rel rel-'+l.relationship+'">'+l.relationship+'</span>':'')
-      +(l.scale?'<span class="mr-lm">'+esc(l.scale)+'</span>':'')
       +(l.prize&&l.prize.fee?'<span class="mr-lm" title="'+esc(l.prize.summary||'')+'">Prize <b>'+esc(l.prize.fee)+'</b></span>':'')
       +(l.chaseBy&&l.chaseBy.label?'<span class="mr-chase'+(l.chaseBy.days<=3?' soon':'')+'" title="'+esc(l.chaseBy.rationale||'')+'">'+esc(l.chaseBy.label)+'</span>':'')
       +(anti2.length?'<span class="mr-anti">⚠ '+esc(anti2.join(' · '))+'</span>':'')+'</div>'
-      +dk('Why now',esc(l.why)+' '+srcl(l))
+      +dk('Why now',esc(l.why))
       +(stack?dk('Evidence','<span class="mr-stack">'+stack+'</span>'):'')
       +(l.prize&&l.prize.summary?dk('Prize',esc(l.prize.summary)+'<span class="mr-basis">'+esc(l.prize.basis||'')+'</span>'):'')
-      +(who?dk('Who to call',who):'')
-      +(l.competitive&&l.competitive.summary?dk('Competitive',vd(l.competitive)+esc(l.competitive.summary)):'')
-      +(l.access?dk('Access',esc(l.access)):'')
       +(l.fitWhy?dk('Fit',esc(l.fitWhy)):'')
-      +(l.proof&&l.proof.angle?dk('Why VMA','<span class="mr-vma">'+esc(l.proof.angle)+(l.proof.vs_incumbent?' '+esc(l.proof.vs_incumbent):'')+'</span>'):'')
       +(l.opener?dk('The play','<span class="mr-play">'+esc(l.opener)+'</span>'):'')
-      +(l.objection&&l.objection.likely?dk('If they push back','<span class="mr-obj"><b>"'+esc(l.objection.likely)+'"</b> '+esc(l.objection.counter)+'</span>'):'')
-      +ocBtns(l)
       +'</div>';}
   function bdRow(l,idx){var top=(idx===0&&filter==='active');
     return '<div class="mr-row '+(open[l._id]?'open ':'')+(top?'top':'')+'" data-id="'+l._id+'">'
@@ -1542,7 +1508,6 @@ MR_JS = r"""
    +'<button data-act="filt" data-f="followed_up">Followed up <span class="mr-mc" id="mr-m-fu"></span></button>'
    +'<button data-act="filt" data-f="dismissed">Dismissed <span class="mr-mc" id="mr-m-dis"></span></button>'
    +'<button data-act="filt" data-f="all">All</button></div></div></div>'
-   +'<div class="mr-cal" id="mr-cal" style="display:none"></div>'
    +'<div id="mr-rows"></div>';
   root.addEventListener('click',function(e){
     var a=e.target.closest('[data-act]');if(!a||!root.contains(a))return;
@@ -1555,11 +1520,10 @@ MR_JS = r"""
     if(act==='pg'){e.stopPropagation();setPage(a.getAttribute('data-pg'));return;}
     if(act==='pgbtn'){e.stopPropagation();var pm=$('mr-pgmenu');if(pm)pm.classList.toggle('open');var fm0=$('mr-filtmenu');if(fm0)fm0.classList.remove('open');return;}
     if(act==='filtbtn'){e.stopPropagation();var m=$('mr-filtmenu');if(m)m.classList.toggle('open');var pm0=$('mr-pgmenu');if(pm0)pm0.classList.remove('open');return;}
-    if(act==='outc'){e.stopPropagation();mrOutcome(id,a.getAttribute('data-oc'));return;}
     if(act==='filt'){e.stopPropagation();setFilter(a.getAttribute('data-f'),a);return;}
   });
   document.addEventListener('click',function(e){var inside=e.target.closest('.mr-filt');['mr-pgmenu','mr-filtmenu'].forEach(function(mid){var m=$(mid);if(m&&(!inside||!inside.contains(m)))m.classList.remove('open');});});
-  renderCal();render();
+  render();
 })();
 """
 
@@ -1697,19 +1661,13 @@ def _mr_lead_fields(row):
         "action": L.get("action"), "actionLabel": L.get("action_label"),
         "fit": L.get("fit"), "fitBand": L.get("fit_band"), "fitWhy": L.get("fit_why"),
         "sig": L.get("signal"), "sigBand": L.get("signal_band"),
-        "access": L.get("access_text"), "whoToCall": L.get("who_to_call"),
-        "whoUrl": L.get("who_url") or "", "relationship": L.get("relationship"),
-        "scale": L.get("scale"), "conflict": L.get("conflict") or False,
+        "relationship": L.get("relationship"),
+        "conflict": L.get("conflict") or False,
         "corro": L.get("corroboration"),
         "anti": L.get("anti_triggers") or [],
-        "outcome": row.get("outcome") or "",
         "opener": row.get("outreach") or "",
-        # The "work it" layer: deal size, competitive position, why-VMA proof,
-        # the likely objection, and a chase-by date (lead_engine).
+        # Kept "work it" elements: deal size + a chase-by date.
         "prize": L.get("prize") or {},
-        "competitive": L.get("competitive") or {},
-        "proof": L.get("proof") or {},
-        "objection": L.get("objection") or {},
         "chaseBy": L.get("chase_by") or {},
         "stack": [{"label": t.get("label"), "confidence": t.get("confidence"),
                    "age": t.get("age_days"), "url": t.get("url") or "",

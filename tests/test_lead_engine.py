@@ -291,71 +291,6 @@ def test_prize_uses_desk_noun():
     assert "marketing" in mkt["mix"]
 
 
-# ---- competitive context ----------------------------------------------
-def test_competitive_open_and_psl_honestly_unknown():
-    c = LE.score_lead(_pred(events=[_ev("ceo_change", 1)]))["competitive"]
-    assert c["verdict"] == "open"
-    assert "unknown" in c["psl"].lower()          # never asserts PSL it can't know
-    assert "confirm" in c["summary"].lower()
-
-
-def test_competitive_locked_on_incumbent_language():
-    c = LE.score_lead(_pred(events=[
-        _ev("chro_change", 1, evidence="the search is exclusively retained by a rival agency")
-    ]))["competitive"]
-    assert c["verdict"] == "locked"
-    assert "incumbent" in c["incumbent"].lower()
-
-
-def test_competitive_contested_on_in_house_team():
-    c = LE.score_lead(_pred(events=[
-        _ev("funding", 1, url="ft.com", evidence="built a 20-person in-house comms team")
-    ]))["competitive"]
-    assert c["verdict"] == "contested"
-    assert "in-house" in c["internal_ta"].lower()
-
-
-def test_competitive_reads_seeded_psl_flag():
-    item = _pred(events=[_ev("ceo_change", 1)])
-    item["psl_status"] = "on"
-    c = LE.score_lead(item)["competitive"]
-    assert "PSL" in c["psl"] and "on" in c["psl"].lower()
-
-
-# ---- the proof (why VMA) ----------------------------------------------
-def test_proof_prompts_a_comparable_placement_not_a_fabricated_one():
-    p = LE.score_lead(_pred(events=[_ev("ceo_change", 1)]))["proof"]
-    assert "comparable" in p["angle"].lower()     # prompts, never invents
-    assert "comms" in p["angle"].lower()
-    assert p["vs_incumbent"]
-
-
-def test_proof_sharpens_against_an_incumbent():
-    p = LE.score_lead(_pred(events=[
-        _ev("chro_change", 1, evidence="exclusively retained by a rival agency")
-    ]))["proof"]
-    assert "off-limits" in p["vs_incumbent"].lower() or "passive" in p["vs_incumbent"].lower()
-
-
-# ---- the objection it will hit ----------------------------------------
-def test_objection_in_house_for_cold_leadership_lead():
-    o = LE.score_lead(_pred(events=[_ev("ceo_change", 1)]))["objection"]
-    assert "in-house" in o["likely"].lower()
-    assert o["counter"]
-
-
-def test_objection_handles_incumbent_first():
-    o = LE.score_lead(_pred(events=[
-        _ev("chro_change", 1, evidence="exclusively retained by a rival agency")
-    ]))["objection"]
-    assert "agency" in o["likely"].lower()
-
-
-def test_objection_is_desk_aware():
-    o = LE.score_lead(_pred(events=[_ev("ceo_change", 1)]), desk="marketing")["objection"]
-    assert "marketing" in o["likely"].lower()
-
-
 # ---- chase-by date -----------------------------------------------------
 def test_chase_by_is_within_a_week_for_a_fast_signal():
     cb = LE.score_lead(_pred(events=[_ev("funding", 1, url="ft.com")]))["chase_by"]
@@ -380,19 +315,16 @@ def test_work_it_fields_present_for_both_desks():
     for desk in ("comms", "marketing"):
         lead = LE.score_lead(_pred(events=[_ev("chro_change", 1),
                                            _ev("job_ad_cluster", 1, url="ft.com")]), desk=desk)
-        for key in ("prize", "competitive", "proof", "objection", "chase_by"):
+        for key in ("prize", "chase_by"):
             assert lead[key], f"{key} missing for {desk}"
 
 
 def test_work_it_copy_has_no_em_dashes():
     lead = LE.score_lead(_pred(events=[
-        _ev("chro_change", 1, evidence="exclusively retained by a rival agency"),
+        _ev("chro_change", 1),
         _ev("job_ad_cluster", 1, url="ft.com")]))
     blob = " ".join([
         lead["prize"]["summary"], lead["prize"]["basis"],
-        lead["competitive"]["summary"],
-        lead["proof"]["angle"], lead["proof"]["vs_incumbent"],
-        lead["objection"]["likely"], lead["objection"]["counter"],
         lead["chase_by"]["rationale"],
     ])
     assert "—" not in blob and "–" not in blob

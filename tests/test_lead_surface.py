@@ -91,7 +91,7 @@ def test_mr_lead_fields_carries_work_it_layer():
     pred["lead"] = LE.score_lead(pred)
     f = d._mr_lead_fields(pred)
     assert f["prize"]["fee"].startswith("£")
-    assert f["competitive"]["verdict"] in ("open", "contested", "locked")
-    assert f["proof"]["angle"]
-    assert f["objection"]["likely"]
     assert f["chaseBy"]["label"].startswith("Chase by")
+    # the removed "fodder" fields no longer ship to the client
+    for gone in ("competitive", "proof", "objection", "whoToCall", "access", "scale", "outcome"):
+        assert gone not in f
