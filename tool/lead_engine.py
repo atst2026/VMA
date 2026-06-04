@@ -57,6 +57,37 @@ _COMMS_TAXONOMY = {
     "press_velocity_spike":    (1, "soft", "fast"),
     "personal_brand_velocity": (1, "soft", "slow"),
 }
+
+# Marketing desk taxonomy. Same trigger detection, different conversion logic:
+# growth/brand mandates fire hardest on funding (growth budget), a CMO change
+# and a job-ad cluster; corporate-comms-only triggers (IR/regulator) are
+# down-weighted. Stress-tested against the same anti-triggers + corroboration
+# gate as comms (see tests).
+_MKT_TAXONOMY = {
+    "comms_leader_departure":  (5, "leadership", "slow"),   # CMO / brand-lead change
+    "chro_change":             (5, "leadership", "slow"),
+    "ceo_change":              (4, "leadership", "slow"),
+    "cfo_change":              (3, "leadership", "slow"),    # ROI / efficiency marketing
+    "chair_change":            (1, "leadership", "slow"),
+    "ir_director_change":      (1, "leadership", "slow"),
+    "funding":                 (6, "demand", "fast"),        # marketing master demand trigger
+    "ipo_listing":             (5, "demand", "fast"),
+    "job_ad_cluster":          (5, "demand", "fast"),
+    "profit_warning":          (4, "demand", "fast"),        # demand-gen / ROI drive
+    "mna":                     (3, "demand", "fast"),
+    "pe_acquisition":          (3, "demand", "fast"),
+    "restructure":             (3, "demand", "fast"),
+    "crisis_event":            (3, "demand", "fast"),
+    "activist_stake":          (2, "demand", "fast"),
+    "regulator_action":        (2, "demand", "fast"),
+    "regulator_probe_early":   (1, "demand", "fast"),
+    "contract_loss":           (2, "demand", "fast"),
+    "ic_platform_rfp":         (2, "access", "fast"),
+    "ned_trustee_appointment": (1, "soft", "slow"),
+    "press_velocity_spike":    (1, "soft", "fast"),
+    "personal_brand_velocity": (1, "soft", "slow"),
+}
+
 _SOFT_CAP = 2.0          # soft modifiers add at most +2, and only alongside a real signal
 _SIGNAL_HIGH = 6.0       # effective-points threshold for "High SIGNAL"
 _FIT_HIGH = 7            # 0-10 threshold for "High FIT"
@@ -102,6 +133,31 @@ _WHO = {
     "contract_loss": "CEO office / Corporate Affairs",
 }
 _WHO_DEFAULT = "CHRO / Head of Comms"
+
+# Marketing-desk buyer map. Defaults to the functional buyer (CMO / Marketing
+# Director); a named, mapped contact (seeded_contact) always wins over this.
+_MKT_WHO = {
+    "funding": "CEO / CFO (or CMO if appointed)",
+    "ipo_listing": "CFO / CMO",
+    "ceo_change": "Incoming CEO's office / CMO",
+    "comms_leader_departure": "CEO office / CMO",
+    "chro_change": "CHRO / CMO",
+    "cfo_change": "CFO (ROI / efficiency)",
+    "job_ad_cluster": "CMO / Marketing Director",
+    "profit_warning": "CFO / CMO",
+    "mna": "Brand / Integration Director",
+    "pe_acquisition": "Deal team / incoming CMO",
+    "restructure": "CMO / Transformation lead",
+    "crisis_event": "CMO / Corporate Affairs",
+}
+_MKT_WHO_DEFAULT = "CMO / Marketing Director"
+
+
+def _tables(desk: str):
+    """(taxonomy, who_map, who_default) for the desk."""
+    if (desk or "comms").lower() == "marketing":
+        return _MKT_TAXONOMY, _MKT_WHO, _MKT_WHO_DEFAULT
+    return _COMMS_TAXONOMY, _WHO, _WHO_DEFAULT
 
 
 def _age_days(iso: str | None, fallback: str | None = None) -> float:
@@ -201,7 +257,7 @@ def fit_score(company: str, account_tier: str) -> tuple[int, str, str]:
     return pts, band, why
 
 
-def _signal(events: list[dict], fallback_date: str | None):
+def _signal(events: list[dict], fallback_date: str | None, taxonomy: dict):
     """Layer 1-3 — SIGNAL = sum of raw_pts x recency x confidence, soft
     modifiers capped and gated on at least one real signal."""
     independent = len({(e.get("url") or e.get("source") or "").lower()
@@ -210,7 +266,7 @@ def _signal(events: list[dict], fallback_date: str | None):
     soft = 0.0
     triggers = []
     for e in events:
-        spec = _COMMS_TAXONOMY.get(e.get("trigger_key"))
+        spec = taxonomy.get(e.get("trigger_key"))
         if not spec:
             continue
         pts, family, decay = spec
@@ -270,10 +326,11 @@ _ACTION_LABEL = {
 }
 
 
-def _who_to_call(triggers, seeded, seeded_role):
+def _who_to_call(triggers, seeded, seeded_role, who_map, who_default):
+    # A named, mapped functional contact always wins over the generic buyer.
     if seeded:
         return seeded + (f" ({seeded_role})" if seeded_role else "")
-    return _WHO.get(triggers[0]["key"], _WHO_DEFAULT) if triggers else _WHO_DEFAULT
+    return who_map.get(triggers[0]["key"], who_default) if triggers else who_default
 
 
 def _route(fit_pts: int, signal: float, cap: bool, corroborated: bool) -> str:
@@ -295,11 +352,13 @@ def _route(fit_pts: int, signal: float, cap: bool, corroborated: bool) -> str:
     return "monitor"
 
 
-def score_lead(item: dict, kind: str = "predictor") -> dict:
+def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict:
     """Score one BD lead on the two-axis model. `item` is a persisted
-    predictor dict, or a funding event when kind='funding'. Returns the
-    `lead` sub-dict; never raises (returns a safe default on bad input)."""
+    predictor dict, or a funding event when kind='funding'. `desk` selects the
+    comms / marketing taxonomy + buyer map. Returns the `lead` sub-dict; never
+    raises (returns a safe default on bad input)."""
     try:
+        taxonomy, who_map, who_default = _tables(desk)
         company = (item.get("company") or "").strip()
         if kind == "funding":
             events = [{
@@ -321,7 +380,7 @@ def score_lead(item: dict, kind: str = "predictor") -> dict:
             linkedin = item.get("linkedin_profile_url")
 
         fit_pts, fit_band, fit_why = fit_score(company, account_tier)
-        signal, triggers = _signal(events, fallback)
+        signal, triggers = _signal(events, fallback, taxonomy)
         anti_flags, anti_mult, cap = _anti_triggers(events)
         signal = round(signal * anti_mult, 2)
         # Corroboration gate: 2+ independent sources OR one Tier-1 verified
@@ -340,7 +399,8 @@ def score_lead(item: dict, kind: str = "predictor") -> dict:
             "action": action, "action_label": _ACTION_LABEL[action],
             "access": access_key, "access_text": access_text,
             "who_to_call": _who_to_call(triggers, seeded,
-                                        item.get("seeded_contact_role")),
+                                        item.get("seeded_contact_role"),
+                                        who_map, who_default),
             "corroboration": len(triggers), "corroborated": corroborated,
             "anti_triggers": anti_flags,
             "triggers": triggers,

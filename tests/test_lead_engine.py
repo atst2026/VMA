@@ -152,6 +152,33 @@ def test_dossier_fields_present():
     assert lead["fit_why"].startswith(("Core", "Adjacent", "Out"))
 
 
+# ---- MARKETING desk port ----
+def test_marketing_funding_outweighs_comms():
+    ev = [_ev("funding", 1, url="ft.com")]
+    comms = LE.score_lead(_pred(events=ev), desk="comms")
+    mkt = LE.score_lead(_pred(events=ev), desk="marketing")
+    assert mkt["signal"] > comms["signal"]   # funding = 6 for marketing vs 5 comms
+
+
+def test_marketing_who_to_call_is_marketing_buyer():
+    lead = LE.score_lead(_pred(events=[_ev("job_ad_cluster", 1)]), desk="marketing")
+    assert "CMO" in lead["who_to_call"] or "Marketing" in lead["who_to_call"]
+
+
+def test_marketing_anti_triggers_still_apply():
+    inhouse = LE.score_lead(_pred(events=[
+        _ev("funding", 1, url="companieshouse.gov.uk", evidence="grew a 30-person in-house marketing team"),
+        _ev("job_ad_cluster", 1, url="ft.com")]), desk="marketing")
+    assert "in_house_team" in inhouse["anti_triggers"]
+
+
+def test_marketing_corroboration_gate_still_applies():
+    same = LE.score_lead(_pred(events=[_ev("funding", 1, url="ft.com"),
+                                       _ev("job_ad_cluster", 1, url="ft.com")]), desk="marketing")
+    assert same["corroborated"] is False
+    assert same["action"] != "call_today"
+
+
 # ---- FUNDING kind ----
 def test_funding_event_synthesises_demand_trigger():
     lead = LE.score_lead({"company": "Monzo", "amount": "£430m", "round": "Series I",

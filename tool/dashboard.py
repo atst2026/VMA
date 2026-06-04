@@ -1274,7 +1274,8 @@ MR_CSS = r"""
 .mr-anti{font:700 9px/1.5 "Inter",sans-serif;color:#c0392b;background:#fdecea;padding:2px 7px;border-radius:6px}
 .mr-laccess{font-size:11.5px;color:var(--blue-deep);background:rgba(62,92,132,.05);border-left:2px solid var(--vma);border-radius:5px;padding:6px 9px;margin:4px 0 8px}
 .mr-stack{display:flex;flex-wrap:wrap;gap:6px}
-.mr-st1{font:600 9.5px/1.5 "JetBrains Mono",monospace;background:rgba(16,22,38,.05);color:var(--ink2);padding:3px 8px;border-radius:6px}.mr-st1 i{color:var(--dim);font-style:normal}.mr-st1 em{color:var(--dim);font-style:normal}
+.mr-st1{display:inline-flex;align-items:center;gap:4px;font:600 9.5px/1.5 "JetBrains Mono",monospace;background:rgba(16,22,38,.05);color:var(--ink2);padding:3px 8px;border-radius:6px}.mr-st1 i{color:var(--dim);font-style:normal}.mr-st1 em{color:var(--dim);font-style:normal}
+.mr-st1.lk{text-decoration:none;cursor:pointer}.mr-st1.lk:hover{background:var(--blue-wash);color:var(--blue-deep)}.mr-st1.lk svg{width:10px;height:10px;opacity:.55}
 .mr-gen2{font-size:12.5px;color:var(--ink2);line-height:1.55}
 .mr-doss{display:flex;flex-direction:column;gap:8px;padding-top:2px}
 .mr-drow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:2px}
@@ -1354,7 +1355,8 @@ MR_JS = r"""
   function brief(l){
     var b=l.brief||(l.seat+' likely within '+l.win+'.');
     if(!l.action) return '<div class="mr-gen2">'+esc(b)+' '+srcl(l)+'</div>';
-    var stack=(l.stack||[]).map(function(t){return '<span class="mr-st1">'+esc(t.label)+(t.confidence?' <i>'+t.confidence+'</i>':'')+(t.age!=null?' <em>'+t.age+'d</em>':'')+'</span>';}).join('');
+    var stack=(l.stack||[]).map(function(t){var inner=esc(t.label)+(t.confidence?' <i>'+t.confidence+'</i>':'')+(t.age!=null?' <em>'+t.age+'d</em>':'');
+      return t.url?'<a class="mr-st1 lk" href="'+esc(t.url)+'" target="_blank" rel="noopener" title="'+esc(t.src||'source')+'">'+inner+' '+IC.ext+'</a>':'<span class="mr-st1">'+inner+'</span>';}).join('');
     return '<div class="mr-doss">'
       +'<div class="mr-drow"><span class="mr-ab ab-'+l.action+'">'+esc(l.actionLabel)+'</span>'
       +'<span class="mr-lm">Fit <b>'+l.fit+'/10</b></span><span class="mr-lm">Signal <b>'+l.sig+'</b></span>'
@@ -1534,7 +1536,8 @@ def _mr_lead_fields(row):
         "anti": L.get("anti_triggers") or [],
         "opener": (row.get("outreach") or "")[:320],
         "stack": [{"label": t.get("label"), "confidence": t.get("confidence"),
-                   "age": t.get("age_days")}
+                   "age": t.get("age_days"), "url": t.get("url") or "",
+                   "src": _mr_domain(t.get("url")) or (t.get("source") or "")}
                   for t in (L.get("triggers") or [])[:4]],
     }
 
@@ -1662,16 +1665,15 @@ def _render_dashboard():
         _p["_kind"] = "predictor"
     for _f in funding_events:
         _f["_kind"] = "funding"
-    # Two-axis Fit x Signal scoring (lead_engine). Comms desk only for now —
-    # the marketing taxonomy is a separate table; marketing rows keep the
-    # legacy strength. Additive: attaches a `lead` sub-dict, changes nothing
-    # else about ordering or the existing fields.
-    if active_profile().key != "marketing":
-        from tool import lead_engine
-        for _p in predictors:
-            _p["lead"] = lead_engine.score_lead(_p, "predictor")
-        for _f in funding_events:
-            _f["lead"] = lead_engine.score_lead(_f, "funding")
+    # Two-axis Fit x Signal scoring (lead_engine), desk-aware (comms +
+    # marketing taxonomies). Additive: attaches a `lead` sub-dict, changes
+    # nothing else about ordering or the existing fields.
+    from tool import lead_engine
+    _desk = active_profile().key
+    for _p in predictors:
+        _p["lead"] = lead_engine.score_lead(_p, "predictor", _desk)
+    for _f in funding_events:
+        _f["lead"] = lead_engine.score_lead(_f, "funding", _desk)
     premarket_rows = sorted(predictors + funding_events,
                             key=lambda d: d.get("_opp") or 0.0, reverse=True)
     from tool import framework_status as _fws
