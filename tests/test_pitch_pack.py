@@ -299,6 +299,19 @@ def test_cov_labels_are_evidenced():
     assert "conservative 30%" in keys                          # bad-hire floor framed
 
 
+def test_consumer_promo_news_is_filtered_out():
+    # The exact Costa Coffee case: a deals/clickbait piece that names the brand
+    # must never reach the pack's "Recent market context".
+    from tool.pitch_pack import _is_strategic_headline
+    assert not _is_strategic_headline("How to claim a free Costa coffee using little-known trick")
+    assert not _is_strategic_headline("Best coffee deals this week and a secret menu hack")
+    assert not _is_strategic_headline("Win a year of free coffee in our giveaway")
+    # Legitimate corporate coverage still passes (incl. the financial term
+    # "free cash flow", which must NOT be mistaken for a "free coffee" promo).
+    assert _is_strategic_headline("Costa Coffee appoints new chief executive")
+    assert _is_strategic_headline("Costa Coffee full-year results show free cash flow rise")
+
+
 def test_salary_hedged_when_unsourced():
     html, _ = _render("Diageo", role="Head of Internal Communications")
     assert "confirm against VMA's latest salary benchmarking" in html

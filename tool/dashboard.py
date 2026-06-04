@@ -1289,7 +1289,7 @@ def index():
 # ---------------------------------------------------------------------------
 
 MR_CSS = r"""
-.mr-wrap{max-width:1160px;margin:0 auto;
+.mr-wrap{max-width:1160px;width:100%;margin:0 auto;
   --ink:#101626;--ink2:#3C4043;--muted:#5a6577;--dim:#9AA0A6;--vma:#3E5C84;
   --blue:#4285F4;--blue-deep:#1A3D7C;--blue-wash:#E8F0FE;--clay:#D97757;
   --hairline:rgba(16,22,38,.07);--elevated:#F4F7FC;--mrborder:rgba(60,64,67,.12)}
@@ -4126,8 +4126,9 @@ TEMPLATE = r"""
     .rr-when { color: var(--text-muted); white-space: nowrap; font-size: 11.5px; }
     .rr-muted { color: var(--text-dim, #aab); }
     .rr-acts { text-align: right; white-space: nowrap; }
-    .rr-acts a { vertical-align: middle; }
-    .rr-acts a + a { margin-left: 8px; }
+    /* Vertically centre the View button and the download icon (different
+       heights) reliably, instead of relying on inline vertical-align. */
+    .rr-actwrap { display: inline-flex; align-items: center; gap: 8px; vertical-align: middle; }
     .rr-gen { color: var(--text-muted); font-size: 10.5px; font-style: italic; }
 
     .action-card label {
@@ -6632,7 +6633,7 @@ async function loadRecentReports() {
         '<td>' + (x.company && x.company !== '—' ? esc(x.company) : '<span class="rr-muted">—</span>') + '</td>' +
         '<td>' + (x.name ? esc(x.name) : '<span class="rr-muted">—</span>') + '</td>' +
         '<td class="rr-when">' + esc(ago) + '</td>' +
-        '<td class="rr-acts">' + acts + '</td></tr>'
+        '<td class="rr-acts"><span class="rr-actwrap">' + acts + '</span></td></tr>'
       );
     }
     out.push('</tbody></table>');
