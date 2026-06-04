@@ -263,33 +263,9 @@ def test_chro_buyer_is_comms_owner_not_just_chro():
 
 
 # ====================================================================
-# The "work it" layer — what an AD needs to CONVERT, not just open.
+# The "work it" layer — a chase-by date so a decaying lead gets a
+# follow-up date instead of sitting in the queue.
 # ====================================================================
-
-# ---- size of the prize -------------------------------------------------
-def test_prize_cluster_is_multi_role_with_fee():
-    lead = LE.score_lead(_pred(events=[_ev("chro_change", 1),
-                                       _ev("job_ad_cluster", 1, url="ft.com")]))
-    pz = lead["prize"]
-    assert pz["roles"] >= 3                       # 1 senior + 2+ mid-level
-    assert "mid-level" in pz["mix"]
-    assert pz["fee"].startswith("£") and "k" in pz["fee"]
-    assert pz["fee_high"] > pz["fee_low"] > 0
-    assert "indicative" in pz["summary"].lower()
-
-
-def test_prize_single_search_when_no_cluster():
-    pz = LE.score_lead(_pred(events=[_ev("ceo_change", 1)]))["prize"]
-    assert pz["roles"] == 1
-    assert "single senior" in pz["mix"]
-
-
-def test_prize_uses_desk_noun():
-    comms = LE.score_lead(_pred(events=[_ev("job_ad_cluster", 1)]), desk="comms")["prize"]
-    mkt = LE.score_lead(_pred(events=[_ev("job_ad_cluster", 1)]), desk="marketing")["prize"]
-    assert "comms" in comms["mix"]
-    assert "marketing" in mkt["mix"]
-
 
 # ---- chase-by date -----------------------------------------------------
 def test_chase_by_is_within_a_week_for_a_fast_signal():
@@ -311,20 +287,9 @@ def test_chase_by_lapsed_signal_still_gets_a_near_term_date():
 
 
 # ---- presence + no em dashes (house style) across both desks ----------
-def test_work_it_fields_present_for_both_desks():
+def test_chase_by_present_for_both_desks():
     for desk in ("comms", "marketing"):
         lead = LE.score_lead(_pred(events=[_ev("chro_change", 1),
                                            _ev("job_ad_cluster", 1, url="ft.com")]), desk=desk)
-        for key in ("prize", "chase_by"):
-            assert lead[key], f"{key} missing for {desk}"
-
-
-def test_work_it_copy_has_no_em_dashes():
-    lead = LE.score_lead(_pred(events=[
-        _ev("chro_change", 1),
-        _ev("job_ad_cluster", 1, url="ft.com")]))
-    blob = " ".join([
-        lead["prize"]["summary"], lead["prize"]["basis"],
-        lead["chase_by"]["rationale"],
-    ])
-    assert "—" not in blob and "–" not in blob
+        assert lead["chase_by"], f"chase_by missing for {desk}"
+        assert "—" not in lead["chase_by"]["rationale"]

@@ -1314,7 +1314,7 @@ MR_CSS = r"""
 .mr-filtmenu{display:none;position:absolute;top:calc(100% + 6px);right:0;background:#fff;border:1px solid var(--mrborder);border-radius:11px;box-shadow:0 10px 28px rgba(31,55,124,.14);padding:6px;min-width:196px;z-index:20}.mr-filtmenu.open{display:block}
 .mr-filtmenu button{display:flex;width:100%;align-items:center;gap:8px;border:none;background:transparent;font:600 12px/1 "Inter",sans-serif;color:var(--ink2);padding:9px 10px;border-radius:8px;cursor:pointer;text-align:left}.mr-filtmenu button:hover{background:var(--elevated)}.mr-filtmenu button.on{background:var(--blue-wash);color:var(--blue-deep)}
 .mr-filtmenu .mr-mc{margin-left:auto;font:600 9px/1 "JetBrains Mono",monospace;background:rgba(31,31,31,.07);color:var(--ink2);padding:2px 6px;border-radius:9999px}.mr-filtmenu button.on .mr-mc{background:#fff;color:var(--blue-deep)}
-.mr-tp{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:7px;font:600 10.5px/1.5 "Inter",sans-serif;white-space:nowrap}.mr-tp::before{content:"";width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.mr-tp{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle;padding:2px 8px;border-radius:7px;font:600 10.5px/1.5 "Inter",sans-serif}.mr-tp::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:middle}
 .mr-tp.lead{background:#e9effb;color:#1d4ed8}.mr-tp.lead::before{background:#3b82f6}.mr-tp.fund{background:#e7f3ec;color:#1e7a41}.mr-tp.fund::before{background:#34A853}.mr-tp.restr{background:#edf0f4;color:#46556e}.mr-tp.restr::before{background:#6b7689}.mr-tp.warn{background:#fdecdb;color:#b5530e}.mr-tp.warn::before{background:#D97A2B}.mr-tp.mna{background:#efe9fb;color:#6b3fb5}.mr-tp.mna::before{background:#8B5CF6}.mr-tp.people{background:#ddf3f0;color:#0e7c74}.mr-tp.people::before{background:#12A594}
 .mr-sc{display:inline-flex;align-items:center;justify-content:center;padding:3px 9px;font:700 9.5px/1.6 "Inter",sans-serif;letter-spacing:.04em;text-transform:uppercase;border-radius:7px;white-space:nowrap}
 .mr-sc.high{color:#2e7d50;background:#e7f3ec}.mr-sc.med{color:#8a5a00;background:#fff4e0}.mr-sc.low{color:#6b7686;background:#eef1f5}
@@ -1324,9 +1324,6 @@ MR_CSS = r"""
 .mr-lm{font:600 10px/1.5 "Inter",sans-serif;color:var(--muted)}.mr-lm b{color:var(--ink)}
 .mr-anti{font:700 9px/1.5 "Inter",sans-serif;color:#c0392b;background:#fdecea;padding:2px 7px;border-radius:6px}
 .mr-laccess{font-size:11.5px;color:var(--blue-deep);background:rgba(62,92,132,.05);border-left:2px solid var(--vma);border-radius:5px;padding:6px 9px;margin:4px 0 8px}
-.mr-stack{display:flex;flex-wrap:wrap;gap:6px}
-.mr-st1{display:inline-flex;align-items:center;gap:4px;font:600 9.5px/1.5 "JetBrains Mono",monospace;background:rgba(16,22,38,.05);color:var(--ink2);padding:3px 8px;border-radius:6px}.mr-st1 i{color:var(--dim);font-style:normal}.mr-st1 em{color:var(--dim);font-style:normal}
-.mr-st1.lk{text-decoration:none;cursor:pointer}.mr-st1.lk:hover{background:var(--blue-wash);color:var(--blue-deep)}.mr-st1.lk svg{width:10px;height:10px;opacity:.55}
 .mr-gen2{font-size:12.5px;color:var(--ink2);line-height:1.55}
 .mr-doss{display:flex;flex-direction:column;gap:8px;padding-top:2px}
 .mr-drow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:2px}
@@ -1334,14 +1331,16 @@ MR_CSS = r"""
 .mr-dlab{font:600 8.5px/1.6 "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
 .mr-play{color:var(--ink2);background:rgba(62,92,132,.05);border-left:2px solid var(--vma);border-radius:5px;padding:7px 10px;display:block;font-size:12px;line-height:1.55}
 .mr-chase{font:700 9px/1.5 "JetBrains Mono",monospace;letter-spacing:.02em;color:#46556e;background:#edf0f4;padding:2px 7px;border-radius:6px}.mr-chase.soon{color:#b5530e;background:#fdecdb}
-.mr-basis{display:block;color:var(--dim);font:500 10.5px/1.45 "Inter",sans-serif;margin-top:3px}
-.mr-rel{font:700 8.5px/1.6 "Inter",sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:6px}
-.mr-rel.rel-warm{color:#1e7a41;background:#e7f3ec}.mr-rel.rel-cold{color:#6b7686;background:#eef1f5}
+.mr-acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.mr-actbtn{display:inline-flex;align-items:center;gap:6px;font:600 11px/1 "Inter",sans-serif;color:var(--ink);background:#fff;border:1px solid var(--mrborder);border-radius:8px;padding:8px 12px;cursor:pointer;transition:.13s}.mr-actbtn svg{width:14px;height:14px}.mr-actbtn:hover{background:var(--elevated);border-color:var(--dim)}
+.mr-actbtn.primary{background:var(--blue-deep);color:#fff;border-color:var(--blue-deep)}.mr-actbtn.primary:hover{background:#16336a;border-color:#16336a}.mr-actbtn.primary svg{opacity:.95}
+.mr-actbtn.busy{color:var(--dim)}.mr-actbtn.done{color:#1e7a41;border-color:#bfe3cd;background:#f3faf5}
+.mr-playwrap:not(.on){display:none}
+.mr-playbox{min-height:1.2em}
 .mr-wb{font:600 9px/1.6 "JetBrains Mono",monospace;padding:2px 6px;border-radius:4px;background:rgba(14,40,69,.05);color:#1A3D7C;white-space:nowrap;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .mr-badge{font:500 10px/1.4 "Inter",sans-serif;background:var(--elevated);border:1px solid var(--mrborder);border-radius:6px;padding:3px 8px;color:var(--ink);white-space:nowrap;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .mr-newp{font:700 7.5px/1 "Inter",sans-serif;letter-spacing:.06em;color:#1d4ed8;background:#e9effb;padding:2px 4px;border-radius:3px;vertical-align:middle}
 .mr-srcl{display:inline-flex;align-items:center;gap:5px;margin-left:8px;color:var(--blue-deep);text-decoration:none;font:600 11px/1 "Inter",sans-serif;padding:4px 9px;border:1px solid var(--mrborder);border-radius:7px;background:#fff;vertical-align:middle;white-space:nowrap}.mr-srcl svg{width:13px;height:13px}.mr-srcl:hover{background:var(--blue-wash);border-color:var(--blue)}
-.mr-dl{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:28px;padding:0 9px;border-radius:7px;color:var(--ink);background:#fff;cursor:pointer;border:1px solid var(--mrborder);font:600 11px/1 "Inter",sans-serif;transition:.13s}.mr-dl svg{width:15px;height:15px}.mr-dl.icon{width:28px;padding:0}.mr-dl:hover{background:var(--elevated);color:var(--ink);border-color:var(--dim)}.mr-dl.busy{color:var(--dim)}.mr-dl.done{color:#1e7a41;border-color:#bfe3cd;background:#f3faf5}
 .mr-io{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:28px;padding:0 9px;border-radius:7px;color:var(--ink);cursor:pointer;border:1px solid var(--mrborder);background:#fff;font:600 11px/1 "Inter",sans-serif}.mr-io.icon{width:28px;padding:0}.mr-io svg{width:14px;height:14px}.mr-io:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
 .mr-io.tfu:hover{background:#e7f3ec;color:#1e7a41;border-color:#bfe3cd}.mr-io.tdis:hover{background:#fdecea;color:#c0392b;border-color:#f0c5bd}
 .mr-toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:#101626;color:#fff;font:600 12px/1 "Inter",sans-serif;padding:11px 16px;border-radius:10px;box-shadow:0 8px 26px rgba(0,0,0,.2);opacity:0;transition:.25s;z-index:2000;display:flex;gap:8px;align-items:center;pointer-events:none}.mr-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}.mr-toast .mr-spk svg{width:14px;height:14px}
@@ -1349,7 +1348,7 @@ MR_CSS = r"""
 .mr-aibrief .mr-gen{font-size:12.5px;color:var(--ink2);line-height:1.55}
 #mr-rows{border:1px solid var(--hairline);border-radius:13px;background:rgba(255,255,255,.62);overflow:hidden}
 .mr-rsum{display:grid;align-items:center;gap:11px}
-.mr-gbd{grid-template-columns:24px 150px 126px 158px minmax(90px,1fr) 82px 56px 76px auto}
+.mr-gbd{grid-template-columns:24px 150px 132px 158px minmax(90px,1fr) 82px 56px auto}
 .mr-gjobs{grid-template-columns:28px minmax(180px,1fr) minmax(220px,1.7fr) 160px 72px 46px auto}
 .mr-row{border-bottom:1px solid var(--hairline);transition:.2s;display:block}.mr-row:last-child{border-bottom:none}.mr-row.gone{height:0!important;opacity:0;border:none;overflow:hidden}
 .mr-row.top .mr-rsum{box-shadow:inset 3px 0 0 var(--blue)}
@@ -1410,30 +1409,29 @@ MR_JS = r"""
   function brief(l){
     var b=l.brief||(l.seat+' likely within '+l.win+'.');
     if(!l.action) return '<div class="mr-gen2">'+esc(b)+' '+srcl(l)+'</div>';
-    var stack=(l.stack||[]).map(function(t){var inner=esc(t.label)+(t.confidence?' <i>'+t.confidence+'</i>':'')+(t.age!=null?' <em>'+t.age+'d</em>':'');
-      return t.url?'<a class="mr-st1 lk" href="'+esc(t.url)+'" target="_blank" rel="noopener" title="'+esc(t.src||'source')+'">'+inner+' '+IC.ext+'</a>':'<span class="mr-st1">'+inner+'</span>';}).join('');
+    var hasSrc=!!l.url;for(var si=0;si<(l.stack||[]).length;si++){if(l.stack[si].url){hasSrc=true;break;}}
     var anti2=(l.anti||[]).filter(function(x){return x!=='competing_recruiter';});
+    var acts='<div class="mr-acts">'
+      +(hasSrc?'<button class="mr-actbtn" data-act="viewsrc" data-id="'+l._id+'">'+IC.ext+'View sources</button>':'')
+      +'<button class="mr-actbtn primary" data-act="pitch" data-id="'+l._id+'">'+IC.dl+'Generate pitch</button>'
+      +(l.opener?'<button class="mr-actbtn" data-act="draft" data-id="'+l._id+'">'+IC.spark+'Draft opener</button>':'')
+      +'</div>';
     return '<div class="mr-doss">'
       +'<div class="mr-drow"><span class="mr-ab ab-'+l.action+'">'+esc(l.actionLabel)+'</span>'
-      +'<span class="mr-lm">Fit <b>'+l.fit+'/10</b></span><span class="mr-lm">Signal <b>'+l.sig+'</b></span>'
+      +'<span class="mr-lm">Signal <b>'+l.sig+'</b></span>'
       +(l.corro?'<span class="mr-lm">'+l.corro+' signal'+(l.corro>1?'s':'')+'</span>':'')
       +(l.conflict?'<span class="mr-anti">⚠ competing recruiter</span>':'')
-      +(l.relationship?'<span class="mr-rel rel-'+l.relationship+'">'+l.relationship+'</span>':'')
-      +(l.prize&&l.prize.fee?'<span class="mr-lm" title="'+esc(l.prize.summary||'')+'">Prize <b>'+esc(l.prize.fee)+'</b></span>':'')
       +(l.chaseBy&&l.chaseBy.label?'<span class="mr-chase'+(l.chaseBy.days<=3?' soon':'')+'" title="'+esc(l.chaseBy.rationale||'')+'">'+esc(l.chaseBy.label)+'</span>':'')
       +(anti2.length?'<span class="mr-anti">⚠ '+esc(anti2.join(' · '))+'</span>':'')+'</div>'
       +dk('Why now',esc(l.why))
-      +(stack?dk('Evidence','<span class="mr-stack">'+stack+'</span>'):'')
-      +(l.prize&&l.prize.summary?dk('Prize',esc(l.prize.summary)+'<span class="mr-basis">'+esc(l.prize.basis||'')+'</span>'):'')
-      +(l.fitWhy?dk('Fit',esc(l.fitWhy)):'')
-      +(l.opener?dk('The play','<span class="mr-play">'+esc(l.opener)+'</span>'):'')
+      +'<div class="mr-dk"><span class="mr-dlab"></span>'+acts+'</div>'
+      +(l.opener?'<div class="mr-dk mr-playwrap'+(l.drafted?' on':'')+'"><span class="mr-dlab">The play</span><span class="mr-play mr-playbox">'+(l.drafted?esc(l.opener):'')+'</span></div>':'')
       +'</div>';}
   function bdRow(l,idx){var top=(idx===0&&filter==='active');
     return '<div class="mr-row '+(open[l._id]?'open ':'')+(top?'top':'')+'" data-id="'+l._id+'">'
      +'<div class="mr-rsum mr-gbd" data-act="toggle" data-id="'+l._id+'">'
      +'<span class="mr-rk">'+(idx+1)+'</span><span class="mr-co">'+esc(l.co)+newp(l)+'</span>'+tp(l)
      +'<span class="mr-seat">'+esc(l.seat)+'</span><span class="mr-why">'+esc(l.why)+'</span>'+wb(l)+ab(l)
-     +'<span class="mr-pcell"><button class="mr-dl icon" data-act="pitch" data-id="'+l._id+'" title="Pitch pack">'+IC.dl+'</button></span>'
      +'<span class="mr-racts">'+(filter==='all'?stbadge(l):'')+triBtns(l)+'</span></div>'
      +'<div class="mr-rdet"><div class="mr-aibrief"><div class="mr-gen">'+brief(l)+'</div></div></div></div>';}
   function jobRow(l,idx){
@@ -1443,6 +1441,20 @@ MR_JS = r"""
      +'<span class="mr-jt">'+esc(l.jt)+'</span><span class="mr-badge">'+esc(l.source)+'</span><span class="mr-badge">'+esc(l.geo)+'</span>'
      +'<span class="mr-pcell"><button class="mr-io icon" data-act="copy" data-id="'+l._id+'" title="Copy outreach">'+IC.copy+'</button></span>'
      +'<span class="mr-racts">'+(filter==='all'?stbadge(l):'')+triBtns(l)+'</span></div></div>';}
+  function viewSources(id){var l=BYID[id];if(!l)return;var urls=[];
+    (l.stack||[]).forEach(function(t){if(t.url&&urls.indexOf(t.url)<0)urls.push(t.url);});
+    if(!urls.length&&l.url)urls.push(l.url);
+    if(!urls.length){toast('No sources for '+l.co);return;}
+    urls.forEach(function(u){window.open(u,'_blank','noopener');});
+    toast((urls.length>1?('Opening '+urls.length+' sources for '):('Opening source for '))+l.co);}
+  function draftOpener(id){var l=BYID[id];if(!l||!l.opener)return;
+    var row=document.querySelector('#mr-rows .mr-row[data-id="'+id+'"]');
+    var wrap=row&&row.querySelector('.mr-playwrap');if(!wrap)return;
+    var box=wrap.querySelector('.mr-playbox');if(!box)return;
+    wrap.classList.add('on');l.drafted=true;
+    if(box._typing)return;box._typing=true;
+    var t=l.opener,i=0;box.textContent='';
+    (function tick(){i+=2;box.textContent=t.slice(0,i);if(i<t.length){setTimeout(tick,16);}else{box.textContent=t;box._typing=false;}})();}
   function copyOutreach(id){var l=BYID[id];if(!l)return;var t=l.outreach||'';
     try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t);}
       else{var ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();document.execCommand('copy');document.body.removeChild(ta);}}catch(e){}
@@ -1514,6 +1526,8 @@ MR_JS = r"""
     var act=a.getAttribute('data-act');var id=a.getAttribute('data-id');
     if(act==='tri'){e.stopPropagation();triage(id,a.getAttribute('data-st'));return;}
     if(act==='pitch'){e.stopPropagation();pitch(id,a);return;}
+    if(act==='viewsrc'){e.stopPropagation();viewSources(id);return;}
+    if(act==='draft'){e.stopPropagation();draftOpener(id);return;}
     if(act==='copy'){e.stopPropagation();copyOutreach(id);return;}
     if(act==='toggle'){toggle(id);return;}
     if(act==='openjob'){openjob(id);return;}
@@ -1530,14 +1544,24 @@ MR_JS = r"""
 
 # trigger_key -> (pill label, colour key). Colour keys map to .mr-tp.<key>.
 _MR_TRIGGER = {
-    "ceo_change":       ("Leadership",       "lead"),
-    "cfo_change":       ("CFO change",       "lead"),
-    "chro_change":      ("CHRO change",      "people"),
-    "restructure":      ("Restructure",      "restr"),
-    "regulator_action": ("Regulator action", "warn"),
-    "profit_warning":   ("Profit warning",   "warn"),
-    "mna":              ("M&A",              "mna"),
-    "job_ad_cluster":   ("Hiring cluster",   "lead"),
+    "ceo_change":            ("Leadership",       "lead"),
+    "cfo_change":            ("CFO change",       "lead"),
+    "chro_change":           ("CHRO change",      "people"),
+    "chair_change":          ("Chair change",     "lead"),
+    "comms_leader_departure": ("Comms exit",      "lead"),
+    "ir_director_change":    ("IR change",        "lead"),
+    "restructure":           ("Restructure",      "restr"),
+    "regulator_action":      ("Regulator action", "warn"),
+    "regulator_probe_early": ("Regulator probe",  "warn"),
+    "profit_warning":        ("Profit warning",   "warn"),
+    "crisis_event":          ("Crisis",           "warn"),
+    "contract_loss":         ("Contract loss",    "warn"),
+    "mna":                   ("M&A",              "mna"),
+    "pe_acquisition":        ("PE acquisition",   "mna"),
+    "activist_stake":        ("Activist stake",   "mna"),
+    "ipo_listing":           ("IPO / listing",    "fund"),
+    "ic_platform_rfp":       ("IC platform RFP",  "lead"),
+    "job_ad_cluster":        ("Hiring cluster",   "lead"),
 }
 
 
@@ -1659,16 +1683,13 @@ def _mr_lead_fields(row):
         return {}
     return {
         "action": L.get("action"), "actionLabel": L.get("action_label"),
-        "fit": L.get("fit"), "fitBand": L.get("fit_band"), "fitWhy": L.get("fit_why"),
-        "sig": L.get("signal"), "sigBand": L.get("signal_band"),
-        "relationship": L.get("relationship"),
+        "sig": L.get("signal"),
         "conflict": L.get("conflict") or False,
         "corro": L.get("corroboration"),
         "anti": L.get("anti_triggers") or [],
         "opener": row.get("outreach") or "",
-        # Kept "work it" elements: deal size + a chase-by date.
-        "prize": L.get("prize") or {},
         "chaseBy": L.get("chase_by") or {},
+        # stack carries the source URLs the "View sources" button opens.
         "stack": [{"label": t.get("label"), "confidence": t.get("confidence"),
                    "age": t.get("age_days"), "url": t.get("url") or "",
                    "src": _mr_domain(t.get("url")) or (t.get("source") or "")}
