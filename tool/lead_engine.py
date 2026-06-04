@@ -65,12 +65,43 @@ _FIT_HIGH = 7            # 0-10 threshold for "High FIT"
 _TIER1 = ("companieshouse", "rns", "londonstockexchange", "lse",
           "regulatory", "gov.uk", "official", "/rns")
 
-# Anti-triggers — multiplicative suppression / hard caps (Layer 4).
+# Anti-triggers — multiplicative suppression / hard caps (Layer 4). These are
+# the cases that *should* score high on raw signal but shouldn't convert: a
+# funded company that just built an in-house team, a function already locked to
+# a competitor. Text-detected from evidence; a manual override flag can be
+# layered on top later.
 _ANTI = [
-    ("hiring_freeze", re.compile(r"hiring freeze|freeze on hiring|recruitment freeze|pause(?:d|s)? hiring", re.I), "cap"),
-    ("layoffs",       re.compile(r"redundanc|lay[\s-]?offs?|job cuts|cutting \d+\s+jobs|axe[sd]? \d+", re.I), 0.3),
-    ("admin",         re.compile(r"\benters? administration|goes into administration|insolvenc|liquidation", re.I), "cap"),
+    ("hiring_freeze",  re.compile(r"hiring freeze|freeze on hiring|recruitment freeze|pause(?:d|s)? hiring", re.I), "cap"),
+    ("layoffs",        re.compile(r"redundanc|lay[\s-]?offs?|job cuts|cutting \d+\s+jobs|axe[sd]? \d+", re.I), 0.3),
+    ("administration", re.compile(r"\benters? administration|goes into administration|insolvenc|liquidation", re.I), "cap"),
+    ("in_house_team",  re.compile(r"in[\s-]house (?:team|function|capabilit|comms|marketing)|built .{0,25}in[\s-]house|grew? .{0,25}in[\s-]house|fully[\s-]staffed|\d+[\s-]person .{0,20}in[\s-]house|brought .{0,20}in[\s-]house", re.I), 0.5),
+    ("competitor_lock", re.compile(r"exclusiv(?:e|ely) (?:retained|appointed|partner)|signed .{0,30}exclusiv|sole (?:agency|search|supplier)|appointed .{0,20}as (?:sole|exclusive)", re.I), 0.2),
 ]
+
+# Who the AD actually calls — the buyer of a senior comms hire, by strongest
+# trigger. Surfaced in the dossier so the lead is actionable, not just scored.
+_WHO = {
+    "chro_change": "CHRO / People Director",
+    "comms_leader_departure": "CEO office / CHRO",
+    "ir_director_change": "CFO / Head of IR",
+    "ceo_change": "Incoming CEO's office / CHRO",
+    "chair_change": "CEO office / Company Secretary",
+    "cfo_change": "CFO / Head of IR",
+    "ipo_listing": "CFO / Head of IR",
+    "funding": "CEO / CFO",
+    "job_ad_cluster": "CHRO / in-house TA lead",
+    "ic_platform_rfp": "Internal Comms lead / IT procurement",
+    "mna": "Corporate Affairs / Integration Director",
+    "pe_acquisition": "Deal team / incoming Chair",
+    "activist_stake": "CEO office / Corporate Affairs",
+    "crisis_event": "CEO office / Corporate Affairs",
+    "regulator_action": "General Counsel / Corporate Affairs",
+    "regulator_probe_early": "General Counsel / Corporate Affairs",
+    "profit_warning": "CFO / Head of IR",
+    "restructure": "CHRO / Transformation lead",
+    "contract_loss": "CEO office / Corporate Affairs",
+}
+_WHO_DEFAULT = "CHRO / Head of Comms"
 
 
 def _age_days(iso: str | None, fallback: str | None = None) -> float:
@@ -151,19 +182,23 @@ def _on_patch(company: str) -> bool:
     return False
 
 
-def fit_score(company: str, account_tier: str) -> tuple[int, str]:
+def fit_score(company: str, account_tier: str) -> tuple[int, str, str]:
     """Layer 0 — ICP / FIT (0-10), transparent and rule-based. The curated
     watchlist IS the ICP (sized, comms-relevant), so membership is the
     dominant fit signal; sector-on-patch and UK geo refine it. Unknown stays
-    'adjacent' rather than suppressing (protect recall)."""
-    pts = 5 if (account_tier or "watchlist") == "watchlist" else 1
-    if _on_patch(company):
-        pts += 3
-    if _is_uk(company):
-        pts += 2
+    'adjacent' rather than suppressing (protect recall). Returns
+    (points, band, one-line rationale)."""
+    wl = (account_tier or "watchlist") == "watchlist"
+    onp = _on_patch(company)
+    uk = _is_uk(company)
+    pts = (5 if wl else 1) + (3 if onp else 0) + (2 if uk else 0)
     pts = max(0, min(10, pts))
     band = "core" if pts >= _FIT_HIGH else ("adjacent" if pts >= 4 else "out")
-    return pts, band
+    parts = [("watchlist account" if wl else "off-watchlist"),
+             ("on-patch sector" if onp else "sector unconfirmed"),
+             ("UK" if uk else "non-UK")]
+    why = band.capitalize() + ": " + ", ".join(parts)
+    return pts, band, why
 
 
 def _signal(events: list[dict], fallback_date: str | None):
@@ -235,13 +270,24 @@ _ACTION_LABEL = {
 }
 
 
-def _route(fit_pts: int, signal: float, cap: bool) -> str:
+def _who_to_call(triggers, seeded, seeded_role):
+    if seeded:
+        return seeded + (f" ({seeded_role})" if seeded_role else "")
+    return _WHO.get(triggers[0]["key"], _WHO_DEFAULT) if triggers else _WHO_DEFAULT
+
+
+def _route(fit_pts: int, signal: float, cap: bool, corroborated: bool) -> str:
+    """Layer 5 routing. Call today additionally REQUIRES corroboration — a
+    single uncorroborated signal never earns a call, however high its raw
+    points; it routes to Investigate (verify before spending recruiter time).
+    Belt-and-braces over the confidence weighting, which already caps a lone
+    single-source signal well below threshold."""
     if cap:
         return "monitor"
     high_fit = fit_pts >= _FIT_HIGH
     high_sig = signal >= _SIGNAL_HIGH
     if high_fit and high_sig:
-        return "call_today"
+        return "call_today" if corroborated else "investigate"
     if high_fit:
         return "nurture"
     if high_sig:
@@ -274,26 +320,34 @@ def score_lead(item: dict, kind: str = "predictor") -> dict:
             seeded = item.get("seeded_contact_name")
             linkedin = item.get("linkedin_profile_url")
 
-        fit_pts, fit_band = fit_score(company, account_tier)
+        fit_pts, fit_band, fit_why = fit_score(company, account_tier)
         signal, triggers = _signal(events, fallback)
         anti_flags, anti_mult, cap = _anti_triggers(events)
         signal = round(signal * anti_mult, 2)
-        action = _route(fit_pts, signal, cap)
+        # Corroboration gate: 2+ independent sources OR one Tier-1 verified
+        # signal. A lone single-source scrape can't reach Call today.
+        independent = len({(t.get("source") or t.get("url") or "").lower()
+                           for t in triggers if (t.get("source") or t.get("url"))})
+        has_verified = any(t.get("confidence") == "verified" for t in triggers)
+        corroborated = independent >= 2 or has_verified
+        action = _route(fit_pts, signal, cap, corroborated)
         access_key, access_text = _access(triggers, seeded, linkedin)
-        corroboration = len(triggers)
         return {
-            "fit": fit_pts, "fit_band": fit_band,
+            "fit": fit_pts, "fit_band": fit_band, "fit_why": fit_why,
             "signal": signal,
             "signal_band": ("high" if signal >= _SIGNAL_HIGH
                             else "medium" if signal >= 3 else "low"),
             "action": action, "action_label": _ACTION_LABEL[action],
             "access": access_key, "access_text": access_text,
-            "corroboration": corroboration,
+            "who_to_call": _who_to_call(triggers, seeded,
+                                        item.get("seeded_contact_role")),
+            "corroboration": len(triggers), "corroborated": corroborated,
             "anti_triggers": anti_flags,
             "triggers": triggers,
         }
     except Exception:
-        return {"fit": 0, "fit_band": "out", "signal": 0.0, "signal_band": "low",
-                "action": "monitor", "action_label": "Monitor",
-                "access": "inbound", "access_text": "", "corroboration": 0,
+        return {"fit": 0, "fit_band": "out", "fit_why": "", "signal": 0.0,
+                "signal_band": "low", "action": "monitor", "action_label": "Monitor",
+                "access": "inbound", "access_text": "", "who_to_call": _WHO_DEFAULT,
+                "corroboration": 0, "corroborated": False,
                 "anti_triggers": [], "triggers": []}

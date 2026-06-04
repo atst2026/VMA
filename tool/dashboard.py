@@ -1273,9 +1273,14 @@ MR_CSS = r"""
 .mr-lm{font:600 10px/1.5 "Inter",sans-serif;color:var(--muted)}.mr-lm b{color:var(--ink)}
 .mr-anti{font:700 9px/1.5 "Inter",sans-serif;color:#c0392b;background:#fdecea;padding:2px 7px;border-radius:6px}
 .mr-laccess{font-size:11.5px;color:var(--blue-deep);background:rgba(62,92,132,.05);border-left:2px solid var(--vma);border-radius:5px;padding:6px 9px;margin:4px 0 8px}
-.mr-stack{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
-.mr-st1{font:600 9.5px/1.5 "JetBrains Mono",monospace;background:rgba(16,22,38,.05);color:var(--ink2);padding:3px 8px;border-radius:6px}.mr-st1 i{color:var(--dim);font-style:normal}
+.mr-stack{display:flex;flex-wrap:wrap;gap:6px}
+.mr-st1{font:600 9.5px/1.5 "JetBrains Mono",monospace;background:rgba(16,22,38,.05);color:var(--ink2);padding:3px 8px;border-radius:6px}.mr-st1 i{color:var(--dim);font-style:normal}.mr-st1 em{color:var(--dim);font-style:normal}
 .mr-gen2{font-size:12.5px;color:var(--ink2);line-height:1.55}
+.mr-doss{display:flex;flex-direction:column;gap:8px;padding-top:2px}
+.mr-drow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:2px}
+.mr-dk{display:grid;grid-template-columns:82px 1fr;gap:12px;align-items:baseline;font-size:12px;color:var(--ink2);line-height:1.5}
+.mr-dlab{font:600 8.5px/1.6 "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.mr-play{color:var(--ink2);background:rgba(62,92,132,.05);border-left:2px solid var(--vma);border-radius:5px;padding:7px 10px;display:block;font-size:12px;line-height:1.55}
 .mr-wb{font:600 9px/1.6 "JetBrains Mono",monospace;padding:2px 6px;border-radius:4px;background:rgba(14,40,69,.05);color:#1A3D7C;white-space:nowrap;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .mr-badge{font:500 10px/1.4 "Inter",sans-serif;background:var(--elevated);border:1px solid var(--mrborder);border-radius:6px;padding:3px 8px;color:var(--ink);white-space:nowrap;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .mr-newp{font:700 7.5px/1 "Inter",sans-serif;letter-spacing:.06em;color:#1d4ed8;background:#e9effb;padding:2px 4px;border-radius:3px;vertical-align:middle}
@@ -1345,16 +1350,23 @@ MR_JS = r"""
     ?'<button class="mr-io icon tfu" data-act="tri" data-id="'+l._id+'" data-st="followed_up" title="Followed up">'+IC.check+'</button><button class="mr-io icon tdis" data-act="tri" data-id="'+l._id+'" data-st="dismissed" title="Dismiss">'+IC.x+'</button>'
     :'<button class="mr-io icon" data-act="tri" data-id="'+l._id+'" data-st="active" title="Restore">'+IC.undo+'</button>';}
   function ab(l){return l.action?'<span class="mr-ab ab-'+l.action+'">'+esc(l.actionLabel)+'</span>':sc(l);}
-  function leadMeta(l){if(!l.action)return '';
-    var stack=(l.stack||[]).map(function(t){return '<span class="mr-st1">'+esc(t.label)+(t.confidence?' <i>'+t.confidence+'</i>':'')+'</span>';}).join('');
-    var anti=(l.anti&&l.anti.length)?'<span class="mr-anti">⚠ '+l.anti.join(' · ')+'</span>':'';
-    return '<div class="mr-lmeta"><span class="mr-ab ab-'+l.action+'">'+esc(l.actionLabel)+'</span>'
-      +'<span class="mr-lm">Fit <b>'+l.fit+'/10</b> · '+l.fitBand+'</span>'
-      +'<span class="mr-lm">Signal <b>'+l.sig+'</b></span>'
-      +(l.corro?'<span class="mr-lm">'+l.corro+' signal'+(l.corro>1?'s':'')+'</span>':'')+anti+'</div>'
-      +(l.access?'<div class="mr-laccess">'+esc(l.access)+'</div>':'')
-      +(stack?'<div class="mr-stack">'+stack+'</div>':'');}
-  function brief(l){var b=l.brief||(l.seat+' likely within '+l.win+'.');return leadMeta(l)+'<div class="mr-gen2">'+esc(b)+' '+srcl(l)+'</div>';}
+  function dk(lab,val){return '<div class="mr-dk"><span class="mr-dlab">'+lab+'</span><span>'+val+'</span></div>';}
+  function brief(l){
+    var b=l.brief||(l.seat+' likely within '+l.win+'.');
+    if(!l.action) return '<div class="mr-gen2">'+esc(b)+' '+srcl(l)+'</div>';
+    var stack=(l.stack||[]).map(function(t){return '<span class="mr-st1">'+esc(t.label)+(t.confidence?' <i>'+t.confidence+'</i>':'')+(t.age!=null?' <em>'+t.age+'d</em>':'')+'</span>';}).join('');
+    return '<div class="mr-doss">'
+      +'<div class="mr-drow"><span class="mr-ab ab-'+l.action+'">'+esc(l.actionLabel)+'</span>'
+      +'<span class="mr-lm">Fit <b>'+l.fit+'/10</b></span><span class="mr-lm">Signal <b>'+l.sig+'</b></span>'
+      +(l.corro?'<span class="mr-lm">'+l.corro+' signal'+(l.corro>1?'s':'')+'</span>':'')
+      +(l.anti&&l.anti.length?'<span class="mr-anti">⚠ '+esc(l.anti.join(' · '))+'</span>':'')+'</div>'
+      +dk('Why now',esc(l.why)+' '+srcl(l))
+      +(stack?dk('Evidence','<span class="mr-stack">'+stack+'</span>'):'')
+      +(l.whoToCall?dk('Who to call',esc(l.whoToCall)):'')
+      +(l.access?dk('Access',esc(l.access)):'')
+      +(l.fitWhy?dk('Fit',esc(l.fitWhy)):'')
+      +(l.opener?dk('The play','<span class="mr-play">'+esc(l.opener)+'</span>'):'')
+      +'</div>';}
   function bdRow(l,idx){var top=(idx===0&&filter==='active');
     return '<div class="mr-row '+(open[l._id]?'open ':'')+(top?'top':'')+'" data-id="'+l._id+'">'
      +'<div class="mr-rsum mr-gbd" data-act="toggle" data-id="'+l._id+'">'
@@ -1515,11 +1527,14 @@ def _mr_lead_fields(row):
         return {}
     return {
         "action": L.get("action"), "actionLabel": L.get("action_label"),
-        "fit": L.get("fit"), "fitBand": L.get("fit_band"),
+        "fit": L.get("fit"), "fitBand": L.get("fit_band"), "fitWhy": L.get("fit_why"),
         "sig": L.get("signal"), "sigBand": L.get("signal_band"),
-        "access": L.get("access_text"), "corro": L.get("corroboration"),
+        "access": L.get("access_text"), "whoToCall": L.get("who_to_call"),
+        "corro": L.get("corroboration"),
         "anti": L.get("anti_triggers") or [],
-        "stack": [{"label": t.get("label"), "confidence": t.get("confidence")}
+        "opener": (row.get("outreach") or "")[:320],
+        "stack": [{"label": t.get("label"), "confidence": t.get("confidence"),
+                   "age": t.get("age_days")}
                   for t in (L.get("triggers") or [])[:4]],
     }
 
