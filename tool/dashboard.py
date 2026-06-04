@@ -1370,7 +1370,7 @@ MR_CSS = r"""
 .mr-tp,.mr-sc,.mr-wb,.mr-badge{justify-self:start}
 .mr-pcell{justify-self:center}
 .mr-racts{display:inline-flex;gap:6px;align-items:center;justify-self:end}
-.mr-rdet{max-height:0;opacity:0;overflow:hidden;transition:.25s;padding:0 14px 0 49px}.mr-row.open .mr-rdet{max-height:240px;opacity:1;padding:2px 14px 15px 49px}
+.mr-rdet{max-height:0;opacity:0;overflow:hidden;transition:max-height .3s ease,opacity .25s,padding .25s;padding:0 14px 0 49px}.mr-row.open .mr-rdet{max-height:1600px;opacity:1;padding:2px 14px 15px 49px}
 .mr-badge-st{font:700 8px/1 "Inter",sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:3px 6px;border-radius:4px}.mr-badge-st.followed_up{background:rgba(34,139,87,.12);color:#1e7a41}.mr-badge-st.dismissed{background:rgba(120,120,120,.1);color:#888}
 .mr-empty{padding:40px;text-align:center;color:var(--dim)}
 """
@@ -1690,7 +1690,7 @@ def _mr_lead_fields(row):
         "corro": L.get("corroboration"),
         "anti": L.get("anti_triggers") or [],
         "outcome": row.get("outcome") or "",
-        "opener": (row.get("outreach") or "")[:320],
+        "opener": row.get("outreach") or "",
         "stack": [{"label": t.get("label"), "confidence": t.get("confidence"),
                    "age": t.get("age_days"), "url": t.get("url") or "",
                    "src": _mr_domain(t.get("url")) or (t.get("source") or "")}
