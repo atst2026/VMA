@@ -19,6 +19,26 @@ def test_dedupe_collapses_acronym_and_fullname():
     assert kept["_opp"] == 3.0
 
 
+def test_dedupe_acronym_skips_stopwords():
+    # "Department for Work and Pensions" -> dwp, collapses with the acronym row
+    rows = [{"company": "DWP", "_opp": 2.0},
+            {"company": "Department for Work and Pensions", "_opp": 3.0}]
+    out = d._dedupe_rows(rows)
+    assert len(out) == 1
+
+
+def test_dedupe_parent_child_alias():
+    # the recruitment arm collapses into its parent body
+    rows = [{"company": "Department for Work and Pensions", "_opp": 3.0},
+            {"company": "Government Recruitment Service", "_opp": 1.0},
+            {"company": "Tesco", "_opp": 5.0}]
+    out = d._dedupe_rows(rows)
+    names = [r["company"] for r in out]
+    assert "Tesco" in names
+    assert "Government Recruitment Service" not in names   # merged into DWP
+    assert len(out) == 2
+
+
 def test_dedupe_keeps_distinct_companies():
     rows = [{"company": "Tesco", "_opp": 2}, {"company": "Sainsbury's", "_opp": 1},
             {"company": "BP", "_opp": 3}, {"company": "Currys", "_opp": 4}]

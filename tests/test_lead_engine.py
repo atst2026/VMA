@@ -163,6 +163,23 @@ def test_event_grade_funding_corroborated_even_obscure_source():
     assert lead["signal"] >= 3.0
 
 
+# ---- competing-recruiter conflict ----
+def test_competing_recruiter_flagged_and_parked():
+    for name in ("Gill Cooke Personnel", "The Recruitment Group",
+                 "Government Recruitment Service", "Hays Staffing"):
+        assert LE._is_recruiter(name), name
+    assert not LE._is_recruiter("Tesco")
+    assert not LE._is_recruiter("Department for Work and Pensions")
+    lead = LE.score_lead(_pred(company="Gill Cooke Personnel",
+                               events=[_ev("job_ad_cluster", 1, url="ft.com"),
+                                       _ev("chro_change", 1, url="companieshouse.gov.uk")]))
+    assert lead["conflict"] is True
+    assert lead["fit_band"] == "out"
+    assert "competing recruiter" in lead["fit_why"]
+    assert lead["action"] == "monitor"          # capped, never above Monitor
+    assert "competing_recruiter" in lead["anti_triggers"]
+
+
 # ---- dossier fields ----
 def test_dossier_fields_present():
     lead = LE.score_lead(_pred(events=[_ev("ceo_change", 1)]))
