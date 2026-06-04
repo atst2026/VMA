@@ -1321,7 +1321,6 @@ MR_CSS = r"""
 .mr-ab{display:inline-flex;align-items:center;justify-content:center;padding:3px 9px;font:700 9px/1.6 "Inter",sans-serif;letter-spacing:.03em;text-transform:uppercase;border-radius:7px;white-space:nowrap;justify-self:start}
 .mr-ab.ab-call_today{color:#fff;background:#D9633C}.mr-ab.ab-nurture{color:#1d4ed8;background:#e9effb}.mr-ab.ab-investigate{color:#8a5a00;background:#fff4e0}.mr-ab.ab-monitor{color:#6b7686;background:#eef1f5}
 .mr-lmeta{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:2px 0 8px}
-.mr-lm{font:600 10px/1.5 "Inter",sans-serif;color:var(--muted)}.mr-lm b{color:var(--ink)}
 .mr-anti{font:700 9px/1.5 "Inter",sans-serif;color:#c0392b;background:#fdecea;padding:2px 7px;border-radius:6px}
 .mr-laccess{font-size:11.5px;color:var(--blue-deep);background:rgba(62,92,132,.05);border-left:2px solid var(--vma);border-radius:5px;padding:6px 9px;margin:4px 0 8px}
 .mr-gen2{font-size:12.5px;color:var(--ink2);line-height:1.55}
@@ -1330,10 +1329,13 @@ MR_CSS = r"""
 .mr-dk{display:grid;grid-template-columns:82px 1fr;gap:12px;align-items:baseline;font-size:12px;color:var(--ink2);line-height:1.5}
 .mr-dlab{font:600 8.5px/1.6 "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
 .mr-play{color:var(--ink2);background:rgba(62,92,132,.05);border-left:2px solid var(--vma);border-radius:5px;padding:7px 10px;display:block;font-size:12px;line-height:1.55}
-.mr-chase{font:700 9px/1.5 "JetBrains Mono",monospace;letter-spacing:.02em;color:#46556e;background:#edf0f4;padding:2px 7px;border-radius:6px}.mr-chase.soon{color:#b5530e;background:#fdecdb}
-.mr-acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.mr-actbtn{display:inline-flex;align-items:center;gap:7px;font:500 12.5px/1 "Inter",sans-serif;color:var(--ink2);background:#fff;border:1px solid var(--mrborder);border-radius:10px;padding:8px 14px;cursor:pointer;transition:.13s}.mr-actbtn svg{width:15px;height:15px;opacity:.85}.mr-actbtn:hover{background:var(--elevated);border-color:var(--dim)}
+.mr-acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:11px 0 2px}
+.mr-actbtn{display:inline-flex;align-items:center;gap:6px;font:500 11.5px/1 "Inter",sans-serif;color:var(--ink);background:#fff;border:1px solid var(--mrborder);border-radius:9px;padding:6px 11px;cursor:pointer;transition:.13s}.mr-actbtn svg{width:14px;height:14px;flex-shrink:0}.mr-actbtn:hover{background:var(--elevated);border-color:var(--dim)}
 .mr-actbtn.busy{color:var(--dim)}.mr-actbtn.done{color:#1e7a41;border-color:#bfe3cd;background:#f3faf5}
+.mr-scan{display:inline-flex;align-items:center;gap:7px;margin-left:14px;font:500 12px/1.4 "Inter",sans-serif;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:560px}
+.mr-scan .mr-scan-spk{color:var(--clay);display:inline-flex;flex-shrink:0}.mr-scan .mr-scan-spk svg{width:13px;height:13px}
+.mr-scan.typing .mr-scan-tx::after{content:"";display:inline-block;width:6px;height:12px;background:var(--clay);margin-left:2px;vertical-align:-2px;animation:mrblink .85s steps(1) infinite}
+@keyframes mrblink{50%{opacity:0}}
 .mr-playwrap:not(.on){display:none}
 .mr-playbox{min-height:1.2em}
 .mr-wb{font:600 9px/1.6 "JetBrains Mono",monospace;padding:2px 6px;border-radius:4px;background:rgba(14,40,69,.05);color:#1A3D7C;white-space:nowrap;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis}
@@ -1380,7 +1382,9 @@ MR_JS = r"""
     chevd:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
     radar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" opacity=".4"/><path d="M12 12 L12 3 A9 9 0 0 1 19.8 7.5 Z" fill="currentColor" stroke="none" opacity=".55"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>',
     jobs:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7.5" width="18" height="12.5" rx="2.2"/><path d="M8 7.5V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1.5"/><path d="M3 12.5h18"/></svg>',
-    spark:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.4 5L18 8.5l-4.6 1.5L12 15l-1.4-5L6 8.5 10.6 7 12 2z"/></svg>',
+    spark:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l1.7 6.3L20 12l-6.3 1.7L12 20l-1.7-6.3L4 12l6.3-1.7L12 4z"/></svg>',
+    sources:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17"/><path d="M12 3.5c2.4 2.3 2.4 14.7 0 17M12 3.5c-2.4 2.3-2.4 14.7 0 17"/></svg>',
+    pitch:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5z"/><path d="M13.5 3v5.5H19"/><path d="M9.2 13l.55 1.65 1.65.55-1.65.55L9.2 17.4l-.55-1.65L7 15.2l1.65-.55z" fill="currentColor" stroke="none"/></svg>',
     spin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9"/></svg>'};
   var root=document.getElementById('mr');
   if(!root) return;
@@ -1411,19 +1415,17 @@ MR_JS = r"""
     var hasSrc=!!l.url;for(var si=0;si<(l.stack||[]).length;si++){if(l.stack[si].url){hasSrc=true;break;}}
     var anti2=(l.anti||[]).filter(function(x){return x!=='competing_recruiter';});
     var acts='<div class="mr-acts">'
-      +(hasSrc?'<button class="mr-actbtn" data-act="viewsrc" data-id="'+l._id+'">'+IC.ext+'View sources</button>':'')
-      +'<button class="mr-actbtn" data-act="pitch" data-id="'+l._id+'">'+IC.dl+'Generate pitch</button>'
+      +(hasSrc?'<button class="mr-actbtn" data-act="viewsrc" data-id="'+l._id+'">'+IC.sources+'View sources</button>':'')
+      +'<button class="mr-actbtn" data-act="pitch" data-id="'+l._id+'">'+IC.pitch+'Generate pitch</button>'
       +(l.opener?'<button class="mr-actbtn" data-act="draft" data-id="'+l._id+'">'+IC.spark+'Draft opener</button>':'')
       +'</div>';
-    return '<div class="mr-doss">'
-      +'<div class="mr-drow"><span class="mr-ab ab-'+l.action+'">'+esc(l.actionLabel)+'</span>'
-      +'<span class="mr-lm">Signal <b>'+l.sig+'</b></span>'
-      +(l.corro?'<span class="mr-lm">'+l.corro+' signal'+(l.corro>1?'s':'')+'</span>':'')
+    var warn=(l.conflict||anti2.length)?'<div class="mr-drow">'
       +(l.conflict?'<span class="mr-anti">⚠ competing recruiter</span>':'')
-      +(l.chaseBy&&l.chaseBy.label?'<span class="mr-chase'+(l.chaseBy.days<=3?' soon':'')+'" title="'+esc(l.chaseBy.rationale||'')+'">'+esc(l.chaseBy.label)+'</span>':'')
-      +(anti2.length?'<span class="mr-anti">⚠ '+esc(anti2.join(' · '))+'</span>':'')+'</div>'
+      +(anti2.length?'<span class="mr-anti">⚠ '+esc(anti2.join(' · '))+'</span>':'')+'</div>':'';
+    return '<div class="mr-doss">'
+      +warn
       +dk('Why now',esc(l.why))
-      +'<div class="mr-dk"><span class="mr-dlab"></span>'+acts+'</div>'
+      +acts
       +(l.opener?'<div class="mr-dk mr-playwrap'+(l.drafted?' on':'')+'"><span class="mr-dlab">The play</span><span class="mr-play mr-playbox">'+(l.drafted?esc(l.opener):'')+'</span></div>':'')
       +'</div>';}
   function bdRow(l,idx){var top=(idx===0&&filter==='active');
@@ -1466,6 +1468,18 @@ MR_JS = r"""
     setc('mr-m-dis',c(function(l){return l.status==='dismissed';}));
     var lbl={active:'Active','new':'New today',followed_up:'Followed up',dismissed:'Dismissed',all:'All'}[filter];
     setc('mr-filtlbl',lbl);}
+  function scanText(){var ds=active(),isJobs=(page==='jobs');
+    var nw=ds.filter(function(l){return l.isNew&&l.status==='active';}).length;
+    var noun=isJobs?'job':'lead';
+    var t='Scanning the market...... '+nw+' new '+noun+(nw===1?'':'s')+' found today.';
+    if(!isJobs&&nw>0){var hi=ds.filter(function(l){return l.isNew&&l.status==='active'&&(l.action==='call_today'||(+l.sig)>=6);}).length;
+      t+='  '+hi+' of them high-intent trigger'+(hi===1?'':'s')+'.';}
+    return t;}
+  function typeScan(){var e=$('mr-scan');if(!e)return;var txt=scanText();
+    if(e._t)clearTimeout(e._t);
+    e.innerHTML='<span class="mr-scan-spk">'+IC.spark+'</span><span class="mr-scan-tx"></span>';
+    var tx=e.querySelector('.mr-scan-tx'),i=0;e.classList.add('typing');
+    (function tick(){i+=1;tx.textContent=txt.slice(0,i);if(i<txt.length){e._t=setTimeout(tick,24);}else{e.classList.remove('typing');}})();}
   function render(){var arr=sortd(active().filter(match));var box=$('mr-rows');if(!box)return;
     if(!arr.length){box.innerHTML='<div class="mr-empty">Nothing here. Pick another filter.</div>';counts();return;}
     box.innerHTML=arr.map(function(l,i){return page==='bd'?bdRow(l,i):jobRow(l,i);}).join('');counts();}
@@ -1476,7 +1490,7 @@ MR_JS = r"""
     var pm=$('mr-pgmenu');if(pm){pm.classList.remove('open');var pb=pm.querySelectorAll('[data-act="pg"]');for(var i=0;i<pb.length;i++){pb[i].classList.toggle('on',pb[i].getAttribute('data-pg')===pg);}}
     var fb=document.querySelectorAll('#mr-filtmenu [data-act="filt"]');for(var j=0;j<fb.length;j++){fb[j].classList.toggle('on',fb[j].getAttribute('data-f')==='active');}
     var fm=$('mr-filtmenu');if(fm)fm.classList.remove('open');
-    render();}
+    render();typeScan();}
   function setFilter(f,btn){filter=f;var fb=document.querySelectorAll('#mr-filtmenu [data-act="filt"]');for(var i=0;i<fb.length;i++){fb[i].classList.toggle('on',fb[i]===btn);}var m=$('mr-filtmenu');if(m)m.classList.remove('open');render();}
   function triage(id,st){var l=BYID[id];if(!l)return;var prev=l.status;l.status=st;
     var row=document.querySelector('#mr-rows .mr-row[data-id="'+id+'"]');
@@ -1501,7 +1515,7 @@ MR_JS = r"""
         (function poll(){
           if(Date.now()-started>MAX){fail('Pitch pack timed out');return;}
           fetch('/api/output/status?'+qs).then(function(r){return r.json();}).then(function(s){
-            if(s&&s.ready&&s.id){var v='/api/output/view?artifact='+encodeURIComponent(j.artifact)+'&id='+encodeURIComponent(s.id);if(win&&!win.closed)win.location=v;btn.classList.remove('busy');btn.classList.add('done');btn.innerHTML=IC.dl;setTimeout(function(){btn.classList.remove('done');btn.innerHTML=orig;},2200);}
+            if(s&&s.ready&&s.id){var v='/api/output/view?artifact='+encodeURIComponent(j.artifact)+'&id='+encodeURIComponent(s.id);if(win&&!win.closed)win.location=v;btn.classList.remove('busy');btn.classList.add('done');btn.innerHTML=IC.check+'Ready';setTimeout(function(){btn.classList.remove('done');btn.innerHTML=orig;},2200);}
             else{setTimeout(poll,12000);}
           }).catch(function(){setTimeout(poll,12000);});
         })();
@@ -1511,6 +1525,7 @@ MR_JS = r"""
    +'<div class="mr-filtmenu" id="mr-pgmenu">'
    +'<button data-act="pg" data-pg="bd" class="on">BD Leads</button>'
    +'<button data-act="pg" data-pg="jobs">Live Jobs</button></div></div>'
+   +'<span class="mr-scan" id="mr-scan"></span>'
    +'<span class="mr-spacer"></span>'
    +'<div class="mr-filt"><button class="mr-filtbtn" data-act="filtbtn">'+IC.funnel+'<span class="mr-lbl" id="mr-filtlbl">Active</span><span class="mr-cv">'+IC.chevd+'</span></button>'
    +'<div class="mr-filtmenu" id="mr-filtmenu">'
@@ -1536,7 +1551,7 @@ MR_JS = r"""
     if(act==='filt'){e.stopPropagation();setFilter(a.getAttribute('data-f'),a);return;}
   });
   document.addEventListener('click',function(e){var inside=e.target.closest('.mr-filt');['mr-pgmenu','mr-filtmenu'].forEach(function(mid){var m=$(mid);if(m&&(!inside||!inside.contains(m)))m.classList.remove('open');});});
-  render();
+  render();typeScan();
 })();
 """
 
@@ -1682,12 +1697,10 @@ def _mr_lead_fields(row):
         return {}
     return {
         "action": L.get("action"), "actionLabel": L.get("action_label"),
-        "sig": L.get("signal"),
+        "sig": L.get("signal"),                 # used by the scan banner's high-intent count
         "conflict": L.get("conflict") or False,
-        "corro": L.get("corroboration"),
         "anti": L.get("anti_triggers") or [],
         "opener": row.get("outreach") or "",
-        "chaseBy": L.get("chase_by") or {},
         # stack carries the source URLs the "View sources" button opens.
         "stack": [{"label": t.get("label"), "confidence": t.get("confidence"),
                    "age": t.get("age_days"), "url": t.get("url") or "",

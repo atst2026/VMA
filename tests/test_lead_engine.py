@@ -260,36 +260,3 @@ def test_scale_build_out_on_cluster():
 def test_chro_buyer_is_comms_owner_not_just_chro():
     lead = LE.score_lead(_pred(events=[_ev("chro_change", 1)]))
     assert "CCO" in lead["who_to_call"]  # comms mandate owner, CHRO is the door
-
-
-# ====================================================================
-# The "work it" layer — a chase-by date so a decaying lead gets a
-# follow-up date instead of sitting in the queue.
-# ====================================================================
-
-# ---- chase-by date -----------------------------------------------------
-def test_chase_by_is_within_a_week_for_a_fast_signal():
-    cb = LE.score_lead(_pred(events=[_ev("funding", 1, url="ft.com")]))["chase_by"]
-    assert cb and 0 < cb["days"] <= 7
-    assert cb["label"].startswith("Chase by")
-    assert cb["date"]
-
-
-def test_chase_by_runs_longer_for_a_leadership_signal():
-    fast = LE.score_lead(_pred(events=[_ev("funding", 1, url="ft.com")]))["chase_by"]
-    slow = LE.score_lead(_pred(events=[_ev("chro_change", 1)]))["chase_by"]
-    assert slow["days"] > fast["days"]            # leadership edge holds longer
-
-
-def test_chase_by_lapsed_signal_still_gets_a_near_term_date():
-    cb = LE.score_lead(_pred(events=[_ev("crisis_event", 40, url="ft.com")]))["chase_by"]
-    assert cb["days"] >= 1                         # never sits with no follow-up date
-
-
-# ---- presence + no em dashes (house style) across both desks ----------
-def test_chase_by_present_for_both_desks():
-    for desk in ("comms", "marketing"):
-        lead = LE.score_lead(_pred(events=[_ev("chro_change", 1),
-                                           _ev("job_ad_cluster", 1, url="ft.com")]), desk=desk)
-        assert lead["chase_by"], f"chase_by missing for {desk}"
-        assert "—" not in lead["chase_by"]["rationale"]

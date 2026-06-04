@@ -20,7 +20,7 @@ the marketing taxonomy is a separate table.
 from __future__ import annotations
 
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 # --------------------------------------------------------------------------
 # Layer 1 — SIGNAL taxonomy (comms desk). raw_pts per the research, mapped
@@ -407,36 +407,6 @@ def _route(fit_pts: int, signal: float, cap: bool, corroborated: bool) -> str:
     return "monitor"
 
 
-# --------------------------------------------------------------------------
-# The "work it" layer — a chase-by date so a decaying lead gets a follow-up
-# date and does not just sit in the queue. Derived from the decay model.
-# --------------------------------------------------------------------------
-
-
-def _chase_by(triggers: list[dict]) -> dict:
-    """Timing handle for the chase itself. The mandate WINDOW says when the role
-    opens; this says when to FOLLOW UP if the first call goes to voicemail,
-    derived from the decay model: an event signal's freshness fades within a
-    week, a leadership signal holds but the first-mover edge fades within ~3
-    weeks. Without it, a decaying lead just sits in the queue."""
-    if not triggers:
-        return {}
-    best = min(triggers, key=lambda t: t.get("age_days") if t.get("age_days") is not None else 9999)
-    age = best.get("age_days") or 0
-    slow = best.get("family") == "leadership"
-    window = 21 if slow else 7
-    days_left = window - int(age)
-    if days_left <= 0:
-        days_left = 2          # lapsed: chase within a couple of days or lose it
-    target = (datetime.now(timezone.utc) + timedelta(days=days_left)).date()
-    rel = "today" if days_left == 0 else f"in {days_left} day" + ("" if days_left == 1 else "s")
-    rationale = ("leadership signal holds, but the first-mover edge fades within ~3 weeks" if slow
-                 else "event signal, freshness fades within a week")
-    return {"date": target.isoformat(),
-            "label": f"Chase by {target.day} {target.strftime('%b')}",
-            "days": days_left, "rel": rel, "rationale": rationale}
-
-
 def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict:
     """Score one BD lead on the two-axis model. `item` is a persisted
     predictor dict, or a funding event when kind='funding'. `desk` selects the
@@ -495,7 +465,6 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
         warm = bool(name or item.get("contact_on_file"))
         access_key, access_text = _access(triggers, warm, name)
         relationship = "warm" if warm else "cold"
-        # The "work it" layer — a chase-by date (see _chase_by above).
         return {
             "fit": fit_pts, "fit_band": fit_band, "fit_why": fit_why,
             "signal": signal,
@@ -511,7 +480,6 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
             "corroboration": len(triggers), "corroborated": corroborated,
             "anti_triggers": anti_flags,
             "triggers": triggers,
-            "chase_by": _chase_by(triggers),
         }
     except Exception:
         return {"fit": 0, "fit_band": "out", "fit_why": "", "signal": 0.0,
@@ -520,5 +488,4 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
                 "scale": "single senior search", "conflict": False,
                 "who_to_call": _WHO_DEFAULT,
                 "who_url": "", "corroboration": 0, "corroborated": False,
-                "anti_triggers": [], "triggers": [],
-                "chase_by": {}}
+                "anti_triggers": [], "triggers": []}
