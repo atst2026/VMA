@@ -2357,7 +2357,7 @@ LANDING_TEMPLATE = r"""
     100%{transform:scale(3.4);opacity:0;}
   }
 
-  .lbl{font-family:"Inter",-apple-system,system-ui,sans-serif;font-size:15px;letter-spacing:.04em;text-transform:uppercase;font-weight:600;color:#1F1F1F;}
+  .lbl{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;letter-spacing:.26em;text-transform:uppercase;font-weight:500;color:#1F1F1F;}
 
   @media (max-width:720px){
     .stage{gap:24px;}
