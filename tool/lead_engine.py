@@ -148,6 +148,21 @@ _WHO = {
 }
 _WHO_DEFAULT = "CHRO / Head of Comms"
 
+# Competing recruiters / staffing firms. VMA IS a recruitment company, so a
+# rival agency (or the government's in-house recruitment arm) hiring its own
+# comms team is a conflict, not a clean BD lead — it must not rank Fit 10/10
+# above real targets. Flagged and de-ranked, not silently dropped (VMA does
+# occasionally place into other recruiters), so the AD sees the conflict.
+_RECRUITER_RX = re.compile(
+    r"\b(recruit(?:ment|er|ers|ing)?|staffing|resourcing|personnel|headhunt\w*|"
+    r"manpower|employment agency|executive search|search\s*(?:&|and)\s*selection)\b",
+    re.I)
+
+
+def _is_recruiter(company: str) -> bool:
+    return bool(_RECRUITER_RX.search(company or ""))
+
+
 # Marketing-desk buyer map. Defaults to the functional buyer (CMO / Marketing
 # Director); a named, mapped contact (seeded_contact) always wins over this.
 _MKT_WHO = {
@@ -426,9 +441,17 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
                        or ((_lk or {}).get("url") if isinstance(_lk, dict) else (_lk or ""))
                        or "")
 
+        conflict = _is_recruiter(company)
         fit_pts, fit_band, fit_why = fit_score(company, account_tier)
+        if conflict:
+            # Out of ICP by conflict, regardless of sector/size/UK.
+            fit_pts, fit_band = 2, "out"
+            fit_why = "Out — competing recruiter / staffing firm (likely conflict)"
         signal, triggers = _signal(events, fallback, taxonomy)
         anti_flags, anti_mult, cap = _anti_triggers(events)
+        if conflict:
+            anti_flags = anti_flags + ["competing_recruiter"]
+            cap = True   # never routes above Monitor
         signal = round(signal * anti_mult, 2)
         # Corroboration gate: 2+ independent sources OR one Tier-1 verified
         # signal. A lone single-source scrape can't reach Call today.
@@ -450,6 +473,7 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
             "access": access_key, "access_text": access_text,
             "relationship": "warm" if warm else "cold",
             "scale": _scale(triggers),
+            "conflict": conflict,
             "who_to_call": _who_to_call(triggers, name, name_role, who_map, who_default),
             "who_url": who_url,
             "corroboration": len(triggers), "corroborated": corroborated,
@@ -460,6 +484,7 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
         return {"fit": 0, "fit_band": "out", "fit_why": "", "signal": 0.0,
                 "signal_band": "low", "action": "monitor", "action_label": "Monitor",
                 "access": "cold", "access_text": "", "relationship": "cold",
-                "scale": "single senior search", "who_to_call": _WHO_DEFAULT,
+                "scale": "single senior search", "conflict": False,
+                "who_to_call": _WHO_DEFAULT,
                 "who_url": "", "corroboration": 0, "corroborated": False,
                 "anti_triggers": [], "triggers": []}
