@@ -1290,6 +1290,9 @@ MR_CSS = r"""
 .mr-oc.on.oc-converted{background:#e7f3ec;color:#1e7a41;border-color:#bfe3cd}
 .mr-oc.on.oc-dead{background:#fdecea;color:#c0392b;border-color:#f0c5bd}
 .mr-prov{font:600 8px/1.6 "JetBrains Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-left:4px}
+.mr-rel{font:700 8.5px/1.6 "Inter",sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:6px}
+.mr-rel.rel-warm{color:#1e7a41;background:#e7f3ec}.mr-rel.rel-cold{color:#6b7686;background:#eef1f5}
+.mr-wholink{color:var(--blue-deep);text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:5px}.mr-wholink svg{width:11px;height:11px;opacity:.6}.mr-wholink:hover{text-decoration:underline}
 .mr-wb{font:600 9px/1.6 "JetBrains Mono",monospace;padding:2px 6px;border-radius:4px;background:rgba(14,40,69,.05);color:#1A3D7C;white-space:nowrap;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .mr-badge{font:500 10px/1.4 "Inter",sans-serif;background:var(--elevated);border:1px solid var(--mrborder);border-radius:6px;padding:3px 8px;color:var(--ink);white-space:nowrap;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .mr-newp{font:700 7.5px/1 "Inter",sans-serif;letter-spacing:.06em;color:#1d4ed8;background:#e9effb;padding:2px 4px;border-radius:3px;vertical-align:middle}
@@ -1377,14 +1380,17 @@ MR_JS = r"""
     if(!l.action) return '<div class="mr-gen2">'+esc(b)+' '+srcl(l)+'</div>';
     var stack=(l.stack||[]).map(function(t){var inner=esc(t.label)+(t.confidence?' <i>'+t.confidence+'</i>':'')+(t.age!=null?' <em>'+t.age+'d</em>':'');
       return t.url?'<a class="mr-st1 lk" href="'+esc(t.url)+'" target="_blank" rel="noopener" title="'+esc(t.src||'source')+'">'+inner+' '+IC.ext+'</a>':'<span class="mr-st1">'+inner+'</span>';}).join('');
+    var who=l.whoToCall?(l.whoUrl?'<a class="mr-wholink" href="'+esc(l.whoUrl)+'" target="_blank" rel="noopener">'+esc(l.whoToCall)+' '+IC.ext+'</a>':esc(l.whoToCall)):'';
     return '<div class="mr-doss">'
       +'<div class="mr-drow"><span class="mr-ab ab-'+l.action+'">'+esc(l.actionLabel)+'</span>'
       +'<span class="mr-lm">Fit <b>'+l.fit+'/10</b></span><span class="mr-lm">Signal <b>'+l.sig+'</b></span>'
       +(l.corro?'<span class="mr-lm">'+l.corro+' signal'+(l.corro>1?'s':'')+'</span>':'')
+      +(l.relationship?'<span class="mr-rel rel-'+l.relationship+'">'+l.relationship+'</span>':'')
+      +(l.scale?'<span class="mr-lm">'+esc(l.scale)+'</span>':'')
       +(l.anti&&l.anti.length?'<span class="mr-anti">⚠ '+esc(l.anti.join(' · '))+'</span>':'')+'</div>'
       +dk('Why now',esc(l.why)+' '+srcl(l))
       +(stack?dk('Evidence','<span class="mr-stack">'+stack+'</span>'):'')
-      +(l.whoToCall?dk('Who to call',esc(l.whoToCall)):'')
+      +(who?dk('Who to call',who):'')
       +(l.access?dk('Access',esc(l.access)):'')
       +(l.fitWhy?dk('Fit',esc(l.fitWhy)):'')
       +(l.opener?dk('The play','<span class="mr-play">'+esc(l.opener)+'</span>'):'')
@@ -1555,6 +1561,8 @@ def _mr_lead_fields(row):
         "fit": L.get("fit"), "fitBand": L.get("fit_band"), "fitWhy": L.get("fit_why"),
         "sig": L.get("signal"), "sigBand": L.get("signal_band"),
         "access": L.get("access_text"), "whoToCall": L.get("who_to_call"),
+        "whoUrl": L.get("who_url") or "", "relationship": L.get("relationship"),
+        "scale": L.get("scale"),
         "corro": L.get("corroboration"),
         "anti": L.get("anti_triggers") or [],
         "outcome": row.get("outcome") or "",
@@ -1695,10 +1703,22 @@ def _render_dashboard():
     from tool import lead_engine, lead_outcomes
     _desk = active_profile().key
     _outc = lead_outcomes.get_all()
+    # Relationship proxy: do we already hold a contact for this account? (Warm
+    # vs cold cold-open in the dossier.) Best-effort; never blocks the render.
+    try:
+        from tool.contacts.store import load_contacts, get_contact
+        _contacts = load_contacts()
+        def _on_file(co):
+            return bool(co and get_contact(_contacts, co))
+    except Exception:
+        def _on_file(co):
+            return False
     for _p in predictors:
+        _p["contact_on_file"] = _on_file(_p.get("company"))
         _p["lead"] = lead_engine.score_lead(_p, "predictor", _desk)
         _p["outcome"] = _outc.get(_p.get("pid"))
     for _f in funding_events:
+        _f["contact_on_file"] = _on_file(_f.get("company"))
         _f["lead"] = lead_engine.score_lead(_f, "funding", _desk)
         _f["outcome"] = _outc.get(_f.get("fid"))
     _mr_cal = lead_outcomes.calibration()

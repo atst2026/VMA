@@ -112,8 +112,11 @@ _ANTI = [
 # Who the AD actually calls — the buyer of a senior comms hire, by strongest
 # trigger. Surfaced in the dossier so the lead is actionable, not just scored.
 _WHO = {
-    "chro_change": "CHRO / People Director",
-    "comms_leader_departure": "CEO office / CHRO",
+    # CHRO change is the access route (HR opens the door), but the comms
+    # mandate is usually owned by the CCO / CEO with HR running process — aim
+    # the call at the owner, not just the seat that changed.
+    "chro_change": "CCO / CEO office (HR runs process)",
+    "comms_leader_departure": "CEO office / CCO",
     "ir_director_change": "CFO / Head of IR",
     "ceo_change": "Incoming CEO's office / CHRO",
     "chair_change": "CEO office / Company Secretary",
@@ -306,18 +309,40 @@ def _anti_triggers(events: list[dict]) -> tuple[list[str], float, bool]:
     return flags, mult, cap
 
 
-def _access(triggers: list[dict], seeded_contact: str | None,
-            linkedin: str | None) -> tuple[str, str]:
+def _access(triggers: list[dict], warm: bool, contact_name: str | None) -> tuple[str, str]:
+    """The single most important thing before a BD call: warm or cold. `warm`
+    means VMA has a contact on file for this account (the relationship proxy we
+    can actually compute). The trigger supplies the angle; the relationship
+    decides whether it's a warm follow-up or a cold open.
+
+    NOTE: this is a contact-on-file proxy, not full relationship history — VMA
+    has no integrated placements feed yet, so a genuine prior placement we
+    don't have a contact card for will read 'cold'. That feed is the
+    highest-value data integration still missing (see README/notes)."""
     fams = {t["family"] for t in triggers}
-    if seeded_contact:
-        return ("contact_known", f"A named decision-maker is mapped ({seeded_contact}).")
-    if linkedin:
-        return ("contact_known", "A named decision-maker is already mapped.")
     if "access" in fams:
-        return ("live_rfp", "A live RFP / platform re-tender is underway.")
-    if "leadership" in fams:
-        return ("new_supplier", "A new leader just landed, so the supplier relationship is open.")
-    return ("inbound", "Reachable on the trigger above before the role is briefed out.")
+        angle = "a live RFP / platform re-tender is underway"
+    elif "leadership" in fams:
+        angle = "a new leader just landed, so the supplier relationship is open"
+    elif "demand" in fams:
+        angle = "the build-out a change of this size implies, before the role is briefed out"
+    else:
+        angle = "reachable on the trigger above before the role is briefed out"
+    if warm:
+        nm = f" ({contact_name})" if contact_name else ""
+        return ("warm", f"Warm — VMA has a contact on file{nm}; {angle}.")
+    return ("cold", f"Cold — no VMA relationship on file; {angle}.")
+
+
+def _scale(triggers: list[dict]) -> str:
+    """Size of the prize: a single retained search vs a build-out. An AD pitches
+    these very differently and budgets time on exactly this."""
+    keys = {t["key"] for t in triggers}
+    if "job_ad_cluster" in keys:
+        return "build-out (role cluster)"
+    if sum(1 for t in triggers if t["family"] == "demand") >= 2:
+        return "multi-signal build-out"
+    return "single senior search"
 
 
 _ACTION_LABEL = {
@@ -371,13 +396,20 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
             }]
             account_tier = "watchlist"   # funding rows are UK-gated, on-patch by detection
             fallback = item.get("first_seen")
-            seeded, linkedin = None, None
+            name, name_role, who_url = None, None, ""
         else:
             events = [e for e in (item.get("events") or []) if isinstance(e, dict)]
             account_tier = item.get("account_tier") or "watchlist"
             fallback = item.get("last_seen") or item.get("first_seen")
-            seeded = item.get("seeded_contact_name")
-            linkedin = item.get("linkedin_profile_url")
+            # Resolve a PERSON, not just a seat: seeded hiring contact, then a
+            # resolved LinkedIn profile name. The dossier should never make the
+            # AD open a tab to find who to ring.
+            name = item.get("seeded_contact_name") or item.get("linkedin_profile_name")
+            name_role = item.get("seeded_contact_role") or item.get("linkedin_profile_role")
+            _lk = item.get("linkedin")
+            who_url = (item.get("linkedin_profile_url")
+                       or ((_lk or {}).get("url") if isinstance(_lk, dict) else (_lk or ""))
+                       or "")
 
         fit_pts, fit_band, fit_why = fit_score(company, account_tier)
         signal, triggers = _signal(events, fallback, taxonomy)
@@ -390,7 +422,10 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
         has_verified = any(t.get("confidence") == "verified" for t in triggers)
         corroborated = independent >= 2 or has_verified
         action = _route(fit_pts, signal, cap, corroborated)
-        access_key, access_text = _access(triggers, seeded, linkedin)
+        # Warm/cold = do we hold a contact for this account (the proxy we can
+        # compute). contact_on_file is set by the caller from the contacts store.
+        warm = bool(name or item.get("contact_on_file"))
+        access_key, access_text = _access(triggers, warm, name)
         return {
             "fit": fit_pts, "fit_band": fit_band, "fit_why": fit_why,
             "signal": signal,
@@ -398,9 +433,10 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
                             else "medium" if signal >= 3 else "low"),
             "action": action, "action_label": _ACTION_LABEL[action],
             "access": access_key, "access_text": access_text,
-            "who_to_call": _who_to_call(triggers, seeded,
-                                        item.get("seeded_contact_role"),
-                                        who_map, who_default),
+            "relationship": "warm" if warm else "cold",
+            "scale": _scale(triggers),
+            "who_to_call": _who_to_call(triggers, name, name_role, who_map, who_default),
+            "who_url": who_url,
             "corroboration": len(triggers), "corroborated": corroborated,
             "anti_triggers": anti_flags,
             "triggers": triggers,
@@ -408,6 +444,7 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
     except Exception:
         return {"fit": 0, "fit_band": "out", "fit_why": "", "signal": 0.0,
                 "signal_band": "low", "action": "monitor", "action_label": "Monitor",
-                "access": "inbound", "access_text": "", "who_to_call": _WHO_DEFAULT,
-                "corroboration": 0, "corroborated": False,
+                "access": "cold", "access_text": "", "relationship": "cold",
+                "scale": "single senior search", "who_to_call": _WHO_DEFAULT,
+                "who_url": "", "corroboration": 0, "corroborated": False,
                 "anti_triggers": [], "triggers": []}
