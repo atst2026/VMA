@@ -408,52 +408,9 @@ def _route(fit_pts: int, signal: float, cap: bool, corroborated: bool) -> str:
 
 
 # --------------------------------------------------------------------------
-# The "work it" layer — what an AD needs to prioritise and chase a lead, beyond
-# just opening it: how big the prize is (so the week can be ranked by expected
-# value) and by when to chase it (so a decaying lead does not sit in the queue).
-# Desk-aware (comms / marketing); fee bands are indicative and confirmed on the
-# call, never asserted as exact.
+# The "work it" layer — a chase-by date so a decaying lead gets a follow-up
+# date and does not just sit in the queue. Derived from the decay model.
 # --------------------------------------------------------------------------
-
-# Indicative recruitment-fee bands (GBP) by seniority. A senior retained search
-# on a ~£100-150k seat bills ~28-33% of total comp; a mid-level placement bills
-# materially less. Deliberately COARSE ranges, surfaced as "indicative, confirm
-# on the call" — they let an AD rank the week by expected value, which a bare
-# "build-out (role cluster)" does not. Same order of magnitude across both desks.
-_FEE_SENIOR = (25_000, 45_000)     # one senior retained search
-_FEE_MID = (9_000, 18_000)         # per mid-level placement
-
-
-def _fmt_fee(low: int, high: int) -> str:
-    return f"£{low // 1000}k-£{high // 1000}k"
-
-
-def _prize(triggers: list[dict], desk: str) -> dict:
-    """Size and shape of the prize: how many roles, at what level, worth what
-    fee. A job-ad cluster implies mid-level hiring already underway plus an
-    unfilled senior mandate (3+ roles); a lone leadership move is a single
-    senior search. Fees are indicative ranges the AD confirms against the brief."""
-    noun = "marketing" if (desk or "comms").lower() == "marketing" else "comms"
-    keys = {t.get("key") for t in triggers}
-    cluster = "job_ad_cluster" in keys
-    multi = sum(1 for t in triggers if t.get("family") == "demand") >= 2
-    mids = 2 if cluster else (1 if multi else 0)
-    roles = 1 + mids
-    low = _FEE_SENIOR[0] + mids * _FEE_MID[0]
-    high = _FEE_SENIOR[1] + mids * _FEE_MID[1]
-    if mids:
-        plus = "+" if cluster else ""
-        mix = f"1 senior + {mids}{plus} mid-level {noun}"
-        roles_label = f"{roles}{plus} roles"
-    else:
-        mix = f"single senior {noun} search"
-        roles_label = "1 senior role"
-    return {
-        "roles": roles, "mix": mix, "fee": _fmt_fee(low, high),
-        "fee_low": low, "fee_high": high,
-        "summary": f"{roles_label}: {mix}. Indicative {_fmt_fee(low, high)} in fees.",
-        "basis": "Indicative: fee scales with the exact level and salary; confirm the brief on the call.",
-    }
 
 
 def _chase_by(triggers: list[dict]) -> dict:
@@ -538,8 +495,7 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
         warm = bool(name or item.get("contact_on_file"))
         access_key, access_text = _access(triggers, warm, name)
         relationship = "warm" if warm else "cold"
-        # The "work it" layer — deal size and a chase-by date (see the helpers
-        # above).
+        # The "work it" layer — a chase-by date (see _chase_by above).
         return {
             "fit": fit_pts, "fit_band": fit_band, "fit_why": fit_why,
             "signal": signal,
@@ -555,7 +511,6 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
             "corroboration": len(triggers), "corroborated": corroborated,
             "anti_triggers": anti_flags,
             "triggers": triggers,
-            "prize": _prize(triggers, desk),
             "chase_by": _chase_by(triggers),
         }
     except Exception:
@@ -566,4 +521,4 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
                 "who_to_call": _WHO_DEFAULT,
                 "who_url": "", "corroboration": 0, "corroborated": False,
                 "anti_triggers": [], "triggers": [],
-                "prize": {}, "chase_by": {}}
+                "chase_by": {}}

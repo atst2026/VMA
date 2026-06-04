@@ -75,8 +75,8 @@ def test_opener_falls_back_without_company():
     assert isinstance(op, str) and op  # default, never blank
 
 
-# ---- the "work it" layer flows engine -> console row -------------------
-def test_mr_lead_fields_carries_work_it_layer():
+# ---- the dossier row carries only the slimmed-down fields --------------
+def test_mr_lead_fields_carries_chase_by_and_sources():
     from datetime import datetime, timezone, timedelta
     from tool import lead_engine as LE
     fresh = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
@@ -90,8 +90,9 @@ def test_mr_lead_fields_carries_work_it_layer():
             ]}
     pred["lead"] = LE.score_lead(pred)
     f = d._mr_lead_fields(pred)
-    assert f["prize"]["fee"].startswith("£")
     assert f["chaseBy"]["label"].startswith("Chase by")
+    assert f["stack"] and any(t.get("url") for t in f["stack"])   # View sources has URLs
     # the removed "fodder" fields no longer ship to the client
-    for gone in ("competitive", "proof", "objection", "whoToCall", "access", "scale", "outcome"):
+    for gone in ("prize", "competitive", "proof", "objection",
+                 "whoToCall", "access", "scale", "outcome", "fit", "fitWhy", "relationship"):
         assert gone not in f
