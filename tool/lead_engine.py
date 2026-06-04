@@ -1,21 +1,42 @@
-"""Two-axis BD lead scoring — Fit x Signal (comms desk).
+"""BD lead scoring — a multi-layer CONJUNCTION, not a single trigger.
 
-Implements the v2.0 framework from the lead-sourcing research: a single
-combined "strength" is split into two independent axes,
+v3 of the lead-sourcing research ("What makes a genuinely strong pre-contact
+BD lead"). A strong lead is signal STACKING: two or three independent,
+same-direction signals across DIFFERENT layers, with no material
+contradiction. A lone trigger plus a heuristic is a hypothesis to watch, not a
+lead to action. Everything here is for the lead-up TO first contact.
 
-    FIT (ICP)     slow-moving, never decays   — should VMA serve this org at all?
-    SIGNAL/INTENT fast, decayed, confidence-weighted — is a comms mandate
-                                                  imminent and winnable?
+The layers (each detectable from public/scraped data, no JobAdder, no outcome
+loop yet):
 
-and the lead is routed on the fit x signal matrix to one concrete action:
-Call today / Nurture / Investigate / Monitor. Each contributing trigger
-carries its own raw points x recency-decay x source-confidence, anti-triggers
-suppress multiplicatively, and an access angle says *how* VMA gets in.
+  FIT (ICP, Layer 2)        slow-moving — should VMA serve this org at all?
+  SIGNAL / TRIGGER (1)      the event, x recency-decay x source-confidence.
+  MARKET STATE (3)          a global macro coefficient (KPMG/REC, IPA, Gartner)
+                            that raises the stacking bar in a cold market, so a
+                            lone trigger defaults to "watch".
+  FINANCIAL DIRECTION (4)   growth funds an external build; cuts absorb it.
+                            Signals must point the same way (funding AND
+                            layoffs cancel out).
+  POSTURE (5)               in-house-vs-agency — the decisive, under-used
+                            filter. A building internal TA / "no agencies" /
+                            in-house bench is an anti-signal; an active cluster
+                            with no internal recruiter, or aged postings, is a
+                            pro-signal. Inferred pre-contact, always a
+                            probability.
+  OPPORTUNITY SIZE (7)      team-build vs single backfill.
+  RECENCY + TOO-FRESH (9)   decay both ways: too old = stale; a brand-new
+                            leadership / funding trigger is premature (the new
+                            leader has no hiring plan for ~8-12 weeks).
 
-This is an ADDITIVE layer over tool.predictor_pipeline: it reads a persisted
-predictor dict (or a funding event) and returns a `lead` sub-dict. It does not
-change the legacy `score` / `strength` / ordering. Comms desk only for now;
-the marketing taxonomy is a separate table.
+Routing (Layer 5 of the report): ACTIVE hiring now (a corroborated live
+cluster, no in-house contradiction) is the strongest pre-contact signal ->
+Call today. Anticipatory triggers (leadership / funding) need maturity plus a
+stack -> Call today; thinner -> Nurture (prepare) or Monitor (watch). Negative
+scoring is first-class. Deferred: live index feeds, precise TA / PSL scraping,
+and outcome-based re-weighting.
+
+Additive over tool.predictor_pipeline: reads a persisted predictor dict (or a
+funding event) and returns a `lead` sub-dict. Comms + marketing desks.
 """
 from __future__ import annotations
 
@@ -91,6 +112,152 @@ _MKT_TAXONOMY = {
 _SOFT_CAP = 2.0          # soft modifiers add at most +2, and only alongside a real signal
 _SIGNAL_HIGH = 6.0       # effective-points threshold for "High SIGNAL"
 _FIT_HIGH = 7            # 0-10 threshold for "High FIT"
+
+# --------------------------------------------------------------------------
+# Layer 3 — MARKET STATE (global macro modifier). The report's central
+# insight: in a contracting hiring market the SAME trigger means something
+# different — companies freeze, absorb hiring in-house and cut budgets — so a
+# lone trigger should default to "watch" and a genuinely strong lead must
+# clear a higher stacking bar. This is one monthly-updatable constant (no live
+# feed yet), read from the KPMG/REC UK Report on Jobs Permanent Placements
+# Index (PPI), the IPA Bellwether marketing-budget balance and the Gartner CMO
+# Spend Survey. PPI > 50 = expansion, < 50 = contraction. UPDATE MONTHLY.
+# --------------------------------------------------------------------------
+MARKET_STATE = {
+    "ppi": 44.3,                    # KPMG/REC Permanent Placements Index, Dec 2025
+    "marketing_budget_balance": 7.3,  # IPA Bellwether Q1 2026 net balance, %
+    "as_of": "2025-12",
+    "source": "KPMG/REC Report on Jobs; IPA Bellwether; Gartner CMO Spend",
+}
+
+
+def _market_state(sector: str | None = None) -> dict:
+    """Resolve the macro modifier (sector segmentation is a later upgrade).
+    Returns state, the stacking bar a STRONG lead must clear, and a one-line
+    human read for the dossier."""
+    ppi = MARKET_STATE.get("ppi", 50.0)
+    if ppi >= 52:
+        return {"state": "expanding", "stack_req": 2,
+                "note": "the hiring market is expanding"}
+    if ppi <= 48:
+        return {"state": "contracting", "stack_req": 3,
+                "note": "the hiring market is contracting, so lone triggers are often absorbed in-house"}
+    return {"state": "flat", "stack_req": 2, "note": "the hiring market is flat"}
+
+
+# Layer 4 — FINANCIAL DIRECTION. Growth funds an external build; contraction
+# absorbs it. The report's rule: signals must point the SAME way, so a trigger
+# contradicted by a budget-cut signal downgrades to "watch". (Bare
+# "restructure" is a comms trigger that is financially ambiguous, so it is NOT
+# treated as a cut unless cut language is present.)
+_FIN_PRO_KEYS = {"funding", "ipo_listing"}
+_FIN_PRO_RX = re.compile(
+    r"\b(rais(?:e|ed|ing)|funding round|series\s+[a-z]\b|\$\d|£\d+\s?m|investment|"
+    r"expansion|expanding|record (?:revenue|results|profit|year)|revenue growth|"
+    r"new (?:office|hq|headquarters|market|site)|contract win|won .{0,20}contract|"
+    r"scale[\s-]?up|growth capital|ipo|flotation|listing)\b", re.I)
+_FIN_ANTI_KEYS = {"profit_warning", "contract_loss"}
+# NOTE: no trailing \b — several alternatives are stems (redundanc, efficienc,
+# streamlin, insolvenc, downsiz, rightsiz, cost-cut) that must match inside a
+# longer word ("redundancies", "streamlining"); a trailing \b would kill them.
+_FIN_ANTI_RX = re.compile(
+    r"\b(?:redundanc|lay[\s-]?offs?|job cuts|cost[\s-]?cut|"
+    r"efficienc|streamlin|rightsiz|downsiz|hiring freeze|recruitment freeze|"
+    r"profit warning|administration|insolvenc|savings? (?:programme|program|plan|target)|"
+    r"reduce (?:costs|headcount|spend)|cut (?:costs|jobs|headcount|spend))", re.I)
+
+# Layer 5 — IN-HOUSE-vs-AGENCY POSTURE (the decisive, under-used filter).
+# Whether a need reaches an external agency depends on the recruitment
+# operating model. Detectable, but only inferable pre-contact, so always a
+# probability with a confidence flag (never asserted).
+_POSTURE_INT_RX = re.compile(
+    r"\b(?:talent acquisition|in[\s-]house recruit|internal recruit|talent partner|"
+    r"rpo\b|recruitment process outsourc|no agenc|agencies need not|"
+    r"direct applicants? only|no recruiters?|strictly no agenc|head of ta\b)", re.I)
+_POSTURE_EXT_RX = re.compile(
+    r"\b(retained search|executive search|via (?:an )?agency|appointed .{0,20}agency|"
+    r"preferred supplier|on (?:the )?psl)\b", re.I)
+
+
+def _financial_direction(events: list[dict], live_triggers: list[dict]) -> dict:
+    blob = " ".join((e.get("evidence") or "") + " " + (e.get("trigger_label") or "")
+                    for e in events)
+    keys = {t.get("key") for t in live_triggers}
+    has_pro = bool(keys & _FIN_PRO_KEYS) or bool(_FIN_PRO_RX.search(blob))
+    has_anti = bool(keys & _FIN_ANTI_KEYS) or bool(_FIN_ANTI_RX.search(blob))
+    if has_anti and has_pro:
+        direction = "conflicting"
+    elif has_anti:
+        direction = "anti"
+    elif has_pro:
+        direction = "pro"
+    else:
+        direction = "neutral"
+    return {"direction": direction, "has_pro": has_pro, "has_anti": has_anti}
+
+
+def _posture(item: dict, live_triggers: list[dict], anti_flags: list[str]) -> dict:
+    """Likely to go external (pro) or absorbed in-house (anti)? Inferred from
+    seeded flags, job-ad language, an active cluster with no internal recruiter,
+    and aged postings. Confidence is always 'inferred' pre-contact."""
+    blob = " ".join((t.get("evidence") or "") + " " + (t.get("label") or "")
+                    for t in live_triggers)
+    keys = {t.get("key") for t in live_triggers}
+    reasons_int, reasons_ext = [], []
+    # seeded, authoritative flags win
+    if item.get("internal_ta") is True or item.get("psl_status") in ("closed", "off", "no", False):
+        reasons_int.append("internal TA / not on PSL on file")
+    if "in_house_team" in anti_flags or _POSTURE_INT_RX.search(blob):
+        reasons_int.append("in-house team / TA language detected")
+    if item.get("psl_status") in ("on", "yes", True) or _POSTURE_EXT_RX.search(blob):
+        reasons_ext.append("history of agency use / on a PSL")
+    cluster = "job_ad_cluster" in keys
+    aged_cluster = any(t.get("key") == "job_ad_cluster" and (t.get("age_days") or 0) >= 45
+                       for t in live_triggers)
+    if cluster and not reasons_int:
+        reasons_ext.append("roles open beyond the average time-to-fill, no in-house recruiter in sight"
+                           if aged_cluster else "an active hiring cluster with no in-house recruiter in sight")
+    if reasons_int:
+        return {"direction": "internal", "confidence": "inferred", "reasons": reasons_int}
+    if reasons_ext:
+        return {"direction": "external", "confidence": "inferred", "reasons": reasons_ext}
+    return {"direction": "neutral", "confidence": "inferred", "reasons": []}
+
+
+def _assess(*, fit_band: str, demand_now: bool, n_dim: int, corroborated: bool,
+            cap: bool, conflict: bool, contradiction: bool, too_fresh: bool,
+            quality_trigger: bool, stack_req: int) -> tuple[str, str]:
+    """The conjunction router. Returns (strength_band, action).
+
+    Two routes to STRONG, both gated on corroboration and no contradiction:
+      (a) ACTIVE hiring now: a live, corroborated hiring cluster / RFP with no
+          in-house contradiction. They are demonstrably hiring externally now,
+          which overrides the cold-market default.
+      (b) ANTICIPATORY stack: leadership / funding signals need maturity (past
+          the 8-12 week too-fresh hold) AND a stack of (stack_req - 1) extra
+          same-direction layers (a second event, growth funding, an external
+          posture) on top of the base trigger.
+    Everything thinner is promising (prepare) or a watch (monitor)."""
+    if cap or conflict:
+        return "parked", "monitor"
+    if contradiction:
+        return "watch", "monitor"            # conflicting signals: hypothesis to watch
+    if demand_now and corroborated:
+        return "strong", ("call_today" if fit_band == "core" else "investigate")
+    if too_fresh and quality_trigger:
+        return "premature", ("nurture" if fit_band in ("core", "adjacent") else "monitor")
+    if quality_trigger and corroborated and n_dim >= (stack_req - 1):
+        return "strong", ("call_today" if fit_band == "core" else "investigate")
+    if quality_trigger and (n_dim >= 1 or fit_band == "core"):
+        return "promising", ("nurture" if fit_band in ("core", "adjacent") else "investigate")
+    return "watch", "monitor"
+
+
+# Numeric rank for ordering the board by strength (strongest first), folded
+# into the legacy opportunity value at render time.
+_STRENGTH_RANK = {"strong": 1.0, "promising": 0.72, "premature": 0.6,
+                  "watch": 0.4, "parked": 0.06}
+
 
 # Sources we treat as Tier-1 direct verification.
 _TIER1 = ("companieshouse", "rns", "londonstockexchange", "lse",
@@ -388,23 +555,51 @@ def _who_to_call(triggers, seeded, seeded_role, who_map, who_default):
     return who_map.get(triggers[0]["key"], who_default) if triggers else who_default
 
 
-def _route(fit_pts: int, signal: float, cap: bool, corroborated: bool) -> str:
-    """Layer 5 routing. Call today additionally REQUIRES corroboration — a
-    single uncorroborated signal never earns a call, however high its raw
-    points; it routes to Investigate (verify before spending recruiter time).
-    Belt-and-braces over the confidence weighting, which already caps a lone
-    single-source signal well below threshold."""
-    if cap:
-        return "monitor"
-    high_fit = fit_pts >= _FIT_HIGH
-    high_sig = signal >= _SIGNAL_HIGH
-    if high_fit and high_sig:
-        return "call_today" if corroborated else "investigate"
-    if high_fit:
-        return "nurture"
-    if high_sig:
-        return "investigate"
-    return "monitor"
+def _why_now_narrative(desk: str, company: str, trig_label: str | None,
+                       seat: str | None, window: str | None, band: str,
+                       pro_human: list[str], contradictions: list[str],
+                       market_note: str) -> str:
+    """Articulate the CONJUNCTION, not a single-trigger heuristic. British, no
+    em dashes. This is what makes the dossier say *why* a pre-market hiring
+    opportunity is real (or why it is only one to watch)."""
+    noun = "marketing" if (desk or "comms").lower() == "marketing" else "comms"
+    co = (company or "this account").strip()
+    seat = (seat or f"a senior {noun} hire").strip()
+    w = (window or "the coming weeks").strip()
+    trig = (trig_label or "a recent development").strip()
+
+    def _join(items):
+        items = [i for i in items if i]
+        if not items:
+            return ""
+        if len(items) == 1:
+            return items[0]
+        return ", ".join(items[:-1]) + " and " + items[-1]
+
+    if band == "strong":
+        stack = _join(pro_human)
+        tail = f" It stacks with {stack}." if stack else ""
+        return (f"{trig} at {co}, and the signals point the same way.{tail} "
+                f"This reads as a team build heading to an agency, so {seat} is winnable now. Worth a call.")
+    if band == "premature":
+        return (f"{trig} at {co} has only just landed. A new leader rarely has a hiring plan for "
+                f"8 to 12 weeks, so prepare the approach now and make contact when the plan forms.")
+    if band == "watch":
+        return (f"{trig} at {co}, but {_join(contradictions) or 'the corroborating signals are not there yet'}. "
+                f"The signals conflict, so this is one to watch rather than call.")
+    if band == "parked":
+        return (f"{trig} at {co}. {_join(contradictions) or 'Not a clean external mandate'}. "
+                f"Not actionable as a BD lead.")
+    # promising
+    missing = []
+    if not pro_human:
+        missing.append("no corroborating build-out yet")
+    if "contracting" in (market_note or ""):
+        missing.append(market_note)
+    tail = _join(missing) or "it needs a second, corroborating signal"
+    extra = (" " + _join(pro_human) + " already point the right way, but") if pro_human else ""
+    return (f"{trig} at {co}. A real trigger for {seat};{extra} {tail}. "
+            f"Prepare and watch for the build-out within {w}.")
 
 
 def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict:
@@ -459,12 +654,79 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
                            for t in triggers if (t.get("source") or t.get("url"))})
         has_verified = any(t.get("confidence") == "verified" for t in triggers)
         corroborated = independent >= 2 or has_verified
-        action = _route(fit_pts, signal, cap, corroborated)
+
+        # ---- the CONJUNCTION model (the report's core) ----------------------
+        # Only signals that are still live (not decayed) count toward the stack.
+        live = [t for t in triggers if (t.get("recency_mult") or 0) >= 0.3]
+        live_keys = {t.get("key") for t in live}
+        live_fams = {t.get("family") for t in live}
+        quality_trigger = any(t.get("confidence") in ("verified", "corroborated") for t in live)
+        demand_now = any(t.get("key") in ("job_ad_cluster", "ic_platform_rfp")
+                         and (t.get("recency_mult") or 0) >= 0.6 for t in live)
+        buildout = _scale(live) != "single senior search"
+        multi_event = len(live_keys) >= 2
+        fin = _financial_direction(events, live)
+        posture = _posture(item, live, anti_flags)
+        mkt = _market_state()
+
+        # EXTRA same-direction layers on top of the base trigger. These are the
+        # independent corroborations the report calls "signal stacking across
+        # different layers": a second distinct event, growth/funding, or an
+        # external posture read.
+        dim_financial = fin["direction"] == "pro"
+        dim_posture = posture["direction"] == "external"
+        n_dim = sum((multi_event, dim_financial, dim_posture))
+        # a single number for ordering / debugging: base trigger + extra layers
+        n_pro = (1 if quality_trigger else 0) + n_dim
+
+        # negative scoring: a trigger sitting beside a contradiction is a watch
+        contradictions = []
+        if fin["direction"] in ("anti", "conflicting") or "layoffs" in anti_flags:
+            contradictions.append("budget pressure or cuts point the other way")
+        if posture["direction"] == "internal":
+            contradictions.append("the hiring looks likely to be absorbed in-house")
+        if "competitor_lock" in anti_flags:
+            contradictions.append("the search looks locked to an incumbent")
+        material_contradiction = bool(contradictions)
+
+        # too-fresh hold: a fresh leadership/funding trigger with no active
+        # hiring is premature (the new leader has no plan for 8-12 weeks).
+        anticipatory = ("leadership" in live_fams) or bool(live_keys & {"funding", "ipo_listing"})
+        freshest = min((t.get("age_days") for t in live if t.get("age_days") is not None),
+                       default=999)
+        too_fresh = anticipatory and freshest < 21 and not demand_now
+
+        strength, action = _assess(
+            fit_band=fit_band, demand_now=demand_now, n_dim=n_dim,
+            corroborated=corroborated, cap=cap, conflict=conflict,
+            contradiction=material_contradiction, too_fresh=too_fresh,
+            quality_trigger=quality_trigger, stack_req=mkt["stack_req"])
+
+        # Human-readable stack for the dossier narrative.
+        pro_human = []
+        if demand_now:
+            pro_human.append("several roles already open")
+        elif buildout:
+            pro_human.append("a team build, not a backfill")
+        elif multi_event:
+            pro_human.append("more than one signal at once")
+        if dim_financial:
+            pro_human.append("growth funding the build")
+        if dim_posture and not demand_now:
+            pro_human.append("no in-house recruiter in sight")
+
         # Warm/cold = do we hold a contact for this account (the proxy we can
         # compute). contact_on_file is set by the caller from the contacts store.
         warm = bool(name or item.get("contact_on_file"))
         access_key, access_text = _access(triggers, warm, name)
         relationship = "warm" if warm else "cold"
+
+        seat = (item.get("predicted_role") or "").strip() or None
+        window = (item.get("window_label") or item.get("window") or "").strip() or None
+        why_now = _why_now_narrative(
+            desk, company, (triggers[0].get("label") if triggers else None),
+            seat, window, strength, pro_human, contradictions, mkt["note"])
+
         return {
             "fit": fit_pts, "fit_band": fit_band, "fit_why": fit_why,
             "signal": signal,
@@ -480,6 +742,17 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
             "corroboration": len(triggers), "corroborated": corroborated,
             "anti_triggers": anti_flags,
             "triggers": triggers,
+            # ---- the conjunction layer ----
+            "strength": strength,
+            "strength_rank": _STRENGTH_RANK.get(strength, 0.4),
+            "stack": pro_human,
+            "n_pro": n_pro,
+            "contradictions": contradictions,
+            "premature": too_fresh,
+            "financial": fin,
+            "posture": posture,
+            "market_state": {"state": mkt["state"], "note": mkt["note"]},
+            "why_now": why_now,
         }
     except Exception:
         return {"fit": 0, "fit_band": "out", "fit_why": "", "signal": 0.0,
@@ -488,4 +761,8 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
                 "scale": "single senior search", "conflict": False,
                 "who_to_call": _WHO_DEFAULT,
                 "who_url": "", "corroboration": 0, "corroborated": False,
-                "anti_triggers": [], "triggers": []}
+                "anti_triggers": [], "triggers": [],
+                "strength": "watch", "strength_rank": 0.4, "stack": [], "n_pro": 0,
+                "contradictions": [], "premature": False,
+                "financial": {"direction": "neutral"}, "posture": {"direction": "neutral"},
+                "market_state": {"state": "flat", "note": ""}, "why_now": ""}

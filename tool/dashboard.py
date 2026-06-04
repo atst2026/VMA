@@ -1767,7 +1767,8 @@ def _build_mr_rows(premarket_rows, leads, role_label):
                 "isNew": 1 if first_seen.startswith(today) else 0,
                 "type": "Funding", "key": "fund",
                 "seat": role_label, "why": why,
-                "whyNow": _why_now("funding", _mkt, role_label, _mr_compact_window(row.get("window"))),
+                "whyNow": (row.get("lead") or {}).get("why_now")
+                          or _why_now("funding", _mkt, role_label, _mr_compact_window(row.get("window"))),
                 "brief": brief or "Funding round — senior build-out likely.",
                 "url": url, "src": _mr_domain(url),
                 "win": _mr_compact_window(row.get("window")),
@@ -1794,7 +1795,8 @@ def _build_mr_rows(premarket_rows, leads, role_label):
                 "isNew": 1 if row.get("is_new") else 0,
                 "type": typ, "key": key,
                 "seat": seat, "why": why,
-                "whyNow": _why_now(tkey, _mkt, seat, row.get("window_label")),
+                "whyNow": (row.get("lead") or {}).get("why_now")
+                          or _why_now(tkey, _mkt, seat, row.get("window_label")),
                 "brief": brief,
                 "url": url, "src": _mr_domain(url),
                 "win": row.get("window_label") or "",
@@ -1892,10 +1894,11 @@ def _render_dashboard():
         _r["contact_on_file"] = _on_file(_r.get("company"))
         _r["lead"] = lead_engine.score_lead(_r, _kind, _desk)
         _r["outcome"] = _outc.get(_id)
-        # Competing recruiters are flagged out of ICP; sink them below real
-        # leads so they don't sit above the fold (still shown, not dropped).
-        if _r["lead"].get("conflict"):
-            _r["_opp"] = (_r.get("_opp") or 0.0) * 0.05
+        # Order the board by the conjunction strength: a stacked, call-today
+        # lead should sit above a lone "watch", even if the legacy opportunity
+        # value disagrees. (Competing recruiters carry the lowest rank, so they
+        # still sink below real leads.)
+        _r["_opp"] = (_r.get("_opp") or 0.0) * (_r["lead"].get("strength_rank") or 0.4)
     for _p in predictors:
         _enrich(_p, "predictor", _p.get("pid"))
     for _f in funding_events:
