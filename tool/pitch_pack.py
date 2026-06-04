@@ -239,6 +239,29 @@ def _gdelt_articles(query: str, hours_back: int) -> list[dict]:
         return []
 
 
+# Consumer-promo / lifestyle / clickbait coverage that names the brand but is
+# irrelevant to a senior comms/marketing leadership pitch (e.g. a "free coffee
+# using a little-known trick" deals piece). Deliberately targeted so it doesn't
+# catch legitimate corporate news (note "free cash flow" is NOT matched — only
+# "free <consumer item>").
+_NEWS_NOISE = _re.compile(
+    r"(?:"
+    r"free (?:coffee|drink|cup|gift|sample|delivery|food|meal|item|refill|stuff|breakfast)|"
+    r"\bvoucher|\bcoupon|promo code|discount code|\bgiveaway\b|win an? |"
+    r"little[\s-]?known trick|how to (?:claim|get a free|save|order|win)|"
+    r"secret menu|menu hack|money[\s-]?saving|save (?:£|\$)\s?\d|gift card|"
+    r"loyalty (?:card|points|scheme)|reward(?:s)? (?:card|points|scheme)|"
+    r"\brecipe\b|taste test|best (?:coffee|deals?|buys?)\b|deal of the (?:day|week)|"
+    r"\bhack\b|order now|half[\s-]?price"
+    r")", _re.I)
+
+
+def _is_strategic_headline(title: str) -> bool:
+    """False for consumer-promo / lifestyle / clickbait headlines that should
+    never reach a client-facing pitch pack's 'Recent market context'."""
+    return not _NEWS_NOISE.search(title or "")
+
+
 def _is_relevant_english(article: dict, core: str) -> bool:
     """Keep only English-language coverage that actually names the company.
     GDELT otherwise returns multilingual global noise (Spanish banking,
@@ -268,8 +291,9 @@ def recent_news_for(target: str, hours_back: int = 24 * 90) -> list[dict]:
     if not raw and core.lower() != (target or "").strip().lower():
         log.info("GDELT %r empty — retrying core name %r", target, core)
         raw = _gdelt_articles(f'"{core}"', hours_back)
-    articles = [a for a in raw if _is_relevant_english(a, core)]
-    log.info("GDELT %r: %d raw, %d English & on-topic", target, len(raw), len(articles))
+    articles = [a for a in raw if _is_relevant_english(a, core)
+                and _is_strategic_headline(a.get("title") or "")]
+    log.info("GDELT %r: %d raw, %d English, on-topic & strategic", target, len(raw), len(articles))
     return articles
 
 
