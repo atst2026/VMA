@@ -277,10 +277,27 @@ def raster_is_visible(data: bytes) -> bool:
         return True
 
 
+def _is_photo_not_logo(content: bytes) -> bool:
+    """True for a heavy / photo-scale raster — a hero image, banner or stock
+    photo, never a logo. A real logo is an SVG or a light raster; multi-megabyte
+    or huge-canvas images are the wrong kind of artwork for the cover."""
+    if len(content) > 1_500_000:
+        return True
+    try:
+        import io
+        from PIL import Image
+        w, h = Image.open(io.BytesIO(content)).size
+        if max(w, h) > 2200:
+            return True
+    except Exception:
+        pass
+    return False
+
+
 def usable_logo(content: bytes, content_type: str = "", source: str = "") -> bool:
     """The single acceptance gate: structurally a valid image (valid_logo), not a
-    decorative graphic (by its source/markup), and one that will render visibly
-    on the cover (SVG and raster visibility checks).
+    decorative graphic (by its source/markup), not a photo/hero, and one that
+    will render visibly on the cover (SVG and raster visibility checks).
 
     The decorative check on `source` looks only at the URL PATH (a glyph
     filename like `/loading-spinner.svg`), never the host — so a real company
@@ -295,6 +312,8 @@ def usable_logo(content: bytes, content_type: str = "", source: str = "") -> boo
         if _looks_decorative(content[:2000].decode("utf-8", "ignore")):
             return False
         return svg_is_visible(content)
+    if _is_photo_not_logo(content):
+        return False
     return raster_is_visible(content)
 
 
@@ -708,21 +727,28 @@ _THIRD_PARTY_CLASS_RX = re.compile(
 
 
 def _logo_name_tokens(company: str, base_url: str) -> list[str]:
-    """Tokens that mark an asset as the company's OWN: the name's significant
-    words, its acronym, and the site's own domain label (so 'oqc-logo.svg' is
-    recognised for 'Oxford Quantum Circuits' on oqc.tech)."""
-    base = _name_tokens(company)
-    toks = [t for t in base if len(t) >= 3]
-    if len(base) >= 2:
-        ac = "".join(t[0] for t in base)
-        if len(ac) >= 2:
-            toks.append(ac)
+    """DISTINCTIVE identifiers that mark an asset as the company's OWN — the
+    site's own domain label, the name's acronym, the whole-name slug, and (only
+    for a single-word brand) that word. Deliberately NOT the individual common
+    words of a multi-word name: 'Oxford Quantum Circuits' must not claim a
+    'Quantum Insider' press logo via the generic word 'quantum'."""
+    sig = _name_tokens(company)
+    toks: list[str] = []
     try:
         lab = _domain_label(urlparse(base_url).netloc)
-        if len(lab) >= 2:
+        if len(lab) >= 3:
             toks.append(lab)
     except Exception:
         pass
+    if len(sig) >= 2:
+        ac = "".join(t[0] for t in sig)
+        if len(ac) >= 3:
+            toks.append(ac)
+    full = _slug(company)
+    if len(full) >= 6:
+        toks.append(full)
+    if len(sig) == 1 and len(sig[0]) >= 4:
+        toks.append(sig[0])
     return list(dict.fromkeys(toks))
 
 
@@ -946,7 +972,24 @@ def extract_logo_urls(html: str, base_url: str,
         add(secondary, href)
 
     # The company's own named assets lead, then structural logos / favicons.
-    return {"primary": named + primary, "secondary": secondary}
+    # Within each bucket prefer a crisp vector / light raster over a JPEG (logos
+    # are SVG/PNG; a .jpg is almost always a photo or a press image).
+    return {"primary": _by_format(named) + _by_format(primary),
+            "secondary": _by_format(secondary)}
+
+
+def _by_format(urls: list[str]) -> list[str]:
+    """Stable-sort logo URLs so SVG leads, then light rasters, then JPEG last."""
+    def rank(u: str) -> int:
+        b = u.lower().split("?")[0]
+        if u.startswith("data:image/svg") or b.endswith(".svg"):
+            return 0
+        if b.endswith((".jpg", ".jpeg")):
+            return 3
+        if b.endswith((".png", ".webp", ".gif", ".ico", ".avif")):
+            return 1
+        return 2
+    return sorted(urls, key=rank)
 
 
 def _extract_logo_urls_regex(html: str, base_url: str) -> dict[str, list[str]]:
@@ -1091,7 +1134,12 @@ def _site_logo_candidates(domain: str, company: str = "") -> list[str]:
     except Exception as e:
         log.info("logo scrape parse failed for %s: %s", domain, e)
         return []
-    return c.get("primary", []) + c.get("secondary", [])
+    cands = c.get("primary", []) + c.get("secondary", [])
+    # Diagnostic: the ordered candidate list, so a wrong/missing logo is
+    # debuggable straight from the run log (which asset won, what else was there).
+    log.info("logo candidates for %r @ %s: %s", company, domain,
+             [_short(u) for u in cands[:12]])
+    return cands
 
 
 def find_logo(company: str, hint_url: str | None = None

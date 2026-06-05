@@ -485,6 +485,45 @@ def test_extract_logo_urls_skips_partner_grid_by_context():
     assert "https://x.io/img/acme.png" not in cands
 
 
+def test_logo_name_tokens_are_distinctive():
+    # the distinctive ids — domain label, acronym, whole-name slug — but NOT the
+    # generic individual words of a multi-word name (the "Quantum Insider" trap).
+    toks = lf._logo_name_tokens("Oxford Quantum Circuits", "https://oqc.tech")
+    assert "oqc" in toks and "oxfordquantumcircuits" in toks
+    assert "quantum" not in toks and "oxford" not in toks and "circuits" not in toks
+    assert not lf._url_names_company(
+        "https://oqc.tech/wp-content/uploads/2026/04/QUANTUM-INSIDER-comp.jpg", toks)
+    assert lf._url_names_company("https://oqc.tech/assets/oqc-logo.svg", toks)
+    # a single-word brand keeps its (distinctive) word
+    assert "geordie" in lf._logo_name_tokens("Geordie AI", "https://geordie.ai")
+
+
+def test_is_photo_not_logo_and_usable_gate():
+    pytest.importorskip("PIL")
+    import os
+    from PIL import Image
+    # a heavy, photo-scale raster (random noise -> > 1.5 MB PNG)
+    big = Image.frombytes("RGB", (900, 900), os.urandom(900 * 900 * 3))
+    buf = io.BytesIO()
+    big.save(buf, format="PNG")
+    photo = buf.getvalue()
+    assert len(photo) > 1_500_000
+    assert lf._is_photo_not_logo(photo)
+    assert not lf.usable_logo(photo, "image/png")     # a hero/photo is not a logo
+    small = _png(lambda d: d.rectangle((10, 10, 110, 50), fill=(30, 60, 110, 255)))
+    assert not lf._is_photo_not_logo(small)
+
+
+def test_extract_logo_urls_prefers_svg_over_jpg():
+    # both a JPEG and an SVG logo present in the header -> the SVG leads
+    html = ('<header><a href="/"><img src="/logo.jpg"></a>'
+            '<img class="logo" src="/logo.svg"></header>')
+    out = lf.extract_logo_urls(html, "https://x.io")
+    pr = out["primary"]
+    assert pr[0] == "https://x.io/logo.svg"
+    assert "https://x.io/logo.jpg" in pr and pr.index("https://x.io/logo.svg") < pr.index("https://x.io/logo.jpg")
+
+
 def test_find_logo_passes_company_to_scraper(monkeypatch):
     # find_logo must hand the company name to the scraper so it can tell the
     # site's own mark from third-party badges.
