@@ -4879,17 +4879,20 @@ TEMPLATE = r"""
     .bdc-fw-h { display: flex; align-items: center; gap: 10px; width: 100%; background: none; border: none; font: inherit;
       text-align: left; padding: 11px 13px; cursor: pointer; }
     .bdc-fw-h:hover { background: var(--elevated); }
-    .bdc-fw-dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--dim); }
-    .bdc-fw.live .bdc-fw-dot { background: var(--grn-tx); box-shadow: 0 0 0 3px var(--grn-bg); }
-    .bdc-fw-t { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 620; color: var(--ink); letter-spacing: -.01em;
+    .bdc-fw-ic { flex: none; width: 28px; height: 28px; border-radius: 8px; background: var(--elevated); color: var(--blue-deep);
+      display: grid; place-items: center; }
+    .bdc-fw-ic svg { width: 16px; height: 16px; }
+    .bdc-fw.live .bdc-fw-ic { background: var(--grn-bg); color: var(--grn-tx); }
+    .bdc-fw-t { flex: 1; min-width: 0; font-size: 13px; font-weight: 620; color: var(--ink); letter-spacing: -.01em;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .bdc-fw-pill { flex: none; font-size: 9px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
       padding: 3px 8px; border-radius: 20px; background: var(--elevated); color: var(--muted); white-space: nowrap; }
     .bdc-fw-pill.open { background: var(--grn-bg); color: var(--grn-tx); }
     .bdc-fw-cv { flex: none; color: var(--dim); font-size: 14px; transition: transform .2s; }
     .bdc-fw.open .bdc-fw-cv { transform: rotate(90deg); }
-    .bdc-fw-d { display: none; padding: 0 13px 13px 32px; }
+    .bdc-fw-d { display: none; padding: 0 13px 13px 51px; }
     .bdc-fw.open .bdc-fw-d { display: block; }
+    .bdc-fw-dt { font-size: 12px; font-weight: 600; color: var(--ink); margin-bottom: 4px; letter-spacing: -.01em; }
     .bdc-fw-by { font-size: 11.5px; color: var(--ink-2); font-weight: 500; }
     .bdc-fw-sc { font-size: 11.5px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
     .bdc-fw-link { font-size: 11.5px; font-weight: 600; color: var(--blue-deep); margin-top: 9px; display: inline-block; }
@@ -4940,6 +4943,7 @@ TEMPLATE = r"""
     .bdc-ynav button { width: 24px; height: 24px; border-radius: 7px; border: 1px solid var(--border); background: var(--card);
       color: var(--muted); cursor: pointer; line-height: 1; font-size: 13px; }
     .bdc-ynav button:hover { background: var(--elevated); color: var(--ink); }
+    .bdc-ynav button:disabled { opacity: .3; cursor: default; background: var(--card); color: var(--dim); }
     .bdc-mgrid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 1fr); gap: 8px; }
     .bdc-mcl { border: 1px solid var(--border); border-radius: 12px; background: #fff; padding: 7px 9px;
       display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
@@ -5415,18 +5419,31 @@ TEMPLATE = r"""
       <div class="bdc-grid">
 
         <div class="bdc-card a-fw">
-          <div class="bdc-card-h"><h2>Framework Eligibility</h2><span class="meta">{{ framework_events|length }} · where &amp; when VMA can bid</span></div>
+          <div class="bdc-card-h"><h2>Framework Eligibility</h2><span class="meta">where &amp; when VMA can bid</span></div>
           <div class="bdc-fwa" id="framework-body">
             {% if framework_events|length == 0 %}<div class="empty compact">No framework windows tracked.</div>{% endif %}
             {% for fw in framework_events %}
+            {% set fwshort = (fw.ad_title or fw.title or '').split('—')[0] | trim | replace(' sector', '') %}
+            {% set kl = (fw.ad_title or fw.title or '') | lower %}
             <div class="bdc-fw{% if loop.first %} open{% endif %}{% if fw.status == 'refresh_window' %} live{% endif %}">
               <button type="button" class="bdc-fw-h">
-                <span class="bdc-fw-dot"></span>
-                <span class="bdc-fw-t">{{ fw.ad_title or fw.title }}</span>
+                <span class="bdc-fw-ic">
+                  {%- if 'health' in kl or 'nhs' in kl -%}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg>
+                  {%- elif 'nuclear' in kl or 'energy' in kl -%}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>
+                  {%- elif 'gov' in kl or 'devolved' in kl or 'central' in kl or 'crown' in kl -%}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10M19 21V10M9 21v-6h6v6M12 3l8 5H4z"/></svg>
+                  {%- else -%}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>
+                  {%- endif -%}
+                </span>
+                <span class="bdc-fw-t">{{ fwshort or (fw.ad_title or fw.title) }}</span>
                 <span class="bdc-fw-pill {{ 'open' if fw.status == 'refresh_window' else '' }}">{{ fw.window_pill }}</span>
                 <span class="bdc-fw-cv">&rsaquo;</span>
               </button>
               <div class="bdc-fw-d">
+                <div class="bdc-fw-dt">{{ fw.ad_title or fw.title }}</div>
                 <div class="bdc-fw-by">{{ fw.buyer }}</div>
                 <div class="bdc-fw-sc">{{ fw.scope }}</div>
                 <a class="bdc-fw-link" href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify on portal &rsaquo;</a>
@@ -5437,12 +5454,12 @@ TEMPLATE = r"""
         </div>
 
         <div class="bdc-card a-cal">
-          <div class="bdc-card-h"><h2>Events &amp; Networking</h2><span class="meta" id="events-count">—</span></div>
+          <div class="bdc-card-h"><h2>Events &amp; Networking</h2></div>
           <div id="events-body"><div class="empty compact">Loading…</div></div>
         </div>
 
         <div class="bdc-card a-pw">
-          <div class="bdc-card-h"><h2>Placement Windows</h2><span class="meta" id="pulses-count">—</span></div>
+          <div class="bdc-card-h"><h2>Placement Windows</h2></div>
           <div id="pulses-body"><div class="empty compact">Loading…</div></div>
         </div>
 
@@ -6208,6 +6225,7 @@ async function loadEvents() {
       (byMonth[k] = byMonth[k] || []).push(e);
     });
     const now = new Date(); const nowY = now.getFullYear(), nowM = now.getMonth();
+    const minY = nowY - 1, maxY = nowY + 1;   // can't look more than one year either way
     let year = nowY;   // a single calendar year (Jan–Dec); year stepper switches it
     function renderCal() {
       let cells = '';
@@ -6226,16 +6244,16 @@ async function loadEvents() {
         } else { cells += '<div class="bdc-mcl-none">&mdash;</div>'; }
         cells += '</div>';
       }
-      body.innerHTML = '<div class="bdc-calbar"><span class="bdc-ynav"><button type="button" data-y="-1">&lsaquo;</button></span>' +
+      body.innerHTML = '<div class="bdc-calbar"><span class="bdc-ynav"><button type="button" data-y="-1"' + (year <= minY ? ' disabled' : '') + '>&lsaquo;</button></span>' +
         '<span class="bdc-yr">' + year + '</span>' +
-        '<span class="bdc-ynav"><button type="button" data-y="1">&rsaquo;</button></span></div>' +
+        '<span class="bdc-ynav"><button type="button" data-y="1"' + (year >= maxY ? ' disabled' : '') + '>&rsaquo;</button></span></div>' +
         '<div class="bdc-mgrid">' + cells + '</div>';
       body.querySelector('.bdc-mgrid').addEventListener('click', (ev) => {
         const b = ev.target.closest('.bdc-mev'); if (!b) return;
         renderDetail(byKey[b.dataset.ek]);
       });
       body.querySelectorAll('.bdc-ynav button').forEach(btn =>
-        btn.addEventListener('click', () => { year += (+btn.dataset.y); renderCal(); }));
+        btn.addEventListener('click', () => { const ny = year + (+btn.dataset.y); if (ny < minY || ny > maxY) return; year = ny; renderCal(); }));
     }
     function renderDetail(e) {
       if (!e) { renderCal(); return; }
