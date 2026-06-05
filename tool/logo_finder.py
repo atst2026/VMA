@@ -7,26 +7,32 @@ Wikidata or Wikipedia and whose domains aren't a naive ".com" guess — e.g.
 "Geordie AI" -> geordie.ai, "OQC" -> oxford quantum circuits -> oqc.tech. A
 logo service keyed on a guessed domain misses those entirely.
 
-So the engine works the way a person would: find the company's official
-website, then take the logo off it. Resolution order, first good hit wins:
+The engine is DETERMINISTIC-FIRST, then conservative: it never shows a
+DIFFERENT company's logo. It returns the right mark or a clean wordmark — never
+a plausible-but-wrong one. Resolution order, first good hit wins:
 
-  1. resolve the official DOMAIN
-       - a small curated map (marquee names)
-       - a web SEARCH (Bright Data unblocked Google, else DuckDuckGo/Bing),
-         taking the first organic result whose domain matches the company
-       - Wikidata "official website" (P856) for entities that are organisations
-       - probe a broad set of TLDs (.com/.ai/.io/.tech/.co/.co.uk/...) and
-         keep the one whose homepage actually names the company
-  2. pull the logo FROM that site
-       - scrape the homepage for an explicit logo element (SVG preferred), the
-         SVG/mask favicon, then Clearbit / logo.dev by domain
-  3. authoritative encyclopaedia logo (Wikidata P154 -> Wikipedia infobox) for
-     companies that have one
-  4. site icons (apple-touch-icon / favicon) as an acceptable brand mark
-  5. give up -> caller renders a typographic wordmark
+  0. a human-verified LOCAL OVERRIDE file (tool/assets/company_logos/<slug>.*),
+     used verbatim, offline — the unequivocal guarantee for known accounts
+     (see tool/company_logos.py);
+  1. an authoritative logo asset pinned in the curated registry;
+  2. the company's OFFICIAL DOMAIN, then the logo off that confirmed site:
+       - the domain is registry-pinned where known, else resolved
+         conservatively: a web SEARCH whose result domain STRICTLY matches the
+         company, Wikidata P856 (double-checked against the name), or a TLD
+         probe that requires the homepage to strongly name the company;
+       - scrape the homepage for the brand logo (ranked so a partner/award/
+         payment image never wins), the SVG/mask favicon, then Clearbit /
+         logo.dev by domain, then a keyless favicon floor;
+  3. ONLY when no official domain resolves at all, a name-ALIGNED encyclopaedia
+     logo (Wikidata P154 / Wikipedia), guarded so a same-named band / person /
+     place / different firm is never used;
+  4. give up -> caller renders a typographic wordmark.
 
-Every network step is best-effort and swallowed; the engine never raises.
-The chosen source is logged so a miss is debuggable from the run log.
+The old loose paths that caused "wrong company entirely" are gone: loose
+single-token domain matching, token-mention TLD acceptance, an encyclopaedia
+image for a company we positively placed, and Clearbit/favicon on a GUESSED
+domain (zero identity check). Every network step is best-effort and swallowed;
+the engine never raises. The chosen source is logged so a miss is debuggable.
 """
 from __future__ import annotations
 
@@ -183,6 +189,34 @@ def _looks_decorative(blob: str) -> bool:
     if "logo" in b:
         return False
     return bool(_DECORATIVE_RX.search(b))
+
+
+# Tokens that mark a mark as ANOTHER party's logo (a partner / client / sponsor
+# strip, an award laurel, a payment or accreditation badge, an "as featured in"
+# press row) rather than the TARGET company's own brand. Unlike the decorative
+# tokens above, these fire even when the literal word "logo" is present —
+# "partner-logo", alt="Visa logo", "award-logos.svg" are real, visible images
+# that pass every other gate, which is the "right company, wrong logo" failure.
+# A handful of named third-party brands (payment networks, review sites) are
+# included because they appear as alt text on otherwise-unmarked icons.
+_THIRD_PARTY_RX = re.compile(
+    r"\bpartner(?:s|ship)?\b|\bclient(?:s)?\b|\bsponsor(?:s|ship|ed)?\b|"
+    r"\baward(?:s|ed)?\b|\baccreditation\b|\baccredited\b|\bcertif(?:ied|ication)\b|"
+    r"\bbadge(?:s)?\b|\bmember(?:s|ship)?\b|\baffiliat\w*|\bendorse\w*|"
+    r"as[-\s]?featured|featured[-\s]?in|\bas[-\s]?seen[-\s]?(?:in|on)\b|"
+    r"trusted[-\s]?by|powered[-\s]?by|\bintegrat\w*|"
+    r"press[-\s]?(?:logos?|kit|coverage|mentions?)|\bmedia[-\s]?logos?\b|"
+    r"\bpayment(?:s)?\b|\bvisa\b|\bmastercard\b|\bamex\b|\bpaypal\b|\bklarna\b|"
+    r"\bstripe\b|\bapple[-\s]?pay\b|\bgoogle[-\s]?pay\b|\btrustpilot\b|\btrustico\b|"
+    r"\bg2\b|\bcapterra\b|\bglassdoor\b|\bgartner\b|\bforrester\b|\biso[-\s]?\d",
+    re.I)
+
+
+def _looks_third_party(blob: str) -> bool:
+    """True if the markup blob marks the image as ANOTHER organisation's logo
+    (partner / client / sponsor / award / payment / review-site / press), which
+    must never be mistaken for the target company's own brand mark."""
+    return bool(_THIRD_PARTY_RX.search((blob or "").lower()))
 
 
 def _is_whiteish(colour: str) -> bool:
@@ -387,27 +421,56 @@ def domain_candidates(company: str) -> list[str]:
 
 
 def _domain_matches_company(host: str, company: str) -> bool:
-    """Does this domain plausibly belong to the company? True when the domain
-    label and the company name overlap — the label inside the name slug, a name
-    token inside the label, or the company's initials matching the label (so a
-    full name like 'Oxford Quantum Circuits' matches the acronym domain
-    'oqc.tech')."""
+    """Does this domain CONFIDENTLY belong to the company? Deliberately strict —
+    a loose match here is the root of the "wrong company entirely" cover failure
+    (a SERP / TLD guess landing a *same-token* but different company). Accepts
+    only when the domain label is genuinely the company's brand:
+
+      * exact: label == the company name slug;
+      * acronym: the initials of a multi-word name exactly equal the label
+        (Oxford Quantum Circuits -> oqc.tech);
+      * strong affix: one of {label, slug} is a prefix/suffix of the other AND
+        the shorter is a substantial fraction of the longer (>=4 chars, >=60%),
+        so "Geordie AI" (geordieai) matches geordie.ai but "Pulse" (pulse) does
+        NOT match an unrelated pulsesecure.net;
+      * embedded multi-word: EVERY significant token of a 2+ word name appears
+        in the label.
+
+    A bare single-token substring (the old "label in name or token in label")
+    is rejected: it is what let "Arc" match arcgis.com / monarch.com and any
+    'quantum*' domain match a different quantum company."""
     label = _domain_label(host)
-    if not label:
-        return False
     name_slug = _slug(company)
-    if label in name_slug or name_slug in label:
+    if not label or not name_slug:
+        return False
+    if label == name_slug:
         return True
     tokens = _name_tokens(company)
-    if any(tok in label or label in tok for tok in tokens):
-        return True
-    # initials of a multi-word name -> acronym domain (Oxford Quantum Circuits
-    # -> oqc). Kept strict (exact label) to avoid spurious matches.
     if len(tokens) >= 2:
         acronym = "".join(t[0] for t in tokens)
         if acronym and label == acronym:
             return True
+        if all(tok in label for tok in tokens):
+            return True
+    longer, shorter = (label, name_slug) if len(label) >= len(name_slug) else (name_slug, label)
+    if (longer.startswith(shorter) or longer.endswith(shorter)) \
+            and len(shorter) >= 4 and len(shorter) / len(longer) >= 0.6:
+        return True
     return False
+
+
+def _names_align(a: str, b: str) -> bool:
+    """True when two NAMES are confidently the same entity (used to gate the
+    encyclopaedia, where the risk is a same-named band / person / different
+    company). One slug must contain the other and be a substantial fraction of
+    it — so 'Diageo' aligns with 'Diageo plc' but not with 'Diageo Park'."""
+    sa, sb = _slug(a), _slug(b)
+    if not sa or not sb:
+        return False
+    if sa == sb:
+        return True
+    longer, shorter = (sa, sb) if len(sa) >= len(sb) else (sb, sa)
+    return shorter in longer and len(shorter) >= 4 and len(shorter) / len(longer) >= 0.6
 
 
 # ======================================================================
@@ -572,16 +635,25 @@ def _wd_get(params: dict) -> dict | None:
     return None
 
 
-def _wikidata_org_entities(company: str) -> list[str]:
-    """Entity IDs for the company, best match first. We don't hard-filter to
-    organisations here (that needs extra calls); the P154/P856 lookups below
-    naturally skip people/places that carry neither."""
+def _wikidata_org_entities(company: str) -> list[tuple[str, str]]:
+    """(entity-id, label) pairs for the company, best match first, keeping only
+    entities whose LABEL confidently aligns with the queried name. The label
+    filter is the identity guard: Wikidata's search will happily return a
+    same-named band / town / person, and using its logo/site for our company is
+    exactly the "wrong company" failure. We don't hard-filter to organisations
+    (that needs extra calls); the P154/P856 lookups naturally skip entities that
+    carry neither."""
     j = _wd_get({"action": "wbsearchentities", "search": company,
-                 "language": "en", "type": "item", "format": "json", "limit": 5})
+                 "language": "en", "type": "item", "format": "json", "limit": 7})
     if not j:
         return []
     try:
-        return [e["id"] for e in j.get("search", [])]
+        out = []
+        for e in j.get("search", []):
+            label = e.get("label") or e.get("match", {}).get("text") or ""
+            if _names_align(label, company):
+                out.append((e["id"], label))
+        return out
     except Exception:
         return []
 
@@ -599,13 +671,17 @@ def _wikidata_claim_value(qid: str, prop: str):
 
 
 def wikidata_official_site(company: str) -> str | None:
-    """Wikidata 'official website' (P856) -> registrable domain."""
-    for qid in _wikidata_org_entities(company)[:4]:
+    """Wikidata 'official website' (P856) -> registrable domain, but only for an
+    entity whose label aligns with the company (enforced by
+    _wikidata_org_entities) AND whose resolved domain itself matches the company.
+    The double check stops a same-named entity's website being adopted."""
+    for qid, _label in _wikidata_org_entities(company)[:4]:
         val = _wikidata_claim_value(qid, "P856")
         if isinstance(val, str) and val.startswith("http"):
             host = urlparse(val).netloc
-            if host:
-                return _registrable(host)
+            reg = _registrable(host) if host else ""
+            if reg and reg not in _AGGREGATORS and _domain_matches_company(reg, company):
+                return reg
     return None
 
 
@@ -615,8 +691,10 @@ def _commons_filepath(filename: str, width: int = 512) -> bytes | None:
 
 
 def _wikidata_logo(company: str) -> tuple[bytes | None, str]:
-    """Wikidata 'logo image' (P154) -> the official logo on Commons."""
-    for qid in _wikidata_org_entities(company)[:4]:
+    """Wikidata 'logo image' (P154) -> the official logo on Commons, only for an
+    entity whose label aligns with the company (the identity guard lives in
+    _wikidata_org_entities)."""
+    for qid, _label in _wikidata_org_entities(company)[:4]:
         fname = _wikidata_claim_value(qid, "P154")
         if isinstance(fname, str) and fname:
             img = _commons_filepath(fname, 512)
@@ -636,6 +714,11 @@ def _wikipedia_logo(company: str) -> tuple[bytes | None, str]:
     except Exception:
         return None, ""
     for p in pages.values():
+        # Identity guard: the resolved article title must align with the company
+        # name, else the lead image belongs to a same-named band / person /
+        # place / different firm — the original "Geordie AI" wrong-image failure.
+        if not _names_align(p.get("title") or "", company):
+            continue
         src = (p.get("original") or {}).get("source")
         if src:
             img = _fetch_image(src)
@@ -731,12 +814,14 @@ def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
         except Exception:
             return False
 
-    # 1. <img> elements that identify themselves as a logo (SVG first).
+    # 1. <img> elements that identify themselves as a logo (SVG first). A
+    #    third-party marker (alt="Visa logo", class="partner-logo") is skipped —
+    #    it carries the word "logo" but is another brand's mark, not the target's.
     svg_logo, other_logo = [], []
     for img in soup.find_all("img"):
         attrs = " ".join(str(img.get(k, "")) for k in
                          ("class", "id", "alt", "src", "data-src", "title")).lower()
-        if "logo" in attrs:
+        if "logo" in attrs and not _looks_third_party(attrs):
             s = _img_src(img)
             if s:
                 (svg_logo if ".svg" in s.lower() else other_logo).append(s)
@@ -753,21 +838,23 @@ def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
     for el in soup.select("[class*=logo], [id*=logo], [class*=Logo], "
                           "[class*=brand], [id*=brand], [class*=Brand]"):
         blob = " ".join(str(el.get(k, "")) for k in ("class", "id")).lower()
-        if _looks_decorative(blob):
+        if _looks_decorative(blob) or _looks_third_party(blob):
             continue
         bg = _bg_url(el.get("style", ""))
-        if bg:
+        if bg and not _looks_third_party(bg):
             add(primary, bg)
 
     # 2. <img> / background inside the homepage link (<a href="/">) — almost
     #    always the logo. Skip decorative furniture (a social / search glyph).
     for a in soup.find_all("a"):
         if is_root_anchor(a):
+            anchor_meta = str(a.get("class", "")) + str(a.get("id", ""))
             bg = _bg_url(a.get("style", ""))
-            if bg and not _looks_decorative(str(a.get("class", "")) + str(a.get("id", ""))):
+            if bg and not _looks_decorative(anchor_meta) and not _looks_third_party(anchor_meta):
                 add(primary, bg)
             for img in a.find_all("img"):
-                if not _looks_decorative(_img_blob(img)):
+                blob = _img_blob(img)
+                if not _looks_decorative(blob) and not _looks_third_party(blob):
                     add(primary, _img_src(img))
 
     # 3. first <img> inside header / nav / a top-bar / an element that names
@@ -778,7 +865,8 @@ def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
                 "[class*=brand] img", "[id*=brand] img", "[role=banner] img",
                 "[class*=top-bar] img", "[class*=topbar] img"):
         for img in soup.select(sel)[:3]:
-            if not _looks_decorative(_img_blob(img)):
+            blob = _img_blob(img)
+            if not _looks_decorative(blob) and not _looks_third_party(blob):
                 add(primary, _img_src(img))
 
     # 3b. <style> blocks: a url(...) whose filename looks like a logo — the
@@ -788,7 +876,7 @@ def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
         for m in re.finditer(r"url\(\s*[\"']?([^\"')]+)", css):
             u = m.group(1).strip()
             base = u.lower().split("?")[0]
-            if "logo" in base and not u.startswith("data:"):
+            if "logo" in base and not u.startswith("data:") and not _looks_third_party(base):
                 add(primary, u)
 
     # 4. mask-icon / SVG favicon files (monochrome brand mark).
@@ -931,18 +1019,24 @@ def _duckduckgo_favicon(domain: str) -> bytes | None:
 # Domain resolution + top-level entry point
 # ======================================================================
 def _probe_tlds(company: str) -> str | None:
-    """Fetch guessed domains and keep the first whose homepage actually names
-    the company (so a squatter on <name>.com doesn't win)."""
+    """Fetch guessed domains and keep the first whose homepage STRONGLY names the
+    company. Strict on purpose: a guessed <name>.com is owned by whoever it's
+    owned by, so accepting it on a single token mention (the old behaviour) is a
+    prime "wrong company" source — "Pol AI" matching pol.com because the page
+    says "available" (which collapses to contain "ai"). We require either the
+    full collapsed name to appear, or — for a multi-word name — EVERY significant
+    token to be present on the page."""
     tokens = _name_tokens(company)
+    name_slug = _slug(company)
     for dom in domain_candidates(company):
         html = _fetch_html("https://" + dom)
         if not html:
             continue
-        low = html.lower()
-        # the page should mention the company (a token, or the name slug in a
-        # collapsed form) somewhere in its first chunk
-        head = low[:20000]
-        if any(t in head for t in tokens) or _slug(company)[:12] in _slug(head):
+        head = html.lower()[:20000]
+        slug_head = _slug(head)
+        full_name = len(name_slug) >= 4 and name_slug[:18] in slug_head
+        all_tokens = len(tokens) >= 2 and all(t in head for t in tokens)
+        if full_name or all_tokens:
             log.info("TLD probe matched %s for %r", dom, company)
             return dom
     return None
@@ -959,6 +1053,17 @@ def resolve_domain(company: str, hint_url: str | None = None
     key = (company or "").strip().lower()
     if key in KNOWN_DOMAINS:
         return KNOWN_DOMAINS[key], "known"
+    # Curated registry — the authoritative name->exact-domain map. Pinning the
+    # domain here is what stops "wrong company entirely": resolution uses the
+    # real company's domain instead of a SERP/TLD guess that can land a namesake.
+    try:
+        from tool import company_logos
+        reg = company_logos.registry_domain(company)
+    except Exception as e:
+        log.info("registry lookup failed for %r: %s", company, e)
+        reg = None
+    if reg:
+        return reg, "registry"
     for fn, how in ((_serp_domain, "serp"),
                     (wikidata_official_site, "wikidata_p856"),
                     (_probe_tlds, "tld_probe")):
@@ -990,49 +1095,101 @@ def _site_logo_candidates(domain: str) -> list[str]:
     return c.get("primary", []) + c.get("secondary", [])
 
 
+def _rank_site_cands(cands: list[str], company: str) -> list[str]:
+    """Order scraped site URLs so the TARGET's own brand mark is tried first: a
+    filename containing 'logo' or a company-name token wins; bare icons
+    (apple-touch / favicon) sink. Stable for ties, so the scraper's own order is
+    preserved within a score band. This is the surgical fix for 'right company,
+    wrong logo' — a partner/award image with no name affinity is tried last."""
+    tokens = [t for t in _name_tokens(company) if len(t) >= 3]
+
+    def score(u: str) -> int:
+        b = u.lower().split("?")[0]
+        s = 0
+        if "logo" in b:
+            s += 3
+        if any(t in b for t in tokens):
+            s += 3
+        if "brand" in b or "/mark" in b or "wordmark" in b:
+            s += 1
+        if "apple-touch" in b or "favicon" in b or "/icon" in b:
+            s -= 2
+        return -s                       # ascending sort -> highest score first
+
+    return sorted(cands, key=score)
+
+
 def find_logo(company: str, hint_url: str | None = None
               ) -> tuple[bytes | None, str]:
     """Resolve the company's real logo. Returns (image_bytes_or_None, source).
 
-    Once the official domain is known the resolution is laddered so a REAL,
-    VISIBLE brand mark always beats site furniture:
+    Resolution is DETERMINISTIC-FIRST, then conservative, so a wrong company's
+    mark can never reach the cover — the cover gets the right logo or a clean
+    typographic wordmark, never a different company:
 
-      1. the site's own explicit logo files / icons (raster or .svg file);
-      2. domain-keyed raster services (Clearbit / logo.dev) — self-contained and
-         reliably visible, tried BEFORE any inline header SVG so a loader or a
-         white-on-dark mark can never win;
-      3. an inline header/anchor SVG, but only one that clears the decorative +
-         visibility gates;
-      4. a keyless favicon floor.
+      0. a human-verified LOCAL OVERRIDE file (tool/assets/company_logos/) — the
+         unequivocal guarantee, offline, always wins;
+      1. an authoritative logo asset pinned in the curated registry;
+      2. the company's OFFICIAL DOMAIN (registry-pinned where known, else a
+         conservatively-resolved one), then off that confirmed site:
+           a. the site's own logo files, ranked so the brand mark beats a
+              partner/award image and a bare favicon;
+           b. domain-keyed raster services (Clearbit / logo.dev);
+           c. a gated inline header SVG;
+           d. a keyless favicon floor;
+      3. ONLY when no official domain resolves at all, a name-aligned
+         encyclopaedia logo (Wikidata P154 / Wikipedia), guarded so a same-named
+         entity's image is never used.
 
-    Every candidate passes through `usable_logo` (via `_fetch_image` / the
-    service helpers), so the three reported cover failures — a decorative
-    spinner, an invisible white mark, junk scored as a logo — are all filtered
-    out and the cover falls back to the next rung, ending at a clean wordmark.
-
-    Never raises — the caller falls back to a typographic wordmark."""
+    The old identity-free fallbacks (a same-named encyclopaedia image for a
+    company we *did* place, and Clearbit/favicon on a GUESSED domain) are gone —
+    they were the source of "wrong company entirely". Every image still passes
+    the `usable_logo` visibility/decorative gate. Never raises."""
     company = (company or "").strip()
     if not company:
         return None, "wordmark"
+
+    # 0. Human-verified local override — offline, deterministic, unequivocal.
+    try:
+        from tool import company_logos
+        ov, ovsrc = company_logos.local_logo(company)
+    except Exception as e:
+        log.info("local override lookup failed for %r: %s", company, e)
+        ov, ovsrc = None, ""
+    if ov:
+        log.info("logo for %r via %s (%d bytes)", company, ovsrc, len(ov))
+        return ov, ovsrc
+
+    # 1. Registry-pinned authoritative logo asset (if one is configured).
+    try:
+        pinned = company_logos.registry_logo_url(company)
+    except Exception:
+        pinned = None
+    if pinned:
+        img = _fetch_image(pinned)
+        if img:
+            log.info("logo for %r via registry asset %s", company, _short(pinned))
+            return img, f"registry:{urlparse(pinned).netloc or 'asset'}"
 
     domain, how = resolve_domain(company, hint_url)
 
     if domain:
         # Split the scraped candidates: real logo/icon FILES vs fragile inline
-        # SVGs (data: URIs). Files and the raster services are tried first; the
-        # inline SVG is a last site resort, even when it passes its gates.
+        # SVGs (data: URIs). Files (ranked) and the raster services are tried
+        # first; the inline SVG is a last site resort, even when it passes gates.
         site_cands = _site_logo_candidates(domain)
-        file_cands = [u for u in site_cands if not u.startswith("data:")]
+        file_cands = _rank_site_cands(
+            [u for u in site_cands if not u.startswith("data:")], company)
         inline_cands = [u for u in site_cands if u.startswith("data:")]
 
-        # 1. the company's own explicit logo files / icons, best-first.
+        # 2a. the company's own logo files / icons, brand-mark first.
         for u in file_cands[:12]:
             img = _fetch_image(u)
             if img:
                 log.info("logo for %r via site %s (%s, %d bytes)",
                          company, domain, _short(u), len(img))
                 return img, f"site:{domain}"
-        # 2. domain-keyed raster services — reliable + visible — BEFORE inline SVG.
+        # 2b. domain-keyed raster services — reliable + visible — BEFORE inline SVG.
         for fn, name in ((_clearbit, "clearbit"), (_logodev, "logodev")):
             try:
                 img = fn(domain)
@@ -1041,22 +1198,29 @@ def find_logo(company: str, hint_url: str | None = None
             if img:
                 log.info("logo for %r via %s:%s", company, name, domain)
                 return img, f"{name}:{domain}"
-        # 3. inline header/anchor SVG — last site resort (already gated for
-        #    decorative + visibility in extraction and in _fetch_image).
+        # 2c. inline header/anchor SVG — last site resort (already gated for
+        #     decorative + visibility in extraction and in _fetch_image).
         for u in inline_cands[:4]:
             img = _fetch_image(u)
             if img:
                 log.info("logo for %r via site-inline %s (%d bytes)",
                          company, domain, len(img))
                 return img, f"site:{domain}"
-        # 4. keyless favicon floor — a real brand mark for any live domain.
+        # 2d. keyless favicon floor — a real brand mark for any live domain.
         img = _favicon_floor(domain)
         if img:
             log.info("logo for %r via favicon:%s", company, domain)
             return img, f"favicon:{domain}"
+        # A domain resolved but yielded no usable mark: STOP here. Reaching for
+        # an encyclopaedia / guessed-domain image now would risk a same-named
+        # entity's logo for a company we positively placed — the exact failure
+        # we are eliminating. A clean wordmark is the correct, honest fallback.
+        log.info("domain %s for %r yielded no usable logo — wordmark", domain, company)
+        return None, "wordmark"
 
-    # 4. encyclopaedia logo — only when no usable domain resolved (so we never
-    #    risk a same-named entity's image for a company we DID place).
+    # 3. No official domain at all -> a name-ALIGNED encyclopaedia logo only.
+    #    (Both helpers self-guard on name alignment; a same-named band/person/
+    #    place/different-firm image is rejected rather than shown.)
     for fn, name in ((_wikidata_logo, "wikidata"), (_wikipedia_logo, "wikipedia")):
         try:
             img, src = fn(company)
@@ -1065,18 +1229,6 @@ def find_logo(company: str, hint_url: str | None = None
         if img:
             log.info("logo for %r via %s (%d bytes)", company, src, len(img))
             return img, src
-
-    # 5. no domain at all -> Clearbit / favicon on guessed candidates.
-    if not domain:
-        for d in domain_candidates(company)[:5]:
-            for fn, name in ((_clearbit, "clearbit"), (_favicon_floor, "favicon")):
-                try:
-                    img = fn(d)
-                except Exception:
-                    img = None
-                if img:
-                    log.info("logo for %r via %s:%s (guessed)", company, name, d)
-                    return img, f"{name}:{d}"
 
     log.info("no logo resolved for %r — wordmark fallback", company)
     return None, "wordmark"

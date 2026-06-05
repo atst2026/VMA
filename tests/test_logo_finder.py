@@ -491,3 +491,158 @@ def test_find_logo_junk_only_falls_to_wordmark(monkeypatch):
     monkeypatch.setattr(lf, "_wikidata_logo", lambda c: (None, ""))
     monkeypatch.setattr(lf, "_wikipedia_logo", lambda c: (None, ""))
     assert lf.find_logo("Acme") == (None, "wordmark")
+
+
+# ======================================================================
+# The unequivocal fix: deterministic-first resolution + a conservative live
+# fallback that prefers a clean wordmark over a WRONG company's logo. These
+# pin the behaviour that closes the three reported failure modes for good.
+# ======================================================================
+
+# ---- (a) "wrong company entirely": strict identity, no loose/guessed paths --
+
+def test_domain_matches_company_is_strict_about_namesakes():
+    # the loose single-token / short-substring matches that picked a DIFFERENT
+    # company are now rejected …
+    assert not lf._domain_matches_company("arcgis.com", "Arc")
+    assert not lf._domain_matches_company("monarch.com", "Arc")
+    assert not lf._domain_matches_company("pulsesecure.net", "Pulse")
+    assert not lf._domain_matches_company("quantumcomputinginc.com", "Quantum Motion")
+    # … while the genuine matches still resolve
+    assert lf._domain_matches_company("geordie.ai", "Geordie AI")
+    assert lf._domain_matches_company("oqc.tech", "Oxford Quantum Circuits")
+    assert lf._domain_matches_company("quantummotion.tech", "Quantum Motion")
+    assert lf._domain_matches_company("severntrent.co.uk", "Severn Trent")
+
+
+def test_resolve_domain_uses_registry_not_serp(monkeypatch):
+    # a registry-pinned account resolves to its EXACT domain with no web search,
+    # so a SERP can never substitute a same-named company.
+    def _no_serp(c):
+        raise AssertionError("SERP must not run for a registry-pinned company")
+    monkeypatch.setattr(lf, "_serp_domain", _no_serp)
+    assert lf.resolve_domain("Hilton Hotels") == ("hilton.com", "registry")
+    assert lf.resolve_domain("GKN Automotive") == ("gknautomotive.com", "registry")
+
+
+def test_probe_tlds_requires_strong_name_match(monkeypatch):
+    # a guessed <name>.com whose page merely contains a stray token is rejected
+    weak = "<html><head><title>Welcome</title></head><body>available email main</body></html>"
+    monkeypatch.setattr(lf, "_fetch_html", lambda url: weak)
+    assert lf._probe_tlds("Pol AI") is None
+    # but a page that actually names the company is accepted
+    strong = "<html><body><h1>Pol AI</h1><p>we build robots</p></body></html>"
+    monkeypatch.setattr(lf, "_fetch_html", lambda url: strong)
+    assert lf._probe_tlds("Pol AI") in lf.domain_candidates("Pol AI")
+
+
+def test_find_logo_local_override_wins_offline(monkeypatch, tmp_path):
+    # a human-dropped file is used verbatim and SHORT-CIRCUITS all resolution —
+    # the unequivocal guarantee.
+    from tool import company_logos
+    monkeypatch.setattr(company_logos, "OVERRIDE_DIR", tmp_path)
+    data = b"\x89PNG\r\n\x1a\n" + b"\x33" * 300
+    (tmp_path / "acmerobotics.png").write_bytes(data)
+
+    def _boom(*a, **k):
+        raise AssertionError("resolution must not run when an override exists")
+    monkeypatch.setattr(lf, "resolve_domain", _boom)
+    got, src = lf.find_logo("Acme Robotics")
+    assert got == data and src == "local:acmerobotics.png"
+
+
+def test_find_logo_no_domain_never_guesses_a_service(monkeypatch):
+    # no official domain -> the old guessed-domain Clearbit/favicon (zero
+    # identity check) is GONE; a name-aligned encyclopaedia is the only option,
+    # else a clean wordmark. A wrong company's mark can't sneak in.
+    monkeypatch.setattr(lf, "resolve_domain", lambda c, hint_url=None: (None, ""))
+
+    def _boom(*a, **k):
+        raise AssertionError("guessed-domain logo services must not run")
+    monkeypatch.setattr(lf, "_clearbit", _boom)
+    monkeypatch.setattr(lf, "_favicon_floor", _boom)
+    monkeypatch.setattr(lf, "_logodev", _boom)
+    monkeypatch.setattr(lf, "_wikidata_logo", lambda c: (None, ""))
+    monkeypatch.setattr(lf, "_wikipedia_logo", lambda c: (None, ""))
+    assert lf.find_logo("Totally Unknown Startup Co") == (None, "wordmark")
+
+
+def test_find_logo_placed_domain_no_logo_is_wordmark_never_encyclopaedia(monkeypatch):
+    # Once we've POSITIVELY placed a domain, a same-named encyclopaedia image is
+    # never reached for — the cover degrades to a wordmark, not a wrong logo.
+    monkeypatch.setattr(lf, "resolve_domain", lambda c, hint_url=None: ("acme.com", "registry"))
+    monkeypatch.setattr(lf, "_site_logo_candidates", lambda d: [])
+    monkeypatch.setattr(lf, "_clearbit", lambda d: None)
+    monkeypatch.setattr(lf, "_logodev", lambda d: None)
+    monkeypatch.setattr(lf, "_favicon_floor", lambda d: None)
+
+    def _boom(c):
+        raise AssertionError("encyclopaedia must never run once a domain is placed")
+    monkeypatch.setattr(lf, "_wikidata_logo", _boom)
+    monkeypatch.setattr(lf, "_wikipedia_logo", _boom)
+    assert lf.find_logo("Acme") == (None, "wordmark")
+
+
+def test_wikipedia_logo_rejects_misaligned_title(monkeypatch):
+    # a same-named non-company page (band / person) must not donate its image
+    class _Resp:
+        status_code = 200
+        def json(self):
+            return {"query": {"pages": {"1": {
+                "title": "Geordie (musician)",
+                "original": {"source": "https://x/img.png"}}}}}
+    monkeypatch.setattr(lf, "_http_get", lambda *a, **k: _Resp())
+
+    def _no_fetch(u):
+        raise AssertionError("must not fetch a misaligned page's image")
+    monkeypatch.setattr(lf, "_fetch_image", _no_fetch)
+    assert lf._wikipedia_logo("Geordie AI") == (None, "")
+
+
+def test_wikipedia_logo_accepts_aligned_title(monkeypatch):
+    class _Resp:
+        status_code = 200
+        def json(self):
+            return {"query": {"pages": {"1": {
+                "title": "Geordie AI",
+                "original": {"source": "https://x/img.png"}}}}}
+    monkeypatch.setattr(lf, "_http_get", lambda *a, **k: _Resp())
+    png = b"\x89PNG\r\n\x1a\n" + b"\x01" * 300
+    monkeypatch.setattr(lf, "_fetch_image", lambda u: png)
+    assert lf._wikipedia_logo("Geordie AI") == (png, "wikipedia")
+
+
+# ---- (b) "right company, wrong logo": skip third-party marks, rank brand-first
+
+def test_extract_logo_urls_skips_third_party_partner_logo():
+    # a partner / payment badge carries the word "logo" but is ANOTHER brand;
+    # it must never be chosen over the company's own mark.
+    html = ('<header><a href="/">'
+            '<img class="partner-logo" alt="Visa logo" src="/visa.svg">'
+            '<img class="site-logo" alt="Acme logo" src="/logo.svg">'
+            '</a></header>')
+    out = lf.extract_logo_urls(html, "https://acme.com")
+    everything = out["primary"] + out["secondary"]
+    assert "https://acme.com/logo.svg" in out["primary"]
+    assert "https://acme.com/visa.svg" not in everything
+
+
+def test_looks_third_party():
+    for blob in ("partner-logo", "client logos", "award-winning", "payment-logos",
+                 "Visa logo", "trusted-by", "as-featured-in", "sponsor strip",
+                 "iso-27001", "trustpilot rating"):
+        assert lf._looks_third_party(blob), blob
+    for blob in ("site-logo", "navbar-brand", "acme logo", "header__logo",
+                 "company-mark", "brand"):
+        assert not lf._looks_third_party(blob), blob
+
+
+def test_rank_site_cands_brand_beats_partner_and_favicon():
+    cands = ["https://x.com/apple-touch-icon.png",
+             "https://x.com/img/partner/visa.png",
+             "https://x.com/assets/acme-logo.svg"]
+    ranked = lf._rank_site_cands(cands, "Acme")
+    # the company's own logo file (name + "logo") leads
+    assert ranked[0] == "https://x.com/assets/acme-logo.svg"
+    # the bare touch-icon sinks to the bottom
+    assert ranked[-1] == "https://x.com/apple-touch-icon.png"
