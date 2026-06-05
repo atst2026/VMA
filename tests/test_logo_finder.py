@@ -340,9 +340,15 @@ def test_usable_logo_combines_gates():
     navy_svg = (b'<svg xmlns="http://www.w3.org/2000/svg">'
                 b'<path fill="#24486f" d="M0 0h9v9z"/></svg>')
     assert lf.usable_logo(navy_svg, "image/svg+xml")
+    # A white-on-dark mark is now USABLE — it is recoloured for the cover rather
+    # than discarded (discarding it was how the visible WRONG badge used to win).
     white_svg = (b'<svg xmlns="http://www.w3.org/2000/svg">'
                  b'<rect fill="#fff" width="9" height="9"/></svg>')
-    assert not lf.usable_logo(white_svg, "image/svg+xml")
+    assert lf.usable_logo(white_svg, "image/svg+xml")
+    # an animated spinner is still rejected (never a logo)
+    spinner = (b'<svg xmlns="http://www.w3.org/2000/svg"><circle r="5">'
+               b'<animateTransform attributeName="transform"/></circle></svg>')
+    assert not lf.usable_logo(spinner, "image/svg+xml")
     # a decorative source FILENAME (path) is rejected even when the bytes are fine
     assert not lf.usable_logo(navy_svg, "image/svg+xml",
                               source="https://x.io/loading-spinner.svg")
@@ -374,16 +380,19 @@ def test_normalize_logo_trims_padding_and_passes_svg_through():
 
 # ---- extraction skips decorative / invisible candidates ----------------
 
-def test_extract_logo_urls_skips_decorative_and_invisible_inline_svg():
+def test_extract_logo_urls_skips_spinner_keeps_white_brand_for_recolour():
     html = """
     <html><body><header><a href="/">
       <svg class="loading-spinner"><circle r="5"><animateTransform/></circle></svg>
       <svg class="brand-mark"><rect fill="#ffffff" width="9" height="9"/></svg>
     </a></header></body></html>"""
     out = lf.extract_logo_urls(html, "https://x.io")
-    # neither the animated spinner nor the white-only mark becomes a candidate
-    assert not any(u.startswith("data:image/svg+xml")
-                   for u in out["primary"] + out["secondary"])
+    svg_cands = [u for u in out["primary"] + out["secondary"]
+                 if u.startswith("data:image/svg+xml")]
+    # the animated spinner is still excluded …
+    assert not any("animate" in u.lower() for u in svg_cands)
+    # … but the white-on-dark brand mark IS kept (it gets recoloured for the cover)
+    assert any("rect" in u.lower() for u in svg_cands)
 
 
 def test_extract_logo_urls_skips_decorative_img():
@@ -430,11 +439,14 @@ def test_extract_logo_urls_srcset_logo():
 
 
 def test_fetch_image_validates_data_uris():
-    # the white/animated inline SVG must NOT escape _fetch_image (the hole that
-    # let an invisible mark and a spinner reach the cover).
+    # an animated spinner must NOT escape _fetch_image …
+    spinner = ('<svg xmlns="http://www.w3.org/2000/svg"><circle r="5">'
+               '<animateTransform attributeName="transform"/></circle></svg>')
+    assert lf._fetch_image("data:image/svg+xml;utf8," + quote(spinner)) is None
+    # … but a white-on-dark mark is now KEPT (usable; recoloured for the cover) …
     white = ('<svg xmlns="http://www.w3.org/2000/svg">'
              '<rect fill="#fff" width="9" height="9"/></svg>')
-    assert lf._fetch_image("data:image/svg+xml;utf8," + quote(white)) is None
+    assert lf._fetch_image("data:image/svg+xml;utf8," + quote(white)) is not None
     navy = ('<svg xmlns="http://www.w3.org/2000/svg">'
             '<path fill="#24486f" d="M0 0h9v9z"/></svg>')
     assert lf._fetch_image("data:image/svg+xml;utf8," + quote(navy)) is not None
@@ -684,3 +696,187 @@ def test_extract_logo_urls_own_token_guard_is_what_keeps_partners_group():
     out_named = lf.extract_logo_urls(html, "https://partnersgroup.com",
                                      company="Partners Group")
     assert "https://partnersgroup.com/pg.svg" in out_named["primary"]
+
+
+# ======================================================================
+# The OQC failure: a "Cyber Essentials" certification badge scraped AS the
+# company logo, while OQC's real (white) header logo was discarded for being
+# invisible on the white cover. Fix = filter the badge + recolour white marks.
+# ======================================================================
+
+def test_third_party_catches_certification_badges():
+    for blob in ("cyber-essentials", "cyber essentials logo", "b-corp",
+                 "iso 27001", "living-wage employer", "investors in people",
+                 "fairtrade", "great place to work", "planet mark"):
+        assert lf._looks_third_party(blob), blob
+    # a real company whose own name contains one of those words is still kept
+    assert not lf._looks_third_party("fairtrade foundation logo", ("fairtrade", "foundation"))
+
+
+_OQC_PAGE = """
+<html><head></head><body>
+  <header><a href="/" class="site-logo">
+    <svg class="oqc-mark" viewBox="0 0 120 30"><path fill="#ffffff" d="M2 2h40v20H2z"/></svg>
+  </a></header>
+  <main><h1>Application Optimised Quantum Compute</h1></main>
+  <footer class="site-footer">
+    <div class="accreditations">
+      <img src="/badges/cyber-essentials.png" alt="Cyber Essentials">
+      <img class="iso-logo" src="/badges/iso-27001.png" alt="ISO 27001 certified">
+    </div>
+  </footer>
+</body></html>
+"""
+
+
+def test_extract_skips_footer_certification_badge_keeps_header_logo():
+    out = lf.extract_logo_urls(_OQC_PAGE, "https://oqc.tech", company="OQC")
+    everything = out["primary"] + out["secondary"]
+    # the OQC header mark (white inline svg) is kept for recolouring …
+    assert any(u.startswith("data:image/svg+xml") and "path" in u.lower()
+               for u in everything)
+    # … and NO footer certification badge is a candidate
+    assert not any("cyber-essentials" in u.lower() for u in everything)
+    assert not any("iso-27001" in u.lower() for u in everything)
+
+
+def test_find_logo_oqc_uses_header_mark_not_badge(monkeypatch):
+    monkeypatch.setattr(lf, "resolve_domain",
+                        lambda c, hint_url=None: ("oqc.tech", "registry"))
+    monkeypatch.setattr(lf, "_fetch_html", lambda url: _OQC_PAGE)
+    monkeypatch.setattr(lf, "_clearbit", lambda d: None)
+    monkeypatch.setattr(lf, "_logodev", lambda d: None)
+    data, src = lf.find_logo("OQC")
+    assert src == "site:oqc.tech"
+    low = data.decode("utf-8", "ignore").lower()
+    assert "<svg" in low and "cyber" not in low            # the OQC mark, not the badge
+    # and once prepared for the cover, the (white) mark is recoloured to show
+    prepared = lf.prepare_cover_logo(data)
+    assert lf.svg_is_visible(prepared)
+
+
+# ---- recolouring a white-on-dark mark for the light cover --------------
+
+def test_recolor_white_svg_becomes_visible_and_keeps_coloured_untouched():
+    white = (b'<svg xmlns="http://www.w3.org/2000/svg">'
+             b'<path fill="#ffffff" d="M0 0h9v9z"/></svg>')
+    assert not lf.svg_is_visible(white)
+    out = lf.recolor_for_light_bg(white, "image/svg+xml")
+    assert lf.svg_is_visible(out)                          # now shows on white
+    assert b"24486f" in out.lower() or b"#24486f" in out.lower()
+    # currentColor (meant to inherit a dark page colour) is also resolved
+    cc = (b'<svg xmlns="http://www.w3.org/2000/svg">'
+          b'<path fill="currentColor" d="M0 0h9z"/></svg>')
+    assert lf.svg_is_visible(lf.recolor_for_light_bg(cc, "image/svg+xml"))
+    # a logo that already has real colour is returned UNCHANGED
+    navy = (b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b'<path fill="#24486f" d="M0 0h9v9z"/></svg>')
+    assert lf.recolor_for_light_bg(navy, "image/svg+xml") == navy
+
+
+def test_recolor_white_raster_becomes_visible():
+    pytest.importorskip("PIL")
+    white_mark = _png(lambda d: d.rectangle((10, 20, 110, 40),
+                                            fill=(255, 255, 255, 255)))
+    assert not lf.raster_is_visible(white_mark)            # invisible on white
+    out = lf.recolor_for_light_bg(white_mark, "image/png")
+    assert lf.raster_is_visible(out)                       # recoloured -> shows
+    # a coloured raster is left untouched (same bytes back)
+    coloured = _png(lambda d: d.rectangle((10, 10, 110, 50), fill=(30, 60, 110, 255)))
+    assert lf.recolor_for_light_bg(coloured, "image/png") == coloured
+
+
+def test_prepare_cover_logo_trims_and_recolours():
+    pytest.importorskip("PIL")
+    from PIL import Image
+    # a small white mark floating in a big transparent canvas
+    padded = _png(lambda d: d.rectangle((100, 50, 140, 70), fill=(255, 255, 255, 255)),
+                  size=(240, 120))
+    out = lf.prepare_cover_logo(padded, "image/png")
+    assert Image.open(io.BytesIO(out)).size < (240, 120)   # trimmed
+    assert lf.raster_is_visible(out)                       # and recoloured to show
+
+
+# ======================================================================
+# The durable principle: resolve from the company's OWN machine-readable logo
+# declaration (schema.org JSON-LD, og:logo, web-app manifest) so the back-end
+# stops guessing which <img> is the brand and never grabs a footer badge.
+# ======================================================================
+
+def test_extract_logo_urls_reads_jsonld_organization_logo():
+    html = """
+    <html><head>
+      <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"Organization","name":"Acme",
+       "logo":"https://cdn.acme.com/brand/acme-logo.svg"}
+      </script>
+    </head><body><header></header></body></html>"""
+    out = lf.extract_logo_urls(html, "https://acme.com", company="Acme")
+    assert "https://cdn.acme.com/brand/acme-logo.svg" in out["primary"]
+
+
+def test_extract_logo_urls_reads_jsonld_graph_and_object_logo():
+    # publisher.logo as an ImageObject inside @graph (the common Article shape)
+    html = """
+    <html><head>
+      <script type="application/ld+json">
+      {"@graph":[{"@type":"WebPage"},
+                 {"@type":"Organization","logo":{"@type":"ImageObject",
+                  "url":"/assets/org-logo.png"}}]}
+      </script>
+    </head><body></body></html>"""
+    out = lf.extract_logo_urls(html, "https://acme.com")
+    assert "https://acme.com/assets/org-logo.png" in out["primary"]
+
+
+def test_extract_logo_urls_reads_og_logo_but_not_og_image_banner():
+    html = """
+    <html><head>
+      <meta property="og:logo" content="https://acme.com/og-logo.png">
+      <meta property="og:image" content="https://acme.com/social-banner.jpg">
+    </head><body></body></html>"""
+    out = lf.extract_logo_urls(html, "https://acme.com")
+    everything = out["primary"] + out["secondary"]
+    assert "https://acme.com/og-logo.png" in out["primary"]
+    # og:image is a share banner, never the logo -> must not be a candidate
+    assert not any("social-banner" in u for u in everything)
+
+
+def test_manifest_icon_url_picks_largest(monkeypatch):
+    html = '<head><link rel="manifest" href="/site.webmanifest"></head>'
+    manifest = ('{"icons":[{"src":"/icons/i192.png","sizes":"192x192"},'
+                '{"src":"/icons/i512.png","sizes":"512x512"}]}')
+    monkeypatch.setattr(lf, "_fetch_html",
+                        lambda url: manifest if "webmanifest" in url else None)
+    assert lf.manifest_icon_url(html, "https://acme.com") == "https://acme.com/icons/i512.png"
+
+
+def test_extract_logo_urls_regex_reads_declared_logo():
+    out = lf._extract_logo_urls_regex(
+        '<meta property="og:logo" content="/m/logo.svg">'
+        '<script type="application/ld+json">{"logo":"/ld/logo.png"}</script>',
+        "https://x.io")
+    assert "https://x.io/m/logo.svg" in out["primary"]
+    assert "https://x.io/ld/logo.png" in out["primary"]
+
+
+def test_find_logo_uses_declared_logo_when_no_header_img(monkeypatch):
+    # A site with NO header <img> logo but a JSON-LD declared logo (and a footer
+    # badge) must resolve to the DECLARED logo — the principled win.
+    html = """
+    <html><head>
+      <script type="application/ld+json">
+      {"@type":"Organization","logo":"https://acme.com/brand.svg"}</script>
+    </head><body>
+      <header><a href="/">Acme</a></header>
+      <footer class="site-footer"><img src="/badges/cyber-essentials.png" alt="Cyber Essentials"></footer>
+    </body></html>"""
+    monkeypatch.setattr(lf, "resolve_domain", lambda c, hint_url=None: ("acme.com", "registry"))
+    monkeypatch.setattr(lf, "_fetch_html", lambda url: html)
+    monkeypatch.setattr(lf, "_clearbit", lambda d: None)
+    monkeypatch.setattr(lf, "_logodev", lambda d: None)
+    png = b"\x89PNG\r\n\x1a\n" + b"\x44" * 600
+    monkeypatch.setattr(lf, "_fetch_image",
+                        lambda u: png if u == "https://acme.com/brand.svg" else None)
+    data, src = lf.find_logo("Acme")
+    assert data == png and src == "site:acme.com"

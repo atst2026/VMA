@@ -67,7 +67,10 @@ def _asset_data_uri(name: str) -> str:
 # --------------------------------------------------------------------------
 company_logo = logo_finder.find_logo
 _img_data_uri = logo_finder.img_data_uri
-_normalize_logo = logo_finder.normalize_logo
+# Trim padding AND recolour a white-on-dark mark so it shows on the light cover
+# (a logo with real colour is left untouched). This is what lets the OQC-style
+# white header logo appear instead of being discarded for a visible wrong badge.
+_prepare_cover_logo = logo_finder.prepare_cover_logo
 
 
 # --------------------------------------------------------------------------
@@ -86,9 +89,10 @@ def _generation_date(when: _dt.date | _dt.datetime | None = None) -> str:
 def _cover_logo_html(company: str, logo_bytes: bytes | None) -> str:
     """The target company's logo on the cover, or a clean typographic
     wordmark fallback (so the cover is always presentable). The logo is trimmed
-    of surrounding padding so it fills the cover box at a sensible size."""
+    of surrounding padding and recoloured if it would otherwise be invisible on
+    the white cover, so it fills the box at a sensible size and always shows."""
     if logo_bytes:
-        logo_bytes = _normalize_logo(logo_bytes)
+        logo_bytes = _prepare_cover_logo(logo_bytes)
         return (f'<img class="client-logo" src="{_img_data_uri(logo_bytes)}" '
                 f'alt="{_esc(company)}">')
     return f'<div class="client-wordmark">{_esc(company)}</div>'
