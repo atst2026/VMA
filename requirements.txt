@@ -7,3 +7,4 @@ gunicorn>=21.0
 pypdf>=4.0
 pdfplumber>=0.10
 weasyprint>=60      # comms pitch-pack PDF (needs system pango/cairo libs)
+pillow>=9.1         # logo visibility/trim gate (also a WeasyPrint dependency)
