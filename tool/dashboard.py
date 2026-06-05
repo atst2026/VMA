@@ -1762,6 +1762,13 @@ def _why_now(trigger_key: str | None, mkt: bool, seat: str | None, window: str |
         "profit_warning": f"A profit warning drives an IR / Corporate Affairs reset, opening a senior seat within {w}.",
         "contract_loss": f"A major contract loss triggers a change and stakeholder-{fn} rebuild within {w}.",
         "ic_platform_rfp": f"An internal-comms platform re-tender usually precedes a senior internal-comms hire within {w}.",
+        "rebrand": f"A rebrand rollout needs a senior brand / corporate-{fn} owner, so {seat} tends to land within {w}.",
+        "agency_account_move": f"An agency account move drives a client-side {fn} reshuffle, opening a senior seat within {w}.",
+        "esg_bcorp": f"Substantiating green claims (CMA Green Claims Code) opens a sustainability-{fn} / brand-trust brief within {w}.",
+        "martech_adoption": f"A martech platform purchase and the senior marketing-ops / change-{fn} hire to run it are one decision, usually within {w}.",
+        "secured_financing": f"Fresh secured capital funds an external {fn} build, with {seat} the hire that lands it, usually within {w}.",
+        "ownership_change": f"New ownership refreshes leadership and the corporate narrative, opening a senior {fn} seat within {w}.",
+        "leadership_tenure": f"A long-tenured {fn} leader is a flight risk; line up the relationship and a backfill brief ahead of a likely move.",
     }
     return M.get(trigger_key or "") or f"This usually opens a senior {fn} mandate ({seat}) within {w}."
 

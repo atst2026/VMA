@@ -682,13 +682,221 @@ PRESS_VELOCITY_SPIKE = TriggerType(
 )
 
 
+# ====================================================================
+# BD-strengthening triggers — profession-specific leading indicators the
+# corporate-event taxonomy under-covered (per the "BD strengthening"
+# expert assessment). All free/public-data detectable. Four are regex
+# triggers fired off the news/trade-press lanes; three (leadership_tenure,
+# secured_financing, ownership_change) carry no regex and are emitted by
+# dedicated free sources (Companies House charges/PSC + Wayback), so they
+# are registered here only to carry a weight + window (like the velocity
+# spike above), never matched on free text.
+# ====================================================================
+
+# ---- Rebrand / brand refresh ------------------------------------------
+# A direct brand/creative hiring trigger: a rebrand or new visual identity
+# pulls through a senior brand / corporate-marketing / comms hire to own
+# the rollout. Marketing-heavy, but corporate rebrands also drive a
+# Corporate Affairs / reputation hire.
+REBRAND = TriggerType(
+    key="rebrand",
+    label="Rebrand / brand refresh",
+    weight=0.7,
+    lead_time_weeks=(4, 16),
+    who_to_call="CMO / Head of Brand — rebrand rollout drives a senior brand/marketing hire",
+    implication=(
+        "Rebrand / brand refresh at {company}. A new identity rollout "
+        "typically pulls through a senior brand / corporate-marketing hire "
+        "(and often a Corporate Affairs hire to own the narrative) within "
+        "4–16 weeks."
+    ),
+    patterns=_rx(
+        r"rebrand(?:s|ed|ing)?",
+        r"brand refresh",
+        r"new (?:brand|visual|corporate) identity",
+        r"unveils? (?:a )?new (?:logo|brand|identity)",
+        r"(?:reveals?|launches?|introduces?) (?:a )?new (?:logo|brand identity|visual identity)",
+        r"rebrands? as",
+        r"new name and (?:logo|identity|brand)",
+    ),
+)
+
+
+# ---- Agency account win / loss (PRWeek "Pitch Update" / Campaign) -------
+# A brand moving its PR / creative / media / marketing account drives
+# agency-side hiring on the winning agency AND a client-side marketing
+# reshuffle. Openly published in PRWeek's "Pitch Update" and Campaign.
+AGENCY_ACCOUNT_MOVE = TriggerType(
+    key="agency_account_move",
+    label="Agency account win / loss",
+    weight=0.6,
+    lead_time_weeks=(4, 16),
+    who_to_call="CMO / Marketing Director (client-side) or Agency MD / New Business (agency-side)",
+    implication=(
+        "Agency account move at {company} (PR / creative / media / marketing "
+        "account win or loss). Account moves drive agency-side delivery hiring "
+        "and a client-side marketing reshuffle within 4–16 weeks."
+    ),
+    patterns=[
+        re.compile(p, re.IGNORECASE) for p in (
+            r"\bwins?\b.{0,40}\b(?:PR|comms|communications|creative|advertising|media|marketing|brand)\b.{0,15}\b(?:account|business|brief|retainer|mandate)\b",
+            r"\bappoints?\b.{0,45}\bas (?:its |their |lead )?(?:PR|comms|communications|creative|advertising|media|marketing|brand) agency\b",
+            r"\bhands?\b.{0,40}\b(?:PR|creative|advertising|media|marketing)\b.{0,15}\baccount to\b",
+            r"\bnames?\b.{0,45}\bas (?:its |their )?(?:lead )?(?:agency|creative agency|media agency|PR agency)\b",
+            r"\bawards?\b.{0,40}\b(?:PR|advertising|media|creative|marketing)\b.{0,15}\b(?:account|brief|business|mandate)\b",
+            r"\bpitch (?:win|update)\b",
+            r"\bswitch(?:es|ed)? (?:its )?(?:PR|ad|media|creative|marketing) (?:account|business) to\b",
+        )
+    ],
+)
+
+
+# ---- ESG / B-Corp certification (CMA Green Claims Code) -----------------
+# A new B-Corp certification, science-based target, net-zero strategy or
+# CSRD obligation triggers a substantiation-and-comms build-out: someone
+# has to evidence and communicate the claims without falling foul of the
+# CMA Green Claims Code. A permanent sustainability-comms / brand-trust
+# hire commonly follows.
+ESG_BCORP = TriggerType(
+    key="esg_bcorp",
+    label="ESG / B-Corp certification",
+    weight=0.5,
+    lead_time_weeks=(8, 26),
+    who_to_call="Head of Sustainability / Corporate Affairs — substantiation + comms build-out",
+    implication=(
+        "ESG / B-Corp certification event at {company}. Substantiating and "
+        "communicating the claims (under the CMA Green Claims Code) drives a "
+        "permanent sustainability-comms / brand-trust hire within 8–26 weeks."
+    ),
+    patterns=[
+        re.compile(p, re.IGNORECASE) for p in (
+            r"\bB[\s-]?Corp(?:oration)?\b",
+            r"\bcertified B[\s-]?Corp\b",
+            r"\bachieves? B[\s-]?Corp\b",
+            r"\bbecomes? a B[\s-]?Corp\b",
+            r"\bscience[\s-]based targets?\b",
+            r"\bnet[\s-]zero (?:strategy|target|plan|commitment|transition plan)\b",
+            r"\bgreen claims\b",
+            r"\bCSRD\b",
+        )
+    ],
+)
+
+
+# ---- Martech / digital-marketing platform adoption ---------------------
+# Adoption of a marketing-automation / CDP / martech platform is two sides
+# of one decision: the platform purchase and the senior marketing-ops /
+# change-comms hire to run it. Detectable free in trade press AND via
+# technographics (Wappalyzer / BuiltWith — see sources/technographics.py).
+MARTECH_VENDORS = [
+    "Salesforce Marketing Cloud", "Adobe Experience", "Adobe Experience Cloud",
+    "Marketo", "HubSpot", "Braze", "Segment", "Tealium", "Bloomreach",
+    "Iterable", "Klaviyo", "Emarsys", "Sitecore", "Optimizely",
+]
+_MARTECH_ALT = "|".join(re.escape(v) for v in MARTECH_VENDORS)
+
+MARTECH_ADOPTION = TriggerType(
+    key="martech_adoption",
+    label="Martech / marketing-platform adoption",
+    weight=0.5,
+    lead_time_weeks=(6, 16),
+    who_to_call="CMO / Head of Marketing Ops — platform purchase + senior hire are one decision",
+    implication=(
+        "Martech / marketing-platform adoption at {company}. A new marketing-"
+        "automation / CDP deployment correlates with a senior marketing-ops / "
+        "digital-marketing (or change-comms) hire within 6–16 weeks."
+    ),
+    patterns=[
+        re.compile(p, re.IGNORECASE) for p in (
+            r"(?:adopts?|implements?|rolls? out|deploys?|migrates? to|selects?|"
+            r"chooses?|goes live with)\s+(?:" + _MARTECH_ALT + r")",
+            r"(?:" + _MARTECH_ALT + r")\s+(?:deployment|implementation|roll[\s-]?out|go[\s-]?live)",
+            r"\bmarketing automation platform\b",
+            r"\bcustomer data platform\b",
+            r"\bmartech (?:stack|platform|transformation)\b",
+            r"\bdigital transformation programme\b",
+        )
+    ],
+)
+
+
+# ---- Leadership tenure (flight-risk) — Companies House / Wayback --------
+# A senior comms / marketing leader past a long-tenure threshold is a
+# statistical flight risk (CMO/CCO tenure is among the shortest in the
+# C-suite). Emitted by companies_house.detect_tenure_signals off board
+# officers' appointed_on dates — a soft, slow restlessness signal that
+# keys on the leader's CURRENT employer (the account about to lose them /
+# need a backfill). Never regex-matched on free text.
+LEADERSHIP_TENURE = TriggerType(
+    key="leadership_tenure",
+    label="Leadership tenure (flight-risk / succession watch)",
+    weight=0.5,
+    lead_time_weeks=(26, 52),
+    who_to_call="The individual directly + the CHRO — long tenure precedes a move; line up a backfill brief",
+    implication=(
+        "A senior comms / marketing leader at {company} has passed a long-"
+        "tenure threshold. Long tenure in a short-tenure seat empirically "
+        "precedes a move within 6–12 months — open the relationship early "
+        "and prepare a backfill brief."
+    ),
+    patterns=[],   # emitted by companies_house.detect_tenure_signals, not regex
+)
+
+
+# ---- Secured financing / charge registered — Companies House -----------
+# A newly registered charge (debenture / mortgage) or a share allotment
+# (SH01) at a watchlist company is a financing event: growth/secured
+# capital that funds an external build. Emitted by
+# companies_house.detect_filing_events off the free /charges + filing-
+# history endpoints; Tier-1 verified by construction.
+SECURED_FINANCING = TriggerType(
+    key="secured_financing",
+    label="Secured financing / charge registered",
+    weight=0.85,
+    lead_time_weeks=(8, 26),
+    who_to_call="CFO / CEO — fresh capital funds an external comms/marketing build",
+    implication=(
+        "Secured financing event at {company} (a charge registered, or a "
+        "share allotment, at Companies House). Fresh growth capital funds an "
+        "external build; a senior comms / marketing hire commonly follows "
+        "within 8–26 weeks."
+    ),
+    patterns=[],   # emitted by companies_house.detect_filing_events, not regex
+)
+
+
+# ---- Ownership change (PSC) — Companies House --------------------------
+# A new person/entity with significant control (a PSC notified in the
+# window, or an existing one ceased) is an ownership change: a new owner
+# typically refreshes the leadership and the corporate narrative. Emitted
+# by companies_house.detect_filing_events off the free PSC endpoint;
+# Tier-1 verified by construction.
+OWNERSHIP_CHANGE = TriggerType(
+    key="ownership_change",
+    label="Ownership change (new significant control)",
+    weight=0.9,
+    lead_time_weeks=(8, 24),
+    who_to_call="Incoming owner / Corporate Affairs — new ownership refreshes leadership + narrative",
+    implication=(
+        "Ownership change at {company} (a new person with significant "
+        "control filed at Companies House). New owners typically refresh "
+        "leadership and the corporate narrative, driving a senior comms / "
+        "marketing hire within 8–24 weeks."
+    ),
+    patterns=[],   # emitted by companies_house.detect_filing_events, not regex
+)
+
+
 TRIGGERS = [CEO_CHANGE, CHAIR_CHANGE, CHRO_CHANGE, CFO_CHANGE,
             IR_DIRECTOR_CHANGE, COMMS_LEADER_DEPARTURE,
             MNA, ACTIVIST_STAKE, PE_ACQUISITION,
             REGULATOR_ACTION, REGULATOR_PROBE_EARLY, CRISIS_EVENT,
             PROFIT_WARNING, RESTRUCTURE, IC_PLATFORM_RFP,
             IPO_LISTING, CONTRACT_LOSS, PRESS_VELOCITY_SPIKE,
-            PERSONAL_BRAND_VELOCITY, NED_TRUSTEE_APPOINTMENT]
+            PERSONAL_BRAND_VELOCITY, NED_TRUSTEE_APPOINTMENT,
+            # BD-strengthening additions
+            REBRAND, AGENCY_ACCOUNT_MOVE, ESG_BCORP, MARTECH_ADOPTION,
+            LEADERSHIP_TENURE, SECURED_FINANCING, OWNERSHIP_CHANGE]
 BY_KEY = {t.key: t for t in TRIGGERS}
 
 # Marketing desk (FIRST DRAFT): the trigger DETECTION (regex patterns) is
@@ -753,6 +961,24 @@ if _active_profile().key == "marketing":
         "press_velocity_spike": ("Head of Marketing / CMO",
             "Press-velocity spike at {company} — heightened market activity often "
             "precedes a senior marketing hire."),
+        "rebrand": ("CMO / Head of Brand",
+            "Rebrand / brand refresh at {company}. A new identity rollout drives a "
+            "senior brand / corporate-marketing hire within 4–16 weeks."),
+        "agency_account_move": ("CMO / Marketing Director",
+            "Agency account move at {company}. A PR / creative / media account win "
+            "or loss drives a client-side marketing reshuffle within 4–16 weeks."),
+        "esg_bcorp": ("CMO / Head of Brand — brand-trust & sustainability marketing",
+            "ESG / B-Corp certification at {company}. Substantiating green claims "
+            "(CMA Green Claims Code) opens a brand-trust / sustainability-marketing brief."),
+        "martech_adoption": ("CMO / Head of Marketing Ops",
+            "Martech / marketing-platform adoption at {company}. A platform purchase "
+            "and a senior marketing-ops hire are two sides of one decision."),
+        "secured_financing": ("CFO / CMO (or CEO)",
+            "Secured financing at {company}. Fresh growth capital funds an external "
+            "marketing build."),
+        "ownership_change": ("Incoming owner / CMO",
+            "Ownership change at {company}. New owners commonly refresh the marketing "
+            "leadership in the first 6 months."),
     }
     for _k, (_w, _i) in _MKT_COPY.items():
         _t = BY_KEY.get(_k)
@@ -886,6 +1112,14 @@ _MARKETING_TRIGGER_KEYS = {
     "contract_loss",           # demand & brand defence
     "personal_brand_velocity", # candidate signal (specialism-agnostic)
     "ned_trustee_appointment", # candidate signal (specialism-agnostic)
+    # BD-strengthening additions — all plausibly precede a marketing hire
+    "rebrand",                 # brand/creative hiring trigger
+    "agency_account_move",     # agency + client-side marketing reshuffle
+    "esg_bcorp",               # brand-trust / sustainability marketing
+    "martech_adoption",        # marketing-ops / digital-marketing hire
+    "leadership_tenure",       # candidate signal (specialism-agnostic)
+    "secured_financing",       # growth capital → marketing build
+    "ownership_change",        # new owner refreshes marketing
 }
 
 

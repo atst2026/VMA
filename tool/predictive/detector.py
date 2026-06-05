@@ -172,6 +172,36 @@ def extract_named_employer(title: str, summary: str = "") -> str:
     return best
 
 
+# Agency / holding-company names that appear as the OBJECT of an
+# agency-account-move headline ("Brand appoints Ogilvy", "WPP wins the X
+# account"). Several are watchlist members in their own right, so — exactly
+# like a regulator in a probe headline — they must not be read as the
+# SUBJECT of the move. Masked from the company-resolution text so the brand
+# (the actual lead) resolves instead. A real "WPP appoints a CCO" story
+# carries no agency-account-move trigger, so it is unaffected.
+_AGENCY_OBJECT_NAMES = [
+    "WPP", "Publicis", "Publicis Groupe", "Omnicom", "Interpublic", "IPG",
+    "Dentsu", "Havas", "Accenture Song", "Ogilvy", "BBH", "AMV BBDO",
+    "Wunderman Thompson", "VCCP", "Saatchi & Saatchi", "McCann", "Edelman",
+    "Weber Shandwick", "FleishmanHillard", "Brunswick", "FGS Global", "Teneo",
+    "Hill+Knowlton", "Golin", "MSL", "Mother", "Droga5", "adam&eveDDB",
+    "Leo Burnett", "Grey", "TBWA", "DDB", "BBDO", "Havas Lynx",
+]
+
+
+def _mask_object_names(text: str, names: list[str]) -> str:
+    """Blank out object names (martech vendors / agencies) from text used for
+    SUBJECT resolution, longest-first so multi-word names go before their
+    substrings. Word-boundary, case-insensitive. Leaves the rest intact so
+    the genuine subject (the adopter / the brand) still resolves."""
+    if not text:
+        return text
+    out = text
+    for nm in sorted(names, key=len, reverse=True):
+        out = re.sub(r"\b" + re.escape(nm) + r"\b", " ", out, flags=re.IGNORECASE)
+    return out
+
+
 def _tier_from_source_label(label: str) -> str:
     low = (label or "").lower()
     if "rns" in low or "investegate" in low:
@@ -224,13 +254,28 @@ def detect_events(signals: Iterable[dict]) -> list[TriggerEvent]:
         if not hits:
             continue
         pattern_hits += 1
+        # For martech-adoption / agency-account-move hits, the named vendor /
+        # agency is the OBJECT, not the subject — and several (Adobe,
+        # Salesforce, WPP, Publicis…) are watchlist members, so they would
+        # mis-resolve as the lead. Mask them from the resolution text so the
+        # adopter / brand resolves instead (or the event drops as off-universe
+        # if no watchlist subject remains). Evidence still uses the original
+        # body, so the vendor/agency stays visible in the dossier.
+        hit_keys = {h.key for h in hits}
+        mask_names: list[str] = []
+        if "martech_adoption" in hit_keys:
+            mask_names += P.MARTECH_VENDORS
+        if "agency_account_move" in hit_keys:
+            mask_names += _AGENCY_OBJECT_NAMES
+        res_title = _mask_object_names(title, mask_names) if mask_names else title
+        res_summary = _mask_object_names(summary, mask_names) if mask_names else summary
         # Candidate chain: structured company (most reliable) → named-employer
         # extractor (public/charity/HE/housing orgs the strict extractor
         # misses) → strict RNS-suffix/peer extractor.
         candidate = (
             (s.get("company") or "").strip()
-            or extract_named_employer(title, summary)
-            or extract_company(title, summary)
+            or extract_named_employer(res_title, res_summary)
+            or extract_company(res_title, res_summary)
         )
         # Account-relevance gate, now TIERED (text-first). A watchlist name
         # appearing as the headline subject scores full weight; a
@@ -251,7 +296,7 @@ def detect_events(signals: Iterable[dict]) -> list[TriggerEvent]:
         # deliberately added. A candidate is only required for the
         # off-watchlist path. Fail-open if the watchlist can't load; the
         # resolved canonical name keeps display + contact-matching consistent.
-        company, acct_tier = classify_account(candidate, title, summary)
+        company, acct_tier = classify_account(candidate, res_title, res_summary)
         if not company:
             if not candidate:
                 rejected_no_company += 1

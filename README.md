@@ -56,15 +56,19 @@ Manual dispatch bypasses the 08:30–10:30 window check.
 
 | Source | Via |
 |---|---|
-| Companies House (UK director/PSC changes) | `/search` + `/officers` APIs |
+| Companies House (UK director changes) | `/search` + `/officers` APIs |
+| Companies House (financing / ownership / rebrand / tenure) | `/charges`, `/persons-with-significant-control`, `/filing-history` + officer `appointed_on`; optional Streaming API (`CH_STREAM_ENABLED`) |
 | LSE RNS | Investegate RSS |
 | UK regulators | FCA, Ofcom, Ofgem, Ofwat, ICO, CMA RSS |
-| UK procurement | Contracts Finder, Find a Tender RSS |
+| UK procurement | Find a Tender + devolved: Public Contracts Scotland, Sell2Wales, eTendersNI RSS |
+| Charity registers | Charity Commission (E&W) API trustee-board changes (free key); OSCR / CCNI wired |
 | Civil Service Jobs | RSS |
+| Profession / charity / sector job boards | CIPR, PRCA, CharityComms, CharityJob, NHS Jobs, jobs.ac.uk, Guardian Jobs RSS |
 | SEC EDGAR | Atom feed, 8-K filings |
-| Trade press | PRWeek UK/US/Asia, Campaign, CorpComms, HR Magazine, People Management, Ragan, Provoke/Holmes |
+| Trade press | CorpComms, PRmoment, CIPR Influence, Ragan + sector titles (Inside Housing, Utility Week, pharmaphorum) |
 | Public job boards | Greenhouse, Lever, Ashby, Workable (JSON); LinkedIn Jobs public (logged-off); Adzuna (optional) |
-| Global news graph | GDELT DOC 2.0 |
+| Wayback Machine | careers/leadership-page diffing — pre-announcement leader departures |
+| Global news graph | GDELT DOC 2.0 + Google News RSS (redundant predictive lane) |
 | LinkedIn public surface | Bright Data free tier (5k requests/month) |
 
 ## Scope
