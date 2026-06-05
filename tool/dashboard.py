@@ -198,14 +198,17 @@ _ARTIFACT_LABEL = {
 
 
 def _artifact_label(name: str | None) -> str | None:
-    """Human label for an artifact name. Pitch packs carry a per-dispatch
-    suffix ('pitch-pack-<token>') so each dispatch maps to its own artifact
-    and a second dispatch can't resolve to the first one's; match by prefix."""
+    """Human label for an artifact name. Every report type carries a
+    per-dispatch suffix ('<base>-<token>') so each dispatch maps to its own
+    artifact and a second dispatch can't resolve to the first one's; match by
+    prefix so the tokened artifacts still resolve to their label (and so still
+    appear in Recent Reports / the view / delete paths)."""
     if not name:
         return None
-    if name == "pitch-pack" or name.startswith("pitch-pack-"):
-        return "Pitch Pack"
-    return _ARTIFACT_LABEL.get(name)
+    for base, label in _ARTIFACT_LABEL.items():
+        if name == base or name.startswith(base + "-"):
+            return label
+    return None
 
 
 def _is_report_artifact(name: str | None) -> bool:
@@ -2122,19 +2125,25 @@ def api_pitch_pack():
 @_auth_required
 def api_reverse_match():
     data = _safe_json_body()
+    import uuid
+    token = uuid.uuid4().hex[:10]
     inputs = {
         "candidate_name": (data.get("candidate_name") or "").strip(),
         "current_company": (data.get("current_company") or "").strip(),
         "current_title": (data.get("current_title") or "").strip(),
         # Hard-coded to "preview" — emails disabled for non-brief reports.
         "mode": "preview",
+        # Unique per-dispatch id so the loading tab resolves to THIS run's
+        # artifact, never a previous reverse-match's (the duplicate / "doesn't
+        # fully load" bug — same fix as the pitch pack).
+        "token": token,
     }
     missing = [k for k in ("candidate_name", "current_company", "current_title")
                if not inputs[k]]
     if missing:
         return jsonify({"ok": False, "detail": f"Missing: {', '.join(missing)}"}), 400
     res = trigger_workflow("reverse-match.yml", inputs)
-    res["artifact"] = _WORKFLOW_ARTIFACT["reverse-match.yml"]
+    res["artifact"] = f"{_WORKFLOW_ARTIFACT['reverse-match.yml']}-{token}"
     if res.get("ok"):
         from tool import report_log
         report_log.add("Reverse Match", inputs["current_company"],
@@ -2146,17 +2155,20 @@ def api_reverse_match():
 @_auth_required
 def api_pre_meeting():
     data = _safe_json_body()
+    import uuid
+    token = uuid.uuid4().hex[:10]
     inputs = {
         "account_name": (data.get("account_name") or "").strip(),
         "contact_name": (data.get("contact_name") or "").strip(),
         "meeting_context": (data.get("meeting_context") or "").strip(),
         # Hard-coded to "preview" — emails disabled for non-brief reports.
         "mode": "preview",
+        "token": token,   # per-dispatch artifact id (see api_reverse_match)
     }
     if not inputs["account_name"]:
         return jsonify({"ok": False, "detail": "Account name required"}), 400
     res = trigger_workflow("pre-meeting-brief.yml", inputs)
-    res["artifact"] = _WORKFLOW_ARTIFACT["pre-meeting-brief.yml"]
+    res["artifact"] = f"{_WORKFLOW_ARTIFACT['pre-meeting-brief.yml']}-{token}"
     if res.get("ok"):
         from tool import report_log
         report_log.add("Pre-meeting Brief", inputs["account_name"],
@@ -2168,13 +2180,16 @@ def api_pre_meeting():
 @_auth_required
 def api_sweep():
     data = _safe_json_body()
+    import uuid
+    token = uuid.uuid4().hex[:10]
     inputs = {
         "window_days": str(data.get("window_days", "14")),
         # Hard-coded to "preview" — emails disabled for non-brief reports.
         "mode": "preview",
+        "token": token,   # per-dispatch artifact id (see api_reverse_match)
     }
     res = trigger_workflow("fortnightly-sweep.yml", inputs)
-    res["artifact"] = _WORKFLOW_ARTIFACT["fortnightly-sweep.yml"]
+    res["artifact"] = f"{_WORKFLOW_ARTIFACT['fortnightly-sweep.yml']}-{token}"
     if res.get("ok"):
         from tool import report_log
         report_log.add("Manual Sweep", "", "", res["artifact"])

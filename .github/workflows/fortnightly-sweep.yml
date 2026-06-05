@@ -16,6 +16,10 @@ on:
           - test
           - send
           - preview
+      token:
+        description: "Internal: unique id from the dashboard so each dispatch maps to its own artifact."
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -60,10 +64,14 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fortnightly-sweep
+          # Per-dispatch name so the loading tab resolves to THIS run's
+          # artifact, never a previous sweep's (falls back to the plain name).
+          name: ${{ github.event.inputs.token != '' && format('fortnightly-sweep-{0}', github.event.inputs.token) || 'fortnightly-sweep' }}
           path: |
             tool/state/latest_sweep.html
             tool/state/latest_sweep.txt
+            tool/state/**/latest_sweep.html
+            tool/state/**/latest_sweep.txt
             tool/state/latest_sweep_signals.json
             tool/state/latest_predictive.json
             tool/state/predictor_pipeline.json
