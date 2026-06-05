@@ -1322,9 +1322,10 @@ MR_CSS = r"""
 .mr-pgtab{font:600 13.5px/1 "Inter",sans-serif;color:var(--muted);background:none;border:none;cursor:pointer;padding:5px 0;position:relative;display:inline-flex;align-items:center;gap:7px;transition:.13s}.mr-pgtab svg{width:15px;height:15px;opacity:.85}.mr-pgtab:hover{color:var(--ink2)}
 .mr-pgtab.on{color:var(--ink)}.mr-pgtab.on::after{content:"";position:absolute;left:0;right:0;bottom:-7px;height:2px;background:var(--blue-deep);border-radius:2px}
 .mr-filt{position:relative}
-.mr-filtbtn{display:inline-flex;align-items:center;gap:7px;font:600 12px/1 "Inter",sans-serif;color:var(--ink);background:#fff;border:1px solid var(--mrborder);border-radius:9px;height:34px;min-width:140px;padding:0 12px;cursor:pointer}.mr-filtbtn>svg{width:15px;height:15px;flex-shrink:0}.mr-filtbtn .mr-lbl{color:var(--ink)}.mr-filtbtn .mr-cv{width:13px;height:13px;color:var(--dim);margin-left:auto;flex-shrink:0}.mr-filtbtn:hover{background:var(--elevated)}
+.mr-filtbtn{display:inline-flex;align-items:center;gap:7px;font:600 12px/1 "Inter",sans-serif;color:var(--ink);background:#fff;border:1px solid var(--mrborder);border-radius:9px;height:34px;padding:0 12px;cursor:pointer}.mr-filtbtn>svg{width:15px;height:15px;flex-shrink:0}.mr-filtbtn .mr-pgi{display:inline-flex}.mr-filtbtn .mr-pgi svg{width:15px;height:15px}.mr-filtbtn .mr-lbl{color:var(--ink)}.mr-filtbtn .mr-cv{width:13px;height:13px;color:var(--dim)}.mr-filtbtn:hover{background:var(--elevated)}
 .mr-filtmenu{display:none;position:absolute;top:calc(100% + 6px);left:0;right:auto;background:#fff;border:1px solid var(--mrborder);border-radius:11px;box-shadow:0 10px 28px rgba(31,55,124,.14);padding:6px;min-width:196px;z-index:20}.mr-filtmenu.open{display:block}
 .mr-sortsel .mr-filtmenu{left:auto;right:0}
+.mr-filtmenu button>svg{width:15px;height:15px;flex-shrink:0;color:var(--dim)}
 .mr-filtmenu button{display:flex;width:100%;align-items:center;gap:8px;border:none;background:transparent;font:600 12px/1 "Inter",sans-serif;color:var(--ink2);padding:9px 10px;border-radius:8px;cursor:pointer;text-align:left}.mr-filtmenu button:hover{background:var(--elevated)}.mr-filtmenu button.on{background:var(--blue-wash);color:var(--blue-deep)}
 .mr-filtmenu .mr-mc{margin-left:auto;font:600 9px/1 "JetBrains Mono",monospace;background:rgba(31,31,31,.07);color:var(--ink2);padding:2px 6px;border-radius:9999px}.mr-filtmenu button.on .mr-mc{background:#fff;color:var(--blue-deep)}
 .mr-tp{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle;padding:2px 8px;border-radius:7px;font:600 10.5px/1.5 "Inter",sans-serif}.mr-tp::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:middle}
@@ -1389,6 +1390,7 @@ MR_JS = r"""
     undo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a9 9 0 1 1-2 5.7"/><path d="M3 4v5h5"/></svg>',
     funnel:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.2V19l-4 2v-7.8z"/></svg>',
     sort:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h11M4 18h6"/></svg>',
+    lead:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.6"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/></svg>',
     chevd:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
     radar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" opacity=".4"/><path d="M12 12 L12 3 A9 9 0 0 1 19.8 7.5 Z" fill="currentColor" stroke="none" opacity=".55"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>',
     jobs:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7.5" width="18" height="12.5" rx="2.2"/><path d="M8 7.5V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1.5"/><path d="M3 12.5h18"/></svg>',
@@ -1501,6 +1503,7 @@ MR_JS = r"""
   function openjob(id){var l=BYID[id];if(l&&l.url){window.open(l.url,'_blank','noopener');}else{toast('No posting link'+(l?' for '+l.co:''));}}
   function setPage(pg){page=pg;filter='active';open={};
     var pl=$('mr-pglbl');if(pl)pl.textContent=(pg==='jobs'?'Live Jobs':'BD Leads');
+    var pi=$('mr-pgico');if(pi)pi.innerHTML=(pg==='jobs'?IC.jobs:IC.lead);
     var pm=$('mr-pgmenu');if(pm){pm.classList.remove('open');var pb=pm.querySelectorAll('[data-act="pg"]');for(var i=0;i<pb.length;i++){pb[i].classList.toggle('on',pb[i].getAttribute('data-pg')===pg);}}
     var fb=document.querySelectorAll('#mr-filtmenu [data-act="filt"]');for(var j=0;j<fb.length;j++){fb[j].classList.toggle('on',fb[j].getAttribute('data-f')==='active');}
     var fm=$('mr-filtmenu');if(fm)fm.classList.remove('open');
@@ -1538,10 +1541,10 @@ MR_JS = r"""
         })();
       }).catch(function(){fail();});}
   root.innerHTML='<div class="mr-bar">'
-   +'<div class="mr-filt mr-pgsel"><button class="mr-filtbtn" data-act="pgbtn"><span class="mr-lbl" id="mr-pglbl">BD Leads</span><span class="mr-cv">'+IC.chevd+'</span></button>'
+   +'<div class="mr-filt mr-pgsel"><button class="mr-filtbtn" data-act="pgbtn"><span class="mr-pgi" id="mr-pgico">'+IC.lead+'</span><span class="mr-lbl" id="mr-pglbl">BD Leads</span><span class="mr-cv">'+IC.chevd+'</span></button>'
    +'<div class="mr-filtmenu" id="mr-pgmenu">'
-   +'<button data-act="pg" data-pg="bd" class="on">BD Leads</button>'
-   +'<button data-act="pg" data-pg="jobs">Live Jobs</button></div></div>'
+   +'<button data-act="pg" data-pg="bd" class="on">'+IC.lead+'BD Leads</button>'
+   +'<button data-act="pg" data-pg="jobs">'+IC.jobs+'Live Jobs</button></div></div>'
    +'<div class="mr-filt"><button class="mr-filtbtn" data-act="filtbtn">'+IC.funnel+'<span class="mr-lbl" id="mr-filtlbl">Active</span><span class="mr-cv">'+IC.chevd+'</span></button>'
    +'<div class="mr-filtmenu" id="mr-filtmenu">'
    +'<button data-act="filt" data-f="active" class="on">Active <span class="mr-mc" id="mr-m-active"></span></button>'
