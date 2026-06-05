@@ -136,6 +136,23 @@ def run() -> dict:
 
 def main() -> int:
     mode = (sys.argv[1] if len(sys.argv) > 1 else "preview").lower()
+
+    # Market State auto-ingest (Layer 3 macro coefficient). Refreshes the
+    # KPMG/REC Permanent Placements Index + IPA Bellwether monthly so the
+    # lead engine no longer relies on a hand-edited constant. Non-fatal and
+    # never regressive: a failed parse writes nothing and the hand-set value
+    # stands. Persist to the dashboard-state branch so the live dashboard's
+    # score_lead reads the fresh value.
+    try:
+        from tool import market_ingest
+        _mkt_override = market_ingest.refresh_market_state()
+        if _mkt_override and market_ingest.MARKET_FILE.exists():
+            _persist_state("tool/state/market_state.json",
+                           market_ingest.MARKET_FILE.read_text(),
+                           "state: morning-brief market_state.json")
+    except Exception as e:
+        log.info("market_state refresh failed: %s", e)
+
     result = run()
     signals = result["signals"]
     report = result["report"]
@@ -297,6 +314,12 @@ def main() -> int:
     except Exception as e:
         log.info("wayback careers-page diff: %s", e)
         wayback_events = []
+    try:
+        from tool.sources import technographics as _techno
+        techno_events = _techno.detect_technographics()
+    except Exception as e:
+        log.info("technographics fingerprint: %s", e)
+        techno_events = []
 
     # CH officer-change scan + contacts auto-update already ran earlier
     # (pre-enrichment) so signals are enriched with fresh data. The
@@ -304,10 +327,11 @@ def main() -> int:
     # the all-events combination for the predictor pipeline.
     all_events = (trigger_events + cluster_events + ch_events + velocity_events
                   + ch_filing_events + ch_stream_events + charity_events
-                  + wayback_events)
+                  + wayback_events + techno_events)
     log.info("BD-strengthening lanes: %d CH-filing + %d CH-stream + %d charity "
-             "+ %d wayback events", len(ch_filing_events), len(ch_stream_events),
-             len(charity_events), len(wayback_events))
+             "+ %d wayback + %d technographics events",
+             len(ch_filing_events), len(ch_stream_events),
+             len(charity_events), len(wayback_events), len(techno_events))
     # Specialism relevance: marketing keeps only triggers that predict a
     # MARKETING hire (comms keeps all). So a regulator / IR / governance
     # trigger surfaces as a comms BD lead but NOT a marketing one — the

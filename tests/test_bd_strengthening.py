@@ -365,3 +365,107 @@ def test_wayback_guards_js_rendered_live_page(monkeypatch):
     monkeypatch.setattr(wb, "_cdx_nearest", lambda url, days: "20260401000000")
     # Must NOT fabricate departures from a parse failure.
     assert wb.diff_company("BT Group", "https://example.com/leaders") == []
+
+
+# ====================================================================
+# 8. Market State auto-ingest (Layer 3 macro coefficient).
+# ====================================================================
+def test_market_parse_ppi_and_bellwether():
+    from tool import market_ingest as M
+    ppi_txt = ("KPMG and REC UK Report on Jobs: the Permanent Placements Index "
+               "registered 47.6 in May, a softer fall.")
+    assert M.parse_ppi(ppi_txt) == 47.6
+    bell_txt = "IPA Bellwether recorded a net balance of +4.8% for marketing budgets."
+    assert M.parse_bellwether(bell_txt) == 4.8
+    # junk / implausible -> None (never poisons the coefficient)
+    assert M.parse_ppi("nothing relevant here") is None
+    assert M.parse_ppi("permanent placements collapsed to 12.0") is None
+    assert M.parse_bellwether("no balance figure") is None
+
+
+def test_market_refresh_writes_override(tmp_path, monkeypatch):
+    from tool import market_ingest as M
+    monkeypatch.setattr(M, "MARKET_FILE", tmp_path / "market_state.json")
+    monkeypatch.setattr(M, "_fetch_text",
+                        lambda url: "Permanent Placements Index registered 49.1")
+    monkeypatch.setattr(M, "_gnews_text",
+                        lambda q: "net balance of +6.0% for marketing budgets")
+    ov = M.refresh_market_state(force=True)
+    assert ov and ov["default_ppi"] == 49.1
+    assert ov["marketing_budget_balance"] == 6.0
+    assert M.MARKET_FILE.exists()
+    # fresh -> skips the network on the next (non-forced) call
+    monkeypatch.setattr(M, "_fetch_text", lambda url: (_ for _ in ()).throw(AssertionError("should not fetch")))
+    again = M.refresh_market_state(force=False)
+    assert again["default_ppi"] == 49.1
+
+
+def test_market_refresh_no_write_when_unparseable(tmp_path, monkeypatch):
+    from tool import market_ingest as M
+    monkeypatch.setattr(M, "MARKET_FILE", tmp_path / "market_state.json")
+    monkeypatch.setattr(M, "_fetch_text", lambda url: "no index here")
+    monkeypatch.setattr(M, "_gnews_text", lambda q: "still nothing")
+    assert M.refresh_market_state(force=True) is None
+    assert not M.MARKET_FILE.exists()       # hand-set value stands
+
+
+def test_lead_engine_applies_market_override(tmp_path, monkeypatch):
+    from tool import lead_engine as LE
+    f = tmp_path / "market_state.json"
+    f.write_text('{"default_ppi": 55.0, "as_of": "2026-06", "marketing_budget_balance": 9.0}')
+    monkeypatch.setattr(LE, "_MARKET_OVERRIDE_FILE", f)
+    monkeypatch.setattr(LE, "_market_override_cache", {"mtime": None, "value": None})
+    eff = LE._effective_market_state()
+    assert eff["default_ppi"] == 55.0 and "auto-ingested" in eff["source"]
+    # 55 PPI -> the UK-overall read is now expanding (was contracting at 44.3)
+    assert LE._market_state("Some Unknown Co")["state"] == "expanding"
+    # sector divergence preserved (shifted by the same delta)
+    assert eff["sectors"]["retail_consumer"] > LE.MARKET_STATE["sectors"]["retail_consumer"]
+
+
+def test_lead_engine_rejects_implausible_override(tmp_path, monkeypatch):
+    from tool import lead_engine as LE
+    f = tmp_path / "market_state.json"
+    f.write_text('{"default_ppi": 999}')
+    monkeypatch.setattr(LE, "_MARKET_OVERRIDE_FILE", f)
+    monkeypatch.setattr(LE, "_market_override_cache", {"mtime": None, "value": None})
+    assert LE._effective_market_state()["default_ppi"] == LE.MARKET_STATE["default_ppi"]
+
+
+def test_lead_engine_no_override_file_is_unchanged(tmp_path, monkeypatch):
+    from tool import lead_engine as LE
+    monkeypatch.setattr(LE, "_MARKET_OVERRIDE_FILE", tmp_path / "absent.json")
+    monkeypatch.setattr(LE, "_market_override_cache", {"mtime": None, "value": None})
+    assert LE._effective_market_state() is LE.MARKET_STATE
+    assert LE._market_state()["state"] == "contracting"   # the hand-set default
+
+
+# ====================================================================
+# 9. Technographics fingerprinting.
+# ====================================================================
+def test_technographics_detect_vendors():
+    from tool.sources import technographics as T
+    html = ('<script src="https://js.hs-scripts.com/123.js"></script>'
+            '<script>var m="munchkin.js"</script>'
+            '<script src="https://cdn.segment.com/analytics.js/v1/x/analytics.min.js"></script>')
+    assert T.detect_vendors(html) == {"HubSpot", "Marketo", "Segment"}
+    assert T.detect_vendors("<html><body>nothing</body></html>") == set()
+
+
+def test_technographics_emits_on_new_adoption(tmp_path, monkeypatch):
+    from tool.sources import technographics as T
+    monkeypatch.setattr(T, "SNAPSHOT_FILE", tmp_path / "techno.json")
+    sites = {"Tesco": "https://www.tesco.com/"}
+
+    state = {"html": '<script src="https://js.hs-scripts.com/1.js"></script>'}  # HubSpot only
+    monkeypatch.setattr(T, "_fetch", lambda url: state["html"])
+
+    # First run seeds the snapshot — no events on pre-existing tags.
+    assert T.detect_technographics(sites) == []
+    # Now the site adds Marketo -> a NEW adoption fires one event.
+    state["html"] += '<script>munchkin.js</script>'
+    evs = T.detect_technographics(sites)
+    assert [e.trigger_key for e in evs] == ["martech_adoption"]
+    assert "Marketo" in evs[0].evidence and evs[0].company == "Tesco"
+    # Re-scan with no change -> no new events.
+    assert T.detect_technographics(sites) == []
