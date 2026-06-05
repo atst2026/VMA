@@ -4962,7 +4962,15 @@ TEMPLATE = r"""
     /* placement windows — master / detail */
     /* the section + the detail pane stay fixed; only this list scrolls */
     .bdc-md { display: grid; grid-template-columns: 232px 1fr; gap: 14px; align-items: stretch; height: 100%; }
-    .bdc-mdlist { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow-y: auto; padding-right: 6px; }
+    .bdc-mdcol { position: relative; min-height: 0; height: 100%; display: flex; flex-direction: column; }
+    .bdc-mdlist { flex: 1; display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow-y: auto; padding-right: 6px; }
+    .bdc-mdlist::-webkit-scrollbar { width: 6px; }
+    .bdc-mdlist::-webkit-scrollbar-thumb { background: rgba(60,64,67,.22); border-radius: 3px; }
+    .bdc-mdlist::-webkit-scrollbar-track { background: transparent; }
+    /* a bottom fade that appears while more windows are below (a scroll cue) */
+    .bdc-mdfade { position: absolute; left: 0; right: 6px; bottom: 0; height: 28px; pointer-events: none; opacity: 0; transition: opacity .15s;
+      background: linear-gradient(rgba(255,255,255,0), var(--card)); }
+    .bdc-mdcol.more .bdc-mdfade { opacity: 1; }
     .bdc-mdi { display: flex; align-items: center; gap: 11px; border: 1px solid var(--border); border-radius: 12px; background: var(--card);
       padding: 10px 12px; cursor: pointer; transition: .14s; text-align: left; font: inherit; width: 100%; }
     .bdc-mdi:hover { border-color: var(--border-hi) }
@@ -4970,7 +4978,12 @@ TEMPLATE = r"""
     .bdc-mdi .sq { flex: none; width: 11px; height: 34px; border-radius: 5px; background: var(--cc) }
     .bdc-mdi .nm { font-size: 12.5px; font-weight: 600; line-height: 1.25 }
     .bdc-mdi .by { font-size: 10.5px; color: var(--dim); margin-top: 2px; font-weight: 600 }
-    .bdc-mdpane { border: 1px solid var(--border); border-radius: 16px; background: var(--bg); padding: 16px 18px; overflow: hidden; align-self: stretch; }
+    .bdc-mdpane { border: 1px solid var(--border); border-radius: 16px; background: transparent; padding: 16px 18px; overflow: hidden; align-self: stretch; }
+    /* transparent pill: everything black except the "N days left" tag */
+    #cal .bdc-mdpane .bdc-pwd-meta, #cal .bdc-mdpane .bdc-angle, #cal .bdc-mdpane .bdc-k,
+    #cal .bdc-mdpane .bdc-v, #cal .bdc-mdpane .bdc-basis { color: var(--ink); }
+    #cal .bdc-mdpane .bdc-srcline a, #cal .bdc-mdpane .bdc-rm,
+    #cal .bdc-mdpane .bdc-rm-no { color: var(--ink); }
     /* events — a MONTHLY calendar for one year (Jan–Dec): a symmetric 4x3 grid
        that fills the card (no scroll). Clicking an event replaces the grid with
        the detail; a Back control returns to the calendar. Year stepper top-right. */
@@ -5462,7 +5475,7 @@ TEMPLATE = r"""
       <div class="bdc-grid">
 
         <div class="bdc-card a-fw">
-          <div class="bdc-card-h"><h2>Framework Eligibility</h2><span class="meta">where &amp; when VMA can bid</span></div>
+          <div class="bdc-card-h"><h2>Framework Eligibility</h2><span class="meta">Where &amp; when VMA can bid</span></div>
           <div class="bdc-fwa" id="framework-body">
             {% if framework_events|length == 0 %}<div class="empty compact">No framework windows tracked.</div>{% endif %}
             {% for fw in framework_events %}
@@ -5486,7 +5499,6 @@ TEMPLATE = r"""
                 <span class="bdc-fw-cv">&rsaquo;</span>
               </button>
               <div class="bdc-fw-d">
-                <div class="bdc-fw-dt">{{ fw.ad_title or fw.title }}</div>
                 <div class="bdc-fw-by">{{ fw.buyer }}</div>
                 <div class="bdc-fw-sc">{{ fw.scope }}</div>
                 <a class="bdc-fw-link" href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify on portal &rsaquo;</a>
@@ -6214,12 +6226,24 @@ async function loadPulses() {
         '<span class="sq"></span><div><div class="nm">' + esc(bdcShort(w.name)) + '</div>' +
         '<div class="by">' + esc(days) + (days ? ' · ' : '') + esc(cc[1]) + '</div></div></button>';
     }).join('');
-    body.innerHTML = '<div class="bdc-md"><div class="bdc-mdlist">' + list + '</div>' +
+    body.innerHTML = '<div class="bdc-md"><div class="bdc-mdcol"><div class="bdc-mdlist">' + list + '</div><div class="bdc-mdfade"></div></div>' +
       '<div class="bdc-mdpane" id="bdc-wpane"></div></div>';
     const pane = document.getElementById('bdc-wpane');
+    const col = body.querySelector('.bdc-mdcol');
     const mdlist = body.querySelector('.bdc-mdlist');
+    // show a bottom fade while there are more windows below (hides at the end)
+    function updFade() {
+      const more = mdlist.scrollHeight > mdlist.clientHeight + 4;
+      const atEnd = mdlist.scrollTop + mdlist.clientHeight >= mdlist.scrollHeight - 4;
+      col.classList.toggle('more', more && !atEnd);
+    }
+    mdlist.addEventListener('scroll', updFade);
+    // re-check when the list gets a real height (the BD-Calendar page starts
+    // hidden, so the first measure is zero until it's shown).
+    if (window.ResizeObserver) { try { new ResizeObserver(updFade).observe(mdlist); } catch (e) {} }
     function paint(w) { pane.style.setProperty('--cc', bdcWinCat(w.name)[0]); pane.innerHTML = bdcWinDetail(w); }
     paint(rows[0]);
+    setTimeout(updFade, 0);
     mdlist.addEventListener('click', (ev) => {
       const it = ev.target.closest('.bdc-mdi'); if (!it) return;
       mdlist.querySelectorAll('.bdc-mdi').forEach(x => x.classList.remove('sel'));
@@ -6369,8 +6393,11 @@ async function loadEvents() {
     root.querySelectorAll('.bdc-fw').forEach(function (x) { x.classList.remove('open'); });
     if (!wasOpen) {
       node.classList.add('open');
-      // bring the opened section (incl. its detail) fully into view
-      setTimeout(function () { try { node.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {} }, 60);
+      // bring the opened detail (its end + the portal link) fully into view
+      setTimeout(function () {
+        var d = node.querySelector('.bdc-fw-d');
+        try { (d || node).scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+      }, 70);
     }
   });
 })();
