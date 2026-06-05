@@ -368,6 +368,18 @@ def test_market_state_is_contracting_now():
     assert ms["stack_req"] == 3              # lone triggers must stack harder
 
 
+def test_market_state_is_per_sector_not_one_global_number():
+    # A funded tech / life-sciences scale-up must NOT carry the retail penalty.
+    tech = LE._market_state("Oxford Quantum Circuits")
+    bio = LE._market_state("IMU Biosciences")
+    retail = LE._market_state("JD Sports")
+    assert tech["sector"] == "technology" and tech["state"] != "contracting"
+    assert bio["sector"] == "pharma_healthcare" and bio["stack_req"] == 2
+    assert retail["sector"] == "retail_consumer" and retail["state"] == "contracting"
+    # unclassified falls back to the UK-overall contraction
+    assert LE._market_state("Some Unknown Co")["state"] == "contracting"
+
+
 # ---- the why-now narrative articulates the conjunction, both desks ----
 def test_why_now_names_the_stack_for_a_strong_lead():
     for desk in ("comms", "marketing"):

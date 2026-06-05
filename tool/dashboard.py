@@ -643,6 +643,15 @@ def load_latest_predictive() -> list[dict]:
         _ov = _ps_overlay.get(p_item["pid"])
         if _ov:
             p_item["status"] = _ov
+        # Resolve the seat for the desk being VIEWED, not the desk that ran the
+        # brief: the stored predicted_role can be a stale, wrong-desk seat (a
+        # comms role surfacing on the Marketing Radar). Re-derive from the
+        # triggers under the active desk so the seat is always desk-correct.
+        _evk = {e.get("trigger_key") for e in (p_item.get("events") or [])
+                if isinstance(e, dict)}
+        if _evk:
+            p_item["predicted_role"] = predictor_pipeline.role_for_trigger_keys(
+                _evk, desk=active_profile().key)
         p_item["outreach"] = draft_outreach_for_predictor(p_item)
         p_item["linkedin"] = linkedin_search_for_predictor(p_item)
         evs = p_item.get("events") or []
@@ -1894,20 +1903,25 @@ def _render_dashboard():
         _r["contact_on_file"] = _on_file(_r.get("company"))
         _r["lead"] = lead_engine.score_lead(_r, _kind, _desk)
         _r["outcome"] = _outc.get(_id)
-        # Order the board by the conjunction strength: a stacked, call-today
-        # lead should sit above a lone "watch", even if the legacy opportunity
-        # value disagrees. (Competing recruiters carry the lowest rank, so they
-        # still sink below real leads.)
-        _r["_opp"] = (_r.get("_opp") or 0.0) * (_r["lead"].get("strength_rank") or 0.4)
+        _r["_legacy_opp"] = _r.get("_opp") or 0.0   # kept as the within-band tiebreaker
     for _p in predictors:
         _enrich(_p, "predictor", _p.get("pid"))
     for _f in funding_events:
         _enrich(_f, "funding", _f.get("fid"))
     _mr_cal = lead_outcomes.calibration()
     premarket_rows = sorted(predictors + funding_events,
-                            key=lambda d: d.get("_opp") or 0.0, reverse=True)
+                            key=lambda d: d.get("_legacy_opp") or 0.0, reverse=True)
     # Entity resolution: one row per company (OQC == Oxford Quantum Circuits).
     premarket_rows = _dedupe_rows(premarket_rows)
+    # Order the board BAND-FIRST: strength tier (call-today > nurture > watch)
+    # is the primary key, the legacy opportunity value only the within-band
+    # tiebreaker. So a Nurture never sits below a Monitor. We then stamp a clean
+    # descending _opp so the client's by-opp sort reproduces this exactly.
+    premarket_rows.sort(key=lambda r: ((r.get("lead") or {}).get("strength_rank") or 0.4,
+                                       r.get("_legacy_opp") or 0.0), reverse=True)
+    _n_rows = len(premarket_rows)
+    for _i, _r in enumerate(premarket_rows):
+        _r["_opp"] = float(_n_rows - _i)
     # Permanent suppression: a lead "removed entirely" never relists, even if a
     # fresh event re-detected the same company.
     from tool import bd_tombstone
