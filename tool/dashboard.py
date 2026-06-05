@@ -4869,25 +4869,30 @@ TEMPLATE = r"""
     .bdc-card-h { display: flex; align-items: center; gap: 10px; margin-bottom: 11px; flex: none; }
     .bdc-card-h h2 { font-size: 14.5px; font-weight: 620; margin: 0; letter-spacing: -.01em; }
     .bdc-card-h .meta { margin-left: auto; font-size: 11.5px; color: var(--dim); font-weight: 600; }
-    /* each card's content area is the scroll region inside the fixed card */
-    #cal #framework-body, #cal #events-body, #cal #pulses-body { flex: 1; min-height: 0; overflow-y: auto; }
-    /* frameworks — vertical timeline graph */
-    .bdc-vt { position: relative; margin-left: 7px; padding-left: 22px; border-left: 2px solid var(--border); }
-    .bdc-vt-node { position: relative; padding: 1px 2px 16px 0; }
-    .bdc-vt-node:last-child { padding-bottom: 2px }
-    .bdc-vt-dot { position: absolute; left: -29px; top: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--card); border: 2.5px solid var(--dim); }
-    .bdc-vt-node.open .bdc-vt-dot { background: var(--grn-tx); border-color: var(--grn-tx); box-shadow: 0 0 0 3px var(--grn-bg); }
-    .bdc-vt-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-    .bdc-vt-t { font-size: 12.5px; font-weight: 620; letter-spacing: -.01em; color: var(--ink); line-height: 1.3;
-      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .bdc-vt-pill { flex: none; font-size: 9px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+    /* the three card bodies don't scroll; only the windows LIST scrolls (below) */
+    #cal #framework-body, #cal #events-body, #cal #pulses-body { flex: 1; min-height: 0; overflow: hidden; }
+    #cal #events-body { display: flex; flex-direction: column; }
+    /* frameworks — minimalist accordion: 4 rows, one open at a time, no scroll */
+    .bdc-fwa { display: flex; flex-direction: column; gap: 8px; }
+    .bdc-fw { border: 1px solid var(--border); border-radius: 12px; background: var(--card); overflow: hidden; transition: border-color .14s, box-shadow .14s; }
+    .bdc-fw.open { border-color: var(--border-hi); box-shadow: var(--shadow-sm); }
+    .bdc-fw-h { display: flex; align-items: center; gap: 10px; width: 100%; background: none; border: none; font: inherit;
+      text-align: left; padding: 11px 13px; cursor: pointer; }
+    .bdc-fw-h:hover { background: var(--elevated); }
+    .bdc-fw-dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--dim); }
+    .bdc-fw.live .bdc-fw-dot { background: var(--grn-tx); box-shadow: 0 0 0 3px var(--grn-bg); }
+    .bdc-fw-t { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 620; color: var(--ink); letter-spacing: -.01em;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bdc-fw-pill { flex: none; font-size: 9px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
       padding: 3px 8px; border-radius: 20px; background: var(--elevated); color: var(--muted); white-space: nowrap; }
-    .bdc-vt-pill.open { background: var(--grn-bg); color: var(--grn-tx); }
-    .bdc-vt-by { font-size: 11px; color: var(--muted); margin-top: 3px; }
-    .bdc-vt-by a { color: var(--blue-deep); font-weight: 600; }
-    .bdc-vt-bar { height: 5px; border-radius: 4px; background: var(--elevated); margin-top: 9px; overflow: hidden; }
-    .bdc-vt-bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--blue), #9cc0fb); }
-    .bdc-vt-node.open .bdc-vt-bar i { background: linear-gradient(90deg, var(--grn-tx), #74c596); }
+    .bdc-fw-pill.open { background: var(--grn-bg); color: var(--grn-tx); }
+    .bdc-fw-cv { flex: none; color: var(--dim); font-size: 14px; transition: transform .2s; }
+    .bdc-fw.open .bdc-fw-cv { transform: rotate(90deg); }
+    .bdc-fw-d { display: none; padding: 0 13px 13px 32px; }
+    .bdc-fw.open .bdc-fw-d { display: block; }
+    .bdc-fw-by { font-size: 11.5px; color: var(--ink-2); font-weight: 500; }
+    .bdc-fw-sc { font-size: 11.5px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+    .bdc-fw-link { font-size: 11.5px; font-weight: 600; color: var(--blue-deep); margin-top: 9px; display: inline-block; }
     /* events — a real month calendar + agenda */
     .bdc-split { display: grid; grid-template-columns: 1.05fr .95fr; gap: 16px; align-items: start; }
     .bdc-caltop { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
@@ -4916,8 +4921,9 @@ TEMPLATE = r"""
     .bdc-evstrip { margin-top: 14px; border-top: 1px solid var(--hairline); padding-top: 13px; min-height: 50px; }
     .bdc-evstrip .none { font-size: 12.5px; color: var(--dim); }
     /* placement windows — master / detail */
-    .bdc-md { display: grid; grid-template-columns: 230px 1fr; gap: 14px; align-items: start; }
-    .bdc-mdlist { display: flex; flex-direction: column; gap: 8px; }
+    /* the section + the detail pane stay fixed; only this list scrolls */
+    .bdc-md { display: grid; grid-template-columns: 232px 1fr; gap: 14px; align-items: stretch; height: 100%; }
+    .bdc-mdlist { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow-y: auto; padding-right: 6px; }
     .bdc-mdi { display: flex; align-items: center; gap: 11px; border: 1px solid var(--border); border-radius: 12px; background: var(--card);
       padding: 10px 12px; cursor: pointer; transition: .14s; text-align: left; font: inherit; width: 100%; }
     .bdc-mdi:hover { border-color: var(--border-hi) }
@@ -4925,19 +4931,31 @@ TEMPLATE = r"""
     .bdc-mdi .sq { flex: none; width: 11px; height: 34px; border-radius: 5px; background: var(--cc) }
     .bdc-mdi .nm { font-size: 12.5px; font-weight: 600; line-height: 1.25 }
     .bdc-mdi .by { font-size: 10.5px; color: var(--dim); margin-top: 2px; font-weight: 600 }
-    .bdc-mdpane { border: 1px solid var(--border); border-radius: 16px; background: var(--bg); padding: 16px 18px; }
-    /* events — a compact MONTHLY calendar (12 months, not a day grid): events
-       are sparse, so each cell is a month with its event(s) listed; click an
-       event for the detail + link. */
-    #cal .bdc-mcal { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; padding: 0; }
-    #cal .bdc-mcell { height: auto; min-height: 66px; padding: 9px 10px; border-radius: 13px; }
-    #cal .bdc-mcell.quiet { background: var(--bg); border-style: dashed; }
-    #cal .bdc-mc-h { margin-bottom: 4px; }
-    #cal .bdc-mc-m { font-size: 12px; font-weight: 650; }
-    #cal .bdc-mc-ev { padding: 4px 5px; gap: 6px; border-radius: 7px; }
-    #cal .bdc-mc-nm { font-size: 10.5px; }
-    #cal .bdc-mc-none { padding: 1px 4px; opacity: .4; }
-    #cal .bdc-evstrip { margin-top: 12px; flex: none; }
+    .bdc-mdpane { border: 1px solid var(--border); border-radius: 16px; background: var(--bg); padding: 16px 18px; overflow: hidden; align-self: stretch; }
+    /* events — a MONTHLY calendar for one year (Jan–Dec): a symmetric 4x3 grid
+       that fills the card (no scroll). Clicking an event replaces the grid with
+       the detail; a Back control returns to the calendar. Year stepper top-right. */
+    .bdc-calbar { flex: none; display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-bottom: 9px; }
+    .bdc-yr { font-size: 12.5px; font-weight: 650; color: var(--ink); min-width: 36px; text-align: center; }
+    .bdc-ynav button { width: 24px; height: 24px; border-radius: 7px; border: 1px solid var(--border); background: var(--card);
+      color: var(--muted); cursor: pointer; line-height: 1; font-size: 13px; }
+    .bdc-ynav button:hover { background: var(--elevated); color: var(--ink); }
+    .bdc-mgrid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 1fr); gap: 8px; }
+    .bdc-mcl { border: 1px solid var(--border); border-radius: 12px; background: #fff; padding: 7px 9px;
+      display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+    .bdc-mcl.quiet { background: var(--bg); border-style: dashed; }
+    .bdc-mcl.now { box-shadow: 0 0 0 1.5px var(--blue) inset; background: var(--blue-wash); border-color: transparent; }
+    .bdc-mcl-h { display: flex; align-items: baseline; gap: 5px; margin-bottom: 3px; }
+    .bdc-mcl-m { font-size: 11.5px; font-weight: 650; color: var(--ink); }
+    .bdc-mcl-now { margin-left: auto; font-size: 8.5px; font-weight: 700; color: var(--blue); text-transform: uppercase; letter-spacing: .04em; }
+    .bdc-mev { display: flex; align-items: center; gap: 6px; width: 100%; background: none; border: none; font: inherit;
+      text-align: left; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
+    .bdc-mev:hover { background: rgba(31,55,124,.06); }
+    .bdc-mev .dt { flex: none; width: 6px; height: 6px; border-radius: 50%; }
+    .bdc-mev .nm { font-size: 10px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bdc-mcl-none { font-size: 12px; color: var(--dim); opacity: .35; }
+    .bdc-back { flex: none; align-self: flex-start; background: none; border: none; font: inherit; font-size: 12px;
+      font-weight: 600; color: var(--blue-deep); cursor: pointer; padding: 0 0 10px; }
     /* windows brief: keep it compact so the bottom card never clips */
     #cal .bdc-angle { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 12.5px; margin-top: 12px; }
     #cal .bdc-mdlist { gap: 7px; }
@@ -5398,18 +5416,21 @@ TEMPLATE = r"""
 
         <div class="bdc-card a-fw">
           <div class="bdc-card-h"><h2>Framework Eligibility</h2><span class="meta">{{ framework_events|length }} · where &amp; when VMA can bid</span></div>
-          <div class="bdc-vt" id="framework-body">
+          <div class="bdc-fwa" id="framework-body">
             {% if framework_events|length == 0 %}<div class="empty compact">No framework windows tracked.</div>{% endif %}
             {% for fw in framework_events %}
-            {% set bp = [[(100 - ((fw.days_to_expiry or 200) / 9)), 24] | max, 100] | min | round | int %}
-            <div class="bdc-vt-node {{ 'open' if fw.status == 'refresh_window' else '' }}">
-              <span class="bdc-vt-dot"></span>
-              <div class="bdc-vt-top">
-                <div class="bdc-vt-t">{{ fw.ad_title or fw.title }}</div>
-                <span class="bdc-vt-pill {{ 'open' if fw.status == 'refresh_window' else '' }}">{{ fw.window_pill }}</span>
+            <div class="bdc-fw{% if loop.first %} open{% endif %}{% if fw.status == 'refresh_window' %} live{% endif %}">
+              <button type="button" class="bdc-fw-h">
+                <span class="bdc-fw-dot"></span>
+                <span class="bdc-fw-t">{{ fw.ad_title or fw.title }}</span>
+                <span class="bdc-fw-pill {{ 'open' if fw.status == 'refresh_window' else '' }}">{{ fw.window_pill }}</span>
+                <span class="bdc-fw-cv">&rsaquo;</span>
+              </button>
+              <div class="bdc-fw-d">
+                <div class="bdc-fw-by">{{ fw.buyer }}</div>
+                <div class="bdc-fw-sc">{{ fw.scope }}</div>
+                <a class="bdc-fw-link" href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify on portal &rsaquo;</a>
               </div>
-              <div class="bdc-vt-by">{{ fw.buyer }} · <a href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify &rsaquo;</a></div>
-              <div class="bdc-vt-bar"><i style="width:{{ bp }}%"></i></div>
             </div>
             {% endfor %}
           </div>
@@ -6186,55 +6207,83 @@ async function loadEvents() {
       const k = (+p[0]) + '-' + ((+p[1]) - 1);
       (byMonth[k] = byMonth[k] || []).push(e);
     });
-    // A compact MONTHLY calendar: the next 12 months, each a cell with its
-    // event(s). No day grid — events are too sparse to warrant one.
-    const now = new Date(); const curY = now.getFullYear(), curM = now.getMonth();
-    let cells = '';
-    for (let i = 0; i < 12; i++) {
-      const d = new Date(curY, curM + i, 1); const y = d.getFullYear(), m = d.getMonth();
-      const evs = byMonth[y + '-' + m] || [];
-      cells += '<div class="bdc-mcell' + (i === 0 ? ' now' : '') + (evs.length ? '' : ' quiet') + '">' +
-        '<div class="bdc-mc-h"><span class="bdc-mc-m">' + BDC_MON[m] + '</span>' +
-        '<span class="bdc-mc-y">’' + (('' + y).slice(2)) + '</span>' +
-        (i === 0 ? '<span class="bdc-mc-now">now</span>' : '') + '</div>';
-      if (evs.length) {
-        evs.forEach(e => {
-          const day = parseInt((String(e.event_date).split('-')[2] || ''), 10) || '';
-          cells += '<button class="bdc-mc-ev" data-evkey="' + esc(e.key || e.name || '') + '">' +
-            '<span class="bdc-mc-dot" style="background:' + bdcFocusCol(e.focus) + '"></span>' +
-            '<span class="bdc-mc-dd">' + day + '</span>' +
-            '<span class="bdc-mc-nm">' + esc(e.name || '') + '</span></button>';
-        });
-      } else { cells += '<div class="bdc-mc-none">&mdash;</div>'; }
-      cells += '</div>';
+    const now = new Date(); const nowY = now.getFullYear(), nowM = now.getMonth();
+    let year = nowY;   // a single calendar year (Jan–Dec); year stepper switches it
+    function renderCal() {
+      let cells = '';
+      for (let m = 0; m < 12; m++) {
+        const evs = byMonth[year + '-' + m] || [];
+        const isNow = (year === nowY && m === nowM);
+        cells += '<div class="bdc-mcl' + (isNow ? ' now' : '') + (evs.length ? '' : ' quiet') + '">' +
+          '<div class="bdc-mcl-h"><span class="bdc-mcl-m">' + BDC_MON[m] + '</span>' +
+          (isNow ? '<span class="bdc-mcl-now">now</span>' : '') + '</div>';
+        if (evs.length) {
+          evs.forEach(e => {
+            cells += '<button class="bdc-mev" data-ek="' + esc(e.key || e.name || '') + '">' +
+              '<span class="dt" style="background:' + bdcFocusCol(e.focus) + '"></span>' +
+              '<span class="nm">' + esc(e.name || '') + '</span></button>';
+          });
+        } else { cells += '<div class="bdc-mcl-none">&mdash;</div>'; }
+        cells += '</div>';
+      }
+      body.innerHTML = '<div class="bdc-calbar"><span class="bdc-ynav"><button type="button" data-y="-1">&lsaquo;</button></span>' +
+        '<span class="bdc-yr">' + year + '</span>' +
+        '<span class="bdc-ynav"><button type="button" data-y="1">&rsaquo;</button></span></div>' +
+        '<div class="bdc-mgrid">' + cells + '</div>';
+      body.querySelector('.bdc-mgrid').addEventListener('click', (ev) => {
+        const b = ev.target.closest('.bdc-mev'); if (!b) return;
+        renderDetail(byKey[b.dataset.ek]);
+      });
+      body.querySelectorAll('.bdc-ynav button').forEach(btn =>
+        btn.addEventListener('click', () => { year += (+btn.dataset.y); renderCal(); }));
     }
-    body.innerHTML = '<div class="bdc-mcal">' + cells + '</div>' +
-      '<div class="bdc-evstrip" id="bdc-evstrip"><div class="none">Pick an event to see the detail and the link.</div></div>';
-    const strip = document.getElementById('bdc-evstrip');
-    body.querySelector('.bdc-mcal').addEventListener('click', (ev) => {
-      const b = ev.target.closest('.bdc-mc-ev'); if (!b) return;
-      body.querySelectorAll('.bdc-mc-ev').forEach(x => x.classList.remove('sel'));
-      b.classList.add('sel');
-      bdcShowEvent(strip, byKey[b.dataset.evkey]);
-    });
-    strip.addEventListener('click', async (ev) => {
-      const btn = ev.target.closest('.bdc-rm'); if (!btn) return;
-      const key = btn.getAttribute('data-key'); if (!key) return;
-      btn.disabled = true;
-      try {
-        const r = await fetch('/api/pulses/dismiss', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ key: key, dismissed: true }),
-        });
-        const jj = await r.json();
-        if (jj.ok) { loadEvents(); }
-        else { btn.disabled = false; alert(jj.detail || 'Could not remove.'); }
-      } catch (err) { btn.disabled = false; alert('Network error: ' + err.message); }
-    });
+    function renderDetail(e) {
+      if (!e) { renderCal(); return; }
+      const p = String(e.event_date || '').split('-');
+      const dd = p.length > 2 ? parseInt(p[2], 10) : '', mm = p.length > 1 ? parseInt(p[1], 10) - 1 : 0;
+      const src = e.url || e.source;
+      const foc = e.focus === 'internal' ? 'internal' : e.focus === 'external' ? 'external' : 'mixed';
+      body.innerHTML = '<button type="button" class="bdc-back">&lsaquo; Back to calendar</button>' +
+        '<div class="bdc-ev-card"><div class="bdc-ev-date"><div class="d2">' + dd + '</div><div class="m2">' + (BDC_MON[mm] || '') + '</div></div>' +
+        '<div class="bdc-ev-info"><span class="bdc-ev-nm">' + esc(e.name || '') + '</span>' +
+        '<span class="bdc-ev-tag ' + foc + '">' + foc + '</span>' +
+        '<div class="bdc-ev-loc">' + (BDC_MONF[mm] || '') + ' ' + dd + ', ' + (p[0] || '') + (e.location ? ' &middot; ' + esc(e.location) : '') + '</div>' +
+        (e.why_now ? '<div class="bdc-ev-why">' + esc(e.why_now) + '</div>' : '') +
+        (src ? '<a class="bdc-ev-lk" href="' + safeUrl(src) + '" target="_blank" rel="noopener noreferrer">View details &rsaquo;</a>' : '') +
+        '<div class="bdc-actions"><button class="bdc-rm" data-key="' + esc(e.key || '') + '">Remove this event</button></div></div></div>';
+      body.querySelector('.bdc-back').addEventListener('click', renderCal);
+      body.querySelector('.bdc-rm').addEventListener('click', async function () {
+        const key = this.getAttribute('data-key'); if (!key) return;
+        this.disabled = true;
+        try {
+          const r = await fetch('/api/pulses/dismiss', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: key, dismissed: true }),
+          });
+          const jj = await r.json();
+          if (jj.ok) { loadEvents(); }
+          else { this.disabled = false; alert(jj.detail || 'Could not remove.'); }
+        } catch (err) { this.disabled = false; alert('Network error: ' + err.message); }
+      });
+    }
+    renderCal();
   } catch (e) {
     body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
   }
 }
+
+// Framework Eligibility — minimalist accordion: one row open at a time.
+(function () {
+  var root = document.getElementById('framework-body');
+  if (!root) return;
+  root.addEventListener('click', function (ev) {
+    var h = ev.target.closest('.bdc-fw-h'); if (!h) return;
+    var node = h.parentNode;
+    var wasOpen = node.classList.contains('open');
+    root.querySelectorAll('.bdc-fw').forEach(function (x) { x.classList.remove('open'); });
+    if (!wasOpen) node.classList.add('open');
+  });
+})();
 
 // ---------- Water Special-Administration Watch ----------
 async function loadWaterSar() {
