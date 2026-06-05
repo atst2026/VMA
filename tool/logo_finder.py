@@ -200,23 +200,33 @@ def _looks_decorative(blob: str) -> bool:
 # A handful of named third-party brands (payment networks, review sites) are
 # included because they appear as alt text on otherwise-unmarked icons.
 _THIRD_PARTY_RX = re.compile(
-    r"\bpartner(?:s|ship)?\b|\bclient(?:s)?\b|\bsponsor(?:s|ship|ed)?\b|"
+    r"\bpartners?\b|\bclient(?:s)?\b|\bsponsor(?:s|ship|ed)?\b|"
     r"\baward(?:s|ed)?\b|\baccreditation\b|\baccredited\b|\bcertif(?:ied|ication)\b|"
     r"\bbadge(?:s)?\b|\bmember(?:s|ship)?\b|\baffiliat\w*|\bendorse\w*|"
     r"as[-\s]?featured|featured[-\s]?in|\bas[-\s]?seen[-\s]?(?:in|on)\b|"
     r"trusted[-\s]?by|powered[-\s]?by|\bintegrat\w*|"
-    r"press[-\s]?(?:logos?|kit|coverage|mentions?)|\bmedia[-\s]?logos?\b|"
+    r"press[-\s]?(?:logos?|kit|coverage|mentions?)|\bmedia[-\s]?logos\b|"
     r"\bpayment(?:s)?\b|\bvisa\b|\bmastercard\b|\bamex\b|\bpaypal\b|\bklarna\b|"
     r"\bstripe\b|\bapple[-\s]?pay\b|\bgoogle[-\s]?pay\b|\btrustpilot\b|\btrustico\b|"
     r"\bg2\b|\bcapterra\b|\bglassdoor\b|\bgartner\b|\bforrester\b|\biso[-\s]?\d",
     re.I)
 
 
-def _looks_third_party(blob: str) -> bool:
+def _looks_third_party(blob: str, own_tokens: tuple[str, ...] = ()) -> bool:
     """True if the markup blob marks the image as ANOTHER organisation's logo
     (partner / client / sponsor / award / payment / review-site / press), which
-    must never be mistaken for the target company's own brand mark."""
-    return bool(_THIRD_PARTY_RX.search((blob or "").lower()))
+    must never be mistaken for the target company's own brand mark.
+
+    `own_tokens` are the TARGET company's own significant name tokens: if the
+    blob carries one (e.g. alt="Virgin Media logo" for Virgin Media, or
+    "John Lewis Partnership"), it is the company's OWN mark and is NEVER treated
+    as third-party, even when its name happens to contain a marker word like
+    "media" or "partnership". This is the fix for a brand whose legal name
+    collides with a third-party token."""
+    b = (blob or "").lower()
+    if own_tokens and any(t in b for t in own_tokens):
+        return False
+    return bool(_THIRD_PARTY_RX.search(b))
 
 
 def _is_whiteish(colour: str) -> bool:
@@ -766,7 +776,8 @@ def _bg_url(style: str) -> str | None:
     return m.group(1).strip() if m else None
 
 
-def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
+def extract_logo_urls(html: str, base_url: str,
+                      company: str = "") -> dict[str, list[str]]:
     """Parse a homepage for logo image URLs, ordered best-first. Returns
     {'primary': [...], 'secondary': [...]}:
 
@@ -798,9 +809,16 @@ def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
         except Exception:
             soup = BeautifulSoup(html, "html.parser")
     except Exception:
-        return _extract_logo_urls_regex(html, base_url)
+        return _extract_logo_urls_regex(html, base_url, company)
 
     root = urlparse(base_url).netloc.lower()
+    # The target's own significant name tokens, so a brand whose name contains a
+    # marker word (Virgin "Media", John Lewis "Partnership") is never filtered as
+    # third-party by its own logo's alt/class.
+    own_tokens = tuple(t for t in _name_tokens(company) if len(t) >= 3)
+
+    def _tp(blob) -> bool:
+        return _looks_third_party(blob, own_tokens)
 
     def is_root_anchor(a) -> bool:
         href = (a.get("href") or "").strip()
@@ -821,7 +839,7 @@ def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
     for img in soup.find_all("img"):
         attrs = " ".join(str(img.get(k, "")) for k in
                          ("class", "id", "alt", "src", "data-src", "title")).lower()
-        if "logo" in attrs and not _looks_third_party(attrs):
+        if "logo" in attrs and not _tp(attrs):
             s = _img_src(img)
             if s:
                 (svg_logo if ".svg" in s.lower() else other_logo).append(s)
@@ -838,10 +856,10 @@ def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
     for el in soup.select("[class*=logo], [id*=logo], [class*=Logo], "
                           "[class*=brand], [id*=brand], [class*=Brand]"):
         blob = " ".join(str(el.get(k, "")) for k in ("class", "id")).lower()
-        if _looks_decorative(blob) or _looks_third_party(blob):
+        if _looks_decorative(blob) or _tp(blob):
             continue
         bg = _bg_url(el.get("style", ""))
-        if bg and not _looks_third_party(bg):
+        if bg and not _tp(bg):
             add(primary, bg)
 
     # 2. <img> / background inside the homepage link (<a href="/">) — almost
@@ -850,11 +868,11 @@ def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
         if is_root_anchor(a):
             anchor_meta = str(a.get("class", "")) + str(a.get("id", ""))
             bg = _bg_url(a.get("style", ""))
-            if bg and not _looks_decorative(anchor_meta) and not _looks_third_party(anchor_meta):
+            if bg and not _looks_decorative(anchor_meta) and not _tp(anchor_meta):
                 add(primary, bg)
             for img in a.find_all("img"):
                 blob = _img_blob(img)
-                if not _looks_decorative(blob) and not _looks_third_party(blob):
+                if not _looks_decorative(blob) and not _tp(blob):
                     add(primary, _img_src(img))
 
     # 3. first <img> inside header / nav / a top-bar / an element that names
@@ -866,7 +884,7 @@ def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
                 "[class*=top-bar] img", "[class*=topbar] img"):
         for img in soup.select(sel)[:3]:
             blob = _img_blob(img)
-            if not _looks_decorative(blob) and not _looks_third_party(blob):
+            if not _looks_decorative(blob) and not _tp(blob):
                 add(primary, _img_src(img))
 
     # 3b. <style> blocks: a url(...) whose filename looks like a logo — the
@@ -876,7 +894,7 @@ def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
         for m in re.finditer(r"url\(\s*[\"']?([^\"')]+)", css):
             u = m.group(1).strip()
             base = u.lower().split("?")[0]
-            if "logo" in base and not u.startswith("data:") and not _looks_third_party(base):
+            if "logo" in base and not u.startswith("data:") and not _tp(base):
                 add(primary, u)
 
     # 4. mask-icon / SVG favicon files (monochrome brand mark).
@@ -935,12 +953,14 @@ def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
     return {"primary": primary, "secondary": secondary}
 
 
-def _extract_logo_urls_regex(html: str, base_url: str) -> dict[str, list[str]]:
+def _extract_logo_urls_regex(html: str, base_url: str,
+                             company: str = "") -> dict[str, list[str]]:
     """bs4-free fallback parser."""
+    own_tokens = tuple(t for t in _name_tokens(company) if len(t) >= 3)
     primary, secondary = [], []
     for m in re.finditer(r'<img[^>]+>', html, re.I):
         tag = m.group(0)
-        if "logo" in tag.lower():
+        if "logo" in tag.lower() and not _looks_third_party(tag, own_tokens):
             sm = re.search(r'(?:data-src|src)\s*=\s*["\']([^"\']+)', tag, re.I)
             if sm:
                 primary.append(urljoin(base_url, sm.group(1)))
@@ -1081,14 +1101,16 @@ def _short(u: str) -> str:
     return (u[:70] + "…") if len(u) > 71 else u
 
 
-def _site_logo_candidates(domain: str) -> list[str]:
+def _site_logo_candidates(domain: str, company: str = "") -> list[str]:
     """All logo/icon URLs scraped from the homepage, ordered best-first
-    (header logo -> apple-touch-icon -> inline svg -> favicons)."""
+    (header logo -> apple-touch-icon -> inline svg -> favicons). `company` lets
+    the scraper keep the target's own name-bearing logo even when its name
+    contains a third-party marker word."""
     html = _fetch_html("https://" + domain) or _fetch_html("http://" + domain)
     if not html:
         return []
     try:
-        c = extract_logo_urls(html, "https://" + domain)
+        c = extract_logo_urls(html, "https://" + domain, company)
     except Exception as e:
         log.info("logo scrape parse failed for %s: %s", domain, e)
         return []
@@ -1177,7 +1199,7 @@ def find_logo(company: str, hint_url: str | None = None
         # Split the scraped candidates: real logo/icon FILES vs fragile inline
         # SVGs (data: URIs). Files (ranked) and the raster services are tried
         # first; the inline SVG is a last site resort, even when it passes gates.
-        site_cands = _site_logo_candidates(domain)
+        site_cands = _site_logo_candidates(domain, company)
         file_cands = _rank_site_cands(
             [u for u in site_cands if not u.startswith("data:")], company)
         inline_cands = [u for u in site_cands if u.startswith("data:")]

@@ -169,12 +169,24 @@ REGISTRY: dict[str, dict] = {
 def _build_indexes() -> tuple[dict[str, dict], dict[str, dict]]:
     by_slug: dict[str, dict] = {}
     by_alias: dict[str, dict] = {}
+    # Pass 1: canonical slugs win outright.
     for slug, entry in REGISTRY.items():
         by_slug[slug] = entry
         by_alias[slug] = entry
+    # Pass 2: aliases fill in, but never clobber a canonical slug / alias already
+    # claimed by another entry (first registered wins; a collision is logged).
+    for slug, entry in REGISTRY.items():
         for alias in entry.get("aliases", ()):
-            by_alias[(alias or "").strip().lower()] = entry
-            by_slug[slugify(alias)] = entry
+            akey = (alias or "").strip().lower()
+            aslug = slugify(alias)
+            for index, key in ((by_alias, akey), (by_slug, aslug)):
+                if not key:
+                    continue
+                if key in index and index[key] is not entry:
+                    log.info("registry alias %r collides with an existing entry; "
+                             "keeping the first", alias)
+                    continue
+                index[key] = entry
     return by_slug, by_alias
 
 

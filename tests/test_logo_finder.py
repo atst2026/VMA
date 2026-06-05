@@ -247,7 +247,7 @@ def test_find_logo_never_uses_encyclopaedia_for_resolved_domain(monkeypatch):
     # favicon floor wins and the (stubbed) encyclopaedia is never consulted.
     monkeypatch.setattr(lf, "resolve_domain",
                         lambda c, hint_url=None: ("geordie.ai", "known"))
-    monkeypatch.setattr(lf, "_site_logo_candidates", lambda d: [])
+    monkeypatch.setattr(lf, "_site_logo_candidates", lambda d, c="": [])
     monkeypatch.setattr(lf, "_clearbit", lambda d: None)
     monkeypatch.setattr(lf, "_logodev", lambda d: None)
     fav = b"\x89PNG\r\n\x1a\n" + b"\x02" * 500
@@ -447,7 +447,7 @@ def test_find_logo_inline_svg_loses_to_raster_service(monkeypatch):
     # reliable raster service. No usable site file -> Clearbit wins, inline ignored.
     monkeypatch.setattr(lf, "resolve_domain", lambda c, hint_url=None: ("acme.com", "known"))
     monkeypatch.setattr(lf, "_site_logo_candidates",
-                        lambda d: ["data:image/svg+xml;utf8,<svg></svg>"])
+                        lambda d, c="": ["data:image/svg+xml;utf8,<svg></svg>"])
     png = b"\x89PNG\r\n\x1a\n" + b"\x05" * 600
     monkeypatch.setattr(lf, "_clearbit", lambda d: png)
     data, src = lf.find_logo("Acme")
@@ -457,7 +457,7 @@ def test_find_logo_inline_svg_loses_to_raster_service(monkeypatch):
 def test_find_logo_prefers_usable_site_file(monkeypatch):
     monkeypatch.setattr(lf, "resolve_domain", lambda c, hint_url=None: ("acme.com", "known"))
     monkeypatch.setattr(lf, "_site_logo_candidates",
-                        lambda d: ["https://acme.com/apple-touch-icon.png"])
+                        lambda d, c="": ["https://acme.com/apple-touch-icon.png"])
     png = b"\x89PNG\r\n\x1a\n" + b"\x06" * 600
     monkeypatch.setattr(lf, "_fetch_image",
                         lambda u: png if u.endswith("apple-touch-icon.png") else None)
@@ -470,7 +470,7 @@ def test_find_logo_unusable_site_file_falls_through_to_service(monkeypatch):
     # A white/invisible site logo file (_fetch_image returns None for it) must not
     # strand the cover — resolution continues to the next rung.
     monkeypatch.setattr(lf, "resolve_domain", lambda c, hint_url=None: ("acme.com", "known"))
-    monkeypatch.setattr(lf, "_site_logo_candidates", lambda d: ["https://acme.com/logo.svg"])
+    monkeypatch.setattr(lf, "_site_logo_candidates", lambda d, c="": ["https://acme.com/logo.svg"])
     monkeypatch.setattr(lf, "_fetch_image", lambda u: None)   # rejected by the gate
     png = b"\x89PNG\r\n\x1a\n" + b"\x07" * 600
     monkeypatch.setattr(lf, "_clearbit", lambda d: png)
@@ -483,7 +483,7 @@ def test_find_logo_junk_only_falls_to_wordmark(monkeypatch):
     # the cover prints the company name, never a blank space (the PDF-2 failure).
     monkeypatch.setattr(lf, "resolve_domain", lambda c, hint_url=None: ("acme.com", "known"))
     monkeypatch.setattr(lf, "_site_logo_candidates",
-                        lambda d: ["data:image/svg+xml;utf8,<svg></svg>"])
+                        lambda d, c="": ["data:image/svg+xml;utf8,<svg></svg>"])
     monkeypatch.setattr(lf, "_fetch_image", lambda u: None)
     monkeypatch.setattr(lf, "_clearbit", lambda d: None)
     monkeypatch.setattr(lf, "_logodev", lambda d: None)
@@ -571,7 +571,7 @@ def test_find_logo_placed_domain_no_logo_is_wordmark_never_encyclopaedia(monkeyp
     # Once we've POSITIVELY placed a domain, a same-named encyclopaedia image is
     # never reached for — the cover degrades to a wordmark, not a wrong logo.
     monkeypatch.setattr(lf, "resolve_domain", lambda c, hint_url=None: ("acme.com", "registry"))
-    monkeypatch.setattr(lf, "_site_logo_candidates", lambda d: [])
+    monkeypatch.setattr(lf, "_site_logo_candidates", lambda d, c="": [])
     monkeypatch.setattr(lf, "_clearbit", lambda d: None)
     monkeypatch.setattr(lf, "_logodev", lambda d: None)
     monkeypatch.setattr(lf, "_favicon_floor", lambda d: None)
@@ -646,3 +646,41 @@ def test_rank_site_cands_brand_beats_partner_and_favicon():
     assert ranked[0] == "https://x.com/assets/acme-logo.svg"
     # the bare touch-icon sinks to the bottom
     assert ranked[-1] == "https://x.com/apple-touch-icon.png"
+
+
+def test_looks_third_party_respects_own_name_tokens():
+    # a brand whose own name contains a marker word keeps its own logo …
+    assert not lf._looks_third_party("partners group logo", ("partners",))
+    assert not lf._looks_third_party("virgin media logo", ("virgin", "media"))
+    # … while a genuine third-party mark on that page is still caught
+    assert lf._looks_third_party("visa logo", ("partners",))
+    assert lf._looks_third_party("press-logos strip", ("virgin", "media"))
+
+
+def test_extract_logo_urls_keeps_brand_whose_name_has_marker_word():
+    # "Virgin Media" / "John Lewis Partnership": the brand's own name contains a
+    # third-party marker word; its own logo must NOT be filtered out. (Both are
+    # registry accounts; this was a real regression.)
+    vm = ('<header><a href="/">'
+          '<img class="logo" alt="Virgin Media logo" src="/vm-logo.svg"></a></header>')
+    out = lf.extract_logo_urls(vm, "https://virginmedia.com", company="Virgin Media")
+    assert "https://virginmedia.com/vm-logo.svg" in out["primary"]
+
+    jl = ('<header><a href="/">'
+          '<img class="logo" alt="John Lewis Partnership" src="/jl.svg"></a></header>')
+    out2 = lf.extract_logo_urls(jl, "https://johnlewis.com",
+                                company="John Lewis Partnership")
+    assert "https://johnlewis.com/jl.svg" in out2["primary"]
+
+
+def test_extract_logo_urls_own_token_guard_is_what_keeps_partners_group():
+    # "Partners Group": "partners" is a third-party marker, so WITHOUT the
+    # company context its logo is dropped — but WITH it, the own-token guard
+    # keeps it. Proves the guard, not just the regex, is doing the work.
+    html = ('<header><a href="/">'
+            '<img class="partners-logo" alt="Partners Group" src="/pg.svg"></a></header>')
+    out_blind = lf.extract_logo_urls(html, "https://partnersgroup.com")
+    assert "https://partnersgroup.com/pg.svg" not in out_blind["primary"]
+    out_named = lf.extract_logo_urls(html, "https://partnersgroup.com",
+                                     company="Partners Group")
+    assert "https://partnersgroup.com/pg.svg" in out_named["primary"]
