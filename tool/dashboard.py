@@ -1953,11 +1953,23 @@ def _render_dashboard():
                             key=lambda d: d.get("_legacy_opp") or 0.0, reverse=True)
     # Entity resolution: one row per company (OQC == Oxford Quantum Circuits).
     premarket_rows = _dedupe_rows(premarket_rows)
-    # Order the board BAND-FIRST: strength tier (call-today > nurture > watch)
-    # is the primary key, the legacy opportunity value only the within-band
-    # tiebreaker. So a Nurture never sits below a Monitor. We then stamp a clean
-    # descending _opp so the client's by-opp sort reproduces this exactly.
+    # Order the board BAND-FIRST, then by SIGNAL within the band:
+    #   1. strength tier (call-today > nurture > watch) — a Nurture never sits
+    #      below a Monitor.
+    #   2. signal strength — the conjunction model's continuous score
+    #      (raw_pts x recency x confidence, soft-capped). This is ONE
+    #      commensurable scale across leadership changes AND funding rounds, so
+    #      "Strongest signal" actually ranks by signal: equal-depth triggers of
+    #      the same type cluster, and a lone leadership change can only out-rank
+    #      a funding round when its signal is genuinely higher.
+    #   3. legacy opportunity value (a size proxy) only as a final micro-
+    #      tiebreak — it can no longer leapfrog a stronger signal. It was the
+    #      old within-band key, but it mixed two non-commensurable scales
+    #      (predictor opp vs funding opp), which scattered same-type triggers.
+    # We then stamp a clean descending _opp so the client's by-opp sort
+    # reproduces this exactly.
     premarket_rows.sort(key=lambda r: ((r.get("lead") or {}).get("strength_rank") or 0.4,
+                                       (r.get("lead") or {}).get("signal") or 0.0,
                                        r.get("_legacy_opp") or 0.0), reverse=True)
     _n_rows = len(premarket_rows)
     for _i, _r in enumerate(premarket_rows):

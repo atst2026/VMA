@@ -126,10 +126,45 @@ def test_board_orders_band_first_not_by_legacy_opp():
     for r in rows:
         r["lead"] = LE.score_lead(r, "predictor", "comms")
     rows.sort(key=lambda r: ((r.get("lead") or {}).get("strength_rank") or 0.4,
+                             (r.get("lead") or {}).get("signal") or 0.0,
                              r.get("_legacy_opp") or 0.0), reverse=True)
     assert rows[0]["company"] == "NurtureCo"          # band beats legacy opp
     assert rows[0]["lead"]["action"] != "monitor"
     assert rows[1]["lead"]["action"] == "monitor"
+
+
+def test_within_band_order_is_signal_not_legacy_opp():
+    # Opus's tell: with "Strongest signal" selected, a lone leadership change
+    # was out-ranking larger funding rounds in the SAME band because the
+    # within-band tiebreaker was legacy opportunity value on two incompatible
+    # scales. The within-band key is now SIGNAL (one scale), so a lead can only
+    # sit higher in its band when its signal is genuinely higher — a huge
+    # legacy_opp can no longer leapfrog a stronger signal.
+    from datetime import datetime, timezone, timedelta
+    from tool import lead_engine as LE
+    def iso(n): return (datetime.now(timezone.utc) - timedelta(days=n)).isoformat()
+    def ev(k, d, u, l): return {"trigger_key": k, "trigger_label": l, "url": u,
+                                "source": u, "published": iso(d), "evidence": ""}
+    # Two leads, same band (both CEO changes inside the too-fresh hold ->
+    # premature). The first has a far bigger legacy_opp but a weaker signal
+    # (press-grade source, x0.6); the second a small legacy_opp but a stronger
+    # signal (a verified filing, x1.0).
+    rows = [
+        {"company": "BigButWeak", "account_tier": "watchlist", "_legacy_opp": 9.0,
+         "events": [ev("ceo_change", 10, "theguardian.com", "CEO change")]},
+        {"company": "SmallButStrong", "account_tier": "watchlist", "_legacy_opp": 1.0,
+         "events": [ev("ceo_change", 10, "companieshouse.gov.uk", "CEO change")]},
+    ]
+    for r in rows:
+        r["lead"] = LE.score_lead(r, "predictor", "comms")
+    # same band (both premature/nurture), so the band key ties and the order is
+    # decided by signal, not legacy_opp.
+    assert rows[0]["lead"]["strength_rank"] == rows[1]["lead"]["strength_rank"]
+    assert rows[1]["lead"]["signal"] > rows[0]["lead"]["signal"]
+    rows.sort(key=lambda r: ((r.get("lead") or {}).get("strength_rank") or 0.4,
+                             (r.get("lead") or {}).get("signal") or 0.0,
+                             r.get("_legacy_opp") or 0.0), reverse=True)
+    assert rows[0]["company"] == "SmallButStrong"  # stronger signal wins its band
 
 
 def test_why_now_explains_rather_than_repeats():
