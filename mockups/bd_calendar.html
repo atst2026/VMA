@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BD Calendar — real windows + metro time</title>
+<style>
+  :root{
+    --bg:#F7F9FC;--card:#FFFFFF;--ink:#1F1F1F;--ink2:#3C4043;--muted:#5F6368;--dim:#9AA0A6;
+    --border:rgba(60,64,67,.12);--hairline:rgba(31,31,31,.06);--elevated:#F4F7FC;
+    --blue:#4285F4;--blue-deep:#1A3D7C;--blue-wash:#E8F0FE;--border-hi:rgba(66,133,244,.4);
+    --grn-bg:#E8F5EC;--grn-tx:#1E7A41;--tan-bg:#FFF3E0;--tan-tx:#9A6516;
+    --shadow-sm:0 1px 2px rgba(60,64,67,.05);--shadow-md:0 6px 22px rgba(60,64,67,.08),0 1px 3px rgba(60,64,67,.04);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;font-size:15px}
+  a{color:var(--blue);text-decoration:none} button{font:inherit}
+  body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:radial-gradient(680px 400px at 12% -8%,rgba(120,170,255,.14),transparent 60%),radial-gradient(640px 440px at 92% -2%,rgba(150,225,200,.12),transparent 60%),radial-gradient(860px 560px at 72% 112%,rgba(180,170,255,.10),transparent 55%)}
+  .wrap{height:100%;max-width:1300px;margin:0 auto;padding:16px 24px;display:flex;flex-direction:column}
+  .top{flex:none;display:flex;align-items:center;gap:12px}
+  .top .ic{color:var(--ink);display:grid;place-items:center}.top .ic svg{width:26px;height:26px}
+  .top h1{font-family:"Newsreader",Georgia,serif;font-weight:500;font-size:27px;margin:0;letter-spacing:-.01em}
+  .tabs{margin-left:auto;display:inline-flex;gap:6px;background:rgba(236,239,244,.8);padding:5px;border-radius:13px}
+  .tabs button{border:none;background:transparent;font-size:12px;font-weight:600;color:var(--muted);padding:7px 12px;border-radius:9px;cursor:pointer}
+  .tabs button .n{color:var(--blue);margin-right:6px}.tabs button.on{background:#fff;color:var(--ink);box-shadow:var(--shadow-sm)}
+  .v{flex:1;min-height:0;display:none}.v.on{display:flex;flex-direction:column}
+  .grid{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;grid-template-areas:"fw cal" "pw pw";gap:13px;margin-top:12px}
+  .a-fw{grid-area:fw}.a-cal{grid-area:cal}.a-pw{grid-area:pw}
+  .card{background:rgba(255,255,255,.78);backdrop-filter:blur(13px);border:1px solid rgba(255,255,255,.7);box-shadow:var(--shadow-md);border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  .ch{flex:none;display:flex;align-items:center;gap:10px;margin-bottom:10px}.ch h2{font-size:13.5px;font-weight:620;margin:0}.ch .meta{margin-left:auto;font-size:11px;color:var(--dim);font-weight:600}
+
+  /* ---- framework lane chart (where & when VMA can bid) ---- */
+  .fwwrap{flex:1;min-height:0;display:flex;flex-direction:column}
+  .gantt{position:absolute;inset:0;display:flex}
+  .gcol-lab{flex:none;width:138px;display:flex;flex-direction:column;padding-right:12px}
+  .gcol-track{flex:1;position:relative;display:flex;flex-direction:column}
+  .gaxis{flex:none;height:20px;position:relative}
+  .galx{position:absolute;bottom:1px;font-size:9px;color:var(--dim);transform:translateX(-50%)}
+  .glab-sp{flex:none;height:20px}
+  .glab{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;cursor:pointer;padding-left:4px;border-radius:8px 0 0 8px;transition:background .15s}
+  .glab:hover{background:rgba(66,133,244,.05)}
+  .glab b{font-size:11.5px;font-weight:640;color:var(--ink);line-height:1.15;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .glab i{font-size:8.5px;font-style:normal;color:var(--dim);margin-top:3px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+  .glab.sel b{color:var(--blue-deep)}.glab.sel i{color:var(--blue)}
+  .grow{flex:1;min-height:0;position:relative;display:flex;align-items:center;cursor:pointer;border-top:1px solid var(--hairline)}
+  .grow:last-child{border-bottom:1px solid var(--hairline)}
+  .grow:hover{background:rgba(66,133,244,.04)}
+  .gbar{position:absolute;height:16px;border-radius:9px;display:flex;align-items:center;padding:0 10px 0 20px;overflow:hidden;box-shadow:0 1px 3px rgba(40,60,90,.2);z-index:3;transition:filter .15s,box-shadow .15s}
+  .gbar .gdot{position:absolute;left:7px;top:50%;width:7px;height:7px;border-radius:50%;background:#fff;transform:translateY(-50%);opacity:.92}
+  .gbar .gwin{font-size:9px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.02em}
+  .grow.sel .gbar{outline:2px solid rgba(66,133,244,.55);outline-offset:2px;box-shadow:0 3px 8px rgba(40,60,90,.28)}
+  .ggrid{position:absolute;top:20px;bottom:0;width:1px;background:var(--hairline);z-index:1}
+  .gtoday{position:absolute;top:14px;bottom:0;width:2px;background:#E1433B;z-index:4}
+  .gtoday span{position:absolute;top:-13px;left:0;transform:translateX(-50%);font-size:8.5px;font-weight:700;color:#E1433B;white-space:nowrap}
+  .fwd{flex:none;margin-top:9px;padding:10px 12px;background:linear-gradient(180deg,#F6FAFF,#EDF3FB);border:1px solid var(--border);border-radius:13px;box-shadow:var(--shadow-sm)}
+  .fwd-top{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+  .fwd-chip{display:inline-flex;align-items:center;gap:5px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:var(--elevated);border:1px solid var(--border);border-radius:20px;padding:3px 9px}
+  .fwd-chip .cdot{width:6px;height:6px;border-radius:50%;background:var(--dim)}
+  .fwd-chip.live{color:var(--grn-tx);background:var(--grn-bg);border-color:transparent}.fwd-chip.live .cdot{background:var(--grn-tx)}
+  .fwd-win{margin-left:auto;font-size:9.5px;font-weight:700;letter-spacing:.02em;color:var(--blue-deep);white-space:nowrap}
+  .fwd-t{font-size:13px;font-weight:660;line-height:1.22;letter-spacing:-.01em}
+  .fwd-by{font-size:11px;color:var(--muted);margin-top:3px}.fwd-by a{font-weight:600;color:var(--blue-deep)}
+  .fwd-sc{font-size:11.5px;color:var(--ink2);margin-top:7px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .fwd-facts{display:flex;gap:18px;margin-top:9px;flex-wrap:wrap}
+  .fwd-facts>div{font-size:11px;font-weight:600;color:var(--ink)}
+  .fwd-facts span{display:block;font-size:8px;text-transform:uppercase;letter-spacing:.05em;color:var(--dim);font-weight:700;margin-bottom:1px}
+
+  /* ---- monthly calendar ---- */
+  .calhost{flex:1;min-height:0;display:flex;flex-direction:column}
+  .mcal{flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:7px}
+  .mc{border:1px solid var(--border);border-radius:10px;background:#fff;padding:6px 8px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  .mc.q{background:var(--bg);border-style:dashed}.mc.now{box-shadow:0 0 0 1.5px var(--blue) inset;background:var(--blue-wash);border-color:transparent}
+  .mc-h{font-size:10.5px;font-weight:650;display:flex;align-items:center;margin-bottom:2px}.mc-now{margin-left:auto;font-size:7.5px;font-weight:700;color:var(--blue);text-transform:uppercase}
+  .mc-ev{display:flex;align-items:center;gap:5px;width:100%;text-align:left;background:none;border:none;font:inherit;cursor:pointer;padding:1px 2px;border-radius:5px}
+  .mc-ev:hover{background:var(--elevated)}.mc-ev i{flex:none;width:6px;height:6px;border-radius:50%}.mc-ev span{font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ce-back{flex:none;align-self:flex-start;background:none;border:none;font:inherit;font-size:11.5px;font-weight:600;color:var(--blue-deep);cursor:pointer;padding:0 0 8px}
+  .ce{display:flex;gap:12px}.ce .dd{flex:none;width:46px;text-align:center;background:var(--elevated);border-radius:10px;padding:7px 0}
+  .ce .dd b{font-size:18px;line-height:1}.ce .dd span{display:block;font-size:9px;color:var(--muted);text-transform:uppercase;font-weight:650;margin-top:3px}
+  .ce .nm{font-size:13.5px;font-weight:640}.ce .tag{font-size:9px;font-weight:700;text-transform:uppercase;border-radius:5px;padding:2px 6px;margin-left:7px}
+  .ce .tag.internal{background:var(--blue-wash);color:var(--blue-deep)}.ce .tag.external{background:var(--tan-bg);color:var(--tan-tx)}
+  .ce .lc{font-size:11.5px;color:var(--muted);margin-top:5px}.ce .wy{font-size:11.5px;color:var(--ink2);margin-top:8px;line-height:1.5}.ce .lk{font-size:12px;font-weight:600;margin-top:9px;display:inline-block}
+
+  /* ===================== REALISTIC WINDOWS ===================== */
+  /* row auto-distributes equal/symmetric space across however many windows the data yields */
+  .winrow{width:100%;height:min(242px,100%);display:flex;justify-content:center;gap:14px;perspective:1700px;padding:2px;align-items:center}
+  .win{position:relative;flex:1 1 0;min-width:0;height:60%;align-self:center;cursor:pointer;transition:flex .5s cubic-bezier(.5,.02,.2,1),height .45s cubic-bezier(.5,.02,.2,1)}
+  .win.open{flex:2.9;height:100%;cursor:default}
+  /* the glazed opening (inner reveal area) */
+  .inner{position:absolute;border-radius:3px;overflow:hidden}
+  .wi-wrap{position:absolute;inset:0;z-index:1;opacity:0;transition:opacity .35s .18s;overflow:auto}
+  .win.open .wi-wrap{opacity:1}
+  /* hardware tucks away as the window opens */
+  .win.open .handle,.win.open .rail,.win.open .latch{opacity:0;transition:opacity .3s}
+  /* interior = verbatim Gemini landing halo (body::before), dark ink like the landing */
+  .wi{min-height:100%;padding:13px 16px;display:flex;flex-direction:column;background:linear-gradient(180deg,#F4F9FF 0%,#E7F1FD 46%,#DCEBFB 100%);color:var(--ink2)}
+  .wi .wi-angle{color:var(--ink2)}
+  .wi-tag{align-self:flex-start;font-size:9.5px;font-weight:800;color:#fff;background:var(--tint);border-radius:7px;padding:3px 9px;letter-spacing:.02em}
+  .wi-t{font-size:13.5px;font-weight:650;letter-spacing:-.01em;margin-top:7px;line-height:1.2;color:var(--ink)}
+  .wi-meta{font-size:10.5px;color:var(--muted);margin-top:3px}
+  .wi-angle{font-size:11.5px;line-height:1.45;margin-top:7px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .wi-facts{display:flex;gap:18px;margin-top:8px;flex-wrap:wrap}.wi-facts div{font-size:11px;color:var(--ink)}.wi-facts span{display:block;font-size:8px;text-transform:uppercase;letter-spacing:.04em;color:var(--dim);font-weight:650}
+  .wi-seat{font-size:11px;color:var(--ink);margin-top:7px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.wi-seat span{font-size:8px;text-transform:uppercase;letter-spacing:.04em;color:var(--dim);font-weight:650;display:block}
+  .wi-scope{font-size:10.5px;color:var(--muted);margin-top:7px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+  .wi-src{font-size:11.5px;font-weight:600;color:var(--blue-deep);margin-top:10px;display:inline-block}
+  /* glass + sashes (realistic) */
+  .sash{position:absolute;top:0;bottom:0;width:50%;z-index:2;backface-visibility:hidden;transition:transform .6s cubic-bezier(.55,.02,.2,1);
+    background:linear-gradient(128deg,#a7c6e6 0%,#dcebf8 36%,#c0dbf2 58%,#9bbfe2 100%)}
+  .sash.l{left:0;transform-origin:left center}.sash.r{right:0;transform-origin:right center}
+  .sash .refl{position:absolute;top:-25%;left:-30%;width:55%;height:170%;transform:rotate(11deg);
+    background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.55) 50%,transparent 60%)}
+  .sash .refl2{position:absolute;top:-25%;left:8%;width:18%;height:170%;transform:rotate(11deg);
+    background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.3) 50%,transparent 60%)}
+  .single{position:absolute;inset:0;z-index:2;transition:transform .6s cubic-bezier(.55,.02,.2,1);
+    background:linear-gradient(128deg,#a7c6e6 0%,#dcebf8 36%,#c0dbf2 58%,#9bbfe2 100%)}
+  .single .refl{position:absolute;top:-25%;left:-20%;width:48%;height:170%;transform:rotate(11deg);background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.5) 50%,transparent 60%)}
+  .plate{position:absolute;z-index:6;background:rgba(255,255,255,.92);border:1px solid var(--border);border-radius:7px;padding:5px 10px;
+    left:50%;bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:7px;white-space:nowrap;transition:opacity .25s;box-shadow:var(--shadow-sm)}
+  .win.open .plate{opacity:0;pointer-events:none}
+  .plate .pn{font-size:11px;font-weight:650;color:var(--blue-deep)}.plate .pd{font-size:10px;color:var(--muted)}
+  .win-x{position:absolute;z-index:7;top:12px;right:16px;font-size:11px;font-weight:600;color:var(--muted);opacity:0;transition:opacity .3s .2s}
+  .win.open .win-x{opacity:1;cursor:pointer}
+
+  /* === style A: white casement (modern, 2-sash swing) === */
+  .win.casement{border-radius:7px;padding:9px 9px 12px;
+    background:linear-gradient(135deg,#ffffff,#e1e9f2);border:1px solid #a9b9cb;
+    box-shadow:0 9px 22px rgba(40,60,90,.18),inset 0 1px 0 #fff,inset 0 -3px 5px rgba(150,168,190,.45)}
+  .win.casement .inner{inset:9px 9px 12px}
+  .win.casement .sash.l{border-right:2px solid #cdd9e6}
+  .win.casement .sash::after{content:"";position:absolute;left:0;right:0;top:50%;height:5px;transform:translateY(-50%);background:linear-gradient(#cdd9e6,#fff,#c0cdda)}
+  .win.casement.open .sash.l{transform:rotateY(-130deg)}.win.casement.open .sash.r{transform:rotateY(130deg)}
+  .win.casement .handle{position:absolute;z-index:5;right:18px;top:50%;transform:translateY(-50%);width:7px;height:30px;border-radius:4px;background:linear-gradient(#fdfefe,#a9b9cb);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+  .win.casement .sill{position:absolute;z-index:5;left:-3px;right:-3px;bottom:-5px;height:11px;border-radius:0 0 4px 4px;background:linear-gradient(#f1f5f9,#bdc9d7);box-shadow:0 6px 12px rgba(40,60,90,.2)}
+
+  /* === style B: Georgian sash (6-pane, slides up) === */
+  .win.sashwin{border-radius:5px;padding:12px 12px 18px;background:linear-gradient(#fdfdfb,#e7e3da);border:1px solid #c8bfae;
+    box-shadow:0 9px 22px rgba(70,60,40,.16),inset 0 1px 0 #fff,inset 0 -3px 5px rgba(170,160,140,.4)}
+  .win.sashwin .inner{inset:12px 12px 18px}
+  .win.sashwin .single{background:linear-gradient(128deg,#aecbe8,#e4f0fa 40%,#c6def4 62%,#a3c4e6)}
+  .win.sashwin .single .mun{position:absolute;inset:0;
+    background:linear-gradient(#d8d2c4,#d8d2c4) 33.3% 0/2px 100% no-repeat,linear-gradient(#d8d2c4,#d8d2c4) 66.6% 0/2px 100% no-repeat,
+      linear-gradient(#d8d2c4,#d8d2c4) 0 50%/100% 2px no-repeat}
+  .win.sashwin .rail{position:absolute;z-index:3;left:0;right:0;top:50%;height:7px;transform:translateY(-50%);background:linear-gradient(#fdfdfb,#cfc7b6);box-shadow:0 1px 2px rgba(0,0,0,.15)}
+  .win.sashwin.open .single{transform:translateY(-101%)}
+  .win.sashwin .latch{position:absolute;z-index:5;left:50%;top:50%;transform:translate(-50%,-50%);width:14px;height:6px;border-radius:3px;background:linear-gradient(#e8c87a,#b98d3a);box-shadow:0 1px 2px rgba(0,0,0,.3)}
+  .win.sashwin .sill{position:absolute;z-index:5;left:-4px;right:-4px;bottom:-6px;height:12px;border-radius:0 0 4px 4px;background:linear-gradient(#efe9dc,#c3b9a3);box-shadow:0 6px 12px rgba(70,60,40,.2)}
+
+  /* === style C: Crittall (black industrial, multi-pane swing) === */
+  .win.crittall{border-radius:4px;padding:9px;background:linear-gradient(135deg,#3a3f47,#23272d);border:1px solid #15181c;
+    box-shadow:0 10px 24px rgba(20,25,35,.3),inset 0 1px 0 rgba(255,255,255,.12)}
+  .win.crittall .inner{inset:9px}
+  .win.crittall .sash.l{border-right:2px solid #1c2025}
+  .win.crittall .sash{background:linear-gradient(128deg,#9cc0e2 0%,#d4e7f6 36%,#b6d3ef 58%,#8fb6dd 100%)}
+  .win.crittall .sash .mun{position:absolute;inset:0;
+    background:linear-gradient(#23272d,#23272d) 0 33.3%/100% 2px no-repeat,linear-gradient(#23272d,#23272d) 0 66.6%/100% 2px no-repeat}
+  .win.crittall.open .sash.l{transform:rotateY(-78deg)}.win.crittall.open .sash.r{transform:rotateY(78deg)}
+  .win.crittall .handle{position:absolute;z-index:5;right:14px;top:50%;transform:translateY(-50%);width:6px;height:24px;border-radius:3px;background:linear-gradient(#4a4f57,#1c2025);box-shadow:0 1px 2px rgba(0,0,0,.4)}
+  .win.crittall .sill{position:absolute;z-index:5;left:-2px;right:-2px;bottom:-5px;height:9px;border-radius:0 0 3px 3px;background:linear-gradient(#3a3f47,#1c2025);box-shadow:0 5px 10px rgba(20,25,35,.3)}
+  .win.crittall .plate{background:rgba(28,32,38,.92);border-color:#15181c}.win.crittall .plate .pn{color:#cfe0f2}.win.crittall .plate .pd{color:#9fb0c2}
+  .win.crittall .win-x{color:#cfe0f2}
+
+  /* === style D: thin black lines (minimalist line window) === */
+  .win.lines{border:1.6px solid #1f1f1f;border-radius:3px;padding:0;background:#fff;box-shadow:0 6px 16px rgba(40,60,90,.10)}
+  .win.lines .inner{inset:0;border-radius:0}
+  .win.lines .single{background:linear-gradient(150deg,#fbfdff,#eef4fb 60%,#e4eef9)}
+  .win.lines .single{transform-origin:left center}
+  .win.lines.open .single{transform:rotateY(-132deg)}
+  .win.lines .single .mun{position:absolute;inset:0;background:linear-gradient(#1f1f1f,#1f1f1f) center/1.6px 100% no-repeat,linear-gradient(#1f1f1f,#1f1f1f) center/100% 1.6px no-repeat}
+  .win.lines .single .refl{position:absolute;top:-20%;left:-15%;width:42%;height:160%;transform:rotate(11deg);background:linear-gradient(105deg,transparent 42%,rgba(255,255,255,.55) 50%,transparent 58%)}
+  .win.lines .plate{border-color:#1f1f1f;border-radius:0;background:#fff}.win.lines .plate .pn{color:#1f1f1f}
+  .win.lines .sill{position:absolute;z-index:5;left:-1px;right:-1px;bottom:-4px;height:5px;background:#1f1f1f;border-radius:0 0 2px 2px}
+  .win.lines .win-x{color:#1f1f1f}
+
+  @media(max-width:900px){.grid{grid-template-columns:1fr;grid-template-rows:none;grid-template-areas:"fw" "cal" "pw"}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></span>
+    <h1>BD Calendar</h1>
+    <div class="tabs" id="tabs">
+      <button data-v="0"><span class="n">01</span>White casement</button>
+      <button data-v="1"><span class="n">02</span>Georgian sash</button>
+      <button class="on" data-v="2"><span class="n">03</span>Thin black lines</button>
+    </div>
+  </div>
+  <section class="v" id="v0"></section><section class="v" id="v1"></section><section class="v on" id="v2"></section>
+</div>
+<script>
+var CAT={stat:{c:'#3E5C84',l:'Statutory reporting'},reg:{c:'#B98235',l:'Regulatory'},sus:{c:'#2F9E5B',l:'Sustainability'},pub:{c:'#6C7BA6',l:'Public sector'}};
+var WINDOWS=[
+  {k:'agm',cat:'stat',short:'AGM season',name:'UK annual-report & AGM season',days:25,window:'1 Feb → 30 Jun 2026',act:'30 Jun 2026',sector:'Financial services',seat:'Head of Investor Relations / Corporate-Reporting & Governance Communications',angle:'Dec-year-end issuers publish annual reports Feb–Apr and run AGMs Apr–Jun; the run-up is a repeatable retained-search window for the permanent IR/corporate-reporting comms seat — pitch before the crunch.',scope:'FTSE-weight Dec-year-end UK-listed issuers (financials, energy/utilities, industrials, pharma).',targets:12,src:'https://www.legislation.gov.uk/ukpga/2006/46/contents'},
+  {k:'gpg',cat:'stat',short:'Gender Pay Gap',name:'Gender Pay Gap — reporting & scrutiny',days:25,window:'1 Mar → 30 Jun 2026',act:'30 Jun 2026',sector:'Financial services',seat:'Head of Internal / DEI Communications',angle:'Statutory GPG reports land Mar–Apr; the publication & media-scrutiny window is a repeatable retained-search window for the permanent internal/DEI-comms seat.',scope:'UK employers with 250+ staff (statutory GPG reporters).',targets:12,src:'https://www.gov.uk/report-gender-pay-gap-data'},
+  {k:'cd',cat:'reg',short:'Consumer Duty',name:'FCA Consumer Duty — board-report ramp',days:56,window:'1 Apr → 31 Jul 2026',act:'31 Jul 2026',sector:'Financial services',seat:'Head of Regulatory / Customer Communications',angle:'FS firms must lay an annual Consumer Duty board report by 31 Jul; the Q2 run-up is a repeatable retained-search window for the permanent regulatory-comms seat — pitch before they advertise.',scope:'FCA-regulated retail financial-services firms (banks, insurers, asset & wealth managers).',targets:12,src:'https://www.fca.org.uk/firms/consumer-duty'},
+  {k:'srs',cat:'sus',short:'UK SRS',name:'UK SRS — first sustainability-reporting',days:209,window:'1 Jan → 31 Dec 2026',act:'31 Dec 2026',sector:'Financial services',seat:'Head of Sustainability / ESG & Corporate-Reporting Communications',angle:'UK SRS (IFRS S1/S2) endorsement + FCA consultation land in 2026; large issuers build sustainability-reporting comms ahead of the first mandatory cycle — get the retained brief before the rush hire.',scope:'FTSE-weight UK-listed issuers in high-exposure sectors (financials, energy/utilities, pharma, industrials).',targets:12,src:'https://www.frc.org.uk/'},
+  {k:'mog',cat:'pub',short:'Machinery of gov',name:'Machinery-of-government reshuffle',days:209,window:'1 Apr → 31 Dec 2026',act:'31 Dec 2026',sector:'Public sector',seat:'Director of Communications (GCS) — transition & change communications',angle:'Spending Review 2025 settlements drive 2026/27 departmental restructures; GCS comms-leadership and transition-comms briefs open as departments reorganise.',scope:'UK central-government departments and major ALBs.',targets:12,src:'https://gcs.civilservice.gov.uk/'},
+  {k:'nhs',cat:'pub',short:'NHS planning',name:'NHS operational-planning round',days:148,window:'1 Jan → 31 May 2026',act:'31 May 2026',sector:'Public sector',seat:'Director of Communications — NHS transition & change',angle:'NHS planning guidance + ICB/trust restructures cluster Q1 into the new financial year; comms-leadership briefs open before the recruitment cycle.',scope:'NHS trusts, ICBs and arm’s-length bodies.',targets:12,src:'https://www.england.nhs.uk/operational-planning-and-contracting/'}
+];
+var FRAMEWORKS=[
+  {short:'NHS & health',title:'NHS Workforce Alliance — Exec Search & Interim',buyer:'NHS Workforce Alliance (via CCS)',scope:'Executive search & interim for NHS / health-sector senior leadership, including comms & corporate affairs.',win:"OPEN → DEC '26",opensIn:0,expiryIn:7,live:true,src:'https://www.crowncommercial.gov.uk'},
+  {short:'Nuclear & energy',title:'Nuclear Decommissioning Authority — Shared Services',buyer:'NDA Shared Services Alliance',scope:'Recruitment / executive search for NDA group bodies; Lot 6 covers senior / specialist roles.',win:"OPENS ~JUN '26",opensIn:1,expiryIn:10,live:false,src:'https://www.gov.uk/government/organisations/nuclear-decommissioning-authority'},
+  {short:'Devolved gov',title:'Devolved Government — Executive Search',buyer:'Scottish / Welsh Gov & NI bodies',scope:'Executive search frameworks run by the devolved administrations for senior public-appointment & comms roles.',win:"OPENS ~DEC '26",opensIn:6,expiryIn:16,live:false,src:'https://www.publiccontractsscotland.gov.uk'},
+  {short:'Central gov',title:'Crown Commercial Service — Executive Search 3',buyer:'Crown Commercial Service',scope:'Executive search & permanent recruitment for senior public-sector roles (incl. comms / corporate-affairs leadership).',win:"OPENS ~AUG '27",opensIn:14,expiryIn:24,live:false,src:'https://www.crowncommercial.gov.uk'}
+];
+var EVENTS=[
+  {k:'cipr_ex',name:'CIPR Excellence Awards',date:'2026-07-01',loc:'Royal Lancaster Hotel, London',focus:'external',why:'UK PR practitioner gold standard; senior in-house comms judges + finalists = a direct relationship route.',link:'https://awards.cipr.co.uk/'},
+  {k:'ic_live',name:'Internal Communications & Engagement Live',date:'2026-07-08',loc:'The Brewery, London',focus:'internal',why:'One-day UK IC conference; delegates skew Head of IC / Director of IC.',link:'https://www.communicatemagazine.com/'},
+  {k:'ioic',name:'IoIC Awards',date:'2026-09-17',loc:'London',focus:'internal',why:'Premier UK internal-comms awards; finalists = visible Heads of IC.',link:'https://www.ioic.org.uk/awards.html'},
+  {k:'icco',name:'ICCO Global Summit',date:'2026-11-11',loc:'Milan',focus:'external',why:'Consultancy CEOs + senior in-house clients attend; relationship-building venue.',link:'https://iccopr.com/globalsummit/'},
+  {k:'cipr_conf',name:'CIPR Annual Conference',date:'2026-11-18',loc:'London',focus:'external',why:'Theme: Organisational Resilience; tier-1 in-house comms speakers.',link:'https://cipr.co.uk/'}
+];
+var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],MONF=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+function fcol(f){return f==='internal'?'#4285F4':'#B98235'}
+var EVKEY={};EVENTS.forEach(function(e){EVKEY[e.k]=e});
+
+function monthlyCal(host){
+  var bm={};EVENTS.forEach(function(e){var p=e.date.split('-'),k=(+p[0])+'-'+(+p[1]-1);(bm[k]=bm[k]||[]).push(e)});
+  var now=new Date(),ny=now.getFullYear(),nm=now.getMonth(),year=2026;
+  function cal(){var c='';for(var m=0;m<12;m++){var ev=bm[year+'-'+m]||[],iN=(year===ny&&m===nm);
+    c+='<div class="mc'+(iN?' now':'')+(ev.length?'':' q')+'"><div class="mc-h">'+MON[m]+(iN?'<span class="mc-now">now</span>':'')+'</div>';
+    ev.forEach(function(e){c+='<button class="mc-ev" data-k="'+e.k+'"><i style="background:'+fcol(e.focus)+'"></i><span>'+esc(e.name)+'</span></button>'});c+='</div>'}
+    host.innerHTML='<div class="mcal">'+c+'</div>';host.querySelector('.mcal').addEventListener('click',function(e){var b=e.target.closest('.mc-ev');if(b)det(EVKEY[b.dataset.k])})}
+  function det(e){var p=e.date.split('-'),dd=+p[2],mm=+p[1]-1;
+    host.innerHTML='<button class="ce-back">‹ Back to calendar</button><div class="ce"><div class="dd"><b>'+dd+'</b><span>'+MON[mm]+'</span></div><div><div class="nm">'+esc(e.name)+'<span class="tag '+e.focus+'">'+e.focus+'</span></div><div class="lc">'+MONF[mm]+' '+dd+', '+p[0]+' · '+esc(e.loc)+'</div><div class="wy">'+esc(e.why)+'</div><a class="lk" href="'+e.link+'" target="_blank" rel="noopener">View details ›</a></div></div>';
+    host.querySelector('.ce-back').addEventListener('click',cal)}
+  cal();
+}
+/* ---- framework lane chart (where & when) ---- */
+function frameworkGantt(host){
+  var months=24,pct=function(x){return x/months*100};
+  var labs=FRAMEWORKS.map(function(f,i){
+    return '<div class="glab" data-i="'+i+'"><b>'+esc(f.short)+'</b><i>'+(f.live?'open now':'upcoming')+'</i></div>';
+  }).join('');
+  var grid='';[25,50,75].forEach(function(p){grid+='<div class="ggrid" style="left:'+p+'%"></div>'});
+  var axis='<div class="galx" style="left:25%">6mo</div><div class="galx" style="left:50%">12mo</div>'+
+           '<div class="galx" style="left:75%">18mo</div><div class="galx" style="right:0;transform:none">24mo</div>';
+  var rows=FRAMEWORKS.map(function(f,i){
+    var x=pct(f.opensIn),w=Math.max(13,pct(f.expiryIn-f.opensIn));
+    var c=f.live?['#1FAE55','#0F8A40']:['#5C9BF7','#2F6FF0'];
+    return '<div class="grow" data-i="'+i+'"><div class="gbar" style="left:'+x+'%;width:'+w+'%;background:linear-gradient(90deg,'+c[0]+','+c[1]+')">'+
+      '<span class="gdot"></span><span class="gwin">'+esc(f.win)+'</span></div></div>';
+  }).join('');
+  host.querySelector('.fwviz').innerHTML=
+    '<div class="gantt"><div class="gcol-lab"><div class="glab-sp"></div>'+labs+'</div>'+
+    '<div class="gcol-track"><div class="gaxis">'+axis+'</div>'+grid+rows+
+    '<div class="gtoday" style="left:0%"><span>today</span></div></div></div>';
+  function showF(f){
+    var dur=Math.max(1,f.expiryIn-f.opensIn);
+    var status=f.live?'Open now':(f.opensIn<=2?'Opening soon':'Upcoming');
+    var opensLabel=f.opensIn===0?'Now':'~'+f.opensIn+' mo';
+    host.querySelector('.fwd').innerHTML=
+      '<div class="fwd-top"><span class="fwd-chip'+(f.live?' live':'')+'"><span class="cdot"></span>'+esc(status)+'</span>'+
+        '<span class="fwd-win">'+esc(f.win)+'</span></div>'+
+      '<div class="fwd-t">'+esc(f.title)+'</div>'+
+      '<div class="fwd-by">'+esc(f.buyer)+' · <a href="'+f.src+'" target="_blank" rel="noopener">verify ›</a></div>'+
+      '<div class="fwd-sc">'+esc(f.scope)+'</div>'+
+      '<div class="fwd-facts"><div><span>Opens</span>'+opensLabel+'</div>'+
+        '<div><span>Expires</span>~'+f.expiryIn+' mo</div>'+
+        '<div><span>Window length</span>~'+dur+' mo</div></div>';
+  }
+  function sel(i){host.querySelectorAll('.grow,.glab').forEach(function(x){x.classList.toggle('sel',+x.dataset.i===i)});showF(FRAMEWORKS[i])}
+  host.querySelector('.gantt').addEventListener('click',function(e){var el=e.target.closest('[data-i]');if(!el)return;sel(+el.dataset.i)});
+  sel(0);
+}
+/* ---- realistic windows ---- */
+function winInterior(w){
+  return '<div class="wi" style="--tint:'+CAT[w.cat].c+'"><span class="wi-tag">'+w.days+' days left</span>'+
+    '<div class="wi-t">'+esc(w.name)+'</div><div class="wi-meta">'+CAT[w.cat].l+' · '+esc(w.sector)+'</div>'+
+    '<div class="wi-angle">'+esc(w.angle)+'</div>'+
+    '<div class="wi-facts"><div><span>Window</span>'+esc(w.window)+'</div><div><span>Act by</span>'+esc(w.act)+'</div></div>'+
+    '<div class="wi-seat"><span>The seat</span>'+esc(w.seat)+'</div>'+
+    '<div class="wi-scope">'+esc(w.scope)+' · '+w.targets+' named targets</div>'+
+    '<a class="wi-src" href="'+w.src+'" target="_blank" rel="noopener">View source ›</a></div>';
+}
+function glassFor(style){
+  if(style==='sashwin') return '<div class="single"><div class="mun"></div><div class="refl"></div></div><div class="rail"></div><div class="latch"></div>';
+  if(style==='lines') return '<div class="single"><div class="mun"></div><div class="refl"></div></div>';
+  // casement + crittall: two sashes
+  var mun = style==='crittall' ? '<div class="mun"></div>' : '';
+  return '<div class="sash l">'+mun+'<div class="refl"></div><div class="refl2"></div></div><div class="sash r">'+mun+'</div><div class="handle"></div>';
+}
+function renderWindows(host,style){
+  host.innerHTML='<div class="winrow">'+WINDOWS.map(function(w){
+    return '<div class="win '+style+'" data-k="'+w.k+'" style="--tint:'+CAT[w.cat].c+'">'+
+      '<div class="inner"><div class="wi-wrap">'+winInterior(w)+'</div>'+glassFor(style)+
+      '<div class="plate"><span class="pn">'+esc(w.short)+'</span><span class="pd">'+w.days+'d</span></div></div>'+
+      '<div class="sill"></div><div class="win-x">✕ close</div></div>';
+  }).join('')+'</div>';
+  host.querySelector('.winrow').addEventListener('click',function(e){
+    if(e.target.closest('.wi-src'))return;var w=e.target.closest('.win');if(!w)return;
+    var was=w.classList.contains('open');host.querySelectorAll('.win').forEach(function(x){x.classList.remove('open')});if(!was)w.classList.add('open')});
+}
+function shell(){return '<div class="grid">'+
+  '<div class="card a-fw"><div class="ch"><h2>Approved Frameworks</h2><span class="meta">where &amp; when VMA can bid</span></div><div class="fwwrap"><div class="fwviz" style="flex:1;min-height:0;position:relative"></div><div class="fwd"></div></div></div>'+
+  '<div class="card a-cal"><div class="ch"><h2>Events &amp; Networking</h2><span class="meta">2026</span></div><div class="calhost calmount"></div></div>'+
+  '<div class="card a-pw"><div class="ch"><h2>Mandate windows</h2><span class="meta">click a window — it opens</span></div><div class="winmount" style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center"></div></div></div>'}
+var STYLES=['casement','sashwin','lines'],built={};
+function build(i){var root=document.getElementById('v'+i);root.innerHTML=shell();
+  frameworkGantt(root.querySelector('.fwwrap'));monthlyCal(root.querySelector('.calmount'));renderWindows(root.querySelector('.winmount'),STYLES[i]);built[i]=true}
+document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;var i=+b.dataset.v;
+  document.querySelectorAll('.v').forEach(function(s){s.classList.remove('on')});document.getElementById('v'+i).classList.add('on');
+  document.querySelectorAll('#tabs button').forEach(function(x){x.classList.toggle('on',x.dataset.v==i)});if(!built[i])build(i)});
+build(2);
+</script>
+</body>
+</html>
