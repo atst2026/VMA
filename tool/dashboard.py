@@ -4854,10 +4854,8 @@ TEMPLATE = r"""
         #a4c6e8 0%, #bdd4ea 16%, #d4e2ef 34%, #e9f0f7 58%, #f4f8fc 78%, rgba(247,249,252,0) 100%); }
     #cal .brand-title { font-size: 30px; }
     #cal .wm-head .brand { gap: 13px; }
-    .bdc-hero-ic { width: 50px; height: 50px; border-radius: 14px; display: grid; place-items: center;
-      color: var(--blue-deep); background: rgba(255,255,255,.55); box-shadow: 0 2px 10px rgba(31,55,124,.10); flex-shrink: 0; }
-    .bdc-hero-ic svg { width: 28px; height: 28px; }
-    #cal .bdc-sub { font-size: 13px; color: var(--muted); margin-top: 7px; }
+    .bdc-hero-ic { display: grid; place-items: center; color: var(--ink); flex-shrink: 0; }
+    .bdc-hero-ic svg { width: 30px; height: 30px; }
     /* the page fits the viewport: hero is fixed, the grid fills the rest. No
        page scroll — each card sizes to its cell and scrolls internally. */
     #cal .bdc-page { flex: 1; min-height: 0; overflow: hidden; padding: 2px 20px 16px; }
@@ -4869,8 +4867,11 @@ TEMPLATE = r"""
     .bdc-card-h { display: flex; align-items: center; gap: 10px; margin-bottom: 11px; flex: none; }
     .bdc-card-h h2 { font-size: 14.5px; font-weight: 620; margin: 0; letter-spacing: -.01em; }
     .bdc-card-h .meta { margin-left: auto; font-size: 11.5px; color: var(--dim); font-weight: 600; }
-    /* the three card bodies don't scroll; only the windows LIST scrolls (below) */
-    #cal #framework-body, #cal #events-body, #cal #pulses-body { flex: 1; min-height: 0; overflow: hidden; }
+    /* events + windows card bodies don't scroll; the windows LIST scrolls (below).
+       The frameworks body DOES scroll, so an opened section's bottom is reachable. */
+    #cal #framework-body, #cal #events-body, #cal #pulses-body { flex: 1; min-height: 0; }
+    #cal #events-body, #cal #pulses-body { overflow: hidden; }
+    #cal #framework-body { overflow-y: auto; }
     #cal #events-body { display: flex; flex-direction: column; }
     /* frameworks — minimalist accordion: 4 rows, one open at a time, no scroll */
     .bdc-fwa { display: flex; flex-direction: column; gap: 8px; }
@@ -4938,12 +4939,20 @@ TEMPLATE = r"""
     /* events — a MONTHLY calendar for one year (Jan–Dec): a symmetric 4x3 grid
        that fills the card (no scroll). Clicking an event replaces the grid with
        the detail; a Back control returns to the calendar. Year stepper top-right. */
-    .bdc-calbar { flex: none; display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-bottom: 9px; }
+    .bdc-yearnav { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; }
     .bdc-yr { font-size: 12.5px; font-weight: 650; color: var(--ink); min-width: 36px; text-align: center; }
-    .bdc-ynav button { width: 24px; height: 24px; border-radius: 7px; border: 1px solid var(--border); background: var(--card);
+    .bdc-yearnav button { width: 23px; height: 23px; border-radius: 7px; border: 1px solid var(--border); background: var(--card);
       color: var(--muted); cursor: pointer; line-height: 1; font-size: 13px; }
-    .bdc-ynav button:hover { background: var(--elevated); color: var(--ink); }
-    .bdc-ynav button:disabled { opacity: .3; cursor: default; background: var(--card); color: var(--dim); }
+    .bdc-yearnav button:hover { background: var(--elevated); color: var(--ink); }
+    .bdc-yearnav button:disabled { opacity: .3; cursor: default; background: var(--card); color: var(--dim); }
+    /* window brief: source link + two-step remove confirm */
+    .bdc-srcline { margin-top: 11px; }
+    .bdc-srcline a { font-size: 12px; font-weight: 600; color: var(--blue-deep); text-decoration: none; }
+    .bdc-rm-yes, .bdc-rm-no { background: none; border: none; font: inherit; font-size: 12px; cursor: pointer;
+      padding: 4px 0; text-decoration: underline; text-underline-offset: 2px; }
+    .bdc-confirm { font-size: 12px; color: var(--ink-2); margin-right: 10px; }
+    .bdc-rm-yes { color: #C0392B; font-weight: 600; margin-right: 12px; }
+    .bdc-rm-no { color: var(--muted); }
     .bdc-mgrid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 1fr); gap: 8px; }
     .bdc-mcl { border: 1px solid var(--border); border-radius: 12px; background: #fff; padding: 7px 9px;
       display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
@@ -5409,9 +5418,8 @@ TEMPLATE = r"""
     <div class="wm-head">
       <div class="brand">
         <span class="brand-title">BD Calendar</span>
-        <span class="bdc-hero-ic" title="The moves that run on key dates"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></span>
+        <span class="bdc-hero-ic" title="The moves that run on key dates"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></span>
       </div>
-      <div class="bdc-sub">The business-development moves that run on key dates.</div>
     </div>
 
     <!-- full-page dashboard: frameworks top-left, calendar top-right, windows bottom -->
@@ -5454,7 +5462,7 @@ TEMPLATE = r"""
         </div>
 
         <div class="bdc-card a-cal">
-          <div class="bdc-card-h"><h2>Events &amp; Networking</h2></div>
+          <div class="bdc-card-h"><h2>Events &amp; Networking</h2><span class="bdc-yearnav" id="ev-yearnav"></span></div>
           <div id="events-body"><div class="empty compact">Loading…</div></div>
         </div>
 
@@ -6092,29 +6100,62 @@ function bdcShort(name) {
   if (s.length > 32) s = s.slice(0, 31).trim() + '…';
   return s;
 }
+// ISO -> "1 Feb 2026". Used to show window / act-by in plain English dates.
+function bdcEngDate(iso) {
+  const p = String(iso || '').split('-'); if (p.length < 3) return iso || '';
+  return (+p[2]) + ' ' + (BDC_MON[(+p[1]) - 1] || '') + ' ' + p[0];
+}
+// "2026-02-01 → 2026-06-30" -> "1 Feb → 30 Jun 2026" (year shown once if shared).
+function bdcWinRange(s) {
+  const parts = String(s || '').split('→').map(x => x.trim());
+  if (parts.length === 2) {
+    const a = parts[0].split('-'), b = parts[1].split('-');
+    if (a.length === 3 && b.length === 3) {
+      const sameY = a[0] === b[0];
+      const fa = (+a[2]) + ' ' + (BDC_MON[(+a[1]) - 1] || '') + (sameY ? '' : ' ' + a[0]);
+      const fb = (+b[2]) + ' ' + (BDC_MON[(+b[1]) - 1] || '') + ' ' + b[0];
+      return fa + ' → ' + fb;
+    }
+  }
+  return s;
+}
+// Shared remove / confirm controls (two-step "are you sure" on dismiss).
+function bdcRmBtn(key, label) { return '<button type="button" class="bdc-rm" data-key="' + esc(key) + '">' + label + '</button>'; }
+function bdcConfirm(key, q) {
+  return '<span class="bdc-confirm">' + q + '</span>' +
+    '<button type="button" class="bdc-rm-yes" data-key="' + esc(key) + '">Yes, remove</button>' +
+    '<button type="button" class="bdc-rm-no" data-key="' + esc(key) + '">Cancel</button>';
+}
+async function bdcDismiss(key, after) {
+  try {
+    const r = await fetch('/api/pulses/dismiss', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: key, dismissed: true }),
+    });
+    const jj = await r.json();
+    if (jj.ok) { after(); } else { alert(jj.detail || 'Could not remove.'); }
+  } catch (e) { alert('Network error: ' + e.message); }
+}
 // Placement Windows — master/detail: a compact list on the left, the full
 // brief on the right. The remove (dismiss) is tucked into the open brief.
 function bdcWinDetail(w) {
   const cc = bdcWinCat(w.name);
   const src = w.source_url || (/^https?:/i.test(w.url || '') ? w.url : '');
   const nTargets = (w.targets || []).length;
-  // Compact brief — essentials only, so the bottom card never clips.
   return '<div class="bdc-pwd-h"><span class="bdc-pwd-tag">' +
       esc(typeof w.days_left === 'number' ? w.days_left + ' days left' : 'window') + '</span>' +
       '<div><div class="bdc-pwd-t">' + esc(w.name || '') + '</div>' +
       '<div class="bdc-pwd-meta">' + esc(cc[1]) + (w.sector ? ' &middot; ' + esc(bdcSector(w.sector)) : '') + '</div></div></div>' +
     (w.angle ? '<div class="bdc-angle">' + esc(w.angle) + '</div>' : '') +
     '<div class="bdc-kv">' +
-      (w.window ? '<div><div class="bdc-k">Window</div><div class="bdc-v">' + esc(w.window) + '</div></div>' : '') +
-      (w.act_by ? '<div><div class="bdc-k">Act by</div><div class="bdc-v">' + esc(w.act_by) + '</div></div>' : '') +
+      (w.window ? '<div><div class="bdc-k">Window</div><div class="bdc-v">' + esc(bdcWinRange(w.window)) + '</div></div>' : '') +
+      (w.act_by ? '<div><div class="bdc-k">Act by</div><div class="bdc-v">' + esc(bdcEngDate(w.act_by)) + '</div></div>' : '') +
       (w.seat ? '<div><div class="bdc-k">The seat</div><div class="bdc-v seat">' + esc(w.seat) + '</div></div>' : '') +
     '</div>' +
-    '<div class="bdc-basis">' +
-      (w.scope_note ? esc(w.scope_note) : '') +
-      (nTargets ? ' &middot; ' + nTargets + ' named targets' : '') +
-      (src ? ' &nbsp;&middot;&nbsp; <a href="' + safeUrl(src) + '" target="_blank" rel="noopener noreferrer">View source &rsaquo;</a>' : '') +
-    '</div>' +
-    '<div class="bdc-actions"><button class="bdc-rm" data-key="' + esc(w.key || '') + '">Remove this window</button></div>';
+    '<div class="bdc-basis">' + (w.scope_note ? esc(w.scope_note) : '') +
+      (nTargets ? ' &middot; ' + nTargets + ' named targets' : '') + '</div>' +
+    (src ? '<div class="bdc-srcline"><a href="' + safeUrl(src) + '" target="_blank" rel="noopener noreferrer">View source &rsaquo;</a></div>' : '') +
+    '<div class="bdc-actions">' + bdcRmBtn(w.key || '', 'Remove this window') + '</div>';
 }
 async function loadPulses() {
   const body = document.getElementById('pulses-body');
@@ -6150,19 +6191,14 @@ async function loadPulses() {
       it.classList.add('sel');
       paint(rows.filter(x => (x.key || x.name) === it.dataset.key)[0]);
     });
-    pane.addEventListener('click', async (ev) => {
-      const btn = ev.target.closest('.bdc-rm'); if (!btn) return;
-      const key = btn.getAttribute('data-key'); if (!key) return;
-      btn.disabled = true;
-      try {
-        const r = await fetch('/api/pulses/dismiss', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ key: key, dismissed: true }),
-        });
-        const jj = await r.json();
-        if (jj.ok) { loadPulses(); }
-        else { btn.disabled = false; alert(jj.detail || 'Could not remove.'); }
-      } catch (e) { btn.disabled = false; alert('Network error: ' + e.message); }
+    pane.addEventListener('click', (ev) => {
+      const acts = pane.querySelector('.bdc-actions'); if (!acts) return;
+      const rm = ev.target.closest('.bdc-rm');
+      const no = ev.target.closest('.bdc-rm-no');
+      const yes = ev.target.closest('.bdc-rm-yes');
+      if (rm) { acts.innerHTML = bdcConfirm(rm.dataset.key, 'Remove this window?'); }
+      else if (no) { acts.innerHTML = bdcRmBtn(no.dataset.key, 'Remove this window'); }
+      else if (yes) { bdcDismiss(yes.dataset.key, loadPulses); }
     });
   } catch (e) {
     body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
@@ -6227,7 +6263,16 @@ async function loadEvents() {
     const now = new Date(); const nowY = now.getFullYear(), nowM = now.getMonth();
     const minY = nowY - 1, maxY = nowY + 1;   // can't look more than one year either way
     let year = nowY;   // a single calendar year (Jan–Dec); year stepper switches it
+    const yearNav = document.getElementById('ev-yearnav');
     function renderCal() {
+      // year stepper lives in the card header, so the grid below can be larger
+      if (yearNav) {
+        yearNav.innerHTML = '<button type="button" data-y="-1"' + (year <= minY ? ' disabled' : '') + '>&lsaquo;</button>' +
+          '<span class="bdc-yr">' + year + '</span>' +
+          '<button type="button" data-y="1"' + (year >= maxY ? ' disabled' : '') + '>&rsaquo;</button>';
+        yearNav.querySelectorAll('button').forEach(btn =>
+          btn.addEventListener('click', () => { const ny = year + (+btn.dataset.y); if (ny < minY || ny > maxY) return; year = ny; renderCal(); }));
+      }
       let cells = '';
       for (let m = 0; m < 12; m++) {
         const evs = byMonth[year + '-' + m] || [];
@@ -6244,16 +6289,11 @@ async function loadEvents() {
         } else { cells += '<div class="bdc-mcl-none">&mdash;</div>'; }
         cells += '</div>';
       }
-      body.innerHTML = '<div class="bdc-calbar"><span class="bdc-ynav"><button type="button" data-y="-1"' + (year <= minY ? ' disabled' : '') + '>&lsaquo;</button></span>' +
-        '<span class="bdc-yr">' + year + '</span>' +
-        '<span class="bdc-ynav"><button type="button" data-y="1"' + (year >= maxY ? ' disabled' : '') + '>&rsaquo;</button></span></div>' +
-        '<div class="bdc-mgrid">' + cells + '</div>';
+      body.innerHTML = '<div class="bdc-mgrid">' + cells + '</div>';
       body.querySelector('.bdc-mgrid').addEventListener('click', (ev) => {
         const b = ev.target.closest('.bdc-mev'); if (!b) return;
         renderDetail(byKey[b.dataset.ek]);
       });
-      body.querySelectorAll('.bdc-ynav button').forEach(btn =>
-        btn.addEventListener('click', () => { const ny = year + (+btn.dataset.y); if (ny < minY || ny > maxY) return; year = ny; renderCal(); }));
     }
     function renderDetail(e) {
       if (!e) { renderCal(); return; }
@@ -6268,20 +6308,13 @@ async function loadEvents() {
         '<div class="bdc-ev-loc">' + (BDC_MONF[mm] || '') + ' ' + dd + ', ' + (p[0] || '') + (e.location ? ' &middot; ' + esc(e.location) : '') + '</div>' +
         (e.why_now ? '<div class="bdc-ev-why">' + esc(e.why_now) + '</div>' : '') +
         (src ? '<a class="bdc-ev-lk" href="' + safeUrl(src) + '" target="_blank" rel="noopener noreferrer">View details &rsaquo;</a>' : '') +
-        '<div class="bdc-actions"><button class="bdc-rm" data-key="' + esc(e.key || '') + '">Remove this event</button></div></div></div>';
+        '<div class="bdc-actions">' + bdcRmBtn(e.key || '', 'Remove this event') + '</div></div></div>';
       body.querySelector('.bdc-back').addEventListener('click', renderCal);
-      body.querySelector('.bdc-rm').addEventListener('click', async function () {
-        const key = this.getAttribute('data-key'); if (!key) return;
-        this.disabled = true;
-        try {
-          const r = await fetch('/api/pulses/dismiss', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key: key, dismissed: true }),
-          });
-          const jj = await r.json();
-          if (jj.ok) { loadEvents(); }
-          else { this.disabled = false; alert(jj.detail || 'Could not remove.'); }
-        } catch (err) { this.disabled = false; alert('Network error: ' + err.message); }
+      const acts = body.querySelector('.bdc-actions');
+      acts.addEventListener('click', (ev) => {
+        if (ev.target.closest('.bdc-rm')) { acts.innerHTML = bdcConfirm(e.key || '', 'Remove this event?'); }
+        else if (ev.target.closest('.bdc-rm-no')) { acts.innerHTML = bdcRmBtn(e.key || '', 'Remove this event'); }
+        else if (ev.target.closest('.bdc-rm-yes')) { bdcDismiss(e.key || '', loadEvents); }
       });
     }
     renderCal();
@@ -6299,7 +6332,11 @@ async function loadEvents() {
     var node = h.parentNode;
     var wasOpen = node.classList.contains('open');
     root.querySelectorAll('.bdc-fw').forEach(function (x) { x.classList.remove('open'); });
-    if (!wasOpen) node.classList.add('open');
+    if (!wasOpen) {
+      node.classList.add('open');
+      // bring the opened section (incl. its detail) fully into view
+      setTimeout(function () { try { node.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {} }, 60);
+    }
   });
 })();
 
