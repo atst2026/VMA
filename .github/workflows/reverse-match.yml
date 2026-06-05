@@ -21,6 +21,10 @@ on:
           - test
           - send
           - preview
+      token:
+        description: "Internal: unique id from the dashboard so each dispatch maps to its own artifact (stops the loading tab resolving to a previous reverse-match)."
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -91,11 +95,17 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: reverse-match
+          # Per-dispatch name so the dashboard poll resolves to THIS run's
+          # artifact, never a previous reverse-match's. Falls back to the plain
+          # name for a manual run with no token.
+          name: ${{ github.event.inputs.token != '' && format('reverse-match-{0}', github.event.inputs.token) || 'reverse-match' }}
           # Two patterns rather than {html,txt} brace expansion - actions/
-          # upload-artifact@v4's minimatch does not expand braces, so the
-          # brace form was matching zero files and uploading nothing.
+          # upload-artifact@v4's minimatch does not expand braces. The ** forms
+          # also cover the per-desk state dirs (tool/state/<profile>/), so a
+          # non-comms run can't upload zero files.
           path: |
             tool/state/reverse_match_*.html
             tool/state/reverse_match_*.txt
+            tool/state/**/reverse_match_*.html
+            tool/state/**/reverse_match_*.txt
           if-no-files-found: warn

@@ -32,6 +32,10 @@ on:
           - test
           - send
           - preview
+      token:
+        description: "Internal: unique id from the dashboard so each dispatch maps to its own artifact."
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -99,10 +103,15 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pre-meeting-brief
-          # Multi-line path (brace expansion not supported by minimatch)
+          # Per-dispatch name so the loading tab resolves to THIS run's
+          # artifact, never a previous brief's (falls back to the plain name).
+          name: ${{ github.event.inputs.token != '' && format('pre-meeting-brief-{0}', github.event.inputs.token) || 'pre-meeting-brief' }}
+          # Multi-line path (brace expansion not supported by minimatch); the
+          # ** forms cover the per-desk state dirs too.
           path: |
             tool/state/pre_meeting_*.html
             tool/state/pre_meeting_*.txt
+            tool/state/**/pre_meeting_*.html
+            tool/state/**/pre_meeting_*.txt
           if-no-files-found: warn
           retention-days: 14
