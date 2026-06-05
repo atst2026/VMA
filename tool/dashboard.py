@@ -4750,13 +4750,14 @@ TEMPLATE = r"""
     .bdc-pt { display: grid; grid-template-columns: repeat(auto-fill, minmax(122px, 1fr)); gap: 11px; padding: 0 16px; }
     .bdc-pw { aspect-ratio: 1/1; border: 1px solid var(--border); border-radius: 15px; background: #fff; cursor: pointer;
       padding: 13px; display: flex; flex-direction: column; text-align: left; box-shadow: var(--shadow-sm); font: inherit;
-      transition: transform .14s, box-shadow .14s, border-color .14s; }
+      overflow: hidden; transition: transform .14s, box-shadow .14s, border-color .14s; }
     .bdc-pw:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--border-hi); }
     .bdc-pw.sel { border-color: var(--cc); box-shadow: 0 0 0 2px var(--cc) inset; }
     .bdc-pw-top { display: flex; align-items: center; justify-content: space-between; }
     .bdc-pw-dot { width: 11px; height: 11px; border-radius: 4px; background: var(--cc); }
     .bdc-pw-days { font-size: 11px; color: var(--muted); font-weight: 650; }
-    .bdc-pw-nm { margin-top: auto; font-size: 12.5px; font-weight: 600; line-height: 1.3; color: var(--ink); letter-spacing: -.01em; }
+    .bdc-pw-nm { margin-top: auto; font-size: 12.5px; font-weight: 600; line-height: 1.3; color: var(--ink); letter-spacing: -.01em;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
     .bdc-pw-open { font-size: 11px; color: var(--dim); margin-top: 6px; }
     /* shared expand-detail (windows) */
     .bdc-pwd { margin: 14px 16px 4px; border: 1px solid var(--border); border-radius: 16px; background: var(--bg);
@@ -4783,20 +4784,22 @@ TEMPLATE = r"""
     .bdc-rm:hover { color: #C0392B; }
     /* events: monthly calendar */
     .bdc-mcal { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 12px; padding: 0 16px; }
-    .bdc-mcell { border: 1px solid var(--border); border-radius: 14px; background: #fff; padding: 11px 12px; min-height: 104px; box-shadow: var(--shadow-sm); }
+    .bdc-mcell { border: 1px solid var(--border); border-radius: 14px; background: #fff; padding: 11px 12px; height: 120px;
+      overflow: hidden; box-shadow: var(--shadow-sm); }
     .bdc-mcell.quiet { background: var(--bg); border-style: dashed; box-shadow: none; }
     .bdc-mcell.now { border-color: transparent; box-shadow: 0 0 0 1.5px var(--blue) inset; }
     .bdc-mc-h { display: flex; align-items: baseline; gap: 6px; margin-bottom: 5px; }
     .bdc-mc-m { font-size: 12.5px; font-weight: 650; letter-spacing: -.01em; }
     .bdc-mc-y { font-size: 10px; color: var(--dim); }
     .bdc-mc-now { margin-left: auto; font-size: 9px; font-weight: 700; color: var(--blue); text-transform: uppercase; letter-spacing: .04em; }
-    .bdc-mc-ev { display: flex; align-items: flex-start; gap: 7px; width: 100%; text-align: left; background: none; border: none;
-      cursor: pointer; padding: 5px; border-radius: 7px; font: inherit; transition: background .12s; }
+    .bdc-mc-ev { display: flex; align-items: center; gap: 7px; width: 100%; text-align: left; background: none; border: none;
+      cursor: pointer; padding: 4px 5px; border-radius: 7px; font: inherit; transition: background .12s; }
     .bdc-mc-ev:hover { background: var(--elevated); }
     .bdc-mc-ev.sel { background: var(--blue-wash); }
-    .bdc-mc-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; margin-top: 5px; }
+    .bdc-mc-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; }
     .bdc-mc-dd { flex: none; font-size: 11px; font-weight: 700; color: var(--muted); width: 15px; }
-    .bdc-mc-nm { font-size: 11px; line-height: 1.3; color: var(--ink); }
+    .bdc-mc-nm { font-size: 11px; line-height: 1.3; color: var(--ink); flex: 1; min-width: 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .bdc-mc-none { font-size: 13px; color: var(--dim); opacity: .5; padding: 3px 5px; }
     .bdc-evd { margin: 18px 16px 4px; border-top: 1px solid var(--hairline); padding-top: 16px; min-height: 70px; }
     .bdc-evd-empty { color: var(--dim); font-size: 13px; text-align: center; padding: 14px 0; }
@@ -4812,6 +4815,30 @@ TEMPLATE = r"""
     .bdc-ev-loc { font-size: 12px; color: var(--muted); margin-top: 6px; }
     .bdc-ev-why { font-size: 12.5px; color: var(--ink-2); margin-top: 9px; line-height: 1.55; }
     .bdc-ev-lk { display: inline-block; margin-top: 12px; font-size: 12.5px; font-weight: 600; color: var(--blue-deep); text-decoration: none; }
+
+    /* Framework Eligibility — softened to read less like a CRM list: drop the
+       'structural' left-girder + corner-joint framing and the FW type badge for
+       a clean white card. The filter pills (#fw-filter-bar) and the triage
+       hooks (.framework-action) are untouched. */
+    #framework-body .framework-row { margin: 10px 12px 0; padding: 14px 16px; border: 1px solid var(--border);
+      border-radius: 14px; background: #fff; box-shadow: var(--shadow-sm); }
+    #framework-body .framework-row::before, #framework-body .framework-row::after { content: none; background: none; }
+    #framework-body .framework-row:last-child { margin-bottom: 12px; }
+    #framework-body .row2-head { padding: 0; gap: 11px; }
+    #framework-body .row2-head:hover { background: transparent; }
+    #framework-body .typ.fw { display: none; }
+    #framework-body .row2-title { font-size: 14px; font-weight: 600; letter-spacing: -.01em; color: var(--ink); }
+    #framework-body .ipill { font-family: inherit; font-weight: 650; font-size: 10px; letter-spacing: .03em;
+      text-transform: uppercase; padding: 3px 10px; border-radius: 20px; }
+    #framework-body .ipill.w { background: var(--tan-bg); color: var(--tan-tx); }
+    #framework-body .ipill.mut { background: var(--elevated); color: var(--muted); }
+    #framework-body .row2-detail { padding: 6px 0 2px; }
+    #framework-body .row2-sub { font-size: 12.5px; color: var(--muted); margin: 6px 0 0; line-height: 1.5; }
+    #framework-body .play { border: none; background: transparent; padding: 10px 0 0; margin-top: 4px; }
+    #framework-body .play-lab { color: var(--muted); font-weight: 650; }
+    #framework-body .play-desc { font-size: 12px; color: var(--ink-2); margin-top: 4px; }
+    #framework-body .play .item-actions { margin-top: 12px; }
+    #framework-body .btn-mini { border-radius: 8px; }
 
     /* ============================================================
        MOBILE LAYER — phones only (<= 640px). Purely additive: every
@@ -5952,6 +5979,14 @@ function bdcSector(s) {
   s = (s || '').replace(/_/g, ' ').trim();
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
 }
+// Tile title: drop the qualifier after a spaced dash so every tile reads as a
+// short, uniform label (the full name still shows in the open brief), then
+// hard-cap as a fallback so nothing can overrun the square.
+function bdcShort(name) {
+  let s = String(name || '').split(/\s+[—–-]\s+/)[0].trim();
+  if (s.length > 32) s = s.slice(0, 31).trim() + '…';
+  return s;
+}
 async function loadPulses() {
   const body = document.getElementById('pulses-body');
   const count = document.getElementById('pulses-count');
@@ -5978,7 +6013,7 @@ async function loadPulses() {
       const days = (typeof p.days_left === 'number') ? p.days_left + 'd' : '';
       tiles += '<button class="bdc-pw" data-key="' + esc(p.key || p.name || '') + '" style="--cc:' + cc[0] + '">' +
         '<span class="bdc-pw-top"><span class="bdc-pw-dot"></span><span class="bdc-pw-days">' + esc(days) + '</span></span>' +
-        '<span class="bdc-pw-nm">' + esc(p.name || '') + '</span>' +
+        '<span class="bdc-pw-nm">' + esc(bdcShort(p.name)) + '</span>' +
         '<span class="bdc-pw-open">Open &rsaquo;</span></button>';
     });
     body.innerHTML = leg + '<div class="bdc-pt">' + tiles + '</div>' +
