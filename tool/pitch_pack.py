@@ -954,6 +954,51 @@ def render_text(target: str, role: str, ch_snapshot: dict,
     return "\n".join(lines)
 
 
+def _run_comms_proposal(target: str, role: str, mode: str) -> int:
+    """Comms desk pitch pack: the branded, client-facing VMA "Search Proposal"
+    PDF (tool/pitch_proposal). The target company's own logo, the predicted
+    seat and the generation date are wired onto the cover, and the company name
+    replaces the template's example client throughout. Saves a .pdf into the
+    per-profile state dir and, in send/test mode, emails it as an attachment.
+
+    This is the comms-only output (the marketing desk keeps the dynamic pack in
+    main()). Returns a process exit code."""
+    from tool import pitch_proposal
+    log.info("Building comms SEARCH PROPOSAL PDF for %r · seat %r · mode %r",
+             target, role, mode)
+    pdf_bytes, meta = pitch_proposal.generate(target, role)
+    safe = "".join(c if c.isalnum() else "_" for c in target.lower())[:40]
+    stamp = datetime.now().strftime("%Y%m%d_%H%M")
+    pdf_path = STATE_DIR / f"pitch_pack_{safe}_{stamp}.pdf"
+    pdf_path.write_bytes(pdf_bytes)
+    log.info("Proposal PDF: %d bytes (logo: %s) -> %s",
+             len(pdf_bytes), meta.get("logo_source"), pdf_path)
+
+    if mode in ("send", "test") and getattr(config, "NON_BRIEF_EMAIL_ENABLED", False):
+        to = config.TEST_RECIPIENT if mode == "test" else config.RECIPIENT
+        subject = f"[Pitch Pack] {target} - {role}"
+        if mode == "test":
+            subject = "[TEST] " + subject
+        body_html = (
+            f"<p>Please find attached the VMA Group search proposal for "
+            f"<strong>{html.escape(target)}</strong> &ndash; {html.escape(role)}.</p>"
+            "<p>Strictly private &amp; confidential.</p>")
+        body_text = (f"Please find attached the VMA Group search proposal for "
+                     f"{target} - {role}.\n\nStrictly private & confidential.")
+        result = email_send(to, subject, body_html, body_text,
+                            attachments=[(pdf_path.name, pdf_bytes, "application/pdf")])
+        log.info("Send: %s", result)
+        if not result.get("ok"):
+            print("\n--- EMAIL SEND FAILED ---")
+            print(result)
+            return 2
+        print(f"✓ Sent proposal to {to}.")
+        return 0
+
+    print(f"[saved comms proposal PDF to tool/state/{pdf_path.name}]")
+    return 0
+
+
 def main() -> int:
     if len(sys.argv) < 2:
         print(f'Usage: python -m tool.pitch_pack "<account name>" [role="{_DEFAULT_ROLE}"] [mode=preview|send|test]', file=sys.stderr)
@@ -972,6 +1017,12 @@ def main() -> int:
              "set" if os.environ.get("GMAIL_USER") else "EMPTY",
              os.environ.get("PITCH_SALARY_MIN", ""),
              os.environ.get("PITCH_SALARY_MAX", ""))
+
+    # Comms desk: the client-facing pitch pack is the branded VMA "Search
+    # Proposal" PDF. Marketing keeps the dynamic, data-driven pack below.
+    # (Wired for comms only, per the current scope.)
+    if not _MKT:
+        return _run_comms_proposal(target, role, mode)
 
     ch = companies_house.company_events(target)
     news = recent_news_for(target)
