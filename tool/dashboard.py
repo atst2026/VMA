@@ -1322,8 +1322,9 @@ MR_CSS = r"""
 .mr-pgtab{font:600 13.5px/1 "Inter",sans-serif;color:var(--muted);background:none;border:none;cursor:pointer;padding:5px 0;position:relative;display:inline-flex;align-items:center;gap:7px;transition:.13s}.mr-pgtab svg{width:15px;height:15px;opacity:.85}.mr-pgtab:hover{color:var(--ink2)}
 .mr-pgtab.on{color:var(--ink)}.mr-pgtab.on::after{content:"";position:absolute;left:0;right:0;bottom:-7px;height:2px;background:var(--blue-deep);border-radius:2px}
 .mr-filt{position:relative}
-.mr-filtbtn{display:inline-flex;align-items:center;gap:7px;font:600 12px/1 "Inter",sans-serif;color:var(--ink);background:#fff;border:1px solid var(--mrborder);border-radius:9px;height:34px;padding:0 12px;cursor:pointer}.mr-filtbtn>svg{width:15px;height:15px}.mr-filtbtn .mr-lbl{color:var(--ink)}.mr-filtbtn .mr-cv{width:13px;height:13px;color:var(--dim)}.mr-filtbtn:hover{background:var(--elevated)}
-.mr-filtmenu{display:none;position:absolute;top:calc(100% + 6px);right:0;background:#fff;border:1px solid var(--mrborder);border-radius:11px;box-shadow:0 10px 28px rgba(31,55,124,.14);padding:6px;min-width:196px;z-index:20}.mr-filtmenu.open{display:block}
+.mr-filtbtn{display:inline-flex;align-items:center;gap:7px;font:600 12px/1 "Inter",sans-serif;color:var(--ink);background:#fff;border:1px solid var(--mrborder);border-radius:9px;height:34px;min-width:140px;padding:0 12px;cursor:pointer}.mr-filtbtn>svg{width:15px;height:15px;flex-shrink:0}.mr-filtbtn .mr-lbl{color:var(--ink)}.mr-filtbtn .mr-cv{width:13px;height:13px;color:var(--dim);margin-left:auto;flex-shrink:0}.mr-filtbtn:hover{background:var(--elevated)}
+.mr-filtmenu{display:none;position:absolute;top:calc(100% + 6px);left:0;right:auto;background:#fff;border:1px solid var(--mrborder);border-radius:11px;box-shadow:0 10px 28px rgba(31,55,124,.14);padding:6px;min-width:196px;z-index:20}.mr-filtmenu.open{display:block}
+.mr-sortsel .mr-filtmenu{left:auto;right:0}
 .mr-filtmenu button{display:flex;width:100%;align-items:center;gap:8px;border:none;background:transparent;font:600 12px/1 "Inter",sans-serif;color:var(--ink2);padding:9px 10px;border-radius:8px;cursor:pointer;text-align:left}.mr-filtmenu button:hover{background:var(--elevated)}.mr-filtmenu button.on{background:var(--blue-wash);color:var(--blue-deep)}
 .mr-filtmenu .mr-mc{margin-left:auto;font:600 9px/1 "JetBrains Mono",monospace;background:rgba(31,31,31,.07);color:var(--ink2);padding:2px 6px;border-radius:9999px}.mr-filtmenu button.on .mr-mc{background:#fff;color:var(--blue-deep)}
 .mr-tp{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle;padding:2px 8px;border-radius:7px;font:600 10.5px/1.5 "Inter",sans-serif}.mr-tp::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:middle}
@@ -1387,6 +1388,7 @@ MR_JS = r"""
     x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
     undo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a9 9 0 1 1-2 5.7"/><path d="M3 4v5h5"/></svg>',
     funnel:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.2V19l-4 2v-7.8z"/></svg>',
+    sort:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h11M4 18h6"/></svg>',
     chevd:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
     radar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" opacity=".4"/><path d="M12 12 L12 3 A9 9 0 0 1 19.8 7.5 Z" fill="currentColor" stroke="none" opacity=".55"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>',
     jobs:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7.5" width="18" height="12.5" rx="2.2"/><path d="M8 7.5V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1.5"/><path d="M3 12.5h18"/></svg>',
@@ -1400,7 +1402,7 @@ MR_JS = r"""
   var BD=(window.MR_BD||[]).map(function(l,i){l._id='b'+i;l.opp=+l.opp||0;l.status=l.status||'active';return l;});
   var JOBS=(window.MR_JOBS||[]).map(function(l,i){l._id='j'+i;l.idtype='job';l.status=l.status||'active';return l;});
   var BYID={};BD.concat(JOBS).forEach(function(l){BYID[l._id]=l;});
-  var page='bd',filter='active',open={};
+  var page='bd',filter='active',sort='strength',open={};
   function $(id){return document.getElementById(id);}
   function esc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   function active(){return page==='bd'?BD:JOBS;}
@@ -1411,7 +1413,14 @@ MR_JS = r"""
   function srcl(l){return l.url?'<a class="mr-srcl" href="'+esc(l.url)+'" target="_blank" rel="noopener">'+IC.ext+'<span>View source</span></a>':'';}
   function toast(m){var t=$('mr-toast');if(!t)return;t.innerHTML='<span class="mr-spk">'+IC.spark+'</span> '+esc(m);t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},2400);}
   function match(l){if(filter==='active')return l.status==='active';if(filter==='new')return l.isNew&&l.status==='active';if(filter==='followed_up')return l.status==='followed_up';if(filter==='dismissed')return l.status==='dismissed';return true;}
-  function sortd(a){if(page==='jobs')return a.sort(function(x,y){return (y.isNew-x.isNew)||x.co.localeCompare(y.co);});return a.sort(function(x,y){return y.opp-x.opp;});}
+  function winWeeks(s){s=(''+(s||'')).toLowerCase();var m=s.match(/(\d+)/);if(!m)return 9999;var n=parseInt(m[1],10);return /mo|month/.test(s)?n*4.33:n;}
+  function rowAge(l){return (l.age==null?9999:l.age);}
+  function sortd(a){
+    if(page==='jobs')return a.sort(function(x,y){return (y.isNew-x.isNew)||x.co.localeCompare(y.co);});
+    if(sort==='window')return a.sort(function(x,y){return (winWeeks(x.win)-winWeeks(y.win))||(y.opp-x.opp);});
+    if(sort==='new')return a.sort(function(x,y){return (rowAge(x)-rowAge(y))||(y.isNew-x.isNew)||(y.opp-x.opp);});
+    return a.sort(function(x,y){return y.opp-x.opp;});   // strongest signal (band-first)
+  }
   function stbadge(l){return l.status!=='active'?'<span class="mr-badge-st '+l.status+'">'+(l.status==='followed_up'?'✓ followed up':'dismissed')+'</span>':'';}
   function triBtns(l){if(l.status==='active')
     return '<button class="mr-io icon tfu" data-act="tri" data-id="'+l._id+'" data-st="followed_up" title="Followed up">'+IC.check+'</button><button class="mr-io icon tdis" data-act="tri" data-id="'+l._id+'" data-st="dismissed" title="Dismiss">'+IC.x+'</button>';
@@ -1495,8 +1504,11 @@ MR_JS = r"""
     var pm=$('mr-pgmenu');if(pm){pm.classList.remove('open');var pb=pm.querySelectorAll('[data-act="pg"]');for(var i=0;i<pb.length;i++){pb[i].classList.toggle('on',pb[i].getAttribute('data-pg')===pg);}}
     var fb=document.querySelectorAll('#mr-filtmenu [data-act="filt"]');for(var j=0;j<fb.length;j++){fb[j].classList.toggle('on',fb[j].getAttribute('data-f')==='active');}
     var fm=$('mr-filtmenu');if(fm)fm.classList.remove('open');
+    // The sort options (signal / window) are BD-lead concepts; hide on Jobs.
+    var ss=document.querySelector('.mr-sortsel');if(ss)ss.style.display=(pg==='jobs'?'none':'');
     render();}
   function setFilter(f,btn){filter=f;var fb=document.querySelectorAll('#mr-filtmenu [data-act="filt"]');for(var i=0;i<fb.length;i++){fb[i].classList.toggle('on',fb[i]===btn);}var m=$('mr-filtmenu');if(m)m.classList.remove('open');render();}
+  function setSort(s,btn){sort=s;var sb=document.querySelectorAll('#mr-sortmenu [data-act="sort"]');for(var i=0;i<sb.length;i++){sb[i].classList.toggle('on',sb[i]===btn);}var lbl=$('mr-sortlbl');if(lbl)lbl.textContent=(btn.textContent||'').trim();var m=$('mr-sortmenu');if(m)m.classList.remove('open');render();}
   function triage(id,st){var l=BYID[id];if(!l)return;var prev=l.status;l.status=st;
     var row=document.querySelector('#mr-rows .mr-row[data-id="'+id+'"]');
     var hide=(filter==='active'||filter==='new')&&st!=='active';
@@ -1530,14 +1542,20 @@ MR_JS = r"""
    +'<div class="mr-filtmenu" id="mr-pgmenu">'
    +'<button data-act="pg" data-pg="bd" class="on">BD Leads</button>'
    +'<button data-act="pg" data-pg="jobs">Live Jobs</button></div></div>'
-   +'<span class="mr-spacer"></span>'
    +'<div class="mr-filt"><button class="mr-filtbtn" data-act="filtbtn">'+IC.funnel+'<span class="mr-lbl" id="mr-filtlbl">Active</span><span class="mr-cv">'+IC.chevd+'</span></button>'
    +'<div class="mr-filtmenu" id="mr-filtmenu">'
    +'<button data-act="filt" data-f="active" class="on">Active <span class="mr-mc" id="mr-m-active"></span></button>'
    +'<button data-act="filt" data-f="new">New today <span class="mr-mc" id="mr-m-new"></span></button>'
    +'<button data-act="filt" data-f="followed_up">Followed up <span class="mr-mc" id="mr-m-fu"></span></button>'
    +'<button data-act="filt" data-f="dismissed">Dismissed <span class="mr-mc" id="mr-m-dis"></span></button>'
-   +'<button data-act="filt" data-f="all">All</button></div></div></div>'
+   +'<button data-act="filt" data-f="all">All</button></div></div>'
+   +'<span class="mr-spacer"></span>'
+   +'<div class="mr-filt mr-sortsel"><button class="mr-filtbtn" data-act="sortbtn">'+IC.sort+'<span class="mr-lbl" id="mr-sortlbl">Strongest signal</span><span class="mr-cv">'+IC.chevd+'</span></button>'
+   +'<div class="mr-filtmenu" id="mr-sortmenu">'
+   +'<button data-act="sort" data-s="strength" class="on">Strongest signal</button>'
+   +'<button data-act="sort" data-s="window">Soonest window</button>'
+   +'<button data-act="sort" data-s="new">Newest to oldest</button></div></div>'
+   +'</div>'
    +'<div id="mr-rows"></div>';
   root.addEventListener('click',function(e){
     var a=e.target.closest('[data-act]');if(!a||!root.contains(a))return;
@@ -1551,11 +1569,13 @@ MR_JS = r"""
     if(act==='toggle'){toggle(id);return;}
     if(act==='openjob'){openjob(id);return;}
     if(act==='pg'){e.stopPropagation();setPage(a.getAttribute('data-pg'));return;}
-    if(act==='pgbtn'){e.stopPropagation();var pm=$('mr-pgmenu');if(pm)pm.classList.toggle('open');var fm0=$('mr-filtmenu');if(fm0)fm0.classList.remove('open');return;}
-    if(act==='filtbtn'){e.stopPropagation();var m=$('mr-filtmenu');if(m)m.classList.toggle('open');var pm0=$('mr-pgmenu');if(pm0)pm0.classList.remove('open');return;}
+    if(act==='pgbtn'){e.stopPropagation();var pm=$('mr-pgmenu');if(pm)pm.classList.toggle('open');var fm0=$('mr-filtmenu');if(fm0)fm0.classList.remove('open');var sm0=$('mr-sortmenu');if(sm0)sm0.classList.remove('open');return;}
+    if(act==='filtbtn'){e.stopPropagation();var m=$('mr-filtmenu');if(m)m.classList.toggle('open');var pm0=$('mr-pgmenu');if(pm0)pm0.classList.remove('open');var sm1=$('mr-sortmenu');if(sm1)sm1.classList.remove('open');return;}
+    if(act==='sortbtn'){e.stopPropagation();var sm=$('mr-sortmenu');if(sm)sm.classList.toggle('open');var pm2=$('mr-pgmenu');if(pm2)pm2.classList.remove('open');var fm2=$('mr-filtmenu');if(fm2)fm2.classList.remove('open');return;}
     if(act==='filt'){e.stopPropagation();setFilter(a.getAttribute('data-f'),a);return;}
+    if(act==='sort'){e.stopPropagation();setSort(a.getAttribute('data-s'),a);return;}
   });
-  document.addEventListener('click',function(e){var inside=e.target.closest('.mr-filt');['mr-pgmenu','mr-filtmenu'].forEach(function(mid){var m=$(mid);if(m&&(!inside||!inside.contains(m)))m.classList.remove('open');});});
+  document.addEventListener('click',function(e){var inside=e.target.closest('.mr-filt');['mr-pgmenu','mr-filtmenu','mr-sortmenu'].forEach(function(mid){var m=$(mid);if(m&&(!inside||!inside.contains(m)))m.classList.remove('open');});});
   render();
 })();
 """
@@ -1743,6 +1763,18 @@ def _why_now(trigger_key: str | None, mkt: bool, seat: str | None, window: str |
     return M.get(trigger_key or "") or f"This usually opens a senior {fn} mandate ({seat}) within {w}."
 
 
+def _mr_row_age(first_seen: str | None) -> int:
+    """Days since a BD lead was first presented (for the Newest->Oldest sort).
+    Large number when unknown so undated rows sort last."""
+    try:
+        d = datetime.fromisoformat((first_seen or "").replace("Z", "+00:00"))
+        if d.tzinfo is None:
+            d = d.replace(tzinfo=timezone.utc)
+        return max(0, (datetime.now(timezone.utc) - d).days)
+    except Exception:
+        return 9999
+
+
 def _build_mr_rows(premarket_rows, leads, role_label):
     """Project the live predictor/funding/lead data onto the flat row shape
     the Radar console renders (BD Leads + Live Jobs). Pre-sorted upstream by
@@ -1777,6 +1809,7 @@ def _build_mr_rows(premarket_rows, leads, role_label):
             bd.append({
                 "co": row.get("company") or "—",
                 "isNew": 1 if first_seen.startswith(today) else 0,
+                "age": _mr_row_age(first_seen),
                 "type": "Funding", "key": "fund",
                 "seat": role_label, "why": why,
                 "whyNow": (row.get("lead") or {}).get("why_now")
@@ -1805,6 +1838,7 @@ def _build_mr_rows(premarket_rows, leads, role_label):
             bd.append({
                 "co": row.get("company") or "—",
                 "isNew": 1 if row.get("is_new") else 0,
+                "age": _mr_row_age(row.get("first_seen")),
                 "type": typ, "key": key,
                 "seat": seat, "why": why,
                 "whyNow": (row.get("lead") or {}).get("why_now")
