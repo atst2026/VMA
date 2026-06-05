@@ -142,6 +142,39 @@ def test_extract_logo_urls_prefers_explicit_logo_svg():
     assert "https://geordie.ai/static/apple-touch-icon.png" in out["secondary"]
 
 
+_OQC_HOME = """
+<html><head>
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" href="/favicon.ico">
+</head><body>
+  <header><a href="/" class="brand">
+    <svg class="oqc-mark" viewBox="0 0 100 40"><path d="M0 0h10v10H0z"/></svg>
+  </a></header>
+</body></html>
+"""
+
+
+def test_extract_logo_urls_header_inline_svg_and_apple_touch():
+    # The oqc.tech shape: logo is an inline <svg> in the homepage-link, plus an
+    # apple-touch-icon. No <img> logo, so the icons must carry it.
+    out = lf.extract_logo_urls(_OQC_HOME, "https://oqc.tech")
+    sec = out["secondary"]
+    assert "https://oqc.tech/apple-touch-icon.png" in sec
+    assert any(u.startswith("data:image/svg+xml") for u in sec), "inline header svg captured"
+
+
+def test_find_logo_gets_oqc_logo_from_site_assets(monkeypatch):
+    monkeypatch.setattr(lf, "resolve_domain",
+                        lambda c, hint_url=None: ("oqc.tech", "known"))
+    monkeypatch.setattr(lf, "_fetch_html", lambda url: _OQC_HOME)
+    png = b"\x89PNG\r\n\x1a\n" + b"\x07" * 600
+    # apple-touch-icon returns real bytes; nothing else needed
+    monkeypatch.setattr(lf, "_fetch_image",
+                        lambda url: png if url.endswith("/apple-touch-icon.png") else None)
+    data, src = lf.find_logo("OQC")
+    assert data == png and src == "site:oqc.tech"
+
+
 def test_extract_logo_urls_regex_fallback():
     out = lf._extract_logo_urls_regex(
         '<img class="logo" src="/brand/logo.png">', "https://x.io")
@@ -167,7 +200,7 @@ def test_find_logo_scrapes_site_logo(monkeypatch):
     assert src == "site:geordie.ai"
 
 
-def test_find_logo_falls_back_to_clearbit_then_wordmark(monkeypatch):
+def test_find_logo_falls_back_to_clearbit_then_favicon_then_wordmark(monkeypatch):
     monkeypatch.setattr(lf, "resolve_domain",
                         lambda c, hint_url=None: ("oqc.tech", "known"))
     monkeypatch.setattr(lf, "_fetch_html", lambda url: "<html></html>")  # no logo on page
@@ -177,13 +210,41 @@ def test_find_logo_falls_back_to_clearbit_then_wordmark(monkeypatch):
     data, src = lf.find_logo("OQC")
     assert data == png and src == "clearbit:oqc.tech"
 
-    # and if even clearbit misses, and no encyclopaedia, we get the wordmark
+    # clearbit misses -> the keyless favicon floor still yields a brand mark
     monkeypatch.setattr(lf, "_clearbit", lambda d: None)
     monkeypatch.setattr(lf, "_logodev", lambda d: None)
+    fav = b"\x89PNG\r\n\x1a\n" + b"\x01" * 500
+    monkeypatch.setattr(lf, "_favicon_floor", lambda d: fav)
+    data, src = lf.find_logo("OQC")
+    assert data == fav and src == "favicon:oqc.tech"
+
+    # everything misses (incl. the favicon floor) and no encyclopaedia -> wordmark
+    monkeypatch.setattr(lf, "_favicon_floor", lambda d: None)
     monkeypatch.setattr(lf, "_wikidata_logo", lambda c: (None, ""))
     monkeypatch.setattr(lf, "_wikipedia_logo", lambda c: (None, ""))
-    monkeypatch.setattr(lf, "_google_favicon", lambda d: None)
     assert lf.find_logo("OQC") == (None, "wordmark")
+
+
+def test_find_logo_never_uses_encyclopaedia_for_resolved_domain(monkeypatch):
+    # The Geordie failure mode: a same-named Wikipedia image must NOT be used
+    # when we have the company's real domain. With a domain resolved, the
+    # favicon floor wins and the (stubbed) encyclopaedia is never consulted.
+    monkeypatch.setattr(lf, "resolve_domain",
+                        lambda c, hint_url=None: ("geordie.ai", "known"))
+    monkeypatch.setattr(lf, "_site_logo_candidates", lambda d: [])
+    monkeypatch.setattr(lf, "_clearbit", lambda d: None)
+    monkeypatch.setattr(lf, "_logodev", lambda d: None)
+    fav = b"\x89PNG\r\n\x1a\n" + b"\x02" * 500
+    monkeypatch.setattr(lf, "_favicon_floor", lambda d: fav)
+    wrong = b"\x89PNG\r\n\x1a\n" + b"\xff" * 500   # a same-named Wikipedia image
+
+    def _boom(c):
+        raise AssertionError("encyclopaedia must not be consulted for a resolved domain")
+    monkeypatch.setattr(lf, "_wikidata_logo", _boom)
+    monkeypatch.setattr(lf, "_wikipedia_logo", _boom)
+    data, src = lf.find_logo("Geordie AI")
+    assert data == fav and src == "favicon:geordie.ai"
+    assert data != wrong
 
 
 def test_resolve_domain_uses_known_map_for_reported_cases():

@@ -456,19 +456,45 @@ def _wikipedia_logo(company: str) -> tuple[bytes | None, str]:
 # ======================================================================
 # Homepage logo scraping
 # ======================================================================
+def _rel(link) -> str:
+    rel = link.get("rel")
+    if isinstance(rel, (list, tuple)):
+        return " ".join(rel).lower()
+    return str(rel or "").lower()
+
+
+def _sz(link) -> int:
+    m = re.match(r"(\d+)", link.get("sizes") or "")
+    return int(m.group(1)) if m else 0
+
+
+def _img_src(img):
+    return (img.get("src") or img.get("data-src") or img.get("data-lazy-src")
+            or img.get("data-original") or img.get("data-image"))
+
+
 def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
-    """Parse a homepage for logo image URLs. Returns {'primary': [...],
-    'secondary': [...]} where 'primary' is explicit brand logos (an element
-    that says "logo", or an SVG/mask favicon) and 'secondary' is acceptable
-    fallback marks (apple-touch-icon, sized favicons). Pure — unit-tested."""
+    """Parse a homepage for logo image URLs, ordered best-first. Returns
+    {'primary': [...], 'secondary': [...]}:
+
+      primary   — the actual brand logo: an element that says "logo", the
+                  <img>/<svg> inside the homepage link or header/nav, or a
+                  mask/SVG favicon.
+      secondary — acceptable square brand marks: apple-touch-icon, an inline
+                  header SVG serialised to a data URI, then sized favicons.
+
+    Modern startup sites (e.g. oqc.tech, geordie.ai) put the logo in the header
+    link as an <img> or inline <svg> and ship an apple-touch-icon, so all of
+    those are covered. Pure — unit-tested against fixtures."""
     primary: list[str] = []
     secondary: list[str] = []
 
     def add(lst, href):
         if not href:
             return
-        u = href if href.startswith("data:") else urljoin(base_url, href.strip())
-        if u and u not in lst:
+        href = href.strip()
+        u = href if href.startswith("data:") else urljoin(base_url, href)
+        if u and u not in primary and u not in secondary:
             lst.append(u)
 
     try:
@@ -480,59 +506,89 @@ def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
     except Exception:
         return _extract_logo_urls_regex(html, base_url)
 
+    root = urlparse(base_url).netloc.lower()
+
+    def is_root_anchor(a) -> bool:
+        href = (a.get("href") or "").strip()
+        if href in ("/", "#", "/#", "./"):
+            return True
+        if not href or href.startswith(("mailto:", "tel:", "javascript:")):
+            return False
+        try:
+            p = urlparse(urljoin(base_url, href))
+            return p.netloc.lower() == root and p.path in ("", "/")
+        except Exception:
+            return False
+
     # 1. <img> elements that identify themselves as a logo (SVG first).
-    logo_imgs_svg, logo_imgs_other = [], []
+    svg_logo, other_logo = [], []
     for img in soup.find_all("img"):
         attrs = " ".join(str(img.get(k, "")) for k in
                          ("class", "id", "alt", "src", "data-src", "title")).lower()
         if "logo" in attrs:
-            src = img.get("src") or img.get("data-src") or img.get("data-lazy-src")
-            if not src:
-                continue
-            (logo_imgs_svg if ".svg" in src.lower() else logo_imgs_other).append(src)
-    for s in logo_imgs_svg + logo_imgs_other:
+            s = _img_src(img)
+            if s:
+                (svg_logo if ".svg" in s.lower() else other_logo).append(s)
+    for s in svg_logo + other_logo:
         add(primary, s)
 
-    # 2. inline <svg> with a logo-ish class/aria-label -> serialise to a data
-    #    candidate so it can be embedded directly.
-    for svg in soup.find_all("svg"):
-        blob = " ".join(str(svg.get(k, "")) for k in
-                        ("class", "id", "aria-label", "role")).lower()
-        if "logo" in blob:
-            try:
-                raw = str(svg)
-                if "xmlns" not in raw:
-                    raw = raw.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"', 1)
-                add(primary, "data:image/svg+xml;utf8," + quote(raw))
-            except Exception:
-                pass
-            break
+    # 2. <img> inside the homepage link (<a href="/">) — almost always the logo.
+    for a in soup.find_all("a"):
+        if is_root_anchor(a):
+            for img in a.find_all("img"):
+                add(primary, _img_src(img))
 
-    # 3. link rels: SVG/mask icons are usually the brand mark; apple-touch and
-    #    sized icons are decent fallbacks.
-    sized_icons: list[tuple[int, str]] = []
+    # 3. first <img> inside header / nav / a top-bar.
+    for sel in ("header img", "nav img", "[class*=header] img",
+                "[class*=navbar] img", "[class*=Header] img"):
+        for img in soup.select(sel)[:3]:
+            add(primary, _img_src(img))
+
+    # 4. mask-icon / SVG favicon files (monochrome brand mark).
     for link in soup.find_all("link"):
-        rel = " ".join(link.get("rel") or []).lower() if link.get("rel") else \
-            str(link.get("rel", "")).lower()
-        href = link.get("href")
+        rel, href = _rel(link), link.get("href")
         if not href:
             continue
         typ = (link.get("type") or "").lower()
-        if "mask-icon" in rel or "svg" in typ or href.lower().endswith(".svg"):
+        base = href.lower().split("?")[0]
+        if "mask-icon" in rel or ("icon" in rel and ("svg" in typ or base.endswith(".svg"))):
             add(primary, href)
-        elif "apple-touch-icon" in rel:
-            add(secondary, href)
-        elif "icon" in rel:
-            sz = link.get("sizes") or ""
-            m = re.match(r"(\d+)", sz)
-            sized_icons.append((int(m.group(1)) if m else 0, href))
-    for _, href in sorted(sized_icons, key=lambda t: -t[0]):
+
+    # 5. apple-touch-icon (largest) — a reliable, self-contained square mark.
+    apple = [(_sz(l), l.get("href")) for l in soup.find_all("link")
+             if l.get("href") and "apple-touch-icon" in _rel(l)]
+    for _, href in sorted(apple, key=lambda t: -t[0]):
         add(secondary, href)
 
-    # 4. first <img> inside header/nav, as a structural fallback.
-    for sel in ("header img", "nav img", "[class*=header] img", "[class*=nav] img"):
-        for img in soup.select(sel)[:2]:
-            add(secondary, img.get("src") or img.get("data-src"))
+    # 6. inline <svg> that is (or sits inside) the homepage link / header — the
+    #    logo on script-built sites. Serialised to a data URI for embedding.
+    svgs = []
+    for a in soup.find_all("a"):
+        if is_root_anchor(a):
+            svgs += a.find_all("svg")
+    svgs += soup.select("header svg, nav svg")
+    for svg in svgs[:3]:
+        blob = " ".join(str(svg.get(k, "")) for k in
+                        ("class", "id", "aria-label", "role")).lower()
+        try:
+            raw = str(svg)
+        except Exception:
+            continue
+        if "</svg>" not in raw:
+            continue
+        # take it if it looks logo-ish OR it's the header/anchor svg (most are)
+        if "icon" in blob and "logo" not in blob:
+            continue
+        if "xmlns" not in raw[:120]:
+            raw = raw.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"', 1)
+        add(secondary, "data:image/svg+xml;utf8," + quote(raw))
+
+    # 7. sized <link rel=icon> (largest first).
+    icons = [(_sz(l), l.get("href")) for l in soup.find_all("link")
+             if l.get("href") and "icon" in _rel(l)
+             and "apple" not in _rel(l) and "mask" not in _rel(l)]
+    for _, href in sorted(icons, key=lambda t: -t[0]):
+        add(secondary, href)
 
     return {"primary": primary, "secondary": secondary}
 
@@ -595,6 +651,28 @@ def _google_favicon(domain: str) -> bytes | None:
     return None
 
 
+def _favicon_floor(domain: str) -> bytes | None:
+    """Keyless favicon services — a guaranteed real brand mark for ANY live
+    domain (used as the floor before giving up to a wordmark). Google's service
+    upsizes to 256px; DuckDuckGo's is a clean fallback."""
+    for fn in (_google_favicon, _duckduckgo_favicon):
+        try:
+            b = fn(domain)
+        except Exception:
+            b = None
+        if b:
+            return b
+    return None
+
+
+def _duckduckgo_favicon(domain: str) -> bytes | None:
+    r = _http_get(f"https://icons.duckduckgo.com/ip3/{domain}.ico", want_bytes=True)
+    if r is not None and r.status_code == 200 and \
+            valid_logo(r.content, r.headers.get("content-type", "")):
+        return r.content
+    return None
+
+
 # ======================================================================
 # Domain resolution + top-level entry point
 # ======================================================================
@@ -640,45 +718,50 @@ def resolve_domain(company: str, hint_url: str | None = None
     return None, ""
 
 
-def _logo_from_site(domain: str, company: str
-                    ) -> tuple[bytes | None, str, dict]:
-    """Scrape the homepage for an explicit logo; return (bytes, source,
-    icon_candidates) so the caller can reuse the parsed fallback icons."""
+def _short(u: str) -> str:
+    return (u[:70] + "…") if len(u) > 71 else u
+
+
+def _site_logo_candidates(domain: str) -> list[str]:
+    """All logo/icon URLs scraped from the homepage, ordered best-first
+    (header logo -> apple-touch-icon -> inline svg -> favicons)."""
     html = _fetch_html("https://" + domain) or _fetch_html("http://" + domain)
-    cands = {"primary": [], "secondary": []}
-    if html:
-        try:
-            cands = extract_logo_urls(html, "https://" + domain)
-        except Exception as e:
-            log.info("logo scrape parse failed for %s: %s", domain, e)
-    for u in cands.get("primary", [])[:6]:
-        img = _fetch_image(u)
-        if img:
-            return img, f"site:{domain}", cands
-    return None, "", cands
+    if not html:
+        return []
+    try:
+        c = extract_logo_urls(html, "https://" + domain)
+    except Exception as e:
+        log.info("logo scrape parse failed for %s: %s", domain, e)
+        return []
+    return c.get("primary", []) + c.get("secondary", [])
 
 
 def find_logo(company: str, hint_url: str | None = None
               ) -> tuple[bytes | None, str]:
     """Resolve the company's real logo. Returns (image_bytes_or_None, source).
+
+    Once the official domain is known, EVERY logo/icon the site itself ships is
+    tried (header logo, apple-touch-icon, favicon) plus a keyless favicon floor,
+    BEFORE any name-based encyclopaedia lookup. That guarantees a real brand
+    mark for a resolved domain and removes the failure modes seen on the BD
+    radar: a wrong, same-named Wikipedia image, or no logo at all.
+
     Never raises — the caller falls back to a typographic wordmark."""
     company = (company or "").strip()
     if not company:
         return None, "wordmark"
 
     domain, how = resolve_domain(company, hint_url)
-    icon_cands: dict[str, list[str]] = {"primary": [], "secondary": []}
 
-    # 1. the company's own website (best for startups + most companies)
     if domain:
-        try:
-            img, src, icon_cands = _logo_from_site(domain, company)
+        # 1. the company's own website assets, best-first.
+        for u in _site_logo_candidates(domain)[:12]:
+            img = _fetch_image(u)
             if img:
-                log.info("logo for %r via %s (domain %s, %d bytes)",
-                         company, src, how, len(img))
-                return img, src
-        except Exception as e:
-            log.info("site logo failed for %s: %s", domain, e)
+                log.info("logo for %r via site %s (%s, %d bytes)",
+                         company, domain, _short(u), len(img))
+                return img, f"site:{domain}"
+        # 2. domain-keyed logo services.
         for fn, name in ((_clearbit, "clearbit"), (_logodev, "logodev")):
             try:
                 img = fn(domain)
@@ -687,8 +770,14 @@ def find_logo(company: str, hint_url: str | None = None
             if img:
                 log.info("logo for %r via %s:%s", company, name, domain)
                 return img, f"{name}:{domain}"
+        # 3. keyless favicon floor — a real brand mark for any live domain.
+        img = _favicon_floor(domain)
+        if img:
+            log.info("logo for %r via favicon:%s", company, domain)
+            return img, f"favicon:{domain}"
 
-    # 2. authoritative encyclopaedia logo (established companies)
+    # 4. encyclopaedia logo — only when no usable domain resolved (so we never
+    #    risk a same-named entity's image for a company we DID place).
     for fn, name in ((_wikidata_logo, "wikidata"), (_wikipedia_logo, "wikipedia")):
         try:
             img, src = fn(company)
@@ -698,31 +787,17 @@ def find_logo(company: str, hint_url: str | None = None
             log.info("logo for %r via %s (%d bytes)", company, src, len(img))
             return img, src
 
-    # 3. acceptable site icons (apple-touch-icon / favicon), then a hi-res
-    #    favicon service as the last brand mark before a wordmark.
-    if domain:
-        for u in icon_cands.get("secondary", [])[:4]:
-            img = _fetch_image(u)
-            if img:
-                log.info("logo for %r via icon %s", company, domain)
-                return img, f"icon:{domain}"
-        try:
-            img = _google_favicon(domain)
-        except Exception:
-            img = None
-        if img:
-            return img, f"favicon:{domain}"
-
-    # 4. no domain resolved at all -> try Clearbit on guessed candidates
+    # 5. no domain at all -> Clearbit / favicon on guessed candidates.
     if not domain:
         for d in domain_candidates(company)[:5]:
-            try:
-                img = _clearbit(d)
-            except Exception:
-                img = None
-            if img:
-                log.info("logo for %r via clearbit:%s (guessed)", company, d)
-                return img, f"clearbit:{d}"
+            for fn, name in ((_clearbit, "clearbit"), (_favicon_floor, "favicon")):
+                try:
+                    img = fn(d)
+                except Exception:
+                    img = None
+                if img:
+                    log.info("logo for %r via %s:%s (guessed)", company, name, d)
+                    return img, f"{name}:{d}"
 
     log.info("no logo resolved for %r — wordmark fallback", company)
     return None, "wordmark"
