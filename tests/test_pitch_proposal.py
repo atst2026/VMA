@@ -67,18 +67,8 @@ def test_generation_date_has_no_time():
     assert ":" not in s and "14" not in s
 
 
-# ---- domain candidates / logo resolution ------------------------------
-
-def test_domain_candidates_known_and_guessed():
-    from tool.pitch_proposal import _domain_candidates
-    assert "belron.com" in _domain_candidates("Belron")
-    assert "diageo.com" in _domain_candidates("Diageo")
-    # generic guess for an unknown name (suffixes stripped, .com + .co.uk)
-    cands = _domain_candidates("Acme Holdings Ltd")
-    assert "acme.com" in cands and "acme.co.uk" in cands
-
-
 # ---- end-to-end render invariants -------------------------------------
+# (Logo-resolution internals are covered in tests/test_logo_finder.py.)
 
 def test_company_replaces_belron_everywhere():
     from tool import pitch_proposal as pp
@@ -133,49 +123,13 @@ def test_supplied_logo_is_embedded():
     assert _page_count(pdf) == 8
 
 
-def test_valid_logo_rejects_junk_accepts_png():
-    from tool.pitch_proposal import _valid_logo
-    assert not _valid_logo(b"", "image/png")
-    assert not _valid_logo(b"<html>404</html>", "text/html")
-    # too-small RASTER payload rejected even if it claims to be an image
-    assert not _valid_logo(b"x" * 100, "image/png")
-
-
-def test_valid_logo_accepts_svg_by_structure():
-    from tool.pitch_proposal import _valid_logo
-    svg = (b'<svg xmlns="http://www.w3.org/2000/svg" width="200" height="80">'
-           b'<rect width="200" height="80"/></svg>')
-    assert _valid_logo(svg, "image/svg+xml")
-    assert _valid_logo(svg, "")                 # sniffed even without a content-type
-    assert not _valid_logo(b"<svg> no closing tag", "image/svg+xml")
-
-
-def test_img_data_uri_sniffs_mime():
-    import base64
-    from tool.pitch_proposal import _img_data_uri
-    png = base64.b64decode(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=")
-    assert _img_data_uri(png).startswith("data:image/png;base64,")
-    assert _img_data_uri(b"\xff\xd8\xff\xe0junk").startswith("data:image/jpeg;base64,")
-    assert _img_data_uri(b"<svg></svg>").startswith("data:image/svg+xml;base64,")
-
-
-def test_logo_providers_are_ordered_authoritative_first():
-    # Official-logo sources (Wikidata P154, Wikipedia infobox) lead, so the
-    # cover gets the real brand mark, not a domain-service guess or a wordmark.
+def test_company_logo_delegates_to_finder():
+    # pitch_proposal.company_logo is logo_finder.find_logo; an empty name
+    # resolves to the wordmark sentinel with no network calls.
     from tool import pitch_proposal as pp
-    names = [p.__name__ for p in pp._LOGO_PROVIDERS]
-    assert names[0] == "_logo_from_wikidata"
-    assert names.index("_logo_from_wikidata") < names.index("_logo_from_clearbit")
-    assert "_logo_from_wikipedia" in names and "_logo_from_favicon" in names
-
-
-def test_company_logo_falls_back_to_wordmark_offline():
-    # No network in the test env -> every provider misses and we get the
-    # wordmark sentinel rather than an exception.
-    from tool import pitch_proposal as pp
-    data, src = pp.company_logo("Equinor")
-    assert data is None and src == "wordmark"
+    from tool import logo_finder
+    assert pp.company_logo is logo_finder.find_logo
+    assert pp.company_logo("") == (None, "wordmark")
 
 
 # ---- profile routing ---------------------------------------------------
