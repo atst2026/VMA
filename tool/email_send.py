@@ -20,10 +20,12 @@ Dispatches based on which env vars are configured:
 If both are set, Resend wins. If neither is set, we write a clear error.
 """
 from __future__ import annotations
+import base64
 import json
 import logging
 import os
 import smtplib
+from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -35,17 +37,22 @@ log = logging.getLogger("brief.email")
 
 
 def send(to: str, subject: str, html: str, text: str | None = None,
-         bcc: list[str] | None = None) -> dict:
+         bcc: list[str] | None = None,
+         attachments: list[tuple[str, bytes, str]] | None = None) -> dict:
     """Return {ok: bool, detail: ..., provider: 'resend'|'gmail'|'none'}.
 
     `bcc` is an optional list of additional addresses to silently copy.
     Used in send mode so Amir's hotmail confirms whether the email left
     the system — when Sara's spam filter eats a pack we can tell the
-    difference between "didn't send" and "sent but trapped"."""
+    difference between "didn't send" and "sent but trapped".
+
+    `attachments` is an optional list of (filename, raw_bytes, mimetype)
+    tuples — used to attach the comms pitch-pack PDF. Both providers
+    support it; omit it (the default) for a plain HTML/text email."""
     if RESEND_API_KEY:
-        return _send_resend(to, subject, html, text, bcc=bcc)
+        return _send_resend(to, subject, html, text, bcc=bcc, attachments=attachments)
     if os.environ.get("GMAIL_APP_PASSWORD") and os.environ.get("GMAIL_USER"):
-        return _send_gmail(to, subject, html, text, bcc=bcc)
+        return _send_gmail(to, subject, html, text, bcc=bcc, attachments=attachments)
     return {
         "ok": False,
         "provider": "none",
@@ -57,9 +64,10 @@ def send(to: str, subject: str, html: str, text: str | None = None,
 
 
 def _send_resend(to: str, subject: str, html: str, text: str | None,
-                 bcc: list[str] | None = None) -> dict:
-    log.info("Resend: from=%r to=%r bcc=%r subject=%r",
-             RESEND_FROM, to, bcc, subject)
+                 bcc: list[str] | None = None,
+                 attachments: list[tuple[str, bytes, str]] | None = None) -> dict:
+    log.info("Resend: from=%r to=%r bcc=%r subject=%r attachments=%d",
+             RESEND_FROM, to, bcc, subject, len(attachments or []))
     payload = {
         "from": RESEND_FROM,
         "to": [to],
@@ -70,6 +78,13 @@ def _send_resend(to: str, subject: str, html: str, text: str | None,
         payload["bcc"] = list(bcc)
     if text:
         payload["text"] = text
+    if attachments:
+        payload["attachments"] = [
+            {"filename": fn,
+             "content": base64.b64encode(raw).decode("ascii"),
+             "content_type": mime}
+            for (fn, raw, mime) in attachments
+        ]
     try:
         r = requests.post(
             "https://api.resend.com/emails",
@@ -88,7 +103,8 @@ def _send_resend(to: str, subject: str, html: str, text: str | None,
 
 
 def _send_gmail(to: str, subject: str, html: str, text: str | None,
-                bcc: list[str] | None = None) -> dict:
+                bcc: list[str] | None = None,
+                attachments: list[tuple[str, bytes, str]] | None = None) -> dict:
     gmail_user = os.environ["GMAIL_USER"].strip()
     gmail_pw = os.environ["GMAIL_APP_PASSWORD"].replace(" ", "").strip()
     from tool.profiles import active_profile
@@ -97,7 +113,25 @@ def _send_gmail(to: str, subject: str, html: str, text: str | None,
     display_name = os.environ.get("GMAIL_FROM_NAME", _default_name)
     from_header = f"{display_name} <{gmail_user}>"
 
-    msg = MIMEMultipart("alternative")
+    # With attachments the message must be multipart/mixed, with the text/html
+    # bodies grouped in an alternative subpart; without, a plain alternative
+    # message (unchanged from before).
+    body = MIMEMultipart("alternative")
+    if text:
+        body.attach(MIMEText(text, "plain"))
+    body.attach(MIMEText(html, "html"))
+
+    if attachments:
+        msg = MIMEMultipart("mixed")
+        msg.attach(body)
+        for (fn, raw, mime) in attachments:
+            maintype, _, subtype = mime.partition("/")
+            part = MIMEApplication(raw, _subtype=subtype or "octet-stream")
+            part.add_header("Content-Disposition", "attachment", filename=fn)
+            msg.attach(part)
+    else:
+        msg = body
+
     msg["Subject"] = subject
     msg["From"] = from_header
     msg["To"] = to
@@ -105,10 +139,6 @@ def _send_gmail(to: str, subject: str, html: str, text: str | None,
     # see the bcc list), but the address IS included in the sendmail
     # destination list per RFC 5321 / smtplib.
     recipients = [to] + list(bcc or [])
-
-    if text:
-        msg.attach(MIMEText(text, "plain"))
-    msg.attach(MIMEText(html, "html"))
 
     try:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=30) as s:

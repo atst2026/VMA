@@ -367,8 +367,8 @@ def _find_output_artifact(name: str, since_iso: str) -> dict | None:
         return None
 
 
-def _artifact_html(artifact_id: int) -> str | None:
-    """Download an artifact zip by id and return its first .html file."""
+def _artifact_zip(artifact_id: int) -> bytes | None:
+    """Download an artifact zip by id; None on any failure."""
     if not GITHUB_TOKEN:
         return None
     url = (f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}"
@@ -377,13 +377,41 @@ def _artifact_html(artifact_id: int) -> str | None:
         r = requests.get(url, headers=_github_headers(), timeout=40)
         if r.status_code != 200 or not r.content:
             return None
-        with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
+        return r.content
+    except requests.RequestException:
+        return None
+
+
+def _artifact_html(artifact_id: int) -> str | None:
+    """The first .html file inside an artifact zip (HTML reports)."""
+    content = _artifact_zip(artifact_id)
+    if not content:
+        return None
+    try:
+        with zipfile.ZipFile(io.BytesIO(content)) as zf:
             html_members = sorted(
                 m for m in zf.namelist() if m.lower().endswith(".html"))
             if not html_members:
                 return None
             return zf.read(html_members[0]).decode("utf-8", "replace")
-    except (requests.RequestException, zipfile.BadZipFile):
+    except zipfile.BadZipFile:
+        return None
+
+
+def _artifact_pdf(artifact_id: int) -> bytes | None:
+    """The first .pdf file inside an artifact zip (the comms pitch pack is a
+    branded PDF rather than HTML)."""
+    content = _artifact_zip(artifact_id)
+    if not content:
+        return None
+    try:
+        with zipfile.ZipFile(io.BytesIO(content)) as zf:
+            pdf_members = sorted(
+                m for m in zf.namelist() if m.lower().endswith(".pdf"))
+            if not pdf_members:
+                return None
+            return zf.read(pdf_members[0])
+    except zipfile.BadZipFile:
         return None
 
 
@@ -2279,6 +2307,14 @@ def api_output_view():
     if not artifact_id:
         return Response("Invalid artifact id.", status=400,
                         mimetype="text/plain")
+    art = (request.args.get("artifact") or "report").strip()
+    # The comms pitch pack ships as a branded PDF; serve it directly (inline,
+    # so the browser tab renders it). Everything else is HTML.
+    pdf = _artifact_pdf(artifact_id)
+    if pdf is not None:
+        disp = "attachment" if request.args.get("download") else "inline"
+        return Response(pdf, mimetype="application/pdf", headers={
+            "Content-Disposition": f'{disp}; filename="{art}_{artifact_id}.pdf"'})
     html = _artifact_html(artifact_id)
     if html is None:
         return Response(
@@ -2287,7 +2323,6 @@ def api_output_view():
             status=404, mimetype="text/plain")
     skinned = _skin_report_html(html)
     if request.args.get("download"):
-        art = (request.args.get("artifact") or "report").strip()
         fname = f"{art}_{artifact_id}.html"
         return Response(skinned, mimetype="text/html", headers={
             "Content-Disposition": f'attachment; filename="{fname}"'})
