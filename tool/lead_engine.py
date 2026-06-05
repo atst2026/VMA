@@ -124,25 +124,68 @@ _FIT_HIGH = 7            # 0-10 threshold for "High FIT"
 # Spend Survey. PPI > 50 = expansion, < 50 = contraction. UPDATE MONTHLY.
 # --------------------------------------------------------------------------
 MARKET_STATE = {
-    "ppi": 44.3,                    # KPMG/REC Permanent Placements Index, Dec 2025
-    "marketing_budget_balance": 7.3,  # IPA Bellwether Q1 2026 net balance, %
     "as_of": "2025-12",
     "source": "KPMG/REC Report on Jobs; IPA Bellwether; Gartner CMO Spend",
+    # The UK-overall Permanent Placements Index (KPMG/REC, Dec 2025) is the
+    # default; but the report says SECTOR divergence matters more than
+    # live-ness, so a funded tech / life-sciences scale-up must not carry the
+    # same cold-market penalty as cyclical retail. A handful of hand-set,
+    # monthly-updatable per-sector reads (PPI > 50 = expansion, < 50 =
+    # contraction) keyed to tool.peers.detect_sector buckets.
+    "default_ppi": 44.3,
+    "marketing_budget_balance": 7.3,   # IPA Bellwether Q1 2026 net balance, %
+    "sectors": {
+        "technology": 52.0,
+        "pharma_healthcare": 51.0,
+        "financial_services": 47.0,
+        "media_telecoms": 46.0,
+        "professional_services": 46.0,
+        "energy_utilities": 45.0,
+        "industrial_manufacturing": 44.0,
+        "transport_logistics": 44.0,
+        "real_estate": 43.0,
+        "public_sector_charities": 43.0,
+        "retail_consumer": 41.0,
+    },
 }
 
 
-def _market_state(sector: str | None = None) -> dict:
-    """Resolve the macro modifier (sector segmentation is a later upgrade).
-    Returns state, the stacking bar a STRONG lead must clear, and a one-line
-    human read for the dossier."""
-    ppi = MARKET_STATE.get("ppi", 50.0)
+def _market_sector(company: str | None) -> str | None:
+    """Classify a company into a MARKET_STATE sector bucket: the peers
+    detector first, then a light keyword fallback for funded scale-ups that
+    are not in the curated peer lists (quantum / bio / software, etc.)."""
+    try:
+        from tool.peers import detect_sector
+        s = detect_sector(company)
+        if s:
+            return s
+    except Exception:
+        pass
+    n = (company or "").lower()
+    if re.search(r"quantum|software|cyber|fintech|robotics|semiconductor|"
+                 r"\bai\b|\bdata\b|technolog|digital|\blabs?\b|systems", n):
+        return "technology"
+    if re.search(r"bio|biosci|therapeut|pharma|genom|sciences|health|medic|clinic", n):
+        return "pharma_healthcare"
+    return None
+
+
+def _market_state(company: str | None = None) -> dict:
+    """Resolve the macro modifier for this company's sector (falling back to
+    the UK-overall read). Returns state, the stacking bar a STRONG lead must
+    clear, the sector, and a one-line human read for the dossier."""
+    sector = _market_sector(company)
+    ppi = MARKET_STATE["sectors"].get(sector, MARKET_STATE["default_ppi"])
     if ppi >= 52:
-        return {"state": "expanding", "stack_req": 2,
-                "note": "the hiring market is expanding"}
-    if ppi <= 48:
-        return {"state": "contracting", "stack_req": 3,
-                "note": "the hiring market is contracting, so lone triggers are often absorbed in-house"}
-    return {"state": "flat", "stack_req": 2, "note": "the hiring market is flat"}
+        state, req = "expanding", 2
+    elif ppi <= 48:
+        state, req = "contracting", 3
+    else:
+        state, req = "flat", 2
+    note = {"expanding": "the hiring market in this sector is expanding",
+            "flat": "the hiring market is flat",
+            "contracting": "the hiring market is contracting, so lone triggers are often absorbed in-house"}[state]
+    return {"state": state, "stack_req": req, "note": note, "sector": sector, "ppi": ppi}
 
 
 # Layer 4 — FINANCIAL DIRECTION. Growth funds an external build; contraction
@@ -667,7 +710,7 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
         multi_event = len(live_keys) >= 2
         fin = _financial_direction(events, live)
         posture = _posture(item, live, anti_flags)
-        mkt = _market_state()
+        mkt = _market_state(company)
 
         # EXTRA same-direction layers on top of the base trigger. These are the
         # independent corroborations the report calls "signal stacking across

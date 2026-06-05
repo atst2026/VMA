@@ -74,11 +74,12 @@ def save_pipeline(pipeline: dict) -> None:
     PIPELINE_FILE.write_text(json.dumps(pipeline, indent=2, default=str))
 
 
-def _predicted_role_for(stk: Stack) -> str:
+def _predicted_role_for(stk: Stack, desk: str | None = None) -> str:
     """Map the stack's strongest trigger to the senior role most likely
     being hired. Profile-aware: comms desk -> comms seats, marketing desk
-    -> marketing seats. Resolved per call (not import) so it's correct in
-    the single dashboard process and in each desk's brief."""
+    -> marketing seats. ``desk`` overrides the active profile (used to resolve
+    the seat at RENDER time for the desk being viewed). Resolved per call (not
+    import) so it's correct in the single dashboard process and each brief."""
     keys = {e.trigger_key for e in stk.events}
     # Order = priority; first match wins
     comms_map = [
@@ -127,17 +128,38 @@ def _predicted_role_for(stk: Stack) -> str:
         ("personal_brand_velocity","Head of Marketing (succession watch)"),
         ("job_ad_cluster",         "Head of Marketing"),
     ]
-    try:
-        from tool.profiles import active_profile
-        is_marketing = active_profile().key == "marketing"
-    except Exception:
-        is_marketing = False
+    if desk is None:
+        try:
+            from tool.profiles import active_profile
+            is_marketing = active_profile().key == "marketing"
+        except Exception:
+            is_marketing = False
+    else:
+        is_marketing = (desk or "").lower() == "marketing"
     role_map = marketing_map if is_marketing else comms_map
     default = "Senior Marketing hire" if is_marketing else "Senior Comms hire"
     for key, role in role_map:
         if key in keys:
             return role
     return default
+
+
+def role_for_trigger_keys(keys, desk: str | None = None) -> str:
+    """Desk-aware seat for a set of trigger keys, resolvable at RENDER time so
+    the displayed seat is always correct for the desk being viewed (a seat is
+    stored at brief-time and can otherwise show a stale, wrong-desk role, e.g.
+    a comms seat on the Marketing Radar)."""
+    class _E:
+        __slots__ = ("trigger_key",)
+
+        def __init__(self, k):
+            self.trigger_key = k
+
+    class _S:
+        pass
+    s = _S()
+    s.events = [_E(k) for k in (keys or [])]
+    return _predicted_role_for(s, desk=desk)
 
 
 def _imminence_mult(window_weeks: tuple | None) -> float:
