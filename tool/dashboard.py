@@ -4739,6 +4739,80 @@ TEMPLATE = r"""
     .bd-modal .mb .panel .panel-header { display: none; }
     .bd-modal .mb .panel .panel-body { max-height: none; overflow: visible; }
 
+    /* ===== BD-Calendar pop-up bodies — window tiles + monthly calendar.
+       Only the CONTENTS of the Placement-Windows and Events pop-ups; the
+       landing cards, the modal chrome and the framework filter pills are
+       untouched. Everything stays minimal until a tile/event is clicked. ===== */
+    .bdc-leg { display: flex; flex-wrap: wrap; gap: 14px; margin: 2px 16px 14px; font-size: 12px; color: var(--muted); }
+    .bdc-leg span { display: inline-flex; align-items: center; gap: 7px; }
+    .bdc-leg i { width: 11px; height: 11px; border-radius: 4px; display: inline-block; }
+    /* placement windows: rounded-square tiles */
+    .bdc-pt { display: grid; grid-template-columns: repeat(auto-fill, minmax(122px, 1fr)); gap: 11px; padding: 0 16px; }
+    .bdc-pw { aspect-ratio: 1/1; border: 1px solid var(--border); border-radius: 15px; background: #fff; cursor: pointer;
+      padding: 13px; display: flex; flex-direction: column; text-align: left; box-shadow: var(--shadow-sm); font: inherit;
+      transition: transform .14s, box-shadow .14s, border-color .14s; }
+    .bdc-pw:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--border-hi); }
+    .bdc-pw.sel { border-color: var(--cc); box-shadow: 0 0 0 2px var(--cc) inset; }
+    .bdc-pw-top { display: flex; align-items: center; justify-content: space-between; }
+    .bdc-pw-dot { width: 11px; height: 11px; border-radius: 4px; background: var(--cc); }
+    .bdc-pw-days { font-size: 11px; color: var(--muted); font-weight: 650; }
+    .bdc-pw-nm { margin-top: auto; font-size: 12.5px; font-weight: 600; line-height: 1.3; color: var(--ink); letter-spacing: -.01em; }
+    .bdc-pw-open { font-size: 11px; color: var(--dim); margin-top: 6px; }
+    /* shared expand-detail (windows) */
+    .bdc-pwd { margin: 14px 16px 4px; border: 1px solid var(--border); border-radius: 16px; background: var(--bg);
+      overflow: hidden; max-height: 0; opacity: 0; transition: max-height .3s ease, opacity .3s ease; }
+    .bdc-pwd.show { max-height: 1600px; opacity: 1; }
+    .bdc-pwd-in { padding: 18px 20px; }
+    .bdc-pwd-h { display: flex; align-items: flex-start; gap: 12px; }
+    .bdc-pwd-tag { flex: none; font-size: 11px; font-weight: 700; letter-spacing: .03em; color: #fff; background: var(--cc);
+      border-radius: 8px; padding: 4px 9px; margin-top: 2px; white-space: nowrap; }
+    .bdc-pwd-t { font-size: 16px; font-weight: 650; letter-spacing: -.01em; }
+    .bdc-pwd-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .bdc-angle { font-size: 13px; line-height: 1.55; margin: 14px 0 2px; color: var(--ink-2); }
+    .bdc-kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 14px; }
+    .bdc-k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--dim); font-weight: 650; }
+    .bdc-v { font-size: 12.5px; margin-top: 3px; color: var(--ink); }
+    .bdc-v.seat { font-weight: 600; }
+    .bdc-tgts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+    .bdc-tgt { font-size: 11.5px; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 3px 9px; color: var(--muted); }
+    .bdc-basis { margin-top: 14px; font-size: 11.5px; color: var(--dim); line-height: 1.5; }
+    .bdc-basis a { color: var(--blue-deep); font-weight: 600; text-decoration: none; }
+    .bdc-actions { margin-top: 14px; }
+    .bdc-rm { background: none; border: none; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer;
+      padding: 4px 0; text-decoration: underline; text-underline-offset: 2px; }
+    .bdc-rm:hover { color: #C0392B; }
+    /* events: monthly calendar */
+    .bdc-mcal { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 12px; padding: 0 16px; }
+    .bdc-mcell { border: 1px solid var(--border); border-radius: 14px; background: #fff; padding: 11px 12px; min-height: 104px; box-shadow: var(--shadow-sm); }
+    .bdc-mcell.quiet { background: var(--bg); border-style: dashed; box-shadow: none; }
+    .bdc-mcell.now { border-color: transparent; box-shadow: 0 0 0 1.5px var(--blue) inset; }
+    .bdc-mc-h { display: flex; align-items: baseline; gap: 6px; margin-bottom: 5px; }
+    .bdc-mc-m { font-size: 12.5px; font-weight: 650; letter-spacing: -.01em; }
+    .bdc-mc-y { font-size: 10px; color: var(--dim); }
+    .bdc-mc-now { margin-left: auto; font-size: 9px; font-weight: 700; color: var(--blue); text-transform: uppercase; letter-spacing: .04em; }
+    .bdc-mc-ev { display: flex; align-items: flex-start; gap: 7px; width: 100%; text-align: left; background: none; border: none;
+      cursor: pointer; padding: 5px; border-radius: 7px; font: inherit; transition: background .12s; }
+    .bdc-mc-ev:hover { background: var(--elevated); }
+    .bdc-mc-ev.sel { background: var(--blue-wash); }
+    .bdc-mc-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; margin-top: 5px; }
+    .bdc-mc-dd { flex: none; font-size: 11px; font-weight: 700; color: var(--muted); width: 15px; }
+    .bdc-mc-nm { font-size: 11px; line-height: 1.3; color: var(--ink); }
+    .bdc-mc-none { font-size: 13px; color: var(--dim); opacity: .5; padding: 3px 5px; }
+    .bdc-evd { margin: 18px 16px 4px; border-top: 1px solid var(--hairline); padding-top: 16px; min-height: 70px; }
+    .bdc-evd-empty { color: var(--dim); font-size: 13px; text-align: center; padding: 14px 0; }
+    .bdc-ev-card { display: flex; gap: 15px; }
+    .bdc-ev-date { flex: none; width: 60px; text-align: center; background: var(--elevated); border-radius: 12px; padding: 9px 0; }
+    .bdc-ev-date .d2 { font-size: 23px; font-weight: 700; line-height: 1; color: var(--ink); }
+    .bdc-ev-date .m2 { font-size: 10px; color: var(--muted); text-transform: uppercase; font-weight: 650; margin-top: 4px; }
+    .bdc-ev-nm { font-size: 15px; font-weight: 640; letter-spacing: -.01em; }
+    .bdc-ev-tag { font-size: 10px; font-weight: 700; border-radius: 6px; padding: 2px 7px; text-transform: uppercase; letter-spacing: .03em; margin-left: 8px; }
+    .bdc-ev-tag.internal { background: var(--blue-wash); color: var(--blue-deep); }
+    .bdc-ev-tag.external { background: var(--tan-bg); color: var(--tan-tx); }
+    .bdc-ev-tag.mixed { background: var(--elevated); color: var(--muted); }
+    .bdc-ev-loc { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .bdc-ev-why { font-size: 12.5px; color: var(--ink-2); margin-top: 9px; line-height: 1.55; }
+    .bdc-ev-lk { display: inline-block; margin-top: 12px; font-size: 12.5px; font-weight: 600; color: var(--blue-deep); text-decoration: none; }
+
     /* ============================================================
        MOBILE LAYER — phones only (<= 640px). Purely additive: every
        rule here is inside this media query, so nothing at >= 641px
@@ -5861,88 +5935,106 @@ async function loadMandates() {
 }
 
 // ---------- Calendar Pulses (deterministic placement windows) ----------
+// Wired into the BD-Calendar "Placement Windows" pop-up as rounded-square
+// window tiles (minimal until clicked); the full brief — seat, angle,
+// scope, targets and a source link — expands below. The remove (dismiss)
+// control is tucked inside the open brief so the grid stays clean.
+function bdcWinCat(name) {
+  const n = (name || '').toLowerCase();
+  if (/consumer duty|\bfca\b|regulat/.test(n)) return ['#B98235', 'Regulatory'];
+  if (/\bsrs\b|sustainab|\besg\b/.test(n)) return ['#2F9E5B', 'Sustainability'];
+  if (/pay gap|annual report|\bagm\b|reporting/.test(n)) return ['#3E5C84', 'Statutory reporting'];
+  if (/machinery|government|spending|\bgcs\b|\bnhs\b|clearing|higher-education|universit|public/.test(n)) return ['#6C7BA6', 'Public sector'];
+  if (/trading|golden quarter|campaign|marketing|budget|brand|peak/.test(n)) return ['#9A6CB0', 'Seasonal'];
+  return ['#5F6368', 'Window'];
+}
+function bdcSector(s) {
+  s = (s || '').replace(/_/g, ' ').trim();
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+}
 async function loadPulses() {
   const body = document.getElementById('pulses-body');
   const count = document.getElementById('pulses-count');
+  if (!body) return;
   try {
-    // Placement Windows = statutory/regulatory + policy pulses ONLY.
-    // Industry events were split out into the Events & Networking panel
-    // (loadEvents); they no longer share this ribbon.
     const res = await fetch('/api/pulses');
-    const j   = await res.json();
-    const pulseRows = j.rows || [];
-    const total = pulseRows.length;
-    count.textContent = total;
-    if (total === 0) {
+    const j = await res.json();
+    const rows = j.rows || [];
+    if (count) count.textContent = rows.length;
+    if (rows.length === 0) {
       body.innerHTML = '<div class="empty compact">No placement window open today. ' +
-        'Pulses surface only inside a statutory/regulator run-up (FCA Consumer Duty ' +
-        'board-report ramp, UK SRS first-cycle build-up, post-Spending-Review ' +
-        'machinery-of-government reshuffle) — by design they go quiet outside those ' +
-        'dated windows rather than show stale noise.</div>';
+        'Pulses surface only inside a statutory/regulator run-up — by design they go ' +
+        'quiet outside those dated windows rather than show stale noise.</div>';
       return;
     }
-    // Each placement window is drawn as a glass window-pane tile beside its
-    // target role + timing — "the concept of a window" made literal.
-    const newCount = pulseRows.filter(p => p.just_opened).length;
-    const out = ['<div class="win-list">'];
-    pulseRows.forEach(p => {
-      const high = p.confidence === 'high';
-      const confLabel = high ? 'Regulatory deadline' : 'Policy timeline';
-      const days = (typeof p.days_left === 'number') ? p.days_left + 'd left' : '';
-      const rm = p.key
-        ? '<button class="cal-rm" data-key="' + esc(p.key) + '" title="Remove this window">&#10005;</button>'
-        : '';
-      out.push(
-        '<div class="win-row' + (p.just_opened ? ' is-new' : '') + '" data-key="' + esc(p.key || p.name || '') + '">' +
-          '<div class="win-tile" title="Placement window"></div>' +
-          '<div class="win-main">' +
-            '<div class="win-name">' + esc(p.name || '') +
-              (p.discovered ? ' <span class="found-pill" title="Auto-discovered from a live public source">Found</span>' : '') + '</div>' +
-            (p.seat ? '<div class="win-seat">' + esc(p.seat) + '</div>' : '') +
-            '<div class="win-tags">' +
-              '<span class="conf-pill ' + (high ? 'high' : 'med') + '">' + esc(confLabel) + '</span>' +
-              (days ? '<span class="win-days">' + esc(days) + '</span>' : '') +
-            '</div>' +
-            (p.scope_note ? '<div class="win-scope">' + esc(p.scope_note) +
-              ((p.url || p.source) ? ' &middot; <a href="' + safeUrl(p.url || p.source) +
-                 '" target="_blank" rel="noopener noreferrer" style="color:var(--blue-deep);text-decoration:none;">source</a>' : '') +
-              '</div>' : '') +
-            (p.advisory ? '<div class="win-scope">' + esc(p.advisory) + '</div>' : '') +
-          '</div>' +
-          rm +
-        '</div>'
-      );
+    const leg = '<div class="bdc-leg">' +
+      '<span><i style="background:#3E5C84"></i>Statutory</span>' +
+      '<span><i style="background:#B98235"></i>Regulatory</span>' +
+      '<span><i style="background:#2F9E5B"></i>Sustainability</span>' +
+      '<span><i style="background:#6C7BA6"></i>Public sector</span></div>';
+    let tiles = '';
+    rows.forEach(p => {
+      const cc = bdcWinCat(p.name);
+      const days = (typeof p.days_left === 'number') ? p.days_left + 'd' : '';
+      tiles += '<button class="bdc-pw" data-key="' + esc(p.key || p.name || '') + '" style="--cc:' + cc[0] + '">' +
+        '<span class="bdc-pw-top"><span class="bdc-pw-dot"></span><span class="bdc-pw-days">' + esc(days) + '</span></span>' +
+        '<span class="bdc-pw-nm">' + esc(p.name || '') + '</span>' +
+        '<span class="bdc-pw-open">Open &rsaquo;</span></button>';
     });
-    out.push('</div>');
-    body.innerHTML = out.join('');
-
-    // Remove-a-window: delegated dismissal (shared pulse_dismiss keyspace),
-    // then re-render so the count stays correct.
-    body.querySelectorAll('.cal-rm').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const key = btn.getAttribute('data-key');
-        if (!key) return;
-        btn.disabled = true;
-        try {
-          const r = await fetch('/api/pulses/dismiss', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key: key, dismissed: true }),
-          });
-          const j = await r.json();
-          if (j.ok) {
-            loadPulses();   // re-render with the window removed
-          } else {
-            btn.disabled = false;
-            alert(j.detail || 'Could not remove.');
-          }
-        } catch (e) {
-          btn.disabled = false;
-          alert('Network error: ' + e.message);
-        }
-      });
+    body.innerHTML = leg + '<div class="bdc-pt">' + tiles + '</div>' +
+      '<div class="bdc-pwd" id="bdc-pwd"><div class="bdc-pwd-in"></div></div>';
+    const grid = body.querySelector('.bdc-pt');
+    const det = document.getElementById('bdc-pwd');
+    const detIn = det.querySelector('.bdc-pwd-in');
+    grid.addEventListener('click', (ev) => {
+      const b = ev.target.closest('.bdc-pw'); if (!b) return;
+      const p = rows.filter(x => (x.key || x.name) === b.dataset.key)[0]; if (!p) return;
+      const was = b.classList.contains('sel');
+      grid.querySelectorAll('.bdc-pw').forEach(x => x.classList.remove('sel'));
+      if (was) { det.classList.remove('show'); return; }
+      b.classList.add('sel');
+      const cc = bdcWinCat(p.name);
+      det.style.setProperty('--cc', cc[0]);
+      const src = p.source_url || (/^https?:/i.test(p.url || '') ? p.url : '');
+      const tg = (p.targets || []).map(t => '<span class="bdc-tgt">' + esc(t) + '</span>').join('');
+      detIn.innerHTML =
+        '<div class="bdc-pwd-h"><span class="bdc-pwd-tag">' +
+          esc(typeof p.days_left === 'number' ? p.days_left + ' days left' : 'window') + '</span>' +
+          '<div><div class="bdc-pwd-t">' + esc(p.name || '') + '</div>' +
+          '<div class="bdc-pwd-meta">' + esc(cc[1]) + (p.sector ? ' &middot; ' + esc(bdcSector(p.sector)) : '') + '</div></div></div>' +
+        (p.angle ? '<div class="bdc-angle">' + esc(p.angle) + '</div>' : '') +
+        '<div class="bdc-kv">' +
+          (p.window ? '<div><div class="bdc-k">Window</div><div class="bdc-v">' + esc(p.window) + '</div></div>' : '') +
+          (p.act_by ? '<div><div class="bdc-k">Act by</div><div class="bdc-v">' + esc(p.act_by) + '</div></div>' : '') +
+          (p.seat ? '<div><div class="bdc-k">The seat</div><div class="bdc-v seat">' + esc(p.seat) + '</div></div>' : '') +
+          (p.scope_note ? '<div><div class="bdc-k">Scope</div><div class="bdc-v">' + esc(p.scope_note) + '</div></div>' : '') +
+        '</div>' +
+        (tg ? '<div class="bdc-tgts">' + tg + '</div>' : '') +
+        '<div class="bdc-basis">' + (p.advisory ? '<b>Advisory in:</b> ' + esc(p.advisory) + '<br>' : '') +
+          (p.source ? 'Basis &middot; ' + esc(p.source) : '') +
+          (p.confidence ? ' &middot; confidence: ' + esc(p.confidence) : '') +
+          (src ? ' &nbsp;&middot;&nbsp; <a href="' + safeUrl(src) + '" target="_blank" rel="noopener noreferrer">View source &rsaquo;</a>' : '') +
+        '</div>' +
+        '<div class="bdc-actions"><button class="bdc-rm" data-key="' + esc(p.key || '') + '">Remove this window</button></div>';
+      det.classList.add('show');
     });
-
+    // Remove-a-window: tucked into the open brief (shared pulse_dismiss keyspace).
+    det.addEventListener('click', async (ev) => {
+      const btn = ev.target.closest('.bdc-rm'); if (!btn) return;
+      const key = btn.getAttribute('data-key'); if (!key) return;
+      btn.disabled = true;
+      try {
+        const r = await fetch('/api/pulses/dismiss', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: key, dismissed: true }),
+        });
+        const jj = await r.json();
+        if (jj.ok) { det.classList.remove('show'); loadPulses(); }
+        else { btn.disabled = false; alert(jj.detail || 'Could not remove.'); }
+      } catch (e) { btn.disabled = false; alert('Network error: ' + e.message); }
+    });
+    // "new this week" header pip — unchanged behaviour (hidden inside the modal).
+    const newCount = rows.filter(p => p.just_opened).length;
     const nb = document.getElementById('pulses-new');
     if (nb) {
       if (newCount > 0) {
@@ -5950,9 +6042,7 @@ async function loadPulses() {
         if (n) n.textContent = newCount;
         nb.style.display = 'inline-flex';
         nb.onclick = null;
-      } else {
-        nb.style.display = 'none';
-      }
+      } else { nb.style.display = 'none'; }
     }
   } catch (e) {
     body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
@@ -5960,10 +6050,10 @@ async function loadPulses() {
 }
 
 // ---------- Events & Networking (industry events) ----------
-// Relationship / candidate-visibility moments (awards, conferences,
-// summits) — split out of the old BD Calendar. Rendered as a light
-// chronological list rather than a placement-window ribbon, because an
-// event drives networking, not a statute-forced hire.
+// Wired into the BD-Calendar "Events & Networking" pop-up as a rolling
+// 12-month calendar (the next 12 months from today). Each event is a
+// clickable row inside its month; the full detail — location, why-now and
+// the source link — opens below. Remove is tucked into the open detail.
 async function loadEvents() {
   const body = document.getElementById('events-body');
   const count = document.getElementById('events-count');
@@ -5975,93 +6065,86 @@ async function loadEvents() {
     if (count) count.textContent = rows.length;
     if (rows.length === 0) {
       body.innerHTML = '<div class="empty compact">No comms awards, conferences or ' +
-        'summits in the next ~6 months. This panel lists networking & candidate-' +
-        'visibility moments (PRWeek / CIPR / PRCA awards, IoIC, EACD, European ' +
-        'Excellence) — relationship groundwork, not statute-forced placement windows.</div>';
+        'summits in the next ~6 months. This pop-up lists networking & candidate-' +
+        'visibility moments — relationship groundwork, not statute-forced windows.</div>';
       return;
     }
     const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const fmtDate = iso => {
-      const p = String(iso || '').split('-');
-      if (p.length < 3) return iso || '';
-      return parseInt(p[2], 10) + ' ' + (MON[parseInt(p[1], 10) - 1] || '') + ' ' + p[0];
-    };
-    const whenChip = d => {
-      if (typeof d !== 'number') return '';
-      if (d < 0) return 'past';
-      if (d === 0) return 'today';
-      if (d === 1) return 'tomorrow';
-      if (d < 60) return 'in ' + d + 'd';
-      return 'in ' + Math.round(d / 30) + 'mo';
-    };
-    const focusChip = f => {
-      const lab = f === 'internal' ? 'Internal comms'
-                : f === 'external' ? 'External comms' : 'Mixed';
-      return '<span class="ev-focus ev-' + esc(f || 'mixed') + '">' + lab + '</span>';
-    };
-    const dayOf = iso => { const p = String(iso || '').split('-'); return p.length >= 3 ? parseInt(p[2], 10) : ''; };
-    const monOf = iso => { const p = String(iso || '').split('-'); return p.length >= 2 ? (MON[parseInt(p[1], 10) - 1] || '') : ''; };
-    const out = ['<div class="ev-list">'];
-    rows.forEach((e, i) => {
-      const win = e.in_action_window
-        ? '<span class="ev-open" title="Outreach window open now">window open</span>' : '';
-      const rm = e.key
-        ? '<button class="ev-rm" data-key="' + esc(e.key) + '" title="Remove this event">&#10005;</button>' : '';
-      const focLab = e.focus === 'internal' ? 'Internal' : e.focus === 'external' ? 'External' : 'Mixed';
-      const when = whenChip(e.days_to_event);
-      const srcLink = e.url || e.source;
-      const hasDetail = !!(e.why_now || srcLink);
-      out.push(
-        '<div class="ev-item' + (hasDetail ? ' has-detail' : '') + '" data-evkey="' + esc(e.key || e.name || '') + '">' +
-          '<div class="ev-row">' +
-            '<div class="ev-date"><b>' + esc(dayOf(e.event_date)) + '</b><span>' + esc(monOf(e.event_date)) + '</span></div>' +
-            '<div class="ev-main">' +
-              '<div class="ev-n">' + esc(e.name || '') + win +
-                (e.discovered ? ' <span class="found-pill" title="Auto-discovered from a live public source">Found</span>' : '') + '</div>' +
-              '<div class="ev-t">' +
-                '<span class="ev-foc">' + focLab + '</span>' +
-                (e.location ? '<span>' + esc(e.location) + '</span>' : '') +
-                (when ? '<span>' + esc(when) + '</span>' : '') +
-              '</div>' +
-            '</div>' +
-            (hasDetail ? '<span class="ev-chev">&rsaquo;</span>' : '') +
-            rm +
-          '</div>' +
-          (hasDetail ?
-            '<div class="ev-detail">' +
-              (e.why_now ? '<div class="ev-why">' + esc(e.why_now) + '</div>' : '') +
-              (srcLink ? '<div class="ev-why"><a href="' + safeUrl(srcLink) +
-                 '" target="_blank" rel="noopener noreferrer" style="color:var(--blue-deep);text-decoration:none;">source &rsaquo;</a></div>' : '') +
-            '</div>' : '') +
-        '</div>'
-      );
+    const MONF = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const focusCol = f => f === 'internal' ? '#4285F4' : f === 'external' ? '#C08A3E' : '#9AA0A6';
+    const now = new Date();
+    const curY = now.getFullYear(), curM = now.getMonth();
+    const byMonth = {};
+    rows.forEach(e => {
+      const p = String(e.event_date || '').split('-');
+      if (p.length < 2) return;
+      const k = p[0] + '-' + (parseInt(p[1], 10) - 1);
+      (byMonth[k] = byMonth[k] || []).push(e);
     });
-    out.push('</div>');
-    body.innerHTML = out.join('');
-    // Click a row to expand its why-now + source link below it.
-    body.querySelectorAll('.ev-item.has-detail .ev-row').forEach(row => {
-      row.addEventListener('click', (ev) => {
-        if (ev.target.closest('.ev-rm')) return;   // dismiss is handled separately
-        row.parentElement.classList.toggle('expanded');
-      });
+    let cells = '';
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(curY, curM + i, 1);
+      const y = d.getFullYear(), m = d.getMonth();
+      const evs = byMonth[y + '-' + m] || [];
+      cells += '<div class="bdc-mcell' + (i === 0 ? ' now' : '') + (evs.length ? '' : ' quiet') + '">' +
+        '<div class="bdc-mc-h"><span class="bdc-mc-m">' + MON[m] + '</span>' +
+        '<span class="bdc-mc-y">' + y + '</span>' +
+        (i === 0 ? '<span class="bdc-mc-now">now</span>' : '') + '</div>';
+      if (evs.length) {
+        evs.forEach(e => {
+          const day = parseInt((String(e.event_date).split('-')[2] || ''), 10) || '';
+          cells += '<button class="bdc-mc-ev" data-evkey="' + esc(e.key || e.name || '') + '">' +
+            '<span class="bdc-mc-dot" style="background:' + focusCol(e.focus) + '"></span>' +
+            '<span class="bdc-mc-dd">' + day + '</span>' +
+            '<span class="bdc-mc-nm">' + esc(e.name || '') + '</span></button>';
+        });
+      } else {
+        cells += '<div class="bdc-mc-none">&mdash;</div>';
+      }
+      cells += '</div>';
+    }
+    const leg = '<div class="bdc-leg">' +
+      '<span><i style="background:#4285F4"></i>Internal comms</span>' +
+      '<span><i style="background:#C08A3E"></i>External comms</span></div>';
+    body.innerHTML = leg + '<div class="bdc-mcal">' + cells + '</div>' +
+      '<div class="bdc-evd" id="bdc-evd"><div class="bdc-evd-empty">Select an event to see the detail and the link.</div></div>';
+    const cal = body.querySelector('.bdc-mcal');
+    const evd = document.getElementById('bdc-evd');
+    cal.addEventListener('click', (ev) => {
+      const b = ev.target.closest('.bdc-mc-ev'); if (!b) return;
+      const e = rows.filter(x => (x.key || x.name) === b.dataset.evkey)[0]; if (!e) return;
+      cal.querySelectorAll('.bdc-mc-ev').forEach(x => x.classList.remove('sel'));
+      b.classList.add('sel');
+      const p = String(e.event_date || '').split('-');
+      const dd = p.length > 2 ? parseInt(p[2], 10) : '';
+      const mm = p.length > 1 ? parseInt(p[1], 10) - 1 : 0;
+      const src = e.url || e.source;
+      const foc = e.focus === 'internal' ? 'internal' : e.focus === 'external' ? 'external' : 'mixed';
+      evd.innerHTML = '<div class="bdc-ev-card">' +
+        '<div class="bdc-ev-date"><div class="d2">' + dd + '</div><div class="m2">' + (MON[mm] || '') + '</div></div>' +
+        '<div class="bdc-ev-info"><span class="bdc-ev-nm">' + esc(e.name || '') + '</span>' +
+        '<span class="bdc-ev-tag ' + foc + '">' + foc + '</span>' +
+        '<div class="bdc-ev-loc">' + (MONF[mm] || '') + ' ' + dd + ', ' + (p[0] || '') +
+          (e.location ? ' &middot; ' + esc(e.location) : '') + '</div>' +
+        (e.why_now ? '<div class="bdc-ev-why">' + esc(e.why_now) + '</div>' : '') +
+        (src ? '<a class="bdc-ev-lk" href="' + safeUrl(src) + '" target="_blank" rel="noopener noreferrer">View details &rsaquo;</a>' : '') +
+        '<div class="bdc-actions"><button class="bdc-rm" data-key="' + esc(e.key || '') + '">Remove this event</button></div>' +
+        '</div></div>';
     });
-    // Remove-an-event (delegated): persist the dismissal (shared pulse_dismiss
-    // keyspace) then re-render so the count + list stay correct.
-    body.querySelectorAll('.ev-rm').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const key = btn.getAttribute('data-key');
-        if (!key) return;
-        btn.disabled = true;
-        try {
-          const r = await fetch('/api/pulses/dismiss', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key: key, dismissed: true }),
-          });
-          const jj = await r.json();
-          if (jj.ok) { loadEvents(); }
-          else { btn.disabled = false; alert(jj.detail || 'Could not remove.'); }
-        } catch (err) { btn.disabled = false; alert('Network error: ' + err.message); }
-      });
+    // Remove-an-event: tucked into the open detail (shared pulse_dismiss keyspace).
+    evd.addEventListener('click', async (ev) => {
+      const btn = ev.target.closest('.bdc-rm'); if (!btn) return;
+      const key = btn.getAttribute('data-key'); if (!key) return;
+      btn.disabled = true;
+      try {
+        const r = await fetch('/api/pulses/dismiss', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: key, dismissed: true }),
+        });
+        const jj = await r.json();
+        if (jj.ok) { loadEvents(); }
+        else { btn.disabled = false; alert(jj.detail || 'Could not remove.'); }
+      } catch (err) { btn.disabled = false; alert('Network error: ' + err.message); }
     });
   } catch (e) {
     body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
@@ -7053,8 +7136,8 @@ async function loadRecentReports() {
   }
   // Current item keys per card (unique), read from the rendered panels.
   function currentKeys(key) {
-    var sel = key === 'windows' ? '#pulses-body .win-row[data-key]'
-            : key === 'events' ? '#events-body .ev-item[data-evkey]'
+    var sel = key === 'windows' ? '#pulses-body .bdc-pw[data-key]'
+            : key === 'events' ? '#events-body .bdc-mc-ev[data-evkey]'
             : key === 'frameworks' ? '#framework-body .framework-row[data-fwid]'
             : null;
     if (!sel) return [];
