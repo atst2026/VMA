@@ -683,29 +683,116 @@ def _bg_url(style: str) -> str | None:
     return m.group(1).strip() if m else None
 
 
-def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
-    """Parse a homepage for logo image URLs, ordered best-first. Returns
+# --- Telling the company's OWN logo apart from third-party marks on the page ---
+# A site's homepage is full of OTHER brands' artwork: certification badges
+# (Cyber Essentials, ISO), integration / "works with" logos, partner & client
+# grids, app-store buttons. Their filenames often literally contain "logo"
+# (cyber-essentials-logo.svg) or sit in a /logos/ collection, so a naive "logo"
+# match grabs them. These pick those out so only the company's own mark wins.
+_COLLECTION_DIRS = {
+    "logos", "partners", "partner", "clients", "client", "customers", "customer",
+    "integrations", "integration", "badges", "badge", "certifications",
+    "certification", "accreditations", "accreditation", "sponsors", "sponsor",
+    "awards", "award", "press", "reviews", "brands", "members", "portfolio",
+}
+_BADGE_RX = re.compile(
+    r"cyber[-_]?essentials|iso[-_]?\d{2,}|\bgdpr\b|g[-_]?cloud|"
+    r"crown[-_]?commercial|ce[-_]?mark|\bbadge\b|accredit|certified|"
+    r"certificate|\bcert\b|\bawards?\b|essentials|compliant|compliance|"
+    r"\bpartners?\b|as[-_]?seen|featured[-_]?in|trustpilot|soc[-_]?2|"
+    r"google[-_]?play|app[-_]?store|\bseal\b", re.I)
+_THIRD_PARTY_CLASS_RX = re.compile(
+    r"partner|client|customer|sponsor|badge|cert|accredit|award|review|"
+    r"press|integration|as-seen|featured|testimonial|portfolio|ticker|marquee",
+    re.I)
+
+
+def _logo_name_tokens(company: str, base_url: str) -> list[str]:
+    """Tokens that mark an asset as the company's OWN: the name's significant
+    words, its acronym, and the site's own domain label (so 'oqc-logo.svg' is
+    recognised for 'Oxford Quantum Circuits' on oqc.tech)."""
+    base = _name_tokens(company)
+    toks = [t for t in base if len(t) >= 3]
+    if len(base) >= 2:
+        ac = "".join(t[0] for t in base)
+        if len(ac) >= 2:
+            toks.append(ac)
+    try:
+        lab = _domain_label(urlparse(base_url).netloc)
+        if len(lab) >= 2:
+            toks.append(lab)
+    except Exception:
+        pass
+    return list(dict.fromkeys(toks))
+
+
+def _url_names_company(url: str, tokens: list[str]) -> bool:
+    """True if the asset's filename contains one of the company tokens."""
+    if not tokens or not url:
+        return False
+    try:
+        base = urlparse(url).path.lower().rsplit("/", 1)[-1] or url.lower()
+    except Exception:
+        base = url.lower()
+    slug = re.sub(r"[^a-z0-9]", "", base)
+    return any(t in slug for t in tokens)
+
+
+def _is_third_party_asset(url: str, tokens: list[str]) -> bool:
+    """True for a badge / certification / partner / integration mark — never the
+    company's own logo. The company's own name on the asset always overrides."""
+    if not url or url.startswith("data:"):
+        return False
+    if _url_names_company(url, tokens):
+        return False
+    try:
+        path = urlparse(url).path.lower()
+    except Exception:
+        return False
+    segs = [s for s in path.strip("/").split("/") if s]
+    dirs, fname = segs[:-1], (segs[-1] if segs else "")
+    if any(d in _COLLECTION_DIRS for d in dirs):
+        return True
+    return bool(_BADGE_RX.search(fname))
+
+
+def extract_logo_urls(html: str, base_url: str,
+                      company: str = "") -> dict[str, list[str]]:
+    """Parse a homepage for the COMPANY'S OWN logo URLs, best-first. Returns
     {'primary': [...], 'secondary': [...]}:
 
-      primary   — the actual brand logo: an element that says "logo"/"brand",
-                  the <img>/<svg>/CSS-background inside the homepage link, the
-                  header / nav / top-bar, a "logo" url() in a <style> rule, or a
-                  mask/SVG favicon. Responsive logos (srcset) are covered too.
+      primary   — the company's own brand logo: an asset whose filename names
+                  the company, then a structurally-placed logo (inside the
+                  homepage link, the header / nav / top-bar, a "logo" element's
+                  background, a "logo" url() in a <style> rule), then a mask/SVG
+                  favicon. Responsive logos (srcset) and CSS-background logos
+                  are covered.
       secondary — acceptable square brand marks: apple-touch-icon, an inline
                   header SVG serialised to a data URI, then sized favicons.
 
-    Modern startup sites (e.g. oqc.tech, geordie.ai) put the top-right logo in
-    the header as an <img>, an inline <svg>, OR a CSS background-image, and ship
-    an apple-touch-icon — all of those are covered. Pure — unit-tested."""
+    Third-party artwork on the page (certification badges like Cyber Essentials,
+    integration / partner / client logos in a /logos/ or /partners/ collection)
+    is filtered out, even when its filename literally contains "logo" — the
+    failure that put a Claude Code mark and a Cyber Essentials badge on real
+    covers. Pure — unit-tested."""
     primary: list[str] = []
     secondary: list[str] = []
+    named: list[str] = []                       # asset filename names the company
+    tokens = _logo_name_tokens(company, base_url)
 
     def add(lst, href):
         if not href:
             return
         href = href.strip()
         u = href if href.startswith("data:") else urljoin(base_url, href)
-        if u and u not in primary and u not in secondary:
+        if not u or u in primary or u in secondary or u in named:
+            return
+        if _is_third_party_asset(u, tokens):
+            log.info("skip third-party asset %s", _short(u))
+            return
+        if not u.startswith("data:") and _url_names_company(u, tokens):
+            named.append(u)                     # the company's own name -> front
+        else:
             lst.append(u)
 
     try:
@@ -731,57 +818,69 @@ def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
         except Exception:
             return False
 
-    # 1. <img> elements that identify themselves as a logo (SVG first).
-    svg_logo, other_logo = [], []
-    for img in soup.find_all("img"):
-        attrs = " ".join(str(img.get(k, "")) for k in
-                         ("class", "id", "alt", "src", "data-src", "title")).lower()
-        if "logo" in attrs:
-            s = _img_src(img)
-            if s:
-                (svg_logo if ".svg" in s.lower() else other_logo).append(s)
-    for s in svg_logo + other_logo:
-        add(primary, s)
-
     def _img_blob(img) -> str:
         return " ".join(str(img.get(k, "")) for k in
                         ("class", "id", "alt", "src", "data-src", "title"))
 
-    # 1b. CSS background-image logos: an element that identifies as a logo/brand
-    #     and paints the mark via an inline-style background-image (Webflow /
-    #     custom builds), which a plain <img> scrape never sees.
-    for el in soup.select("[class*=logo], [id*=logo], [class*=Logo], "
-                          "[class*=brand], [id*=brand], [class*=Brand]"):
-        blob = " ".join(str(el.get(k, "")) for k in ("class", "id")).lower()
-        if _looks_decorative(blob):
-            continue
-        bg = _bg_url(el.get("style", ""))
-        if bg:
-            add(primary, bg)
+    def _in_third_party_context(el) -> bool:
+        """True if the element sits inside a partner / client / badge / press
+        block — a grid of OTHER companies' logos, not the site's own."""
+        cur = el
+        for _ in range(4):
+            if cur is None or not hasattr(cur, "get"):
+                break
+            blob = " ".join(str(cur.get(k, "")) for k in ("class", "id"))
+            if _THIRD_PARTY_CLASS_RX.search(blob):
+                return True
+            cur = cur.parent
+        return False
 
-    # 2. <img> / background inside the homepage link (<a href="/">) — almost
-    #    always the logo. Skip decorative furniture (a social / search glyph).
+    def _usable_img(img) -> bool:
+        return (not _looks_decorative(_img_blob(img))
+                and not _in_third_party_context(img))
+
+    # 0. ANY asset whose filename names the company is its logo, wherever it
+    #    sits (a name match beats position; third-party assets are gated in add).
+    for img in soup.find_all("img"):
+        s = _img_src(img)
+        if s and (_url_names_company(s, tokens)
+                  or _url_names_company(str(img.get("alt", "")), tokens)):
+            if _usable_img(img):
+                add(primary, s)
+
+    # 1. <img> inside the homepage link (<a href="/">) — almost always the logo.
     for a in soup.find_all("a"):
         if is_root_anchor(a):
             bg = _bg_url(a.get("style", ""))
             if bg and not _looks_decorative(str(a.get("class", "")) + str(a.get("id", ""))):
                 add(primary, bg)
             for img in a.find_all("img"):
-                if not _looks_decorative(_img_blob(img)):
+                if _usable_img(img):
                     add(primary, _img_src(img))
 
-    # 3. first <img> inside header / nav / a top-bar / an element that names
-    #    itself a logo or brand (decorative glyphs skipped).
+    # 2. <img> / CSS-background inside the header / nav / top-bar / a logo-named
+    #    element (structural — the company's own mark, decorative + third-party
+    #    grids skipped).
     for sel in ("header img", "nav img", "[class*=header] img",
                 "[class*=navbar] img", "[class*=Header] img",
                 "[class*=logo] img", "[id*=logo] img", "[class*=Logo] img",
                 "[class*=brand] img", "[id*=brand] img", "[role=banner] img",
                 "[class*=top-bar] img", "[class*=topbar] img"):
-        for img in soup.select(sel)[:3]:
-            if not _looks_decorative(_img_blob(img)):
+        for img in soup.select(sel)[:4]:
+            if _usable_img(img):
                 add(primary, _img_src(img))
 
-    # 3b. <style> blocks: a url(...) whose filename looks like a logo — the
+    for el in soup.select("header [style], nav [style], a[style], "
+                          "[class*=logo][style], [id*=logo][style], "
+                          "[class*=brand][style]"):
+        blob = " ".join(str(el.get(k, "")) for k in ("class", "id")).lower()
+        if _looks_decorative(blob) or _in_third_party_context(el):
+            continue
+        bg = _bg_url(el.get("style", ""))
+        if bg:
+            add(primary, bg)
+
+    # 2b. <style> blocks: a url(...) whose filename looks like a logo — the
     #     class-driven CSS background logo (.site-logo{background:url(/logo.svg)}).
     for st in soup.find_all("style"):
         css = st.string or st.get_text() or ""
@@ -791,7 +890,7 @@ def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
             if "logo" in base and not u.startswith("data:"):
                 add(primary, u)
 
-    # 4. mask-icon / SVG favicon files (monochrome brand mark).
+    # 3. mask-icon / SVG favicon files (monochrome brand mark).
     for link in soup.find_all("link"):
         rel, href = _rel(link), link.get("href")
         if not href:
@@ -801,13 +900,13 @@ def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
         if "mask-icon" in rel or ("icon" in rel and ("svg" in typ or base.endswith(".svg"))):
             add(primary, href)
 
-    # 5. apple-touch-icon (largest) — a reliable, self-contained square mark.
+    # 4. apple-touch-icon (largest) — a reliable, self-contained square mark.
     apple = [(_sz(l), l.get("href")) for l in soup.find_all("link")
              if l.get("href") and "apple-touch-icon" in _rel(l)]
     for _, href in sorted(apple, key=lambda t: -t[0]):
         add(secondary, href)
 
-    # 6. inline <svg> that is (or sits inside) the homepage link / header — the
+    # 5. inline <svg> that is (or sits inside) the homepage link / header — the
     #    logo on script-built sites. Serialised to a data URI for embedding.
     svgs = []
     for a in soup.find_all("a"):
@@ -815,6 +914,8 @@ def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
             svgs += a.find_all("svg")
     svgs += soup.select("header svg, nav svg")
     for svg in svgs[:3]:
+        if _in_third_party_context(svg):
+            continue
         blob = " ".join(str(svg.get(k, "")) for k in
                         ("class", "id", "aria-label", "role")).lower()
         try:
@@ -837,14 +938,15 @@ def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
             continue
         add(secondary, "data:image/svg+xml;utf8," + quote(raw))
 
-    # 7. sized <link rel=icon> (largest first).
+    # 6. sized <link rel=icon> (largest first).
     icons = [(_sz(l), l.get("href")) for l in soup.find_all("link")
              if l.get("href") and "icon" in _rel(l)
              and "apple" not in _rel(l) and "mask" not in _rel(l)]
     for _, href in sorted(icons, key=lambda t: -t[0]):
         add(secondary, href)
 
-    return {"primary": primary, "secondary": secondary}
+    # The company's own named assets lead, then structural logos / favicons.
+    return {"primary": named + primary, "secondary": secondary}
 
 
 def _extract_logo_urls_regex(html: str, base_url: str) -> dict[str, list[str]]:
@@ -976,14 +1078,16 @@ def _short(u: str) -> str:
     return (u[:70] + "…") if len(u) > 71 else u
 
 
-def _site_logo_candidates(domain: str) -> list[str]:
-    """All logo/icon URLs scraped from the homepage, ordered best-first
-    (header logo -> apple-touch-icon -> inline svg -> favicons)."""
+def _site_logo_candidates(domain: str, company: str = "") -> list[str]:
+    """The company's own logo/icon URLs scraped from the homepage, best-first
+    (company-named asset -> structural header logo -> mask/SVG favicon ->
+    apple-touch-icon -> inline svg -> favicons). `company` lets the scraper tell
+    the site's own mark apart from third-party badges / partner logos."""
     html = _fetch_html("https://" + domain) or _fetch_html("http://" + domain)
     if not html:
         return []
     try:
-        c = extract_logo_urls(html, "https://" + domain)
+        c = extract_logo_urls(html, "https://" + domain, company)
     except Exception as e:
         log.info("logo scrape parse failed for %s: %s", domain, e)
         return []
@@ -1021,7 +1125,7 @@ def find_logo(company: str, hint_url: str | None = None
         # Split the scraped candidates: real logo/icon FILES vs fragile inline
         # SVGs (data: URIs). Files and the raster services are tried first; the
         # inline SVG is a last site resort, even when it passes its gates.
-        site_cands = _site_logo_candidates(domain)
+        site_cands = _site_logo_candidates(domain, company)
         file_cands = [u for u in site_cands if not u.startswith("data:")]
         inline_cands = [u for u in site_cands if u.startswith("data:")]
 

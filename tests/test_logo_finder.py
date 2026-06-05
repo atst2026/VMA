@@ -247,7 +247,7 @@ def test_find_logo_never_uses_encyclopaedia_for_resolved_domain(monkeypatch):
     # favicon floor wins and the (stubbed) encyclopaedia is never consulted.
     monkeypatch.setattr(lf, "resolve_domain",
                         lambda c, hint_url=None: ("geordie.ai", "known"))
-    monkeypatch.setattr(lf, "_site_logo_candidates", lambda d: [])
+    monkeypatch.setattr(lf, "_site_logo_candidates", lambda d, company="": [])
     monkeypatch.setattr(lf, "_clearbit", lambda d: None)
     monkeypatch.setattr(lf, "_logodev", lambda d: None)
     fav = b"\x89PNG\r\n\x1a\n" + b"\x02" * 500
@@ -429,6 +429,78 @@ def test_extract_logo_urls_srcset_logo():
     assert "https://x.io/logo@1x.png" in out["primary"]
 
 
+# ---- the real Geordie/OQC failures: third-party badges & integration logos ---
+
+def test_third_party_asset_detection():
+    toks = lf._logo_name_tokens("Oxford Quantum Circuits", "https://oqc.tech")
+    # a Cyber Essentials certification badge — never the company's own logo
+    assert lf._is_third_party_asset(
+        "https://oqc.tech/wp-content/uploads/2023/12/cyber-essentials-logo.svg", toks)
+    # an integration logo sitting in a /logos/ collection
+    gtok = lf._logo_name_tokens("Geordie AI", "https://geordie.ai")
+    assert lf._is_third_party_asset("https://geordie.ai/logos/agents/claude-code.svg", gtok)
+    # the company's OWN logo (names the company / domain) is NOT third-party
+    assert not lf._is_third_party_asset("https://oqc.tech/assets/oqc-logo.svg", toks)
+    assert not lf._is_third_party_asset("https://geordie.ai/img/geordie-logo.svg", gtok)
+    assert not lf._is_third_party_asset("https://x.io/assets/logo.svg", [])
+
+
+def test_extract_logo_urls_rejects_cyber_essentials_badge():
+    # the exact OQC failure: a cert badge in the footer whose filename has "logo"
+    html = ('<header><a href="/"><img class="logo" src="/assets/oqc-logo.svg"></a></header>'
+            '<footer><img src="/wp-content/uploads/2023/12/cyber-essentials-logo.svg">'
+            '</footer>')
+    out = lf.extract_logo_urls(html, "https://oqc.tech", "Oxford Quantum Circuits")
+    cands = out["primary"] + out["secondary"]
+    assert "https://oqc.tech/assets/oqc-logo.svg" in cands
+    assert not any("cyber-essentials" in c for c in cands)
+
+
+def test_extract_logo_urls_rejects_integration_logo_grid():
+    # the exact Geordie failure: a /logos/agents/claude-code.svg integration mark
+    html = ('<header><a href="/"><img class="brand" src="/geordie-logo.svg"></a></header>'
+            '<section class="integrations"><img src="/logos/agents/claude-code.svg">'
+            '</section>')
+    out = lf.extract_logo_urls(html, "https://geordie.ai", "Geordie AI")
+    cands = out["primary"] + out["secondary"]
+    assert "https://geordie.ai/geordie-logo.svg" in cands
+    assert not any("claude-code" in c for c in cands)
+
+
+def test_extract_logo_urls_company_named_asset_leads():
+    # an asset whose filename names the company is the own logo and leads
+    html = ('<div class="partners"><img src="/partner-acme.png"></div>'
+            '<header><img src="/x/oqc-mark.svg"></header>')
+    out = lf.extract_logo_urls(html, "https://oqc.tech", "Oxford Quantum Circuits")
+    assert out["primary"][0] == "https://oqc.tech/x/oqc-mark.svg"
+
+
+def test_extract_logo_urls_skips_partner_grid_by_context():
+    # a partner logo with a clean filename is still skipped by its container
+    html = ('<section class="our-partners"><a href="/"><img src="/img/acme.png"></a></section>'
+            '<header><img class="logo" src="/img/ourlogo.svg"></header>')
+    out = lf.extract_logo_urls(html, "https://x.io", "Example Co")
+    cands = out["primary"] + out["secondary"]
+    assert "https://x.io/img/ourlogo.svg" in cands
+    assert "https://x.io/img/acme.png" not in cands
+
+
+def test_find_logo_passes_company_to_scraper(monkeypatch):
+    # find_logo must hand the company name to the scraper so it can tell the
+    # site's own mark from third-party badges.
+    seen = {}
+    def fake_site(domain, company=""):
+        seen["company"] = company
+        return ["https://oqc.tech/assets/oqc-logo.svg"]
+    monkeypatch.setattr(lf, "resolve_domain", lambda c, hint_url=None: ("oqc.tech", "known"))
+    monkeypatch.setattr(lf, "_site_logo_candidates", fake_site)
+    png = b"\x89PNG\r\n\x1a\n" + b"\x08" * 600
+    monkeypatch.setattr(lf, "_fetch_image", lambda u: png)
+    data, src = lf.find_logo("Oxford Quantum Circuits")
+    assert seen["company"] == "Oxford Quantum Circuits"
+    assert src == "site:oqc.tech" and data == png
+
+
 def test_fetch_image_validates_data_uris():
     # the white/animated inline SVG must NOT escape _fetch_image (the hole that
     # let an invisible mark and a spinner reach the cover).
@@ -447,7 +519,7 @@ def test_find_logo_inline_svg_loses_to_raster_service(monkeypatch):
     # reliable raster service. No usable site file -> Clearbit wins, inline ignored.
     monkeypatch.setattr(lf, "resolve_domain", lambda c, hint_url=None: ("acme.com", "known"))
     monkeypatch.setattr(lf, "_site_logo_candidates",
-                        lambda d: ["data:image/svg+xml;utf8,<svg></svg>"])
+                        lambda d, company="": ["data:image/svg+xml;utf8,<svg></svg>"])
     png = b"\x89PNG\r\n\x1a\n" + b"\x05" * 600
     monkeypatch.setattr(lf, "_clearbit", lambda d: png)
     data, src = lf.find_logo("Acme")
@@ -457,7 +529,7 @@ def test_find_logo_inline_svg_loses_to_raster_service(monkeypatch):
 def test_find_logo_prefers_usable_site_file(monkeypatch):
     monkeypatch.setattr(lf, "resolve_domain", lambda c, hint_url=None: ("acme.com", "known"))
     monkeypatch.setattr(lf, "_site_logo_candidates",
-                        lambda d: ["https://acme.com/apple-touch-icon.png"])
+                        lambda d, company="": ["https://acme.com/apple-touch-icon.png"])
     png = b"\x89PNG\r\n\x1a\n" + b"\x06" * 600
     monkeypatch.setattr(lf, "_fetch_image",
                         lambda u: png if u.endswith("apple-touch-icon.png") else None)
@@ -470,7 +542,7 @@ def test_find_logo_unusable_site_file_falls_through_to_service(monkeypatch):
     # A white/invisible site logo file (_fetch_image returns None for it) must not
     # strand the cover — resolution continues to the next rung.
     monkeypatch.setattr(lf, "resolve_domain", lambda c, hint_url=None: ("acme.com", "known"))
-    monkeypatch.setattr(lf, "_site_logo_candidates", lambda d: ["https://acme.com/logo.svg"])
+    monkeypatch.setattr(lf, "_site_logo_candidates", lambda d, company="": ["https://acme.com/logo.svg"])
     monkeypatch.setattr(lf, "_fetch_image", lambda u: None)   # rejected by the gate
     png = b"\x89PNG\r\n\x1a\n" + b"\x07" * 600
     monkeypatch.setattr(lf, "_clearbit", lambda d: png)
@@ -483,7 +555,7 @@ def test_find_logo_junk_only_falls_to_wordmark(monkeypatch):
     # the cover prints the company name, never a blank space (the PDF-2 failure).
     monkeypatch.setattr(lf, "resolve_domain", lambda c, hint_url=None: ("acme.com", "known"))
     monkeypatch.setattr(lf, "_site_logo_candidates",
-                        lambda d: ["data:image/svg+xml;utf8,<svg></svg>"])
+                        lambda d, company="": ["data:image/svg+xml;utf8,<svg></svg>"])
     monkeypatch.setattr(lf, "_fetch_image", lambda u: None)
     monkeypatch.setattr(lf, "_clearbit", lambda d: None)
     monkeypatch.setattr(lf, "_logodev", lambda d: None)
