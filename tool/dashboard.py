@@ -4849,20 +4849,25 @@ TEMPLATE = r"""
 
     /* ================= BD Calendar — full-page dashboard ================= */
     /* hero icon beside the radar-style title (no spin; calendar glyph) */
-    #cal .wm-head { padding: 38px 0 22px; }
-    #cal .wm-head .brand { gap: 14px; }
-    .bdc-hero-ic { width: 60px; height: 60px; display: grid; place-items: center; color: var(--blue-deep); flex-shrink: 0; }
-    .bdc-hero-ic svg { width: 34px; height: 34px; }
-    #cal .bdc-sub { font-size: 13.5px; color: var(--muted); margin-top: 9px; }
-    /* scroll region fills the rest of the viewport-tall page */
-    #cal .bdc-page { flex: 1; min-height: 0; overflow-y: auto; padding: 2px 22px 26px; }
-    .bdc-grid { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr;
-      grid-template-areas: "fw cal" "pw pw"; gap: 18px; }
+    #cal .wm-head { padding: 20px 0 13px; }
+    #cal .brand-title { font-size: 28px; }
+    #cal .wm-head .brand { gap: 13px; }
+    .bdc-hero-ic { width: 50px; height: 50px; display: grid; place-items: center; color: var(--blue-deep); flex-shrink: 0; }
+    .bdc-hero-ic svg { width: 29px; height: 29px; }
+    #cal .bdc-sub { font-size: 13px; color: var(--muted); margin-top: 6px; }
+    /* the page fits the viewport: hero is fixed, the grid fills the rest. No
+       page scroll — each card sizes to its cell and scrolls internally. */
+    #cal .bdc-page { flex: 1; min-height: 0; overflow: hidden; padding: 2px 20px 16px; }
+    .bdc-grid { max-width: 1240px; height: 100%; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr;
+      grid-template-rows: minmax(0, 1.04fr) minmax(0, .96fr); grid-template-areas: "fw cal" "pw pw"; gap: 14px; }
     .bdc-grid .a-fw { grid-area: fw } .bdc-grid .a-cal { grid-area: cal } .bdc-grid .a-pw { grid-area: pw }
-    .bdc-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow-sm); padding: 18px 20px; }
-    .bdc-card-h { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-    .bdc-card-h h2 { font-size: 15px; font-weight: 620; margin: 0; letter-spacing: -.01em; }
+    .bdc-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow-sm);
+      padding: 14px 16px; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+    .bdc-card-h { display: flex; align-items: center; gap: 10px; margin-bottom: 11px; flex: none; }
+    .bdc-card-h h2 { font-size: 14.5px; font-weight: 620; margin: 0; letter-spacing: -.01em; }
     .bdc-card-h .meta { margin-left: auto; font-size: 11.5px; color: var(--dim); font-weight: 600; }
+    /* each card's content area is the scroll region inside the fixed card */
+    #cal #framework-body, #cal #events-body, #cal #pulses-body { flex: 1; min-height: 0; overflow-y: auto; }
     /* frameworks — vertical timeline graph */
     .bdc-vt { position: relative; margin-left: 8px; padding-left: 22px; border-left: 2px solid var(--border); }
     .bdc-vt-node { position: relative; padding: 2px 0 18px; }
@@ -4903,7 +4908,7 @@ TEMPLATE = r"""
     .bdc-evstrip { margin-top: 14px; border-top: 1px solid var(--hairline); padding-top: 13px; min-height: 50px; }
     .bdc-evstrip .none { font-size: 12.5px; color: var(--dim); }
     /* placement windows — master / detail */
-    .bdc-md { display: grid; grid-template-columns: 300px 1fr; gap: 16px; align-items: start; }
+    .bdc-md { display: grid; grid-template-columns: 230px 1fr; gap: 14px; align-items: start; }
     .bdc-mdlist { display: flex; flex-direction: column; gap: 8px; }
     .bdc-mdi { display: flex; align-items: center; gap: 11px; border: 1px solid var(--border); border-radius: 12px; background: var(--card);
       padding: 10px 12px; cursor: pointer; transition: .14s; text-align: left; font: inherit; width: 100%; }
@@ -4912,10 +4917,22 @@ TEMPLATE = r"""
     .bdc-mdi .sq { flex: none; width: 11px; height: 34px; border-radius: 5px; background: var(--cc) }
     .bdc-mdi .nm { font-size: 12.5px; font-weight: 600; line-height: 1.25 }
     .bdc-mdi .by { font-size: 10.5px; color: var(--dim); margin-top: 2px; font-weight: 600 }
-    .bdc-mdpane { border: 1px solid var(--border); border-radius: 16px; background: var(--bg); padding: 20px 22px; min-height: 240px; }
+    .bdc-mdpane { border: 1px solid var(--border); border-radius: 16px; background: var(--bg); padding: 16px 18px; }
+    /* events — a compact MONTHLY calendar (12 months, not a day grid): events
+       are sparse, so each cell is a month with its event(s) listed; click an
+       event for the detail + link. */
+    #cal .bdc-mcal { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; padding: 0; }
+    #cal .bdc-mcell { height: auto; min-height: 58px; padding: 7px 9px; }
+    #cal .bdc-mc-h { margin-bottom: 3px; }
+    #cal .bdc-mc-none { padding: 2px 4px; }
+    #cal .bdc-evstrip { margin-top: 12px; flex: none; }
     @media (max-width: 980px) {
-      .bdc-grid { grid-template-columns: 1fr; grid-template-areas: "fw" "cal" "pw" }
+      #cal .bdc-page { overflow-y: auto; }
+      .bdc-grid { height: auto; grid-template-columns: 1fr; grid-template-rows: none; grid-template-areas: "fw" "cal" "pw" }
+      .bdc-card { overflow: visible; }
+      #cal #framework-body, #cal #events-body, #cal #pulses-body { overflow: visible; }
       .bdc-md { grid-template-columns: 1fr } .bdc-split { grid-template-columns: 1fr }
+      #cal .bdc-mcal { grid-template-columns: repeat(3, 1fr); }
     }
 
     /* ============================================================
@@ -6142,45 +6159,44 @@ async function loadEvents() {
         'summits in the next ~6 months — relationship groundwork, not statute-forced windows.</div>';
       return;
     }
-    const evmap = {}, byKey = {};
+    const byKey = {}, byMonth = {};
     rows.forEach(e => {
       byKey[e.key || e.name] = e;
       const p = String(e.event_date || '').split('-');
-      if (p.length >= 3) evmap[(+p[0]) + '-' + ((+p[1]) - 1) + '-' + (+p[2])] = e;
+      if (p.length < 2) return;
+      const k = (+p[0]) + '-' + ((+p[1]) - 1);
+      (byMonth[k] = byMonth[k] || []).push(e);
     });
-    const agenda = rows.map(e => {
-      const p = String(e.event_date || '').split('-');
-      return '<button class="bdc-ag" data-ek="' + esc(e.key || e.name || '') + '">' +
-        '<div class="agd"><div class="d">' + (+p[2] || '') + '</div><div class="m">' + (BDC_MON[(+p[1]) - 1] || '') + '</div></div>' +
-        '<div><div class="agn">' + esc(e.name || '') + '</div><div class="agl">' + esc(e.location || '') + '</div></div></button>';
-    }).join('');
-    body.innerHTML = '<div class="bdc-split"><div id="bdc-calwrap"></div>' +
-      '<div><div class="bdc-aghead">Upcoming</div><div class="bdc-agenda">' + agenda + '</div></div></div>' +
-      '<div class="bdc-evstrip" id="bdc-evstrip"><div class="none">Pick a highlighted date or an event to see the detail and the link.</div></div>';
-    const host = document.getElementById('bdc-calwrap');
-    const strip = document.getElementById('bdc-evstrip');
-    const now = new Date(); const st = { y: now.getFullYear(), m: now.getMonth() };
-    host.innerHTML = '<div class="bdc-caltop"><span class="bdc-caltitle"></span>' +
-      '<span class="bdc-calnav"><button data-d="-1">&lsaquo;</button><button data-d="1">&rsaquo;</button></span></div>' +
-      '<div class="bdc-calgrid"></div>';
-    function paint() {
-      host.querySelector('.bdc-caltitle').textContent = BDC_MONF[st.m] + ' ' + st.y;
-      host.querySelector('.bdc-calgrid').innerHTML = bdcMonthGrid(st.y, st.m, evmap);
+    // A compact MONTHLY calendar: the next 12 months, each a cell with its
+    // event(s). No day grid — events are too sparse to warrant one.
+    const now = new Date(); const curY = now.getFullYear(), curM = now.getMonth();
+    let cells = '';
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(curY, curM + i, 1); const y = d.getFullYear(), m = d.getMonth();
+      const evs = byMonth[y + '-' + m] || [];
+      cells += '<div class="bdc-mcell' + (i === 0 ? ' now' : '') + (evs.length ? '' : ' quiet') + '">' +
+        '<div class="bdc-mc-h"><span class="bdc-mc-m">' + BDC_MON[m] + '</span>' +
+        '<span class="bdc-mc-y">’' + (('' + y).slice(2)) + '</span>' +
+        (i === 0 ? '<span class="bdc-mc-now">now</span>' : '') + '</div>';
+      if (evs.length) {
+        evs.forEach(e => {
+          const day = parseInt((String(e.event_date).split('-')[2] || ''), 10) || '';
+          cells += '<button class="bdc-mc-ev" data-evkey="' + esc(e.key || e.name || '') + '">' +
+            '<span class="bdc-mc-dot" style="background:' + bdcFocusCol(e.focus) + '"></span>' +
+            '<span class="bdc-mc-dd">' + day + '</span>' +
+            '<span class="bdc-mc-nm">' + esc(e.name || '') + '</span></button>';
+        });
+      } else { cells += '<div class="bdc-mc-none">&mdash;</div>'; }
+      cells += '</div>';
     }
-    paint();
-    host.querySelector('.bdc-calnav').addEventListener('click', (ev) => {
-      const b = ev.target.closest('button'); if (!b) return;
-      st.m += (+b.dataset.d); if (st.m < 0) { st.m = 11; st.y--; } if (st.m > 11) { st.m = 0; st.y++; } paint();
-    });
-    host.querySelector('.bdc-calgrid').addEventListener('click', (ev) => {
-      const c = ev.target.closest('.bdc-cday.ev'); if (!c) return;
-      host.querySelectorAll('.bdc-cday.ev').forEach(x => x.classList.remove('sel'));
-      c.classList.add('sel');
-      bdcShowEvent(strip, byKey[c.dataset.ek]);
-    });
-    body.querySelector('.bdc-agenda').addEventListener('click', (ev) => {
-      const a = ev.target.closest('.bdc-ag'); if (!a) return;
-      bdcShowEvent(strip, byKey[a.dataset.ek]);
+    body.innerHTML = '<div class="bdc-mcal">' + cells + '</div>' +
+      '<div class="bdc-evstrip" id="bdc-evstrip"><div class="none">Pick an event to see the detail and the link.</div></div>';
+    const strip = document.getElementById('bdc-evstrip');
+    body.querySelector('.bdc-mcal').addEventListener('click', (ev) => {
+      const b = ev.target.closest('.bdc-mc-ev'); if (!b) return;
+      body.querySelectorAll('.bdc-mc-ev').forEach(x => x.classList.remove('sel'));
+      b.classList.add('sel');
+      bdcShowEvent(strip, byKey[b.dataset.evkey]);
     });
     strip.addEventListener('click', async (ev) => {
       const btn = ev.target.closest('.bdc-rm'); if (!btn) return;
