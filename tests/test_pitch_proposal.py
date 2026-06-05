@@ -132,6 +132,35 @@ def test_company_logo_delegates_to_finder():
     assert pp.company_logo("") == (None, "wordmark")
 
 
+def test_cover_logo_is_trimmed_to_fill_the_box():
+    # The cover trims surrounding padding so the logo sits at a sensible size
+    # rather than floating tiny in a sea of whitespace ("appropriately sized").
+    pytest.importorskip("PIL")
+    import base64
+    import io
+    from PIL import Image, ImageDraw
+    from tool import pitch_proposal as pp
+
+    pad = Image.new("RGBA", (240, 120), (255, 255, 255, 0))
+    ImageDraw.Draw(pad).rectangle((100, 50, 140, 70), fill=(20, 20, 20, 255))
+    buf = io.BytesIO()
+    pad.save(buf, format="PNG")
+
+    html = pp._cover_logo_html("Acme", buf.getvalue())
+    assert 'class="client-logo"' in html
+    data_uri = html.split('src="', 1)[1].split('"', 1)[0]
+    embedded = base64.b64decode(data_uri.split(",", 1)[1])
+    assert Image.open(io.BytesIO(embedded)).size < (240, 120)
+
+
+def test_cover_wordmark_when_logo_bytes_none():
+    # No logo -> the cover always prints the company name as a wordmark, so it can
+    # never render blank (the reported PDF that showed neither logo nor name).
+    from tool import pitch_proposal as pp
+    html = pp._cover_logo_html("Acme Corporation", None)
+    assert "client-wordmark" in html and "Acme Corporation" in html
+
+
 # ---- profile routing ---------------------------------------------------
 
 def test_comms_profile_routes_to_proposal():

@@ -144,6 +144,193 @@ def img_data_uri(data: bytes) -> str:
 
 
 # ======================================================================
+# "Is this actually a usable LOGO?" — the gate that stops the three reported
+# cover failures (a decorative loader/menu glyph, a white-on-transparent mark
+# that vanishes on the white cover, or junk that scores as a logo). `valid_logo`
+# above only proves the bytes are a structurally-sound image; the checks below
+# prove the image is a real brand mark that will RENDER VISIBLY on the cover.
+# ======================================================================
+
+# Tokens in a class / id / alt / filename that mark a graphic as site furniture
+# (a loader, a nav/menu/search/social/cart glyph) rather than the brand logo. An
+# explicit "logo" marker overrides these (see _looks_decorative), so a brand
+# whose file is e.g. "arrow-logo.svg" is never mistaken for an arrow icon. The
+# ambiguous tokens (arrow / social / cookie …) require an icon/banner context so
+# a real company name that merely CONTAINS one ("Arrow", "Consentry") is safe.
+_DECORATIVE_RX = re.compile(
+    r"\bspinner\b|\bloader\b|\bloading\b|preloader|throbber|skeleton-?(?:loader|screen)|"
+    r"hamburger|burger-?menu|menu-?burger|nav-?toggle|menu-?toggle|toggle-?(?:menu|nav)|"
+    r"search-?icon|icon-?search|magnif\w*|"
+    r"\bchevron\b|\bcaret\b|dropdown-?(?:icon|arrow)|"
+    r"arrow-(?:left|right|up|down|icon|head|circle)|(?:left|right|up|down|next|prev|back|slide|slider|carousel)-?arrow|"
+    r"social-?(?:icon|media|links?|share|nav|bar|menu)|share-?icon|icon-?share|"
+    r"\bfacebook\b|\btwitter\b|\binstagram\b|\blinkedin\b|\byoutube\b|\btiktok\b|"
+    r"\bwhatsapp\b|\bpinterest\b|\bsnapchat\b|"
+    r"cart-?icon|icon-?cart|\bbasket\b|\btrolley\b|"
+    r"\bavatar\b|\bgravatar\b|"
+    r"cookie-?(?:banner|bar|notice|consent|popup|icon|policy)|"
+    r"consent-?(?:banner|bar|notice|popup|manager|modal)|\bgdpr\b|"
+    r"play-?button|video-?icon|icon-?play|"
+    r"\bsprite\b|\bplaceholder\b|"
+    r"close-?icon|icon-?close",
+    re.I)
+
+
+def _looks_decorative(blob: str) -> bool:
+    """True if the markup blob (class/id/alt/src or raw inline-svg) identifies a
+    decorative UI graphic, not a brand logo. An explicit 'logo' marker wins."""
+    b = (blob or "").lower()
+    if "logo" in b:
+        return False
+    return bool(_DECORATIVE_RX.search(b))
+
+
+def _is_whiteish(colour: str) -> bool:
+    """True for white / near-white colour tokens (#fff, #ffffff, white,
+    rgb(255,255,255), …) — the colours that make a logo vanish on a white
+    cover."""
+    c = (colour or "").strip().lower()
+    if not c or c in ("none", "transparent", "inherit", "currentcolor"):
+        return False
+    if c in ("white", "#fff", "#ffff", "#ffffff", "#ffffffff"):
+        return True
+    m = re.fullmatch(r"#([0-9a-f]{3,8})", c)
+    if m:
+        h = m.group(1)
+        if len(h) in (3, 4):                      # #rgb / #rgba
+            chans = [int(ch * 2, 16) for ch in h[:3]]
+        elif len(h) in (6, 8):                     # #rrggbb / #rrggbbaa
+            chans = [int(h[i:i + 2], 16) for i in (0, 2, 4)]
+        else:
+            return False
+        return all(ch >= 244 for ch in chans)
+    m = re.fullmatch(r"rgba?\(([^)]*)\)", c)
+    if m:
+        try:
+            parts = [p.strip() for p in m.group(1).split(",")[:3]]
+            chans = [int(round(float(p[:-1]) * 2.55)) if p.endswith("%") else int(float(p))
+                     for p in parts]
+            return len(chans) == 3 and all(ch >= 244 for ch in chans)
+        except Exception:
+            return False
+    return False
+
+
+def svg_is_visible(data: bytes) -> bool:
+    """Will this SVG render as visible ink on a white cover?
+
+    Rejects the two SVG failure modes seen on real packs:
+      * animated loaders / spinners (<animate …>), which are never a logo;
+      * marks whose ONLY explicit colours are white (designed to sit on a dark
+        header), which disappear on the white cover.
+
+    Accepts SVGs that use currentColor or carry no explicit colour (both render
+    in the default near-black), and any SVG with at least one non-white fill or
+    stroke. Pure / offline — unit-tested."""
+    try:
+        t = data.decode("utf-8", "ignore")
+    except Exception:
+        return False
+    low = t.lower()
+    if "<svg" not in low:
+        return False
+    if "<animate" in low:                          # spinner / loader, not a logo
+        return False
+    if not re.search(r"<(path|rect|circle|ellipse|polygon|polyline|line|text|image|use)\b", low):
+        return False                               # nothing drawable
+    if "currentcolor" in low or "<image" in low:
+        return True
+    colours = re.findall(
+        r"(?:fill|stroke)\s*[:=]\s*[\"']?\s*(#[0-9a-fA-F]{3,8}|rgba?\([^)]*\)|[a-zA-Z]+)", t)
+    explicit = [c for c in colours
+                if c.lower() not in ("none", "transparent", "inherit", "currentcolor")]
+    if not explicit:
+        return True                                # default fill is black -> visible
+    return any(not _is_whiteish(c) for c in explicit)
+
+
+def raster_is_visible(data: bytes) -> bool:
+    """Will this raster render as visible ink on a white cover? Composites the
+    image (honouring transparency) onto white and requires a small but real
+    fraction of non-white pixels — so a fully-transparent or white-on-transparent
+    mark (which vanishes on the cover) is rejected. Pillow is a hard dependency
+    of the PDF renderer; if it can't open the bytes we don't block (valid_logo
+    already vouched for them)."""
+    try:
+        import io
+        from PIL import Image
+        im = Image.open(io.BytesIO(data)).convert("RGBA")
+    except Exception:
+        return True
+    try:
+        bg = Image.new("RGBA", im.size, (255, 255, 255, 255))
+        comp = Image.alpha_composite(bg, im).convert("RGB")
+        small = comp.resize((min(64, max(1, comp.width)), min(64, max(1, comp.height))))
+        raw = small.tobytes()                       # tightly-packed RGB
+        n = len(raw) // 3
+        if n == 0:
+            return False
+        ink = sum(1 for i in range(0, n * 3, 3)
+                  if (765 - raw[i] - raw[i + 1] - raw[i + 2]) > 40)
+        return (ink / n) >= 0.005
+    except Exception:
+        return True
+
+
+def usable_logo(content: bytes, content_type: str = "", source: str = "") -> bool:
+    """The single acceptance gate: structurally a valid image (valid_logo), not a
+    decorative graphic (by its source/markup), and one that will render visibly
+    on the cover (SVG and raster visibility checks).
+
+    The decorative check on `source` looks only at the URL PATH (a glyph
+    filename like `/loading-spinner.svg`), never the host — so a real company
+    whose domain happens to contain a substring like "consent" or "arrow" is not
+    wrongly rejected."""
+    if not valid_logo(content, content_type):
+        return False
+    if source.startswith(("http://", "https://")):
+        if _looks_decorative(urlparse(source).path):
+            return False
+    if is_svg(content, content_type):
+        if _looks_decorative(content[:2000].decode("utf-8", "ignore")):
+            return False
+        return svg_is_visible(content)
+    return raster_is_visible(content)
+
+
+def normalize_logo(data: bytes, content_type: str = "") -> bytes:
+    """Trim the surrounding transparent / white border off a raster logo so it
+    fills the cover box instead of floating tiny in a sea of padding (the
+    "appropriately sized" half of the ask). SVGs and anything Pillow can't read
+    are returned unchanged. Best-effort — never raises."""
+    if not data or is_svg(data, content_type):
+        return data
+    try:
+        import io
+        from PIL import Image, ImageChops
+        im = Image.open(io.BytesIO(data))
+        im.load()
+        im = im.convert("RGBA")
+        white = Image.new("RGBA", im.size, (255, 255, 255, 255))
+        comp = Image.alpha_composite(white, im).convert("RGB")
+        diff = ImageChops.difference(comp, Image.new("RGB", im.size, (255, 255, 255)))
+        bbox = diff.getbbox()
+        if not bbox:
+            return data
+        pad = max(2, int(0.04 * max(im.size)))
+        l, t, r, b = bbox
+        box = (max(0, l - pad), max(0, t - pad),
+               min(im.width, r + pad), min(im.height, b + pad))
+        if box == (0, 0, im.width, im.height):
+            return data
+        out = io.BytesIO()
+        im.crop(box).save(out, format="PNG")
+        return out.getvalue()
+    except Exception:
+        return data
+
+
+# ======================================================================
 # Name / domain helpers (pure)
 # ======================================================================
 def _slug(s: str) -> str:
@@ -261,15 +448,19 @@ def _fetch_html(url: str) -> str | None:
 
 
 def _fetch_image(url: str) -> bytes | None:
-    """Logo image bytes. Handles data: URIs inline; otherwise a plain request,
-    falling back to Bright Data (read as bytes) for sites that block."""
+    """A usable logo image's bytes, or None. Handles data: URIs inline; otherwise
+    a plain request, falling back to Bright Data (read as bytes) for sites that
+    block. Every path runs through `usable_logo`, so a decorative glyph, a
+    white-on-transparent mark, or a non-image never escapes this function — which
+    is what stops them reaching the cover."""
     if not url:
         return None
     if url.startswith("data:"):
-        return _decode_data_uri(url)
+        b = _decode_data_uri(url)
+        return b if b and usable_logo(b, "", source=url) else None
     r = _http_get(url, want_bytes=True)
     if r is not None and r.status_code == 200 and r.content:
-        if valid_logo(r.content, r.headers.get("content-type", "")):
+        if usable_logo(r.content, r.headers.get("content-type", ""), source=url):
             return r.content
     # blocked? try Bright Data, reading raw bytes
     try:
@@ -283,7 +474,7 @@ def _fetch_image(url: str) -> bytes | None:
                                           "Content-Type": "application/json"},
                                  timeout=30)
             if resp.status_code == 200 and resp.content and \
-                    valid_logo(resp.content, resp.headers.get("content-type", "")):
+                    usable_logo(resp.content, resp.headers.get("content-type", ""), source=url):
                 return resp.content
     except Exception as e:
         log.info("image BD fetch %s failed: %s", url[:60], e)
@@ -469,23 +660,43 @@ def _sz(link) -> int:
 
 
 def _img_src(img):
-    return (img.get("src") or img.get("data-src") or img.get("data-lazy-src")
-            or img.get("data-original") or img.get("data-image"))
+    s = (img.get("src") or img.get("data-src") or img.get("data-lazy-src")
+         or img.get("data-original") or img.get("data-image"))
+    if s:
+        return s
+    # responsive logo shipped only via srcset / data-srcset — take the first
+    # candidate URL (the descriptor after the space is dropped).
+    ss = img.get("srcset") or img.get("data-srcset") or ""
+    if ss:
+        first = ss.split(",")[0].strip().split()
+        if first:
+            return first[0]
+    return None
+
+
+def _bg_url(style: str) -> str | None:
+    """The url(...) of a CSS background / background-image declaration — how many
+    top-right logos are actually painted (a <a class="brand" style="background:
+    url(/logo.svg)">), invisible to a plain <img> scrape."""
+    m = re.search(r'background(?:-image)?\s*:[^;]*url\(\s*["\']?([^"\')]+)',
+                  style or "", re.I)
+    return m.group(1).strip() if m else None
 
 
 def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
     """Parse a homepage for logo image URLs, ordered best-first. Returns
     {'primary': [...], 'secondary': [...]}:
 
-      primary   — the actual brand logo: an element that says "logo", the
-                  <img>/<svg> inside the homepage link or header/nav, or a
-                  mask/SVG favicon.
+      primary   — the actual brand logo: an element that says "logo"/"brand",
+                  the <img>/<svg>/CSS-background inside the homepage link, the
+                  header / nav / top-bar, a "logo" url() in a <style> rule, or a
+                  mask/SVG favicon. Responsive logos (srcset) are covered too.
       secondary — acceptable square brand marks: apple-touch-icon, an inline
                   header SVG serialised to a data URI, then sized favicons.
 
-    Modern startup sites (e.g. oqc.tech, geordie.ai) put the logo in the header
-    link as an <img> or inline <svg> and ship an apple-touch-icon, so all of
-    those are covered. Pure — unit-tested against fixtures."""
+    Modern startup sites (e.g. oqc.tech, geordie.ai) put the top-right logo in
+    the header as an <img>, an inline <svg>, OR a CSS background-image, and ship
+    an apple-touch-icon — all of those are covered. Pure — unit-tested."""
     primary: list[str] = []
     secondary: list[str] = []
 
@@ -532,17 +743,53 @@ def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
     for s in svg_logo + other_logo:
         add(primary, s)
 
-    # 2. <img> inside the homepage link (<a href="/">) — almost always the logo.
+    def _img_blob(img) -> str:
+        return " ".join(str(img.get(k, "")) for k in
+                        ("class", "id", "alt", "src", "data-src", "title"))
+
+    # 1b. CSS background-image logos: an element that identifies as a logo/brand
+    #     and paints the mark via an inline-style background-image (Webflow /
+    #     custom builds), which a plain <img> scrape never sees.
+    for el in soup.select("[class*=logo], [id*=logo], [class*=Logo], "
+                          "[class*=brand], [id*=brand], [class*=Brand]"):
+        blob = " ".join(str(el.get(k, "")) for k in ("class", "id")).lower()
+        if _looks_decorative(blob):
+            continue
+        bg = _bg_url(el.get("style", ""))
+        if bg:
+            add(primary, bg)
+
+    # 2. <img> / background inside the homepage link (<a href="/">) — almost
+    #    always the logo. Skip decorative furniture (a social / search glyph).
     for a in soup.find_all("a"):
         if is_root_anchor(a):
+            bg = _bg_url(a.get("style", ""))
+            if bg and not _looks_decorative(str(a.get("class", "")) + str(a.get("id", ""))):
+                add(primary, bg)
             for img in a.find_all("img"):
+                if not _looks_decorative(_img_blob(img)):
+                    add(primary, _img_src(img))
+
+    # 3. first <img> inside header / nav / a top-bar / an element that names
+    #    itself a logo or brand (decorative glyphs skipped).
+    for sel in ("header img", "nav img", "[class*=header] img",
+                "[class*=navbar] img", "[class*=Header] img",
+                "[class*=logo] img", "[id*=logo] img", "[class*=Logo] img",
+                "[class*=brand] img", "[id*=brand] img", "[role=banner] img",
+                "[class*=top-bar] img", "[class*=topbar] img"):
+        for img in soup.select(sel)[:3]:
+            if not _looks_decorative(_img_blob(img)):
                 add(primary, _img_src(img))
 
-    # 3. first <img> inside header / nav / a top-bar.
-    for sel in ("header img", "nav img", "[class*=header] img",
-                "[class*=navbar] img", "[class*=Header] img"):
-        for img in soup.select(sel)[:3]:
-            add(primary, _img_src(img))
+    # 3b. <style> blocks: a url(...) whose filename looks like a logo — the
+    #     class-driven CSS background logo (.site-logo{background:url(/logo.svg)}).
+    for st in soup.find_all("style"):
+        css = st.string or st.get_text() or ""
+        for m in re.finditer(r"url\(\s*[\"']?([^\"')]+)", css):
+            u = m.group(1).strip()
+            base = u.lower().split("?")[0]
+            if "logo" in base and not u.startswith("data:"):
+                add(primary, u)
 
     # 4. mask-icon / SVG favicon files (monochrome brand mark).
     for link in soup.find_all("link"):
@@ -579,8 +826,15 @@ def extract_logo_urls(html: str, base_url: str) -> dict[str, list[str]]:
         # take it if it looks logo-ish OR it's the header/anchor svg (most are)
         if "icon" in blob and "logo" not in blob:
             continue
+        # Skip site furniture (loaders / menu / search / social glyphs) and any
+        # SVG that won't render as visible ink — the spinner and the invisible
+        # white mark seen on real packs both die here, before they can be picked.
+        if _looks_decorative(blob) or _looks_decorative(raw):
+            continue
         if "xmlns" not in raw[:120]:
             raw = raw.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"', 1)
+        if not svg_is_visible(raw.encode("utf-8")):
+            continue
         add(secondary, "data:image/svg+xml;utf8," + quote(raw))
 
     # 7. sized <link rel=icon> (largest first).
@@ -623,7 +877,7 @@ def _clearbit(domain: str) -> bytes | None:
     r = _http_get(f"https://logo.clearbit.com/{domain}",
                   params={"size": 512, "format": "png"}, want_bytes=True)
     if r is not None and r.status_code == 200 and \
-            valid_logo(r.content, r.headers.get("content-type", "")):
+            usable_logo(r.content, r.headers.get("content-type", "")):
         return r.content
     return None
 
@@ -637,7 +891,7 @@ def _logodev(domain: str) -> bytes | None:
                   params={"token": token, "size": 512, "format": "png"},
                   want_bytes=True)
     if r is not None and r.status_code == 200 and \
-            valid_logo(r.content, r.headers.get("content-type", "")):
+            usable_logo(r.content, r.headers.get("content-type", "")):
         return r.content
     return None
 
@@ -646,7 +900,7 @@ def _google_favicon(domain: str) -> bytes | None:
     r = _http_get("https://www.google.com/s2/favicons",
                   params={"domain": domain, "sz": 256}, want_bytes=True)
     if r is not None and r.status_code == 200 and \
-            valid_logo(r.content, r.headers.get("content-type", "")):
+            usable_logo(r.content, r.headers.get("content-type", "")):
         return r.content
     return None
 
@@ -668,7 +922,7 @@ def _favicon_floor(domain: str) -> bytes | None:
 def _duckduckgo_favicon(domain: str) -> bytes | None:
     r = _http_get(f"https://icons.duckduckgo.com/ip3/{domain}.ico", want_bytes=True)
     if r is not None and r.status_code == 200 and \
-            valid_logo(r.content, r.headers.get("content-type", "")):
+            usable_logo(r.content, r.headers.get("content-type", "")):
         return r.content
     return None
 
@@ -740,11 +994,21 @@ def find_logo(company: str, hint_url: str | None = None
               ) -> tuple[bytes | None, str]:
     """Resolve the company's real logo. Returns (image_bytes_or_None, source).
 
-    Once the official domain is known, EVERY logo/icon the site itself ships is
-    tried (header logo, apple-touch-icon, favicon) plus a keyless favicon floor,
-    BEFORE any name-based encyclopaedia lookup. That guarantees a real brand
-    mark for a resolved domain and removes the failure modes seen on the BD
-    radar: a wrong, same-named Wikipedia image, or no logo at all.
+    Once the official domain is known the resolution is laddered so a REAL,
+    VISIBLE brand mark always beats site furniture:
+
+      1. the site's own explicit logo files / icons (raster or .svg file);
+      2. domain-keyed raster services (Clearbit / logo.dev) — self-contained and
+         reliably visible, tried BEFORE any inline header SVG so a loader or a
+         white-on-dark mark can never win;
+      3. an inline header/anchor SVG, but only one that clears the decorative +
+         visibility gates;
+      4. a keyless favicon floor.
+
+    Every candidate passes through `usable_logo` (via `_fetch_image` / the
+    service helpers), so the three reported cover failures — a decorative
+    spinner, an invisible white mark, junk scored as a logo — are all filtered
+    out and the cover falls back to the next rung, ending at a clean wordmark.
 
     Never raises — the caller falls back to a typographic wordmark."""
     company = (company or "").strip()
@@ -754,14 +1018,21 @@ def find_logo(company: str, hint_url: str | None = None
     domain, how = resolve_domain(company, hint_url)
 
     if domain:
-        # 1. the company's own website assets, best-first.
-        for u in _site_logo_candidates(domain)[:12]:
+        # Split the scraped candidates: real logo/icon FILES vs fragile inline
+        # SVGs (data: URIs). Files and the raster services are tried first; the
+        # inline SVG is a last site resort, even when it passes its gates.
+        site_cands = _site_logo_candidates(domain)
+        file_cands = [u for u in site_cands if not u.startswith("data:")]
+        inline_cands = [u for u in site_cands if u.startswith("data:")]
+
+        # 1. the company's own explicit logo files / icons, best-first.
+        for u in file_cands[:12]:
             img = _fetch_image(u)
             if img:
                 log.info("logo for %r via site %s (%s, %d bytes)",
                          company, domain, _short(u), len(img))
                 return img, f"site:{domain}"
-        # 2. domain-keyed logo services.
+        # 2. domain-keyed raster services — reliable + visible — BEFORE inline SVG.
         for fn, name in ((_clearbit, "clearbit"), (_logodev, "logodev")):
             try:
                 img = fn(domain)
@@ -770,7 +1041,15 @@ def find_logo(company: str, hint_url: str | None = None
             if img:
                 log.info("logo for %r via %s:%s", company, name, domain)
                 return img, f"{name}:{domain}"
-        # 3. keyless favicon floor — a real brand mark for any live domain.
+        # 3. inline header/anchor SVG — last site resort (already gated for
+        #    decorative + visibility in extraction and in _fetch_image).
+        for u in inline_cands[:4]:
+            img = _fetch_image(u)
+            if img:
+                log.info("logo for %r via site-inline %s (%d bytes)",
+                         company, domain, len(img))
+                return img, f"site:{domain}"
+        # 4. keyless favicon floor — a real brand mark for any live domain.
         img = _favicon_floor(domain)
         if img:
             log.info("logo for %r via favicon:%s", company, domain)

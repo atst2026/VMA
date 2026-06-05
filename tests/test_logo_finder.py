@@ -7,13 +7,29 @@ matching, homepage logo scraping, image validation, and the find_logo()
 control flow (driven with monkeypatched network so it's deterministic).
 """
 import base64
+import io
 import os
 import sys
+from urllib.parse import quote
+
+import pytest
 
 _REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, _REPO)
 
 from tool import logo_finder as lf
+
+
+def _png(draw=None, color=(255, 255, 255, 0), size=(120, 60)) -> bytes:
+    """A real (>300-byte) PNG for the raster-visibility tests."""
+    Image = pytest.importorskip("PIL.Image", reason="Pillow needed")
+    from PIL import ImageDraw
+    im = Image.new("RGBA", size, color)
+    if draw:
+        draw(ImageDraw.Draw(im))
+    b = io.BytesIO()
+    im.save(b, format="PNG")
+    return b.getvalue()
 
 
 # ---- image validation + embedding -------------------------------------
@@ -253,3 +269,225 @@ def test_resolve_domain_uses_known_map_for_reported_cases():
     assert lf.resolve_domain("Geordie AI") == ("geordie.ai", "known")
     assert lf.resolve_domain("OQC") == ("oqc.tech", "known")
     assert lf.resolve_domain("Oxford Quantum Circuits") == ("oqc.tech", "known")
+
+
+# ======================================================================
+# Logo VISIBILITY + decorative gates — the three reported cover failures:
+#   (1) a decorative loader/spinner picked as the "logo",
+#   (2) a white-on-transparent mark that vanishes on the white cover,
+#   (3) junk that scores as a logo.
+# Every check below is pure/offline.
+# ======================================================================
+
+def test_is_whiteish():
+    for c in ("#fff", "#ffffff", "white", "rgb(255,255,255)", "#fefefe",
+              "rgb(100%,100%,100%)"):
+        assert lf._is_whiteish(c), c
+    for c in ("#24486f", "black", "#000", "none", "transparent",
+              "currentColor", "rgb(20,30,40)", ""):
+        assert not lf._is_whiteish(c), c
+
+
+def test_looks_decorative():
+    for blob in ("loading-spinner", "nav-toggle hamburger", "icon-search",
+                 "social facebook", "menu-toggle", "preloader", "icon-close",
+                 "slider-arrow", "arrow-right", "cookie-banner"):
+        assert lf._looks_decorative(blob), blob
+    # an explicit "logo" marker always overrides an icon-ish token
+    for blob in ("arrow-logo", "site-logo brand", "company logo search",
+                 "acme-mark", "header__brand"):
+        assert not lf._looks_decorative(blob), blob
+    # real company-name substrings must NOT trip the filter (no icon context)
+    for blob in ("arrow", "consentry", "socialchain", "loadingdock",
+                 "cartrust", "carter"):
+        assert not lf._looks_decorative(blob), blob
+
+
+def test_svg_is_visible_rejects_invisible_and_decorative():
+    white = (b'<svg xmlns="http://www.w3.org/2000/svg">'
+             b'<rect fill="#ffffff" width="10" height="10"/></svg>')
+    assert not lf.svg_is_visible(white)            # white-on-white -> invisible
+    white_named = (b'<svg xmlns="http://www.w3.org/2000/svg">'
+                   b'<path fill="white" d="M0 0h9v9z"/></svg>')
+    assert not lf.svg_is_visible(white_named)
+    spinner = (b'<svg xmlns="http://www.w3.org/2000/svg"><circle r="5">'
+               b'<animateTransform attributeName="transform"/></circle></svg>')
+    assert not lf.svg_is_visible(spinner)          # animated loader, never a logo
+    empty = b'<svg xmlns="http://www.w3.org/2000/svg"></svg>'
+    assert not lf.svg_is_visible(empty)            # nothing drawable
+    # visible cases: explicit colour, default (black) fill, currentColor
+    assert lf.svg_is_visible(
+        b'<svg xmlns="http://www.w3.org/2000/svg"><path fill="#24486f" d="M0 0h9v9z"/></svg>')
+    assert lf.svg_is_visible(
+        b'<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0h9v9z"/></svg>')
+    assert lf.svg_is_visible(
+        b'<svg xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M0 0h9z"/></svg>')
+
+
+def test_raster_is_visible():
+    pytest.importorskip("PIL")
+    assert not lf.raster_is_visible(_png())                          # transparent
+    assert not lf.raster_is_visible(_png(color=(255, 255, 255, 255)))  # solid white
+    # a white mark on a transparent background also vanishes on the cover
+    white_mark = _png(lambda d: d.rectangle((10, 20, 110, 40),
+                                            fill=(255, 255, 255, 255)))
+    assert not lf.raster_is_visible(white_mark)
+    real = _png(lambda d: d.rectangle((10, 10, 110, 50), fill=(30, 60, 110, 255)))
+    assert lf.raster_is_visible(real)
+
+
+def test_usable_logo_combines_gates():
+    navy_svg = (b'<svg xmlns="http://www.w3.org/2000/svg">'
+                b'<path fill="#24486f" d="M0 0h9v9z"/></svg>')
+    assert lf.usable_logo(navy_svg, "image/svg+xml")
+    white_svg = (b'<svg xmlns="http://www.w3.org/2000/svg">'
+                 b'<rect fill="#fff" width="9" height="9"/></svg>')
+    assert not lf.usable_logo(white_svg, "image/svg+xml")
+    # a decorative source FILENAME (path) is rejected even when the bytes are fine
+    assert not lf.usable_logo(navy_svg, "image/svg+xml",
+                              source="https://x.io/loading-spinner.svg")
+
+
+def test_usable_logo_decorative_check_ignores_host():
+    # The decorative filter must look at the URL path, never the host — a real
+    # company whose domain contains a substring like "loading"/"consent"/"arrow"
+    # (e.g. a logo at consentry.com) must NOT be rejected.
+    navy_svg = (b'<svg xmlns="http://www.w3.org/2000/svg">'
+                b'<path fill="#24486f" d="M0 0h9v9z"/></svg>')
+    assert lf.usable_logo(navy_svg, "image/svg+xml",
+                          source="https://consentry.com/assets/brand.svg")
+    assert lf.usable_logo(navy_svg, "image/svg+xml",
+                          source="https://arrowglobal.com/logo.svg")
+
+
+def test_normalize_logo_trims_padding_and_passes_svg_through():
+    pytest.importorskip("PIL")
+    from PIL import Image
+    padded = _png(lambda d: d.rectangle((90, 40, 150, 80), fill=(20, 20, 20, 255)),
+                  size=(240, 120))
+    out = lf.normalize_logo(padded, "image/png")
+    assert Image.open(io.BytesIO(out)).size < (240, 120)   # padding trimmed away
+    svg = b'<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>'
+    assert lf.normalize_logo(svg, "image/svg+xml") == svg  # svg returned unchanged
+    assert lf.normalize_logo(b"", "") == b""               # empty unchanged
+
+
+# ---- extraction skips decorative / invisible candidates ----------------
+
+def test_extract_logo_urls_skips_decorative_and_invisible_inline_svg():
+    html = """
+    <html><body><header><a href="/">
+      <svg class="loading-spinner"><circle r="5"><animateTransform/></circle></svg>
+      <svg class="brand-mark"><rect fill="#ffffff" width="9" height="9"/></svg>
+    </a></header></body></html>"""
+    out = lf.extract_logo_urls(html, "https://x.io")
+    # neither the animated spinner nor the white-only mark becomes a candidate
+    assert not any(u.startswith("data:image/svg+xml")
+                   for u in out["primary"] + out["secondary"])
+
+
+def test_extract_logo_urls_skips_decorative_img():
+    html = ('<header><a href="/">'
+            '<img class="social-icon" src="/fb.svg">'
+            '<img class="site-logo" src="/logo.svg"></a></header>')
+    out = lf.extract_logo_urls(html, "https://x.io")
+    assert "https://x.io/logo.svg" in out["primary"]
+    assert "https://x.io/fb.svg" not in out["primary"]
+
+
+# ---- the top-right-logo coverage gap: img / CSS-bg / <style> / srcset --------
+
+def test_extract_logo_urls_top_right_nav_img():
+    # a logo placed top-right in the nav (Framer/Webflow startup-site shape)
+    html = ('<nav class="nav"><div class="nav-right">'
+            '<a href="/" class="brand"><img src="/images/geordie-logo.svg" alt="Geordie">'
+            '</a></div></nav>')
+    out = lf.extract_logo_urls(html, "https://geordie.ai")
+    assert "https://geordie.ai/images/geordie-logo.svg" in out["primary"]
+
+
+def test_extract_logo_urls_css_background_logo():
+    # the logo painted as a CSS background-image on a branded anchor (no <img>)
+    html = ('<header><a href="/" class="navbar-brand" '
+            'style="background-image:url(\'/assets/logo.svg\');width:160px"></a></header>')
+    out = lf.extract_logo_urls(html, "https://x.io")
+    assert "https://x.io/assets/logo.svg" in out["primary"]
+
+
+def test_extract_logo_urls_style_block_logo():
+    # a class-driven CSS logo: .site-logo{background:url(/brand-logo.png)}
+    html = ('<head><style>.site-logo{background:#fff url(/static/brand-logo.png) no-repeat}'
+            '</style></head><body><div class="site-logo"></div></body>')
+    out = lf.extract_logo_urls(html, "https://x.io")
+    assert "https://x.io/static/brand-logo.png" in out["primary"]
+
+
+def test_extract_logo_urls_srcset_logo():
+    # a responsive logo shipped only via srcset
+    html = '<header><img class="logo" srcset="/logo@1x.png 1x, /logo@2x.png 2x"></header>'
+    out = lf.extract_logo_urls(html, "https://x.io")
+    assert "https://x.io/logo@1x.png" in out["primary"]
+
+
+def test_fetch_image_validates_data_uris():
+    # the white/animated inline SVG must NOT escape _fetch_image (the hole that
+    # let an invisible mark and a spinner reach the cover).
+    white = ('<svg xmlns="http://www.w3.org/2000/svg">'
+             '<rect fill="#fff" width="9" height="9"/></svg>')
+    assert lf._fetch_image("data:image/svg+xml;utf8," + quote(white)) is None
+    navy = ('<svg xmlns="http://www.w3.org/2000/svg">'
+            '<path fill="#24486f" d="M0 0h9v9z"/></svg>')
+    assert lf._fetch_image("data:image/svg+xml;utf8," + quote(navy)) is not None
+
+
+# ---- find_logo laddering: a real mark always beats junk ----------------
+
+def test_find_logo_inline_svg_loses_to_raster_service(monkeypatch):
+    # An inline header SVG (where the spinner / white mark live) must NEVER beat a
+    # reliable raster service. No usable site file -> Clearbit wins, inline ignored.
+    monkeypatch.setattr(lf, "resolve_domain", lambda c, hint_url=None: ("acme.com", "known"))
+    monkeypatch.setattr(lf, "_site_logo_candidates",
+                        lambda d: ["data:image/svg+xml;utf8,<svg></svg>"])
+    png = b"\x89PNG\r\n\x1a\n" + b"\x05" * 600
+    monkeypatch.setattr(lf, "_clearbit", lambda d: png)
+    data, src = lf.find_logo("Acme")
+    assert src == "clearbit:acme.com" and data == png
+
+
+def test_find_logo_prefers_usable_site_file(monkeypatch):
+    monkeypatch.setattr(lf, "resolve_domain", lambda c, hint_url=None: ("acme.com", "known"))
+    monkeypatch.setattr(lf, "_site_logo_candidates",
+                        lambda d: ["https://acme.com/apple-touch-icon.png"])
+    png = b"\x89PNG\r\n\x1a\n" + b"\x06" * 600
+    monkeypatch.setattr(lf, "_fetch_image",
+                        lambda u: png if u.endswith("apple-touch-icon.png") else None)
+    monkeypatch.setattr(lf, "_clearbit", lambda d: b"\x89PNG\r\n\x1a\n" + b"\x09" * 600)
+    data, src = lf.find_logo("Acme")
+    assert src == "site:acme.com" and data == png
+
+
+def test_find_logo_unusable_site_file_falls_through_to_service(monkeypatch):
+    # A white/invisible site logo file (_fetch_image returns None for it) must not
+    # strand the cover — resolution continues to the next rung.
+    monkeypatch.setattr(lf, "resolve_domain", lambda c, hint_url=None: ("acme.com", "known"))
+    monkeypatch.setattr(lf, "_site_logo_candidates", lambda d: ["https://acme.com/logo.svg"])
+    monkeypatch.setattr(lf, "_fetch_image", lambda u: None)   # rejected by the gate
+    png = b"\x89PNG\r\n\x1a\n" + b"\x07" * 600
+    monkeypatch.setattr(lf, "_clearbit", lambda d: png)
+    data, src = lf.find_logo("Acme")
+    assert src == "clearbit:acme.com" and data == png
+
+
+def test_find_logo_junk_only_falls_to_wordmark(monkeypatch):
+    # When every rung yields only junk, the result is the wordmark sentinel — so
+    # the cover prints the company name, never a blank space (the PDF-2 failure).
+    monkeypatch.setattr(lf, "resolve_domain", lambda c, hint_url=None: ("acme.com", "known"))
+    monkeypatch.setattr(lf, "_site_logo_candidates",
+                        lambda d: ["data:image/svg+xml;utf8,<svg></svg>"])
+    monkeypatch.setattr(lf, "_fetch_image", lambda u: None)
+    monkeypatch.setattr(lf, "_clearbit", lambda d: None)
+    monkeypatch.setattr(lf, "_logodev", lambda d: None)
+    monkeypatch.setattr(lf, "_favicon_floor", lambda d: None)
+    monkeypatch.setattr(lf, "_wikidata_logo", lambda c: (None, ""))
+    monkeypatch.setattr(lf, "_wikipedia_logo", lambda c: (None, ""))
+    assert lf.find_logo("Acme") == (None, "wordmark")
