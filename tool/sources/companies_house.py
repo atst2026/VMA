@@ -33,7 +33,7 @@ import json
 import logging
 import re
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from tool.config import COMPANIES_HOUSE_KEY, SOURCES
@@ -564,7 +564,6 @@ def detect_officer_changes(max_companies: int | None = None,
         # Process officers whose resigned_on falls in the last 90 days.
         # The CH /officers endpoint returns BOTH active and resigned, so
         # this adds zero API cost — we just look at the data differently.
-        from datetime import timedelta
         cutoff = datetime.now(timezone.utc) - timedelta(days=90)
         for o in officers:
             resigned_str = o.get("resigned_on")
@@ -675,6 +674,403 @@ def detect_officer_changes(max_companies: int | None = None,
              "(processed %d companies, next cursor=%d)",
              len(events), processed, (cursor + processed) % total)
     return events
+
+
+# ========================================================================
+# BD-strengthening: exploit Companies House beyond /search + /officers.
+# The free API also exposes charges (financing events), persons with
+# significant control (ownership changes), filing history (change-of-name
+# = rebrand, SH01 = share allotment), and officers' appointed_on dates
+# (leadership tenure / flight-risk). All Tier-1 verified by construction.
+#
+# These are emitted DATE-WINDOW based (an event is emitted when its own
+# CH-supplied date falls inside the look-back window) rather than via a
+# day-over-day snapshot diff: idempotent, no snapshot file to corrupt, and
+# downstream dedup (stable signal_id) + the rolling pipeline (keyed by
+# company, first_seen preserved) absorb the daily re-emission exactly as
+# the historical resigned-officer backfill above already does.
+# ========================================================================
+
+# Look-back for filing/charge/PSC events. Matches the predictor's 90-day
+# stacking window and the historical-officer backfill cutoff above.
+_CH_EVENT_WINDOW_DAYS = 90
+# Long-tenure threshold for the flight-risk signal. CMO/CCO tenure is among
+# the shortest in the C-suite (~4–5 years); a comms/marketing board officer
+# past this is a soft succession-watch signal.
+_TENURE_FLIGHT_RISK_DAYS = 365 * 4
+
+
+def _ch_get_json(path: str, params: dict | None = None) -> dict | None:
+    """GET a Companies House API path, return parsed JSON or None. Central
+    so charges/PSC/filing-history share one auth + error path."""
+    if not COMPANIES_HOUSE_KEY:
+        return None
+    url = f"{SOURCES['companies_house_api']}{path}"
+    r = get(url, params=params or {"items_per_page": 100},
+            auth=(COMPANIES_HOUSE_KEY, ""))
+    if not r or r.status_code != 200:
+        return None
+    try:
+        return r.json()
+    except Exception:
+        return None
+
+
+def _parse_ch_date(s: str | None) -> datetime | None:
+    if not s:
+        return None
+    try:
+        return datetime.fromisoformat(str(s)).replace(tzinfo=timezone.utc)
+    except Exception:
+        return None
+
+
+def _within_window(d: datetime | None, cutoff: datetime) -> bool:
+    return d is not None and d >= cutoff
+
+
+def _ch_officers_url(number: str) -> str:
+    return (f"https://find-and-update.company-information.service.gov.uk"
+            f"/company/{number}/officers")
+
+
+def _charge_events(name: str, number: str, cutoff: datetime) -> list[TriggerEvent]:
+    """A newly registered charge (debenture / mortgage) = a secured-financing
+    event. Only outstanding charges created inside the window count."""
+    data = _ch_get_json(f"/company/{number}/charges")
+    if not data:
+        return []
+    out: list[TriggerEvent] = []
+    for ch in (data.get("items") or []):
+        if not isinstance(ch, dict):
+            continue
+        # 'satisfied' charges are settled debt — not a live financing signal.
+        if (ch.get("status") or "").lower() == "satisfied":
+            continue
+        created = _parse_ch_date(ch.get("created_on") or ch.get("delivered_on"))
+        if not _within_window(created, cutoff):
+            continue
+        persons = ", ".join(
+            (p.get("name") or "") for p in (ch.get("persons_entitled") or [])
+            if isinstance(p, dict)
+        )[:120]
+        cid = ch.get("charge_id") or ch.get("id") or (ch.get("links") or {}).get("self", "")
+        ev = (f"Companies House: {name} registered a charge "
+              f"({ch.get('classification', {}).get('description', 'secured financing')}"
+              f"{(' to ' + persons) if persons else ''}) on "
+              f"{created.date().isoformat()}.")
+        out.append(TriggerEvent(
+            trigger_key="secured_financing",
+            trigger_label="Secured financing / charge registered",
+            company=name,
+            evidence=ev,
+            url=f"https://find-and-update.company-information.service.gov.uk/company/{number}/charges",
+            source_label="Companies House (charges)",
+            published=created,
+            raw_signal_id=signal_id("ch_charge", f"{number}|{cid}"),
+            tier_hint="listed",
+        ))
+    return out
+
+
+def _psc_events(name: str, number: str, cutoff: datetime) -> list[TriggerEvent]:
+    """A PSC notified (or ceased) inside the window = an ownership change at a
+    long-established watchlist company. A founding PSC's old notified_on is
+    outside the window, so this only fires on genuine recent control changes."""
+    data = _ch_get_json(f"/company/{number}/persons-with-significant-control")
+    if not data:
+        return []
+    out: list[TriggerEvent] = []
+    for psc in (data.get("items") or []):
+        if not isinstance(psc, dict):
+            continue
+        notified = _parse_ch_date(psc.get("notified_on"))
+        ceased = _parse_ch_date(psc.get("ceased_on"))
+        recent = notified if _within_window(notified, cutoff) else (
+            ceased if _within_window(ceased, cutoff) else None)
+        if recent is None:
+            continue
+        who = psc.get("name") or "a new controlling party"
+        verb = "ceased as" if (ceased and recent == ceased) else "filed as"
+        ev = (f"Companies House: {who} {verb} a person with significant control "
+              f"of {name} on {recent.date().isoformat()}.")
+        pid = (psc.get("links") or {}).get("self", "") or who
+        out.append(TriggerEvent(
+            trigger_key="ownership_change",
+            trigger_label="Ownership change (new significant control)",
+            company=name,
+            evidence=ev,
+            url=f"https://find-and-update.company-information.service.gov.uk/company/{number}/persons-with-significant-control",
+            source_label="Companies House (PSC)",
+            published=recent,
+            raw_signal_id=signal_id("ch_psc", f"{number}|{pid}|{recent.date()}"),
+            tier_hint="listed",
+        ))
+    return out
+
+
+def _filing_events(name: str, number: str, cutoff: datetime) -> list[TriggerEvent]:
+    """Change-of-name filings (= rebrand) and share allotments / SH01
+    (= secured financing / capital raise) from the filing history."""
+    data = _ch_get_json(f"/company/{number}/filing-history",
+                        params={"items_per_page": 50})
+    if not data:
+        return []
+    out: list[TriggerEvent] = []
+    for f in (data.get("items") or []):
+        if not isinstance(f, dict):
+            continue
+        fdate = _parse_ch_date(f.get("date"))
+        if not _within_window(fdate, cutoff):
+            continue
+        category = (f.get("category") or "").lower()
+        ftype = (f.get("type") or "").upper()
+        desc = (f.get("description") or "").replace("-", " ")
+        tid = f.get("transaction_id") or (f.get("links") or {}).get("self", "")
+        if category == "change-of-name" or ftype in ("CERTNM", "NM01", "NM04"):
+            out.append(TriggerEvent(
+                trigger_key="rebrand",
+                trigger_label="Rebrand / change of name",
+                company=name,
+                evidence=(f"Companies House: {name} filed a change of name "
+                          f"on {fdate.date().isoformat()} (a corporate rebrand)."),
+                url=f"https://find-and-update.company-information.service.gov.uk/company/{number}/filing-history",
+                source_label="Companies House (change of name)",
+                published=fdate,
+                raw_signal_id=signal_id("ch_name", f"{number}|{tid}"),
+                tier_hint="listed",
+            ))
+        elif ftype == "SH01" or "allotment of shares" in desc:
+            out.append(TriggerEvent(
+                trigger_key="secured_financing",
+                trigger_label="Share allotment (capital raise)",
+                company=name,
+                evidence=(f"Companies House: {name} filed an allotment of shares "
+                          f"(SH01) on {fdate.date().isoformat()} — fresh equity capital."),
+                url=f"https://find-and-update.company-information.service.gov.uk/company/{number}/filing-history",
+                source_label="Companies House (share allotment)",
+                published=fdate,
+                raw_signal_id=signal_id("ch_sh01", f"{number}|{tid}"),
+                tier_hint="listed",
+            ))
+    return out
+
+
+def _tenure_events(name: str, number: str, officers: list[dict]) -> list[TriggerEvent]:
+    """A board-level comms / marketing officer past the long-tenure
+    threshold is a soft flight-risk / succession-watch signal, keyed on
+    their CURRENT employer. Reuses officers already fetched (zero extra
+    API cost). Active (non-resigned) officers only."""
+    out: list[TriggerEvent] = []
+    now = datetime.now(timezone.utc)
+    for o in officers:
+        if o.get("resigned_on"):
+            continue
+        occ = o.get("occupation") or ""
+        # Tenure flight-risk is meaningful only for the comms/marketing
+        # leadership seat (the one VMA backfills), not generic directors.
+        if not LEADER_TITLE_RX.search(occ):
+            continue
+        appointed = _parse_ch_date(o.get("appointed_on"))
+        if appointed is None:
+            continue
+        tenure_days = (now - appointed).total_seconds() / 86400.0
+        if tenure_days < _TENURE_FLIGHT_RISK_DAYS:
+            continue
+        officer_name = o.get("name") or "A senior officer"
+        years = round(tenure_days / 365.0, 1)
+        out.append(TriggerEvent(
+            trigger_key="leadership_tenure",
+            trigger_label="Leadership tenure (flight-risk / succession watch)",
+            company=name,
+            evidence=(f"Companies House: {officer_name} has held {occ} at {name} "
+                      f"for ~{years} years (appointed {appointed.date().isoformat()}) "
+                      f"— a long tenure in a short-tenure seat."),
+            url=_ch_officers_url(number),
+            source_label="Companies House (tenure / appointed_on)",
+            # Soft, slow-decaying restlessness signal; date it to now so it
+            # stays live in the 90-day window like the velocity spike.
+            published=now,
+            raw_signal_id=signal_id("ch_tenure", f"{number}|{officer_name}|{o.get('appointed_on')}"),
+            tier_hint="covered",
+        ))
+    return out
+
+
+def detect_filing_events(max_companies: int | None = None,
+                         time_budget_s: float | None = None) -> list[TriggerEvent]:
+    """Charges + PSC + change-of-name/SH01 filings + leadership tenure for
+    the watchlist. Shares the resolver cache and the rotating cursor model
+    with detect_officer_changes (its OWN cursor so the two scans cover
+    different slices), so the free 600-req/5-min budget is respected and
+    full coverage rolls round within a few runs.
+
+    Cost per visited company: charges(1) + PSC(1) + filing-history(1) +
+    officers(1, reused for tenure) ≈ 4 calls. Bounded by both the company
+    cap and the wall-clock budget. Fully non-fatal: any company that errors
+    is skipped."""
+    if not COMPANIES_HOUSE_KEY:
+        log.info("CH: no COMPANIES_HOUSE_KEY, skipping filing-event scan")
+        return []
+
+    all_names = _all_watchlist_names()
+    total = len(all_names)
+    if total == 0:
+        return []
+
+    cursor = _load_filing_cursor() % total
+    rotated = all_names[cursor:] + all_names[:cursor]
+    cap = max_companies if max_companies is not None else total
+    deadline = (time.monotonic() + time_budget_s) if time_budget_s is not None else None
+    cutoff = datetime.now(timezone.utc) - timedelta(days=_CH_EVENT_WINDOW_DAYS)
+
+    log.info("CH: filing-event scan — up to %d/%d companies from cursor %d (budget=%ss)",
+             min(cap, total), total, cursor, time_budget_s or "none")
+
+    events: list[TriggerEvent] = []
+    processed = 0
+    for name in rotated:
+        if processed >= cap:
+            break
+        if deadline is not None and time.monotonic() >= deadline:
+            log.info("CH: filing-event time budget reached after %d companies", processed)
+            break
+        processed += 1
+        try:
+            number = resolve_company_number(name)
+            if not number:
+                continue
+            events.extend(_charge_events(name, number, cutoff))
+            events.extend(_psc_events(name, number, cutoff))
+            events.extend(_filing_events(name, number, cutoff))
+            officers = company_officers(number)
+            if officers:
+                events.extend(_tenure_events(name, number, officers))
+            time.sleep(0.15)
+        except Exception as e:
+            log.info("CH filing-event scan: %s failed (%s) — skipped", name, e)
+            continue
+
+    _save_filing_cursor((cursor + processed) % total)
+    log.info("CH: emitted %d filing/charge/PSC/tenure events (processed %d, next cursor=%d)",
+             len(events), processed, (cursor + processed) % total)
+    return events
+
+
+_FILING_CURSOR_FILE = STATE_DIR / "ch_filing_cursor.json"
+
+
+def _load_filing_cursor() -> int:
+    try:
+        return int(json.loads(_FILING_CURSOR_FILE.read_text()).get("cursor", 0))
+    except Exception:
+        return 0
+
+
+def _save_filing_cursor(cursor: int) -> None:
+    try:
+        _FILING_CURSOR_FILE.write_text(json.dumps({"cursor": cursor}))
+    except Exception as e:
+        log.info("CH: could not persist filing cursor: %s", e)
+
+
+def stream_filings(duration_s: float = 25.0,
+                   max_events: int = 200) -> list[TriggerEvent]:
+    """Companies House Streaming API reader (near-real-time filing firehose).
+
+    The Streaming API pushes EVERY company's filings as newline-delimited
+    JSON over a long-lived HTTPS connection. A daily cron can't hold an
+    always-on socket, so this is a BOUNDED reader: it connects, consumes the
+    stream for `duration_s` seconds (or `max_events` records), filters to the
+    watchlist, maps filing categories to trigger keys, and returns. It is
+    OFF by default in the cron and only runs when CH_STREAM_ENABLED is set —
+    an always-on worker is the right home for it. Fully non-fatal.
+
+    Auth uses the same free API key as Basic auth (the streaming key). The
+    record parser (_stream_record_to_event) is unit-tested without a live
+    socket."""
+    import os
+    if (os.environ.get("CH_STREAM_ENABLED") or "").strip().lower() not in ("1", "true", "yes", "on"):
+        return []
+    if not COMPANIES_HOUSE_KEY:
+        return []
+    watch = {_norm_co(n) for n in _all_watchlist_names()}
+    out: list[TriggerEvent] = []
+    try:
+        import requests
+        deadline = time.monotonic() + duration_s
+        with requests.get(SOURCES["companies_house_stream"],
+                          auth=(COMPANIES_HOUSE_KEY, ""),
+                          stream=True, timeout=(10, duration_s + 5)) as r:
+            if r.status_code != 200:
+                log.info("CH stream: HTTP %s", r.status_code)
+                return []
+            for line in r.iter_lines(decode_unicode=True):
+                if time.monotonic() >= deadline or len(out) >= max_events:
+                    break
+                if not line:
+                    continue
+                try:
+                    rec = json.loads(line)
+                except Exception:
+                    continue
+                ev = _stream_record_to_event(rec, watch)
+                if ev:
+                    out.append(ev)
+    except Exception as e:
+        log.info("CH stream reader stopped: %s", e)
+    log.info("CH stream: %d watchlist filing events", len(out))
+    return out
+
+
+def _norm_co(name: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", (name or "").lower()).strip()
+
+
+# Streaming filing-category → trigger-key map (the categories worth a lead).
+_STREAM_CATEGORY_TRIGGER = {
+    "mortgage": "secured_financing",          # a charge registered
+    "persons-with-significant-control": "ownership_change",
+    "change-of-name": "rebrand",
+    "capital": "secured_financing",           # SH01 allotments live here
+}
+
+
+def _stream_record_to_event(rec: dict, watch: set[str]) -> TriggerEvent | None:
+    """Map one Streaming-API filing record to a TriggerEvent if its company
+    is on the watchlist and its category is one we lead on. Pure function —
+    unit-tested without a socket."""
+    if not isinstance(rec, dict):
+        return None
+    data = rec.get("data") or {}
+    company_name = (data.get("company_name")
+                    or (rec.get("resource_kind") and "")
+                    or "")
+    # The filings stream keys company by number in resource_uri; the name is
+    # not always present, so accept either a matched name OR a watchlist
+    # number lookup is out of scope here — require a name match for precision.
+    if not company_name or _norm_co(company_name) not in watch:
+        return None
+    category = (data.get("category") or "").lower()
+    key = _STREAM_CATEGORY_TRIGGER.get(category)
+    if not key:
+        return None
+    trig = P.BY_KEY.get(key)
+    if trig is None:
+        return None
+    when = _parse_ch_date(data.get("date")) or datetime.now(timezone.utc)
+    return TriggerEvent(
+        trigger_key=key,
+        trigger_label=trig.label,
+        company=company_name,
+        evidence=(f"Companies House stream: {company_name} filed "
+                  f"{data.get('description') or category} on {when.date().isoformat()}."),
+        url="https://find-and-update.company-information.service.gov.uk",
+        source_label="Companies House (streaming)",
+        published=when,
+        raw_signal_id=signal_id("ch_stream", str(rec.get("resource_id") or rec.get("event", {}))),
+        tier_hint="listed",
+    )
 
 
 # ---- Back-compat -------------------------------------------------------

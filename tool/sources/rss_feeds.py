@@ -97,6 +97,10 @@ RSS_SOURCES = [
     ("ofwat_news",      "Ofwat News",            "regulator", "UK", 0.9),
     ("cma_news",        "CMA News",              "regulator", "UK", 1.0),
     ("find_a_tender",   "UK Find a Tender",      "procurement", "UK", 0.8, 150),
+    # Devolved procurement — below-threshold Scotland / Wales / NI comms RFPs.
+    ("public_contracts_scotland", "Public Contracts Scotland", "procurement", "UK", 0.8, 150),
+    ("sell2wales",      "Sell2Wales",            "procurement", "UK", 0.8, 120),
+    ("etenders_ni",     "eTendersNI",            "procurement", "UK", 0.8, 120),
     ("civil_service_jobs","Civil Service Jobs",  "job", "UK", 0.9, 150),
     ("corpcomms",       "CorpComms Magazine",    "trade_press", "UK", 1.0),
     ("ragan",           "Ragan",                 "trade_press", "US", 0.6),
@@ -116,6 +120,14 @@ RSS_SOURCES = [
     # Stealing). Opens the hot dark sectors the FTSE-skewed lanes miss.
     ("jobs_ac_uk",      "jobs.ac.uk",            "job", "UK", 1.0, 150),
     ("guardian_jobs",   "Guardian Jobs",         "job", "UK", 1.0, 150),
+    # Profession-specific & sector job boards (free) — CIPR/PRCA/CharityComms
+    # comms-leadership boards + CharityJob + NHS Jobs. kind=job -> Today's
+    # Leads + Mandates Worth Stealing + the job-ad-cluster predictor.
+    ("cipr_jobs",       "CIPR Jobs",             "job", "UK", 1.0, 120),
+    ("prca_jobs",       "PRCA Jobs",             "job", "UK", 1.0, 120),
+    ("charitycomms_jobs","CharityComms Jobs",    "job", "UK", 1.0, 120),
+    ("charityjob",      "CharityJob",            "job", "UK", 1.0, 150),
+    ("nhs_jobs",        "NHS Jobs",              "job", "UK", 0.9, 150),
     # Funding / scale-up news — feeds the Funding-Round detector (was
     # GDELT-only) and the predictor. kind=news.
     ("uktn",            "UKTN",                  "news", "UK", 0.9, 100),

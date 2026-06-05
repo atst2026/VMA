@@ -103,6 +103,13 @@ def _predicted_role_for(stk: Stack, desk: str | None = None) -> str:
         ("press_velocity_spike",   "Head of Communications"),
         ("ned_trustee_appointment","Head of Communications (succession watch)"),
         ("personal_brand_velocity","Head of Communications (succession watch)"),
+        ("leadership_tenure",      "Head of Communications (succession watch)"),
+        ("ownership_change",       "Corporate Affairs Director (new ownership)"),
+        ("secured_financing",      "Corporate Affairs Director"),
+        ("rebrand",                "Head of Brand / Corporate Affairs"),
+        ("agency_account_move",    "Head of Corporate Affairs"),
+        ("esg_bcorp",              "Head of Sustainability Communications"),
+        ("martech_adoption",       "Head of Digital Communications"),
         ("job_ad_cluster",         "Head of Internal Communications"),
     ]
     marketing_map = [
@@ -126,6 +133,13 @@ def _predicted_role_for(stk: Stack, desk: str | None = None) -> str:
         ("press_velocity_spike",   "Head of Brand"),
         ("ned_trustee_appointment","Head of Marketing (succession watch)"),
         ("personal_brand_velocity","Head of Marketing (succession watch)"),
+        ("leadership_tenure",      "Head of Marketing (succession watch)"),
+        ("ownership_change",       "Brand Director (new ownership)"),
+        ("secured_financing",      "Brand / Corporate Marketing Director"),
+        ("rebrand",                "Head of Brand"),
+        ("agency_account_move",    "Marketing Director"),
+        ("esg_bcorp",              "Head of Sustainability Marketing"),
+        ("martech_adoption",       "Head of Marketing Operations"),
         ("job_ad_cluster",         "Head of Marketing"),
     ]
     if desk is None:

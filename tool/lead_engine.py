@@ -71,12 +71,19 @@ _COMMS_TAXONOMY = {
     "restructure":             (3, "demand", "fast"),
     "regulator_probe_early":   (2, "demand", "fast"),
     "contract_loss":           (2, "demand", "fast"),
+    "ownership_change":         (3, "demand", "fast"),
+    "secured_financing":        (3, "demand", "fast"),
+    "rebrand":                 (2, "demand", "fast"),
+    "agency_account_move":     (2, "demand", "fast"),
+    "esg_bcorp":               (2, "demand", "fast"),
     # Access triggers
     "ic_platform_rfp":         (4, "access", "fast"),
+    "martech_adoption":        (2, "access", "fast"),
     # Soft / corroboration only (cannot trigger a lead on their own)
     "ned_trustee_appointment": (1, "soft", "slow"),
     "press_velocity_spike":    (1, "soft", "fast"),
     "personal_brand_velocity": (1, "soft", "slow"),
+    "leadership_tenure":       (1, "soft", "slow"),
 }
 
 # Marketing desk taxonomy. Same trigger detection, different conversion logic:
@@ -104,9 +111,16 @@ _MKT_TAXONOMY = {
     "regulator_probe_early":   (1, "demand", "fast"),
     "contract_loss":           (2, "demand", "fast"),
     "ic_platform_rfp":         (2, "access", "fast"),
+    "rebrand":                 (4, "demand", "fast"),        # marketing brand trigger
+    "agency_account_move":     (4, "demand", "fast"),        # client + agency-side reshuffle
+    "ownership_change":         (3, "demand", "fast"),
+    "secured_financing":        (3, "demand", "fast"),
+    "martech_adoption":        (3, "access", "fast"),        # marketing-ops decision
+    "esg_bcorp":               (2, "demand", "fast"),
     "ned_trustee_appointment": (1, "soft", "slow"),
     "press_velocity_spike":    (1, "soft", "fast"),
     "personal_brand_velocity": (1, "soft", "slow"),
+    "leadership_tenure":       (1, "soft", "slow"),
 }
 
 _SOFT_CAP = 2.0          # soft modifiers add at most +2, and only alongside a real signal
@@ -193,7 +207,7 @@ def _market_state(company: str | None = None) -> dict:
 # contradicted by a budget-cut signal downgrades to "watch". (Bare
 # "restructure" is a comms trigger that is financially ambiguous, so it is NOT
 # treated as a cut unless cut language is present.)
-_FIN_PRO_KEYS = {"funding", "ipo_listing"}
+_FIN_PRO_KEYS = {"funding", "ipo_listing", "secured_financing"}
 _FIN_PRO_RX = re.compile(
     r"\b(rais(?:e|ed|ing)|funding round|series\s+[a-z]\b|\$\d|£\d+\s?m|investment|"
     r"expansion|expanding|record (?:revenue|results|profit|year)|revenue growth|"
@@ -355,6 +369,13 @@ _WHO = {
     "profit_warning": "CFO / Head of IR",
     "restructure": "CHRO / Transformation lead",
     "contract_loss": "CEO office / Corporate Affairs",
+    "rebrand": "CCO / Head of Brand & Reputation",
+    "agency_account_move": "Head of Brand / Corporate Affairs",
+    "esg_bcorp": "Head of Sustainability / Corporate Affairs",
+    "martech_adoption": "Head of Digital Comms / Marketing Ops",
+    "secured_financing": "CFO / CEO",
+    "ownership_change": "Incoming owner's office / Corporate Affairs",
+    "leadership_tenure": "The individual directly / CHRO (succession watch)",
 }
 _WHO_DEFAULT = "CHRO / Head of Comms"
 
@@ -388,6 +409,13 @@ _MKT_WHO = {
     "pe_acquisition": "Deal team / incoming CMO",
     "restructure": "CMO / Transformation lead",
     "crisis_event": "CMO / Corporate Affairs",
+    "rebrand": "CMO / Head of Brand",
+    "agency_account_move": "CMO / Marketing Director",
+    "esg_bcorp": "CMO / Head of Brand (sustainability marketing)",
+    "martech_adoption": "CMO / Head of Marketing Ops",
+    "secured_financing": "CFO / CMO",
+    "ownership_change": "Incoming owner / CMO",
+    "leadership_tenure": "The individual directly / CMO (succession watch)",
 }
 _MKT_WHO_DEFAULT = "CMO / Marketing Director"
 

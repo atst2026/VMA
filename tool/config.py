@@ -166,6 +166,25 @@ SOURCES = {
     #                    / NGO comms & PR leadership
     "jobs_ac_uk": "https://www.jobs.ac.uk/search/?keywords=communications&format=rss",
     "guardian_jobs": "https://jobs.theguardian.com/jobs/marketing-and-pr/?format=rss",
+    # Devolved procurement portals (kind=procurement) — below-threshold
+    # Scottish / Welsh / NI public-body comms RFPs that Find-a-Tender (UK-
+    # wide, above-threshold only) misses. PCS and Sell2Wales both run on the
+    # Proactis/BravoSolution "Public Contracts" platform, which exposes a
+    # standard notices RSS at NoticeDownload/Rss.aspx; eTendersNI is the
+    # Jaggaer NI portal. Graceful-skip + CI-verified like every feed here —
+    # a moved/dead path degrades to "no items", never an error.
+    "public_contracts_scotland": "https://www.publiccontractsscotland.gov.uk/NoticeDownload/Rss.aspx",
+    "sell2wales": "https://www.sell2wales.gov.wales/NoticeDownload/Rss.aspx",
+    "etenders_ni": "https://etendersni.gov.uk/epps/rss/rss.xml",
+    # Profession-specific & sector job boards (kind=job) — the highest-yield
+    # FREE comms/PR/charity boards the FTSE-skewed ATS/Adzuna lanes miss.
+    # CIPR / PRCA / CharityComms run Madgex boards (standard ?format=rss);
+    # CharityJob and NHS Jobs publish search RSS. Graceful-skip + CI-verified.
+    "cipr_jobs": "https://jobs.cipr.co.uk/jobs/?format=rss",
+    "prca_jobs": "https://jobs.prca.org.uk/jobs/?format=rss",
+    "charitycomms_jobs": "https://www.charitycomms.org.uk/jobs/feed",
+    "charityjob": "https://www.charityjob.co.uk/v3api/jobs/rss?Keywords=communications",
+    "nhs_jobs": "https://www.jobs.nhs.uk/api/v1/search_rss?keyword=communications",
     # Funding / scale-up news — so the Funding-Round detector is no
     # longer GDELT-only (Sifted is paywalled with no clean public RSS;
     # these three publish standard WordPress RSS and cover UK/EU growth

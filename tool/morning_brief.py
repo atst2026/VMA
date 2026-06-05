@@ -266,11 +266,48 @@ def main() -> int:
         velocity_events = []
     trigger_events = pdet.detect_events(signals)
     cluster_events = pcluster.detect_clusters()
+
+    # BD-strengthening event lanes (all free). Each is bounded + non-fatal:
+    # a failure logs and yields [] so the brief always completes.
+    #  - CH filing/charge/PSC/tenure events (rotating cursor, own budget)
+    #  - CH streaming firehose (off unless CH_STREAM_ENABLED — returns [])
+    #  - Charity Commission trustee-board changes (no-op without the free key)
+    #  - Wayback careers-page pre-announcement departures
+    try:
+        ch_filing_events = companies_house.detect_filing_events(
+            max_companies=80, time_budget_s=120,
+        )
+    except Exception as e:
+        log.exception("CH filing-event scan: %s", e)
+        ch_filing_events = []
+    try:
+        ch_stream_events = companies_house.stream_filings()
+    except Exception as e:
+        log.info("CH stream reader: %s", e)
+        ch_stream_events = []
+    try:
+        from tool.sources import charity_commission as _charity
+        charity_events = _charity.fetch_charity_signals()
+    except Exception as e:
+        log.info("charity register scan: %s", e)
+        charity_events = []
+    try:
+        from tool.sources import wayback as _wayback
+        wayback_events = _wayback.detect_team_page_departures()
+    except Exception as e:
+        log.info("wayback careers-page diff: %s", e)
+        wayback_events = []
+
     # CH officer-change scan + contacts auto-update already ran earlier
     # (pre-enrichment) so signals are enriched with fresh data. The
     # ch_events list from that earlier call is reused here as part of
     # the all-events combination for the predictor pipeline.
-    all_events = trigger_events + cluster_events + ch_events + velocity_events
+    all_events = (trigger_events + cluster_events + ch_events + velocity_events
+                  + ch_filing_events + ch_stream_events + charity_events
+                  + wayback_events)
+    log.info("BD-strengthening lanes: %d CH-filing + %d CH-stream + %d charity "
+             "+ %d wayback events", len(ch_filing_events), len(ch_stream_events),
+             len(charity_events), len(wayback_events))
     # Specialism relevance: marketing keeps only triggers that predict a
     # MARKETING hire (comms keeps all). So a regulator / IR / governance
     # trigger surfaces as a comms BD lead but NOT a marketing one — the
