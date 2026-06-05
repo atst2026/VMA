@@ -78,6 +78,7 @@ _COMMS_PULSES: list[dict] = [
         "confidence": "high",
         "source": "FCA Consumer Duty (PRIN 2A) — annual board report, "
                   "recurring 31 July cadence.",
+        "source_url": "https://www.fca.org.uk/firms/consumer-duty",
     },
     {
         "key": "uk_srs_2026",
@@ -101,6 +102,7 @@ _COMMS_PULSES: list[dict] = [
         "confidence": "medium",
         "source": "DBT/FRC UK SRS endorsement programme + FCA consultation "
                   "on listed-company sustainability disclosure, 2026.",
+        "source_url": "https://www.frc.org.uk/",
     },
     {
         "key": "mog_post_sr_2026",
@@ -121,6 +123,7 @@ _COMMS_PULSES: list[dict] = [
         "source": "HM Treasury Spending Review 2025 settlements → "
                   "departmental delivery-plan / reorganisation cycle, "
                   "FY2026/27.",
+        "source_url": "https://gcs.civilservice.gov.uk/",
     },
     {
         "key": "agm_reporting_2026",
@@ -140,6 +143,7 @@ _COMMS_PULSES: list[dict] = [
         "confidence": "high",
         "source": "Companies Act annual-report + Listing Rules AGM cycle "
                   "(December year-ends), 2026.",
+        "source_url": "https://www.legislation.gov.uk/ukpga/2006/46/contents",
     },
     {
         "key": "gender_pay_gap_2026",
@@ -158,6 +162,7 @@ _COMMS_PULSES: list[dict] = [
         "confidence": "high",
         "source": "Equality Act 2010 (Gender Pay Gap Information) "
                   "Regulations 2017 — annual 4 Apr / 30 Mar deadlines.",
+        "source_url": "https://www.gov.uk/report-gender-pay-gap-data",
     },
     {
         "key": "nhs_planning_2026",
@@ -174,6 +179,7 @@ _COMMS_PULSES: list[dict] = [
         "confidence": "medium",
         "source": "NHS England operational planning guidance + FY2026/27 "
                   "cycle.",
+        "source_url": "https://www.england.nhs.uk/operational-planning-and-contracting/",
     },
     {
         "key": "he_clearing_2026",
@@ -189,6 +195,7 @@ _COMMS_PULSES: list[dict] = [
         "scope_note": "UK universities and higher-education providers.",
         "confidence": "medium",
         "source": "UCAS Clearing cycle + academic year 2026/27.",
+        "source_url": "https://www.ucas.com/advisers/help-and-training/guides/clearing",
     },
 ]
 
@@ -323,6 +330,10 @@ def active_pulses(today: Optional[date] = None,
             "confidence":  p.get("confidence", "medium"),
             "source":      p.get("source", ""),
             "url":         p.get("url", ""),
+            # Official source link (governing legislation / regulator) for the
+            # window's "View source" action — distinct from the free-text
+            # `source` citation above.
+            "source_url":  p.get("source_url", ""),
             "discovered":  bool(p.get("discovered")),
             "advisory":    advisory_for(p["key"]),
         })
