@@ -5024,6 +5024,60 @@ TEMPLATE = r"""
     #cal .bdc-mdi .nm { font-size: 12px; }
     #cal .bdc-mdpane .bdc-kv { gap: 10px 14px; margin-top: 12px; }
     #cal .bdc-mdpane .bdc-basis { margin-top: 11px; }
+
+    /* ===== Mandate Windows — realistic "thin black line" panes. A symmetric
+       row of closed panes (one per live pulse) that auto-distributes equal
+       space for however many windows there are; click a pane and its glass
+       swings open to reveal the brief on a soft sky-blue interior. ===== */
+    #cal #pulses-body .mw-row { width: 100%; height: 100%; display: flex; justify-content: center;
+      gap: 14px; perspective: 1700px; padding: 2px; align-items: center; }
+    .mw-win { position: relative; flex: 1 1 0; min-width: 0; height: 62%; align-self: center; cursor: pointer;
+      border: 1.6px solid #1f1f1f; border-radius: 3px; background: #fff; box-shadow: 0 6px 16px rgba(40,60,90,.10);
+      transition: flex .5s cubic-bezier(.5,.02,.2,1), height .45s cubic-bezier(.5,.02,.2,1); }
+    .mw-win.open { flex: 3.1 1 0; height: 100%; cursor: default; }
+    .mw-inner { position: absolute; inset: 0; overflow: hidden; }
+    .mw-wrap { position: absolute; inset: 0; z-index: 1; opacity: 0; transition: opacity .35s .18s; overflow: auto; }
+    .mw-win.open .mw-wrap { opacity: 1; }
+    .mw-glass { position: absolute; inset: 0; z-index: 2; transform-origin: left center;
+      transition: transform .6s cubic-bezier(.55,.02,.2,1);
+      background: linear-gradient(150deg, #fbfdff, #eef4fb 60%, #e4eef9); }
+    .mw-win.open .mw-glass { transform: rotateY(-132deg); }
+    .mw-mun { position: absolute; inset: 0;
+      background: linear-gradient(#1f1f1f, #1f1f1f) center/1.6px 100% no-repeat,
+                  linear-gradient(#1f1f1f, #1f1f1f) center/100% 1.6px no-repeat; }
+    .mw-refl { position: absolute; top: -20%; left: -15%; width: 42%; height: 160%; transform: rotate(11deg);
+      background: linear-gradient(105deg, transparent 42%, rgba(255,255,255,.55) 50%, transparent 58%); }
+    .mw-plate { position: absolute; z-index: 6; left: 50%; bottom: 14px; transform: translateX(-50%);
+      display: flex; align-items: center; gap: 7px; max-width: calc(100% - 14px); background: #fff; border: 1px solid #1f1f1f;
+      border-radius: 0; padding: 5px 10px; box-shadow: var(--shadow-sm); transition: opacity .25s; }
+    .mw-win.open .mw-plate { opacity: 0; pointer-events: none; }
+    /* the label fits whatever width each pane gets (ellipsises when panes are
+       narrow because many windows are open) — so nothing ever overflows. */
+    .mw-pn { font-size: 11px; font-weight: 650; color: #1f1f1f; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mw-pd { font-size: 10px; color: var(--muted); flex: none; }
+    .mw-sill { position: absolute; z-index: 5; left: -1px; right: -1px; bottom: -4px; height: 5px; background: #1f1f1f; border-radius: 0 0 2px 2px; }
+    .mw-x { position: absolute; z-index: 7; top: 10px; right: 14px; font-size: 11px; font-weight: 600; color: #1f1f1f;
+      opacity: 0; transition: opacity .3s .2s; }
+    .mw-win.open .mw-x { opacity: 1; cursor: pointer; }
+    /* interior content — soft, light sky-blue (same family as the events content) */
+    .mw-wi { min-height: 100%; padding: 13px 16px; display: flex; flex-direction: column; color: var(--ink-2);
+      background: linear-gradient(180deg, #F4F9FF 0%, #E7F1FD 46%, #DCEBFB 100%); }
+    .mw-tag { align-self: flex-start; font-size: 9.5px; font-weight: 800; color: #fff; background: var(--mw-tint, #5F6368);
+      border-radius: 7px; padding: 3px 9px; letter-spacing: .02em; }
+    .mw-t { font-size: 13.5px; font-weight: 650; letter-spacing: -.01em; margin-top: 7px; line-height: 1.2; color: var(--ink); }
+    .mw-meta { font-size: 10.5px; color: var(--muted); margin-top: 3px; }
+    .mw-angle { font-size: 11.5px; line-height: 1.45; margin-top: 7px; color: var(--ink-2);
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .mw-facts { display: flex; gap: 18px; margin-top: 9px; flex-wrap: wrap; }
+    .mw-facts > div { font-size: 11px; color: var(--ink); font-weight: 600; }
+    .mw-facts span { display: block; font-size: 8px; text-transform: uppercase; letter-spacing: .04em; color: var(--dim); font-weight: 700; margin-bottom: 1px; }
+    .mw-seat { font-size: 11px; color: var(--ink); margin-top: 9px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .mw-seat span { display: block; font-size: 8px; text-transform: uppercase; letter-spacing: .04em; color: var(--dim); font-weight: 700; margin-bottom: 1px; }
+    .mw-scope { font-size: 10.5px; color: var(--muted); margin-top: 9px; line-height: 1.4; }
+    .mw-src { font-size: 11.5px; font-weight: 600; color: var(--blue-deep); margin-top: 10px; display: inline-block; text-decoration: none; }
+    #cal #pulses-body .mw-win .bdc-actions { margin-top: 11px; }
+
     @media (max-width: 980px) {
       #cal .bdc-page { overflow-y: auto; }
       .bdc-grid { height: auto; grid-template-columns: 1fr; grid-template-rows: none; grid-template-areas: "fw" "cal" "pw" }
@@ -5031,6 +5085,10 @@ TEMPLATE = r"""
       #cal #framework-body, #cal #events-body, #cal #pulses-body { overflow: visible; }
       .bdc-md { grid-template-columns: 1fr } .bdc-split { grid-template-columns: 1fr }
       #cal .bdc-mcal { grid-template-columns: repeat(3, 1fr); }
+      /* mandate windows: wrap panes into rows on narrow screens */
+      #cal #pulses-body .mw-row { height: auto; flex-wrap: wrap; }
+      .mw-win { flex: 1 1 150px; height: 150px; }
+      .mw-win.open { flex: 1 1 100%; height: auto; min-height: 250px; }
     }
 
     /* ============================================================
@@ -5475,7 +5533,7 @@ TEMPLATE = r"""
       <div class="bdc-grid">
 
         <div class="bdc-card a-fw">
-          <div class="bdc-card-h"><h2>Framework Eligibility</h2><span class="meta">Where &amp; when VMA can bid</span></div>
+          <div class="bdc-card-h"><h2>Approved Frameworks</h2><span class="meta">Where &amp; when VMA can bid</span></div>
           <div class="bdc-fwa" id="framework-body">
             {% if framework_events|length == 0 %}<div class="empty compact">No framework windows tracked.</div>{% endif %}
             {% for fw in framework_events %}
@@ -5514,7 +5572,7 @@ TEMPLATE = r"""
         </div>
 
         <div class="bdc-card a-pw">
-          <div class="bdc-card-h"><h2>Placement Windows</h2></div>
+          <div class="bdc-card-h"><h2>Mandate Windows</h2><span class="meta">click a window — it opens</span></div>
           <div id="pulses-body"><div class="empty compact">Loading…</div></div>
         </div>
 
@@ -6183,26 +6241,31 @@ async function bdcDismiss(key, after) {
     if (jj.ok) { after(); } else { alert(jj.detail || 'Could not remove.'); }
   } catch (e) { alert('Network error: ' + e.message); }
 }
-// Placement Windows — master/detail: a compact list on the left, the full
-// brief on the right. The remove (dismiss) is tucked into the open brief.
-function bdcWinDetail(w) {
+// Mandate Windows — realistic "thin black line" window panes. Each live
+// pulse is a closed pane (short name + days on a plate); clicking it swings
+// the glass open to reveal the full brief on a soft sky-blue interior. The
+// row auto-distributes equal/symmetric space for however many windows the
+// pulse feed yields. The remove (dismiss) control sits inside the open brief.
+function mwInterior(w) {
   const cc = bdcWinCat(w.name);
   const src = w.source_url || (/^https?:/i.test(w.url || '') ? w.url : '');
   const nTargets = (w.targets || []).length;
-  return '<div class="bdc-pwd-h"><span class="bdc-pwd-tag">' +
-      esc(typeof w.days_left === 'number' ? w.days_left + ' days left' : 'window') + '</span>' +
-      '<div><div class="bdc-pwd-t">' + esc(w.name || '') + '</div>' +
-      '<div class="bdc-pwd-meta">' + esc(cc[1]) + (w.sector ? ' &middot; ' + esc(bdcSector(w.sector)) : '') + '</div></div></div>' +
-    (w.angle ? '<div class="bdc-angle">' + esc(w.angle) + '</div>' : '') +
-    '<div class="bdc-kv">' +
-      (w.window ? '<div><div class="bdc-k">Window</div><div class="bdc-v">' + esc(bdcWinRange(w.window)) + '</div></div>' : '') +
-      (w.act_by ? '<div><div class="bdc-k">Act by</div><div class="bdc-v">' + esc(bdcEngDate(w.act_by)) + '</div></div>' : '') +
-      (w.seat ? '<div><div class="bdc-k">The seat</div><div class="bdc-v seat">' + esc(w.seat) + '</div></div>' : '') +
-    '</div>' +
-    '<div class="bdc-basis">' + (w.scope_note ? esc(w.scope_note) : '') +
-      (nTargets ? ' &middot; ' + nTargets + ' named targets' : '') + '</div>' +
-    (src ? '<div class="bdc-srcline"><a href="' + safeUrl(src) + '" target="_blank" rel="noopener noreferrer">View source &rsaquo;</a></div>' : '') +
-    '<div class="bdc-actions">' + bdcRmBtn(w.key || '', 'Remove this window') + '</div>';
+  const tag = (typeof w.days_left === 'number') ? w.days_left + ' days left' : 'window';
+  return '<div class="mw-wi" style="--mw-tint:' + cc[0] + '">' +
+      '<span class="mw-tag">' + esc(tag) + '</span>' +
+      '<div class="mw-t">' + esc(w.name || '') + '</div>' +
+      '<div class="mw-meta">' + esc(cc[1]) + (w.sector ? ' &middot; ' + esc(bdcSector(w.sector)) : '') + '</div>' +
+      (w.angle ? '<div class="mw-angle">' + esc(w.angle) + '</div>' : '') +
+      '<div class="mw-facts">' +
+        (w.window ? '<div><span>Window</span>' + esc(bdcWinRange(w.window)) + '</div>' : '') +
+        (w.act_by ? '<div><span>Act by</span>' + esc(bdcEngDate(w.act_by)) + '</div>' : '') +
+      '</div>' +
+      (w.seat ? '<div class="mw-seat"><span>The seat</span>' + esc(w.seat) + '</div>' : '') +
+      '<div class="mw-scope">' + (w.scope_note ? esc(w.scope_note) : '') +
+        (nTargets ? ' &middot; ' + nTargets + ' named targets' : '') + '</div>' +
+      (src ? '<a class="mw-src" href="' + safeUrl(src) + '" target="_blank" rel="noopener noreferrer">View source &rsaquo;</a>' : '') +
+      '<div class="bdc-actions">' + bdcRmBtn(w.key || '', 'Remove this window') + '</div>' +
+    '</div>';
 }
 async function loadPulses() {
   const body = document.getElementById('pulses-body');
@@ -6214,50 +6277,43 @@ async function loadPulses() {
     const rows = j.rows || [];
     if (count) count.textContent = rows.length;
     if (rows.length === 0) {
-      body.innerHTML = '<div class="empty compact">No placement window open today. ' +
-        'Pulses surface only inside a statutory/regulator run-up — by design they go ' +
+      body.innerHTML = '<div class="empty compact">No mandate window open today. ' +
+        'Windows surface only inside a statutory/regulator run-up — by design they go ' +
         'quiet outside those dated windows rather than show stale noise.</div>';
       return;
     }
-    const list = rows.map((w, i) => {
+    const panes = rows.map((w) => {
       const cc = bdcWinCat(w.name);
-      const days = (typeof w.days_left === 'number') ? w.days_left + 'd left' : '';
-      return '<button class="bdc-mdi' + (i === 0 ? ' sel' : '') + '" data-key="' + esc(w.key || w.name || '') + '" style="--cc:' + cc[0] + '">' +
-        '<span class="sq"></span><div><div class="nm">' + esc(bdcShort(w.name)) + '</div>' +
-        '<div class="by">' + esc(days) + (days ? ' · ' : '') + esc(cc[1]) + '</div></div></button>';
+      const days = (typeof w.days_left === 'number') ? w.days_left + 'd' : '';
+      return '<div class="mw-win" data-key="' + esc(w.key || w.name || '') + '" style="--mw-tint:' + cc[0] + '">' +
+          '<div class="mw-inner"><div class="mw-wrap">' + mwInterior(w) + '</div>' +
+            '<div class="mw-glass"><div class="mw-mun"></div><div class="mw-refl"></div></div>' +
+            '<div class="mw-plate"><span class="mw-pn">' + esc(bdcShort(w.name)) + '</span>' +
+              (days ? '<span class="mw-pd">' + esc(days) + '</span>' : '') + '</div>' +
+          '</div>' +
+          '<div class="mw-sill"></div><div class="mw-x">&times; close</div>' +
+        '</div>';
     }).join('');
-    body.innerHTML = '<div class="bdc-md"><div class="bdc-mdcol"><div class="bdc-mdlist">' + list + '</div><div class="bdc-mdfade"></div></div>' +
-      '<div class="bdc-mdpane" id="bdc-wpane"></div></div>';
-    const pane = document.getElementById('bdc-wpane');
-    const col = body.querySelector('.bdc-mdcol');
-    const mdlist = body.querySelector('.bdc-mdlist');
-    // show a bottom fade while there are more windows below (hides at the end)
-    function updFade() {
-      const more = mdlist.scrollHeight > mdlist.clientHeight + 4;
-      const atEnd = mdlist.scrollTop + mdlist.clientHeight >= mdlist.scrollHeight - 4;
-      col.classList.toggle('more', more && !atEnd);
-    }
-    mdlist.addEventListener('scroll', updFade);
-    // re-check when the list gets a real height (the BD-Calendar page starts
-    // hidden, so the first measure is zero until it's shown).
-    if (window.ResizeObserver) { try { new ResizeObserver(updFade).observe(mdlist); } catch (e) {} }
-    function paint(w) { pane.style.setProperty('--cc', bdcWinCat(w.name)[0]); pane.innerHTML = bdcWinDetail(w); }
-    paint(rows[0]);
-    setTimeout(updFade, 0);
-    mdlist.addEventListener('click', (ev) => {
-      const it = ev.target.closest('.bdc-mdi'); if (!it) return;
-      mdlist.querySelectorAll('.bdc-mdi').forEach(x => x.classList.remove('sel'));
-      it.classList.add('sel');
-      paint(rows.filter(x => (x.key || x.name) === it.dataset.key)[0]);
-    });
-    pane.addEventListener('click', (ev) => {
-      const acts = pane.querySelector('.bdc-actions'); if (!acts) return;
+    body.innerHTML = '<div class="mw-row">' + panes + '</div>';
+    const row = body.querySelector('.mw-row');
+    row.addEventListener('click', (ev) => {
+      if (ev.target.closest('.mw-src')) return;          // let the source link work
       const rm = ev.target.closest('.bdc-rm');
       const no = ev.target.closest('.bdc-rm-no');
       const yes = ev.target.closest('.bdc-rm-yes');
-      if (rm) { acts.innerHTML = bdcConfirm(rm.dataset.key, 'Remove this window?'); }
-      else if (no) { acts.innerHTML = bdcRmBtn(no.dataset.key, 'Remove this window'); }
-      else if (yes) { bdcDismiss(yes.dataset.key, loadPulses); }
+      if (rm || no || yes) {                              // remove / two-step confirm
+        const winEl = ev.target.closest('.mw-win');
+        const acts = winEl ? winEl.querySelector('.bdc-actions') : null;
+        if (rm && acts) acts.innerHTML = bdcConfirm(rm.dataset.key, 'Remove this window?');
+        else if (no && acts) acts.innerHTML = bdcRmBtn(no.dataset.key, 'Remove this window');
+        else if (yes) bdcDismiss(yes.dataset.key, loadPulses);
+        return;
+      }
+      const win = ev.target.closest('.mw-win'); if (!win) return;
+      if (ev.target.closest('.mw-x')) { win.classList.remove('open'); return; }
+      const was = win.classList.contains('open');
+      row.querySelectorAll('.mw-win').forEach((x) => x.classList.remove('open'));
+      if (!was) win.classList.add('open');
     });
   } catch (e) {
     body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
@@ -7339,9 +7395,9 @@ async function loadRecentReports() {
   var mt = document.getElementById('bd-mt');
   var mx = document.getElementById('bd-mx');
   var BDMETA = {
-    windows:    { ic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg>', t: 'Placement Windows' },
+    windows:    { ic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg>', t: 'Mandate Windows' },
     events:     { ic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 17l-5.2 2.6 1-5.8L3.5 9.7l5.9-.9z"/></svg>', t: 'Events & Networking' },
-    frameworks: { ic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 13h7M8.5 16.5h4.5"/></svg>', t: 'Framework Eligibility' }
+    frameworks: { ic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 13h7M8.5 16.5h4.5"/></svg>', t: 'Approved Frameworks' }
   };
   var openKey = null;
   function panelFor(key) { return host ? host.querySelector('[data-bd="' + key + '"]') : null; }
@@ -7387,7 +7443,7 @@ async function loadRecentReports() {
   }
   // Current item keys per card (unique), read from the rendered panels.
   function currentKeys(key) {
-    var sel = key === 'windows' ? '#pulses-body .bdc-pw[data-key]'
+    var sel = key === 'windows' ? '#pulses-body .mw-win[data-key]'
             : key === 'events' ? '#events-body .bdc-mc-ev[data-evkey]'
             : key === 'frameworks' ? '#framework-body .framework-row[data-fwid]'
             : null;
