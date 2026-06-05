@@ -164,6 +164,63 @@ MARKET_STATE = {
 }
 
 
+# Auto-ingested override. tool.market_ingest refreshes the UK-overall
+# Permanent Placements Index + IPA Bellwether balance monthly and persists
+# them to tool/state/market_state.json, so the macro coefficient is no longer
+# a value someone has to hand-edit. The hand-set MARKET_STATE above is the
+# floor / fallback: if the override file is absent or unparseable, behaviour
+# is exactly as before (so this never regresses). The override moves the
+# overall level; the hand-set per-sector divergences are preserved by
+# applying the same delta to each sector.
+from pathlib import Path as _Path
+
+_MARKET_OVERRIDE_FILE = _Path(__file__).resolve().parent / "state" / "market_state.json"
+_market_override_cache: dict = {"mtime": None, "value": None}
+
+
+def _load_market_override() -> dict | None:
+    """Persisted auto-ingested macro values, or None. Cached on file mtime so
+    repeated score_lead calls don't re-read the disk each row."""
+    try:
+        st = _MARKET_OVERRIDE_FILE.stat()
+    except OSError:
+        return None
+    if _market_override_cache["mtime"] == st.st_mtime:
+        return _market_override_cache["value"]
+    try:
+        import json
+        data = json.loads(_MARKET_OVERRIDE_FILE.read_text())
+        if not isinstance(data, dict):
+            data = None
+    except Exception:
+        data = None
+    _market_override_cache["mtime"] = st.st_mtime
+    _market_override_cache["value"] = data
+    return data
+
+
+def _effective_market_state() -> dict:
+    """MARKET_STATE overlaid with the auto-ingested override (if any). Only a
+    plausible PPI (30–70) is accepted, so a bad parse can never poison the
+    macro coefficient — it falls straight back to the hand-set constant."""
+    base = MARKET_STATE
+    ov = _load_market_override()
+    new_default = (ov or {}).get("default_ppi")
+    if not isinstance(new_default, (int, float)) or not (30.0 <= new_default <= 70.0):
+        return base
+    delta = new_default - base["default_ppi"]
+    sectors = {k: round(v + delta, 1) for k, v in base["sectors"].items()}
+    mbb = ov.get("marketing_budget_balance")
+    return {
+        "as_of": ov.get("as_of", base["as_of"]),
+        "source": (ov.get("source") or base["source"]) + " (auto-ingested)",
+        "default_ppi": float(new_default),
+        "marketing_budget_balance": (mbb if isinstance(mbb, (int, float))
+                                     else base["marketing_budget_balance"]),
+        "sectors": sectors,
+    }
+
+
 def _market_sector(company: str | None) -> str | None:
     """Classify a company into a MARKET_STATE sector bucket: the peers
     detector first, then a light keyword fallback for funded scale-ups that
@@ -188,8 +245,9 @@ def _market_state(company: str | None = None) -> dict:
     """Resolve the macro modifier for this company's sector (falling back to
     the UK-overall read). Returns state, the stacking bar a STRONG lead must
     clear, the sector, and a one-line human read for the dossier."""
+    ms = _effective_market_state()
     sector = _market_sector(company)
-    ppi = MARKET_STATE["sectors"].get(sector, MARKET_STATE["default_ppi"])
+    ppi = ms["sectors"].get(sector, ms["default_ppi"])
     if ppi >= 52:
         state, req = "expanding", 2
     elif ppi <= 48:
