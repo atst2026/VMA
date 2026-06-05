@@ -4848,18 +4848,21 @@ TEMPLATE = r"""
     #framework-body .btn-mini { border-radius: 8px; }
 
     /* ================= BD Calendar — full-page dashboard ================= */
-    /* hero icon beside the radar-style title (no spin; calendar glyph) */
-    #cal .wm-head { padding: 20px 0 13px; }
-    #cal .brand-title { font-size: 28px; }
+    /* hero: radar-style title + calendar glyph over a fuller blue gradient */
+    #cal .wm-head { padding: 24px 0 15px;
+      background: radial-gradient(ellipse 86% 165% at 50% -16%,
+        #a4c6e8 0%, #bdd4ea 16%, #d4e2ef 34%, #e9f0f7 58%, #f4f8fc 78%, rgba(247,249,252,0) 100%); }
+    #cal .brand-title { font-size: 30px; }
     #cal .wm-head .brand { gap: 13px; }
-    .bdc-hero-ic { width: 50px; height: 50px; display: grid; place-items: center; color: var(--blue-deep); flex-shrink: 0; }
-    .bdc-hero-ic svg { width: 29px; height: 29px; }
-    #cal .bdc-sub { font-size: 13px; color: var(--muted); margin-top: 6px; }
+    .bdc-hero-ic { width: 50px; height: 50px; border-radius: 14px; display: grid; place-items: center;
+      color: var(--blue-deep); background: rgba(255,255,255,.55); box-shadow: 0 2px 10px rgba(31,55,124,.10); flex-shrink: 0; }
+    .bdc-hero-ic svg { width: 28px; height: 28px; }
+    #cal .bdc-sub { font-size: 13px; color: var(--muted); margin-top: 7px; }
     /* the page fits the viewport: hero is fixed, the grid fills the rest. No
        page scroll — each card sizes to its cell and scrolls internally. */
     #cal .bdc-page { flex: 1; min-height: 0; overflow: hidden; padding: 2px 20px 16px; }
     .bdc-grid { max-width: 1240px; height: 100%; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr;
-      grid-template-rows: minmax(0, 1.04fr) minmax(0, .96fr); grid-template-areas: "fw cal" "pw pw"; gap: 14px; }
+      grid-template-rows: minmax(0, 0.95fr) minmax(0, 1.05fr); grid-template-areas: "fw cal" "pw pw"; gap: 14px; }
     .bdc-grid .a-fw { grid-area: fw } .bdc-grid .a-cal { grid-area: cal } .bdc-grid .a-pw { grid-area: pw }
     .bdc-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow-sm);
       padding: 14px 16px; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
@@ -4869,17 +4872,22 @@ TEMPLATE = r"""
     /* each card's content area is the scroll region inside the fixed card */
     #cal #framework-body, #cal #events-body, #cal #pulses-body { flex: 1; min-height: 0; overflow-y: auto; }
     /* frameworks — vertical timeline graph */
-    .bdc-vt { position: relative; margin-left: 8px; padding-left: 22px; border-left: 2px solid var(--border); }
-    .bdc-vt-node { position: relative; padding: 2px 0 18px; }
-    .bdc-vt-node:last-child { padding-bottom: 0 }
-    .bdc-vt-dot { position: absolute; left: -29px; top: 2px; width: 13px; height: 13px; border-radius: 50%; background: var(--card); border: 2px solid var(--dim); }
-    .bdc-vt-node.open .bdc-vt-dot { background: var(--grn-tx); border-color: var(--grn-tx) }
-    .bdc-vt-when { font-size: 10.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--blue-deep); }
-    .bdc-vt-node.open .bdc-vt-when { color: var(--grn-tx) }
-    .bdc-vt-t { font-size: 13.5px; font-weight: 600; margin-top: 2px; letter-spacing: -.01em; }
-    .bdc-vt-by { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
-    .bdc-vt-bar { height: 6px; border-radius: 5px; background: linear-gradient(90deg, var(--blue), #9cc0fb); margin-top: 8px; max-width: 340px; }
-    .bdc-vt-portal { font-size: 11.5px; font-weight: 600; margin-top: 8px; display: inline-block; color: var(--blue-deep); }
+    .bdc-vt { position: relative; margin-left: 7px; padding-left: 22px; border-left: 2px solid var(--border); }
+    .bdc-vt-node { position: relative; padding: 1px 2px 16px 0; }
+    .bdc-vt-node:last-child { padding-bottom: 2px }
+    .bdc-vt-dot { position: absolute; left: -29px; top: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--card); border: 2.5px solid var(--dim); }
+    .bdc-vt-node.open .bdc-vt-dot { background: var(--grn-tx); border-color: var(--grn-tx); box-shadow: 0 0 0 3px var(--grn-bg); }
+    .bdc-vt-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .bdc-vt-t { font-size: 12.5px; font-weight: 620; letter-spacing: -.01em; color: var(--ink); line-height: 1.3;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .bdc-vt-pill { flex: none; font-size: 9px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 20px; background: var(--elevated); color: var(--muted); white-space: nowrap; }
+    .bdc-vt-pill.open { background: var(--grn-bg); color: var(--grn-tx); }
+    .bdc-vt-by { font-size: 11px; color: var(--muted); margin-top: 3px; }
+    .bdc-vt-by a { color: var(--blue-deep); font-weight: 600; }
+    .bdc-vt-bar { height: 5px; border-radius: 4px; background: var(--elevated); margin-top: 9px; overflow: hidden; }
+    .bdc-vt-bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--blue), #9cc0fb); }
+    .bdc-vt-node.open .bdc-vt-bar i { background: linear-gradient(90deg, var(--grn-tx), #74c596); }
     /* events — a real month calendar + agenda */
     .bdc-split { display: grid; grid-template-columns: 1.05fr .95fr; gap: 16px; align-items: start; }
     .bdc-caltop { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
@@ -4922,10 +4930,21 @@ TEMPLATE = r"""
        are sparse, so each cell is a month with its event(s) listed; click an
        event for the detail + link. */
     #cal .bdc-mcal { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; padding: 0; }
-    #cal .bdc-mcell { height: auto; min-height: 58px; padding: 7px 9px; }
-    #cal .bdc-mc-h { margin-bottom: 3px; }
-    #cal .bdc-mc-none { padding: 2px 4px; }
+    #cal .bdc-mcell { height: auto; min-height: 66px; padding: 9px 10px; border-radius: 13px; }
+    #cal .bdc-mcell.quiet { background: var(--bg); border-style: dashed; }
+    #cal .bdc-mc-h { margin-bottom: 4px; }
+    #cal .bdc-mc-m { font-size: 12px; font-weight: 650; }
+    #cal .bdc-mc-ev { padding: 4px 5px; gap: 6px; border-radius: 7px; }
+    #cal .bdc-mc-nm { font-size: 10.5px; }
+    #cal .bdc-mc-none { padding: 1px 4px; opacity: .4; }
     #cal .bdc-evstrip { margin-top: 12px; flex: none; }
+    /* windows brief: keep it compact so the bottom card never clips */
+    #cal .bdc-angle { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 12.5px; margin-top: 12px; }
+    #cal .bdc-mdlist { gap: 7px; }
+    #cal .bdc-mdi { padding: 8px 11px; gap: 10px; }
+    #cal .bdc-mdi .nm { font-size: 12px; }
+    #cal .bdc-mdpane .bdc-kv { gap: 10px 14px; margin-top: 12px; }
+    #cal .bdc-mdpane .bdc-basis { margin-top: 11px; }
     @media (max-width: 980px) {
       #cal .bdc-page { overflow-y: auto; }
       .bdc-grid { height: auto; grid-template-columns: 1fr; grid-template-rows: none; grid-template-areas: "fw" "cal" "pw" }
@@ -5385,11 +5404,12 @@ TEMPLATE = r"""
             {% set bp = [[(100 - ((fw.days_to_expiry or 200) / 9)), 24] | max, 100] | min | round | int %}
             <div class="bdc-vt-node {{ 'open' if fw.status == 'refresh_window' else '' }}">
               <span class="bdc-vt-dot"></span>
-              <div class="bdc-vt-when">{{ fw.window_pill }}</div>
-              <div class="bdc-vt-t">{{ fw.ad_title or fw.title }}{% if fw.discovered %} <span class="found-pill" title="Auto-discovered from a live public source">Found</span>{% endif %}</div>
-              <div class="bdc-vt-by">{{ fw.buyer }}</div>
-              <div class="bdc-vt-bar" style="width:{{ bp }}%"></div>
-              <a class="bdc-vt-portal" href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify on portal &rsaquo;</a>
+              <div class="bdc-vt-top">
+                <div class="bdc-vt-t">{{ fw.ad_title or fw.title }}</div>
+                <span class="bdc-vt-pill {{ 'open' if fw.status == 'refresh_window' else '' }}">{{ fw.window_pill }}</span>
+              </div>
+              <div class="bdc-vt-by">{{ fw.buyer }} · <a href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify &rsaquo;</a></div>
+              <div class="bdc-vt-bar"><i style="width:{{ bp }}%"></i></div>
             </div>
             {% endfor %}
           </div>
@@ -6039,7 +6059,8 @@ function bdcShort(name) {
 function bdcWinDetail(w) {
   const cc = bdcWinCat(w.name);
   const src = w.source_url || (/^https?:/i.test(w.url || '') ? w.url : '');
-  const tg = (w.targets || []).map(t => '<span class="bdc-tgt">' + esc(t) + '</span>').join('');
+  const nTargets = (w.targets || []).length;
+  // Compact brief — essentials only, so the bottom card never clips.
   return '<div class="bdc-pwd-h"><span class="bdc-pwd-tag">' +
       esc(typeof w.days_left === 'number' ? w.days_left + ' days left' : 'window') + '</span>' +
       '<div><div class="bdc-pwd-t">' + esc(w.name || '') + '</div>' +
@@ -6049,12 +6070,10 @@ function bdcWinDetail(w) {
       (w.window ? '<div><div class="bdc-k">Window</div><div class="bdc-v">' + esc(w.window) + '</div></div>' : '') +
       (w.act_by ? '<div><div class="bdc-k">Act by</div><div class="bdc-v">' + esc(w.act_by) + '</div></div>' : '') +
       (w.seat ? '<div><div class="bdc-k">The seat</div><div class="bdc-v seat">' + esc(w.seat) + '</div></div>' : '') +
-      (w.scope_note ? '<div><div class="bdc-k">Scope</div><div class="bdc-v">' + esc(w.scope_note) + '</div></div>' : '') +
     '</div>' +
-    (tg ? '<div class="bdc-tgts">' + tg + '</div>' : '') +
-    '<div class="bdc-basis">' + (w.advisory ? '<b>Advisory in:</b> ' + esc(w.advisory) + '<br>' : '') +
-      (w.source ? 'Basis &middot; ' + esc(w.source) : '') +
-      (w.confidence ? ' &middot; confidence: ' + esc(w.confidence) : '') +
+    '<div class="bdc-basis">' +
+      (w.scope_note ? esc(w.scope_note) : '') +
+      (nTargets ? ' &middot; ' + nTargets + ' named targets' : '') +
       (src ? ' &nbsp;&middot;&nbsp; <a href="' + safeUrl(src) + '" target="_blank" rel="noopener noreferrer">View source &rsaquo;</a>' : '') +
     '</div>' +
     '<div class="bdc-actions"><button class="bdc-rm" data-key="' + esc(w.key || '') + '">Remove this window</button></div>';
