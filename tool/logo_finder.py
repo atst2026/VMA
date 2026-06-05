@@ -20,9 +20,12 @@ a plausible-but-wrong one. Resolution order, first good hit wins:
          conservatively: a web SEARCH whose result domain STRICTLY matches the
          company, Wikidata P856 (double-checked against the name), or a TLD
          probe that requires the homepage to strongly name the company;
-       - scrape the homepage for the brand logo (ranked so a partner/award/
-         payment image never wins), the SVG/mask favicon, then Clearbit /
-         logo.dev by domain, then a keyless favicon floor;
+       - take the logo the site DECLARES about itself first — schema.org
+         JSON-LD Organization.logo, og:logo, and the web-app-manifest icon —
+         then the header brand logo (ranked so a partner/award/payment image
+         never wins), the SVG/mask favicon, Clearbit / logo.dev by domain, and
+         a keyless favicon floor. A white-on-dark mark is recoloured, not
+         discarded, so it shows on the light cover;
   3. ONLY when no official domain resolves at all, a name-ALIGNED encyclopaedia
      logo (Wikidata P154 / Wikipedia), guarded so a same-named band / person /
      place / different firm is never used;
@@ -208,7 +211,15 @@ _THIRD_PARTY_RX = re.compile(
     r"press[-\s]?(?:logos?|kit|coverage|mentions?)|\bmedia[-\s]?logos\b|"
     r"\bpayment(?:s)?\b|\bvisa\b|\bmastercard\b|\bamex\b|\bpaypal\b|\bklarna\b|"
     r"\bstripe\b|\bapple[-\s]?pay\b|\bgoogle[-\s]?pay\b|\btrustpilot\b|\btrustico\b|"
-    r"\bg2\b|\bcapterra\b|\bglassdoor\b|\bgartner\b|\bforrester\b|\biso[-\s]?\d",
+    r"\bg2\b|\bcapterra\b|\bglassdoor\b|\bgartner\b|\bforrester\b|\biso[-\s]?\d|"
+    # named certification / trust / accreditation schemes that sit on a company's
+    # own site as a badge and were being scraped AS the logo (the reported Cyber
+    # Essentials failure for OQC). These are never the target's brand mark.
+    r"cyber[-\s]?essentials|\bb[-\s]?corp\b|\bbcorp\b|investors?[-\s]?in[-\s]?people|"
+    r"living[-\s]?wage|\bfairtrade\b|\bsoc[-\s]?2\b|\bpci[-\s]?dss\b|\bukas\b|\bcqc\b|"
+    r"crown[-\s]?commercial|g[-\s]?cloud|disability[-\s]?confident|planet[-\s]?mark|"
+    r"carbon[-\s]?neutral|net[-\s]?zero|climate[-\s]?neutral|\bfsc\b|\bgdpr\b|"
+    r"great[-\s]?place[-\s]?to[-\s]?work|(?:queen|king)'?s[-\s]?award|\bce[-\s]?mark",
     re.I)
 
 
@@ -293,6 +304,54 @@ def svg_is_visible(data: bytes) -> bool:
     return any(not _is_whiteish(c) for c in explicit)
 
 
+def svg_renderable(data: bytes) -> bool:
+    """Is this SVG a real, static mark (drawable content, not an animated
+    loader)? Unlike svg_is_visible it does NOT require non-white ink — a
+    white-on-dark brand mark is renderable and will be RECOLOURED for the light
+    cover (see recolor_for_light_bg), rather than discarded. Rejects only
+    spinners/loaders and empty SVGs."""
+    try:
+        low = data.decode("utf-8", "ignore").lower()
+    except Exception:
+        return False
+    if "<svg" not in low or "<animate" in low:
+        return False
+    return bool(re.search(
+        r"<(path|rect|circle|ellipse|polygon|polyline|line|text|image|use)\b", low))
+
+
+def _raster_ink_fraction(data: bytes, bg: tuple[int, int, int]) -> float:
+    """Fraction of a raster's pixels that differ from a given background once the
+    image is composited onto it (honouring alpha). Used to tell a real SHAPE
+    from a fully-transparent or solid fill."""
+    try:
+        import io
+        from PIL import Image
+        im = Image.open(io.BytesIO(data)).convert("RGBA")
+        back = Image.new("RGBA", im.size, bg + (255,))
+        comp = Image.alpha_composite(back, im).convert("RGB")
+        small = comp.resize((min(64, max(1, comp.width)), min(64, max(1, comp.height))))
+        raw = small.tobytes()
+        n = len(raw) // 3
+        if n == 0:
+            return 0.0
+        diff = sum(1 for i in range(0, n * 3, 3)
+                   if abs(raw[i] - bg[0]) + abs(raw[i + 1] - bg[1]) + abs(raw[i + 2] - bg[2]) > 40)
+        return diff / n
+    except Exception:
+        return 1.0                                  # can't tell -> don't block
+
+
+def raster_usable(data: bytes) -> bool:
+    """A raster that can be SHOWN on the cover: either already visible on white,
+    OR a white-on-transparent shape we can recolour (a real mark, not a fully
+    transparent image and not a solid fill block)."""
+    if raster_is_visible(data):
+        return True
+    frac = _raster_ink_fraction(data, (0, 0, 0))    # white shape shows up on black
+    return 0.01 <= frac <= 0.95
+
+
 def raster_is_visible(data: bytes) -> bool:
     """Will this raster render as visible ink on a white cover? Composites the
     image (honouring transparency) onto white and requires a small but real
@@ -322,14 +381,17 @@ def raster_is_visible(data: bytes) -> bool:
 
 
 def usable_logo(content: bytes, content_type: str = "", source: str = "") -> bool:
-    """The single acceptance gate: structurally a valid image (valid_logo), not a
-    decorative graphic (by its source/markup), and one that will render visibly
-    on the cover (SVG and raster visibility checks).
+    """The single acceptance gate: a structurally valid image (valid_logo), not a
+    decorative graphic (by source/markup), and a real mark we can SHOW on the
+    cover — either already visible, or a white-on-dark mark we will recolour
+    (recolor_for_light_bg) rather than discard. This is what stops the reported
+    failure where the visible WRONG image (a Cyber Essentials badge) won because
+    the right-but-white company logo was thrown away.
 
-    The decorative check on `source` looks only at the URL PATH (a glyph
-    filename like `/loading-spinner.svg`), never the host — so a real company
-    whose domain happens to contain a substring like "consent" or "arrow" is not
-    wrongly rejected."""
+    Still rejected: junk/non-images, decorative furniture (loaders/menu/social
+    glyphs by source or markup), animated spinners, empty/transparent images and
+    solid fills. The decorative check on `source` looks only at the URL PATH, so
+    a real company whose domain contains a substring like "consent" is safe."""
     if not valid_logo(content, content_type):
         return False
     if source.startswith(("http://", "https://")):
@@ -338,8 +400,72 @@ def usable_logo(content: bytes, content_type: str = "", source: str = "") -> boo
     if is_svg(content, content_type):
         if _looks_decorative(content[:2000].decode("utf-8", "ignore")):
             return False
-        return svg_is_visible(content)
-    return raster_is_visible(content)
+        return svg_renderable(content)
+    return raster_usable(content)
+
+
+# Default ink for recolouring a white-on-dark mark so it reads on the light
+# cover (VMA steel-navy, matching the cover's title).
+_RECOLOR_INK = "#24486f"
+
+
+def _ink_rgb(ink: str) -> tuple[int, int, int]:
+    h = ink.lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
+
+
+def recolor_for_light_bg(data: bytes, content_type: str = "",
+                         ink: str = _RECOLOR_INK) -> bytes:
+    """Make a logo that is INVISIBLE on a white cover (a white / near-white
+    monochrome mark designed for a dark site, e.g. the OQC header logo) show up,
+    by recolouring its ink to a dark tone. A logo that already has visible colour
+    is returned UNCHANGED — we never repaint a real coloured logo. Best-effort;
+    never raises."""
+    if not data:
+        return data
+    try:
+        if is_svg(data, content_type):
+            if svg_is_visible(data):                 # already shows on white
+                return data
+            t = data.decode("utf-8", "ignore")
+            # currentColor (meant to inherit a dark page colour) -> ink
+            t = re.sub(r"currentColor", ink, t, flags=re.I)
+
+            def _repl(m):
+                prop, sep, val = m.group(1), m.group("sep"), m.group("val")
+                return f"{prop}{sep}{ink}" if _is_whiteish(val) else m.group(0)
+            # fill="#fff" / stroke:#ffffff / fill='white' -> ink
+            t = re.sub(
+                r"(fill|stroke)(?P<sep>\s*[:=]\s*[\"']?\s*)"
+                r"(?P<val>#[0-9a-fA-F]{3,8}|rgba?\([^)]*\)|white)",
+                _repl, t, flags=re.I)
+            return t.encode("utf-8")
+        # raster
+        if raster_is_visible(data):                  # already shows on white
+            return data
+        import io
+        from PIL import Image
+        im = Image.open(io.BytesIO(data)).convert("RGBA")
+        alpha = im.split()[3]
+        solid = Image.new("RGBA", im.size, _ink_rgb(ink) + (255,))
+        solid.putalpha(alpha)                        # keep the mark's shape/edges
+        out = io.BytesIO()
+        solid.save(out, format="PNG")
+        return out.getvalue()
+    except Exception:
+        return data
+
+
+def prepare_cover_logo(data: bytes, content_type: str = "") -> bytes:
+    """Everything the cover needs done to a resolved logo: trim surrounding
+    padding so it fills the box, then recolour it if it would otherwise be
+    invisible on the white cover. Order matters (trim, then recolour)."""
+    if not data:
+        return data
+    data = normalize_logo(data, content_type)
+    return recolor_for_light_bg(data, content_type)
 
 
 def normalize_logo(data: bytes, content_type: str = "") -> bytes:
@@ -358,7 +484,13 @@ def normalize_logo(data: bytes, content_type: str = "") -> bytes:
         white = Image.new("RGBA", im.size, (255, 255, 255, 255))
         comp = Image.alpha_composite(white, im).convert("RGB")
         diff = ImageChops.difference(comp, Image.new("RGB", im.size, (255, 255, 255)))
-        bbox = diff.getbbox()
+        full = (0, 0, im.width, im.height)
+        wbox = diff.getbbox()                          # ink visible against white
+        abox = im.split()[3].getbbox()                 # non-transparent region
+        # Prefer the white-difference box (dark mark on a white/opaque image);
+        # fall back to the alpha box so a WHITE-on-transparent mark — invisible
+        # against white — is still trimmed by its shape.
+        bbox = wbox if (wbox and wbox != full) else abox
         if not bbox:
             return data
         pad = max(2, int(0.04 * max(im.size)))
@@ -776,6 +908,113 @@ def _bg_url(style: str) -> str | None:
     return m.group(1).strip() if m else None
 
 
+# ======================================================================
+# Self-declared brand assets — the authoritative, machine-readable logo the
+# company publishes about ITSELF. These are the principled source: the site
+# states "this is my logo", so resolution no longer has to guess which <img>
+# is the brand (and a footer accreditation badge can never be mistaken for it).
+# ======================================================================
+def _jsonld_logos(soup, base_url: str) -> list[str]:
+    """Logo URLs declared in schema.org JSON-LD (Organization / WebSite /
+    publisher `logo`). Walks @graph and nested publisher/brand nodes. Falls back
+    to a permissive regex when the JSON is malformed (common in the wild)."""
+    import json
+    out: list[str] = []
+
+    def _url_of(v):
+        if isinstance(v, str):
+            return v
+        if isinstance(v, dict):
+            return v.get("url") or v.get("contentUrl")
+        if isinstance(v, list):
+            for x in v:
+                u = _url_of(x)
+                if u:
+                    return u
+        return None
+
+    def _walk(node, depth=0):
+        if depth > 6:
+            return
+        if isinstance(node, dict):
+            if "logo" in node:
+                u = _url_of(node.get("logo"))
+                if u:
+                    out.append(u)
+            for k in ("publisher", "organization", "brand", "author", "@graph", "mainEntity"):
+                if k in node:
+                    _walk(node[k], depth + 1)
+        elif isinstance(node, list):
+            for x in node:
+                _walk(x, depth + 1)
+
+    for sc in soup.find_all("script", attrs={"type": "application/ld+json"}):
+        txt = (sc.string or sc.get_text() or "").strip()
+        if not txt:
+            continue
+        try:
+            _walk(json.loads(txt))
+        except Exception:
+            for m in re.finditer(r'"logo"\s*:\s*"([^"]+)"', txt):
+                out.append(m.group(1))
+    seen, res = set(), []
+    for u in out:
+        a = u.strip() if u and u.strip().startswith("data:") else (urljoin(base_url, u) if u else None)
+        if a and a not in seen:
+            seen.add(a)
+            res.append(a)
+    return res
+
+
+def _meta_declared_logos(soup, base_url: str) -> list[str]:
+    """Logo URLs declared in page metadata: og:logo and <link rel=image_src>.
+    (og:image / twitter:image are deliberately NOT used — they are usually a
+    social-share BANNER, not the logo.)"""
+    out: list[str] = []
+    for m in soup.find_all("meta"):
+        prop = (m.get("property") or m.get("name") or "").strip().lower()
+        if prop in ("og:logo", "logo"):
+            out.append(m.get("content"))
+    for l in soup.find_all("link"):
+        if "image_src" in _rel(l):
+            out.append(l.get("href"))
+    return [urljoin(base_url, u) for u in out if u]
+
+
+def manifest_icon_url(html: str, base_url: str) -> str | None:
+    """The largest icon declared in the site's web-app manifest
+    (<link rel="manifest"> -> JSON `icons[]`). A company-published square brand
+    mark — a strong fallback when the header logo isn't a clean <img>. Needs one
+    extra fetch; returns None on any miss."""
+    m = re.search(r'<link\b[^>]*\brel=["\']?[^"\'>]*manifest[^"\'>]*["\']?[^>]*>',
+                  html or "", re.I)
+    if not m:
+        return None
+    hm = re.search(r'href=["\']([^"\']+)', m.group(0), re.I)
+    if not hm:
+        return None
+    man_url = urljoin(base_url, hm.group(1))
+    txt = _fetch_html(man_url)
+    if not txt:
+        return None
+    try:
+        import json
+        icons = [ic for ic in (json.loads(txt).get("icons") or []) if ic.get("src")]
+    except Exception:
+        return None
+    if not icons:
+        return None
+
+    def _area(ic) -> int:
+        try:
+            w, h = (ic.get("sizes") or "0x0").lower().split(" ")[0].split("x")
+            return int(w) * int(h)
+        except Exception:
+            return 0
+
+    return urljoin(man_url, max(icons, key=_area)["src"])
+
+
 def extract_logo_urls(html: str, base_url: str,
                       company: str = "") -> dict[str, list[str]]:
     """Parse a homepage for logo image URLs, ordered best-first. Returns
@@ -820,6 +1059,23 @@ def extract_logo_urls(html: str, base_url: str,
     def _tp(blob) -> bool:
         return _looks_third_party(blob, own_tokens)
 
+    def _in_footer(el) -> bool:
+        """True if the element sits inside a page footer — where certification /
+        partner / payment badges live. The brand logo is in the header, so we
+        skip footer images for the broad scans (this drops the OQC 'Cyber
+        Essentials' badge even when its own markup carries no marker word)."""
+        try:
+            for anc in el.parents:
+                name = getattr(anc, "name", "") or ""
+                if name.lower() == "footer":
+                    return True
+                meta = (str(anc.get("class", "")) + " " + str(anc.get("id", ""))).lower()
+                if "footer" in meta or "site-info" in meta or "colophon" in meta:
+                    return True
+        except Exception:
+            return False
+        return False
+
     def is_root_anchor(a) -> bool:
         href = (a.get("href") or "").strip()
         if href in ("/", "#", "/#", "./"):
@@ -832,6 +1088,14 @@ def extract_logo_urls(html: str, base_url: str,
         except Exception:
             return False
 
+    # 0. The company's OWN machine-readable logo declaration (schema.org JSON-LD
+    #    Organization.logo, og:logo). Highest priority: the site states THIS is
+    #    its logo, so we never have to guess which <img> is the brand and a
+    #    footer accreditation badge can never be picked.
+    for u in _jsonld_logos(soup, base_url) + _meta_declared_logos(soup, base_url):
+        if not _tp(u):
+            add(primary, u)
+
     # 1. <img> elements that identify themselves as a logo (SVG first). A
     #    third-party marker (alt="Visa logo", class="partner-logo") is skipped —
     #    it carries the word "logo" but is another brand's mark, not the target's.
@@ -839,7 +1103,7 @@ def extract_logo_urls(html: str, base_url: str,
     for img in soup.find_all("img"):
         attrs = " ".join(str(img.get(k, "")) for k in
                          ("class", "id", "alt", "src", "data-src", "title")).lower()
-        if "logo" in attrs and not _tp(attrs):
+        if "logo" in attrs and not _tp(attrs) and not _in_footer(img):
             s = _img_src(img)
             if s:
                 (svg_logo if ".svg" in s.lower() else other_logo).append(s)
@@ -856,7 +1120,7 @@ def extract_logo_urls(html: str, base_url: str,
     for el in soup.select("[class*=logo], [id*=logo], [class*=Logo], "
                           "[class*=brand], [id*=brand], [class*=Brand]"):
         blob = " ".join(str(el.get(k, "")) for k in ("class", "id")).lower()
-        if _looks_decorative(blob) or _tp(blob):
+        if _looks_decorative(blob) or _tp(blob) or _in_footer(el):
             continue
         bg = _bg_url(el.get("style", ""))
         if bg and not _tp(bg):
@@ -884,7 +1148,7 @@ def extract_logo_urls(html: str, base_url: str,
                 "[class*=top-bar] img", "[class*=topbar] img"):
         for img in soup.select(sel)[:3]:
             blob = _img_blob(img)
-            if not _looks_decorative(blob) and not _tp(blob):
+            if not _looks_decorative(blob) and not _tp(blob) and not _in_footer(img):
                 add(primary, _img_src(img))
 
     # 3b. <style> blocks: a url(...) whose filename looks like a logo — the
@@ -932,14 +1196,15 @@ def extract_logo_urls(html: str, base_url: str,
         # take it if it looks logo-ish OR it's the header/anchor svg (most are)
         if "icon" in blob and "logo" not in blob:
             continue
-        # Skip site furniture (loaders / menu / search / social glyphs) and any
-        # SVG that won't render as visible ink — the spinner and the invisible
-        # white mark seen on real packs both die here, before they can be picked.
-        if _looks_decorative(blob) or _looks_decorative(raw):
+        # Skip site furniture (loaders / menu / search / social glyphs) and
+        # animated spinners. A white-on-dark mark is KEPT here (svg_renderable)
+        # and recoloured for the cover later — discarding it was how the visible
+        # WRONG image (a Cyber Essentials badge) used to win over the right logo.
+        if _looks_decorative(blob) or _looks_decorative(raw) or _tp(blob):
             continue
         if "xmlns" not in raw[:120]:
             raw = raw.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"', 1)
-        if not svg_is_visible(raw.encode("utf-8")):
+        if not svg_renderable(raw.encode("utf-8")):
             continue
         add(secondary, "data:image/svg+xml;utf8," + quote(raw))
 
@@ -958,6 +1223,17 @@ def _extract_logo_urls_regex(html: str, base_url: str,
     """bs4-free fallback parser."""
     own_tokens = tuple(t for t in _name_tokens(company) if len(t) >= 3)
     primary, secondary = [], []
+    # 0. self-declared logo: og:logo + schema.org JSON-LD "logo" (front of list).
+    declared: list[str] = []
+    for m in re.finditer(r'<meta[^>]+>', html, re.I):
+        tag = m.group(0)
+        if re.search(r'(?:property|name)\s*=\s*["\']og:logo["\']', tag, re.I):
+            cm = re.search(r'content\s*=\s*["\']([^"\']+)', tag, re.I)
+            if cm:
+                declared.append(urljoin(base_url, cm.group(1)))
+    for m in re.finditer(r'"logo"\s*:\s*"([^"]+)"', html):
+        declared.append(urljoin(base_url, m.group(1)))
+    primary.extend(d for d in declared if not _looks_third_party(d, own_tokens))
     for m in re.finditer(r'<img[^>]+>', html, re.I):
         tag = m.group(0)
         if "logo" in tag.lower() and not _looks_third_party(tag, own_tokens):
@@ -1106,15 +1382,26 @@ def _site_logo_candidates(domain: str, company: str = "") -> list[str]:
     (header logo -> apple-touch-icon -> inline svg -> favicons). `company` lets
     the scraper keep the target's own name-bearing logo even when its name
     contains a third-party marker word."""
-    html = _fetch_html("https://" + domain) or _fetch_html("http://" + domain)
+    base = "https://" + domain
+    html = _fetch_html(base) or _fetch_html("http://" + domain)
     if not html:
         return []
     try:
-        c = extract_logo_urls(html, "https://" + domain, company)
+        c = extract_logo_urls(html, base, company)
     except Exception as e:
         log.info("logo scrape parse failed for %s: %s", domain, e)
         return []
-    return c.get("primary", []) + c.get("secondary", [])
+    cands = c.get("primary", []) + c.get("secondary", [])
+    # The web-app-manifest icon: a company-declared square brand mark, a strong
+    # fallback when the header logo isn't a clean <img>. Added once, near the
+    # other icon candidates.
+    try:
+        mi = manifest_icon_url(html, base)
+    except Exception:
+        mi = None
+    if mi and mi not in cands:
+        cands.append(mi)
+    return cands
 
 
 def _rank_site_cands(cands: list[str], company: str) -> list[str]:
