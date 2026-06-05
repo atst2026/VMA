@@ -4847,6 +4847,77 @@ TEMPLATE = r"""
     #framework-body .play .item-actions { margin-top: 12px; }
     #framework-body .btn-mini { border-radius: 8px; }
 
+    /* ================= BD Calendar — full-page dashboard ================= */
+    /* hero icon beside the radar-style title (no spin; calendar glyph) */
+    #cal .wm-head { padding: 38px 0 22px; }
+    #cal .wm-head .brand { gap: 14px; }
+    .bdc-hero-ic { width: 60px; height: 60px; display: grid; place-items: center; color: var(--blue-deep); flex-shrink: 0; }
+    .bdc-hero-ic svg { width: 34px; height: 34px; }
+    #cal .bdc-sub { font-size: 13.5px; color: var(--muted); margin-top: 9px; }
+    /* scroll region fills the rest of the viewport-tall page */
+    #cal .bdc-page { flex: 1; min-height: 0; overflow-y: auto; padding: 2px 22px 26px; }
+    .bdc-grid { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr;
+      grid-template-areas: "fw cal" "pw pw"; gap: 18px; }
+    .bdc-grid .a-fw { grid-area: fw } .bdc-grid .a-cal { grid-area: cal } .bdc-grid .a-pw { grid-area: pw }
+    .bdc-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow-sm); padding: 18px 20px; }
+    .bdc-card-h { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .bdc-card-h h2 { font-size: 15px; font-weight: 620; margin: 0; letter-spacing: -.01em; }
+    .bdc-card-h .meta { margin-left: auto; font-size: 11.5px; color: var(--dim); font-weight: 600; }
+    /* frameworks — vertical timeline graph */
+    .bdc-vt { position: relative; margin-left: 8px; padding-left: 22px; border-left: 2px solid var(--border); }
+    .bdc-vt-node { position: relative; padding: 2px 0 18px; }
+    .bdc-vt-node:last-child { padding-bottom: 0 }
+    .bdc-vt-dot { position: absolute; left: -29px; top: 2px; width: 13px; height: 13px; border-radius: 50%; background: var(--card); border: 2px solid var(--dim); }
+    .bdc-vt-node.open .bdc-vt-dot { background: var(--grn-tx); border-color: var(--grn-tx) }
+    .bdc-vt-when { font-size: 10.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--blue-deep); }
+    .bdc-vt-node.open .bdc-vt-when { color: var(--grn-tx) }
+    .bdc-vt-t { font-size: 13.5px; font-weight: 600; margin-top: 2px; letter-spacing: -.01em; }
+    .bdc-vt-by { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+    .bdc-vt-bar { height: 6px; border-radius: 5px; background: linear-gradient(90deg, var(--blue), #9cc0fb); margin-top: 8px; max-width: 340px; }
+    .bdc-vt-portal { font-size: 11.5px; font-weight: 600; margin-top: 8px; display: inline-block; color: var(--blue-deep); }
+    /* events — a real month calendar + agenda */
+    .bdc-split { display: grid; grid-template-columns: 1.05fr .95fr; gap: 16px; align-items: start; }
+    .bdc-caltop { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+    .bdc-caltitle { font-size: 14px; font-weight: 650; letter-spacing: -.01em; }
+    .bdc-calnav { margin-left: auto; display: inline-flex; gap: 6px; }
+    .bdc-calnav button { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--muted); cursor: pointer; line-height: 1; }
+    .bdc-calnav button:hover { background: var(--elevated); color: var(--ink) }
+    .bdc-calgrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+    .bdc-cwd { font-size: 10px; font-weight: 700; color: var(--dim); text-align: center; padding: 2px 0 5px; text-transform: uppercase; letter-spacing: .03em; }
+    .bdc-cday { position: relative; aspect-ratio: 1/1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12.5px; color: var(--ink-2); border-radius: 9px; }
+    .bdc-cday.blank { visibility: hidden }
+    .bdc-cday.today { box-shadow: 0 0 0 1.6px var(--blue) inset; font-weight: 700; color: var(--blue) }
+    .bdc-cday.ev { cursor: pointer; font-weight: 600 }
+    .bdc-cday.ev:hover { background: var(--elevated) }
+    .bdc-cday.ev.sel { background: var(--blue-wash) }
+    .bdc-cdot { width: 6px; height: 6px; border-radius: 50%; margin-top: 3px }
+    .bdc-aghead { font-size: 10.5px; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }
+    .bdc-agenda { display: flex; flex-direction: column; gap: 8px; max-height: 232px; overflow: auto; padding-right: 4px; }
+    .bdc-ag { display: flex; gap: 11px; align-items: center; border: 1px solid var(--border); border-radius: 11px; padding: 8px 10px; cursor: pointer; transition: .14s; background: var(--card); text-align: left; font: inherit; width: 100%; }
+    .bdc-ag:hover { border-color: var(--border-hi); background: var(--elevated) }
+    .bdc-ag .agd { flex: none; width: 38px; text-align: center }
+    .bdc-ag .agd .d { font-size: 16px; font-weight: 700; line-height: 1 }
+    .bdc-ag .agd .m { font-size: 9px; color: var(--dim); text-transform: uppercase; font-weight: 650 }
+    .bdc-ag .agn { font-size: 12px; font-weight: 600; line-height: 1.25 }
+    .bdc-ag .agl { font-size: 10.5px; color: var(--muted); margin-top: 1px }
+    .bdc-evstrip { margin-top: 14px; border-top: 1px solid var(--hairline); padding-top: 13px; min-height: 50px; }
+    .bdc-evstrip .none { font-size: 12.5px; color: var(--dim); }
+    /* placement windows — master / detail */
+    .bdc-md { display: grid; grid-template-columns: 300px 1fr; gap: 16px; align-items: start; }
+    .bdc-mdlist { display: flex; flex-direction: column; gap: 8px; }
+    .bdc-mdi { display: flex; align-items: center; gap: 11px; border: 1px solid var(--border); border-radius: 12px; background: var(--card);
+      padding: 10px 12px; cursor: pointer; transition: .14s; text-align: left; font: inherit; width: 100%; }
+    .bdc-mdi:hover { border-color: var(--border-hi) }
+    .bdc-mdi.sel { border-color: var(--cc); box-shadow: 0 0 0 2px var(--cc) inset }
+    .bdc-mdi .sq { flex: none; width: 11px; height: 34px; border-radius: 5px; background: var(--cc) }
+    .bdc-mdi .nm { font-size: 12.5px; font-weight: 600; line-height: 1.25 }
+    .bdc-mdi .by { font-size: 10.5px; color: var(--dim); margin-top: 2px; font-weight: 600 }
+    .bdc-mdpane { border: 1px solid var(--border); border-radius: 16px; background: var(--bg); padding: 20px 22px; min-height: 240px; }
+    @media (max-width: 980px) {
+      .bdc-grid { grid-template-columns: 1fr; grid-template-areas: "fw" "cal" "pw" }
+      .bdc-md { grid-template-columns: 1fr } .bdc-split { grid-template-columns: 1fr }
+    }
+
     /* ============================================================
        MOBILE LAYER — phones only (<= 640px). Purely additive: every
        rule here is inside this media query, so nothing at >= 641px
@@ -5276,96 +5347,48 @@ TEMPLATE = r"""
 
   <!-- ===== PAGE 3 · BD CALENDAR ===== -->
   <section class="page" id="cal">
-    <div class="cc-wrap">
-      <div class="cc-hero">
-        <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></div>
-        <h1 class="gemini-title">BD Calendar</h1>
-        <div class="cc-sub">The business-development moves that run on key dates.</div>
+    <!-- radar-style hero: title + icon over the faded-blue gradient -->
+    <div class="wm-head">
+      <div class="brand">
+        <span class="brand-title">BD Calendar</span>
+        <span class="bdc-hero-ic" title="The moves that run on key dates"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></span>
       </div>
-      <div class="cc-cards">
-        <button class="cc-card" data-open="windows"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg></span><span class="cx"><span class="ct">Placement Windows</span><span class="cd">Statutory hiring windows that open on a known calendar.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
-        <button class="cc-card" data-open="events"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 17l-5.2 2.6 1-5.8L3.5 9.7l5.9-.9z"/></svg></span><span class="cx"><span class="ct">Events &amp; Networking</span><span class="cd">Awards, summits and networking dates worth showing up to.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
-        <button class="cc-card" data-open="frameworks"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 13h7M8.5 16.5h4.5"/></svg></span><span class="cx"><span class="ct">Framework Eligibility</span><span class="cd">Public-sector frameworks where VMA can bid.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
-      </div>
+      <div class="bdc-sub">The business-development moves that run on key dates.</div>
     </div>
 
-    <!-- HIDDEN HOST — the three context panels live here so their on-load
-         AJAX loaders (loadPulses / loadEvents) and the server-side framework
-         loop resolve into still-in-DOM mounts. Clicking a card moves the
-         matching panel into the modal body; closing moves it back here. -->
-    <div class="cal-host" id="cal-host">
+    <!-- full-page dashboard: frameworks top-left, calendar top-right, windows bottom -->
+    <div class="bdc-page">
+      <div class="bdc-grid">
 
-      <div class="panel ctx-col" id="pulses-row" data-bd="windows">
-        <div class="panel-header">
-          <h2>Placement Windows</h2>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <button class="cal-headnew" id="pulses-new" type="button" style="display:none;">
-              <span class="cal-nd"></span><span id="pulses-new-n">0</span>&nbsp;new</button>
-            <span class="count" id="pulses-count">—</span>
+        <div class="bdc-card a-fw">
+          <div class="bdc-card-h"><h2>Framework Eligibility</h2><span class="meta">{{ framework_events|length }} · where &amp; when VMA can bid</span></div>
+          <div class="bdc-vt" id="framework-body">
+            {% if framework_events|length == 0 %}<div class="empty compact">No framework windows tracked.</div>{% endif %}
+            {% for fw in framework_events %}
+            {% set bp = [[(100 - ((fw.days_to_expiry or 200) / 9)), 24] | max, 100] | min | round | int %}
+            <div class="bdc-vt-node {{ 'open' if fw.status == 'refresh_window' else '' }}">
+              <span class="bdc-vt-dot"></span>
+              <div class="bdc-vt-when">{{ fw.window_pill }}</div>
+              <div class="bdc-vt-t">{{ fw.ad_title or fw.title }}{% if fw.discovered %} <span class="found-pill" title="Auto-discovered from a live public source">Found</span>{% endif %}</div>
+              <div class="bdc-vt-by">{{ fw.buyer }}</div>
+              <div class="bdc-vt-bar" style="width:{{ bp }}%"></div>
+              <a class="bdc-vt-portal" href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify on portal &rsaquo;</a>
+            </div>
+            {% endfor %}
           </div>
         </div>
-        <div class="panel-body" id="pulses-body">
-          <div class="empty compact">Loading…</div>
-        </div>
-      </div>
 
-      <div class="panel ctx-col" data-bd="events">
-        <div class="panel-header">
-          <h2>Events &amp; Networking</h2>
-          <span class="count" id="events-count">—</span>
+        <div class="bdc-card a-cal">
+          <div class="bdc-card-h"><h2>Events &amp; Networking</h2><span class="meta" id="events-count">—</span></div>
+          <div id="events-body"><div class="empty compact">Loading…</div></div>
         </div>
-        <div class="panel-body" id="events-body">
-          <div class="empty compact">Loading…</div>
-        </div>
-      </div>
 
-      <div class="panel ctx-col" id="framework-row" data-bd="frameworks">
-        <div class="panel-header">
-          <h2>Framework Eligibility</h2>
-          <span class="count" id="framework-count">{{ framework_events|length }}</span>
+        <div class="bdc-card a-pw">
+          <div class="bdc-card-h"><h2>Placement Windows</h2><span class="meta" id="pulses-count">—</span></div>
+          <div id="pulses-body"><div class="empty compact">Loading…</div></div>
         </div>
-        <div class="filter-bar" id="fw-filter-bar">
-          <button class="lead-filter-pill active" data-filter="active">Active <span class="pill-count" id="fw-pc-active">{{ fw_active_count }}</span></button>
-          <button class="lead-filter-pill" data-filter="followed_up">Followed up <span class="pill-count" id="fw-pc-followed_up">{{ fw_followed_count }}</span></button>
-          <button class="lead-filter-pill" data-filter="dismissed">Dismissed <span class="pill-count" id="fw-pc-dismissed">{{ fw_dismissed_count }}</span></button>
-          <button class="lead-filter-pill" data-filter="all">All</button>
-        </div>
-        <div class="panel-body" id="framework-body">
-          <div class="fw-note">Where VMA can bid — public-sector framework windows. Eligibility &amp; BD groundwork, not a live lead list.</div>
-          {% if framework_events|length == 0 %}
-            <div class="empty compact">No framework windows tracked.</div>
-          {% endif %}
-          {% for fw in framework_events %}
-            <div class="row2 framework-row" data-status="{{ fw.triage }}" data-new="0" data-fwid="{{ fw.key }}">
-              <div class="row2-head">
-                <span class="typ fw">FW</span>
-                <span class="row2-title">{{ fw.ad_title or fw.title }}{% if fw.discovered %} <span class="found-pill" title="Auto-discovered from a live public source">Found</span>{% endif %}</span>
-                <span class="row2-tags">
-                  <span class="ipill {{ 'w' if fw.status == 'refresh_window' else 'mut' }}">{{ fw.window_pill }}</span>
-                  {% if fw.triage == 'followed_up' %}<span class="status-badge followed-up">&#10003;</span>{% elif fw.triage == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
-                </span>
-                <span class="row2-chev">&rsaquo;</span>
-              </div>
-              <div class="row2-detail">
-                <div class="row2-sub">{{ fw.ad_desc or fw.scope }}</div>
-                <div class="play">
-                  <div class="play-lab">&#9654; {{ fw.window_label }}</div>
-                  <div class="play-desc" title="{{ fw.notes }}">{{ fw.title }} · <a class="lnk" href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify on portal &rsaquo;</a></div>
-                  <div class="item-actions">
-                    {% if fw.triage == 'active' %}
-                      <button class="btn-mini framework-action" data-status="followed_up" type="button">&#10003; Mark followed up</button>
-                      <button class="btn-mini framework-action ghost" data-status="dismissed" type="button">&#10005; Dismiss</button>
-                    {% else %}
-                      <button class="btn-mini framework-action" data-status="active" type="button">&#8634; Restore</button>
-                    {% endif %}
-                  </div>
-                </div>
-              </div>
-            </div>
-          {% endfor %}
-        </div>
-      </div>
 
+      </div>
     </div>
   </section>
 
@@ -5994,6 +6017,31 @@ function bdcShort(name) {
   if (s.length > 32) s = s.slice(0, 31).trim() + '…';
   return s;
 }
+// Placement Windows — master/detail: a compact list on the left, the full
+// brief on the right. The remove (dismiss) is tucked into the open brief.
+function bdcWinDetail(w) {
+  const cc = bdcWinCat(w.name);
+  const src = w.source_url || (/^https?:/i.test(w.url || '') ? w.url : '');
+  const tg = (w.targets || []).map(t => '<span class="bdc-tgt">' + esc(t) + '</span>').join('');
+  return '<div class="bdc-pwd-h"><span class="bdc-pwd-tag">' +
+      esc(typeof w.days_left === 'number' ? w.days_left + ' days left' : 'window') + '</span>' +
+      '<div><div class="bdc-pwd-t">' + esc(w.name || '') + '</div>' +
+      '<div class="bdc-pwd-meta">' + esc(cc[1]) + (w.sector ? ' &middot; ' + esc(bdcSector(w.sector)) : '') + '</div></div></div>' +
+    (w.angle ? '<div class="bdc-angle">' + esc(w.angle) + '</div>' : '') +
+    '<div class="bdc-kv">' +
+      (w.window ? '<div><div class="bdc-k">Window</div><div class="bdc-v">' + esc(w.window) + '</div></div>' : '') +
+      (w.act_by ? '<div><div class="bdc-k">Act by</div><div class="bdc-v">' + esc(w.act_by) + '</div></div>' : '') +
+      (w.seat ? '<div><div class="bdc-k">The seat</div><div class="bdc-v seat">' + esc(w.seat) + '</div></div>' : '') +
+      (w.scope_note ? '<div><div class="bdc-k">Scope</div><div class="bdc-v">' + esc(w.scope_note) + '</div></div>' : '') +
+    '</div>' +
+    (tg ? '<div class="bdc-tgts">' + tg + '</div>' : '') +
+    '<div class="bdc-basis">' + (w.advisory ? '<b>Advisory in:</b> ' + esc(w.advisory) + '<br>' : '') +
+      (w.source ? 'Basis &middot; ' + esc(w.source) : '') +
+      (w.confidence ? ' &middot; confidence: ' + esc(w.confidence) : '') +
+      (src ? ' &nbsp;&middot;&nbsp; <a href="' + safeUrl(src) + '" target="_blank" rel="noopener noreferrer">View source &rsaquo;</a>' : '') +
+    '</div>' +
+    '<div class="bdc-actions"><button class="bdc-rm" data-key="' + esc(w.key || '') + '">Remove this window</button></div>';
+}
 async function loadPulses() {
   const body = document.getElementById('pulses-body');
   const count = document.getElementById('pulses-count');
@@ -6009,59 +6057,26 @@ async function loadPulses() {
         'quiet outside those dated windows rather than show stale noise.</div>';
       return;
     }
-    const leg = '<div class="bdc-leg">' +
-      '<span><i style="background:#3E5C84"></i>Statutory</span>' +
-      '<span><i style="background:#B98235"></i>Regulatory</span>' +
-      '<span><i style="background:#2F9E5B"></i>Sustainability</span>' +
-      '<span><i style="background:#6C7BA6"></i>Public sector</span></div>';
-    let tiles = '';
-    rows.forEach(p => {
-      const cc = bdcWinCat(p.name);
-      const days = (typeof p.days_left === 'number') ? p.days_left + 'd' : '';
-      tiles += '<button class="bdc-pw" data-key="' + esc(p.key || p.name || '') + '" style="--cc:' + cc[0] + '">' +
-        '<span class="bdc-pw-top"><span class="bdc-pw-dot"></span><span class="bdc-pw-days">' + esc(days) + '</span></span>' +
-        '<span class="bdc-pw-nm">' + esc(bdcShort(p.name)) + '</span>' +
-        '<span class="bdc-pw-open">Open &rsaquo;</span></button>';
+    const list = rows.map((w, i) => {
+      const cc = bdcWinCat(w.name);
+      const days = (typeof w.days_left === 'number') ? w.days_left + 'd left' : '';
+      return '<button class="bdc-mdi' + (i === 0 ? ' sel' : '') + '" data-key="' + esc(w.key || w.name || '') + '" style="--cc:' + cc[0] + '">' +
+        '<span class="sq"></span><div><div class="nm">' + esc(bdcShort(w.name)) + '</div>' +
+        '<div class="by">' + esc(days) + (days ? ' · ' : '') + esc(cc[1]) + '</div></div></button>';
+    }).join('');
+    body.innerHTML = '<div class="bdc-md"><div class="bdc-mdlist">' + list + '</div>' +
+      '<div class="bdc-mdpane" id="bdc-wpane"></div></div>';
+    const pane = document.getElementById('bdc-wpane');
+    const mdlist = body.querySelector('.bdc-mdlist');
+    function paint(w) { pane.style.setProperty('--cc', bdcWinCat(w.name)[0]); pane.innerHTML = bdcWinDetail(w); }
+    paint(rows[0]);
+    mdlist.addEventListener('click', (ev) => {
+      const it = ev.target.closest('.bdc-mdi'); if (!it) return;
+      mdlist.querySelectorAll('.bdc-mdi').forEach(x => x.classList.remove('sel'));
+      it.classList.add('sel');
+      paint(rows.filter(x => (x.key || x.name) === it.dataset.key)[0]);
     });
-    body.innerHTML = leg + '<div class="bdc-pt">' + tiles + '</div>' +
-      '<div class="bdc-pwd" id="bdc-pwd"><div class="bdc-pwd-in"></div></div>';
-    const grid = body.querySelector('.bdc-pt');
-    const det = document.getElementById('bdc-pwd');
-    const detIn = det.querySelector('.bdc-pwd-in');
-    grid.addEventListener('click', (ev) => {
-      const b = ev.target.closest('.bdc-pw'); if (!b) return;
-      const p = rows.filter(x => (x.key || x.name) === b.dataset.key)[0]; if (!p) return;
-      const was = b.classList.contains('sel');
-      grid.querySelectorAll('.bdc-pw').forEach(x => x.classList.remove('sel'));
-      if (was) { det.classList.remove('show'); return; }
-      b.classList.add('sel');
-      const cc = bdcWinCat(p.name);
-      det.style.setProperty('--cc', cc[0]);
-      const src = p.source_url || (/^https?:/i.test(p.url || '') ? p.url : '');
-      const tg = (p.targets || []).map(t => '<span class="bdc-tgt">' + esc(t) + '</span>').join('');
-      detIn.innerHTML =
-        '<div class="bdc-pwd-h"><span class="bdc-pwd-tag">' +
-          esc(typeof p.days_left === 'number' ? p.days_left + ' days left' : 'window') + '</span>' +
-          '<div><div class="bdc-pwd-t">' + esc(p.name || '') + '</div>' +
-          '<div class="bdc-pwd-meta">' + esc(cc[1]) + (p.sector ? ' &middot; ' + esc(bdcSector(p.sector)) : '') + '</div></div></div>' +
-        (p.angle ? '<div class="bdc-angle">' + esc(p.angle) + '</div>' : '') +
-        '<div class="bdc-kv">' +
-          (p.window ? '<div><div class="bdc-k">Window</div><div class="bdc-v">' + esc(p.window) + '</div></div>' : '') +
-          (p.act_by ? '<div><div class="bdc-k">Act by</div><div class="bdc-v">' + esc(p.act_by) + '</div></div>' : '') +
-          (p.seat ? '<div><div class="bdc-k">The seat</div><div class="bdc-v seat">' + esc(p.seat) + '</div></div>' : '') +
-          (p.scope_note ? '<div><div class="bdc-k">Scope</div><div class="bdc-v">' + esc(p.scope_note) + '</div></div>' : '') +
-        '</div>' +
-        (tg ? '<div class="bdc-tgts">' + tg + '</div>' : '') +
-        '<div class="bdc-basis">' + (p.advisory ? '<b>Advisory in:</b> ' + esc(p.advisory) + '<br>' : '') +
-          (p.source ? 'Basis &middot; ' + esc(p.source) : '') +
-          (p.confidence ? ' &middot; confidence: ' + esc(p.confidence) : '') +
-          (src ? ' &nbsp;&middot;&nbsp; <a href="' + safeUrl(src) + '" target="_blank" rel="noopener noreferrer">View source &rsaquo;</a>' : '') +
-        '</div>' +
-        '<div class="bdc-actions"><button class="bdc-rm" data-key="' + esc(p.key || '') + '">Remove this window</button></div>';
-      det.classList.add('show');
-    });
-    // Remove-a-window: tucked into the open brief (shared pulse_dismiss keyspace).
-    det.addEventListener('click', async (ev) => {
+    pane.addEventListener('click', async (ev) => {
       const btn = ev.target.closest('.bdc-rm'); if (!btn) return;
       const key = btn.getAttribute('data-key'); if (!key) return;
       btn.disabled = true;
@@ -6071,31 +6086,48 @@ async function loadPulses() {
           body: JSON.stringify({ key: key, dismissed: true }),
         });
         const jj = await r.json();
-        if (jj.ok) { det.classList.remove('show'); loadPulses(); }
+        if (jj.ok) { loadPulses(); }
         else { btn.disabled = false; alert(jj.detail || 'Could not remove.'); }
       } catch (e) { btn.disabled = false; alert('Network error: ' + e.message); }
     });
-    // "new this week" header pip — unchanged behaviour (hidden inside the modal).
-    const newCount = rows.filter(p => p.just_opened).length;
-    const nb = document.getElementById('pulses-new');
-    if (nb) {
-      if (newCount > 0) {
-        const n = document.getElementById('pulses-new-n');
-        if (n) n.textContent = newCount;
-        nb.style.display = 'inline-flex';
-        nb.onclick = null;
-      } else { nb.style.display = 'none'; }
-    }
   } catch (e) {
     body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
   }
 }
 
-// ---------- Events & Networking (industry events) ----------
-// Wired into the BD-Calendar "Events & Networking" pop-up as a rolling
-// 12-month calendar (the next 12 months from today). Each event is a
-// clickable row inside its month; the full detail — location, why-now and
-// the source link — opens below. Remove is tucked into the open detail.
+// ---------- Events & Networking — a real month calendar + agenda ----------
+var BDC_MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var BDC_MONF = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+var BDC_WD = ['M','T','W','T','F','S','S'];
+function bdcFocusCol(f) { return f === 'internal' ? '#4285F4' : f === 'external' ? '#C08A3E' : '#9AA0A6'; }
+function bdcMonthGrid(y, m, evmap) {
+  const first = (new Date(y, m, 1).getDay() + 6) % 7, dim = new Date(y, m + 1, 0).getDate();
+  const t = new Date(), ty = t.getFullYear(), tm = t.getMonth(), td = t.getDate();
+  let h = BDC_WD.map(w => '<div class="bdc-cwd">' + w + '</div>').join('');
+  for (let b = 0; b < first; b++) h += '<div class="bdc-cday blank"></div>';
+  for (let d = 1; d <= dim; d++) {
+    const e = evmap[y + '-' + m + '-' + d];
+    const cls = 'bdc-cday' + (e ? ' ev' : '') + (y === ty && m === tm && d === td ? ' today' : '');
+    const dot = e ? '<span class="bdc-cdot" style="background:' + bdcFocusCol(e.focus) + '"></span>' : '';
+    h += '<div class="' + cls + '"' + (e ? ' data-ek="' + esc(e.key || '') + '"' : '') + '>' + d + dot + '</div>';
+  }
+  return h;
+}
+function bdcShowEvent(strip, e) {
+  if (!strip) return;
+  if (!e) { strip.innerHTML = '<div class="none">Pick a highlighted date or an event.</div>'; return; }
+  const p = String(e.event_date || '').split('-');
+  const dd = p.length > 2 ? parseInt(p[2], 10) : '', mm = p.length > 1 ? parseInt(p[1], 10) - 1 : 0;
+  const src = e.url || e.source;
+  const foc = e.focus === 'internal' ? 'internal' : e.focus === 'external' ? 'external' : 'mixed';
+  strip.innerHTML = '<div class="bdc-ev-card"><div class="bdc-ev-date"><div class="d2">' + dd + '</div><div class="m2">' + (BDC_MON[mm] || '') + '</div></div>' +
+    '<div class="bdc-ev-info"><span class="bdc-ev-nm">' + esc(e.name || '') + '</span>' +
+    '<span class="bdc-ev-tag ' + foc + '">' + foc + '</span>' +
+    '<div class="bdc-ev-loc">' + (BDC_MONF[mm] || '') + ' ' + dd + ', ' + (p[0] || '') + (e.location ? ' &middot; ' + esc(e.location) : '') + '</div>' +
+    (e.why_now ? '<div class="bdc-ev-why">' + esc(e.why_now) + '</div>' : '') +
+    (src ? '<a class="bdc-ev-lk" href="' + safeUrl(src) + '" target="_blank" rel="noopener noreferrer">View details &rsaquo;</a>' : '') +
+    '<div class="bdc-actions"><button class="bdc-rm" data-key="' + esc(e.key || '') + '">Remove this event</button></div></div></div>';
+}
 async function loadEvents() {
   const body = document.getElementById('events-body');
   const count = document.getElementById('events-count');
@@ -6107,74 +6139,50 @@ async function loadEvents() {
     if (count) count.textContent = rows.length;
     if (rows.length === 0) {
       body.innerHTML = '<div class="empty compact">No comms awards, conferences or ' +
-        'summits in the next ~6 months. This pop-up lists networking & candidate-' +
-        'visibility moments — relationship groundwork, not statute-forced windows.</div>';
+        'summits in the next ~6 months — relationship groundwork, not statute-forced windows.</div>';
       return;
     }
-    const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const MONF = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    const focusCol = f => f === 'internal' ? '#4285F4' : f === 'external' ? '#C08A3E' : '#9AA0A6';
-    const now = new Date();
-    const curY = now.getFullYear(), curM = now.getMonth();
-    const byMonth = {};
+    const evmap = {}, byKey = {};
     rows.forEach(e => {
+      byKey[e.key || e.name] = e;
       const p = String(e.event_date || '').split('-');
-      if (p.length < 2) return;
-      const k = p[0] + '-' + (parseInt(p[1], 10) - 1);
-      (byMonth[k] = byMonth[k] || []).push(e);
+      if (p.length >= 3) evmap[(+p[0]) + '-' + ((+p[1]) - 1) + '-' + (+p[2])] = e;
     });
-    let cells = '';
-    for (let i = 0; i < 12; i++) {
-      const d = new Date(curY, curM + i, 1);
-      const y = d.getFullYear(), m = d.getMonth();
-      const evs = byMonth[y + '-' + m] || [];
-      cells += '<div class="bdc-mcell' + (i === 0 ? ' now' : '') + (evs.length ? '' : ' quiet') + '">' +
-        '<div class="bdc-mc-h"><span class="bdc-mc-m">' + MON[m] + '</span>' +
-        '<span class="bdc-mc-y">' + y + '</span>' +
-        (i === 0 ? '<span class="bdc-mc-now">now</span>' : '') + '</div>';
-      if (evs.length) {
-        evs.forEach(e => {
-          const day = parseInt((String(e.event_date).split('-')[2] || ''), 10) || '';
-          cells += '<button class="bdc-mc-ev" data-evkey="' + esc(e.key || e.name || '') + '">' +
-            '<span class="bdc-mc-dot" style="background:' + focusCol(e.focus) + '"></span>' +
-            '<span class="bdc-mc-dd">' + day + '</span>' +
-            '<span class="bdc-mc-nm">' + esc(e.name || '') + '</span></button>';
-        });
-      } else {
-        cells += '<div class="bdc-mc-none">&mdash;</div>';
-      }
-      cells += '</div>';
+    const agenda = rows.map(e => {
+      const p = String(e.event_date || '').split('-');
+      return '<button class="bdc-ag" data-ek="' + esc(e.key || e.name || '') + '">' +
+        '<div class="agd"><div class="d">' + (+p[2] || '') + '</div><div class="m">' + (BDC_MON[(+p[1]) - 1] || '') + '</div></div>' +
+        '<div><div class="agn">' + esc(e.name || '') + '</div><div class="agl">' + esc(e.location || '') + '</div></div></button>';
+    }).join('');
+    body.innerHTML = '<div class="bdc-split"><div id="bdc-calwrap"></div>' +
+      '<div><div class="bdc-aghead">Upcoming</div><div class="bdc-agenda">' + agenda + '</div></div></div>' +
+      '<div class="bdc-evstrip" id="bdc-evstrip"><div class="none">Pick a highlighted date or an event to see the detail and the link.</div></div>';
+    const host = document.getElementById('bdc-calwrap');
+    const strip = document.getElementById('bdc-evstrip');
+    const now = new Date(); const st = { y: now.getFullYear(), m: now.getMonth() };
+    host.innerHTML = '<div class="bdc-caltop"><span class="bdc-caltitle"></span>' +
+      '<span class="bdc-calnav"><button data-d="-1">&lsaquo;</button><button data-d="1">&rsaquo;</button></span></div>' +
+      '<div class="bdc-calgrid"></div>';
+    function paint() {
+      host.querySelector('.bdc-caltitle').textContent = BDC_MONF[st.m] + ' ' + st.y;
+      host.querySelector('.bdc-calgrid').innerHTML = bdcMonthGrid(st.y, st.m, evmap);
     }
-    const leg = '<div class="bdc-leg">' +
-      '<span><i style="background:#4285F4"></i>Internal comms</span>' +
-      '<span><i style="background:#C08A3E"></i>External comms</span></div>';
-    body.innerHTML = leg + '<div class="bdc-mcal">' + cells + '</div>' +
-      '<div class="bdc-evd" id="bdc-evd"><div class="bdc-evd-empty">Select an event to see the detail and the link.</div></div>';
-    const cal = body.querySelector('.bdc-mcal');
-    const evd = document.getElementById('bdc-evd');
-    cal.addEventListener('click', (ev) => {
-      const b = ev.target.closest('.bdc-mc-ev'); if (!b) return;
-      const e = rows.filter(x => (x.key || x.name) === b.dataset.evkey)[0]; if (!e) return;
-      cal.querySelectorAll('.bdc-mc-ev').forEach(x => x.classList.remove('sel'));
-      b.classList.add('sel');
-      const p = String(e.event_date || '').split('-');
-      const dd = p.length > 2 ? parseInt(p[2], 10) : '';
-      const mm = p.length > 1 ? parseInt(p[1], 10) - 1 : 0;
-      const src = e.url || e.source;
-      const foc = e.focus === 'internal' ? 'internal' : e.focus === 'external' ? 'external' : 'mixed';
-      evd.innerHTML = '<div class="bdc-ev-card">' +
-        '<div class="bdc-ev-date"><div class="d2">' + dd + '</div><div class="m2">' + (MON[mm] || '') + '</div></div>' +
-        '<div class="bdc-ev-info"><span class="bdc-ev-nm">' + esc(e.name || '') + '</span>' +
-        '<span class="bdc-ev-tag ' + foc + '">' + foc + '</span>' +
-        '<div class="bdc-ev-loc">' + (MONF[mm] || '') + ' ' + dd + ', ' + (p[0] || '') +
-          (e.location ? ' &middot; ' + esc(e.location) : '') + '</div>' +
-        (e.why_now ? '<div class="bdc-ev-why">' + esc(e.why_now) + '</div>' : '') +
-        (src ? '<a class="bdc-ev-lk" href="' + safeUrl(src) + '" target="_blank" rel="noopener noreferrer">View details &rsaquo;</a>' : '') +
-        '<div class="bdc-actions"><button class="bdc-rm" data-key="' + esc(e.key || '') + '">Remove this event</button></div>' +
-        '</div></div>';
+    paint();
+    host.querySelector('.bdc-calnav').addEventListener('click', (ev) => {
+      const b = ev.target.closest('button'); if (!b) return;
+      st.m += (+b.dataset.d); if (st.m < 0) { st.m = 11; st.y--; } if (st.m > 11) { st.m = 0; st.y++; } paint();
     });
-    // Remove-an-event: tucked into the open detail (shared pulse_dismiss keyspace).
-    evd.addEventListener('click', async (ev) => {
+    host.querySelector('.bdc-calgrid').addEventListener('click', (ev) => {
+      const c = ev.target.closest('.bdc-cday.ev'); if (!c) return;
+      host.querySelectorAll('.bdc-cday.ev').forEach(x => x.classList.remove('sel'));
+      c.classList.add('sel');
+      bdcShowEvent(strip, byKey[c.dataset.ek]);
+    });
+    body.querySelector('.bdc-agenda').addEventListener('click', (ev) => {
+      const a = ev.target.closest('.bdc-ag'); if (!a) return;
+      bdcShowEvent(strip, byKey[a.dataset.ek]);
+    });
+    strip.addEventListener('click', async (ev) => {
       const btn = ev.target.closest('.bdc-rm'); if (!btn) return;
       const key = btn.getAttribute('data-key'); if (!key) return;
       btn.disabled = true;
