@@ -31,8 +31,15 @@ import logging
 import re
 from functools import lru_cache
 from pathlib import Path
+from urllib.parse import quote
 
 log = logging.getLogger("pitch_proposal")
+
+# Wikimedia requires a descriptive User-Agent or it returns 403. Be honest
+# about who we are so the calls keep working.
+_UA = ("VMA-PitchPack/1.0 (https://www.vmagroup.com; executive-search proposal "
+       "generator)")
+_HTTP_TIMEOUT = 8
 
 _ASSETS = Path(__file__).resolve().parent / "assets"
 
@@ -117,12 +124,27 @@ def _domain_candidates(company: str) -> list[str]:
     return list(dict.fromkeys(d for d in out if d))
 
 
-def _valid_logo(content: bytes, content_type: str) -> bool:
-    """A real, reasonably-sized raster logo (reject tiny favicons / error
-    pages / SVG-less placeholders)."""
-    if not content or len(content) < 600:
+def _is_svg(content: bytes, content_type: str = "") -> bool:
+    if "svg" in (content_type or "").lower():
+        return True
+    head = content[:300].lstrip().lower()
+    return head.startswith(b"<?xml") and b"<svg" in content[:600].lower() \
+        or head.startswith(b"<svg")
+
+
+def _valid_logo(content: bytes, content_type: str = "") -> bool:
+    """A real logo image — raster (PNG/JPEG/GIF) of reasonable size, or SVG
+    (vector, ideal). Rejects empty bodies, HTML error pages and tiny stubs."""
+    if not content:
         return False
-    if content_type and not content_type.lower().startswith("image"):
+    if _is_svg(content, content_type):
+        # Validate by structure, not size — a clean vector logo can be small.
+        low = content.lower()
+        return b"<svg" in low and b"</svg>" in low
+    if len(content) < 300:
+        return False
+    ct = (content_type or "").lower()
+    if ct and not ct.startswith("image"):
         return False
     try:
         from PIL import Image
@@ -130,35 +152,153 @@ def _valid_logo(content: bytes, content_type: str) -> bool:
         im = Image.open(io.BytesIO(content))
         im.load()
         w, h = im.size
-        return w >= 48 and h >= 24
+        return w >= 32 and h >= 16
     except Exception:
-        # Pillow unavailable or undecodable — fall back to magic-byte sniff.
+        # Pillow unavailable / undecodable — fall back to a magic-byte sniff.
         return content[:8].startswith((b"\x89PNG", b"\xff\xd8\xff", b"GIF8"))
 
 
-def company_logo(company: str) -> tuple[bytes | None, str]:
-    """Fetch the target company's logo. Returns (png_bytes_or_None, source).
+def _img_data_uri(data: bytes) -> str:
+    """Embed raw image bytes as a data URI, sniffing the right MIME type
+    (WeasyPrint renders PNG/JPEG/GIF and SVG)."""
+    head = data[:64]
+    if data[:8].startswith(b"\x89PNG"):
+        mime = "image/png"
+    elif data[:3] == b"\xff\xd8\xff":
+        mime = "image/jpeg"
+    elif data[:4] == b"GIF8":
+        mime = "image/gif"
+    elif _is_svg(data):
+        mime = "image/svg+xml"
+    else:
+        mime = "image/png"
+    return f"data:{mime};base64,{base64.b64encode(data).decode('ascii')}"
 
-    Network failures and misses are swallowed — the caller falls back to a
-    wordmark — so this never raises."""
+
+def _http_get(url: str, params: dict | None = None):
+    """GET with the Wikimedia-friendly UA; returns the response or None."""
     try:
         import requests
+        return requests.get(url, params=params, timeout=_HTTP_TIMEOUT,
+                            headers={"User-Agent": _UA})
+    except Exception as e:
+        log.info("logo GET %s failed: %s", url, e)
+        return None
+
+
+def _commons_filepath(filename: str, width: int = 512) -> bytes | None:
+    """Fetch a Wikimedia Commons file (the canonical logo) at a target width.
+    MediaWiki thumbnails both raster files and SVGs, so this returns a crisp,
+    appropriately-sized image."""
+    url = "https://commons.wikimedia.org/wiki/Special:FilePath/" + quote(filename)
+    r = _http_get(url, params={"width": width})
+    if r is not None and r.status_code == 200 and \
+            _valid_logo(r.content, r.headers.get("content-type", "")):
+        return r.content
+    return None
+
+
+def _logo_from_wikidata(company: str) -> tuple[bytes | None, str]:
+    """The authoritative source: Wikidata's 'logo image' property (P154) points
+    straight at the company's official logo on Commons. We take the first
+    matching entity that actually carries a logo, which naturally skips
+    same-named people/places (they don't have P154)."""
+    r = _http_get("https://www.wikidata.org/w/api.php", params={
+        "action": "wbsearchentities", "search": company, "language": "en",
+        "type": "item", "format": "json", "limit": 5})
+    if not r or r.status_code != 200:
+        return None, ""
+    try:
+        ids = [e["id"] for e in r.json().get("search", [])]
     except Exception:
-        return None, "no-requests"
-    domains = _domain_candidates(company)
-    for dom in domains:
-        url = f"https://logo.clearbit.com/{dom}?size=512&format=png"
-        try:
-            r = requests.get(url, timeout=12,
-                             headers={"User-Agent": "Mozilla/5.0 (VMA pitch pack)"})
-        except Exception as e:
-            log.info("logo fetch %s failed: %s", dom, e)
+        return None, ""
+    for qid in ids[:4]:
+        c = _http_get("https://www.wikidata.org/w/api.php", params={
+            "action": "wbgetclaims", "entity": qid, "property": "P154",
+            "format": "json"})
+        if not c or c.status_code != 200:
             continue
-        if r.status_code == 200 and _valid_logo(r.content,
-                                                r.headers.get("content-type", "")):
-            log.info("logo resolved for %r via %s", company, dom)
+        try:
+            claims = c.json().get("claims", {}).get("P154", [])
+            fname = claims[0]["mainsnak"]["datavalue"]["value"]
+        except Exception:
+            continue
+        img = _commons_filepath(fname, 512)
+        if img:
+            return img, f"wikidata:{qid}"
+    return None, ""
+
+
+def _logo_from_wikipedia(company: str) -> tuple[bytes | None, str]:
+    """Fallback: the lead image of the company's Wikipedia article, which for
+    company pages is the infobox logo."""
+    r = _http_get("https://en.wikipedia.org/w/api.php", params={
+        "action": "query", "format": "json", "prop": "pageimages",
+        "piprop": "original", "titles": company, "redirects": 1})
+    if not r or r.status_code != 200:
+        return None, ""
+    try:
+        pages = r.json().get("query", {}).get("pages", {})
+    except Exception:
+        return None, ""
+    for p in pages.values():
+        src = (p.get("original") or {}).get("source")
+        if not src:
+            continue
+        rr = _http_get(src)
+        if rr is not None and rr.status_code == 200 and \
+                _valid_logo(rr.content, rr.headers.get("content-type", "")):
+            return rr.content, "wikipedia"
+    return None, ""
+
+
+def _logo_from_clearbit(company: str) -> tuple[bytes | None, str]:
+    """Clearbit logo API by domain — a clean transparent PNG when it has the
+    brand (kept as a secondary source; it no longer covers every company)."""
+    for dom in _domain_candidates(company)[:3]:
+        r = _http_get(f"https://logo.clearbit.com/{dom}",
+                      params={"size": 512, "format": "png"})
+        if r is not None and r.status_code == 200 and \
+                _valid_logo(r.content, r.headers.get("content-type", "")):
             return r.content, f"clearbit:{dom}"
-    log.info("no logo resolved for %r (tried %s) — using wordmark", company, domains)
+    return None, ""
+
+
+def _logo_from_favicon(company: str) -> tuple[bytes | None, str]:
+    """Last resort: the largest favicon Google holds for the domain. Lower
+    quality and square, but a real brand mark beats a plain wordmark."""
+    for dom in _domain_candidates(company)[:3]:
+        r = _http_get("https://www.google.com/s2/favicons",
+                      params={"domain": dom, "sz": 256})
+        if r is not None and r.status_code == 200 and \
+                _valid_logo(r.content, r.headers.get("content-type", "")):
+            return r.content, f"favicon:{dom}"
+    return None, ""
+
+
+# Resolution order: the authoritative official-logo sources first (Wikidata
+# P154, then the Wikipedia infobox image), then domain-based services. The
+# first good-quality hit wins.
+_LOGO_PROVIDERS = (_logo_from_wikidata, _logo_from_wikipedia,
+                   _logo_from_clearbit, _logo_from_favicon)
+
+
+def company_logo(company: str) -> tuple[bytes | None, str]:
+    """Resolve the target company's official logo at good quality. Returns
+    (image_bytes_or_None, source). Tries authoritative sources first and
+    degrades gracefully; never raises (the caller falls back to a wordmark)."""
+    for provider in _LOGO_PROVIDERS:
+        try:
+            data, src = provider(company)
+        except Exception as e:
+            log.info("logo provider %s errored for %r: %s",
+                     provider.__name__, company, e)
+            continue
+        if data:
+            log.info("logo resolved for %r via %s (%d bytes)",
+                     company, src, len(data))
+            return data, src
+    log.info("no logo resolved for %r — using wordmark fallback", company)
     return None, "wordmark"
 
 
@@ -179,8 +319,7 @@ def _cover_logo_html(company: str, logo_bytes: bytes | None) -> str:
     """The target company's logo on the cover, or a clean typographic
     wordmark fallback (so the cover is always presentable)."""
     if logo_bytes:
-        uri = f"data:image/png;base64,{base64.b64encode(logo_bytes).decode('ascii')}"
-        return (f'<img class="client-logo" src="{uri}" '
+        return (f'<img class="client-logo" src="{_img_data_uri(logo_bytes)}" '
                 f'alt="{_esc(company)}">')
     return f'<div class="client-wordmark">{_esc(company)}</div>'
 
