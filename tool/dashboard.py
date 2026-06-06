@@ -5555,7 +5555,7 @@ TEMPLATE = r"""
       <div class="cc-cards">
         <button class="cc-card" data-open="windows"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg></span><span class="cx"><span class="ct">Placement Windows</span><span class="cd">Statutory hiring windows that open on a known calendar.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
         <button class="cc-card" data-open="events"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 17l-5.2 2.6 1-5.8L3.5 9.7l5.9-.9z"/></svg></span><span class="cx"><span class="ct">Events &amp; Networking</span><span class="cd">Awards, summits and networking dates worth showing up to.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
-        <button class="cc-card" data-open="frameworks"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 13h7M8.5 16.5h4.5"/></svg></span><span class="cx"><span class="ct">Framework Eligibility</span><span class="cd">Public-sector frameworks where VMA can bid.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
+        <button class="cc-card" data-open="frameworks"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 13h7M8.5 16.5h4.5"/></svg></span><span class="cx"><span class="ct">Approved Frameworks</span><span class="cd">Public-sector frameworks where VMA can bid.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
       </div>
     </div>
 
@@ -5587,7 +5587,7 @@ TEMPLATE = r"""
 
       <div class="panel ctx-col" id="framework-row" data-bd="frameworks">
         <div class="panel-header">
-          <h2>Framework Eligibility</h2>
+          <h2>Approved Frameworks</h2>
           <span class="count" id="framework-count">{{ framework_events|length }}</span>
         </div>
         <div class="filter-bar" id="fw-filter-bar">
@@ -6325,105 +6325,95 @@ function mwInterior(w) {
 async function loadPulses() {
   const body = document.getElementById('pulses-body');
   const count = document.getElementById('pulses-count');
-  if (!body) return;
   try {
     const res = await fetch('/api/pulses');
-    const j = await res.json();
-    const rows = j.rows || [];
-    if (count) count.textContent = rows.length;
-    if (rows.length === 0) {
-      body.innerHTML = '<div class="empty compact">No mandate window open today. ' +
-        'Windows surface only inside a statutory/regulator run-up — by design they go ' +
-        'quiet outside those dated windows rather than show stale noise.</div>';
+    const j   = await res.json();
+    const pulseRows = j.rows || [];
+    const total = pulseRows.length;
+    count.textContent = total;
+    if (total === 0) {
+      body.innerHTML = '<div class="empty compact">No placement window open today. ' +
+        'Pulses surface only inside a statutory/regulator run-up (FCA Consumer Duty ' +
+        'board-report ramp, UK SRS first-cycle build-up, post-Spending-Review ' +
+        'machinery-of-government reshuffle) — by design they go quiet outside those ' +
+        'dated windows rather than show stale noise.</div>';
       return;
     }
-    function paneHtml(w) {
-      const cc = bdcWinCat(w.name);
-      const days = (typeof w.days_left === 'number') ? w.days_left + 'd' : '';
-      return '<div class="mw-win" data-key="' + esc(w.key || w.name || '') + '" style="--mw-tint:' + cc[0] + '">' +
-          '<div class="mw-inner"><div class="mw-wrap">' + mwInterior(w) + '</div>' +
-            '<div class="mw-glass"><div class="mw-mun"></div><div class="mw-refl"></div></div>' +
-            '<div class="mw-plate"><span class="mw-pn">' + esc(bdcShort(w.name)) + '</span>' +
-              (days ? '<span class="mw-pd">' + esc(days) + '</span>' : '') + '</div>' +
+    const newCount = pulseRows.filter(p => p.just_opened).length;
+    const out = ['<div class="win-list">'];
+    pulseRows.forEach(p => {
+      const high = p.confidence === 'high';
+      const confLabel = high ? 'Regulatory deadline' : 'Policy timeline';
+      const days = (typeof p.days_left === 'number') ? p.days_left + 'd left' : '';
+      const rm = p.key
+        ? '<button class="cal-rm" data-key="' + esc(p.key) + '" title="Remove this window">&#10005;</button>'
+        : '';
+      out.push(
+        '<div class="win-row' + (p.just_opened ? ' is-new' : '') + '" data-key="' + esc(p.key || p.name || '') + '">' +
+          '<div class="win-tile" title="Placement window"></div>' +
+          '<div class="win-main">' +
+            '<div class="win-name">' + esc(p.name || '') +
+              (p.discovered ? ' <span class="found-pill" title="Auto-discovered from a live public source">Found</span>' : '') + '</div>' +
+            (p.seat ? '<div class="win-seat">' + esc(p.seat) + '</div>' : '') +
+            '<div class="win-tags">' +
+              '<span class="conf-pill ' + (high ? 'high' : 'med') + '">' + esc(confLabel) + '</span>' +
+              (days ? '<span class="win-days">' + esc(days) + '</span>' : '') +
+            '</div>' +
+            (p.scope_note ? '<div class="win-scope">' + esc(p.scope_note) +
+              ((p.url || p.source) ? ' &middot; <a href="' + safeUrl(p.url || p.source) +
+                 '" target="_blank" rel="noopener noreferrer" style="color:var(--blue-deep);text-decoration:none;">source</a>' : '') +
+              '</div>' : '') +
+            (p.advisory ? '<div class="win-scope">' + esc(p.advisory) + '</div>' : '') +
           '</div>' +
-          '<div class="mw-sill"></div><div class="mw-x">&times; close</div>' +
-        '</div>';
-    }
-    // ALWAYS two rows: split the windows across a top and a bottom row so the
-    // section stays two rows deep however many windows the feed yields.
-    const half = Math.ceil(rows.length / 2);
-    const top = rows.slice(0, half).map(paneHtml).join('');
-    const bot = rows.slice(half).map(paneHtml).join('');
-    body.innerHTML = '<div class="mw-rows">' +
-      '<div class="mw-row">' + top + '</div>' +
-      (bot ? '<div class="mw-row">' + bot + '</div>' : '') + '</div>';
-    const rowsEl = body.querySelector('.mw-rows');
-    function closeAllWins() {
-      rowsEl.classList.remove('has-open');
-      rowsEl.querySelectorAll('.mw-win.open').forEach((x) => x.classList.remove('open'));
-      rowsEl.querySelectorAll('.mw-row.row-open').forEach((x) => x.classList.remove('row-open'));
-    }
-    rowsEl.addEventListener('click', (ev) => {
-      if (ev.target.closest('.mw-src')) return;            // let the source link work
-      const rm = ev.target.closest('.bdc-rm');
-      const no = ev.target.closest('.bdc-rm-no');
-      const yes = ev.target.closest('.bdc-rm-yes');
-      if (rm || no || yes) {                                // remove / two-step confirm
-        const winEl = ev.target.closest('.mw-win');
-        const acts = winEl ? winEl.querySelector('.bdc-actions') : null;
-        if (rm && acts) acts.innerHTML = bdcConfirm(rm.dataset.key, 'Remove this window?');
-        else if (no && acts) acts.innerHTML = bdcRmBtn(no.dataset.key, 'Remove this window');
-        else if (yes) bdcDismiss(yes.dataset.key, loadPulses);
-        return;
-      }
-      const win = ev.target.closest('.mw-win'); if (!win) return;
-      if (ev.target.closest('.mw-x')) { closeAllWins(); return; }
-      const wasOpen = win.classList.contains('open');
-      closeAllWins();
-      if (!wasOpen) {
-        win.classList.add('open');
-        win.parentNode.classList.add('row-open');
-        rowsEl.classList.add('has-open');
-      }
+          rm +
+        '</div>'
+      );
     });
+    out.push('</div>');
+    body.innerHTML = out.join('');
+
+    body.querySelectorAll('.cal-rm').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const key = btn.getAttribute('data-key');
+        if (!key) return;
+        btn.disabled = true;
+        try {
+          const r = await fetch('/api/pulses/dismiss', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: key, dismissed: true }),
+          });
+          const j = await r.json();
+          if (j.ok) {
+            loadPulses();
+          } else {
+            btn.disabled = false;
+            alert(j.detail || 'Could not remove.');
+          }
+        } catch (e) {
+          btn.disabled = false;
+          alert('Network error: ' + e.message);
+        }
+      });
+    });
+
+    const nb = document.getElementById('pulses-new');
+    if (nb) {
+      if (newCount > 0) {
+        const n = document.getElementById('pulses-new-n');
+        if (n) n.textContent = newCount;
+        nb.style.display = 'inline-flex';
+        nb.onclick = null;
+      } else {
+        nb.style.display = 'none';
+      }
+    }
   } catch (e) {
     body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
   }
 }
 
-// ---------- Events & Networking — a real month calendar + agenda ----------
-var BDC_MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-var BDC_MONF = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-var BDC_WD = ['M','T','W','T','F','S','S'];
-function bdcFocusCol(f) { return f === 'internal' ? '#4285F4' : f === 'external' ? '#C08A3E' : '#9AA0A6'; }
-function bdcMonthGrid(y, m, evmap) {
-  const first = (new Date(y, m, 1).getDay() + 6) % 7, dim = new Date(y, m + 1, 0).getDate();
-  const t = new Date(), ty = t.getFullYear(), tm = t.getMonth(), td = t.getDate();
-  let h = BDC_WD.map(w => '<div class="bdc-cwd">' + w + '</div>').join('');
-  for (let b = 0; b < first; b++) h += '<div class="bdc-cday blank"></div>';
-  for (let d = 1; d <= dim; d++) {
-    const e = evmap[y + '-' + m + '-' + d];
-    const cls = 'bdc-cday' + (e ? ' ev' : '') + (y === ty && m === tm && d === td ? ' today' : '');
-    const dot = e ? '<span class="bdc-cdot" style="background:' + bdcFocusCol(e.focus) + '"></span>' : '';
-    h += '<div class="' + cls + '"' + (e ? ' data-ek="' + esc(e.key || '') + '"' : '') + '>' + d + dot + '</div>';
-  }
-  return h;
-}
-function bdcShowEvent(strip, e) {
-  if (!strip) return;
-  if (!e) { strip.innerHTML = '<div class="none">Pick a highlighted date or an event.</div>'; return; }
-  const p = String(e.event_date || '').split('-');
-  const dd = p.length > 2 ? parseInt(p[2], 10) : '', mm = p.length > 1 ? parseInt(p[1], 10) - 1 : 0;
-  const src = e.url || e.source;
-  const foc = e.focus === 'internal' ? 'internal' : e.focus === 'external' ? 'external' : 'mixed';
-  strip.innerHTML = '<div class="bdc-ev-card"><div class="bdc-ev-date"><div class="d2">' + dd + '</div><div class="m2">' + (BDC_MON[mm] || '') + '</div></div>' +
-    '<div class="bdc-ev-info"><span class="bdc-ev-nm">' + esc(e.name || '') + '</span>' +
-    '<span class="bdc-ev-tag ' + foc + '">' + foc + '</span>' +
-    '<div class="bdc-ev-loc">' + (BDC_MONF[mm] || '') + ' ' + dd + ', ' + (p[0] || '') + (e.location ? ' &middot; ' + esc(e.location) : '') + '</div>' +
-    (e.why_now ? '<div class="bdc-ev-why">' + esc(e.why_now) + '</div>' : '') +
-    (src ? '<a class="bdc-ev-lk" href="' + safeUrl(src) + '" target="_blank" rel="noopener noreferrer">View details &rsaquo;</a>' : '') +
-    '<div class="bdc-actions"><button class="bdc-rm" data-key="' + esc(e.key || '') + '">Remove this event</button></div></div></div>';
-}
+// ---------- Events & Networking (industry events) ----------
 async function loadEvents() {
   const body = document.getElementById('events-body');
   const count = document.getElementById('events-count');
@@ -6435,75 +6425,91 @@ async function loadEvents() {
     if (count) count.textContent = rows.length;
     if (rows.length === 0) {
       body.innerHTML = '<div class="empty compact">No comms awards, conferences or ' +
-        'summits in the next ~6 months — relationship groundwork, not statute-forced windows.</div>';
+        'summits in the next ~6 months. This panel lists networking & candidate-' +
+        'visibility moments (PRWeek / CIPR / PRCA awards, IoIC, EACD, European ' +
+        'Excellence) — relationship groundwork, not statute-forced placement windows.</div>';
       return;
     }
-    const byKey = {}, byMonth = {};
-    rows.forEach(e => {
-      byKey[e.key || e.name] = e;
-      const p = String(e.event_date || '').split('-');
-      if (p.length < 2) return;
-      const k = (+p[0]) + '-' + ((+p[1]) - 1);
-      (byMonth[k] = byMonth[k] || []).push(e);
+    const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const fmtDate = iso => {
+      const p = String(iso || '').split('-');
+      if (p.length < 3) return iso || '';
+      return parseInt(p[2], 10) + ' ' + (MON[parseInt(p[1], 10) - 1] || '') + ' ' + p[0];
+    };
+    const whenChip = d => {
+      if (typeof d !== 'number') return '';
+      if (d < 0) return 'past';
+      if (d === 0) return 'today';
+      if (d === 1) return 'tomorrow';
+      if (d < 60) return 'in ' + d + 'd';
+      return 'in ' + Math.round(d / 30) + 'mo';
+    };
+    const focusChip = f => {
+      const lab = f === 'internal' ? 'Internal comms'
+                : f === 'external' ? 'External comms' : 'Mixed';
+      return '<span class="ev-focus ev-' + esc(f || 'mixed') + '">' + lab + '</span>';
+    };
+    const dayOf = iso => { const p = String(iso || '').split('-'); return p.length >= 3 ? parseInt(p[2], 10) : ''; };
+    const monOf = iso => { const p = String(iso || '').split('-'); return p.length >= 2 ? (MON[parseInt(p[1], 10) - 1] || '') : ''; };
+    const out = ['<div class="ev-list">'];
+    rows.forEach((e, i) => {
+      const win = e.in_action_window
+        ? '<span class="ev-open" title="Outreach window open now">window open</span>' : '';
+      const rm = e.key
+        ? '<button class="ev-rm" data-key="' + esc(e.key) + '" title="Remove this event">&#10005;</button>' : '';
+      const focLab = e.focus === 'internal' ? 'Internal' : e.focus === 'external' ? 'External' : 'Mixed';
+      const when = whenChip(e.days_to_event);
+      const srcLink = e.url || e.source;
+      const hasDetail = !!(e.why_now || srcLink);
+      out.push(
+        '<div class="ev-item' + (hasDetail ? ' has-detail' : '') + '" data-evkey="' + esc(e.key || e.name || '') + '">' +
+          '<div class="ev-row">' +
+            '<div class="ev-date"><b>' + esc(dayOf(e.event_date)) + '</b><span>' + esc(monOf(e.event_date)) + '</span></div>' +
+            '<div class="ev-main">' +
+              '<div class="ev-n">' + esc(e.name || '') + win +
+                (e.discovered ? ' <span class="found-pill" title="Auto-discovered from a live public source">Found</span>' : '') + '</div>' +
+              '<div class="ev-t">' +
+                '<span class="ev-foc">' + focLab + '</span>' +
+                (e.location ? '<span>' + esc(e.location) + '</span>' : '') +
+                (when ? '<span>' + esc(when) + '</span>' : '') +
+              '</div>' +
+            '</div>' +
+            (hasDetail ? '<span class="ev-chev">&rsaquo;</span>' : '') +
+            rm +
+          '</div>' +
+          (hasDetail ?
+            '<div class="ev-detail">' +
+              (e.why_now ? '<div class="ev-why">' + esc(e.why_now) + '</div>' : '') +
+              (srcLink ? '<div class="ev-why"><a href="' + safeUrl(srcLink) +
+                 '" target="_blank" rel="noopener noreferrer" style="color:var(--blue-deep);text-decoration:none;">source &rsaquo;</a></div>' : '') +
+            '</div>' : '') +
+        '</div>'
+      );
     });
-    const now = new Date(); const nowY = now.getFullYear(), nowM = now.getMonth();
-    const minY = nowY - 1, maxY = nowY + 1;   // can't look more than one year either way
-    let year = nowY;   // a single calendar year (Jan–Dec); year stepper switches it
-    const yearNav = document.getElementById('ev-yearnav');
-    function renderCal() {
-      // year stepper lives in the card header, so the grid below can be larger
-      if (yearNav) {
-        yearNav.innerHTML = '<button type="button" data-y="-1"' + (year <= minY ? ' disabled' : '') + '>&lsaquo;</button>' +
-          '<span class="bdc-yr">' + year + '</span>' +
-          '<button type="button" data-y="1"' + (year >= maxY ? ' disabled' : '') + '>&rsaquo;</button>';
-        yearNav.querySelectorAll('button').forEach(btn =>
-          btn.addEventListener('click', () => { const ny = year + (+btn.dataset.y); if (ny < minY || ny > maxY) return; year = ny; renderCal(); }));
-      }
-      let cells = '';
-      for (let m = 0; m < 12; m++) {
-        const evs = byMonth[year + '-' + m] || [];
-        const isNow = (year === nowY && m === nowM);
-        cells += '<div class="bdc-mcl' + (isNow ? ' now' : '') + (evs.length ? '' : ' quiet') + '">' +
-          '<div class="bdc-mcl-h"><span class="bdc-mcl-m">' + BDC_MON[m] + '</span>' +
-          (isNow ? '<span class="bdc-mcl-now">now</span>' : '') + '</div>';
-        if (evs.length) {
-          evs.forEach(e => {
-            cells += '<button class="bdc-mev" data-ek="' + esc(e.key || e.name || '') + '">' +
-              '<span class="dt" style="background:' + bdcFocusCol(e.focus) + '"></span>' +
-              '<span class="nm">' + esc(e.name || '') + '</span></button>';
+    out.push('</div>');
+    body.innerHTML = out.join('');
+    body.querySelectorAll('.ev-item.has-detail .ev-row').forEach(row => {
+      row.addEventListener('click', (ev) => {
+        if (ev.target.closest('.ev-rm')) return;
+        row.parentElement.classList.toggle('expanded');
+      });
+    });
+    body.querySelectorAll('.ev-rm').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const key = btn.getAttribute('data-key');
+        if (!key) return;
+        btn.disabled = true;
+        try {
+          const r = await fetch('/api/pulses/dismiss', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: key, dismissed: true }),
           });
-        } else { cells += '<div class="bdc-mcl-none">&mdash;</div>'; }
-        cells += '</div>';
-      }
-      body.innerHTML = '<div class="bdc-mgrid">' + cells + '</div>';
-      body.querySelector('.bdc-mgrid').addEventListener('click', (ev) => {
-        const b = ev.target.closest('.bdc-mev'); if (!b) return;
-        renderDetail(byKey[b.dataset.ek]);
+          const jj = await r.json();
+          if (jj.ok) { loadEvents(); }
+          else { btn.disabled = false; alert(jj.detail || 'Could not remove.'); }
+        } catch (err) { btn.disabled = false; alert('Network error: ' + err.message); }
       });
-    }
-    function renderDetail(e) {
-      if (!e) { renderCal(); return; }
-      const p = String(e.event_date || '').split('-');
-      const dd = p.length > 2 ? parseInt(p[2], 10) : '', mm = p.length > 1 ? parseInt(p[1], 10) - 1 : 0;
-      const src = e.url || e.source;
-      const foc = e.focus === 'internal' ? 'internal' : e.focus === 'external' ? 'external' : 'mixed';
-      body.innerHTML = '<button type="button" class="bdc-back">&lsaquo; Back to calendar</button>' +
-        '<div class="bdc-ev-card"><div class="bdc-ev-date"><div class="d2">' + dd + '</div><div class="m2">' + (BDC_MON[mm] || '') + '</div></div>' +
-        '<div class="bdc-ev-info"><span class="bdc-ev-nm">' + esc(e.name || '') + '</span>' +
-        '<span class="bdc-ev-tag ' + foc + '">' + foc + '</span>' +
-        '<div class="bdc-ev-loc">' + (BDC_MONF[mm] || '') + ' ' + dd + ', ' + (p[0] || '') + (e.location ? ' &middot; ' + esc(e.location) : '') + '</div>' +
-        (e.why_now ? '<div class="bdc-ev-why">' + esc(e.why_now) + '</div>' : '') +
-        (src ? '<a class="bdc-ev-lk" href="' + safeUrl(src) + '" target="_blank" rel="noopener noreferrer">View details &rsaquo;</a>' : '') +
-        '<div class="bdc-actions">' + bdcRmBtn(e.key || '', 'Remove this event') + '</div></div></div>';
-      body.querySelector('.bdc-back').addEventListener('click', renderCal);
-      const acts = body.querySelector('.bdc-actions');
-      acts.addEventListener('click', (ev) => {
-        if (ev.target.closest('.bdc-rm')) { acts.innerHTML = bdcConfirm(e.key || '', 'Remove this event?'); }
-        else if (ev.target.closest('.bdc-rm-no')) { acts.innerHTML = bdcRmBtn(e.key || '', 'Remove this event'); }
-        else if (ev.target.closest('.bdc-rm-yes')) { bdcDismiss(e.key || '', loadEvents); }
-      });
-    }
-    renderCal();
+    });
   } catch (e) {
     body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
   }
@@ -7466,7 +7472,7 @@ async function loadRecentReports() {
   var mt = document.getElementById('bd-mt');
   var mx = document.getElementById('bd-mx');
   var BDMETA = {
-    windows:    { ic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg>', t: 'Mandate Windows' },
+    windows:    { ic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg>', t: 'Placement Windows' },
     events:     { ic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 17l-5.2 2.6 1-5.8L3.5 9.7l5.9-.9z"/></svg>', t: 'Events & Networking' },
     frameworks: { ic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 13h7M8.5 16.5h4.5"/></svg>', t: 'Approved Frameworks' }
   };
