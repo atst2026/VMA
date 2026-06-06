@@ -1,5 +1,12 @@
 [
   {
+    "ts": "2026-06-06T00:50:49.326462+00:00",
+    "type": "Pitch Pack",
+    "company": "Equinor",
+    "name": "",
+    "artifact": "pitch-pack-50f5ea4d99"
+  },
+  {
     "ts": "2026-06-06T00:11:17.756687+00:00",
     "type": "Pitch Pack",
     "company": "Geordie AI",
