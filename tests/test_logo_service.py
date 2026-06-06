@@ -88,10 +88,45 @@ def test_declared_icon_on_cdn_is_accepted(monkeypatch):
 
 # ---- failure modes MUST raise (never silently degrade) ------------------
 
-def test_unknown_company_raises(monkeypatch):
-    monkeypatch.setattr(ls, "get", lambda url, **kw: _Resp(content=_PNG))
-    with pytest.raises(ci.UnknownCompanyError):
+# ---- derived path: any company, from its own website --------------------
+
+def test_unknown_company_derived_from_homepage_logo(monkeypatch):
+    # a company NOT in the registry: the domain is guessed from the name, the
+    # homepage confirms the match, and the header wordmark <img> is used.
+    def fake_get(url, **kw):
+        if url == "https://acmerobotics.com":
+            return _Resp(text='<header><a class="logo"><img src="/img/logo.svg"></a></header>')
+        if url == "https://acmerobotics.com/img/logo.svg":
+            return _Resp(content=_SVG, content_type="image/svg+xml")
+        return _Resp(status=404)
+    monkeypatch.setattr(ls, "get", fake_get)
+    r = ls.get_logo("Acme Robotics")
+    assert r.source == "derived:logo-img"
+    assert r.url == "https://acmerobotics.com/img/logo.svg"
+    assert r.content_type == "image/svg+xml" and r.company_id == "acmerobotics"
+
+
+def test_unknown_company_no_site_raises(monkeypatch):
+    # nothing resolves (guesses 404, search empty) -> raise so the caller can
+    # fall back to a text wordmark. Never a wrong/placeholder logo.
+    monkeypatch.setattr(ls, "get", lambda url, **kw: _Resp(status=404))
+    with pytest.raises(ls.LogoResolutionError):
         ls.get_logo("Some Unlisted Co")
+
+
+def test_derived_confidence_gate_rejects_mismatched_site(monkeypatch):
+    # a domain that resolves but does NOT correspond to the company (different
+    # name, domain core != name) is rejected by the gate -> no logo -> raise.
+    def fake_get(url, **kw):
+        if "duckduckgo" in url:
+            return _Resp(text='<a href="https://daily-press.example/x">Result</a>')
+        if url == "https://daily-press.example":
+            return _Resp(text="<title>Daily Press — Breaking News</title>"
+                              '<link rel="apple-touch-icon" href="/ati.png">')
+        return _Resp(status=404)               # guessed domains don't exist
+    monkeypatch.setattr(ls, "get", fake_get)
+    with pytest.raises(ls.LogoResolutionError):
+        ls.get_logo("Nonesuch Advisory")
 
 
 def test_all_sources_miss_raises(monkeypatch):
