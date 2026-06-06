@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BD Calendar — Preparation Gantt</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#F7F9FC;color:#1F1F1F;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wm-head{padding:24px 32px 15px;background:radial-gradient(ellipse 86% 165% at 50% -16%,#a4c6e8 0%,#bdd4ea 16%,#d4e2ef 34%,#e9f0f7 58%,#f4f8fc 78%,rgba(247,249,252,0) 100%)}
+.hdr{display:flex;align-items:center;gap:12px}
+.bdc-hero-ic{display:inline-flex;width:32px;height:32px;color:#385578}
+.bdc-hero-ic svg{width:100%;height:100%}
+.hdr h1{font-size:22px;font-weight:700;color:#1F1F1F;letter-spacing:-.3px}
+.hdr .sub{font-size:13px;color:#5a6a7a;margin-left:auto;font-weight:500}
+.view-label{font-size:12px;font-weight:600;color:#385578;text-transform:uppercase;letter-spacing:.8px;margin-top:8px}
+
+.legend{display:flex;gap:20px;padding:16px 32px 8px;flex-wrap:wrap;align-items:center}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#5a6a7a;font-weight:500}
+.legend-bar{width:24px;height:8px;border-radius:3px}
+.legend-bar.solid{background:#4285F4}
+.legend-bar.prep{background:#4285F4;opacity:.25}
+
+.gantt-wrap{padding:0 32px 40px;overflow-x:auto}
+.gantt{min-width:1100px;position:relative}
+
+.gantt-header{display:flex;margin-left:240px}
+.gantt-month{flex:1;text-align:center;font-size:11px;font-weight:600;color:#385578;text-transform:uppercase;letter-spacing:.5px;padding:10px 0;border-bottom:1px solid #e2e8f0}
+
+.group{margin-bottom:8px}
+.group-head{display:flex;align-items:center;gap:8px;padding:10px 0 6px;cursor:pointer;user-select:none}
+.group-head .g-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.group-head .g-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.7px}
+.group-head .g-count{font-size:10px;color:#8a95a5;font-weight:500}
+.group-head .g-arrow{font-size:10px;color:#8a95a5;transition:transform .2s;margin-left:auto}
+.group-head.collapsed .g-arrow{transform:rotate(-90deg)}
+
+.group-rows{overflow:hidden;transition:max-height .3s ease}
+.group-rows.collapsed{max-height:0 !important}
+
+.gantt-row{display:flex;align-items:center;height:34px;border-bottom:1px solid #f5f7fa}
+.gantt-row:hover{background:#fafbfd}
+.row-label{width:240px;flex-shrink:0;font-size:12px;font-weight:600;color:#1F1F1F;padding-right:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-chart{flex:1;position:relative;height:100%}
+
+.g-bar{position:absolute;height:14px;border-radius:4px;top:10px;cursor:pointer;transition:opacity .2s}
+.g-bar.active{z-index:2}
+.g-bar.prep-bar{z-index:1;opacity:.25}
+.g-bar:hover{opacity:.85}
+.g-bar.closed-bar{opacity:.3}
+
+.today-line{position:absolute;top:0;bottom:0;width:2px;background:#c0392b;z-index:20;pointer-events:none}
+.today-label{position:absolute;top:-18px;left:-14px;font-size:9px;font-weight:700;color:#c0392b;text-transform:uppercase;letter-spacing:.4px}
+
+.tooltip{position:fixed;background:#1F1F1F;color:#fff;font-size:12px;padding:10px 14px;border-radius:8px;z-index:200;pointer-events:none;display:none;max-width:300px;line-height:1.5;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.tooltip.show{display:block}
+.tooltip strong{color:#fff;font-weight:600}
+.tooltip .tt-cat{font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;opacity:.7}
+</style>
+</head>
+<body>
+
+<div class="wm-head">
+  <div class="hdr">
+    <span class="bdc-hero-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></span>
+    <h1>BD Calendar</h1>
+    <span class="sub">Preparation Gantt</span>
+  </div>
+  <div class="view-label">Showing both preparation &amp; active phases &middot; Jun 2026 – Jun 2027</div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-bar solid"></div>Active / live period</div>
+  <div class="legend-item"><div class="legend-bar prep"></div>Preparation phase (6–8 weeks before)</div>
+  <div class="legend-item"><div style="width:10px;height:2px;background:#c0392b;border-radius:1px"></div>Today</div>
+</div>
+
+<div class="gantt-wrap">
+  <div class="gantt" id="gantt">
+    <div class="gantt-header" id="ganttHeader"></div>
+    <div id="ganttBody"></div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const TODAY = new Date(2026, 5, 6);
+const VIEW_START = new Date(2026, 5, 1);
+const VIEW_END = new Date(2027, 5, 30);
+
+const MONTHS = [];
+for(let d=new Date(VIEW_START); d<=VIEW_END; d=new Date(d.getFullYear(),d.getMonth()+1,1)){
+  MONTHS.push(new Date(d));
+}
+const mNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// Header
+const hdr = document.getElementById('ganttHeader');
+MONTHS.forEach(m => {
+  const div = document.createElement('div');
+  div.className = 'gantt-month';
+  div.textContent = mNames[m.getMonth()] + ' \'' + String(m.getFullYear()).slice(2);
+  hdr.appendChild(div);
+});
+
+function dateToPct(d){
+  const total = VIEW_END - VIEW_START;
+  const pos = Math.max(0, Math.min(d - VIEW_START, total));
+  return (pos / total) * 100;
+}
+
+const groups = [
+  {
+    label:'Approved Frameworks', color:'#4285F4', cls:'fw',
+    items:[
+      {name:'NHS Workforce Alliance',start:new Date(2026,0,1),end:new Date(2026,11,31),prepWeeks:8,detail:'RM6380 — Exec Search & Interim. Live now.'},
+      {name:'Nuclear Decommissioning Authority',start:new Date(2026,9,1),end:new Date(2027,2,31),prepWeeks:8,detail:'Shared Services Lot 6. Opens ~Oct 2026.'},
+      {name:'Devolved Government',start:new Date(2027,0,1),end:new Date(2027,8,30),prepWeeks:8,detail:'Executive Search. Opens ~Jan 2027.'},
+      {name:'CCS Executive Search 3',start:new Date(2027,5,1),end:new Date(2028,4,31),prepWeeks:8,detail:'RM6394. Opens ~Jun 2027.'},
+    ]
+  },
+  {
+    label:'Events & Networking', color:'#1E7A41', cls:'ev',
+    items:[
+      {name:'CIPR Excellence Awards',start:new Date(2026,6,1),end:new Date(2026,6,1),prepWeeks:8,detail:'1 Jul 2026 — Royal Lancaster Hotel, London'},
+      {name:'IC & Engagement Live',start:new Date(2026,6,8),end:new Date(2026,6,8),prepWeeks:8,detail:'8 Jul 2026 — The Brewery, London'},
+      {name:'IoIC Awards',start:new Date(2026,8,17),end:new Date(2026,8,17),prepWeeks:8,detail:'17 Sep 2026 — London'},
+      {name:'ICCO Global Summit',start:new Date(2026,10,11),end:new Date(2026,10,11),prepWeeks:8,detail:'11 Nov 2026 — Milan'},
+      {name:'CIPR Annual Conference',start:new Date(2026,10,18),end:new Date(2026,10,18),prepWeeks:8,detail:'18 Nov 2026 — London'},
+      {name:'European Excellence Awards',start:new Date(2026,11,11),end:new Date(2026,11,11),prepWeeks:6,detail:'11 Dec 2026 — Europe'},
+    ]
+  },
+  {
+    label:'Mandate Windows', color:'#B98235', cls:'mw',
+    items:[
+      {name:'FCA Consumer Duty',start:new Date(2026,3,1),end:new Date(2026,6,31),prepWeeks:6,detail:'Annual board-report ramp. Head of Regulatory/Customer Comms.'},
+      {name:'UK SRS',start:new Date(2026,0,1),end:new Date(2026,11,31),prepWeeks:8,detail:'Sustainability-reporting build-up. Head of Sustainability/ESG Comms.'},
+      {name:'Machinery-of-government',start:new Date(2026,3,1),end:new Date(2026,11,31),prepWeeks:6,detail:'Post-SR reshuffle. Director of Communications (GCS).'},
+      {name:'UK Annual-Report & AGM',start:new Date(2026,1,1),end:new Date(2026,5,30),prepWeeks:6,detail:'Head of IR/Corporate-Reporting Comms.',ending:true},
+      {name:'Gender Pay Gap',start:new Date(2026,2,1),end:new Date(2026,5,30),prepWeeks:6,detail:'Reporting & scrutiny window. Head of Internal/DEI Comms.',ending:true},
+      {name:'NHS Operational Planning',start:new Date(2026,0,1),end:new Date(2026,4,31),prepWeeks:6,detail:'Restructure round. Director of Comms — NHS.',closed:true},
+      {name:'Higher-Ed Clearing',start:new Date(2026,5,15),end:new Date(2026,8,30),prepWeeks:6,detail:'New-intake comms. Head of Comms/Student Recruitment.'},
+    ]
+  }
+];
+
+const body = document.getElementById('ganttBody');
+const tooltip = document.getElementById('tooltip');
+
+groups.forEach(group => {
+  const gDiv = document.createElement('div');
+  gDiv.className = 'group';
+
+  const head = document.createElement('div');
+  head.className = 'group-head';
+  head.innerHTML = `<span class="g-dot" style="background:${group.color}"></span><span class="g-label" style="color:${group.color}">${group.label}</span><span class="g-count">${group.items.length} items</span><span class="g-arrow">&#9660;</span>`;
+
+  const rows = document.createElement('div');
+  rows.className = 'group-rows';
+
+  head.addEventListener('click', () => {
+    head.classList.toggle('collapsed');
+    rows.classList.toggle('collapsed');
+  });
+
+  group.items.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'gantt-row';
+
+    const label = document.createElement('div');
+    label.className = 'row-label';
+    label.textContent = item.name;
+    row.appendChild(label);
+
+    const chart = document.createElement('div');
+    chart.className = 'row-chart';
+
+    // Prep bar
+    const prepStart = new Date(item.start);
+    prepStart.setDate(prepStart.getDate() - item.prepWeeks * 7);
+    const prepLeft = dateToPct(prepStart);
+    const activeLeft = dateToPct(item.start);
+
+    if(prepLeft < activeLeft){
+      const pb = document.createElement('div');
+      pb.className = 'g-bar prep-bar';
+      pb.style.background = group.color;
+      pb.style.left = prepLeft + '%';
+      pb.style.width = (activeLeft - prepLeft) + '%';
+      chart.appendChild(pb);
+    }
+
+    // Active bar
+    const activeEnd = dateToPct(item.end);
+    const isEvent = item.start.getTime() === item.end.getTime();
+    const ab = document.createElement('div');
+    ab.className = 'g-bar active' + (item.closed ? ' closed-bar' : '');
+    ab.style.background = group.color;
+    ab.style.left = activeLeft + '%';
+    ab.style.width = Math.max(isEvent ? 0.8 : 1.5, activeEnd - activeLeft) + '%';
+    if(isEvent){
+      ab.style.borderRadius = '50%';
+      ab.style.width = '8px';
+      ab.style.height = '8px';
+      ab.style.top = '13px';
+    }
+    chart.appendChild(ab);
+
+    // Tooltip
+    const showTip = (e, el) => {
+      const prepDate = new Date(item.start);
+      prepDate.setDate(prepDate.getDate() - item.prepWeeks * 7);
+      tooltip.innerHTML = `<div class="tt-cat">${group.label}</div><strong>${item.name}</strong><br>${item.detail}<br><span style="opacity:.7">Prep from: ${fmtDate(prepDate)}</span>${item.closed?' <br><strong style="color:#f87171">CLOSED</strong>':''}`;
+      tooltip.classList.add('show');
+      const r = el.getBoundingClientRect();
+      tooltip.style.left = (r.left + r.width/2) + 'px';
+      tooltip.style.top = (r.top - 60) + 'px';
+    };
+    const hideTip = () => tooltip.classList.remove('show');
+
+    [ab, chart.querySelector('.prep-bar')].filter(Boolean).forEach(el => {
+      el.addEventListener('mouseenter', (e) => showTip(e, el));
+      el.addEventListener('mouseleave', hideTip);
+    });
+
+    row.appendChild(chart);
+    rows.appendChild(row);
+  });
+
+  // Set max-height for animation
+  rows.style.maxHeight = (group.items.length * 36 + 10) + 'px';
+
+  gDiv.appendChild(head);
+  gDiv.appendChild(rows);
+  body.appendChild(gDiv);
+});
+
+// Today line
+const allCharts = document.querySelectorAll('.row-chart');
+const todayPct = dateToPct(TODAY);
+
+// Add today line to each chart
+const ganttEl = document.getElementById('gantt');
+const tl = document.createElement('div');
+tl.className = 'today-line';
+tl.style.left = 'calc(240px + ' + todayPct + '% * (100% - 240px) / 100%)';
+// We need a simpler approach: add to the gantt body relative
+document.getElementById('ganttBody').style.position = 'relative';
+const todayLine = document.createElement('div');
+todayLine.style.cssText = `position:absolute;top:0;bottom:0;width:2px;background:#c0392b;z-index:20;pointer-events:none;left:calc(240px + (100% - 240px) * ${todayPct/100})`;
+todayLine.innerHTML = '<span style="position:absolute;top:-16px;left:-14px;font-size:9px;font-weight:700;color:#c0392b;text-transform:uppercase;letter-spacing:.4px">Today</span>';
+document.getElementById('ganttBody').appendChild(todayLine);
+
+function fmtDate(d){return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}
+</script>
+</body>
+</html>

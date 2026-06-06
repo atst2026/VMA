@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMA Group — Command Bar / Card Stack</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #1a1f36; color: #e8ecf1; min-height: 100vh; }
+
+  /* ── Tabs ── */
+  .tab-bar { display: flex; background: #141829; border-bottom: 1px solid #2a3050; padding: 0 32px; }
+  .tab-bar button { background: none; border: none; color: #7a86a8; font-size: 14px; font-weight: 500; padding: 14px 24px; cursor: pointer; border-bottom: 2px solid transparent; transition: color .2s, border-color .2s; letter-spacing: .3px; }
+  .tab-bar button.active { color: #fff; border-bottom-color: #5b8dce; }
+  .tab-bar button:hover:not(.active) { color: #b0bdd4; }
+
+  .page { display: none; min-height: calc(100vh - 49px); }
+  .page.active { display: flex; flex-direction: column; }
+
+  .page-header { padding: 24px 32px 16px; }
+  .page-header h1 { font-size: 22px; font-weight: 600; color: #fff; }
+  .page-header p { font-size: 13px; color: #7a86a8; margin-top: 4px; }
+
+  /* ═══════════════════════════════════════
+     PAGE 1 — COMMAND BAR (Radar)
+     ═══════════════════════════════════════ */
+  .command-section { display: flex; flex-direction: column; align-items: center; padding: 40px 32px 0; }
+  .command-wrapper { position: relative; width: 100%; max-width: 640px; }
+  .command-input { width: 100%; padding: 16px 22px 16px 48px; font-size: 15px; border: 1px solid #2e3a5e; border-radius: 12px; background: #1f2541; color: #e8ecf1; outline: none; transition: border-color .2s, box-shadow .2s; }
+  .command-input::placeholder { color: #5e6a8a; }
+  .command-input:focus { border-color: #5b8dce; box-shadow: 0 0 0 3px rgba(91,141,206,.15); }
+  .command-icon { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #5e6a8a; font-size: 16px; pointer-events: none; }
+
+  /* autocomplete dropdown */
+  .autocomplete { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: #1f2541; border: 1px solid #2e3a5e; border-radius: 10px; overflow: hidden; display: none; box-shadow: 0 8px 32px rgba(0,0,0,.35); z-index: 50; }
+  .autocomplete.show { display: block; }
+  .ac-item { padding: 12px 20px; font-size: 14px; color: #a0acc8; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background .1s; }
+  .ac-item:hover { background: #262d4a; color: #fff; }
+  .ac-item .ac-icon { color: #5b8dce; font-size: 13px; width: 20px; text-align: center; flex-shrink: 0; }
+  .ac-item .ac-text { flex: 1; }
+  .ac-item .ac-hint { font-size: 11px; color: #5e6a8a; }
+
+  /* Signal grid */
+  .signal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; padding: 32px 32px 12px; max-width: 960px; width: 100%; margin: 0 auto; }
+  .signal-card { background: #1f2541; border: 1px solid #2a3050; border-radius: 10px; padding: 16px 18px; display: flex; align-items: center; gap: 12px; transition: border-color .15s, transform .1s; cursor: default; }
+  .signal-card:hover { border-color: #385578; transform: translateY(-2px); }
+  .signal-card .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot.green { background: #3ecf8e; }
+  .dot.amber { background: #f5a623; }
+  .dot.grey  { background: #6b7394; }
+  .signal-card .sc-name { font-size: 14px; font-weight: 500; color: #d4dae8; flex: 1; }
+  .type-badge { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; padding: 3px 8px; border-radius: 4px; flex-shrink: 0; }
+  .type-badge.departure { background: #2d1f3d; color: #c084e4; }
+  .type-badge.restructure { background: #1f2d3d; color: #6db8e4; }
+  .type-badge.regulatory { background: #3d2d1f; color: #e4a86d; }
+  .type-badge.expansion { background: #1f3d2d; color: #6de4a8; }
+  .type-badge.crisis { background: #3d1f1f; color: #e46d6d; }
+  .type-badge.strategy { background: #2d3d1f; color: #a8e46d; }
+  .type-badge.mandate { background: #1f2d3d; color: #6db8e4; }
+  .type-badge.transition { background: #3d351f; color: #e4cf6d; }
+
+  .summary-text { text-align: center; padding: 20px 32px 40px; font-size: 13px; color: #5e6a8a; }
+  .summary-text strong { color: #7a86a8; }
+
+  /* ═══════════════════════════════════════
+     PAGE 2 — CARD STACK (Calendar)
+     ═══════════════════════════════════════ */
+  .card-stack-container { padding: 0 32px 24px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .card-stack { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; flex: 1; min-height: 0; }
+  .stack-card { background: #1f2541; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #2a3050; }
+  .stack-card-header { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .stack-card-header h3 { font-size: 15px; font-weight: 600; color: #fff; }
+  .stack-card-header .sc-badge { font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 20px; }
+  .stack-card.frameworks .stack-card-header { background: linear-gradient(135deg, #253a5c, #1f2d4a); }
+  .stack-card.frameworks .sc-badge { background: #2e5580; color: #7aaad4; }
+  .stack-card.events .stack-card-header { background: linear-gradient(135deg, #1f3d2d, #1a3328); }
+  .stack-card.events .sc-badge { background: #1f5533; color: #6de4a8; }
+  .stack-card.windows .stack-card-header { background: linear-gradient(135deg, #3d351f, #332d1a); }
+  .stack-card.windows .sc-badge { background: #55441f; color: #e4cf6d; }
+
+  .stack-card-body { flex: 1; overflow-y: auto; padding: 8px 0; }
+  .stack-item { padding: 10px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background .1s; border-left: 3px solid transparent; }
+  .stack-item:hover { background: #262d4a; }
+  .stack-item.selected { background: #262d4a; border-left-color: #5b8dce; }
+  .stack-item .si-info { flex: 1; min-width: 0; }
+  .stack-item .si-name { font-size: 13px; font-weight: 500; color: #d4dae8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stack-item .si-date { font-size: 11px; color: #5e6a8a; margin-top: 2px; }
+  .status-pill { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
+  .status-pill.active { background: #1f3d2d; color: #3ecf8e; }
+  .status-pill.closing { background: #3d351f; color: #f5a623; }
+  .status-pill.closed { background: #2a2a36; color: #6b7394; }
+
+  /* Shared detail panel */
+  .detail-panel { background: #1f2541; border: 1px solid #2a3050; border-radius: 12px; margin-top: 18px; padding: 0; overflow: hidden; transition: max-height .3s ease, opacity .3s ease; max-height: 0; opacity: 0; flex-shrink: 0; }
+  .detail-panel.open { max-height: 220px; opacity: 1; padding: 20px 24px; }
+  .dp-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .dp-header h3 { font-size: 15px; font-weight: 600; color: #fff; }
+  .dp-close { background: none; border: none; color: #7a86a8; font-size: 18px; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
+  .dp-close:hover { background: #2a3050; color: #fff; }
+  .dp-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .dp-field .dp-label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: #5e6a8a; letter-spacing: .6px; margin-bottom: 4px; }
+  .dp-field .dp-value { font-size: 13px; color: #d4dae8; line-height: 1.45; }
+</style>
+</head>
+<body>
+
+<!-- Tab Bar -->
+<div class="tab-bar">
+  <button class="active" onclick="switchTab('radar')">Communications Radar</button>
+  <button onclick="switchTab('calendar')">BD Calendar</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE 1 — COMMAND BAR
+     ═══════════════════════════════════════════════ -->
+<div id="page-radar" class="page active">
+  <div class="page-header">
+    <h1>Command Bar</h1>
+    <p>Search signals, filter by strength, or type a natural-language command.</p>
+  </div>
+  <div class="command-section">
+    <div class="command-wrapper">
+      <span class="command-icon">&#x2318;</span>
+      <input class="command-input" id="cmd-input" type="text" placeholder="Search companies, filter signals, or type a command..." autocomplete="off" oninput="onCmdInput()" onfocus="onCmdInput()" onblur="setTimeout(()=>hideAC(),150)">
+      <div class="autocomplete" id="ac-dropdown"></div>
+    </div>
+  </div>
+  <div class="signal-grid" id="signal-grid"></div>
+  <div class="summary-text"><strong>8 active signals</strong> &middot; 3 new today</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE 2 — CARD STACK
+     ═══════════════════════════════════════════════ -->
+<div id="page-calendar" class="page">
+  <div class="page-header">
+    <h1>Card Stack</h1>
+    <p>Frameworks, events, and BD windows at a glance. Click any item for detail.</p>
+  </div>
+  <div class="card-stack-container">
+    <div class="card-stack" id="card-stack"></div>
+    <div class="detail-panel" id="detail-panel">
+      <div class="dp-header">
+        <h3 id="dp-title">—</h3>
+        <button class="dp-close" onclick="closeDetail()">&times;</button>
+      </div>
+      <div class="dp-grid" id="dp-grid"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── Tab switching ── */
+function switchTab(tab) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  document.querySelector('.tab-bar button' + (tab === 'radar' ? ':first-child' : ':last-child')).classList.add('active');
+  closeDetail();
+}
+
+/* ═══════════════════════════════════════
+   COMMAND BAR DATA
+   ═══════════════════════════════════════ */
+const signals = [
+  { company:'Diageo', type:'Departure', strength:'green', badge:'departure' },
+  { company:'Unilever', type:'Restructure', strength:'green', badge:'restructure' },
+  { company:'Network Rail', type:'Regulatory', strength:'amber', badge:'regulatory' },
+  { company:'Barclays', type:'Departure', strength:'green', badge:'departure' },
+  { company:'GSK', type:'Expansion', strength:'amber', badge:'expansion' },
+  { company:'Rolls-Royce', type:'Strategy', strength:'green', badge:'strategy' },
+  { company:'Thames Water', type:'Crisis', strength:'amber', badge:'crisis' },
+  { company:'BP', type:'Transition', strength:'grey', badge:'transition' },
+];
+
+const acSuggestions = [
+  { icon:'&#x1F50D;', text:'show high signals', hint:'Filter by strength: High' },
+  { icon:'&#x1F4E8;', text:'pitch Diageo', hint:'Draft pitch deck for Diageo' },
+  { icon:'&#x2728;', text:"what's new today", hint:'Show signals added in last 24h' },
+  { icon:'&#x1F4CA;', text:'pipeline summary', hint:'View pipeline overview' },
+  { icon:'&#x1F50E;', text:'search Network Rail', hint:'Find all signals for Network Rail' },
+  { icon:'&#x26A0;', text:'show amber signals', hint:'Filter by strength: Moderate' },
+  { icon:'&#x1F4C5;', text:'upcoming deadlines', hint:'Deadlines in next 2 weeks' },
+];
+
+function renderSignals() {
+  const grid = document.getElementById('signal-grid');
+  grid.innerHTML = signals.map(s => `
+    <div class="signal-card">
+      <span class="dot ${s.strength}"></span>
+      <span class="sc-name">${s.company}</span>
+      <span class="type-badge ${s.badge}">${s.type}</span>
+    </div>
+  `).join('');
+}
+
+function onCmdInput() {
+  const val = document.getElementById('cmd-input').value.trim().toLowerCase();
+  const dd = document.getElementById('ac-dropdown');
+  if (val.length === 0) { dd.classList.remove('show'); return; }
+  const matches = acSuggestions.filter(s => s.text.includes(val) || val.split(' ').some(w => s.text.includes(w)));
+  const show = matches.length > 0 ? matches : acSuggestions.slice(0, 4);
+  dd.innerHTML = show.map(s => `
+    <div class="ac-item" onmousedown="selectAC('${s.text}')">
+      <span class="ac-icon">${s.icon}</span>
+      <span class="ac-text">${s.text}</span>
+      <span class="ac-hint">${s.hint}</span>
+    </div>
+  `).join('');
+  dd.classList.add('show');
+}
+function selectAC(text) {
+  document.getElementById('cmd-input').value = text;
+  hideAC();
+}
+function hideAC() {
+  document.getElementById('ac-dropdown').classList.remove('show');
+}
+
+/* ═══════════════════════════════════════
+   CARD STACK DATA
+   ═══════════════════════════════════════ */
+const stackData = {
+  frameworks: {
+    label:'Frameworks', cls:'frameworks',
+    items: [
+      { name:'CIPR Excellence Awards', date:'1 Mar – 15 Mar 2026', status:'active', category:'Industry Awards', org:'CIPR', desc:'Annual awards recognising outstanding PR and communications work across multiple categories.', action:'Submit client case studies for Corporate Comms and Internal Comms categories.' },
+      { name:'PRCA Census', date:'1 Apr – 30 Apr 2026', status:'active', category:'Industry Research', org:'PRCA', desc:'Annual census of the UK PR and communications industry covering salaries, diversity, and trends.', action:'Contribute agency data. Use results for candidate market briefings.' },
+      { name:'GCS Framework Refresh', date:'1 Jun – 31 Jul 2026', status:'closing', category:'Government', org:'Government Communication Service', desc:'Periodic refresh of the GCS proprietary framework for government communications roles.', action:'Prepare for framework panel submission. Brief consultants on GCS competency model.' },
+      { name:'AMEC Measurement Month', date:'1 Jun – 30 Jun 2026', status:'active', category:'Measurement', org:'AMEC', desc:'Global initiative promoting best practice in communications measurement and evaluation.', action:'Host client roundtable on measurement maturity.' },
+      { name:'PR Week Awards', date:'1 Aug – 31 Aug 2026', status:'closing', category:'Industry Awards', org:'PR Week', desc:'Flagship UK awards programme for communications professionals and agencies.', action:'Entry deadline mid-August. Coordinate with clients on joint submissions.' },
+      { name:'IABC Gold Quill', date:'15 Aug – 30 Aug 2026', status:'active', category:'International Awards', org:'IABC', desc:'International awards for business communication excellence.', action:'Late entry window. Identify global client projects for submission.' },
+    ],
+  },
+  events: {
+    label:'Events', cls:'events',
+    items: [
+      { name:'PR Week Strategic Comms', date:'22 Jan 2026', status:'closed', category:'Conference', org:'PR Week', desc:'Annual strategic communications conference bringing together senior comms leaders.', action:'Completed. Follow up with 4 contacts made at event.' },
+      { name:'CommsCon London', date:'18 Apr 2026', status:'closed', category:'Conference', org:'CommsCon', desc:'Practitioner-focused conference covering internal comms, digital, and measurement.', action:'Completed. Share insights deck with team.' },
+      { name:'CIPR Inside', date:'12 May 2026', status:'active', category:'Conference', org:'CIPR', desc:'Dedicated internal communications conference with workshops and case studies.', action:'VMA speaking slot confirmed. Prep presentation on IC leadership trends.' },
+      { name:'AMEC Summit', date:'15 Jun 2026', status:'active', category:'Summit', org:'AMEC', desc:'Global summit on communications measurement, evaluation, and insights.', action:'Register team. Prepare measurement capability positioning.' },
+      { name:'Party Conference Season', date:'Sep – Oct 2026', status:'active', category:'Political', org:'Various', desc:'UK party conference season — key window for public affairs networking.', action:'Book fringe events. Arrange client meetings at Labour and Conservative conferences.' },
+      { name:'Comms Leaders Forum', date:'14 Oct 2026', status:'active', category:'Forum', org:'VMA Group', desc:'VMA-hosted invite-only roundtable for CCOs and Directors of Communications.', action:'Finalise guest list. Confirm venue and topic (AI in corporate comms).' },
+      { name:'CIPR AGM', date:'18 Nov 2026', status:'active', category:'AGM', org:'CIPR', desc:'Annual general meeting of the Chartered Institute of Public Relations.', action:'Attend for networking. Note any governance changes affecting profession.' },
+    ],
+  },
+  windows: {
+    label:'Windows', cls:'windows',
+    items: [
+      { name:'CSRD Reporting — Wave 1', date:'1 Jan – 30 Jun 2026', status:'closing', category:'Regulatory', org:'EU Commission', desc:'First wave of Corporate Sustainability Reporting Directive compliance for large EU companies.', action:'Target companies appointing sustainability comms leads ahead of reporting deadline.' },
+      { name:'FCA Consumer Duty Review', date:'Q1 2026', status:'closed', category:'Regulatory', org:'FCA', desc:'Financial Conduct Authority review of Consumer Duty implementation across financial services.', action:'Completed. Monitor for follow-up enforcement actions creating comms roles.' },
+      { name:'Ofwat PR24 Determination', date:'Jul – Aug 2026', status:'active', category:'Regulatory', org:'Ofwat', desc:'Final determination of water company price controls, driving comms restructuring.', action:'Pipeline Thames Water, United Utilities, Severn Trent for comms leadership roles.' },
+      { name:'Defence Spending Uplift', date:'2026 ongoing', status:'active', category:'Government', org:'HM Treasury', desc:'Increased defence budget creating expanded government relations and comms functions.', action:'Target BAE Systems, Rolls-Royce, QinetiQ for GR and PA leadership hires.' },
+      { name:'COP31 Mobilisation', date:'Sep – Nov 2026', status:'active', category:'Climate', org:'UNFCCC', desc:'Pre-COP communications ramp-up period for corporates and NGOs.', action:'Position VMA for sustainability comms leadership mandates. Brief candidates.' },
+    ],
+  },
+};
+
+function renderCardStack() {
+  const container = document.getElementById('card-stack');
+  container.innerHTML = '';
+  Object.keys(stackData).forEach(key => {
+    const cat = stackData[key];
+    const card = document.createElement('div');
+    card.className = `stack-card ${cat.cls}`;
+    card.innerHTML = `
+      <div class="stack-card-header">
+        <h3>${cat.label}</h3>
+        <span class="sc-badge">${cat.items.length}</span>
+      </div>
+      <div class="stack-card-body">
+        ${cat.items.map((it, idx) => `
+          <div class="stack-item" data-cat="${key}" data-idx="${idx}" onclick="selectItem('${key}',${idx})">
+            <div class="si-info">
+              <div class="si-name">${it.name}</div>
+              <div class="si-date">${it.date}</div>
+            </div>
+            <span class="status-pill ${it.status}">${it.status === 'closing' ? 'Closing Soon' : it.status.charAt(0).toUpperCase() + it.status.slice(1)}</span>
+          </div>
+        `).join('')}
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+let selectedItemKey = null;
+function selectItem(cat, idx) {
+  const item = stackData[cat].items[idx];
+  if (!item) return;
+  // highlight
+  document.querySelectorAll('.stack-item').forEach(el => el.classList.remove('selected'));
+  const el = document.querySelector(`.stack-item[data-cat="${cat}"][data-idx="${idx}"]`);
+  if (el) el.classList.add('selected');
+  selectedItemKey = cat + '-' + idx;
+  // populate detail
+  document.getElementById('dp-title').textContent = item.name;
+  document.getElementById('dp-grid').innerHTML = `
+    <div class="dp-field"><div class="dp-label">Category</div><div class="dp-value">${item.category}</div></div>
+    <div class="dp-field"><div class="dp-label">Organisation</div><div class="dp-value">${item.org}</div></div>
+    <div class="dp-field"><div class="dp-label">Date</div><div class="dp-value">${item.date}</div></div>
+    <div class="dp-field" style="grid-column:span 2;"><div class="dp-label">Description</div><div class="dp-value">${item.desc}</div></div>
+    <div class="dp-field"><div class="dp-label">Action</div><div class="dp-value">${item.action}</div></div>
+  `;
+  document.getElementById('detail-panel').classList.add('open');
+}
+function closeDetail() {
+  document.getElementById('detail-panel').classList.remove('open');
+  document.querySelectorAll('.stack-item').forEach(el => el.classList.remove('selected'));
+}
+
+/* ── Init ── */
+renderSignals();
+renderCardStack();
+</script>
+</body>
+</html>

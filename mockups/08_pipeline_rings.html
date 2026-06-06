@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMA Group — Pipeline Rings &amp; Countdown Wall</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1f36; color: #fff; min-height: 100vh; }
+
+  /* ── Tabs ── */
+  .tab-bar { display: flex; background: #111527; padding: 0 32px; position: sticky; top: 0; z-index: 200; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .tab-bar .logo { color: #fff; font-weight: 700; font-size: 15px; letter-spacing: 1.2px; display: flex; align-items: center; margin-right: 40px; opacity: .85; }
+  .tab-bar .logo span { color: #5b9bd5; }
+  .tab { padding: 16px 28px; color: rgba(255,255,255,.45); font-size: 13px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase; cursor: pointer; border-bottom: 2px solid transparent; transition: all .2s; }
+  .tab:hover { color: rgba(255,255,255,.75); }
+  .tab.active { color: #fff; border-bottom-color: #5b9bd5; }
+
+  /* ── Pages ── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ══════════════════════════════════════
+     PAGE 1 — PIPELINE RINGS
+  ══════════════════════════════════════ */
+  #radar { background: #1a1f36; min-height: calc(100vh - 50px); position: relative; overflow: hidden; }
+
+  .rings-container { position: relative; width: 100%; height: calc(100vh - 50px); display: flex; align-items: center; justify-content: center; }
+
+  /* Ring labels */
+  .ring-label { position: absolute; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,.2); pointer-events: none; }
+
+  /* Concentric rings */
+  .ring { position: absolute; border-radius: 50%; border: 1px solid rgba(255,255,255,.08); }
+  .ring-outer { width: 680px; height: 680px; }
+  .ring-middle { width: 460px; height: 460px; border-color: rgba(255,255,255,.1); }
+  .ring-inner { width: 240px; height: 240px; border-color: rgba(255,255,255,.14); background: rgba(91,155,213,.03); }
+
+  /* Center label */
+  .ring-center { position: absolute; text-align: center; pointer-events: none; }
+  .ring-center .label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,.25); }
+
+  /* Dots */
+  .dot { position: absolute; cursor: pointer; z-index: 10; transition: transform .15s; }
+  .dot:hover { transform: scale(1.15); z-index: 20; }
+  .dot-circle { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: #fff; letter-spacing: .3px; text-shadow: 0 1px 2px rgba(0,0,0,.4); box-shadow: 0 2px 12px rgba(0,0,0,.3); }
+  .dot-label { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 11px; font-weight: 600; color: rgba(255,255,255,.7); pointer-events: none; }
+
+  /* Tooltip */
+  .dot-tooltip { position: absolute; bottom: 46px; left: 50%; transform: translateX(-50%); background: #fff; color: #1a1f36; padding: 10px 14px; border-radius: 8px; font-size: 12px; white-space: nowrap; box-shadow: 0 4px 20px rgba(0,0,0,.3); opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 50; }
+  .dot-tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: #fff; }
+  .dot:hover .dot-tooltip { opacity: 1; }
+  .dot-tooltip strong { display: block; font-weight: 700; margin-bottom: 2px; }
+  .dot-tooltip .tt-trigger { color: #7a8299; font-size: 11px; }
+
+  /* AI callout */
+  .ai-callout { position: absolute; z-index: 30; pointer-events: none; }
+  .ai-callout-box { background: rgba(91,155,213,.15); border: 1px solid rgba(91,155,213,.3); backdrop-filter: blur(8px); border-radius: 8px; padding: 12px 16px; font-size: 12px; color: #c8dcf0; line-height: 1.5; max-width: 220px; pointer-events: auto; }
+  .ai-callout-box strong { color: #fff; }
+  .ai-callout-arrow { position: absolute; width: 60px; height: 2px; background: rgba(91,155,213,.4); }
+  .ai-callout-arrow::after { content: ''; position: absolute; right: -1px; top: -3px; width: 0; height: 0; border-left: 6px solid rgba(91,155,213,.5); border-top: 4px solid transparent; border-bottom: 4px solid transparent; }
+  .ai-badge { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #5b9bd5; margin-bottom: 6px; }
+
+  /* Detail overlay */
+  .overlay-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10,12,22,.7); z-index: 100; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+  .overlay-bg.open { display: flex; }
+  .overlay-card { background: #242842; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 32px 36px; max-width: 480px; width: 90%; box-shadow: 0 8px 40px rgba(0,0,0,.4); }
+  .overlay-card h3 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+  .overlay-meta { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .overlay-meta span { font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 4px; background: rgba(255,255,255,.06); color: rgba(255,255,255,.6); }
+  .overlay-meta .badge-high { background: rgba(231,76,60,.15); color: #e74c3c; }
+  .overlay-meta .badge-med { background: rgba(230,160,40,.15); color: #e6a028; }
+  .overlay-meta .badge-low { background: rgba(39,174,96,.15); color: #27ae60; }
+  .overlay-detail { font-size: 14px; color: rgba(255,255,255,.65); line-height: 1.65; }
+  .overlay-close { margin-top: 20px; background: #385578; border: none; color: #fff; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background .15s; }
+  .overlay-close:hover { background: #4a6d96; }
+
+  /* Sector legend */
+  .legend { position: absolute; bottom: 24px; left: 32px; display: flex; gap: 20px; z-index: 30; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: rgba(255,255,255,.45); font-weight: 600; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* Ring zone labels */
+  .zone-label { position: absolute; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.8px; color: rgba(255,255,255,.15); }
+
+  /* ══════════════════════════════════════
+     PAGE 2 — COUNTDOWN WALL
+  ══════════════════════════════════════ */
+  #calendar { background: #1a1f36; min-height: calc(100vh - 50px); padding: 40px 32px; }
+  .wall-header { margin-bottom: 28px; }
+  .wall-header h2 { font-size: 22px; font-weight: 700; color: #fff; }
+  .wall-header p { font-size: 13px; color: rgba(255,255,255,.4); margin-top: 4px; }
+
+  .wall-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 1100px; }
+
+  .tile { perspective: 800px; height: 180px; cursor: pointer; }
+  .tile-inner { position: relative; width: 100%; height: 100%; transition: transform .6s; transform-style: preserve-3d; }
+  .tile.flipped .tile-inner { transform: rotateY(180deg); }
+
+  .tile-front, .tile-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 10px; overflow: hidden; }
+
+  .tile-front { background: #242842; border: 1px solid rgba(255,255,255,.06); display: flex; flex-direction: column; justify-content: space-between; padding: 18px 20px; }
+  .tile-front.urgent { background: #2a2040; border-color: rgba(192,57,43,.2); }
+  .tile-top-bar { height: 3px; border-radius: 2px; margin: -18px -20px 14px; }
+  .tile-name { font-size: 14px; font-weight: 700; color: #fff; line-height: 1.35; }
+  .tile-category { font-size: 11px; color: rgba(255,255,255,.35); font-weight: 600; text-transform: uppercase; letter-spacing: .6px; margin-top: 4px; }
+  .tile-countdown { font-size: 42px; font-weight: 800; color: rgba(255,255,255,.15); text-align: right; line-height: 1; }
+  .tile-countdown.urgent-num { color: rgba(231,76,60,.6); }
+  .tile-countdown.tomorrow-text { font-size: 16px; font-weight: 800; color: #e74c3c; text-transform: uppercase; letter-spacing: 1px; }
+
+  .tile-back { background: #2c3050; border: 1px solid rgba(255,255,255,.08); transform: rotateY(180deg); padding: 18px 20px; display: flex; flex-direction: column; }
+  .tile-back-header { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .tile-back-detail { font-size: 12px; color: rgba(255,255,255,.55); line-height: 1.55; flex: 1; overflow-y: auto; }
+  .tile-back-meta { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .tile-back-meta span { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 3px; background: rgba(255,255,255,.06); color: rgba(255,255,255,.4); }
+  .tile-back-close { font-size: 11px; color: #5b9bd5; margin-top: 8px; text-align: right; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- ── Tab Bar ── -->
+<div class="tab-bar">
+  <div class="logo">VMA<span>GROUP</span></div>
+  <div class="tab active" onclick="switchTab('radar')">Communications Radar</div>
+  <div class="tab" onclick="switchTab('calendar')">BD Calendar</div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE 1 — PIPELINE RINGS
+═══════════════════════════════════════════════ -->
+<div id="radar" class="page active">
+  <div class="rings-container" id="ringsContainer">
+    <!-- Rings -->
+    <div class="ring ring-outer"></div>
+    <div class="ring ring-middle"></div>
+    <div class="ring ring-inner"></div>
+
+    <!-- Center -->
+    <div class="ring-center"><div class="label">Act Now</div></div>
+
+    <!-- Zone labels -->
+    <div class="zone-label" id="zoneWatch" style="top: 50%; right: calc(50% - 370px); transform: translateY(-50%) rotate(90deg);">Watch</div>
+    <div class="zone-label" id="zoneApproaching" style="top: 50%; right: calc(50% - 255px); transform: translateY(-50%) rotate(90deg);">Approaching</div>
+
+    <!-- Dots are placed by JS -->
+
+    <!-- AI Callout -->
+    <div class="ai-callout" id="aiCallout">
+      <div class="ai-callout-box">
+        <div class="ai-badge">AI Insight</div>
+        <strong>Rolls-Royce</strong> is the most urgent signal. IR Head resigned last week — CEO wants immediate replacement before Q3 results.
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#27ae60"></div>FMCG</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#2980b9"></div>Finance</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#d4850a"></div>Energy</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#8e44ad"></div>Pharma</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#6c5ce7"></div>Tech</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#7f8c8d"></div>Industrials</div>
+    </div>
+  </div>
+
+  <!-- Detail overlay -->
+  <div class="overlay-bg" id="overlayBg" onclick="closeOverlay(event)">
+    <div class="overlay-card" id="overlayCard"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE 2 — COUNTDOWN WALL
+═══════════════════════════════════════════════ -->
+<div id="calendar" class="page">
+  <div class="wall-header">
+    <h2>Countdown Wall</h2>
+    <p>Active pipeline items sorted by urgency. Click a tile to see details.</p>
+  </div>
+  <div class="wall-grid" id="wallGrid"></div>
+</div>
+
+<script>
+/* ── Tab Switching ── */
+function switchTab(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.tab')[id === 'radar' ? 0 : 1].classList.add('active');
+}
+
+/* ══════════════════════════════════════
+   PIPELINE RINGS DATA
+══════════════════════════════════════ */
+const leads = [
+  // Inner ring (Act Now) — high strength
+  { name: 'Rolls-Royce', abbr: 'RR', sector: 'Industrials', color: '#7f8c8d', ring: 'inner', angle: 30, trigger: 'IR Head resigned', strength: 'High', window: '~3 weeks', detail: 'Head of Investor Relations resigned last week. CEO Tufan Erginbilgic wants rapid replacement before Q3 results. Defence division growth story requires experienced IR professional.' },
+  { name: 'Equinor', abbr: 'EQ', sector: 'Energy', color: '#d4850a', ring: 'inner', angle: 150, trigger: 'CEO departure', strength: 'High', window: '~6 weeks', detail: 'Anders Opedal confirmed departure effective 15 July 2026. Board has not named interim. Comms and PA leadership likely to be reviewed.' },
+  { name: 'Haleon', abbr: 'HL', sector: 'FMCG', color: '#27ae60', ring: 'inner', angle: 260, trigger: 'Restructure announced', strength: 'High', window: '~5 weeks', detail: 'Major corporate restructure splitting consumer health into two divisions. New divisional comms heads will be needed. Strong existing VMA relationship.' },
+
+  // Middle ring (Approaching) — medium strength
+  { name: 'Diageo', abbr: 'DG', sector: 'FMCG', color: '#27ae60', ring: 'middle', angle: 15, trigger: 'Brand portfolio review', strength: 'Medium', window: '~2 weeks', detail: 'Window narrowing — internal shortlist reportedly near-final. VP Corporate Affairs role open 60+ days.' },
+  { name: 'Unilever', abbr: 'UL', sector: 'FMCG', color: '#27ae60', ring: 'middle', angle: 100, trigger: 'Internal comms gap', strength: 'Medium', window: '~3 weeks', detail: 'VP Internal Communications departed. CEO personally sponsoring the hire. Fast-track recruitment expected.' },
+  { name: 'NatWest', abbr: 'NW', sector: 'Finance', color: '#2980b9', ring: 'middle', angle: 190, trigger: 'ESG comms build-out', strength: 'Medium', window: '~4 weeks', detail: 'Building dedicated ESG communications function ahead of new FCA sustainability disclosure rules.' },
+  { name: 'HSBC', abbr: 'HS', sector: 'Finance', color: '#2980b9', ring: 'middle', angle: 290, trigger: 'APAC comms restructure', strength: 'Medium', window: '~6 weeks', detail: 'Restructuring Asia-Pacific communications leadership under simplification programme.' },
+  { name: 'Shell', abbr: 'SH', sector: 'Energy', color: '#d4850a', ring: 'middle', angle: 240, trigger: 'IR expansion', strength: 'Medium', window: '~8 weeks', detail: 'Expanding IR team ahead of energy transition capital markets day in September.' },
+
+  // Outer ring (Watch) — low strength
+  { name: 'BP', abbr: 'BP', sector: 'Energy', color: '#d4850a', ring: 'outer', angle: 45, trigger: 'Gov affairs hire', strength: 'Low', window: '~12 weeks', detail: 'New UK energy policy creating need for expanded government affairs team. Scoping 2-3 roles.' },
+  { name: 'Barclays', abbr: 'BC', sector: 'Finance', color: '#2980b9', ring: 'outer', angle: 130, trigger: 'Digital comms transformation', strength: 'Low', window: '~10 weeks', detail: 'Investing in digital-first communications platform. Seeking Head of Digital Communications.' },
+  { name: 'AstraZeneca', abbr: 'AZ', sector: 'Pharma', color: '#8e44ad', ring: 'outer', angle: 220, trigger: 'Corp affairs review', strength: 'Low', window: '~14 weeks', detail: 'Post-acquisition integration of Alexion comms teams ongoing. Potential senior role in H2 2026.' },
+  { name: 'GSK', abbr: 'GK', sector: 'Pharma', color: '#8e44ad', ring: 'outer', angle: 310, trigger: 'Public affairs expansion', strength: 'Low', window: '~10 weeks', detail: 'Expanding public affairs ahead of major vaccine programme launches in 2027.' }
+];
+
+function buildRings() {
+  const container = document.getElementById('ringsContainer');
+  const cx = container.offsetWidth / 2;
+  const cy = container.offsetHeight / 2;
+
+  const radii = { inner: 96, middle: 195, outer: 305 };
+
+  leads.forEach((lead, idx) => {
+    const r = radii[lead.ring];
+    const angleRad = (lead.angle - 90) * (Math.PI / 180);
+    const x = cx + r * Math.cos(angleRad) - 18;
+    const y = cy + r * Math.sin(angleRad) - 18;
+
+    const dot = document.createElement('div');
+    dot.className = 'dot';
+    dot.style.left = x + 'px';
+    dot.style.top = y + 'px';
+
+    dot.innerHTML =
+      '<div class="dot-tooltip"><strong>' + lead.name + '</strong><span class="tt-trigger">' + lead.trigger + '</span></div>' +
+      '<div class="dot-circle" style="background:' + lead.color + '">' + lead.abbr + '</div>' +
+      '<div class="dot-label">' + lead.name + '</div>';
+
+    dot.addEventListener('click', () => showOverlay(lead));
+    container.appendChild(dot);
+
+    // Position AI callout pointing to Rolls-Royce
+    if (lead.name === 'Rolls-Royce') {
+      const callout = document.getElementById('aiCallout');
+      const calloutX = x + 60;
+      const calloutY = y - 120;
+      callout.style.left = calloutX + 'px';
+      callout.style.top = calloutY + 'px';
+    }
+  });
+}
+
+function showOverlay(lead) {
+  const card = document.getElementById('overlayCard');
+  const badgeClass = lead.strength === 'High' ? 'badge-high' : lead.strength === 'Medium' ? 'badge-med' : 'badge-low';
+  card.innerHTML =
+    '<h3>' + lead.name + '</h3>' +
+    '<div class="overlay-meta">' +
+      '<span>' + lead.sector + '</span>' +
+      '<span class="' + badgeClass + '">' + lead.strength + ' Strength</span>' +
+      '<span>' + lead.window + '</span>' +
+      '<span>' + lead.trigger + '</span>' +
+    '</div>' +
+    '<div class="overlay-detail">' + lead.detail + '</div>' +
+    '<button class="overlay-close" onclick="closeOverlay(event, true)">Close</button>';
+  document.getElementById('overlayBg').classList.add('open');
+}
+
+function closeOverlay(event, force) {
+  if (force || event.target === document.getElementById('overlayBg')) {
+    document.getElementById('overlayBg').classList.remove('open');
+  }
+}
+
+// Build rings after layout
+window.addEventListener('load', buildRings);
+window.addEventListener('resize', () => {
+  // Remove old dots and rebuild
+  document.querySelectorAll('.dot').forEach(d => d.remove());
+  buildRings();
+});
+
+/* ══════════════════════════════════════
+   COUNTDOWN WALL
+══════════════════════════════════════ */
+const wallItems = [
+  { name: 'Rolls-Royce IR Head', category: 'Industrials', color: '#7f8c8d', days: 0, detail: 'Head of Investor Relations resigned. CEO wants immediate replacement. Search mandate expected this week. Prior VMA relationship with HR team.', trigger: 'IR Head resigned', strength: 'High' },
+  { name: 'Diageo VP Corp Affairs', category: 'FMCG', color: '#27ae60', days: 3, detail: 'Internal shortlist near-final. Window closing fast. Recommend immediate outreach to CEO office. Budget approved, role open 60+ days.', trigger: 'Brand portfolio review', strength: 'Medium' },
+  { name: 'Equinor Comms Lead', category: 'Energy', color: '#d4850a', days: 7, detail: 'CEO departure confirmed for 15 July. Communications leadership review expected. Historical pattern shows 80% chance of senior comms hire within 90 days.', trigger: 'CEO departure', strength: 'High' },
+  { name: 'Haleon Div. Comms Heads', category: 'Healthcare', color: '#27ae60', days: 10, detail: 'Major restructure creating two new divisions. Each will need communications leadership. Strong VMA relationship with CHRO.', trigger: 'Restructure', strength: 'High' },
+  { name: 'NatWest ESG Comms', category: 'Finance', color: '#2980b9', days: 14, detail: 'New FCA sustainability disclosure rules driving need for dedicated ESG communications function. Two VMA alumni in NatWest comms team.', trigger: 'ESG reporting overhaul', strength: 'Medium' },
+  { name: 'Unilever VP Int. Comms', category: 'FMCG', color: '#27ae60', days: 5, detail: 'VP Internal Communications departed last month. CEO Hein Schumacher personally sponsoring the hire. Fast-track process.', trigger: 'Internal comms gap', strength: 'Medium' },
+  { name: 'HSBC APAC Comms Lead', category: 'Finance', color: '#2980b9', days: 21, detail: 'Restructuring Asia-Pacific communications leadership. London-based role being scoped under simplification programme.', trigger: 'APAC restructure', strength: 'Medium' },
+  { name: 'Shell IR Expansion', category: 'Energy', color: '#d4850a', days: 28, detail: 'Expanding IR team ahead of energy transition capital markets day in September. Two senior positions expected.', trigger: 'IR team growth', strength: 'Medium' },
+  { name: 'Barclays Digital Comms', category: 'Finance', color: '#2980b9', days: 35, detail: 'Digital-first communications platform investment. Head of Digital Communications role being defined. Early stage.', trigger: 'Digital transformation', strength: 'Low' },
+  { name: 'BP Gov Affairs', category: 'Energy', color: '#d4850a', days: 42, detail: 'New UK energy policy creating need for expanded government affairs. Scoping 2-3 public affairs roles in London.', trigger: 'Policy response', strength: 'Low' }
+];
+
+function buildWall() {
+  const grid = document.getElementById('wallGrid');
+  grid.innerHTML = '';
+
+  const sorted = [...wallItems].sort((a, b) => a.days - b.days);
+
+  sorted.forEach((item, idx) => {
+    const isUrgent = item.days < 7;
+    const tile = document.createElement('div');
+    tile.className = 'tile';
+    tile.addEventListener('click', () => tile.classList.toggle('flipped'));
+
+    let countdownContent;
+    if (item.days === 0) {
+      countdownContent = '<div class="tile-countdown tomorrow-text">TODAY</div>';
+    } else if (item.days === 1) {
+      countdownContent = '<div class="tile-countdown tomorrow-text">TOMORROW</div>';
+    } else if (item.days < 7) {
+      countdownContent = '<div class="tile-countdown urgent-num">' + item.days + '</div>';
+    } else {
+      countdownContent = '<div class="tile-countdown">' + item.days + '</div>';
+    }
+
+    const badgeClass = item.strength === 'High' ? 'badge-high' : item.strength === 'Medium' ? 'badge-med' : 'badge-low';
+
+    tile.innerHTML =
+      '<div class="tile-inner">' +
+        '<div class="tile-front' + (isUrgent ? ' urgent' : '') + '">' +
+          '<div class="tile-top-bar" style="background:' + item.color + '"></div>' +
+          '<div>' +
+            '<div class="tile-name">' + item.name + '</div>' +
+            '<div class="tile-category">' + item.category + '</div>' +
+          '</div>' +
+          countdownContent +
+        '</div>' +
+        '<div class="tile-back">' +
+          '<div class="tile-back-header">' + item.name + '</div>' +
+          '<div class="tile-back-detail">' + item.detail + '</div>' +
+          '<div class="tile-back-meta">' +
+            '<span>' + item.category + '</span>' +
+            '<span class="' + badgeClass + '">' + item.strength + '</span>' +
+            '<span>' + item.trigger + '</span>' +
+            '<span>' + (item.days === 0 ? 'Today' : item.days === 1 ? 'Tomorrow' : item.days + ' days') + '</span>' +
+          '</div>' +
+          '<div class="tile-back-close">Click to flip back</div>' +
+        '</div>' +
+      '</div>';
+
+    grid.appendChild(tile);
+  });
+}
+
+buildWall();
+</script>
+</body>
+</html>

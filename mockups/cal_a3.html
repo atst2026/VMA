@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BD Calendar — Three-Month Rolling Calendar</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,sans-serif;background:#F7F9FC;color:#1F1F1F;min-height:100vh}
+.wm-head{padding:24px 32px 15px;background:radial-gradient(ellipse 86% 165% at 50% -16%,#a4c6e8 0%,#bdd4ea 16%,#d4e2ef 34%,#e9f0f7 58%,#f4f8fc 78%,rgba(247,249,252,0) 100%)}
+.container{max-width:1280px;margin:0 auto;padding:24px 32px}
+.month-nav{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+.month-nav h2{font-size:20px;font-weight:700;color:#385578}
+.month-nav button{width:36px;height:36px;border-radius:50%;border:1px solid rgba(60,64,67,.12);background:#fff;cursor:pointer;display:grid;place-items:center;font-size:18px;color:#385578;transition:all .15s}
+.month-nav button:hover{background:#e9f0f7;border-color:#385578}
+.legend{display:flex;gap:18px;margin-bottom:16px;font-size:12px;color:#555}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend-dot{width:10px;height:10px;border-radius:2px;display:inline-block}
+
+/* Multi-month span bars */
+.span-bars-container{background:#fff;border-radius:12px 12px 0 0;border:1px solid rgba(60,64,67,.12);border-bottom:none;padding:8px 12px;min-height:40px}
+.span-bar-row{display:flex;height:20px;margin-bottom:3px;position:relative}
+.span-bar{height:18px;border-radius:3px;font-size:10px;line-height:18px;padding:0 6px;color:#fff;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:absolute}
+
+.months-row{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid rgba(60,64,67,.12);border-top:none;border-radius:0 0 12px 12px;overflow:hidden;background:#fff;box-shadow:0 1px 3px rgba(60,64,67,.06)}
+.month-block{border-right:1px solid rgba(60,64,67,.12)}
+.month-block:last-child{border-right:none}
+.month-block-title{padding:10px 12px;font-size:14px;font-weight:700;color:#385578;background:#f8fafc;border-bottom:1px solid rgba(60,64,67,.12);text-align:center}
+.mini-header{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid rgba(60,64,67,.06)}
+.mini-header div{padding:4px 2px;font-size:10px;font-weight:600;color:#385578;text-align:center;text-transform:uppercase}
+.mini-body{display:grid;grid-template-columns:repeat(7,1fr)}
+.mini-cell{min-height:50px;border-right:1px solid rgba(60,64,67,.04);border-bottom:1px solid rgba(60,64,67,.04);padding:2px;font-size:11px;position:relative}
+.mini-cell:nth-child(7n){border-right:none}
+.mini-cell.other-month{background:#fafbfd}
+.mini-cell.other-month .mc-num{color:#ccc}
+.mini-cell.today .mc-num{background:#385578;color:#fff;border-radius:50%;width:20px;height:20px;display:grid;place-items:center;font-size:10px}
+.mc-num{font-size:11px;font-weight:600;padding:1px 3px;display:inline-block}
+.mc-bar{height:12px;margin:1px 0;font-size:7px;line-height:12px;padding:0 3px;border-radius:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;font-weight:500}
+.mc-bar.framework{background:#4285F4}
+.mc-bar.mandate{background:#B98235}
+.mc-bar.bar-start{border-radius:2px 0 0 2px}
+.mc-bar.bar-mid{border-radius:0}
+.mc-bar.bar-end{border-radius:0 2px 2px 0}
+.mc-bar.bar-full{border-radius:2px}
+.mc-event-dot{width:6px;height:6px;border-radius:50%;background:#1E7A41;display:inline-block;margin:1px}
+.mc-event-label{font-size:7px;color:#1E7A41;font-weight:600}
+
+.ai-briefing{margin-top:24px;background:#fff;border-radius:12px;border:1px solid rgba(60,64,67,.12);padding:24px;box-shadow:0 1px 3px rgba(60,64,67,.06)}
+.ai-briefing h3{font-size:16px;font-weight:700;color:#385578;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.insight-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.insight-card{padding:14px 16px;background:#f4f8fc;border-radius:10px;border-left:3px solid #4285F4;font-size:13px;line-height:1.5;color:#333}
+.insight-card strong{color:#385578}
+.insight-card.ic-event{border-left-color:#1E7A41}
+.insight-card.ic-mandate{border-left-color:#B98235}
+.insight-card.ic-alert{border-left-color:#dc3545;background:#fff5f5}
+.insight-card.ic-info{border-left-color:#6c63ff}
+</style>
+</head>
+<body>
+<div class="wm-head">
+  <div style="display:flex;align-items:center;gap:13px;max-width:1240px;margin:0 auto">
+    <span style="display:grid;place-items:center;color:#1F1F1F"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></span>
+    <span style="font-size:30px;font-weight:700;letter-spacing:-.3px">BD Calendar</span>
+  </div>
+</div>
+<div class="container">
+  <div class="month-nav">
+    <button onclick="changeMonth(-1)">&#8249;</button>
+    <h2 id="monthTitle"></h2>
+    <button onclick="changeMonth(1)">&#8250;</button>
+  </div>
+  <div class="legend">
+    <span><span class="legend-dot" style="background:#4285F4"></span> Approved Frameworks</span>
+    <span><span class="legend-dot" style="background:#1E7A41"></span> Events &amp; Networking</span>
+    <span><span class="legend-dot" style="background:#B98235"></span> Mandate Windows</span>
+  </div>
+  <div class="span-bars-container" id="spanBars"></div>
+  <div class="months-row" id="monthsRow"></div>
+  <div class="ai-briefing">
+    <h3>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4285F4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 017 7c0 3-2 5-3 7h-8c-1-2-3-4-3-7a7 7 0 017-7z"/><path d="M9 16v2a3 3 0 006 0v-2"/></svg>
+      Quarter Ahead — AI Strategic Briefing
+    </h3>
+    <div class="insight-row" id="insights"></div>
+  </div>
+</div>
+
+<script>
+const TODAY = new Date(2026, 5, 6);
+let startMonth = 5, startYear = 2026;
+
+const FRAMEWORKS = [
+  {name:'NHS Workforce Alliance — Exec Search & Interim', short:'NHS Workforce Alliance', start:new Date(2026,0,1), end:new Date(2026,11,31), type:'framework', color:'#4285F4'},
+  {name:'Nuclear Decommissioning Authority — Shared Services Lot 6', short:'NDA — Shared Services Lot 6', start:new Date(2026,9,1), end:new Date(2027,2,31), type:'framework', color:'#4285F4'},
+  {name:'Devolved Government — Executive Search', short:'Devolved Gov — Exec Search', start:new Date(2027,0,1), end:new Date(2027,8,30), type:'framework', color:'#4285F4'},
+  {name:'Crown Commercial Service — Executive Search 3', short:'CCS — Exec Search 3', start:new Date(2027,5,1), end:new Date(2028,4,31), type:'framework', color:'#4285F4'}
+];
+const EVENTS = [
+  {name:'CIPR Excellence Awards', date:new Date(2026,6,1), type:'event'},
+  {name:'Internal Comms & Engagement Live', date:new Date(2026,6,8), type:'event'},
+  {name:'IoIC Awards', date:new Date(2026,8,17), type:'event'},
+  {name:'ICCO Global Summit', date:new Date(2026,10,11), type:'event'},
+  {name:'CIPR Annual Conference', date:new Date(2026,10,18), type:'event'},
+  {name:'European Excellence Awards', date:new Date(2026,11,11), type:'event'}
+];
+const MANDATES = [
+  {name:'FCA Consumer Duty — board-report ramp', short:'FCA Consumer Duty', start:new Date(2026,3,1), end:new Date(2026,6,31), type:'mandate', color:'#B98235', closed:false},
+  {name:'UK SRS — sustainability-reporting build-up', short:'UK SRS', start:new Date(2026,0,1), end:new Date(2026,11,31), type:'mandate', color:'#B98235', closed:false},
+  {name:'Machinery-of-government — post-SR reshuffle', short:'MoG — post-SR reshuffle', start:new Date(2026,3,1), end:new Date(2026,11,31), type:'mandate', color:'#B98235', closed:false},
+  {name:'UK annual-report & AGM season', short:'UK AGM season', start:new Date(2026,1,1), end:new Date(2026,5,30), type:'mandate', color:'#B98235', closed:false},
+  {name:'Gender Pay Gap — reporting & scrutiny', short:'Gender Pay Gap', start:new Date(2026,2,1), end:new Date(2026,5,30), type:'mandate', color:'#B98235', closed:false},
+  {name:'NHS operational-planning round', short:'NHS operational planning', start:new Date(2026,0,1), end:new Date(2026,4,31), type:'mandate', color:'#B98235', closed:true},
+  {name:'Higher-Education clearing & new-intake', short:'HE clearing & new-intake', start:new Date(2026,5,15), end:new Date(2026,8,30), type:'mandate', color:'#B98235', closed:false}
+];
+
+function sameDay(a,b){return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate()}
+const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function renderAll() {
+  const m1y = startYear, m1m = startMonth;
+  let m2m = m1m+1, m2y = m1y; if(m2m>11){m2m=0;m2y++}
+  let m3m = m2m+1, m3y = m2y; if(m3m>11){m3m=0;m3y++}
+
+  document.getElementById('monthTitle').textContent = MN[m1m]+' — '+MN[m3m]+' '+m3y;
+
+  // Compute total date range for span bars
+  const rangeStart = new Date(m1y, m1m, 1);
+  const rangeEnd = new Date(m3y, m3m+1, 0);
+  const totalDays = Math.ceil((rangeEnd - rangeStart) / 86400000) + 1;
+
+  // Span bars for multi-month items
+  const spanItems = [];
+  FRAMEWORKS.forEach(f => {
+    if(f.start <= rangeEnd && f.end >= rangeStart) spanItems.push(f);
+  });
+  MANDATES.forEach(m => {
+    if(!m.closed && m.start <= rangeEnd && m.end >= rangeStart) spanItems.push(m);
+  });
+
+  const spanBarsDiv = document.getElementById('spanBars');
+  spanBarsDiv.innerHTML = '';
+  spanItems.forEach(item => {
+    const bs = Math.max(item.start, rangeStart);
+    const be = Math.min(item.end, rangeEnd);
+    const leftPct = ((bs - rangeStart) / 86400000) / totalDays * 100;
+    const widthPct = ((be - bs) / 86400000 + 1) / totalDays * 100;
+    const row = document.createElement('div');
+    row.className = 'span-bar-row';
+    const bar = document.createElement('div');
+    bar.className = 'span-bar';
+    bar.style.background = item.color;
+    bar.style.left = leftPct + '%';
+    bar.style.width = widthPct + '%';
+    bar.textContent = item.short || item.name;
+    bar.title = item.name;
+    row.appendChild(bar);
+    spanBarsDiv.appendChild(row);
+  });
+
+  // Render 3 month grids
+  const monthsRow = document.getElementById('monthsRow');
+  monthsRow.innerHTML = '';
+  [[m1y,m1m],[m2y,m2m],[m3y,m3m]].forEach(([yr,mn]) => {
+    const block = document.createElement('div');
+    block.className = 'month-block';
+    block.innerHTML = `<div class="month-block-title">${MN[mn]} ${yr}</div>
+      <div class="mini-header"><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div><div>S</div></div>`;
+    const body = document.createElement('div');
+    body.className = 'mini-body';
+
+    const firstDay = new Date(yr, mn, 1);
+    const lastDay = new Date(yr, mn+1, 0);
+    let startDow = firstDay.getDay();
+    startDow = startDow === 0 ? 6 : startDow - 1;
+    const sd = new Date(firstDay); sd.setDate(sd.getDate() - startDow);
+    const totalCells = Math.ceil((startDow + lastDay.getDate()) / 7) * 7;
+
+    // Mini bars
+    const miniBars = [];
+    FRAMEWORKS.forEach(f => {
+      const bs = new Date(Math.max(f.start, sd));
+      const be = new Date(Math.min(f.end, new Date(sd.getTime() + (totalCells-1)*86400000)));
+      if(bs<=be) miniBars.push({...f,barStart:bs,barEnd:be,cls:'framework'});
+    });
+    MANDATES.forEach(m => {
+      if(m.closed) return;
+      const bs = new Date(Math.max(m.start, sd));
+      const be = new Date(Math.min(m.end, new Date(sd.getTime() + (totalCells-1)*86400000)));
+      if(bs<=be) miniBars.push({...m,barStart:bs,barEnd:be,cls:'mandate'});
+    });
+
+    for(let i = 0; i < totalCells; i++) {
+      const cellDate = new Date(sd); cellDate.setDate(cellDate.getDate() + i);
+      const cell = document.createElement('div');
+      cell.className = 'mini-cell';
+      if(cellDate.getMonth() !== mn) cell.classList.add('other-month');
+      if(sameDay(cellDate, TODAY)) cell.classList.add('today');
+
+      const num = document.createElement('div');
+      num.className = 'mc-num';
+      num.textContent = cellDate.getDate();
+      cell.appendChild(num);
+
+      // Show max 1 bar
+      let barShown = false;
+      miniBars.forEach(bar => {
+        if(!barShown && cellDate >= bar.barStart && cellDate <= bar.barEnd) {
+          const el = document.createElement('div');
+          el.className = 'mc-bar ' + bar.cls;
+          const isStart = sameDay(cellDate, bar.barStart) || i%7===0;
+          const isEnd = sameDay(cellDate, bar.barEnd) || i%7===6;
+          if(isStart&&isEnd) el.classList.add('bar-full');
+          else if(isStart) el.classList.add('bar-start');
+          else if(isEnd) el.classList.add('bar-end');
+          else el.classList.add('bar-mid');
+          if(isStart) el.textContent = (bar.short||bar.name).substring(0,12);
+          cell.appendChild(el);
+          barShown = true;
+        }
+      });
+
+      // Events
+      EVENTS.forEach(e => {
+        if(sameDay(cellDate, e.date)) {
+          const dot = document.createElement('span');
+          dot.className = 'mc-event-dot';
+          dot.title = e.name;
+          cell.appendChild(dot);
+        }
+      });
+
+      body.appendChild(cell);
+    }
+    block.appendChild(body);
+    monthsRow.appendChild(block);
+  });
+
+  renderInsights(m1y, m1m, m3y, m3m);
+}
+
+function renderInsights(y1,m1,y3,m3) {
+  const rangeStart = new Date(y1, m1, 1);
+  const rangeEnd = new Date(y3, m3+1, 0);
+
+  const insights = [];
+
+  // Count events in range
+  const eventsInRange = EVENTS.filter(e => e.date >= rangeStart && e.date <= rangeEnd);
+  if(eventsInRange.length > 0) {
+    insights.push({html:`<strong>${eventsInRange.length} networking event${eventsInRange.length>1?'s':''}</strong> in this quarter — prioritise ${eventsInRange[0].name} attendance and pre-event outreach to key delegates.`, cls:'ic-event'});
+  }
+
+  // Closing mandates
+  const closingMandates = MANDATES.filter(m => !m.closed && m.end >= rangeStart && m.end <= rangeEnd);
+  if(closingMandates.length > 0) {
+    insights.push({html:`<strong>${closingMandates.length} mandate window${closingMandates.length>1?'s':''} closing</strong> — ${closingMandates.map(m=>m.short||m.name).join(', ')}. Accelerate candidate pipeline for these roles.`, cls:'ic-alert'});
+  }
+
+  // Active frameworks
+  const activeFw = FRAMEWORKS.filter(f => f.start <= rangeEnd && f.end >= rangeStart);
+  if(activeFw.length > 0) {
+    insights.push({html:`<strong>${activeFw.length} framework${activeFw.length>1?'s':''} active</strong> — leverage ${(activeFw[0].short||activeFw[0].name)} for public-sector placements during this period.`, cls:''});
+  }
+
+  // Opening frameworks
+  const openingFw = FRAMEWORKS.filter(f => f.start >= rangeStart && f.start <= rangeEnd);
+  if(openingFw.length > 0) {
+    insights.push({html:`<strong>New framework opening:</strong> ${openingFw.map(f=>f.short||f.name).join(', ')} — prepare compliance documentation and bid materials ahead of time.`, cls:'ic-info'});
+  }
+
+  // General strategic note
+  insights.push({html:`<strong>Cross-sell opportunity:</strong> Candidates placed via mandate windows can be introduced to framework buyers — align pipeline across categories for maximum efficiency.`, cls:'ic-info'});
+
+  document.getElementById('insights').innerHTML = insights.slice(0,5).map(i => `<div class="insight-card ${i.cls}">${i.html}</div>`).join('');
+}
+
+function changeMonth(dir) {
+  startMonth += dir;
+  if(startMonth > 11){startMonth=0;startYear++}
+  if(startMonth < 0){startMonth=11;startYear--}
+  renderAll();
+}
+
+renderAll();
+</script>
+</body>
+</html>

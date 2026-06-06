@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BD Calendar — Week Planner Calendar</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,sans-serif;background:#F7F9FC;color:#1F1F1F;min-height:100vh}
+.wm-head{padding:24px 32px 15px;background:radial-gradient(ellipse 86% 165% at 50% -16%,#a4c6e8 0%,#bdd4ea 16%,#d4e2ef 34%,#e9f0f7 58%,#f4f8fc 78%,rgba(247,249,252,0) 100%)}
+.container{max-width:1280px;margin:0 auto;padding:24px 32px;display:flex;gap:24px}
+.week-main{flex:1;min-width:0}
+.mini-sidebar{width:260px;flex-shrink:0}
+.week-nav{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+.week-nav h2{font-size:20px;font-weight:700;color:#385578}
+.week-nav button{width:36px;height:36px;border-radius:50%;border:1px solid rgba(60,64,67,.12);background:#fff;cursor:pointer;display:grid;place-items:center;font-size:18px;color:#385578;transition:all .15s}
+.week-nav button:hover{background:#e9f0f7}
+.week-nav .today-btn{width:auto;border-radius:18px;padding:0 14px;font-size:12px;font-weight:600}
+.legend{display:flex;gap:16px;margin-bottom:16px;font-size:12px;color:#555}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend-dot{width:10px;height:10px;border-radius:2px}
+.week-grid{display:grid;grid-template-columns:repeat(5,1fr);background:#fff;border-radius:12px;border:1px solid rgba(60,64,67,.12);overflow:hidden;box-shadow:0 1px 3px rgba(60,64,67,.06)}
+.day-col{border-right:1px solid rgba(60,64,67,.08);display:flex;flex-direction:column}
+.day-col:last-child{border-right:none}
+.day-col-header{padding:12px 14px;background:#f8fafc;border-bottom:1px solid rgba(60,64,67,.12);text-align:center}
+.day-col-header .dow{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#385578}
+.day-col-header .dom{font-size:22px;font-weight:700;color:#1F1F1F;margin-top:2px}
+.day-col-header.today-header{background:#385578}
+.day-col-header.today-header .dow,.day-col-header.today-header .dom{color:#fff}
+.day-col-body{flex:1;display:flex;flex-direction:column}
+.active-section{padding:10px 12px;border-bottom:1px solid rgba(60,64,67,.08);min-height:120px}
+.active-section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#999;margin-bottom:8px}
+.active-bar{padding:6px 8px;border-radius:6px;margin-bottom:5px;font-size:11px;font-weight:500;color:#fff;line-height:1.3}
+.active-bar.framework{background:#4285F4}
+.active-bar.mandate{background:#B98235}
+.active-bar.event{background:#1E7A41}
+.active-bar .bar-sub{font-size:9px;opacity:.85;font-weight:400}
+.ai-section{padding:10px 12px;flex:1;background:#fafcff}
+.ai-section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#4285F4;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.ai-action{padding:8px 10px;background:#fff;border:1px solid rgba(60,64,67,.08);border-radius:6px;margin-bottom:6px;font-size:11px;line-height:1.4;color:#333;position:relative;padding-left:22px}
+.ai-action::before{content:'';position:absolute;left:8px;top:12px;width:6px;height:6px;border-radius:50%;background:#4285F4}
+.ai-action.urgent::before{background:#dc3545}
+.ai-action.event-action::before{background:#1E7A41}
+
+/* Mini calendar */
+.mini-cal-card{background:#fff;border-radius:12px;border:1px solid rgba(60,64,67,.12);padding:16px;box-shadow:0 1px 3px rgba(60,64,67,.06);margin-bottom:16px}
+.mini-cal-card h3{font-size:14px;font-weight:700;color:#385578;margin-bottom:12px;text-align:center}
+.mini-cal-header{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
+.mini-cal-header div{font-size:10px;font-weight:600;color:#999;text-align:center;padding:2px}
+.mini-cal-body{display:grid;grid-template-columns:repeat(7,1fr)}
+.mini-cal-day{width:100%;aspect-ratio:1;display:grid;place-items:center;font-size:11px;color:#555;cursor:pointer;border-radius:50%;transition:all .15s}
+.mini-cal-day:hover{background:#e9f0f7}
+.mini-cal-day.today{background:#385578;color:#fff;font-weight:700}
+.mini-cal-day.in-week{background:#e8f0fe;font-weight:600;color:#385578}
+.mini-cal-day.other{color:#ccc}
+.mini-cal-day.has-event{position:relative}
+.mini-cal-day.has-event::after{content:'';position:absolute;bottom:2px;width:4px;height:4px;border-radius:50%;background:#1E7A41}
+
+.week-summary-card{background:#fff;border-radius:12px;border:1px solid rgba(60,64,67,.12);padding:16px;box-shadow:0 1px 3px rgba(60,64,67,.06)}
+.week-summary-card h3{font-size:14px;font-weight:700;color:#385578;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.ws-item{padding:8px 10px;background:#f4f8fc;border-radius:6px;margin-bottom:6px;font-size:12px;line-height:1.4;color:#333;border-left:3px solid #4285F4}
+.ws-item.ws-mandate{border-left-color:#B98235}
+.ws-item.ws-event{border-left-color:#1E7A41}
+.ws-item.ws-urgent{border-left-color:#dc3545;background:#fff5f5}
+.ws-item strong{color:#385578}
+</style>
+</head>
+<body>
+<div class="wm-head">
+  <div style="display:flex;align-items:center;gap:13px;max-width:1240px;margin:0 auto">
+    <span style="display:grid;place-items:center;color:#1F1F1F"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></span>
+    <span style="font-size:30px;font-weight:700;letter-spacing:-.3px">BD Calendar</span>
+  </div>
+</div>
+<div class="container">
+  <div class="week-main">
+    <div class="week-nav">
+      <button onclick="changeWeek(-1)">&#8249;</button>
+      <h2 id="weekTitle"></h2>
+      <button onclick="changeWeek(1)">&#8250;</button>
+      <button class="today-btn" onclick="goToday()">Today</button>
+    </div>
+    <div class="legend">
+      <span><span class="legend-dot" style="background:#4285F4"></span> Frameworks</span>
+      <span><span class="legend-dot" style="background:#1E7A41"></span> Events</span>
+      <span><span class="legend-dot" style="background:#B98235"></span> Mandate Windows</span>
+      <span style="color:#4285F4;font-weight:600">&#9679; AI Suggested Actions</span>
+    </div>
+    <div class="week-grid" id="weekGrid"></div>
+  </div>
+  <div class="mini-sidebar">
+    <div class="mini-cal-card">
+      <h3 id="miniCalTitle"></h3>
+      <div class="mini-cal-header"><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div><div>S</div></div>
+      <div class="mini-cal-body" id="miniCalBody"></div>
+    </div>
+    <div class="week-summary-card">
+      <h3>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4285F4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 017 7c0 3-2 5-3 7h-8c-1-2-3-4-3-7a7 7 0 017-7z"/><path d="M9 16v2a3 3 0 006 0v-2"/></svg>
+        Week Focus
+      </h3>
+      <div id="weekSummary"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TODAY = new Date(2026, 5, 6);
+// Current week start (Monday)
+let weekStart = new Date(2026, 5, 1); // Mon 1 Jun 2026
+function getMonday(d) {
+  const date = new Date(d);
+  const day = date.getDay();
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+  date.setDate(diff);
+  return date;
+}
+weekStart = getMonday(TODAY);
+
+const FRAMEWORKS = [
+  {name:'NHS Workforce Alliance — Exec Search & Interim', short:'NHS Workforce Alliance', start:new Date(2026,0,1), end:new Date(2026,11,31), buyer:'NHS Workforce Alliance (via CCS)', type:'framework'},
+  {name:'Nuclear Decommissioning Authority — Shared Services Lot 6', short:'NDA — Lot 6', start:new Date(2026,9,1), end:new Date(2027,2,31), buyer:'NDA', type:'framework'},
+  {name:'Devolved Government — Executive Search', short:'Devolved Gov — Exec Search', start:new Date(2027,0,1), end:new Date(2027,8,30), buyer:'Scottish/Welsh/NI Governments', type:'framework'},
+  {name:'Crown Commercial Service — Executive Search 3', short:'CCS — Exec Search 3', start:new Date(2027,5,1), end:new Date(2028,4,31), buyer:'CCS', type:'framework'}
+];
+const EVENTS = [
+  {name:'CIPR Excellence Awards', date:new Date(2026,6,1), location:'London', category:'External', detail:'Senior comms judges + finalists', type:'event'},
+  {name:'Internal Comms & Engagement Live', date:new Date(2026,6,8), location:'The Brewery, London', category:'Internal', detail:'Head of IC / Director of IC delegates', type:'event'},
+  {name:'IoIC Awards', date:new Date(2026,8,17), location:'London', category:'Internal', detail:'Premier UK IC awards', type:'event'},
+  {name:'ICCO Global Summit', date:new Date(2026,10,11), location:'Milan', category:'External', detail:'Consultancy CEOs + in-house clients', type:'event'},
+  {name:'CIPR Annual Conference', date:new Date(2026,10,18), location:'London', category:'External', detail:'Tier-1 comms leaders', type:'event'},
+  {name:'European Excellence Awards', date:new Date(2026,11,11), location:'Europe', category:'Mixed', detail:'UK + EU CCO attendance', type:'event'}
+];
+const MANDATES = [
+  {name:'FCA Consumer Duty — board-report ramp', short:'FCA Consumer Duty', start:new Date(2026,3,1), end:new Date(2026,6,31), role:'Head of Regulatory Comms', daysLeft:56, confidence:'High', sector:'Financial Services', type:'mandate'},
+  {name:'UK SRS — sustainability-reporting build-up', short:'UK SRS', start:new Date(2026,0,1), end:new Date(2026,11,31), role:'Head of Sustainability Comms', daysLeft:209, confidence:'Medium', sector:'Cross-sector', type:'mandate'},
+  {name:'Machinery-of-government — post-SR reshuffle', short:'MoG — post-SR reshuffle', start:new Date(2026,3,1), end:new Date(2026,11,31), role:'Director of Communications (GCS)', daysLeft:209, confidence:'Medium', sector:'Public Sector', type:'mandate'},
+  {name:'UK annual-report & AGM season', short:'UK AGM season', start:new Date(2026,1,1), end:new Date(2026,5,30), role:'Head of IR Communications', daysLeft:25, confidence:'High', sector:'Cross-sector', type:'mandate'},
+  {name:'Gender Pay Gap — reporting & scrutiny', short:'Gender Pay Gap', start:new Date(2026,2,1), end:new Date(2026,5,30), role:'Head of Internal/DEI Comms', daysLeft:25, confidence:'High', sector:'Cross-sector', type:'mandate'},
+  {name:'NHS operational-planning round', short:'NHS ops planning', start:new Date(2026,0,1), end:new Date(2026,4,31), role:'Director of Comms — NHS', daysLeft:-1, confidence:'Medium', sector:'Public Sector', closed:true, type:'mandate'},
+  {name:'Higher-Education clearing & new-intake', short:'HE clearing & intake', start:new Date(2026,5,15), end:new Date(2026,8,30), role:'Head of Comms/Student Recruitment', daysLeft:117, confidence:'Medium', sector:'Public Sector', type:'mandate'}
+];
+
+function sameDay(a,b){return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate()}
+const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DN=['Monday','Tuesday','Wednesday','Thursday','Friday'];
+const DS=['Mon','Tue','Wed','Thu','Fri'];
+function fmtDate(d){return d.getDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]}
+
+function getActiveItems(date) {
+  const items = [];
+  FRAMEWORKS.forEach(f => { if(date >= f.start && date <= f.end) items.push(f); });
+  EVENTS.forEach(e => { if(sameDay(date, e.date)) items.push(e); });
+  MANDATES.forEach(m => { if(!m.closed && date >= m.start && date <= m.end) items.push(m); });
+  return items;
+}
+
+// AI action generation per day
+function getAIActions(date, activeItems) {
+  const actions = [];
+  const dow = date.getDay(); // 1=Mon..5=Fri
+  const daysFromToday = Math.round((date - TODAY) / 86400000);
+
+  activeItems.forEach(item => {
+    if(item.type === 'mandate') {
+      const daysToEnd = Math.round((item.end - date) / 86400000);
+      if(daysToEnd <= 25 && daysToEnd > 0) {
+        if(dow === 1 || daysFromToday === 0) actions.push({text:`Urgent: Review pipeline for ${item.role} — ${daysToEnd} days until ${item.short||item.name} closes`, urgent:true});
+        else if(dow === 3) actions.push({text:`Follow up with shortlisted candidates for ${item.short||item.name} mandate`, urgent:true});
+        else if(dow === 5) actions.push({text:`Send weekly status update on ${item.short||item.name} candidate pipeline`, urgent:false});
+      } else if(daysToEnd <= 60) {
+        if(dow === 1) actions.push({text:`Draft outreach email for ${item.short||item.name} targets`, urgent:false});
+        if(dow === 4) actions.push({text:`Research new candidates for ${item.role} role`, urgent:false});
+      }
+    }
+    if(item.type === 'framework') {
+      if(dow === 2) actions.push({text:`Review active briefs under ${item.short||item.name} framework`, urgent:false});
+      if(dow === 5) actions.push({text:`Update placement tracker for ${item.short||item.name}`, urgent:false});
+    }
+    if(item.type === 'event') {
+      actions.push({text:`Prepare for ${item.name} — review attendee list and plan networking approach`, urgent:false, isEvent:true});
+    }
+  });
+
+  // Prep for upcoming events
+  EVENTS.forEach(e => {
+    const daysUntil = Math.round((e.date - date) / 86400000);
+    if(daysUntil > 0 && daysUntil <= 30 && !sameDay(date, e.date)) {
+      if(daysUntil <= 7 && dow === 1) actions.push({text:`${e.name} in ${daysUntil} days — confirm logistics and prep materials`, urgent:false, isEvent:true});
+      else if(daysUntil <= 21 && dow === 3) actions.push({text:`Research ${e.name} finalists for networking targets`, urgent:false, isEvent:true});
+    }
+  });
+
+  // Deduplicate and limit
+  const seen = new Set();
+  return actions.filter(a => { if(seen.has(a.text)) return false; seen.add(a.text); return true; }).slice(0, 3);
+}
+
+function renderWeek() {
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 4);
+  document.getElementById('weekTitle').textContent = fmtDate(weekStart) + ' — ' + fmtDate(weekEnd) + ' ' + weekEnd.getFullYear();
+
+  const grid = document.getElementById('weekGrid');
+  grid.innerHTML = '';
+
+  for(let i = 0; i < 5; i++) {
+    const date = new Date(weekStart);
+    date.setDate(date.getDate() + i);
+    const isToday = sameDay(date, TODAY);
+    const active = getActiveItems(date);
+    const aiActions = getAIActions(date, active);
+
+    const col = document.createElement('div');
+    col.className = 'day-col';
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'day-col-header' + (isToday ? ' today-header' : '');
+    header.innerHTML = `<div class="dow">${DS[i]}</div><div class="dom">${date.getDate()}</div>`;
+    col.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'day-col-body';
+
+    // Active section
+    const activeSection = document.createElement('div');
+    activeSection.className = 'active-section';
+    activeSection.innerHTML = '<div class="active-section-label">Active</div>';
+    active.forEach(item => {
+      const bar = document.createElement('div');
+      bar.className = 'active-bar ' + item.type;
+      const label = item.short || item.name;
+      let sub = '';
+      if(item.type === 'mandate') {
+        const daysToEnd = Math.round((item.end - date) / 86400000);
+        sub = `<div class="bar-sub">${daysToEnd}d remaining · ${item.confidence}</div>`;
+      }
+      if(item.type === 'event') {
+        sub = `<div class="bar-sub">${item.location} · ${item.category}</div>`;
+      }
+      if(item.type === 'framework') {
+        sub = `<div class="bar-sub">${item.buyer}</div>`;
+      }
+      bar.innerHTML = (label.length > 28 ? label.substring(0,26)+'...' : label) + sub;
+      activeSection.appendChild(bar);
+    });
+    if(active.length === 0) {
+      activeSection.innerHTML += '<div style="font-size:11px;color:#bbb;padding:8px 0">No active windows</div>';
+    }
+    body.appendChild(activeSection);
+
+    // AI section
+    const aiSection = document.createElement('div');
+    aiSection.className = 'ai-section';
+    aiSection.innerHTML = `<div class="ai-section-label"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4285F4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 017 7c0 3-2 5-3 7h-8c-1-2-3-4-3-7a7 7 0 017-7z"/><path d="M9 16v2a3 3 0 006 0v-2"/></svg> Suggested Actions</div>`;
+    if(aiActions.length === 0) {
+      aiSection.innerHTML += '<div style="font-size:11px;color:#bbb;padding:4px 0">No specific actions today</div>';
+    }
+    aiActions.forEach(a => {
+      const el = document.createElement('div');
+      el.className = 'ai-action' + (a.urgent ? ' urgent' : '') + (a.isEvent ? ' event-action' : '');
+      el.textContent = a.text;
+      aiSection.appendChild(el);
+    });
+    body.appendChild(aiSection);
+
+    col.appendChild(body);
+    grid.appendChild(col);
+  }
+
+  renderMiniCal();
+  renderWeekSummary();
+}
+
+function renderMiniCal() {
+  const year = weekStart.getFullYear(), month = weekStart.getMonth();
+  document.getElementById('miniCalTitle').textContent = MN[month] + ' ' + year;
+
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month+1, 0);
+  let startDow = firstDay.getDay();
+  startDow = startDow === 0 ? 6 : startDow - 1;
+  const sd = new Date(firstDay); sd.setDate(sd.getDate() - startDow);
+  const totalCells = Math.ceil((startDow + lastDay.getDate()) / 7) * 7;
+
+  const weekEndDate = new Date(weekStart); weekEndDate.setDate(weekEndDate.getDate() + 6);
+
+  const body = document.getElementById('miniCalBody');
+  body.innerHTML = '';
+  for(let i = 0; i < totalCells; i++) {
+    const d = new Date(sd); d.setDate(d.getDate() + i);
+    const el = document.createElement('div');
+    el.className = 'mini-cal-day';
+    if(d.getMonth() !== month) el.classList.add('other');
+    if(sameDay(d, TODAY)) el.classList.add('today');
+    if(d >= weekStart && d <= weekEndDate) el.classList.add('in-week');
+    EVENTS.forEach(e => { if(sameDay(d, e.date)) el.classList.add('has-event'); });
+    el.textContent = d.getDate();
+    const dd = new Date(d);
+    el.addEventListener('click', () => { weekStart = getMonday(dd); renderWeek(); });
+    body.appendChild(el);
+  }
+}
+
+function renderWeekSummary() {
+  const weekEnd = new Date(weekStart); weekEnd.setDate(weekEnd.getDate() + 4);
+  const summary = [];
+
+  // Closing mandates
+  MANDATES.forEach(m => {
+    if(m.closed) return;
+    const daysToEnd = Math.round((m.end - TODAY) / 86400000);
+    if(m.end >= weekStart && m.end <= new Date(weekStart.getTime() + 30*86400000)) {
+      const cls = daysToEnd <= 14 ? 'ws-urgent' : 'ws-mandate';
+      summary.push({html:`<strong>${m.short||m.name}</strong> closes in ${daysToEnd} days — ${m.role} placement is priority.`, cls});
+    }
+  });
+
+  // Events this week or coming
+  EVENTS.forEach(e => {
+    const daysUntil = Math.round((e.date - weekStart) / 86400000);
+    if(daysUntil >= 0 && daysUntil <= 30) {
+      summary.push({html:`<strong>${e.name}</strong> — ${fmtDate(e.date)} — ${e.location}. Prepare networking approach.`, cls:'ws-event'});
+    }
+  });
+
+  // Active frameworks
+  FRAMEWORKS.forEach(f => {
+    if(weekStart >= f.start && weekStart <= f.end) {
+      summary.push({html:`<strong>${f.short||f.name}</strong> framework is live — maximise placement activity.`, cls:''});
+    }
+  });
+
+  document.getElementById('weekSummary').innerHTML = summary.slice(0,4).map(s => `<div class="ws-item ${s.cls}">${s.html}</div>`).join('');
+}
+
+function changeWeek(dir) {
+  weekStart.setDate(weekStart.getDate() + dir * 7);
+  weekStart = getMonday(weekStart);
+  renderWeek();
+}
+function goToday() {
+  weekStart = getMonday(TODAY);
+  renderWeek();
+}
+
+renderWeek();
+</script>
+</body>
+</html>

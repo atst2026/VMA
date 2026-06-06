@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMA Group — Kanban Triage / Morning Dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1f36; color: #e0e4ec; min-height: 100vh; }
+
+  /* ── Top Bar ── */
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; background: #141829; border-bottom: 1px solid #2a2f48; }
+  .topbar .logo { font-size: 18px; font-weight: 700; letter-spacing: 1px; color: #fff; }
+  .topbar .logo span { color: #5b8fb9; }
+  .tabs { display: flex; gap: 4px; }
+  .tab-btn { padding: 8px 22px; border: none; border-radius: 6px 6px 0 0; cursor: pointer; font-size: 13px; font-weight: 600; background: #232840; color: #8a90a8; transition: all .2s; }
+  .tab-btn.active { background: #1a1f36; color: #fff; }
+  .tab-btn:hover:not(.active) { color: #c0c6d8; }
+
+  .page { display: none; padding: 24px 32px; }
+  .page.active { display: block; }
+
+  /* ═══ RADAR: KANBAN ═══ */
+  .kanban-topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .kanban-title { font-size: 16px; font-weight: 700; color: #fff; }
+  .pipeline-stats { font-size: 12px; color: #8a90a8; background: #232840; padding: 8px 16px; border-radius: 8px; }
+  .pipeline-stats strong { color: #fff; }
+  .pipeline-stats .fee { color: #4ade80; font-weight: 700; }
+
+  .kanban-board { display: flex; gap: 16px; height: calc(100vh - 160px); }
+  .kanban-col { flex: 1; display: flex; flex-direction: column; background: #141829; border-radius: 10px; overflow: hidden; border: 1px solid #2a2f48; }
+  .kanban-col-header { padding: 12px 16px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid; }
+  .kanban-col-header .col-count { font-size: 11px; font-weight: 400; opacity: .7; background: #ffffff15; padding: 2px 8px; border-radius: 10px; }
+  .col-new .kanban-col-header { background: #1e2e3a; color: #60a5fa; border-color: #60a5fa; }
+  .col-eval .kanban-col-header { background: #3a2a1e; color: #fbbf24; border-color: #fbbf24; }
+  .col-outreach .kanban-col-header { background: #1e2340; color: #8a90a8; border-color: #385578; }
+  .col-won .kanban-col-header { background: #1e3a2a; color: #4ade80; border-color: #4ade80; }
+
+  .kanban-col-body { flex: 1; padding: 10px; overflow-y: auto; min-height: 60px; }
+  .kanban-col-body.drag-over { background: #ffffff08; }
+
+  .kanban-card { background: #1e2340; border: 1px solid #2a2f48; border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; cursor: grab; transition: transform .15s, box-shadow .15s; user-select: none; }
+  .kanban-card:active { cursor: grabbing; }
+  .kanban-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px #00000040; }
+  .kanban-card.dragging { opacity: .4; }
+  .card-company { font-weight: 700; font-size: 13px; color: #fff; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  .card-role { font-size: 11px; color: #8a90a8; }
+  .card-meta { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .card-strength { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .card-strength.high { background: #4ade80; }
+  .card-strength.med { background: #fbbf24; }
+  .card-strength.low { background: #f87171; }
+  .card-timer { font-size: 10px; color: #fbbf24; display: flex; align-items: center; gap: 4px; }
+  .card-timer svg { width: 12px; height: 12px; fill: #fbbf24; }
+  .card-fee { font-size: 10px; color: #4ade80; margin-left: auto; }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: #000000aa; z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #1e2340; border: 1px solid #2a2f48; border-radius: 12px; width: 480px; max-width: 90vw; padding: 28px; box-shadow: 0 20px 60px #000000aa; }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .modal-header h2 { font-size: 18px; color: #fff; }
+  .modal-close { background: none; border: none; color: #8a90a8; font-size: 22px; cursor: pointer; padding: 4px; }
+  .modal-close:hover { color: #fff; }
+  .modal-body .field { margin-bottom: 14px; }
+  .modal-body .field-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: #5b8fb9; margin-bottom: 4px; }
+  .modal-body .field-value { font-size: 13px; color: #e0e4ec; }
+  .modal-body .strength-indicator { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+  .modal-body .tag { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .modal-body .tag-stage { background: #1e2e3a; color: #60a5fa; }
+  .modal-body .notes-box { background: #141829; border: 1px solid #2a2f48; border-radius: 6px; padding: 12px; font-size: 12px; color: #8a90a8; line-height: 1.6; margin-top: 4px; }
+
+  /* ═══ CALENDAR: MORNING DASHBOARD ═══ */
+  .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 16px; height: calc(100vh - 130px); }
+  .dash-quad { background: #141829; border: 1px solid #2a2f48; border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; }
+  .dash-quad-header { padding: 14px 18px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: #5b8fb9; border-bottom: 1px solid #2a2f48; display: flex; align-items: center; gap: 8px; }
+  .dash-quad-body { flex: 1; padding: 16px 18px; overflow: auto; }
+
+  /* Expiring Soon */
+  .expiry-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #1e2340; }
+  .expiry-item:last-child { border-bottom: none; }
+  .expiry-name { flex: 1; font-size: 13px; color: #e0e4ec; }
+  .expiry-type { font-size: 10px; color: #8a90a8; }
+  .countdown-pill { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 10px; white-space: nowrap; }
+  .pill-red { background: #3a1e1e; color: #f87171; }
+  .pill-amber { background: #3a2a1e; color: #fbbf24; }
+
+  /* Month Calendar */
+  .month-header { text-align: center; font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 12px; }
+  .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+  .month-grid .day-label { font-size: 10px; font-weight: 600; color: #5b8fb9; padding: 4px; }
+  .month-grid .day-cell { position: relative; padding: 6px 0; font-size: 12px; color: #8a90a8; border-radius: 4px; }
+  .month-grid .day-cell.today { background: #232840; color: #fff; font-weight: 700; }
+  .month-grid .day-cell.empty { }
+  .event-dots { display: flex; gap: 2px; justify-content: center; margin-top: 2px; }
+  .event-dot { width: 5px; height: 5px; border-radius: 50%; }
+  .dot-blue { background: #5b8fb9; }
+  .dot-green { background: #4ade80; }
+  .dot-amber { background: #fbbf24; }
+
+  /* AI Briefing */
+  .ai-briefing { font-size: 13px; line-height: 1.8; color: #c0c6d8; }
+  .ai-briefing p { margin-bottom: 12px; }
+  .ai-briefing .ai-tag { display: inline-block; padding: 2px 8px; background: #232840; border-radius: 4px; font-size: 10px; font-weight: 700; color: #5b8fb9; margin-bottom: 12px; }
+
+  /* Quick Stats */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; height: 100%; align-content: center; }
+  .stat-card { text-align: center; padding: 16px; }
+  .stat-number { font-size: 36px; font-weight: 800; color: #fff; line-height: 1; }
+  .stat-label { font-size: 11px; color: #8a90a8; margin-top: 6px; text-transform: uppercase; letter-spacing: .5px; }
+  .stat-change { font-size: 11px; margin-top: 4px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 4px; }
+  .stat-up { color: #4ade80; }
+  .stat-down { color: #f87171; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">VMA<span>Group</span></div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('radar')">Communications Radar</button>
+    <button class="tab-btn" onclick="switchTab('calendar')">BD Calendar</button>
+  </div>
+</div>
+
+<!-- ═══════════════ RADAR: KANBAN TRIAGE ═══════════════ -->
+<div class="page active" id="page-radar">
+  <div class="kanban-topbar">
+    <div class="kanban-title">Kanban Triage</div>
+    <div class="pipeline-stats">Pipeline: <strong>12 active</strong> &middot; 3 this week &middot; <span class="fee">&pound;84k potential fees</span></div>
+  </div>
+  <div class="kanban-board" id="kanban-board"></div>
+</div>
+
+<!-- ═══════════════ CALENDAR: MORNING DASHBOARD ═══════════════ -->
+<div class="page" id="page-calendar">
+  <div class="dashboard-grid">
+    <!-- Top-Left: Expiring Soon -->
+    <div class="dash-quad">
+      <div class="dash-quad-header">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Expiring Soon
+      </div>
+      <div class="dash-quad-body">
+        <div class="expiry-item">
+          <div class="expiry-name">NHS England Comms Framework</div>
+          <div class="expiry-type">Framework</div>
+          <div class="countdown-pill pill-red">3 days</div>
+        </div>
+        <div class="expiry-item">
+          <div class="expiry-name">CIPR Excellence Awards — Entry Deadline</div>
+          <div class="expiry-type">Event</div>
+          <div class="countdown-pill pill-red">6 days</div>
+        </div>
+        <div class="expiry-item">
+          <div class="expiry-name">Crown Commercial Service Bid</div>
+          <div class="expiry-type">Framework</div>
+          <div class="countdown-pill pill-amber">9 days</div>
+        </div>
+        <div class="expiry-item">
+          <div class="expiry-name">Q3 Budget Planning Window</div>
+          <div class="expiry-type">Window</div>
+          <div class="countdown-pill pill-amber">12 days</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top-Right: This Month -->
+    <div class="dash-quad">
+      <div class="dash-quad-header">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5b8fb9" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        June 2026
+      </div>
+      <div class="dash-quad-body" id="month-cal"></div>
+    </div>
+
+    <!-- Bottom-Left: AI Briefing -->
+    <div class="dash-quad">
+      <div class="dash-quad-header">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5b8fb9" stroke-width="2.5" stroke-linecap="round"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 14v4"/></svg>
+        AI Briefing
+      </div>
+      <div class="dash-quad-body">
+        <div class="ai-briefing">
+          <div class="ai-tag">Generated today at 07:30</div>
+          <p>Three framework deadlines are approaching within the next two weeks, with the NHS England Comms Framework being the most urgent at 3 days remaining. Prioritise finalisation of the bid response and ensure the pricing schedule is signed off by the senior partner today.</p>
+          <p>Two high-conviction BD signals were detected overnight: Unilever is actively recruiting for Head of Communications roles while simultaneously showing executive-level restructuring signals. This presents a strong retained search opportunity worth exploring with the client partner.</p>
+          <p>The CIPR Excellence Awards entry deadline falls next Friday. Submit the VMA Group case study for the "Best Use of Communications in Recruitment" category, which has already been drafted and is awaiting final review.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom-Right: Quick Stats -->
+    <div class="dash-quad">
+      <div class="dash-quad-header">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5b8fb9" stroke-width="2.5" stroke-linecap="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+        Quick Stats
+      </div>
+      <div class="dash-quad-body">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-number">14</div>
+            <div class="stat-label">Active Frameworks</div>
+            <div class="stat-change stat-up"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-8 8h5v8h6v-8h5z"/></svg> +2 this month</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">7</div>
+            <div class="stat-label">Upcoming Events</div>
+            <div class="stat-change stat-up"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-8 8h5v8h6v-8h5z"/></svg> +1 added</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">5</div>
+            <div class="stat-label">Open Windows</div>
+            <div class="stat-change stat-down"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 20l8-8h-5V4H9v8H4z"/></svg> -1 closed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">12</div>
+            <div class="stat-label">Pipeline Leads</div>
+            <div class="stat-change stat-up"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-8 8h5v8h6v-8h5z"/></svg> +3 this week</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 id="modal-title">Lead Details</h2>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ── Tab Switching ──
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', (tab === 'radar' && i === 0) || (tab === 'calendar' && i === 1));
+  });
+  document.getElementById('page-radar').classList.toggle('active', tab === 'radar');
+  document.getElementById('page-calendar').classList.toggle('active', tab === 'calendar');
+}
+
+// ── KANBAN DATA ──
+const leads = [
+  { id: 1, company: 'Unilever', role: 'VP Corporate Affairs', strength: 'high', stage: 'new', trigger: 'Exec Move', fee: '£12k', days: null, source: 'AI Signal', notes: 'Detected executive departure via LinkedIn. VP Corporate Affairs left after 6 years. Likely replacement search imminent. Unilever is an existing VMA client — warm relationship with HR Director.' },
+  { id: 2, company: 'Shell', role: 'Head of External Affairs', strength: 'high', stage: 'new', trigger: 'Exec Move', fee: '£15k', days: null, source: 'Press Release', notes: 'Shell announced restructuring of External Affairs division. Current Head is moving to an advisory role. Strong opportunity for retained search engagement.' },
+  { id: 3, company: 'Barclays', role: 'Dir. Corporate Comms', strength: 'med', stage: 'new', trigger: 'Reorg', fee: '£10k', days: null, source: 'AI Signal', notes: 'Barclays restructuring corporate comms team following merger of two internal divisions. Likely net-new role.' },
+  { id: 4, company: 'AstraZeneca', role: 'Global Comms Lead', strength: 'med', stage: 'evaluating', trigger: 'Expansion', fee: '£14k', days: 3, source: 'LinkedIn', notes: 'AstraZeneca expanding comms team as part of Asia-Pacific growth strategy. Initial contact made with their talent acquisition lead.' },
+  { id: 5, company: 'Diageo', role: 'Head of Public Affairs', strength: 'low', stage: 'evaluating', trigger: 'New Hire', fee: '£8k', days: 5, source: 'Job Board', notes: 'Diageo posted the role on Adzuna 5 days ago. May be handling internally. Low conviction but worth monitoring.' },
+  { id: 6, company: 'GSK', role: 'Investor Relations Dir.', strength: 'med', stage: 'evaluating', trigger: 'Funding', fee: '£11k', days: 2, source: 'AI Signal', notes: 'GSK recently closed a major funding round. IR Director role appears newly created. Outreach to CFO office recommended.' },
+  { id: 7, company: 'HSBC', role: 'VP Corporate Comms', strength: 'high', stage: 'outreach', trigger: 'Exec Move', fee: '£14k', days: null, source: 'Referral', notes: 'Referred by existing contact within HSBC. VP role is confirmed open. Proposal sent to Head of Talent Acquisition on 2 June. Follow-up scheduled for 9 June.' },
+  { id: 8, company: 'Vodafone', role: 'Head of Brand & Comms', strength: 'med', stage: 'outreach', trigger: 'Reorg', fee: '£9k', days: null, source: 'LinkedIn', notes: 'Initial outreach via LinkedIn InMail. HR Business Partner responded with interest. Pitch deck sent. Awaiting confirmation of shortlist meeting.' },
+  { id: 9, company: 'BP', role: 'Internal Comms Lead', strength: 'med', stage: 'outreach', trigger: 'Expansion', fee: '£7k', days: null, source: 'AI Signal', notes: 'BP expanding internal communications function following net-zero strategy launch. Contact made with comms director. Waiting on budget approval.' },
+  { id: 10, company: 'Rolls-Royce', role: 'Comms Transformation Mgr', strength: 'low', stage: 'won', trigger: 'Reorg', fee: '£6k', days: null, source: 'Direct', notes: 'Engagement won. Contract signed 28 May. Candidate shortlist due by 20 June. Exclusive retained search — 3 candidates currently in pipeline.' },
+  { id: 11, company: 'Tesco', role: 'Corporate Affairs Mgr', strength: 'med', stage: 'won', trigger: 'New Hire', fee: '£8k', days: null, source: 'Referral', notes: 'Engagement won. Start fee invoiced. Replacement hire for maternity cover transitioning to permanent. Two candidates at final interview stage.' },
+  { id: 12, company: 'Network Rail', role: 'Head of Stakeholder Comms', strength: 'high', stage: 'lost', trigger: 'Reorg', fee: '£0', days: null, source: 'Framework', notes: 'Lost to competitor — Odgers Berndtson won on price. Feedback: VMA shortlisted but fee structure was 15% higher. Consider pricing review for public sector bids.' }
+];
+
+const columns = [
+  { key: 'new', label: 'New', colorClass: 'col-new' },
+  { key: 'evaluating', label: 'Evaluating', colorClass: 'col-eval' },
+  { key: 'outreach', label: 'Outreach Sent', colorClass: 'col-outreach' },
+  { key: 'won', label: 'Won / Lost', colorClass: 'col-won' }
+];
+
+function getStageKey(stage) {
+  if (stage === 'lost') return 'won';
+  return stage;
+}
+
+function renderKanban() {
+  const board = document.getElementById('kanban-board');
+  board.innerHTML = columns.map(col => {
+    const colLeads = leads.filter(l => getStageKey(l.stage) === col.key);
+    return `<div class="kanban-col ${col.colorClass}">
+      <div class="kanban-col-header">${col.label} <span class="col-count">${colLeads.length}</span></div>
+      <div class="kanban-col-body" data-stage="${col.key}"
+           ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, '${col.key}')">
+        ${colLeads.map(l => renderCard(l)).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderCard(l) {
+  const timerHtml = l.stage === 'evaluating' && l.days != null
+    ? `<span class="card-timer"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="12 6 12 12 16 14" fill="none" stroke="currentColor" stroke-width="2"/></svg>${l.days}d</span>`
+    : '';
+  const wonLost = l.stage === 'won' ? '<span style="color:#4ade80;font-size:10px;font-weight:700;">WON</span>' : l.stage === 'lost' ? '<span style="color:#f87171;font-size:10px;font-weight:700;">LOST</span>' : '';
+  return `<div class="kanban-card" draggable="true" data-id="${l.id}"
+               ondragstart="handleDragStart(event, ${l.id})" ondragend="handleDragEnd(event)"
+               ondblclick="openModal(${l.id})">
+    <div class="card-company">${l.company} ${wonLost}</div>
+    <div class="card-role">${l.role}</div>
+    <div class="card-meta">
+      <span class="card-strength ${l.strength}"></span>
+      <span style="font-size:10px;color:#8a90a8;">${l.trigger}</span>
+      ${timerHtml}
+      <span class="card-fee">${l.fee}</span>
+    </div>
+  </div>`;
+}
+
+// Drag and Drop
+let draggedId = null;
+
+function handleDragStart(e, id) {
+  draggedId = id;
+  e.target.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleDragEnd(e) {
+  e.target.classList.remove('dragging');
+  document.querySelectorAll('.kanban-col-body').forEach(b => b.classList.remove('drag-over'));
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function handleDrop(e, newStage) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (draggedId == null) return;
+  const lead = leads.find(l => l.id === draggedId);
+  if (lead) {
+    lead.stage = newStage;
+    renderKanban();
+  }
+  draggedId = null;
+}
+
+// Modal
+function openModal(id) {
+  const l = leads.find(lead => lead.id === id);
+  if (!l) return;
+  document.getElementById('modal-title').textContent = l.company;
+  const stageLabels = { new: 'New', evaluating: 'Evaluating', outreach: 'Outreach Sent', won: 'Won', lost: 'Lost' };
+  document.getElementById('modal-body').innerHTML = `
+    <div class="field">
+      <div class="field-label">Role</div>
+      <div class="field-value">${l.role}</div>
+    </div>
+    <div class="field">
+      <div class="field-label">Stage</div>
+      <div class="field-value"><span class="tag tag-stage">${stageLabels[l.stage] || l.stage}</span></div>
+    </div>
+    <div class="field">
+      <div class="field-label">Signal Strength</div>
+      <div class="field-value"><span class="strength-indicator"><span class="card-strength ${l.strength}" style="display:inline-block;"></span> ${l.strength.charAt(0).toUpperCase() + l.strength.slice(1)}</span></div>
+    </div>
+    <div class="field">
+      <div class="field-label">Trigger</div>
+      <div class="field-value">${l.trigger}</div>
+    </div>
+    <div class="field">
+      <div class="field-label">Source</div>
+      <div class="field-value">${l.source}</div>
+    </div>
+    <div class="field">
+      <div class="field-label">Estimated Fee</div>
+      <div class="field-value" style="color:#4ade80;font-weight:700;">${l.fee}</div>
+    </div>
+    <div class="field">
+      <div class="field-label">Notes</div>
+      <div class="notes-box">${l.notes}</div>
+    </div>
+  `;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.getElementById('modal-overlay').classList.remove('open'); });
+
+renderKanban();
+
+// ── MONTH CALENDAR ──
+function buildMonthCal() {
+  const container = document.getElementById('month-cal');
+  const year = 2026, month = 5; // June
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const offset = firstDay === 0 ? 6 : firstDay - 1; // Mon start
+
+  // Events on specific dates
+  const events = {
+    3: ['amber'], // NHS deadline near
+    6: ['blue'], // today
+    9: ['blue', 'green'],
+    12: ['amber'],
+    15: ['green'],
+    18: ['blue'],
+    20: ['blue', 'amber'],
+    22: ['green'],
+    23: ['green'],
+    24: ['green'],
+    28: ['amber'],
+    30: ['blue']
+  };
+
+  let html = '<div class="month-header">June 2026</div><div class="month-grid">';
+  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d => {
+    html += `<div class="day-label">${d}</div>`;
+  });
+  for (let i = 0; i < offset; i++) html += '<div class="day-cell empty"></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = d === 6;
+    const dots = events[d] ? `<div class="event-dots">${events[d].map(c => `<div class="event-dot dot-${c}"></div>`).join('')}</div>` : '';
+    html += `<div class="day-cell ${isToday ? 'today' : ''}">${d}${dots}</div>`;
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+buildMonthCal();
+</script>
+</body>
+</html>

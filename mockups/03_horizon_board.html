@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMA Group — Horizon Board / Opportunity Heatmap</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #1a1f36; color: #e8ecf1; min-height: 100vh; }
+
+  /* ── Tabs ── */
+  .tab-bar { display: flex; background: #141829; border-bottom: 1px solid #2a3050; padding: 0 32px; }
+  .tab-bar button { background: none; border: none; color: #7a86a8; font-size: 14px; font-weight: 500; padding: 14px 24px; cursor: pointer; border-bottom: 2px solid transparent; transition: color .2s, border-color .2s; letter-spacing: .3px; }
+  .tab-bar button.active { color: #fff; border-bottom-color: #5b8dce; }
+  .tab-bar button:hover:not(.active) { color: #b0bdd4; }
+
+  .page { display: none; height: calc(100vh - 49px); overflow: hidden; }
+  .page.active { display: flex; flex-direction: column; }
+
+  /* ── Page header ── */
+  .page-header { padding: 24px 32px 16px; }
+  .page-header h1 { font-size: 22px; font-weight: 600; color: #fff; }
+  .page-header p { font-size: 13px; color: #7a86a8; margin-top: 4px; }
+
+  /* ═══════════════════════════════════════
+     PAGE 1 — HORIZON BOARD (Radar)
+     ═══════════════════════════════════════ */
+  .horizon-wrapper { display: flex; flex: 1; overflow: hidden; }
+  .horizon-columns { display: flex; flex: 1; gap: 16px; padding: 0 32px 24px; overflow: auto; }
+  .horizon-col { flex: 1; min-width: 220px; background: #1f2541; border-radius: 10px; display: flex; flex-direction: column; }
+  .horizon-col-header { padding: 16px 18px 12px; border-bottom: 1px solid #2a3050; display: flex; align-items: center; justify-content: space-between; }
+  .horizon-col-header h2 { font-size: 14px; font-weight: 600; color: #c8d1e2; }
+  .horizon-col-header .sub { font-size: 11px; color: #5e6a8a; margin-top: 2px; }
+  .count-badge { background: #2e3a5e; color: #8fa4cc; font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 20px; }
+
+  .horizon-col-body { padding: 12px 14px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+
+  /* ── Pill ── */
+  .pill { display: flex; align-items: center; gap: 10px; background: #262d4a; border-radius: 8px; padding: 10px 14px; cursor: pointer; transition: background .15s, transform .1s; }
+  .pill:hover { background: #303960; transform: translateX(3px); }
+  .pill.selected { background: #385578; box-shadow: inset 3px 0 0 #5b8dce; }
+  .pill .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot.green { background: #3ecf8e; }
+  .dot.amber { background: #f5a623; }
+  .dot.grey  { background: #6b7394; }
+  .pill .pill-label { font-size: 13px; font-weight: 500; color: #d4dae8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ── Drawer ── */
+  .drawer-overlay { position: fixed; inset: 0; background: rgba(10,12,24,.45); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 90; }
+  .drawer-overlay.open { opacity: 1; pointer-events: auto; }
+  .drawer { position: fixed; top: 0; right: 0; width: 420px; height: 100vh; background: #1f2541; box-shadow: -6px 0 30px rgba(0,0,0,.4); transform: translateX(100%); transition: transform .3s cubic-bezier(.4,0,.2,1); z-index: 100; display: flex; flex-direction: column; }
+  .drawer.open { transform: translateX(0); }
+  .drawer-header { padding: 24px 24px 16px; border-bottom: 1px solid #2a3050; display: flex; justify-content: space-between; align-items: flex-start; }
+  .drawer-header h2 { font-size: 18px; font-weight: 600; color: #fff; }
+  .drawer-close { background: none; border: none; color: #7a86a8; font-size: 22px; cursor: pointer; padding: 4px 8px; border-radius: 6px; line-height: 1; }
+  .drawer-close:hover { background: #2a3050; color: #fff; }
+  .drawer-body { padding: 20px 24px; flex: 1; overflow-y: auto; }
+  .drawer-body .detail-row { margin-bottom: 16px; }
+  .drawer-body .detail-label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: #5e6a8a; letter-spacing: .8px; margin-bottom: 4px; }
+  .drawer-body .detail-value { font-size: 14px; color: #d4dae8; line-height: 1.5; }
+  .drawer-body .evidence-box { background: #262d4a; border-radius: 8px; padding: 14px; margin-top: 8px; font-size: 13px; color: #a0acc8; line-height: 1.55; border-left: 3px solid #385578; }
+  .drawer-actions { padding: 20px 24px; border-top: 1px solid #2a3050; display: flex; gap: 10px; }
+  .btn { padding: 9px 18px; border-radius: 7px; border: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: background .15s; }
+  .btn-primary { background: #5b8dce; color: #fff; }
+  .btn-primary:hover { background: #4a7bbd; }
+  .btn-secondary { background: #2e3a5e; color: #c8d1e2; }
+  .btn-secondary:hover { background: #3a4870; }
+
+  /* ═══════════════════════════════════════
+     PAGE 2 — OPPORTUNITY HEATMAP (Calendar)
+     ═══════════════════════════════════════ */
+  .heatmap-page { padding: 0 32px 24px; flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+  .ai-insight { background: linear-gradient(90deg, #263052, #1f2541); border: 1px solid #2e3a5e; border-radius: 10px; padding: 14px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
+  .ai-insight .ai-badge { background: #5b8dce; color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; letter-spacing: .5px; flex-shrink: 0; }
+  .ai-insight p { font-size: 13px; color: #a0acc8; }
+  .ai-insight strong { color: #fff; }
+
+  .heatmap-scroll { flex: 1; overflow: auto; }
+  .heatmap-table { width: 100%; border-collapse: separate; border-spacing: 3px; }
+  .heatmap-table th { font-size: 11px; font-weight: 600; color: #5e6a8a; text-transform: uppercase; letter-spacing: .6px; padding: 8px 4px; text-align: center; }
+  .heatmap-table th.row-label { text-align: left; padding-left: 8px; min-width: 110px; }
+  .heatmap-table td { text-align: center; padding: 0; }
+  .heatmap-cell { width: 100%; aspect-ratio: 1.6; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: transform .1s, box-shadow .15s; min-height: 38px; }
+  .heatmap-cell:hover { transform: scale(1.08); box-shadow: 0 0 12px rgba(91,141,206,.3); z-index: 2; position: relative; }
+  .heat-0 { background: #1f2541; color: #3a4260; }
+  .heat-1 { background: #253a5c; color: #7aaad4; }
+  .heat-2 { background: #2e5580; color: #b0d4f1; }
+  .heat-3 { background: #3872a8; color: #fff; }
+  .total-cell { font-size: 12px; font-weight: 700; color: #8fa4cc; }
+  .total-header { color: #7a86a8 !important; }
+
+  /* ── Bottom drawer ── */
+  .bottom-drawer { position: absolute; bottom: 0; left: 0; right: 0; background: #1f2541; border-top: 1px solid #2a3050; border-radius: 12px 12px 0 0; transform: translateY(100%); transition: transform .3s cubic-bezier(.4,0,.2,1); z-index: 80; max-height: 260px; box-shadow: 0 -4px 24px rgba(0,0,0,.3); }
+  .bottom-drawer.open { transform: translateY(0); }
+  .bottom-drawer-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 24px 10px; border-bottom: 1px solid #2a3050; }
+  .bottom-drawer-header h3 { font-size: 14px; font-weight: 600; color: #c8d1e2; }
+  .bottom-drawer-body { padding: 14px 24px; overflow-y: auto; max-height: 190px; }
+  .bottom-drawer-body .bd-item { padding: 8px 0; border-bottom: 1px solid #262d4a; font-size: 13px; color: #a0acc8; display: flex; justify-content: space-between; }
+  .bottom-drawer-body .bd-item:last-child { border-bottom: none; }
+  .bd-item .bd-name { color: #d4dae8; font-weight: 500; }
+  .bd-item .bd-date { color: #5e6a8a; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<!-- Tab Bar -->
+<div class="tab-bar">
+  <button class="active" onclick="switchTab('radar')">Communications Radar</button>
+  <button onclick="switchTab('calendar')">BD Calendar</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE 1 — HORIZON BOARD
+     ═══════════════════════════════════════════════ -->
+<div id="page-radar" class="page active">
+  <div class="page-header">
+    <h1>Horizon Board</h1>
+    <p>Prioritised pipeline across three time horizons. Click any lead for full detail.</p>
+  </div>
+  <div class="horizon-wrapper">
+    <div class="horizon-columns" id="horizon-columns"></div>
+  </div>
+</div>
+
+<!-- Right drawer -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div>
+      <h2 id="drawer-company">—</h2>
+      <div style="font-size:12px;color:#5e6a8a;margin-top:4px;" id="drawer-horizon">—</div>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">&times;</button>
+  </div>
+  <div class="drawer-body">
+    <div class="detail-row"><div class="detail-label">Role / Brief</div><div class="detail-value" id="drawer-role">—</div></div>
+    <div class="detail-row"><div class="detail-label">Trigger</div><div class="detail-value" id="drawer-trigger">—</div></div>
+    <div class="detail-row"><div class="detail-label">Signal Strength</div><div class="detail-value" id="drawer-strength">—</div></div>
+    <div class="detail-row"><div class="detail-label">Evidence</div><div class="evidence-box" id="drawer-evidence">—</div></div>
+  </div>
+  <div class="drawer-actions">
+    <button class="btn btn-primary">Draft Pitch</button>
+    <button class="btn btn-secondary">Add to Pipeline</button>
+    <button class="btn btn-secondary">Dismiss</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE 2 — OPPORTUNITY HEATMAP
+     ═══════════════════════════════════════════════ -->
+<div id="page-calendar" class="page">
+  <div class="page-header">
+    <h1>Opportunity Heatmap</h1>
+    <p>Density of BD windows by category and month. Click any cell to drill in.</p>
+  </div>
+  <div class="heatmap-page">
+    <div class="ai-insight">
+      <span class="ai-badge">AI</span>
+      <p><strong>Q3 has 8 overlapping windows</strong> — your busiest pitch period. Consider front-loading outreach in June to avoid bottlenecks.</p>
+    </div>
+    <div class="heatmap-scroll">
+      <table class="heatmap-table" id="heatmap-table"></table>
+    </div>
+    <div class="bottom-drawer" id="bottom-drawer">
+      <div class="bottom-drawer-header">
+        <h3 id="bd-drawer-title">—</h3>
+        <button class="drawer-close" onclick="closeBottomDrawer()">&times;</button>
+      </div>
+      <div class="bottom-drawer-body" id="bd-drawer-body"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── Tab switching ── */
+function switchTab(tab) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  document.querySelector('.tab-bar button' + (tab === 'radar' ? ':first-child' : ':last-child')).classList.add('active');
+  closeDrawer();
+  closeBottomDrawer();
+}
+
+/* ═══════════════════════════════════════
+   HORIZON BOARD DATA & RENDER
+   ═══════════════════════════════════════ */
+const leads = [
+  { id:1, company:'Diageo', strength:'green', horizon:'act', role:'Group Head of Communications', trigger:'Incumbent departing Q2', brief:'Global FTSE 100 spirits group seeking senior comms leader to manage corporate reputation and ESG narrative.', evidence:'LinkedIn shows incumbent changed status to "open to work". Board minutes reference leadership transition in corporate affairs.' },
+  { id:2, company:'Unilever', strength:'green', horizon:'act', role:'VP External Affairs — Europe', trigger:'Restructure announced', brief:'New operating model creating standalone European external affairs function.', evidence:'CEO announcement on 12 May confirmed divisional split. Three sources confirm new VP-level role in scoping.' },
+  { id:3, company:'Network Rail', strength:'amber', horizon:'act', role:'Director of Public Affairs', trigger:'Regulatory review', brief:'ORR periodic review driving comms restructure across the organisation.', evidence:'ORR PR23 final determination published. Industry contacts confirm budget uplift for public affairs.' },
+  { id:4, company:'Barclays', strength:'green', horizon:'act', role:'Head of Internal Communications', trigger:'New CHRO appointment', brief:'Incoming CHRO reshaping people & culture communications team.', evidence:'CHRO started 1 April. Glassdoor reviews mention "comms overhaul" in May updates.' },
+  { id:5, company:'GSK', strength:'amber', horizon:'approaching', role:'Senior Director, Corporate Comms', trigger:'Post-demerger brand build', brief:'Standalone GSK building new corporate communications capability after Haleon split.', evidence:'Job postings for 3 comms roles appeared in April. IR day slides reference "brand investment phase".' },
+  { id:6, company:'Rolls-Royce', strength:'green', horizon:'approaching', role:'Group Head of Government Relations', trigger:'Defence spending uplift', brief:'UK defence budget increase creating expanded government relations requirement.', evidence:'Spring Statement confirmed 2.5% GDP defence target. Company FY results flagged "enhanced stakeholder engagement".' },
+  { id:7, company:'Thames Water', strength:'amber', horizon:'approaching', role:'Crisis & Reputation Director', trigger:'Regulatory enforcement', brief:'Ofwat enforcement action driving urgent need for senior reputation management.', evidence:'Ofwat penalty notice issued March. Media monitoring shows 340% increase in negative coverage.' },
+  { id:8, company:'Tesco', strength:'grey', horizon:'watch', role:'Head of Sustainability Comms', trigger:'CSRD reporting requirement', brief:'EU reporting directive creating new sustainability communications function.', evidence:'Annual report mentions "dedicated sustainability communications resource" in forward plan. Timeline aligns with Jan 2027 reporting deadline.' },
+  { id:9, company:'BP', strength:'grey', horizon:'watch', role:'VP Communications — Transition', trigger:'Energy transition strategy', brief:'Strategic pivot creating need for narrative leadership around energy transition.', evidence:'Strategy day presentation referenced "evolving our story". Headcount plan shows Q4 hire window.' },
+  { id:10, company:'Heathrow Airport', strength:'amber', horizon:'watch', role:'Director of External Affairs', trigger:'Expansion planning restart', brief:'Third runway consultation restarting, requiring senior external affairs leadership.', evidence:'DfT consultation response expected autumn. Aviation industry sources confirm lobbying ramp-up.' },
+];
+
+const columns = [
+  { key:'act', title:'Act Now', sub:'0 – 4 weeks' },
+  { key:'approaching', title:'Approaching', sub:'1 – 3 months' },
+  { key:'watch', title:'Watch', sub:'3 – 6 months' },
+];
+
+function renderHorizon() {
+  const container = document.getElementById('horizon-columns');
+  container.innerHTML = '';
+  columns.forEach(col => {
+    const items = leads.filter(l => l.horizon === col.key);
+    const colEl = document.createElement('div');
+    colEl.className = 'horizon-col';
+    colEl.innerHTML = `
+      <div class="horizon-col-header">
+        <div><h2>${col.title}</h2><div class="sub">${col.sub}</div></div>
+        <span class="count-badge">${items.length}</span>
+      </div>
+      <div class="horizon-col-body">
+        ${items.map(it => `
+          <div class="pill" data-id="${it.id}" onclick="openDrawer(${it.id})">
+            <span class="dot ${it.strength}"></span>
+            <span class="pill-label">${it.company}</span>
+          </div>
+        `).join('')}
+      </div>`;
+    container.appendChild(colEl);
+  });
+}
+
+let selectedPill = null;
+function openDrawer(id) {
+  const lead = leads.find(l => l.id === id);
+  if (!lead) return;
+  document.getElementById('drawer-company').textContent = lead.company;
+  const colMeta = columns.find(c => c.key === lead.horizon);
+  document.getElementById('drawer-horizon').textContent = colMeta.title + ' · ' + colMeta.sub;
+  document.getElementById('drawer-role').textContent = lead.role;
+  document.getElementById('drawer-trigger').textContent = lead.trigger;
+  const strengthMap = { green:'Strong', amber:'Moderate', grey:'Early' };
+  document.getElementById('drawer-strength').innerHTML = `<span class="dot ${lead.strength}" style="display:inline-block;vertical-align:middle;margin-right:6px;"></span>${strengthMap[lead.strength]}`;
+  document.getElementById('drawer-evidence').textContent = lead.evidence;
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer-overlay').classList.add('open');
+  // highlight pill
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('selected'));
+  const pill = document.querySelector(`.pill[data-id="${id}"]`);
+  if (pill) pill.classList.add('selected');
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('selected'));
+}
+
+/* ═══════════════════════════════════════
+   HEATMAP DATA & RENDER
+   ═══════════════════════════════════════ */
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const categories = ['Frameworks','Events','Regulatory','Sustainability','Statutory'];
+
+const heatData = {
+  Frameworks:     [0,0,1,1,0,2,1,3,2,1,0,0],
+  Events:         [1,0,1,2,3,2,1,1,3,2,1,0],
+  Regulatory:     [0,1,0,0,1,1,2,1,0,1,2,1],
+  Sustainability: [0,0,0,1,1,2,1,2,1,1,0,0],
+  Statutory:      [1,0,0,1,0,0,1,0,1,0,0,2],
+};
+
+const heatItems = {
+  Frameworks: {
+    2:['CIPR Excellence — submission deadline 15 Mar'],
+    3:['PRCA Census — data collection Apr'],
+    5:['GCS Framework refresh — Q2 window','AMEC Measurement Month — Jun'],
+    6:['IC Index — submissions open Jul'],
+    7:['PR Week Awards — entry deadline Aug','IABC Gold Quill — late entries','Ragan Awards — final call'],
+    8:['CIPR Excellence — shortlist Sep','PRCA Awards — entry deadline'],
+    9:['GCS Framework — panel announcement'],
+  },
+  Events: {
+    0:['PR Week Strategic Comms Conference — 22 Jan'],
+    2:['PRCA National Conference — 10 Mar'],
+    3:['CommsCon London — 18 Apr','Internal Comms Summit — 24 Apr'],
+    4:['Cannes Lions — fringe events','CIPR Inside — 12 May','IoIC Conference — 20 May'],
+    5:['Public Affairs Conference — 8 Jun','AMEC Summit — 15 Jun'],
+    6:['Summer networking hiatus'],
+    7:['PR Week Power Book launch'],
+    8:['Party Conference Season — Sep/Oct','PRCA EMEA Conference — 25 Sep','IoIC Awards — 30 Sep'],
+    9:['Comms Leaders Forum — 14 Oct','Black History Month activations'],
+    10:['CIPR AGM — Nov'],
+  },
+  Regulatory: {
+    1:['FCA Consumer Duty review — Q1'],
+    4:['Ofcom broadcast code consultation'],
+    5:['CMA annual plan publication'],
+    6:['FRC reporting guidance update','Ofwat PR24 draft determination'],
+    7:['ASA annual report'],
+    9:['ICO guidance refresh'],
+    10:['FCA policy statement','DRCF joint workplan'],
+  },
+  Sustainability: {
+    3:['CSRD first wave reporting'],
+    4:['TCFD annual disclosure window'],
+    5:['UN Global Compact CoP deadline','Science-Based Targets review'],
+    6:['Net Zero tracker update'],
+    7:['CDP questionnaire deadline','GRI standards refresh'],
+    8:['Climate Week NYC'],
+    9:['COP prep — comms mobilisation'],
+  },
+  Statutory: {
+    0:['Annual accounts filing — Dec YE'],
+    3:['Q1 trading statement window'],
+    6:['Half-year results season — Jul'],
+    8:['Q3 trading update'],
+    11:['Annual report drafting season','AGM season prep'],
+  },
+};
+
+function renderHeatmap() {
+  const table = document.getElementById('heatmap-table');
+  // header
+  let html = '<thead><tr><th class="row-label"></th>';
+  months.forEach(m => html += `<th>${m}</th>`);
+  html += '<th class="total-header">Total</th></tr></thead><tbody>';
+  // rows
+  categories.forEach(cat => {
+    const row = heatData[cat];
+    const rowTotal = row.reduce((a,b) => a+b, 0);
+    html += `<tr><th class="row-label">${cat}</th>`;
+    row.forEach((v, mi) => {
+      const cls = v >= 3 ? 'heat-3' : v === 2 ? 'heat-2' : v === 1 ? 'heat-1' : 'heat-0';
+      html += `<td><div class="heatmap-cell ${cls}" onclick="openHeatCell('${cat}',${mi})">${v}</div></td>`;
+    });
+    html += `<td class="total-cell">${rowTotal}</td></tr>`;
+  });
+  // column totals
+  html += '<tr><th class="row-label total-header">Total</th>';
+  let grandTotal = 0;
+  for (let mi = 0; mi < 12; mi++) {
+    let colSum = 0;
+    categories.forEach(cat => colSum += heatData[cat][mi]);
+    grandTotal += colSum;
+    html += `<td class="total-cell">${colSum}</td>`;
+  }
+  html += `<td class="total-cell" style="color:#5b8dce;">${grandTotal}</td></tr>`;
+  html += '</tbody>';
+  table.innerHTML = html;
+}
+
+function openHeatCell(cat, mi) {
+  const items = (heatItems[cat] && heatItems[cat][mi]) || [];
+  document.getElementById('bd-drawer-title').textContent = `${cat} — ${months[mi]}`;
+  const body = document.getElementById('bd-drawer-body');
+  if (items.length === 0) {
+    body.innerHTML = '<div style="color:#5e6a8a;font-size:13px;padding:8px 0;">No items in this cell.</div>';
+  } else {
+    body.innerHTML = items.map(it => {
+      const parts = it.split(' — ');
+      return `<div class="bd-item"><span class="bd-name">${parts[0]}</span><span class="bd-date">${parts[1] || ''}</span></div>`;
+    }).join('');
+  }
+  document.getElementById('bottom-drawer').classList.add('open');
+}
+function closeBottomDrawer() {
+  document.getElementById('bottom-drawer').classList.remove('open');
+}
+
+/* ── Init ── */
+renderHorizon();
+renderHeatmap();
+</script>
+</body>
+</html>

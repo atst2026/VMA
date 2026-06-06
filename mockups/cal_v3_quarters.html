@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BD Calendar — Quarterly View</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#F7F9FC;color:#1F1F1F;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wm-head{padding:24px 32px 15px;background:radial-gradient(ellipse 86% 165% at 50% -16%,#a4c6e8 0%,#bdd4ea 16%,#d4e2ef 34%,#e9f0f7 58%,#f4f8fc 78%,rgba(247,249,252,0) 100%)}
+.hdr{display:flex;align-items:center;gap:12px}
+.bdc-hero-ic{display:inline-flex;width:32px;height:32px;color:#385578}
+.bdc-hero-ic svg{width:100%;height:100%}
+.hdr h1{font-size:22px;font-weight:700;color:#1F1F1F;letter-spacing:-.3px}
+.hdr .sub{font-size:13px;color:#5a6a7a;margin-left:auto;font-weight:500}
+.view-label{font-size:12px;font-weight:600;color:#385578;text-transform:uppercase;letter-spacing:.8px;margin-top:8px}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:24px 32px 40px}
+
+.quad{background:#fff;border:1px solid #e8ecf1;border-radius:14px;overflow:hidden;transition:box-shadow .2s}
+.quad:hover{box-shadow:0 6px 24px rgba(0,0,0,.05)}
+.quad-head{padding:16px 20px 12px;border-bottom:1px solid #f0f3f7;display:flex;align-items:center;justify-content:space-between}
+.quad-head h2{font-size:15px;font-weight:700;color:#1F1F1F}
+.quad-head .q-months{font-size:11px;color:#8a95a5;font-weight:500}
+.quad-head.current{background:#f8fbff}
+.quad-head.current h2{color:#385578}
+
+.intensity-bar{height:6px;background:#f0f3f7;margin:0 20px;margin-top:12px;border-radius:3px;overflow:hidden}
+.intensity-fill{height:100%;border-radius:3px;transition:width .5s ease}
+
+.quad-body{padding:16px 20px 20px}
+
+.cat-group{margin-bottom:16px}
+.cat-group:last-child{margin-bottom:0}
+.cat-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.cat-label .cat-dot{width:8px;height:8px;border-radius:3px;flex-shrink:0}
+.cat-label.fw{color:#4285F4}
+.cat-label.fw .cat-dot{background:#4285F4}
+.cat-label.ev{color:#1E7A41}
+.cat-label.ev .cat-dot{background:#1E7A41}
+.cat-label.mw{color:#B98235}
+.cat-label.mw .cat-dot{background:#B98235}
+
+.q-item{font-size:12px;color:#3a4a5a;padding:6px 0 6px 14px;border-left:2px solid #e8ecf1;margin-bottom:2px;position:relative;line-height:1.5}
+.q-item:last-child{margin-bottom:0}
+.q-item .item-name{font-weight:600;color:#1F1F1F}
+.q-item .item-tag{font-size:10px;color:#8a95a5;font-weight:500;margin-left:6px}
+.q-item .item-tag.continues{color:#4285F4}
+.q-item .item-tag.ongoing{color:#1E7A41}
+.q-item .item-tag.ends{color:#c0392b}
+.q-item .item-tag.closed{color:#ccc}
+.q-item .item-detail{font-size:11px;color:#7a8a9a;margin-top:2px}
+
+.q-item.fw{border-left-color:#4285F4}
+.q-item.ev{border-left-color:#1E7A41}
+.q-item.mw{border-left-color:#B98235}
+
+.empty-msg{font-size:12px;color:#b0b8c5;font-style:italic;padding:8px 0}
+</style>
+</head>
+<body>
+
+<div class="wm-head">
+  <div class="hdr">
+    <span class="bdc-hero-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></span>
+    <h1>BD Calendar</h1>
+    <span class="sub">Quarterly View</span>
+  </div>
+  <div class="view-label">Four-quarter strategic planning view</div>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<script>
+const quarters = [
+  {label:'Q3 2026',months:'Jul – Sep 2026',start:new Date(2026,6,1),end:new Date(2026,8,30),current:true},
+  {label:'Q4 2026',months:'Oct – Dec 2026',start:new Date(2026,9,1),end:new Date(2026,11,31)},
+  {label:'Q1 2027',months:'Jan – Mar 2027',start:new Date(2027,0,1),end:new Date(2027,2,31)},
+  {label:'Q2 2027',months:'Apr – Jun 2027',start:new Date(2027,3,1),end:new Date(2027,5,30)},
+];
+
+const frameworks = [
+  {name:'NHS Workforce Alliance',sub:'RM6380',start:new Date(2026,0,1),end:new Date(2026,11,31),detail:'Exec Search & Interim — live now'},
+  {name:'Nuclear Decommissioning Authority',sub:'Lot 6',start:new Date(2026,9,1),end:new Date(2027,2,31),detail:'Shared Services — opens ~Oct 2026'},
+  {name:'Devolved Government',sub:'Exec Search',start:new Date(2027,0,1),end:new Date(2027,8,30),detail:'Scottish/Welsh/NI — opens ~Jan 2027'},
+  {name:'CCS Executive Search 3',sub:'RM6394',start:new Date(2027,5,1),end:new Date(2028,4,31),detail:'Opens ~Jun 2027'},
+];
+
+const events = [
+  {name:'CIPR Excellence Awards',date:new Date(2026,6,1),detail:'Royal Lancaster Hotel, London'},
+  {name:'IC & Engagement Live',date:new Date(2026,6,8),detail:'The Brewery, London'},
+  {name:'IoIC Awards',date:new Date(2026,8,17),detail:'London'},
+  {name:'ICCO Global Summit',date:new Date(2026,10,11),detail:'Milan'},
+  {name:'CIPR Annual Conference',date:new Date(2026,10,18),detail:'London'},
+  {name:'European Excellence Awards',date:new Date(2026,11,11),detail:'Europe'},
+];
+
+const mandates = [
+  {name:'FCA Consumer Duty',sub:'Board-report ramp',start:new Date(2026,3,1),end:new Date(2026,6,31),detail:'Head of Regulatory/Customer Comms'},
+  {name:'UK SRS',sub:'Sustainability reporting',start:new Date(2026,0,1),end:new Date(2026,11,31),detail:'Head of Sustainability/ESG Comms'},
+  {name:'Machinery-of-government',sub:'Post-SR reshuffle',start:new Date(2026,3,1),end:new Date(2026,11,31),detail:'Director of Communications (GCS)'},
+  {name:'UK Annual-Report & AGM',sub:'',start:new Date(2026,1,1),end:new Date(2026,5,30),detail:'Head of IR/Corporate-Reporting Comms'},
+  {name:'Gender Pay Gap',sub:'Reporting window',start:new Date(2026,2,1),end:new Date(2026,5,30),detail:'Head of Internal/DEI Comms'},
+  {name:'NHS Operational Planning',sub:'Restructure round',start:new Date(2026,0,1),end:new Date(2026,4,31),detail:'Director of Comms — NHS',closed:true},
+  {name:'Higher-Ed Clearing',sub:'New-intake comms',start:new Date(2026,5,15),end:new Date(2026,8,30),detail:'Head of Comms/Student Recruitment'},
+];
+
+function overlaps(itemStart, itemEnd, qStart, qEnd){
+  return itemStart <= qEnd && itemEnd >= qStart;
+}
+
+function getTag(itemStart, itemEnd, qStart, qEnd, closed){
+  if(closed && itemEnd < qStart) return {text:'', cls:''};
+  const startsBeforeQ = itemStart < qStart;
+  const endsAfterQ = itemEnd > qEnd;
+  if(startsBeforeQ && endsAfterQ) return {text:'← ongoing →', cls:'ongoing'};
+  if(startsBeforeQ && !endsAfterQ) return {text:'ends this quarter', cls:'ends'};
+  if(!startsBeforeQ && endsAfterQ) return {text:'continues →', cls:'continues'};
+  return {text:'', cls:''};
+}
+
+const grid = document.getElementById('grid');
+
+quarters.forEach(q => {
+  const quad = document.createElement('div');
+  quad.className = 'quad';
+
+  // Collect items for this quarter
+  const qFw = [], qEv = [], qMw = [];
+
+  frameworks.forEach(f => {
+    if(overlaps(f.start, f.end, q.start, q.end)){
+      const tag = getTag(f.start, f.end, q.start, q.end);
+      qFw.push({...f, tag});
+    }
+  });
+
+  events.forEach(e => {
+    if(e.date >= q.start && e.date <= q.end){
+      qEv.push(e);
+    }
+  });
+
+  mandates.forEach(m => {
+    if(m.closed && m.end < q.start) return;
+    if(overlaps(m.start, m.end, q.start, q.end)){
+      const tag = getTag(m.start, m.end, q.start, q.end, m.closed);
+      qMw.push({...m, tag, closed:m.closed});
+    }
+  });
+
+  const totalItems = qFw.length + qEv.length + qMw.length;
+  const maxItems = 10;
+  const intensity = Math.min(100, (totalItems / maxItems) * 100);
+  let intensityColor = '#4285F4';
+  if(intensity > 70) intensityColor = '#c0392b';
+  else if(intensity > 40) intensityColor = '#B98235';
+
+  quad.innerHTML = `
+    <div class="quad-head ${q.current ? 'current' : ''}">
+      <h2>${q.label}</h2>
+      <span class="q-months">${q.months}</span>
+    </div>
+    <div class="intensity-bar"><div class="intensity-fill" style="width:${intensity}%;background:${intensityColor}"></div></div>
+  `;
+
+  const body = document.createElement('div');
+  body.className = 'quad-body';
+
+  // Frameworks
+  if(qFw.length){
+    const grp = document.createElement('div');
+    grp.className = 'cat-group';
+    grp.innerHTML = '<div class="cat-label fw"><span class="cat-dot"></span>Approved Frameworks</div>';
+    qFw.forEach(f => {
+      const tagHtml = f.tag.text ? ` <span class="item-tag ${f.tag.cls}">${f.tag.text}</span>` : '';
+      grp.innerHTML += `<div class="q-item fw"><span class="item-name">${f.name}</span>${tagHtml}<div class="item-detail">${f.detail}</div></div>`;
+    });
+    body.appendChild(grp);
+  }
+
+  // Events
+  if(qEv.length){
+    const grp = document.createElement('div');
+    grp.className = 'cat-group';
+    grp.innerHTML = '<div class="cat-label ev"><span class="cat-dot"></span>Events & Networking</div>';
+    qEv.forEach(e => {
+      const d = e.date.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+      grp.innerHTML += `<div class="q-item ev"><span class="item-name">${e.name}</span> <span class="item-tag" style="color:#5a6a7a">${d}</span><div class="item-detail">${e.detail}</div></div>`;
+    });
+    body.appendChild(grp);
+  }
+
+  // Mandates
+  if(qMw.length){
+    const grp = document.createElement('div');
+    grp.className = 'cat-group';
+    grp.innerHTML = '<div class="cat-label mw"><span class="cat-dot"></span>Mandate Windows</div>';
+    qMw.forEach(m => {
+      const tagHtml = m.tag && m.tag.text ? ` <span class="item-tag ${m.tag.cls}">${m.tag.text}</span>` : '';
+      const closedTag = m.closed ? ' <span class="item-tag closed">CLOSED</span>' : '';
+      grp.innerHTML += `<div class="q-item mw" ${m.closed?'style="opacity:.5"':''}><span class="item-name">${m.name}</span>${closedTag}${tagHtml}<div class="item-detail">${m.detail}</div></div>`;
+    });
+    body.appendChild(grp);
+  }
+
+  if(totalItems === 0){
+    body.innerHTML = '<div class="empty-msg">No active items this quarter</div>';
+  }
+
+  quad.appendChild(body);
+  grid.appendChild(quad);
+});
+</script>
+</body>
+</html>

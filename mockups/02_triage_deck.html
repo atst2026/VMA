@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMA Group — Triage Deck & Week Ahead Focus</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #f0f2f5; color: #1a1f36; }
+
+  /* ── Top bar ── */
+  .topbar { background: #1a1f36; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+  .topbar .logo { color: #fff; font-size: 18px; font-weight: 700; letter-spacing: .5px; }
+  .topbar .logo span { color: #7ea8cc; }
+  .topbar .meta { color: #8a94a6; font-size: 13px; }
+
+  /* ── Tabs ── */
+  .tab-bar { background: #1a1f36; display: flex; padding: 0 32px; border-bottom: 2px solid #2a3150; }
+  .tab-btn { background: none; border: none; color: #8a94a6; font-size: 14px; font-weight: 600; padding: 12px 24px; cursor: pointer; position: relative; transition: color .2s; }
+  .tab-btn:hover { color: #c0d0e0; }
+  .tab-btn.active { color: #fff; }
+  .tab-btn.active::after { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px; background: #5b9bd5; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ══════════════════════════════════
+     PAGE 1 — TRIAGE DECK (RADAR)
+  ══════════════════════════════════ */
+  .deck-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 110px); padding: 40px 20px; }
+
+  /* Progress indicator */
+  .progress { font-size: 13px; color: #8a94a6; font-weight: 600; margin-bottom: 20px; letter-spacing: .3px; }
+
+  /* Main card */
+  .deck-card { background: #fff; border-radius: 16px; width: 100%; max-width: 580px; padding: 40px 44px 36px; box-shadow: 0 8px 40px rgba(26,31,54,.1); position: relative; transition: transform .3s, opacity .3s; }
+  .deck-card.slide-left { transform: translateX(-120%) rotate(-4deg); opacity: 0; }
+  .deck-card.slide-right { transform: translateX(120%) rotate(4deg); opacity: 0; }
+  .deck-card.slide-up { transform: translateY(-120%); opacity: 0; }
+
+  .deck-company { font-size: 28px; font-weight: 800; color: #1a1f36; margin-bottom: 6px; }
+  .deck-role { font-size: 16px; color: #385578; font-weight: 500; margin-bottom: 16px; }
+
+  .deck-badges { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .badge { font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: .5px; }
+  .badge-trigger { background: #eef3ff; color: #385578; }
+  .badge-window { background: #fff8e1; color: #b8860b; }
+
+  /* Strength meter */
+  .meter-label { font-size: 12px; font-weight: 600; color: #8a94a6; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 6px; }
+  .meter-bar { height: 8px; border-radius: 4px; background: #eef0f3; overflow: hidden; margin-bottom: 22px; }
+  .meter-fill { height: 100%; border-radius: 4px; transition: width .6s ease; }
+  .meter-fill.high { background: linear-gradient(90deg, #27ae60, #2ecc71); }
+  .meter-fill.medium { background: linear-gradient(90deg, #e2a03f, #f0c040); }
+  .meter-fill.low { background: linear-gradient(90deg, #b0b8c4, #cfd6de); }
+
+  .deck-brief { font-size: 14px; color: #4a5568; line-height: 1.7; margin-bottom: 24px; }
+  .deck-window { font-size: 13px; color: #6b7a8d; margin-bottom: 30px; }
+  .deck-window strong { color: #1a1f36; }
+
+  /* Action buttons */
+  .deck-actions { display: flex; gap: 12px; justify-content: center; }
+  .deck-actions button { flex: 1; padding: 14px 10px; border-radius: 10px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; transition: background .2s, transform .1s; }
+  .deck-actions button:active { transform: scale(.97); }
+  .btn-dismiss-deck { background: #fdecea; color: #c0392b; }
+  .btn-dismiss-deck:hover { background: #f5c6cb; }
+  .btn-pitch-deck { background: #385578; color: #fff; }
+  .btn-pitch-deck:hover { background: #2a4362; }
+  .btn-follow-deck { background: #e8f5e9; color: #27ae60; }
+  .btn-follow-deck:hover { background: #c8e6c9; }
+
+  /* Keyboard hint */
+  .key-hint { margin-top: 20px; font-size: 12px; color: #b0b8c4; text-align: center; }
+  .key-hint kbd { display: inline-block; background: #eef0f3; border: 1px solid #dde0e5; border-radius: 4px; padding: 1px 7px; font-family: inherit; font-size: 11px; }
+
+  /* Empty state */
+  .deck-empty { text-align: center; color: #8a94a6; }
+  .deck-empty h3 { font-size: 20px; margin-bottom: 8px; color: #1a1f36; }
+  .deck-empty p { font-size: 14px; }
+
+  /* ══════════════════════════════════
+     PAGE 2 — WEEK AHEAD FOCUS (CALENDAR)
+  ══════════════════════════════════ */
+  .week-wrap { max-width: 800px; margin: 0 auto; padding: 28px 20px 80px; }
+
+  .week-ai { background: linear-gradient(135deg, #1a1f36 0%, #2a3150 100%); color: #fff; padding: 14px 20px; border-radius: 10px; margin-bottom: 24px; font-size: 14px; line-height: 1.5; box-shadow: 0 4px 20px rgba(26,31,54,.25); }
+  .week-ai .ai-icon { display: inline-block; background: #5b9bd5; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; margin-right: 8px; vertical-align: middle; }
+
+  .week-section { margin-bottom: 28px; }
+  .week-section-title { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: #8a94a6; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #eef0f3; }
+  .week-section-title.frameworks { border-bottom-color: #385578; }
+  .week-section-title.events { border-bottom-color: #27ae60; }
+  .week-section-title.mandates { border-bottom-color: #e2a03f; }
+
+  .week-item { background: #fff; border-radius: 10px; padding: 14px 18px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+  .week-item-name { font-size: 14px; font-weight: 600; color: #1a1f36; }
+  .week-item-sub { font-size: 12px; color: #6b7a8d; margin-top: 2px; }
+
+  .countdown { font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; white-space: nowrap; }
+  .countdown.today { background: #fdecea; color: #c0392b; }
+  .countdown.tomorrow { background: #fff3e0; color: #e65100; }
+  .countdown.soon { background: #fff8e1; color: #b8860b; }
+  .countdown.normal { background: #eef0f3; color: #6b7a8d; }
+
+  /* Later this month */
+  .later-section { border: 1px solid #eef0f3; border-radius: 10px; overflow: hidden; }
+  .later-header { background: #fafbfc; padding: 12px 18px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+  .later-header h4 { font-size: 13px; font-weight: 600; color: #8a94a6; }
+  .later-chevron { font-size: 12px; color: #b0b8c4; transition: transform .2s; }
+  .later-section.open .later-chevron { transform: rotate(180deg); }
+  .later-body { display: none; padding: 8px 14px 14px; }
+  .later-section.open .later-body { display: block; }
+  .later-item { padding: 10px 4px; border-bottom: 1px solid #f5f6f8; display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #6b7a8d; }
+  .later-item:last-child { border-bottom: none; }
+  .later-item .name { font-weight: 600; color: #4a5568; }
+  .later-chip { font-size: 11px; background: #f0f2f5; color: #8a94a6; padding: 2px 10px; border-radius: 12px; font-weight: 600; }
+
+  .empty-section { font-size: 13px; color: #b0b8c4; font-style: italic; padding: 10px 0; }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="logo">VMA <span>Group</span></div>
+  <div class="meta">Business Development Intelligence</div>
+</div>
+
+<!-- Tabs -->
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="radar">Communications Radar</button>
+  <button class="tab-btn" data-tab="calendar">BD Calendar</button>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE 1 — TRIAGE DECK
+════════════════════════════════════════════ -->
+<div class="page active" id="page-radar">
+  <div class="deck-wrap" id="deck-area">
+    <!-- Rendered by JS -->
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE 2 — WEEK AHEAD FOCUS
+════════════════════════════════════════════ -->
+<div class="page" id="page-calendar">
+  <div class="week-wrap" id="week-area">
+    <!-- Rendered by JS -->
+  </div>
+</div>
+
+<script>
+/* ── Tab switching ── */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('page-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ══════════════════════════════════
+   TRIAGE DECK — data & rendering
+══════════════════════════════════ */
+const signals = [
+  {
+    company: 'Diageo',
+    role: 'Chief Communications Officer',
+    trigger: 'CEO Transition',
+    strength: 'high',
+    pct: 92,
+    brief: 'Incoming CEO expected to restructure the communications function within weeks. The incumbent CCO has been in post 7+ years and is widely expected to depart. VMA placed the previous CCO in 2018 and maintains strong CHRO relationships.',
+    window: '~4 weeks (appointment expected by mid-August)'
+  },
+  {
+    company: 'Shell',
+    role: 'VP, Global External Affairs',
+    trigger: 'Strategic Overhaul',
+    strength: 'high',
+    pct: 87,
+    brief: 'Energy transition strategy overhaul requires new public affairs leadership for repositioning. The role has been covered on an interim basis since May. Regulatory pressure in EU and US markets demands senior appointment before September.',
+    window: '~12 weeks (interim cover ends September)'
+  },
+  {
+    company: 'Barclays',
+    role: 'Director of Corporate Affairs',
+    trigger: 'Regulatory Pressure',
+    strength: 'high',
+    pct: 84,
+    brief: 'Comprehensive brand repositioning following strategic review. The Director departed in April and interim cover ends in August. FCA regulatory scrutiny on consumer communications adds significant urgency to the appointment.',
+    window: '~10 weeks (interim arrangement ends August)'
+  },
+  {
+    company: 'NatWest Group',
+    role: 'Chief Communications Officer',
+    trigger: 'Privatisation Event',
+    strength: 'medium',
+    pct: 68,
+    brief: 'Government stake fully divested by autumn, positioning the bank as fully private for the first time since 2008. A comms leadership refresh is planned as part of a broader "new chapter" narrative. Role may expand to include investor relations.',
+    window: '~16 weeks (aligned to stake sale completion)'
+  },
+  {
+    company: 'Unilever',
+    role: 'Head of Sustainability Communications',
+    trigger: 'ESG Mandate',
+    strength: 'medium',
+    pct: 62,
+    brief: 'New CSRD obligations and the departure of the sustainability comms lead signal a likely search. The role has been informally scoped at HRD level but not yet briefed to agencies. VMA has warm CHRO relationship through PRCA network.',
+    window: '~8-12 weeks (role scoping underway)'
+  },
+  {
+    company: 'Tesco',
+    role: 'Group Head of Internal Communications',
+    trigger: 'Cultural Transformation',
+    strength: 'medium',
+    pct: 58,
+    brief: 'The "Together" cultural transformation programme includes a commitment to upgrade internal communications capability. Current Head of IC is moving to a commercial role in Q4. Budget for external search has been discussed at HRD level.',
+    window: '~14 weeks (incumbent moves Q4)'
+  },
+  {
+    company: 'BP',
+    role: 'SVP, Government Relations',
+    trigger: 'Political Change',
+    strength: 'medium',
+    pct: 55,
+    brief: 'Government relations function being reshaped following changes to UK North Sea licensing policy. The SVP role has been on a 6-month interim contract due to end in September. BP historically uses search firms for SVP-level appointments.',
+    window: '~14 weeks (interim contract ends September)'
+  },
+  {
+    company: 'HSBC',
+    role: 'Head of Media Relations, Europe',
+    trigger: 'Restructuring',
+    strength: 'low',
+    pct: 35,
+    brief: 'Asia-pivot restructure may create a European media relations vacancy in H2. No confirmed vacancy yet, but industry sources suggest the role may be relocated or made redundant by year-end. Speculative signal — monitor closely.',
+    window: 'Q4 2026 (unconfirmed)'
+  },
+  {
+    company: 'Vodafone',
+    role: 'Director of Brand & Marketing Communications',
+    trigger: 'M&A Integration',
+    strength: 'low',
+    pct: 30,
+    brief: 'The Vodafone-Three merger completion expected late 2026, pending CMA approval. Integration planning suggests a single Brand & Marketing Communications Director across the combined entity. No formal process launched yet.',
+    window: 'Late 2026 / Early 2027 (pending CMA)'
+  },
+  {
+    company: 'Rolls-Royce',
+    role: 'VP, Corporate Communications',
+    trigger: 'Portfolio Growth',
+    strength: 'low',
+    pct: 25,
+    brief: 'Growing defence portfolio (AUKUS, small modular reactors) is increasing communications complexity. The current VP is approaching retirement. No confirmed timeline yet, but search could launch early 2027. Early positioning recommended.',
+    window: 'Early 2027 (speculative)'
+  },
+  {
+    company: 'AstraZeneca',
+    role: 'Global Head of Patient Advocacy Communications',
+    trigger: 'Pipeline Expansion',
+    strength: 'low',
+    pct: 22,
+    brief: 'Oncology pipeline expansion creating new patient advocacy communications requirements. Role conceptualised but not yet approved. AZ has historically used specialist pharma recruiters but VMA has a growing life sciences practice.',
+    window: 'H1 2027 (role not yet approved)'
+  }
+];
+
+let currentIndex = 0;
+const total = signals.length;
+
+function renderCard() {
+  const area = document.getElementById('deck-area');
+
+  if (currentIndex >= total) {
+    area.innerHTML = `
+      <div class="deck-empty">
+        <h3>All signals reviewed</h3>
+        <p>You have triaged all ${total} new signals. Check back later for updates.</p>
+      </div>`;
+    return;
+  }
+
+  const s = signals[currentIndex];
+  const strengthLabel = s.strength.charAt(0).toUpperCase() + s.strength.slice(1);
+
+  area.innerHTML = `
+    <div class="progress">${currentIndex + 1} of ${total} new signals</div>
+    <div class="deck-card" id="active-card">
+      <div class="deck-company">${s.company}</div>
+      <div class="deck-role">${s.role}</div>
+      <div class="deck-badges">
+        <span class="badge badge-trigger">${s.trigger}</span>
+        <span class="badge badge-window">${s.window}</span>
+      </div>
+      <div class="meter-label">Signal Strength &mdash; ${strengthLabel} (${s.pct}%)</div>
+      <div class="meter-bar"><div class="meter-fill ${s.strength}" style="width:${s.pct}%"></div></div>
+      <div class="deck-brief">${s.brief}</div>
+      <div class="deck-actions">
+        <button class="btn-dismiss-deck" onclick="doAction('dismiss')">&larr; Dismiss</button>
+        <button class="btn-pitch-deck" onclick="doAction('pitch')">Generate Pitch &uarr;</button>
+        <button class="btn-follow-deck" onclick="doAction('follow')">Follow Up &rarr;</button>
+      </div>
+    </div>
+    <div class="key-hint"><kbd>&larr;</kbd> Dismiss &nbsp;&nbsp; <kbd>&uarr;</kbd> Pitch &nbsp;&nbsp; <kbd>&rarr;</kbd> Follow Up</div>`;
+}
+
+function doAction(type) {
+  const card = document.getElementById('active-card');
+  if (!card) return;
+  if (type === 'dismiss') card.classList.add('slide-left');
+  else if (type === 'pitch') card.classList.add('slide-up');
+  else card.classList.add('slide-right');
+
+  setTimeout(() => {
+    currentIndex++;
+    renderCard();
+  }, 320);
+}
+
+document.addEventListener('keydown', e => {
+  // Only respond if radar tab is active
+  if (!document.getElementById('page-radar').classList.contains('active')) return;
+  if (e.key === 'ArrowLeft') doAction('dismiss');
+  else if (e.key === 'ArrowUp') { e.preventDefault(); doAction('pitch'); }
+  else if (e.key === 'ArrowRight') doAction('follow');
+});
+
+renderCard();
+
+/* ══════════════════════════════════
+   WEEK AHEAD FOCUS — data & rendering
+══════════════════════════════════ */
+function renderWeekAhead() {
+  const today = new Date();
+  const weekEnd = new Date(today);
+  weekEnd.setDate(today.getDate() + 7);
+  const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+  // All items with dates
+  const allItems = [
+    // Frameworks
+    { cat: 'framework', name: 'BBC Exec Search Panel', sub: 'Panel review and re-tender submission window', date: new Date(2026, 5, 15) },
+    { cat: 'framework', name: 'Crown Commercial Service RM6229', sub: 'Lot 7: Marketing & Communications — application deadline', date: new Date(2026, 5, 30) },
+    { cat: 'framework', name: 'Cabinet Office Talent PSL', sub: 'Lot 3: Senior Communications — submission close', date: new Date(2026, 6, 31) },
+    { cat: 'framework', name: 'Network Rail Exec Search', sub: 'Framework re-tender process begins', date: new Date(2026, 6, 1) },
+    { cat: 'framework', name: 'MoD Comms Services', sub: 'Prior Information Notice expected', date: new Date(2026, 7, 1) },
+    { cat: 'framework', name: 'TfL Senior Recruitment', sub: 'Market engagement for new comms lot', date: new Date(2026, 8, 1) },
+
+    // Events
+    { cat: 'event', name: 'PRCA National Conference', sub: 'QEII Centre, London — VMA sponsoring breakout session', date: new Date(2026, 5, 18) },
+    { cat: 'event', name: 'Shell CCO Roundtable (Private)', sub: 'VMA-hosted dinner, The Ivy, 7pm', date: new Date(2026, 5, 10) },
+    { cat: 'event', name: 'FTSE Women Leaders Review', sub: 'Annual reporting deadline — diversity search positioning', date: new Date(2026, 6, 14) },
+    { cat: 'event', name: 'Public Sector Show', sub: 'ExCeL London — government comms leaders networking', date: new Date(2026, 5, 12) },
+    { cat: 'event', name: 'IoD Annual Convention', sub: 'Royal Albert Hall — C-suite networking opportunity', date: new Date(2026, 5, 25) },
+    { cat: 'event', name: 'CIPR President’s Dinner', sub: 'Private dinner, The Dorchester — by invitation', date: new Date(2026, 5, 20) },
+    { cat: 'event', name: 'Global PR Summit', sub: 'Amsterdam — VMA hosting Day 2 roundtable', date: new Date(2026, 9, 8) },
+
+    // Mandates
+    { cat: 'mandate', name: 'Diageo CCO Search', sub: 'Time-critical: CEO transition window closing', date: new Date(2026, 5, 8) },
+    { cat: 'mandate', name: 'Shell VP External Affairs', sub: 'Pitch deck due to procurement', date: new Date(2026, 5, 12) },
+    { cat: 'mandate', name: 'Barclays Dir. Corporate Affairs', sub: 'Initial candidate shortlist review', date: new Date(2026, 5, 17) },
+    { cat: 'mandate', name: 'BP SVP Government Relations', sub: 'Mandate window opens — PSL advantage', date: new Date(2026, 6, 1) },
+    { cat: 'mandate', name: 'NatWest CCO', sub: 'Engagement meeting with CHRO', date: new Date(2026, 6, 15) },
+    { cat: 'mandate', name: 'Tesco Head of IC', sub: 'Cultural transformation programme briefing', date: new Date(2026, 7, 1) },
+  ];
+
+  function daysBetween(a, b) {
+    const msDay = 864e5;
+    return Math.ceil((b - a) / msDay);
+  }
+
+  function countdownChip(itemDate) {
+    const days = daysBetween(today, itemDate);
+    if (days < 0) return { text: days + 'd ago', cls: 'normal' };
+    if (days === 0) return { text: 'Today', cls: 'today' };
+    if (days === 1) return { text: 'Tomorrow', cls: 'tomorrow' };
+    if (days <= 3) return { text: days + ' days', cls: 'soon' };
+    return { text: days + ' days', cls: 'normal' };
+  }
+
+  // Split into this-week and later-this-month
+  const weekItems = { framework: [], event: [], mandate: [] };
+  const laterItems = [];
+
+  allItems.forEach(item => {
+    const days = daysBetween(today, item.date);
+    if (days >= 0 && days <= 7) {
+      weekItems[item.cat].push(item);
+    } else if (days > 7 && item.date <= monthEnd) {
+      laterItems.push(item);
+    }
+  });
+
+  // Sort each category by date
+  Object.keys(weekItems).forEach(k => weekItems[k].sort((a,b) => a.date - b.date));
+  laterItems.sort((a,b) => a.date - b.date);
+
+  // Count urgent items
+  const urgentCount = allItems.filter(i => { const d = daysBetween(today, i.date); return d >= 0 && d <= 2; }).length;
+  const weekTotal = weekItems.framework.length + weekItems.event.length + weekItems.mandate.length;
+
+  function renderSection(title, cls, items) {
+    let html = `<div class="week-section">
+      <div class="week-section-title ${cls}">${title}</div>`;
+    if (items.length === 0) {
+      html += '<div class="empty-section">Nothing scheduled this week.</div>';
+    } else {
+      items.forEach(item => {
+        const chip = countdownChip(item.date);
+        html += `<div class="week-item">
+          <div>
+            <div class="week-item-name">${item.name}</div>
+            <div class="week-item-sub">${item.sub}</div>
+          </div>
+          <span class="countdown ${chip.cls}">${chip.text}</span>
+        </div>`;
+      });
+    }
+    html += '</div>';
+    return html;
+  }
+
+  let html = `
+    <div class="week-ai">
+      <span class="ai-icon">AI</span>
+      ${weekTotal} items in the next 7 days${urgentCount > 0 ? `, ${urgentCount} need attention today or tomorrow` : ''}. Diageo CCO pitch window is closing &mdash; prioritise outreach. PRCA Conference prep should begin now if sponsoring.
+    </div>`;
+
+  html += renderSection('Framework Deadlines', 'frameworks', weekItems.framework);
+  html += renderSection('Events This Week', 'events', weekItems.event);
+  html += renderSection('Active Mandate Windows', 'mandates', weekItems.mandate);
+
+  // Later this month
+  if (laterItems.length > 0) {
+    html += `<div class="later-section" id="later-section">
+      <div class="later-header" onclick="document.getElementById('later-section').classList.toggle('open')">
+        <h4>Later This Month (${laterItems.length} items)</h4>
+        <span class="later-chevron">&#9660;</span>
+      </div>
+      <div class="later-body">`;
+    laterItems.forEach(item => {
+      const chip = countdownChip(item.date);
+      const catLabel = item.cat === 'framework' ? 'Framework' : item.cat === 'event' ? 'Event' : 'Mandate';
+      html += `<div class="later-item">
+        <div>
+          <span class="name">${item.name}</span>
+          <span style="margin-left:8px;font-size:11px;color:#b0b8c4">${catLabel}</span>
+        </div>
+        <span class="later-chip">${chip.text}</span>
+      </div>`;
+    });
+    html += '</div></div>';
+  }
+
+  document.getElementById('week-area').innerHTML = html;
+}
+
+renderWeekAhead();
+</script>
+</body>
+</html>

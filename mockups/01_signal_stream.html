@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMA Group — Signal Stream & Timeline River</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #f0f2f5; color: #1a1f36; }
+
+  /* ── Top bar ── */
+  .topbar { background: #1a1f36; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+  .topbar .logo { color: #fff; font-size: 18px; font-weight: 700; letter-spacing: .5px; }
+  .topbar .logo span { color: #7ea8cc; }
+  .topbar .meta { color: #8a94a6; font-size: 13px; }
+
+  /* ── Tabs ── */
+  .tab-bar { background: #1a1f36; display: flex; padding: 0 32px; border-bottom: 2px solid #2a3150; }
+  .tab-btn { background: none; border: none; color: #8a94a6; font-size: 14px; font-weight: 600; padding: 12px 24px; cursor: pointer; position: relative; transition: color .2s; }
+  .tab-btn:hover { color: #c0d0e0; }
+  .tab-btn.active { color: #fff; }
+  .tab-btn.active::after { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px; background: #5b9bd5; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ══════════════════════════════════
+     PAGE 1 — SIGNAL STREAM (RADAR)
+  ══════════════════════════════════ */
+  .stream-wrap { max-width: 720px; margin: 0 auto; padding: 24px 16px 80px; }
+
+  /* Sticky AI bar */
+  .ai-bar { position: sticky; top: 0; z-index: 10; background: linear-gradient(135deg, #1a1f36 0%, #2a3150 100%); color: #fff; padding: 14px 20px; border-radius: 10px; margin-bottom: 20px; font-size: 14px; line-height: 1.5; box-shadow: 0 4px 20px rgba(26,31,54,.25); }
+  .ai-bar .ai-icon { display: inline-block; background: #5b9bd5; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; margin-right: 8px; vertical-align: middle; }
+
+  /* Cards */
+  .card { background: #fff; border-radius: 10px; padding: 18px 20px 18px 24px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.06); cursor: pointer; transition: box-shadow .2s, transform .15s; position: relative; border-left: 4px solid #ccc; }
+  .card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.1); transform: translateY(-1px); }
+  .card.strength-high { border-left-color: #27ae60; }
+  .card.strength-medium { border-left-color: #e2a03f; }
+  .card.strength-low { border-left-color: #b0b8c4; }
+
+  .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+  .card-company { font-size: 17px; font-weight: 700; color: #1a1f36; }
+  .card-strength { font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: .5px; }
+  .card-strength.high { background: #e8f5e9; color: #27ae60; }
+  .card-strength.medium { background: #fff8e1; color: #e2a03f; }
+  .card-strength.low { background: #f0f2f5; color: #8a94a6; }
+
+  .card-role { font-size: 14px; color: #385578; font-weight: 500; margin-bottom: 4px; }
+  .card-trigger { font-size: 13px; color: #6b7a8d; }
+
+  /* Expanded state */
+  .card-detail { display: none; margin-top: 14px; padding-top: 14px; border-top: 1px solid #eef0f3; }
+  .card.expanded .card-detail { display: block; }
+  .card-detail p { font-size: 13px; color: #4a5568; line-height: 1.65; margin-bottom: 14px; }
+  .card-actions { display: flex; gap: 10px; }
+  .card-actions button { padding: 8px 18px; border-radius: 6px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .2s; }
+  .btn-pitch { background: #385578; color: #fff; }
+  .btn-pitch:hover { background: #2a4362; }
+  .btn-followup { background: #e8f5e9; color: #27ae60; }
+  .btn-followup:hover { background: #c8e6c9; }
+  .btn-dismiss { background: #f0f2f5; color: #8a94a6; }
+  .btn-dismiss:hover { background: #e0e3e8; }
+
+  .chevron { float: right; font-size: 12px; color: #b0b8c4; transition: transform .2s; }
+  .card.expanded .chevron { transform: rotate(180deg); }
+
+  /* ══════════════════════════════════
+     PAGE 2 — TIMELINE RIVER (CALENDAR)
+  ══════════════════════════════════ */
+  .cal-wrap { padding: 24px 32px 60px; }
+  .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .cal-header h2 { font-size: 20px; font-weight: 700; color: #1a1f36; }
+
+  .timeline-container { overflow-x: auto; position: relative; background: #fff; border-radius: 12px; box-shadow: 0 1px 6px rgba(0,0,0,.06); }
+  .timeline-inner { position: relative; min-width: 1600px; padding: 0 0 20px; }
+
+  /* Month axis */
+  .month-axis { display: flex; border-bottom: 1px solid #eef0f3; }
+  .month-cell { flex: 1; text-align: center; font-size: 13px; font-weight: 600; color: #6b7a8d; padding: 14px 0 10px; }
+
+  /* Swim lanes */
+  .swim-lane { position: relative; height: 54px; border-bottom: 1px solid #f5f6f8; display: flex; align-items: center; }
+  .lane-label { position: absolute; left: 0; top: 0; bottom: 0; width: 140px; display: flex; align-items: center; padding-left: 18px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: #8a94a6; background: #fafbfc; z-index: 2; border-right: 1px solid #eef0f3; }
+  .lane-track { position: relative; margin-left: 140px; flex: 1; height: 100%; }
+
+  .bar { position: absolute; height: 28px; top: 13px; border-radius: 6px; display: flex; align-items: center; padding: 0 10px; font-size: 11px; font-weight: 600; color: #fff; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: filter .15s; }
+  .bar:hover { filter: brightness(1.15); }
+
+  .bar.framework { background: #385578; }
+  .bar.event { background: #27ae60; }
+  .bar.mandate { background: #e2a03f; }
+
+  /* Today line */
+  .today-line { position: absolute; top: 0; bottom: 0; width: 2px; background: #e74c3c; z-index: 5; }
+  .today-label { position: absolute; top: -2px; font-size: 10px; color: #e74c3c; font-weight: 700; transform: translateX(-50%); white-space: nowrap; }
+
+  /* Tooltip */
+  .tooltip { display: none; position: fixed; background: #1a1f36; color: #fff; padding: 10px 14px; border-radius: 8px; font-size: 12px; line-height: 1.5; max-width: 260px; z-index: 100; pointer-events: none; box-shadow: 0 4px 20px rgba(0,0,0,.3); }
+
+  /* Legend */
+  .legend { display: flex; gap: 24px; padding: 16px 18px; border-top: 1px solid #eef0f3; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #6b7a8d; }
+  .legend-dot { width: 14px; height: 14px; border-radius: 4px; }
+  .legend-dot.fw { background: #385578; }
+  .legend-dot.ev { background: #27ae60; }
+  .legend-dot.md { background: #e2a03f; }
+  .legend-dot.td { background: #e74c3c; }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="logo">VMA <span>Group</span></div>
+  <div class="meta">Business Development Intelligence</div>
+</div>
+
+<!-- Tabs -->
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="radar">Communications Radar</button>
+  <button class="tab-btn" data-tab="calendar">BD Calendar</button>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE 1 — SIGNAL STREAM
+════════════════════════════════════════════ -->
+<div class="page active" id="page-radar">
+  <div class="stream-wrap">
+
+    <div class="ai-bar">
+      <span class="ai-icon">AI</span>
+      3 high-strength signals today. Diageo is time-critical (CEO change, ~4 weeks). Barclays and Shell both show framework renewal windows opening in Q3.
+    </div>
+
+    <!-- Card 1 -->
+    <div class="card strength-high" onclick="toggleCard(this)">
+      <span class="chevron">&#9660;</span>
+      <div class="card-header">
+        <span class="card-company">Diageo</span>
+        <span class="card-strength high">High</span>
+      </div>
+      <div class="card-role">Chief Communications Officer</div>
+      <div class="card-trigger">CEO transition announced &mdash; incoming leader expected to restructure comms function within 4 weeks.</div>
+      <div class="card-detail">
+        <p>Diageo announced the departure of CEO Ivan Menezes' successor with a restructured executive committee expected by Q3. Historical pattern shows comms leadership changes follow within 60 days of CEO transitions. The incumbent CCO has been in post 7+ years and is widely expected to move on. VMA placed the previous CCO in 2018 &mdash; strong relationship equity with the CHRO.</p>
+        <div class="card-actions">
+          <button class="btn-pitch">Generate Pitch</button>
+          <button class="btn-followup">Mark Followed Up</button>
+          <button class="btn-dismiss">Dismiss</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="card strength-high" onclick="toggleCard(this)">
+      <span class="chevron">&#9660;</span>
+      <div class="card-header">
+        <span class="card-company">Shell</span>
+        <span class="card-strength high">High</span>
+      </div>
+      <div class="card-role">VP, Global External Affairs</div>
+      <div class="card-trigger">Energy transition strategy overhaul &mdash; new public affairs leadership needed for repositioning.</div>
+      <div class="card-detail">
+        <p>Shell's board approved a revised energy transition strategy requiring significant reputational repositioning. The VP External Affairs role was vacated in May and has been covered on an interim basis. Regulatory pressure in EU and US markets demands senior-level appointment before September. VMA has an existing PSL relationship with Shell's procurement team.</p>
+        <div class="card-actions">
+          <button class="btn-pitch">Generate Pitch</button>
+          <button class="btn-followup">Mark Followed Up</button>
+          <button class="btn-dismiss">Dismiss</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="card strength-high" onclick="toggleCard(this)">
+      <span class="chevron">&#9660;</span>
+      <div class="card-header">
+        <span class="card-company">Barclays</span>
+        <span class="card-strength high">High</span>
+      </div>
+      <div class="card-role">Director of Corporate Affairs</div>
+      <div class="card-trigger">Regulatory pressure &amp; brand refresh programme triggering senior comms hire.</div>
+      <div class="card-detail">
+        <p>Barclays is undergoing a comprehensive brand repositioning following its strategic review. The Director of Corporate Affairs departed in April and the interim cover arrangement ends in August. FCA regulatory scrutiny on consumer communications adds urgency. VMA placed two directors in Barclays' corporate affairs team between 2020-2023.</p>
+        <div class="card-actions">
+          <button class="btn-pitch">Generate Pitch</button>
+          <button class="btn-followup">Mark Followed Up</button>
+          <button class="btn-dismiss">Dismiss</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 4 -->
+    <div class="card strength-medium" onclick="toggleCard(this)">
+      <span class="chevron">&#9660;</span>
+      <div class="card-header">
+        <span class="card-company">Unilever</span>
+        <span class="card-strength medium">Medium</span>
+      </div>
+      <div class="card-role">Head of Sustainability Communications</div>
+      <div class="card-trigger">ESG reporting mandate driving new dedicated sustainability comms leadership.</div>
+      <div class="card-detail">
+        <p>Unilever's new CSRD obligations and the departure of their sustainability comms lead signal a likely search. The role has been informally scoped at HRD level but not yet briefed to agencies. VMA's ESG practice lead has a warm relationship with Unilever's CHRO through the PRCA network.</p>
+        <div class="card-actions">
+          <button class="btn-pitch">Generate Pitch</button>
+          <button class="btn-followup">Mark Followed Up</button>
+          <button class="btn-dismiss">Dismiss</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 5 -->
+    <div class="card strength-medium" onclick="toggleCard(this)">
+      <span class="chevron">&#9660;</span>
+      <div class="card-header">
+        <span class="card-company">Tesco</span>
+        <span class="card-strength medium">Medium</span>
+      </div>
+      <div class="card-role">Group Head of Internal Communications</div>
+      <div class="card-trigger">Post-restructuring cultural transformation programme requires internal comms overhaul.</div>
+      <div class="card-detail">
+        <p>Tesco's "Together" cultural transformation programme, announced at the January leadership conference, includes a commitment to upgrade internal communications capability. The current Head of IC is moving to a commercial role in Q4. Budget for an external search has been discussed at HRD level. VMA completed an internal comms mapping project for Tesco in 2024.</p>
+        <div class="card-actions">
+          <button class="btn-pitch">Generate Pitch</button>
+          <button class="btn-followup">Mark Followed Up</button>
+          <button class="btn-dismiss">Dismiss</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 6 -->
+    <div class="card strength-medium" onclick="toggleCard(this)">
+      <span class="chevron">&#9660;</span>
+      <div class="card-header">
+        <span class="card-company">BP</span>
+        <span class="card-strength medium">Medium</span>
+      </div>
+      <div class="card-role">SVP, Government Relations</div>
+      <div class="card-trigger">UK general election aftermath &mdash; new government relationships needed at senior level.</div>
+      <div class="card-detail">
+        <p>BP's government relations function is being reshaped following the change in UK government policy on North Sea licensing. The SVP role has been on a 6-month interim contract due to end in September. BP historically uses search firms for SVP-level and above; VMA is on their broader PSL but has not yet been briefed on this specific role.</p>
+        <div class="card-actions">
+          <button class="btn-pitch">Generate Pitch</button>
+          <button class="btn-followup">Mark Followed Up</button>
+          <button class="btn-dismiss">Dismiss</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 7 -->
+    <div class="card strength-low" onclick="toggleCard(this)">
+      <span class="chevron">&#9660;</span>
+      <div class="card-header">
+        <span class="card-company">HSBC</span>
+        <span class="card-strength low">Low</span>
+      </div>
+      <div class="card-role">Head of Media Relations, Europe</div>
+      <div class="card-trigger">Asia-pivot restructure may create European media relations vacancy in H2.</div>
+      <div class="card-detail">
+        <p>HSBC's continued pivot to Asian markets has led to speculation about restructuring European communications. No confirmed vacancy yet, but industry sources suggest the Head of Media Relations for Europe may be relocated or made redundant by year-end. Monitor situation &mdash; likely to crystallise in Q4.</p>
+        <div class="card-actions">
+          <button class="btn-pitch">Generate Pitch</button>
+          <button class="btn-followup">Mark Followed Up</button>
+          <button class="btn-dismiss">Dismiss</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 8 -->
+    <div class="card strength-low" onclick="toggleCard(this)">
+      <span class="chevron">&#9660;</span>
+      <div class="card-header">
+        <span class="card-company">Vodafone</span>
+        <span class="card-strength low">Low</span>
+      </div>
+      <div class="card-role">Director of Brand &amp; Marketing Communications</div>
+      <div class="card-trigger">Merger integration with Three may trigger senior marketing comms consolidation.</div>
+      <div class="card-detail">
+        <p>The Vodafone-Three merger completion is expected in late 2026 pending CMA approval. Integration planning documents suggest a single Brand &amp; Marketing Communications Director across the combined entity. No formal process yet, but VMA should position early. Previous relationship with Vodafone's CHRO through 2022 mapping exercise.</p>
+        <div class="card-actions">
+          <button class="btn-pitch">Generate Pitch</button>
+          <button class="btn-followup">Mark Followed Up</button>
+          <button class="btn-dismiss">Dismiss</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 9 -->
+    <div class="card strength-medium" onclick="toggleCard(this)">
+      <span class="chevron">&#9660;</span>
+      <div class="card-header">
+        <span class="card-company">NatWest Group</span>
+        <span class="card-strength medium">Medium</span>
+      </div>
+      <div class="card-role">Chief Communications Officer</div>
+      <div class="card-trigger">Government stake sale completion likely to trigger comms leadership refresh.</div>
+      <div class="card-detail">
+        <p>With the UK government's remaining NatWest stake expected to be fully divested by autumn, the bank is preparing to operate as a fully private entity for the first time since 2008. Sources indicate a comms leadership refresh is planned as part of a broader "new chapter" narrative. The CCO role may be expanded to include investor relations.</p>
+        <div class="card-actions">
+          <button class="btn-pitch">Generate Pitch</button>
+          <button class="btn-followup">Mark Followed Up</button>
+          <button class="btn-dismiss">Dismiss</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 10 -->
+    <div class="card strength-low" onclick="toggleCard(this)">
+      <span class="chevron">&#9660;</span>
+      <div class="card-header">
+        <span class="card-company">Rolls-Royce</span>
+        <span class="card-strength low">Low</span>
+      </div>
+      <div class="card-role">VP, Corporate Communications</div>
+      <div class="card-trigger">Defence contract wins creating need for enhanced government &amp; public communications capability.</div>
+      <div class="card-detail">
+        <p>Rolls-Royce's growing defence portfolio (AUKUS submarine programme, small modular reactors) is increasing the profile and complexity of their corporate communications needs. The current VP is approaching retirement. No confirmed timeline yet, but industry sources suggest a search could launch in early 2027. Early positioning recommended.</p>
+        <div class="card-actions">
+          <button class="btn-pitch">Generate Pitch</button>
+          <button class="btn-followup">Mark Followed Up</button>
+          <button class="btn-dismiss">Dismiss</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE 2 — TIMELINE RIVER
+════════════════════════════════════════════ -->
+<div class="page" id="page-calendar">
+  <div class="cal-wrap">
+    <div class="cal-header">
+      <h2>Timeline River &mdash; 12-Month View</h2>
+    </div>
+
+    <div class="timeline-container">
+      <div class="timeline-inner" id="timeline">
+
+        <!-- Month axis -->
+        <div class="month-axis" id="month-axis"></div>
+
+        <!-- Swim lane: Frameworks -->
+        <div class="swim-lane">
+          <div class="lane-label">Frameworks</div>
+          <div class="lane-track" id="lane-frameworks"></div>
+        </div>
+
+        <!-- Swim lane: Events -->
+        <div class="swim-lane">
+          <div class="lane-label">Events</div>
+          <div class="lane-track" id="lane-events"></div>
+        </div>
+
+        <!-- Swim lane: Mandate Windows -->
+        <div class="swim-lane">
+          <div class="lane-label">Mandates</div>
+          <div class="lane-track" id="lane-mandates"></div>
+        </div>
+
+        <!-- Today line injected by JS -->
+      </div>
+
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot fw"></div>Frameworks</div>
+        <div class="legend-item"><div class="legend-dot ev"></div>Events</div>
+        <div class="legend-item"><div class="legend-dot md"></div>Mandate Windows</div>
+        <div class="legend-item"><div class="legend-dot td"></div>Today</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tooltip" id="tooltip"></div>
+</div>
+
+<script>
+/* ── Tab switching ── */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('page-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ── Card expand/collapse ── */
+function toggleCard(el) {
+  el.classList.toggle('expanded');
+}
+
+/* ══════════════════════════════════
+   TIMELINE RIVER — data & rendering
+══════════════════════════════════ */
+const YEAR = 2026;
+const START = new Date(YEAR, 0, 1);   // Jan 1
+const END   = new Date(YEAR, 11, 31); // Dec 31
+const TOTAL_DAYS = (END - START) / 864e5;
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// Populate month axis
+const axisEl = document.getElementById('month-axis');
+MONTHS.forEach(m => {
+  const cell = document.createElement('div');
+  cell.className = 'month-cell';
+  cell.textContent = m;
+  axisEl.appendChild(cell);
+});
+
+function dayOffset(dateStr) {
+  const d = new Date(dateStr);
+  return (d - START) / 864e5;
+}
+function pct(days) { return (days / TOTAL_DAYS * 100) + '%'; }
+
+const frameworks = [
+  { name: 'NHS England Comms Framework', start: '2026-02-01', end: '2026-05-15', tip: 'NHS England Communications Services Framework renewal. Submission deadline 15 May. Estimated value: £4.2M over 4 years.' },
+  { name: 'Cabinet Office Talent PSL', start: '2026-04-01', end: '2026-07-31', tip: 'Cabinet Office Talent Acquisition PSL. Lot 3: Senior Communications. Pre-qualification opens April, submissions close July.' },
+  { name: 'BBC Exec Search Panel', start: '2026-06-15', end: '2026-09-30', tip: 'BBC Executive Search Panel review and re-tender. Current panel expires Sept 2026. Early engagement recommended June.' },
+  { name: 'MoD Comms Services', start: '2026-08-01', end: '2026-11-15', tip: 'Ministry of Defence Communications Services Framework. Prior Information Notice expected August. VMA previously held Lot 2.' },
+  { name: 'Civil Service Fast Stream', start: '2026-01-15', end: '2026-03-31', tip: 'Civil Service Fast Stream Communications specialism. Assessment centre support contract renewal. Decision expected March.' },
+  { name: 'Network Rail Exec Search', start: '2026-07-01', end: '2026-10-15', tip: 'Network Rail Executive Search Framework re-tender. VMA currently on panel. Renewal process starts July.' },
+  { name: 'TfL Senior Recruitment', start: '2026-09-01', end: '2026-12-15', tip: 'Transport for London Senior Recruitment Framework. New requirement for communications-specialist lot. Market engagement Sept.' },
+  { name: 'Crown Commercial Service', start: '2026-03-01', end: '2026-06-30', tip: 'CCS Permanent Recruitment 2 Framework. Lot 7: Marketing & Communications. Application window March-June.' },
+];
+
+const events = [
+  { name: 'PRCA National Conference', start: '2026-06-18', end: '2026-06-19', tip: 'PRCA National Conference, QEII Centre London. Key networking opportunity. VMA sponsoring breakout session on AI in executive comms.' },
+  { name: 'CIPR Excellence Awards', start: '2026-09-24', end: '2026-09-24', tip: 'CIPR Excellence Awards ceremony. VMA shortlisted in Talent Partner category. Table booked for 10.' },
+  { name: 'Davos Comms Summit', start: '2026-01-20', end: '2026-01-23', tip: 'World Economic Forum Communications Leaders Summit. Invitation-only. MD attending. Diageo & Shell CCOs confirmed attendees.' },
+  { name: 'FT Board Director Programme', start: '2026-03-10', end: '2026-03-12', tip: 'FT Non-Executive Director programme. Key client CHRO speaking. Pre-event dinner on 9 March. Business development opportunity.' },
+  { name: 'IoIC Conference', start: '2026-11-05', end: '2026-11-06', tip: 'Institute of Internal Communication annual conference, Birmingham. VMA presenting on "Future of IC Leadership". 400+ attendees expected.' },
+  { name: 'FTSE Women Leaders Review', start: '2026-07-14', end: '2026-07-14', tip: 'FTSE Women Leaders Review annual reporting deadline. Key moment for diversity-focused executive search positioning.' },
+  { name: 'Global PR Summit', start: '2026-10-08', end: '2026-10-10', tip: 'Global PR Summit, Amsterdam. Senior comms leaders from FTSE 100 companies. VMA hosting roundtable on Day 2.' },
+  { name: 'Public Sector Comms Conference', start: '2026-05-12', end: '2026-05-13', tip: 'Government Communications Service annual conference. Whitehall comms leaders. Key framework pipeline intelligence.' },
+];
+
+const mandates = [
+  { name: 'Diageo CCO Search', start: '2026-06-01', end: '2026-08-15', tip: 'Diageo Chief Communications Officer. Time-critical: CEO transition. Target shortlist by mid-July, appointment by mid-August.' },
+  { name: 'Shell VP External Affairs', start: '2026-06-10', end: '2026-09-30', tip: 'Shell VP Global External Affairs. Energy transition repositioning. Interim cover ends September. Budget approved.' },
+  { name: 'Barclays Dir. Corporate Affairs', start: '2026-06-15', end: '2026-08-31', tip: 'Barclays Director of Corporate Affairs. Brand refresh programme. Interim arrangement ends August. FCA urgency factor.' },
+  { name: 'BP SVP Gov Relations', start: '2026-07-01', end: '2026-09-30', tip: 'BP SVP Government Relations. Post-election relationship building. Interim contract ends September. PSL advantage.' },
+  { name: 'Tesco Head of IC', start: '2026-08-01', end: '2026-11-30', tip: 'Tesco Group Head of Internal Communications. Cultural transformation programme. Current incumbent moving to commercial Q4.' },
+  { name: 'NatWest CCO', start: '2026-07-15', end: '2026-10-31', tip: 'NatWest Group CCO. Government stake sale completion trigger. Role may expand to include investor relations.' },
+  { name: 'Unilever Sustainability Comms', start: '2026-08-01', end: '2026-12-15', tip: 'Unilever Head of Sustainability Communications. CSRD obligations driving new dedicated role. Warm CHRO relationship.' },
+  { name: 'HSBC Media Relations Europe', start: '2026-10-01', end: '2026-12-31', tip: 'HSBC Head of Media Relations, Europe. Asia-pivot restructure. Speculative — monitor for confirmation Q4.' },
+];
+
+function renderBars(containerId, items, cls) {
+  const container = document.getElementById(containerId);
+  items.forEach(item => {
+    const bar = document.createElement('div');
+    bar.className = 'bar ' + cls;
+    const s = dayOffset(item.start);
+    const e = dayOffset(item.end);
+    bar.style.left = pct(s);
+    bar.style.width = pct(Math.max(e - s, 2));
+    bar.textContent = item.name;
+    bar.dataset.tip = item.tip;
+
+    bar.addEventListener('mouseenter', ev => showTooltip(ev, item.tip));
+    bar.addEventListener('mousemove', ev => moveTooltip(ev));
+    bar.addEventListener('mouseleave', hideTooltip);
+
+    container.appendChild(bar);
+  });
+}
+
+renderBars('lane-frameworks', frameworks, 'framework');
+renderBars('lane-events', events, 'event');
+renderBars('lane-mandates', mandates, 'mandate');
+
+// Today line
+const todayOffset = dayOffset(new Date().toISOString().slice(0,10));
+if (todayOffset >= 0 && todayOffset <= TOTAL_DAYS) {
+  const line = document.createElement('div');
+  line.className = 'today-line';
+  line.style.left = 'calc(140px + ' + ((todayOffset / TOTAL_DAYS) * 100) + '% * (1 - 140px / ' + document.getElementById('timeline').offsetWidth + '))';
+  // Simpler approach: percentage of track width
+  const trackWidth = document.getElementById('timeline').offsetWidth - 140;
+  line.style.left = (140 + (todayOffset / TOTAL_DAYS) * trackWidth) + 'px';
+  const label = document.createElement('div');
+  label.className = 'today-label';
+  label.textContent = 'Today';
+  line.appendChild(label);
+  document.getElementById('timeline').appendChild(line);
+}
+
+// Tooltip
+const tooltipEl = document.getElementById('tooltip');
+function showTooltip(ev, text) {
+  tooltipEl.textContent = text;
+  tooltipEl.style.display = 'block';
+  moveTooltip(ev);
+}
+function moveTooltip(ev) {
+  tooltipEl.style.left = (ev.clientX + 14) + 'px';
+  tooltipEl.style.top = (ev.clientY - 40) + 'px';
+}
+function hideTooltip() {
+  tooltipEl.style.display = 'none';
+}
+</script>
+</body>
+</html>

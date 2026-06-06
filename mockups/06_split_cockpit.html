@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMA Group — Split Cockpit / Radar Sweep</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #f0f2f5; color: #1a1f36; height: 100vh; display: flex; flex-direction: column; }
+
+  /* ── Tabs ── */
+  .tab-bar { display: flex; background: #1a1f36; padding: 0 32px; gap: 4px; flex-shrink: 0; }
+  .tab-btn { padding: 14px 28px; font-size: 13px; font-weight: 600; letter-spacing: .4px; text-transform: uppercase; color: rgba(255,255,255,.5); background: transparent; border: none; cursor: pointer; border-bottom: 3px solid transparent; transition: all .2s; }
+  .tab-btn:hover { color: rgba(255,255,255,.8); }
+  .tab-btn.active { color: #fff; border-bottom-color: #5b9bd5; }
+  .page { display: none; flex: 1; overflow: hidden; }
+  .page.active { display: flex; flex-direction: column; }
+
+  /* ════════════════════════════════════
+     PAGE 1 — SPLIT COCKPIT (Radar)
+     ════════════════════════════════════ */
+  .cockpit { display: flex; flex: 1; overflow: hidden; }
+
+  /* Left panel */
+  .left-panel { width: 55%; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; background: #fff; }
+  .left-header { padding: 20px 24px 14px; border-bottom: 1px solid #f0f1f3; }
+  .left-header h2 { font-size: 16px; font-weight: 700; color: #1a1f36; }
+  .left-header p { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+  .lead-list { flex: 1; overflow-y: auto; }
+  .lead-row { display: flex; align-items: center; padding: 12px 24px; gap: 14px; cursor: pointer; border-bottom: 1px solid #f8f9fa; transition: background .1s; }
+  .lead-row:hover { background: #f6f8fc; }
+  .lead-row.selected { background: #edf2ff; border-left: 3px solid #5b9bd5; padding-left: 21px; }
+  .lead-rank { width: 22px; height: 22px; border-radius: 50%; background: #f0f2f5; color: #6b7280; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .lead-row.selected .lead-rank { background: #1a1f36; color: #fff; }
+  .lead-company { font-size: 13px; font-weight: 600; color: #1a1f36; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lead-role { font-size: 12px; color: #9ca3af; max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+  .lead-pip { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .pip-high { background: #1a1f36; }
+  .pip-med { background: #385578; }
+  .pip-low { background: #93b5d4; }
+
+  /* Right panel */
+  .right-panel { width: 45%; display: flex; flex-direction: column; background: #fafbfc; }
+  .right-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 14px; }
+  .detail-header { padding: 24px 28px 0; }
+  .detail-company { font-size: 20px; font-weight: 700; color: #1a1f36; }
+  .detail-role { font-size: 13px; color: #385578; margin-top: 2px; }
+  .detail-meta { display: flex; gap: 12px; margin-top: 12px; }
+  .detail-badge { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; background: #edf2ff; color: #385578; }
+
+  /* Detail tabs */
+  .detail-tabs { display: flex; gap: 0; border-bottom: 1px solid #e5e7eb; margin-top: 20px; padding: 0 28px; }
+  .detail-tab { padding: 10px 18px; font-size: 12px; font-weight: 600; color: #9ca3af; cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; background: none; border-top: none; border-left: none; border-right: none; }
+  .detail-tab:hover { color: #1a1f36; }
+  .detail-tab.active { color: #1a1f36; border-bottom-color: #5b9bd5; }
+  .detail-content { flex: 1; overflow-y: auto; padding: 20px 28px; }
+  .detail-section { display: none; }
+  .detail-section.active { display: block; }
+
+  /* Brief tab */
+  .ai-summary { font-size: 14px; line-height: 1.7; color: #374151; margin-bottom: 16px; }
+  .evidence-list { list-style: none; }
+  .evidence-list li { font-size: 13px; color: #6b7280; padding: 8px 0; border-bottom: 1px solid #f0f1f3; display: flex; align-items: flex-start; gap: 8px; line-height: 1.5; }
+  .evidence-list li::before { content: '\25AA'; color: #5b9bd5; flex-shrink: 0; margin-top: 1px; }
+
+  /* History tab */
+  .timeline { position: relative; padding-left: 20px; }
+  .timeline::before { content: ''; position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: #e5e7eb; }
+  .timeline-item { position: relative; padding: 0 0 20px 16px; }
+  .timeline-item::before { content: ''; position: absolute; left: -17px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #5b9bd5; border: 2px solid #fff; }
+  .timeline-date { font-size: 11px; color: #9ca3af; font-weight: 600; }
+  .timeline-text { font-size: 13px; color: #374151; margin-top: 3px; line-height: 1.5; }
+
+  /* Act tab */
+  .action-btn-group { display: flex; flex-direction: column; gap: 10px; }
+  .action-btn { padding: 14px 20px; border-radius: 8px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all .15s; }
+  .action-btn .action-icon { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+  .action-btn-primary { background: #1a1f36; color: #fff; }
+  .action-btn-primary:hover { background: #2a3150; }
+  .action-btn-primary .action-icon { background: rgba(255,255,255,.15); }
+  .action-btn-secondary { background: #fff; color: #1a1f36; border: 1px solid #e5e7eb; }
+  .action-btn-secondary:hover { background: #f6f8fc; }
+  .action-btn-secondary .action-icon { background: #f0f2f5; }
+  .action-btn-label { text-align: left; }
+  .action-btn-label .action-title { display: block; }
+  .action-btn-label .action-sub { display: block; font-size: 11px; font-weight: 400; opacity: .6; margin-top: 2px; }
+
+  .status-group { margin-top: 20px; padding-top: 16px; border-top: 1px solid #f0f1f3; }
+  .status-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #9ca3af; letter-spacing: .5px; margin-bottom: 10px; }
+  .status-options { display: flex; gap: 8px; flex-wrap: wrap; }
+  .status-pill { padding: 6px 14px; font-size: 12px; font-weight: 600; border-radius: 20px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer; transition: all .15s; color: #6b7280; }
+  .status-pill:hover { border-color: #5b9bd5; color: #385578; }
+  .status-pill.active { background: #1a1f36; color: #fff; border-color: #1a1f36; }
+
+
+  /* ════════════════════════════════════
+     PAGE 2 — RADAR SWEEP (Calendar)
+     ════════════════════════════════════ */
+  .radar-page { background: #1a1f36; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .radar-header { padding: 24px 40px 0; }
+  .radar-header h2 { font-size: 18px; font-weight: 700; color: #fff; }
+  .radar-header p { font-size: 12px; color: rgba(255,255,255,.45); margin-top: 3px; }
+
+  .radar-body { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; padding: 20px; gap: 24px; }
+
+  .radar-container { position: relative; width: 480px; height: 480px; flex-shrink: 0; }
+  .radar-ring { position: absolute; border-radius: 50%; border: 1px solid rgba(255,255,255,.1); }
+  .radar-ring-label { position: absolute; font-size: 10px; color: rgba(255,255,255,.3); font-weight: 600; letter-spacing: .3px; }
+
+  /* Sweep line */
+  .radar-sweep { position: absolute; top: 50%; left: 50%; width: 50%; height: 2px; transform-origin: left center; background: linear-gradient(90deg, rgba(91,155,213,.8), transparent); animation: sweep 3s ease-out forwards; }
+  @keyframes sweep {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .radar-sweep::before { content: ''; position: absolute; left: 0; top: -20px; width: 100%; height: 42px; background: linear-gradient(90deg, rgba(91,155,213,.12), transparent); transform-origin: left center; border-radius: 0 50% 50% 0; }
+
+  /* Centre counter */
+  .radar-centre { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; z-index: 5; }
+  .radar-centre .count-primary { font-size: 28px; font-weight: 800; color: #fff; }
+  .radar-centre .count-label { font-size: 11px; color: rgba(255,255,255,.5); margin-top: 2px; }
+  .radar-centre .count-urgent { font-size: 11px; color: #f59e0b; font-weight: 700; margin-top: 4px; }
+
+  /* Dots */
+  .radar-dot { position: absolute; width: 12px; height: 12px; border-radius: 50%; cursor: pointer; transform: translate(-50%,-50%); transition: all .15s; z-index: 3; }
+  .radar-dot:hover { transform: translate(-50%,-50%) scale(1.5); box-shadow: 0 0 12px currentColor; z-index: 6; }
+  .dot-framework { background: #3b82f6; color: #3b82f6; }
+  .dot-event { background: #22c55e; color: #22c55e; }
+  .dot-window { background: #f59e0b; color: #f59e0b; }
+
+  /* Detail card */
+  .radar-detail-card { width: 300px; background: rgba(255,255,255,.07); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 24px; color: #fff; flex-shrink: 0; display: none; }
+  .radar-detail-card.visible { display: block; }
+  .rdc-cat { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px; }
+  .rdc-title { font-size: 16px; font-weight: 700; line-height: 1.4; margin-bottom: 10px; }
+  .rdc-date { font-size: 12px; color: rgba(255,255,255,.5); margin-bottom: 14px; }
+  .rdc-desc { font-size: 13px; line-height: 1.65; color: rgba(255,255,255,.7); }
+  .rdc-close { position: absolute; top: 12px; right: 14px; background: none; border: none; color: rgba(255,255,255,.4); font-size: 18px; cursor: pointer; }
+
+  /* Legend */
+  .radar-legend { display: flex; justify-content: center; gap: 28px; padding: 16px 0 24px; }
+  .radar-legend-item { display: flex; align-items: center; gap: 7px; font-size: 11px; color: rgba(255,255,255,.55); font-weight: 500; }
+  .radar-legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+</style>
+</head>
+<body>
+
+<!-- Tab bar -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('radar')">Communications Radar</button>
+  <button class="tab-btn" onclick="switchTab('calendar')">BD Calendar</button>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE 1 — SPLIT COCKPIT
+     ═══════════════════════════════════════ -->
+<div id="page-radar" class="page active">
+  <div class="cockpit">
+    <!-- Left panel -->
+    <div class="left-panel">
+      <div class="left-header">
+        <h2>Active Leads</h2>
+        <p>12 leads ranked by signal strength &middot; Week of 2 Jun 2026</p>
+      </div>
+      <div class="lead-list" id="lead-list"></div>
+    </div>
+    <!-- Right panel -->
+    <div class="right-panel" id="right-panel">
+      <div class="right-empty" id="right-empty">Select a lead to view details</div>
+      <div id="right-detail" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+        <div class="detail-header">
+          <div class="detail-company" id="d-company"></div>
+          <div class="detail-role" id="d-role"></div>
+          <div class="detail-meta" id="d-meta"></div>
+        </div>
+        <div class="detail-tabs">
+          <button class="detail-tab active" onclick="switchDetailTab('brief',this)">Brief</button>
+          <button class="detail-tab" onclick="switchDetailTab('history',this)">History</button>
+          <button class="detail-tab" onclick="switchDetailTab('act',this)">Act</button>
+        </div>
+        <div class="detail-content">
+          <div class="detail-section active" id="sec-brief"></div>
+          <div class="detail-section" id="sec-history"></div>
+          <div class="detail-section" id="sec-act"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE 2 — RADAR SWEEP
+     ═══════════════════════════════════════ -->
+<div id="page-calendar" class="page">
+  <div class="radar-page">
+    <div class="radar-header">
+      <h2>Radar Sweep</h2>
+      <p>Time-distance view of upcoming frameworks, events, and windows</p>
+    </div>
+    <div class="radar-body">
+      <div class="radar-container" id="radar-container">
+        <!-- Rings drawn by JS -->
+        <div class="radar-sweep"></div>
+        <div class="radar-centre">
+          <div class="count-primary">7</div>
+          <div class="count-label">active</div>
+          <div class="count-urgent">2 urgent</div>
+        </div>
+      </div>
+      <div class="radar-detail-card" id="radar-detail" style="position:relative;">
+        <button class="rdc-close" onclick="closeRadarDetail()">&times;</button>
+        <div class="rdc-cat" id="rdc-cat"></div>
+        <div class="rdc-title" id="rdc-title"></div>
+        <div class="rdc-date" id="rdc-date"></div>
+        <div class="rdc-desc" id="rdc-desc"></div>
+      </div>
+    </div>
+    <div class="radar-legend">
+      <div class="radar-legend-item"><div class="radar-legend-dot" style="background:#3b82f6;"></div> Frameworks</div>
+      <div class="radar-legend-item"><div class="radar-legend-dot" style="background:#22c55e;"></div> Events</div>
+      <div class="radar-legend-item"><div class="radar-legend-dot" style="background:#f59e0b;"></div> Windows</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── Tab switching ── */
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  if (tab === 'radar') {
+    document.querySelectorAll('.tab-btn')[0].classList.add('active');
+    document.getElementById('page-radar').classList.add('active');
+  } else {
+    document.querySelectorAll('.tab-btn')[1].classList.add('active');
+    document.getElementById('page-calendar').classList.add('active');
+  }
+}
+
+/* ── Leads data ── */
+const leads = [
+  { rank:1, company:'Rolls-Royce', role:'Chief Operating Officer', strength:'high', sector:'Aerospace & Defence', signals:['Leadership','Funding'],
+    summary:'Rolls-Royce confirmed COO departure on 28 May with an interim appointment. The permanent search is live with CHRO Sarah Mitchell sponsoring. The role is critical to the ongoing civil aerospace margin improvement programme and the SMR nuclear division expansion.',
+    evidence:['COO departure confirmed via RNS filing 28 May 2026','Interim COO appointed from Civil Aerospace division','CHRO Sarah Mitchell named as search sponsor — existing VMA relationship','Role scope expanded to include SMR nuclear oversight','Competitor Spencer Stuart also briefed — timeline pressure'],
+    history:[{date:'28 May 2026',text:'Signal detected: COO departure RNS filing'},{date:'29 May 2026',text:'AI brief auto-generated and flagged to Aerospace team lead'},{date:'1 Jun 2026',text:'Initial call with CHRO Sarah Mitchell — confirmed exclusive window of 14 days'},{date:'3 Jun 2026',text:'Three candidates identified from long-list; two more needed'},{date:'5 Jun 2026',text:'Availability check emails sent to pipeline candidates'}],
+    status:'In Progress'
+  },
+  { rank:2, company:'Shell', role:'Chief Sustainability Officer', strength:'high', sector:'Energy', signals:['M&A','Restructure','Regulatory'],
+    summary:'Shell faces a convergence of three signal types: the downstream/chemicals merger is creating 40+ leadership changes, the HQ relocation to The Hague presents talent flight risk, and the Dutch court carbon ruling requires a dedicated Chief Sustainability Officer. This is a high-urgency triple-signal lead.',
+    evidence:['Downstream/chemicals merger announced Q1 — integration underway','HQ relocation London to The Hague confirmed for H2 2026','Dutch court ruling requires measurable carbon reduction leadership','Current sustainability function reports to COO — needs elevation to C-suite','LinkedIn data shows 12% attrition in senior Shell UK roles past 90 days'],
+    history:[{date:'15 Apr 2026',text:'M&A signal detected: merger announcement'},{date:'22 Apr 2026',text:'Restructure signal added: HQ relocation confirmed'},{date:'10 May 2026',text:'Regulatory signal added: court ruling implications assessed'},{date:'20 May 2026',text:'Sector lead briefed on triple-signal convergence'},{date:'2 Jun 2026',text:'Preliminary outreach to Shell VP HR — meeting requested'}],
+    status:'Outreach'
+  },
+  { rank:3, company:'Diageo', role:'Chief Financial Officer', strength:'high', sector:'Consumer FMCG', signals:['Leadership','Restructure'],
+    summary:'CFO departure confirmed alongside a major global restructure merging three regional layers into two. The CEO succession plan leak adds urgency — incoming CEO will want their own CFO. VMA has strong existing relationships with Diageo CHRO.',
+    evidence:['CFO departure confirmed 28 May — gardening leave from July','Global restructure: 3 regional layers merging to 2','CEO succession plan reported in Sunday Times 25 May','New CEO expected to appoint own CFO — 90-day window','VMA placed Diageo CHRO in 2024 — strong referral path'],
+    history:[{date:'25 May 2026',text:'Leadership signal: CEO succession reported in Sunday Times'},{date:'28 May 2026',text:'Leadership signal confirmed: CFO departure announcement'},{date:'30 May 2026',text:'Restructure signal added: regional merger details emerged'},{date:'3 Jun 2026',text:'Contact with Diageo CHRO — informal discussion held'}],
+    status:'Warm Lead'
+  },
+  { rank:4, company:'GSK', role:'VP Oncology', strength:'high', sector:'Pharma', signals:['Funding','Regulatory'],
+    summary:'GSK has committed $4bn to oncology R&D and created a new VP Oncology role. The MHRA fast-track regulatory pathway adds strategic urgency. Engagement letter signed — VMA has an active mandate.',
+    evidence:['$4bn oncology R&D fund announced at Capital Markets Day','VP Oncology role created — London/Philadelphia dual base','MHRA fast-track pathway for cancer therapies confirmed','Engagement letter signed 1 Jun — VMA exclusive for 60 days','Target profile: 15+ years pharma, Phase III trial leadership, P&L >$500m'],
+    history:[{date:'15 May 2026',text:'Funding signal: $4bn oncology commitment announced'},{date:'22 May 2026',text:'Role specification received from GSK Chief People Officer'},{date:'1 Jun 2026',text:'Engagement letter signed — exclusive mandate confirmed'},{date:'4 Jun 2026',text:'Sourcing sprint initiated across Roche, Novartis, Merck, AZ'}],
+    status:'Active Mandate'
+  },
+  { rank:5, company:'BP', role:'Head of Green Hydrogen', strength:'med', sector:'Energy', signals:['Funding','M&A'],
+    summary:'BP is raising a $2.1bn green hydrogen fund and acquiring Lightsource, requiring an entire renewables C-suite. The Head of Green Hydrogen role is the anchor hire that will shape subsequent leadership appointments.',
+    evidence:['$2.1bn green hydrogen fund announced — fundraising in progress','Lightsource acquisition creates need for renewables C-suite','Head of Green Hydrogen role will report directly to CEO','Board refresh: 2 non-exec seats opening H2 2026','FCA energy trading compliance review may affect timeline'],
+    history:[{date:'1 May 2026',text:'Funding signal detected: hydrogen fund announcement'},{date:'18 May 2026',text:'M&A signal: Lightsource acquisition terms reported'},{date:'28 May 2026',text:'Preliminary brief developed for sector team review'},{date:'5 Jun 2026',text:'Awaiting green light from BP Chief Strategy Officer'}],
+    status:'Prospecting'
+  },
+  { rank:6, company:'Barclays', role:'Regulatory Programme Director', strength:'med', sector:'Financial Services', signals:['Regulatory','M&A'],
+    summary:'Basel III.1 implementation is driving a major regulatory programme at Barclays. The bank needs a Programme Director to lead compliance transformation. VMA has exclusive positioning if the PRA accelerates the timeline.',
+    evidence:['Basel III.1 PRA implementation date expected July confirmation','Barclays committed to fast-track if regulation accelerates','Wealth management bolt-on acquisition adds integration complexity','CRO lateral move rumoured — potential additional mandate','VMA fortnightly check-ins with Barclays CRO established'],
+    history:[{date:'10 Apr 2026',text:'Regulatory signal: Basel III.1 timeline flagged'},{date:'5 May 2026',text:'M&A signal: wealth management acquisition reported'},{date:'20 May 2026',text:'Meeting with Barclays CRO — conditional mandate discussed'},{date:'3 Jun 2026',text:'Monitoring PRA announcements for trigger event'}],
+    status:'Conditional'
+  },
+  { rank:7, company:'Unilever', role:'Chief Growth Officer', strength:'med', sector:'Consumer FMCG', signals:['Leadership','Restructure'],
+    summary:'Unilever is creating a new Chief Growth Officer role as part of their split into five business groups. The ice cream division divestiture is reshaping the executive team, creating additional opportunities.',
+    evidence:['New Chief Growth Officer role created — search imminent','Five business group restructure planned for Q3 2026','Ice cream division divestiture — exec team reshaping','EU plastics directive may require compliance officer','CGO role is net-new — no predecessor, clean slate for candidate'],
+    history:[{date:'12 May 2026',text:'Leadership signal: CGO role creation reported'},{date:'18 May 2026',text:'Restructure signal: 5 business group plan confirmed'},{date:'1 Jun 2026',text:'AI brief generated — sector lead reviewing'}],
+    status:'Monitoring'
+  },
+  { rank:8, company:'Astrazeneca', role:'EVP Commercial', strength:'med', sector:'Pharma', signals:['Leadership','M&A'],
+    summary:'The EVP Commercial is stepping down at year end. The ongoing Alexion integration ($39bn) means the successor needs M&A integration experience alongside commercial leadership.',
+    evidence:['EVP Commercial departure confirmed for December 2026','Search brief issued to CHRO — VMA among invited firms','Alexion integration ($39bn) ongoing — synergy leads rotating out','Gene therapy JV with Daiichi creating additional leadership roles','China pricing regulations adding APAC complexity to the role'],
+    history:[{date:'20 May 2026',text:'Leadership signal: EVP departure confirmed'},{date:'28 May 2026',text:'Search brief received from AZ CHRO'},{date:'4 Jun 2026',text:'Competitive pitch scheduled for 12 Jun'}],
+    status:'Pitching'
+  },
+  { rank:9, company:'Tesco', role:'Chief Technology Officer', strength:'low', sector:'Retail', signals:['Leadership'],
+    summary:'CTO retiring in December 2026. Replacement search starting soon. VMA has limited existing relationship but the mandate size makes it worth pursuing.',
+    evidence:['CTO retirement announced internally — Dec 2026 timeline','Replacement search expected to launch July','Store operations restructure may expand CTO scope','Digital transformation agenda makes this a strategic hire','VMA retail sector coverage expanding — good entry point'],
+    history:[{date:'1 Jun 2026',text:'Leadership signal detected: CTO retirement reported'},{date:'4 Jun 2026',text:'Sector lead assessing pursuit viability'}],
+    status:'Assessing'
+  },
+  { rank:10, company:'BT Group', role:'Transformation Director', strength:'low', sector:'Telecoms', signals:['Restructure','Regulatory'],
+    summary:'BT\'s 55,000 headcount reduction plan requires a senior Transformation Director. Potential Openreach separation adds board-level complexity.',
+    evidence:['55,000 headcount reduction plan — senior leadership redesign needed','Potential Openreach separation has board-level implications','Ofcom fibre regulation review creating Government Affairs need','Transformation Director role not yet formally created','VMA telecoms coverage is thin — would need partnership approach'],
+    history:[{date:'15 May 2026',text:'Restructure signal: headcount reduction plan reported'},{date:'28 May 2026',text:'Regulatory signal: Ofcom review flagged'},{date:'5 Jun 2026',text:'Preliminary assessment — low priority due to limited access'}],
+    status:'Low Priority'
+  },
+  { rank:11, company:'BHP', role:'VP Sustainability EMEA', strength:'low', sector:'Mining', signals:['Regulatory'],
+    summary:'ESG regulatory pressure in the EU is driving BHP to create a dedicated VP Sustainability for the EMEA region. Early-stage signal — monitoring for confirmation.',
+    evidence:['EU CSRD reporting requirements accelerating for mining sector','BHP EMEA operations expanding through Oz Minerals integration','VP Sustainability EMEA role rumoured but not confirmed','VMA has placed at BHP Australia — can leverage relationship','Timeline uncertain — likely H1 2027 mandate'],
+    history:[{date:'28 May 2026',text:'Regulatory signal: CSRD implications for mining flagged'},{date:'4 Jun 2026',text:'Added to monitoring queue — low confidence'}],
+    status:'Monitoring'
+  },
+  { rank:12, company:'Sainsbury\'s', role:'Chief People Officer', strength:'low', sector:'Retail', signals:['Leadership'],
+    summary:'Rumoured CPO departure — unconfirmed. Watching for formal announcement. Low priority until signal strengthens.',
+    evidence:['CPO departure rumoured via industry network — unconfirmed','Sainsbury\'s undergoing cost transformation programme','If confirmed, VMA would compete against Heidrick & Egon Zehnder','Existing relationship limited to mid-level HR placements','Signal confidence: Low — single source, no corroboration'],
+    history:[{date:'2 Jun 2026',text:'Weak leadership signal: CPO departure rumour received'},{date:'5 Jun 2026',text:'Flagged for monitoring — awaiting confirmation'}],
+    status:'Unconfirmed'
+  }
+];
+
+/* Build lead list */
+(function buildLeads() {
+  const list = document.getElementById('lead-list');
+  leads.forEach((lead, i) => {
+    const row = document.createElement('div');
+    row.className = 'lead-row';
+    row.dataset.index = i;
+    row.innerHTML = `
+      <div class="lead-rank">${lead.rank}</div>
+      <div class="lead-company">${lead.company}</div>
+      <div class="lead-role">${lead.role}</div>
+      <div class="lead-pip pip-${lead.strength}"></div>`;
+    row.addEventListener('click', () => selectLead(i, row));
+    list.appendChild(row);
+  });
+})();
+
+function selectLead(index, rowEl) {
+  // Highlight row
+  document.querySelectorAll('.lead-row').forEach(r => r.classList.remove('selected'));
+  rowEl.classList.add('selected');
+
+  const lead = leads[index];
+  document.getElementById('right-empty').style.display = 'none';
+  const detail = document.getElementById('right-detail');
+  detail.style.display = 'flex';
+
+  document.getElementById('d-company').textContent = lead.company;
+  document.getElementById('d-role').textContent = lead.role;
+  document.getElementById('d-meta').innerHTML = lead.signals.map(s =>
+    `<span class="detail-badge">${s}</span>`
+  ).join('') + `<span class="detail-badge" style="background:#f0fdf4;color:#22c55e;">${lead.status}</span>`;
+
+  // Brief
+  document.getElementById('sec-brief').innerHTML = `
+    <div class="ai-summary">${lead.summary}</div>
+    <ul class="evidence-list">${lead.evidence.map(e => `<li>${e}</li>`).join('')}</ul>`;
+
+  // History
+  document.getElementById('sec-history').innerHTML = `
+    <div class="timeline">${lead.history.map(h => `
+      <div class="timeline-item">
+        <div class="timeline-date">${h.date}</div>
+        <div class="timeline-text">${h.text}</div>
+      </div>`).join('')}
+    </div>`;
+
+  // Act
+  const statusOptions = ['Monitoring','Prospecting','Outreach','Warm Lead','Pitching','Active Mandate','In Progress','Conditional','Won','Lost'];
+  document.getElementById('sec-act').innerHTML = `
+    <div class="action-btn-group">
+      <button class="action-btn action-btn-primary" onclick="alert('Generating pitch deck for ${lead.company}...')">
+        <div class="action-icon">&#9998;</div>
+        <div class="action-btn-label">
+          <span class="action-title">Generate Pitch</span>
+          <span class="action-sub">AI-drafted pitch deck tailored to ${lead.company} signals</span>
+        </div>
+      </button>
+      <button class="action-btn action-btn-secondary" onclick="navigator.clipboard.writeText('${lead.summary.replace(/'/g,"\\'")}').then(()=>alert('Copied!'))">
+        <div class="action-icon">&#128203;</div>
+        <div class="action-btn-label">
+          <span class="action-title">Copy Opener</span>
+          <span class="action-sub">Copy AI-generated conversation opener to clipboard</span>
+        </div>
+      </button>
+      <button class="action-btn action-btn-secondary" onclick="alert('Opening email composer for ${lead.company}...')">
+        <div class="action-icon">&#9993;</div>
+        <div class="action-btn-label">
+          <span class="action-title">Draft Outreach Email</span>
+          <span class="action-sub">Generate personalised outreach based on latest signals</span>
+        </div>
+      </button>
+    </div>
+    <div class="status-group">
+      <div class="status-label">Mark Status</div>
+      <div class="status-options">${statusOptions.map(s =>
+        `<div class="status-pill${s === lead.status ? ' active' : ''}" onclick="setStatus(this)">${s}</div>`
+      ).join('')}</div>
+    </div>`;
+
+  // Reset to Brief tab
+  switchDetailTab('brief', document.querySelectorAll('.detail-tab')[0]);
+}
+
+function switchDetailTab(tab, btn) {
+  document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.detail-section').forEach(s => s.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('sec-' + tab).classList.add('active');
+}
+
+function setStatus(el) {
+  el.parentElement.querySelectorAll('.status-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+
+/* ═══════════════════════════════════════
+   RADAR SWEEP
+   ═══════════════════════════════════════ */
+const radarItems = [
+  { cat:'framework', label:'ESMA Regulatory Framework', date:'18 Jun 2026', months: 0.4, angle: 30, desc:'European Securities and Markets Authority consultation on fund manager remuneration closes. 4 VMA targets affected: Barclays, Schroders, LGIM, abrdn. Requires Chief Compliance Officer upgrades at each firm.' },
+  { cat:'window', label:'R-R COO Search Window', date:'11 Jun 2026', months: 0.17, angle: 85, desc:'Rolls-Royce exclusive search window closes. Shortlist of 5 candidates required by this date. CHRO Sarah Mitchell is sponsor. Competitor Spencer Stuart also briefed if VMA misses deadline.' },
+  { cat:'event', label:'FT Future of Energy Summit', date:'24 Jun 2026', months: 0.6, angle: 150, desc:'BP, Shell, and SSE executives confirmed as panellists. VMA has requested bilateral meetings via event app. Tailored capability decks being prepared for each company.' },
+  { cat:'event', label:'VMA CHRO Roundtable', date:'1 Jul 2026', months: 0.83, angle: 210, desc:'VMA-hosted CHRO Roundtable at The Ned, London. 18 of 24 invitations accepted. Keynote by Prof. Lynda Gratton. Attendee booklets include personalised signal summaries.' },
+  { cat:'framework', label:'Basel III.1 PRA Confirmation', date:'15 Jul 2026', months: 1.3, angle: 340, desc:'PRA expected to confirm Basel III.1 implementation date. If accelerated, triggers Barclays Regulatory Programme Director search (VMA exclusive). Critical dependency for Financial Services pipeline.' },
+  { cat:'window', label:'GSK VP Oncology Exclusivity', date:'1 Aug 2026', months: 1.8, angle: 115, desc:'60-day exclusive mandate window for GSK VP Oncology role. Sourcing sprint across Roche, Novartis, Merck, and AZ oncology divisions. First progress call 20 Jun. London/Philadelphia dual base.' },
+  { cat:'event', label:'Pharma Leadership Forum', date:'15 Sep 2026', months: 3.3, angle: 260, desc:'Annual pharma leadership forum in Zurich. Key networking opportunity for GSK, AstraZeneca, and Novartis mandates. VMA sponsoring a breakout session on oncology leadership.' },
+  { cat:'framework', label:'EU CSRD Reporting Deadline', date:'1 Jan 2027', months: 6.8, angle: 45, desc:'EU Corporate Sustainability Reporting Directive reporting deadline for large companies. Mining and energy sector clients will need VP Sustainability roles filled before this date.' },
+  { cat:'window', label:'AZ EVP Commercial Window', date:'1 Dec 2026', months: 5.8, angle: 180, desc:'AstraZeneca EVP Commercial departure at year end. Competitive pitch on 12 Jun. If won, sourcing must complete by October for December start. $39bn Alexion integration experience required.' }
+];
+
+(function buildRadar() {
+  const container = document.getElementById('radar-container');
+  const size = 480;
+  const cx = size / 2;
+  const cy = size / 2;
+
+  // Draw concentric rings
+  const rings = [
+    { radius: 0.22, label: '1 month' },
+    { radius: 0.50, label: '3 months' },
+    { radius: 0.85, label: '6 months' }
+  ];
+  rings.forEach(r => {
+    const ring = document.createElement('div');
+    ring.className = 'radar-ring';
+    const d = r.radius * size;
+    ring.style.cssText = `width:${d}px;height:${d}px;left:${cx - d/2}px;top:${cy - d/2}px;`;
+    container.appendChild(ring);
+
+    const lbl = document.createElement('div');
+    lbl.className = 'radar-ring-label';
+    lbl.textContent = r.label;
+    lbl.style.cssText = `left:${cx + 4}px;top:${cy - d/2 - 2}px;`;
+    container.appendChild(lbl);
+  });
+
+  // Cross hairs
+  const hLine = document.createElement('div');
+  hLine.style.cssText = `position:absolute;left:5%;right:5%;top:${cy}px;height:1px;background:rgba(255,255,255,.06);`;
+  container.appendChild(hLine);
+  const vLine = document.createElement('div');
+  vLine.style.cssText = `position:absolute;top:5%;bottom:5%;left:${cx}px;width:1px;background:rgba(255,255,255,.06);`;
+  container.appendChild(vLine);
+
+  // Place dots
+  const maxMonths = 7;
+  const maxR = size * 0.42; // max radius for dots
+
+  radarItems.forEach((item, i) => {
+    const dist = Math.min(item.months / maxMonths, 1) * maxR;
+    const angleRad = (item.angle - 90) * Math.PI / 180;
+    const x = cx + dist * Math.cos(angleRad);
+    const y = cy + dist * Math.sin(angleRad);
+
+    const dot = document.createElement('div');
+    dot.className = `radar-dot dot-${item.cat}`;
+    dot.style.cssText = `left:${x}px;top:${y}px;`;
+    dot.title = item.label;
+    dot.addEventListener('click', () => showRadarDetail(item));
+    container.appendChild(dot);
+  });
+})();
+
+function showRadarDetail(item) {
+  const card = document.getElementById('radar-detail');
+  const catLabels = { framework: 'Framework', event: 'Event', window: 'Window' };
+  const catColors = { framework: '#3b82f6', event: '#22c55e', window: '#f59e0b' };
+  document.getElementById('rdc-cat').textContent = catLabels[item.cat];
+  document.getElementById('rdc-cat').style.color = catColors[item.cat];
+  document.getElementById('rdc-title').textContent = item.label;
+  document.getElementById('rdc-date').textContent = item.date;
+  document.getElementById('rdc-desc').textContent = item.desc;
+  card.classList.add('visible');
+}
+
+function closeRadarDetail() {
+  document.getElementById('radar-detail').classList.remove('visible');
+}
+</script>
+</body>
+</html>

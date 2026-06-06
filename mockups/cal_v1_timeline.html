@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BD Calendar — Planning Timeline</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#F7F9FC;color:#1F1F1F;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wm-head{padding:24px 32px 15px;background:radial-gradient(ellipse 86% 165% at 50% -16%,#a4c6e8 0%,#bdd4ea 16%,#d4e2ef 34%,#e9f0f7 58%,#f4f8fc 78%,rgba(247,249,252,0) 100%)}
+.hdr{display:flex;align-items:center;gap:12px}
+.bdc-hero-ic{display:inline-flex;width:32px;height:32px;color:#385578}
+.bdc-hero-ic svg{width:100%;height:100%}
+.hdr h1{font-size:22px;font-weight:700;color:#1F1F1F;letter-spacing:-.3px}
+.hdr .sub{font-size:13px;color:#5a6a7a;margin-left:auto;font-weight:500}
+.view-label{font-size:12px;font-weight:600;color:#385578;text-transform:uppercase;letter-spacing:.8px;margin-top:8px}
+
+.legend{display:flex;gap:20px;padding:16px 32px 8px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#5a6a7a;font-weight:500}
+.legend-dot{width:10px;height:10px;border-radius:3px}
+
+.timeline-wrap{padding:16px 32px 40px;overflow-x:auto}
+.timeline{position:relative;min-width:1100px}
+
+.month-header{display:flex;border-bottom:1px solid #e2e8f0;margin-bottom:0}
+.month-col{flex:1;text-align:center;font-size:11px;font-weight:600;color:#385578;text-transform:uppercase;letter-spacing:.6px;padding:8px 0;position:relative}
+.month-col.current{color:#c0392b;font-weight:700}
+
+.swim-lanes{position:relative}
+.swim-lane{border-bottom:1px solid #f0f3f7;padding:12px 0 12px}
+.swim-lane:last-child{border-bottom:none}
+.lane-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;padding-left:4px}
+.lane-label.fw{color:#4285F4}
+.lane-label.ev{color:#1E7A41}
+.lane-label.mw{color:#B98235}
+
+.lane-rows{position:relative}
+.bar-row{height:28px;position:relative;margin-bottom:4px}
+
+.bar{position:absolute;height:22px;border-radius:6px;cursor:pointer;display:flex;align-items:center;padding:0 8px;font-size:10px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:box-shadow .2s,transform .15s;top:3px;min-width:18px}
+.bar:hover{transform:translateY(-1px);z-index:10}
+.bar.fw{background:#4285F4}
+.bar.fw:hover{box-shadow:0 4px 14px rgba(66,133,244,.35)}
+.bar.ev{background:#1E7A41}
+.bar.ev:hover{box-shadow:0 4px 14px rgba(30,122,65,.35)}
+.bar.mw{background:#B98235}
+.bar.mw:hover{box-shadow:0 4px 14px rgba(185,130,53,.35)}
+.bar.closed{opacity:.45}
+
+.bar.ending{animation:pulse-glow 2s ease-in-out infinite}
+@keyframes pulse-glow{0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,.0)}50%{box-shadow:0 0 12px 3px rgba(192,57,43,.3)}}
+
+.event-diamond{position:absolute;width:14px;height:14px;background:#1E7A41;transform:rotate(45deg);border-radius:2px;cursor:pointer;top:7px;z-index:5;transition:box-shadow .2s,transform .2s}
+.event-diamond:hover{box-shadow:0 3px 10px rgba(30,122,65,.4);transform:rotate(45deg) scale(1.2)}
+.prep-line{position:absolute;top:13px;height:2px;border-top:2px dashed rgba(30,122,65,.35);z-index:3}
+
+.today-line{position:absolute;top:0;bottom:0;width:2px;background:#c0392b;z-index:20;pointer-events:none}
+.today-line::before{content:'Today';position:absolute;top:-20px;left:-16px;font-size:9px;font-weight:700;color:#c0392b;text-transform:uppercase;letter-spacing:.5px}
+
+.popover{position:fixed;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.12);padding:20px;max-width:340px;z-index:100;display:none;font-size:13px}
+.popover.show{display:block}
+.popover .pop-cat{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.popover .pop-title{font-size:15px;font-weight:700;color:#1F1F1F;margin-bottom:8px}
+.popover .pop-meta{font-size:12px;color:#5a6a7a;margin-bottom:4px}
+.popover .pop-desc{font-size:12px;color:#6b7a8a;margin-top:8px;line-height:1.6}
+.popover .pop-close{position:absolute;top:12px;right:14px;background:none;border:none;font-size:18px;color:#999;cursor:pointer;line-height:1}
+</style>
+</head>
+<body>
+
+<div class="wm-head">
+  <div class="hdr">
+    <span class="bdc-hero-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></span>
+    <h1>BD Calendar</h1>
+    <span class="sub">Planning Timeline</span>
+  </div>
+  <div class="view-label">Jul 2026 &mdash; Jun 2027 &middot; 12-month horizon</div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#4285F4"></div>Approved Frameworks</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#1E7A41"></div>Events &amp; Networking</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#B98235"></div>Mandate Windows</div>
+  <div class="legend-item"><div class="legend-dot" style="background:none;border:2px dashed rgba(30,122,65,.5);width:8px;height:8px"></div>Prep period</div>
+  <div class="legend-item"><div style="width:10px;height:2px;background:#c0392b;border-radius:1px"></div>Today (6 Jun)</div>
+</div>
+
+<div class="timeline-wrap">
+  <div class="timeline" id="timeline">
+    <div class="month-header" id="monthHeader"></div>
+    <div class="swim-lanes" id="swimLanes"></div>
+  </div>
+</div>
+
+<div class="popover" id="popover">
+  <button class="pop-close" onclick="closePop()">&times;</button>
+  <div class="pop-cat" id="popCat"></div>
+  <div class="pop-title" id="popTitle"></div>
+  <div class="pop-meta" id="popMeta"></div>
+  <div class="pop-desc" id="popDesc"></div>
+</div>
+
+<script>
+const TODAY = new Date(2026, 5, 6);
+const START = new Date(2026, 5, 1); // Jun 1 2026 (we show from Jun for today line context)
+const END = new Date(2027, 5, 30);  // Jun 30 2027
+const VIEW_START = new Date(2026, 5, 1);
+const VIEW_END = new Date(2027, 5, 30);
+
+const MONTHS = [];
+for(let d=new Date(2026,5,1); d<=VIEW_END; d=new Date(d.getFullYear(),d.getMonth()+1,1)){
+  MONTHS.push(new Date(d));
+}
+
+const frameworks = [
+  {name:'NHS Workforce Alliance',sub:'RM6380 — Exec Search & Interim',buyer:'NHS Workforce Alliance (via CCS)',start:new Date(2026,0,1),end:new Date(2026,11,31),scope:'Executive search for NHS/health-sector senior leadership incl. comms',status:'Live now'},
+  {name:'Nuclear Decommissioning Authority',sub:'Shared Services Lot 6',buyer:'NDA Shared Services Alliance',start:new Date(2026,9,1),end:new Date(2027,2,31),scope:'Senior/specialist recruitment for NDA group bodies',status:'Opens ~Oct 2026'},
+  {name:'Devolved Government',sub:'Executive Search',buyer:'Scottish/Welsh/NI Governments',start:new Date(2027,0,1),end:new Date(2027,8,30),scope:'Senior public-appointment & comms roles',status:'Opens ~Jan 2027'},
+  {name:'Crown Commercial Service',sub:'RM6394 — Executive Search 3',buyer:'CCS',start:new Date(2027,5,1),end:new Date(2028,4,31),scope:'Senior public-sector roles incl. comms/corporate-affairs leadership',status:'Opens ~Jun 2027'},
+];
+
+const events = [
+  {name:'CIPR Excellence Awards',date:new Date(2026,6,1),venue:'Royal Lancaster Hotel, London',type:'External',actionWindow:'May–Jul',why:'145 orgs, 33 categories. Senior in-house comms judges + finalists = direct relationship route'},
+  {name:'Internal Comms & Engagement Live',date:new Date(2026,6,8),venue:'The Brewery, London',type:'Internal',actionWindow:'May–Jul',why:'Delegates skew Head of IC / Director of IC at large UK employers'},
+  {name:'IoIC Awards',date:new Date(2026,8,17),venue:'London',type:'Internal',actionWindow:'Jul–Sep',why:'Premier UK internal-comms awards. Finalists = visible IC Directors'},
+  {name:'ICCO Global Summit',date:new Date(2026,10,11),venue:'Milan',type:'External',actionWindow:'Sep–Nov',why:'Consultancy CEOs + senior in-house clients; relationship-building venue'},
+  {name:'CIPR Annual Conference',date:new Date(2026,10,18),venue:'London',type:'External',actionWindow:'Sep–Nov',why:'Theme: Organisational Resilience. Tier-1 senior in-house comms leaders'},
+  {name:'European Excellence Awards',date:new Date(2026,11,11),venue:'Europe',type:'Mixed',actionWindow:'Oct–Dec',why:'Pan-EU comms awards. UK + EU CCO attendance'},
+];
+
+const mandates = [
+  {name:'FCA Consumer Duty',sub:'Annual board-report ramp',start:new Date(2026,3,1),end:new Date(2026,6,31),seat:'Head of Regulatory/Customer Communications',daysLeft:56,confidence:'High',sector:'Financial Services'},
+  {name:'UK SRS',sub:'First sustainability-reporting build-up',start:new Date(2026,0,1),end:new Date(2026,11,31),seat:'Head of Sustainability/ESG Communications',daysLeft:209,confidence:'Medium',sector:'Cross-sector'},
+  {name:'Machinery-of-government',sub:'Post-SR reshuffle',start:new Date(2026,3,1),end:new Date(2026,11,31),seat:'Director of Communications (GCS)',daysLeft:209,confidence:'Medium',sector:'Public Sector'},
+  {name:'UK Annual-Report & AGM Season',sub:'',start:new Date(2026,1,1),end:new Date(2026,5,30),seat:'Head of IR/Corporate-Reporting Communications',daysLeft:25,confidence:'High',sector:'Cross-sector',ending:true},
+  {name:'Gender Pay Gap',sub:'Reporting & scrutiny window',start:new Date(2026,2,1),end:new Date(2026,5,30),seat:'Head of Internal/DEI Communications',daysLeft:25,confidence:'High',sector:'Cross-sector',ending:true},
+  {name:'NHS Operational Planning',sub:'& restructure round',start:new Date(2026,0,1),end:new Date(2026,4,31),seat:'Director of Communications — NHS',daysLeft:0,confidence:'Medium',sector:'Public Sector',closed:true},
+  {name:'Higher-Ed Clearing & Intake',sub:'',start:new Date(2026,5,15),end:new Date(2026,8,30),seat:'Head of Communications/Student Recruitment',daysLeft:117,confidence:'Medium',sector:'Public Sector'},
+];
+
+function dateToPct(d){
+  const total = VIEW_END - VIEW_START;
+  const pos = Math.max(0, Math.min(d - VIEW_START, total));
+  return (pos / total) * 100;
+}
+
+// Render months
+const mh = document.getElementById('monthHeader');
+const mNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+MONTHS.forEach(m => {
+  const div = document.createElement('div');
+  div.className = 'month-col';
+  if(m.getMonth()===5 && m.getFullYear()===2026) div.classList.add('current');
+  div.textContent = mNames[m.getMonth()] + ' ' + String(m.getFullYear()).slice(2);
+  mh.appendChild(div);
+});
+
+function renderLane(label, cssClass, items, type){
+  const lane = document.createElement('div');
+  lane.className = 'swim-lane';
+  const lbl = document.createElement('div');
+  lbl.className = 'lane-label ' + cssClass;
+  lbl.textContent = label;
+  lane.appendChild(lbl);
+
+  const rows = document.createElement('div');
+  rows.className = 'lane-rows';
+
+  items.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+
+    if(type === 'event'){
+      const pct = dateToPct(item.date);
+      const prepStart = new Date(item.date);
+      prepStart.setDate(prepStart.getDate() - 56);
+      const prepPct = dateToPct(prepStart);
+
+      const pl = document.createElement('div');
+      pl.className = 'prep-line';
+      pl.style.left = prepPct + '%';
+      pl.style.width = (pct - prepPct) + '%';
+      row.appendChild(pl);
+
+      const dia = document.createElement('div');
+      dia.className = 'event-diamond';
+      dia.style.left = 'calc(' + pct + '% - 7px)';
+      dia.onclick = (e) => showPop(e, {cat:'Events & Networking', catColor:'#1E7A41', title:item.name, meta:formatDate(item.date)+' &middot; '+item.venue+' &middot; '+item.type, desc:'<strong>Action window:</strong> '+item.actionWindow+'<br><strong>Why attend:</strong> '+item.why});
+      row.appendChild(dia);
+    } else {
+      const s = Math.max(item.start, VIEW_START);
+      const e = Math.min(item.end, VIEW_END);
+      const left = dateToPct(s);
+      const right = dateToPct(e);
+      const bar = document.createElement('div');
+      bar.className = 'bar ' + cssClass;
+      if(item.closed) bar.classList.add('closed');
+      if(item.ending) bar.classList.add('ending');
+      bar.style.left = left + '%';
+      bar.style.width = Math.max(1.5, right - left) + '%';
+      bar.textContent = item.name;
+
+      if(type === 'framework'){
+        bar.onclick = (e) => showPop(e, {cat:'Approved Framework', catColor:'#4285F4', title:item.name, meta:(item.sub||'')+'<br>Buyer: '+item.buyer+'<br>Status: '+item.status, desc:'<strong>Scope:</strong> '+item.scope+'<br><strong>Expires:</strong> '+formatDate(item.end)});
+      } else {
+        bar.onclick = (e) => showPop(e, {cat:'Mandate Window', catColor:'#B98235', title:item.name+(item.sub?' — '+item.sub:''), meta:'Seat: '+item.seat+'<br>Sector: '+item.sector+'<br>Confidence: '+item.confidence, desc:(item.closed?'<strong style="color:#c0392b">CLOSED</strong> (ended '+formatDate(item.end)+')':'<strong>'+item.daysLeft+' days left</strong> — ends '+formatDate(item.end))});
+      }
+      row.appendChild(bar);
+    }
+    rows.appendChild(row);
+  });
+
+  lane.appendChild(rows);
+  return lane;
+}
+
+const sl = document.getElementById('swimLanes');
+sl.appendChild(renderLane('Approved Frameworks','fw',frameworks,'framework'));
+sl.appendChild(renderLane('Events & Networking','ev',events,'event'));
+sl.appendChild(renderLane('Mandate Windows','mw',mandates,'mandate'));
+
+// Today line
+const tl = document.createElement('div');
+tl.className = 'today-line';
+tl.style.left = dateToPct(TODAY) + '%';
+document.getElementById('swimLanes').appendChild(tl);
+
+function formatDate(d){
+  return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+}
+
+const pop = document.getElementById('popover');
+function showPop(evt, data){
+  evt.stopPropagation();
+  document.getElementById('popCat').textContent = data.cat;
+  document.getElementById('popCat').style.color = data.catColor;
+  document.getElementById('popTitle').textContent = data.title;
+  document.getElementById('popMeta').innerHTML = data.meta;
+  document.getElementById('popDesc').innerHTML = data.desc;
+  pop.classList.add('show');
+  const r = evt.target.getBoundingClientRect();
+  let left = r.right + 12;
+  let top = r.top - 20;
+  if(left + 350 > window.innerWidth) left = r.left - 360;
+  if(top + 200 > window.innerHeight) top = window.innerHeight - 220;
+  if(top < 10) top = 10;
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+}
+function closePop(){pop.classList.remove('show')}
+document.addEventListener('click', (e) => { if(!pop.contains(e.target)) closePop(); });
+</script>
+</body>
+</html>

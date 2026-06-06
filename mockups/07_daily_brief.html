@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMA Group — Daily Brief &amp; Split Calendar</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f4f5f7; color: #1a1f36; min-height: 100vh; }
+
+  /* ── Tabs ── */
+  .tab-bar { display: flex; background: #1a1f36; padding: 0 32px; position: sticky; top: 0; z-index: 100; }
+  .tab-bar .logo { color: #fff; font-weight: 700; font-size: 15px; letter-spacing: 1.2px; display: flex; align-items: center; margin-right: 40px; opacity: .85; }
+  .tab-bar .logo span { color: #5b9bd5; }
+  .tab { padding: 16px 28px; color: rgba(255,255,255,.55); font-size: 13px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase; cursor: pointer; border-bottom: 2px solid transparent; transition: all .2s; }
+  .tab:hover { color: rgba(255,255,255,.8); }
+  .tab.active { color: #fff; border-bottom-color: #5b9bd5; }
+
+  /* ── Pages ── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ══════════════════════════════════════
+     PAGE 1 — DAILY BRIEF
+  ══════════════════════════════════════ */
+  #radar { background: #f4f5f7; min-height: calc(100vh - 50px); padding: 60px 24px 80px; }
+  .brief-header { text-align: center; margin-bottom: 10px; }
+  .brief-header h1 { font-family: Georgia, 'Times New Roman', serif; font-size: 28px; font-weight: 400; color: #1a1f36; letter-spacing: -.3px; }
+  .brief-header .date { font-size: 13px; color: #7a8299; margin-top: 6px; letter-spacing: .4px; }
+  .brief-header .divider { width: 48px; height: 2px; background: #5b9bd5; margin: 18px auto 0; border-radius: 1px; }
+
+  .brief-body { max-width: 680px; margin: 36px auto 0; font-family: Georgia, 'Times New Roman', serif; font-size: 18px; line-height: 1.75; color: #2d3248; }
+  .brief-body p { margin-bottom: 18px; }
+  .brief-body .entity { font-weight: 700; color: #1a1f36; cursor: pointer; border-bottom: 1.5px solid #5b9bd5; transition: color .15s; }
+  .brief-body .entity:hover { color: #385578; }
+
+  /* Inline detail card */
+  .detail-card { max-height: 0; overflow: hidden; transition: max-height .4s ease, opacity .3s ease; opacity: 0; }
+  .detail-card.open { max-height: 260px; opacity: 1; }
+  .detail-card-inner { background: #fff; border: 1px solid #e0e3ea; border-left: 3px solid #5b9bd5; border-radius: 6px; padding: 18px 22px; margin: 10px 0 18px; }
+  .detail-card-inner h4 { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; font-weight: 700; color: #1a1f36; margin-bottom: 8px; }
+  .detail-card-inner .meta { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 12px; color: #7a8299; line-height: 1.6; }
+  .detail-card-inner .meta span { display: inline-block; background: #eef3fa; color: #385578; padding: 2px 8px; border-radius: 3px; font-weight: 600; margin-right: 6px; }
+  .detail-card-inner .detail-text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; color: #4a5068; margin-top: 8px; line-height: 1.55; }
+
+  /* View all button */
+  .view-all-wrap { text-align: center; margin-top: 36px; }
+  .view-all-btn { display: inline-block; background: none; border: 1.5px solid #385578; color: #385578; font-size: 14px; font-weight: 600; padding: 12px 30px; border-radius: 6px; cursor: pointer; transition: all .2s; letter-spacing: .3px; }
+  .view-all-btn:hover { background: #385578; color: #fff; }
+
+  /* Full signal list */
+  .signal-list { max-width: 680px; margin: 0 auto; max-height: 0; overflow: hidden; transition: max-height .6s ease; }
+  .signal-list.open { max-height: 2000px; }
+  .signal-list-header { font-family: -apple-system, sans-serif; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: #7a8299; padding: 24px 0 12px; border-bottom: 1px solid #e0e3ea; }
+  .signal-row { display: flex; align-items: center; padding: 14px 0; border-bottom: 1px solid #eef0f4; font-family: -apple-system, sans-serif; }
+  .signal-row:last-child { border-bottom: none; }
+  .signal-dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 14px; flex-shrink: 0; }
+  .signal-company { font-size: 14px; font-weight: 600; color: #1a1f36; flex: 1; }
+  .signal-trigger { font-size: 12px; color: #7a8299; flex: 1.2; }
+  .signal-strength { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 10px; text-transform: uppercase; letter-spacing: .5px; }
+  .str-high { background: #fce8e8; color: #c0392b; }
+  .str-med { background: #fef4e5; color: #d4850a; }
+  .str-low { background: #e8f4ec; color: #27864a; }
+  .signal-window { font-size: 12px; color: #5b9bd5; font-weight: 600; width: 80px; text-align: right; }
+
+  /* ══════════════════════════════════════
+     PAGE 2 — SPLIT CALENDAR + FEED
+  ══════════════════════════════════════ */
+  #calendar { background: #f4f5f7; min-height: calc(100vh - 50px); }
+  .cal-split { display: flex; height: calc(100vh - 50px); }
+
+  /* Left: Calendar */
+  .cal-left { width: 55%; padding: 36px 32px; border-right: 1px solid #e0e3ea; overflow-y: auto; }
+  .cal-month-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+  .cal-month-header h2 { font-size: 22px; font-weight: 700; color: #1a1f36; }
+  .cal-nav { display: flex; gap: 8px; }
+  .cal-nav button { width: 34px; height: 34px; border: 1px solid #d8dce6; background: #fff; border-radius: 6px; font-size: 16px; cursor: pointer; color: #385578; transition: all .15s; display: flex; align-items: center; justify-content: center; }
+  .cal-nav button:hover { background: #385578; color: #fff; border-color: #385578; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #e0e3ea; border-radius: 8px; overflow: hidden; }
+  .cal-day-head { background: #f0f2f6; padding: 10px 0; text-align: center; font-size: 11px; font-weight: 700; color: #7a8299; text-transform: uppercase; letter-spacing: .6px; }
+  .cal-day { background: #fff; min-height: 72px; padding: 8px; cursor: pointer; transition: background .15s; position: relative; }
+  .cal-day:hover { background: #f8f9fc; }
+  .cal-day.other-month { background: #fafbfd; }
+  .cal-day.other-month .day-num { color: #c4c9d6; }
+  .cal-day.selected { background: #eef3fa; }
+  .day-num { font-size: 13px; font-weight: 600; color: #1a1f36; }
+  .day-num.today { background: #385578; color: #fff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: -4px; }
+  .day-dots { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+  .day-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+  /* Right: Feed */
+  .cal-right { width: 45%; padding: 36px 28px; overflow-y: auto; }
+  .feed-header { font-size: 14px; font-weight: 700; color: #7a8299; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 20px; }
+  .feed-item { display: flex; background: #fff; border-radius: 8px; margin-bottom: 12px; overflow: hidden; border: 1px solid #e8ebf0; transition: box-shadow .15s; cursor: pointer; }
+  .feed-item:hover { box-shadow: 0 2px 8px rgba(26,31,54,.08); }
+  .feed-bar { width: 4px; flex-shrink: 0; }
+  .feed-content { padding: 14px 16px; flex: 1; }
+  .feed-name { font-size: 14px; font-weight: 700; color: #1a1f36; margin-bottom: 4px; }
+  .feed-date { font-size: 12px; color: #7a8299; }
+  .feed-countdown { padding: 14px 16px; display: flex; align-items: center; }
+  .countdown-chip { font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 12px; white-space: nowrap; }
+  .chip-urgent { background: #fce8e8; color: #c0392b; }
+  .chip-soon { background: #fef4e5; color: #d4850a; }
+  .chip-normal { background: #eef3fa; color: #385578; }
+
+  .feed-empty { text-align: center; color: #7a8299; font-size: 14px; padding: 40px 0; }
+</style>
+</head>
+<body>
+
+<!-- ── Tab Bar ── -->
+<div class="tab-bar">
+  <div class="logo">VMA<span>GROUP</span></div>
+  <div class="tab active" onclick="switchTab('radar')">Communications Radar</div>
+  <div class="tab" onclick="switchTab('calendar')">BD Calendar</div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE 1 — DAILY BRIEF
+═══════════════════════════════════════════════ -->
+<div id="radar" class="page active">
+  <div class="brief-header">
+    <h1>Morning Brief</h1>
+    <div class="date">Friday 6 June 2026</div>
+    <div class="divider"></div>
+  </div>
+
+  <div class="brief-body" id="briefBody">
+    <!-- Sentences are built in JS for interactivity -->
+  </div>
+
+  <div class="view-all-wrap">
+    <button class="view-all-btn" id="viewAllBtn" onclick="toggleSignalList()">View all 12 signals &rarr;</button>
+  </div>
+
+  <div class="signal-list" id="signalList">
+    <div class="signal-list-header">All Active Signals</div>
+    <!-- Built in JS -->
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE 2 — SPLIT CALENDAR + FEED
+═══════════════════════════════════════════════ -->
+<div id="calendar" class="page">
+  <div class="cal-split">
+    <div class="cal-left">
+      <div class="cal-month-header">
+        <h2 id="calMonthTitle">June 2026</h2>
+        <div class="cal-nav">
+          <button onclick="changeMonth(-1)">&larr;</button>
+          <button onclick="changeMonth(1)">&rarr;</button>
+        </div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+    <div class="cal-right">
+      <div class="feed-header" id="feedHeader">This Week</div>
+      <div id="feedList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── Tab Switching ── */
+function switchTab(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.tab')[id === 'radar' ? 0 : 1].classList.add('active');
+}
+
+/* ══════════════════════════════════════
+   DAILY BRIEF DATA & RENDERING
+══════════════════════════════════════ */
+const entities = {
+  'Equinor': { sector: 'Energy', trigger: 'CEO departure announced', strength: 'High', window: '~6 weeks', detail: 'Anders Opedal confirmed departure effective 15 July 2026. Board has not named interim. Communications and Public Affairs leadership likely to be reviewed. Historical pattern: 80% chance of senior comms hire within 90 days of CEO transition.' },
+  'Haleon': { sector: 'FMCG / Healthcare', trigger: 'Restructure announced', strength: 'High', window: '~5 weeks', detail: 'Major corporate restructure splitting consumer health into two divisions. New divisional comms heads will be needed. Haleon previously engaged VMA for senior IR role in 2024. Strong existing relationship with CHRO.' },
+  'Diageo': { sector: 'FMCG', trigger: 'Brand portfolio review', strength: 'Medium', window: '~2 weeks', detail: 'Window narrowing as internal shortlist reportedly near-final. Recommend immediate outreach to Debra Crew\'s office. The VP Corporate Affairs role has been open 60+ days and budget is approved.' },
+  'NatWest': { sector: 'Finance', trigger: 'ESG reporting overhaul', strength: 'Medium', window: '~4 weeks', detail: 'New FCA sustainability disclosure rules effective Q3. NatWest building dedicated ESG communications function. Head of Sustainability Comms role expected to be created. Two VMA alumni currently in NatWest comms team.' },
+  'Shell': { sector: 'Energy', trigger: 'Investor relations expansion', strength: 'Medium', window: '~8 weeks', detail: 'Shell expanding IR team ahead of energy transition capital markets day in September. Two senior IR positions expected. Previous VMA placement (2023) still in role — warm introduction available.' },
+  'Barclays': { sector: 'Finance', trigger: 'Digital comms transformation', strength: 'Low', window: '~10 weeks', detail: 'Barclays investing in digital-first communications platform. Seeking Head of Digital Communications. Early stage — job architecture being defined. Monitor for formal requisition.' },
+  'Unilever': { sector: 'FMCG', trigger: 'Internal comms leadership gap', strength: 'Medium', window: '~3 weeks', detail: 'VP Internal Communications departed last month. Role critical for ongoing culture transformation programme. Hein Schumacher personally sponsoring the hire. Fast-track recruitment expected.' },
+  'BP': { sector: 'Energy', trigger: 'Government affairs hire', strength: 'Low', window: '~12 weeks', detail: 'New UK energy policy creating need for expanded government affairs team. BP scoping 2-3 public affairs roles in London. Early intelligence — no formal brief yet.' },
+  'AstraZeneca': { sector: 'Pharma', trigger: 'Corporate affairs review', strength: 'Low', window: '~14 weeks', detail: 'Post-acquisition integration of Alexion comms teams ongoing. Potential for senior corporate affairs role in H2 2026. Monitoring through pharma network contacts.' },
+  'Rolls-Royce': { sector: 'Industrials', trigger: 'Investor relations vacancy', strength: 'High', window: '~3 weeks', detail: 'Head of IR resigned last week. Tufan Erginbilgic wants rapid replacement before Q3 results. Defence division growth story requires experienced IR professional. Budget approved, search imminent.' },
+  'GSK': { sector: 'Pharma', trigger: 'Public affairs expansion', strength: 'Low', window: '~10 weeks', detail: 'GSK expanding public affairs ahead of major vaccine programme launches in 2027. Scoping phase — monitoring for concrete requisitions.' },
+  'HSBC': { sector: 'Finance', trigger: 'Asia-Pacific comms lead', strength: 'Medium', window: '~6 weeks', detail: 'HSBC restructuring Asia-Pacific communications leadership as part of Georges Elhedery\'s simplification programme. London-based Group Head of APAC Comms role being scoped. Strong VMA network in HSBC HR.' }
+};
+
+const briefSentences = [
+  { text: 'Two new high-strength signals overnight: ', entities: ['Equinor'], suffix: ' (CEO departure confirmed, approximately six-week window) and ', entities2: ['Haleon'], suffix2: ' (major restructure announced, new divisional comms heads needed).' },
+  { text: '', entities: ['Diageo'], suffix: '\'s window has narrowed considerably — the internal shortlist is reportedly near-final, so we recommend outreach this week before the opportunity closes.' },
+  { text: '', entities: ['Rolls-Royce'], suffix: ' has emerged as urgent: their Head of IR resigned last week and the CEO wants a rapid replacement before Q3 results.' },
+  { text: 'In financial services, ', entities: ['NatWest'], suffix: ' is building a dedicated ESG communications function ahead of new FCA rules, while ', entities2: ['HSBC'], suffix2: ' is restructuring Asia-Pacific comms leadership — both present medium-term opportunities.' },
+  { text: '', entities: ['Unilever'], suffix: '\'s VP Internal Communications vacancy is now being personally sponsored by the CEO, suggesting a fast-track process over the next three weeks.' },
+  { text: 'Longer-horizon signals from ', entities: ['BP'], suffix: ', ', entities2: ['AstraZeneca'], suffix2: ' and ', entities3: ['GSK'], suffix3: ' remain in monitoring phase — no action required this week.' },
+  { text: 'Overall pipeline health is strong: twelve active signals across six sectors, with four rated high-strength and four at medium.', entities: [], suffix: '' }
+];
+
+function buildBrief() {
+  const body = document.getElementById('briefBody');
+  body.innerHTML = '';
+  briefSentences.forEach((s, idx) => {
+    const p = document.createElement('p');
+    let html = s.text;
+    if (s.entities && s.entities.length > 0) {
+      s.entities.forEach(e => { html += '<span class="entity" onclick="toggleDetail(this, \'' + e + '\')">' + e + '</span>'; });
+    }
+    html += s.suffix || '';
+    if (s.entities2 && s.entities2.length > 0) {
+      s.entities2.forEach(e => { html += '<span class="entity" onclick="toggleDetail(this, \'' + e + '\')">' + e + '</span>'; });
+    }
+    html += s.suffix2 || '';
+    if (s.entities3 && s.entities3.length > 0) {
+      s.entities3.forEach(e => { html += '<span class="entity" onclick="toggleDetail(this, \'' + e + '\')">' + e + '</span>'; });
+    }
+    html += s.suffix3 || '';
+    p.innerHTML = html;
+    body.appendChild(p);
+  });
+}
+
+function toggleDetail(el, name) {
+  const existing = el.parentElement.querySelector('.detail-card[data-entity="' + name + '"]');
+  if (existing) {
+    if (existing.classList.contains('open')) {
+      existing.classList.remove('open');
+      setTimeout(() => existing.remove(), 400);
+    } else {
+      existing.classList.add('open');
+    }
+    return;
+  }
+  // Close other open cards
+  document.querySelectorAll('.detail-card.open').forEach(c => { c.classList.remove('open'); setTimeout(() => c.remove(), 400); });
+  const e = entities[name];
+  if (!e) return;
+  const card = document.createElement('div');
+  card.className = 'detail-card';
+  card.dataset.entity = name;
+  card.innerHTML = '<div class="detail-card-inner"><h4>' + name + '</h4><div class="meta"><span>' + e.sector + '</span> <span>' + e.strength + ' Strength</span> Window: ' + e.window + '</div><div class="detail-text">' + e.detail + '</div></div>';
+  // Insert after the parent <p>
+  el.parentElement.after(card);
+  requestAnimationFrame(() => { requestAnimationFrame(() => { card.classList.add('open'); }); });
+}
+
+function buildSignalList() {
+  const list = document.getElementById('signalList');
+  const sorted = Object.entries(entities).sort((a, b) => {
+    const order = { 'High': 0, 'Medium': 1, 'Low': 2 };
+    return order[a[1].strength] - order[b[1].strength];
+  });
+  sorted.forEach(([name, e]) => {
+    const strClass = e.strength === 'High' ? 'str-high' : e.strength === 'Medium' ? 'str-med' : 'str-low';
+    const dotColor = e.sector.includes('Energy') ? '#d4850a' : e.sector.includes('FMCG') || e.sector.includes('Health') ? '#27ae60' : e.sector.includes('Financ') ? '#2980b9' : e.sector.includes('Pharma') ? '#8e44ad' : '#7f8c8d';
+    const row = document.createElement('div');
+    row.className = 'signal-row';
+    row.innerHTML = '<div class="signal-dot" style="background:' + dotColor + '"></div><div class="signal-company">' + name + '</div><div class="signal-trigger">' + e.trigger + '</div><div class="signal-strength ' + strClass + '">' + e.strength + '</div><div class="signal-window">' + e.window + '</div>';
+    list.appendChild(row);
+  });
+}
+
+function toggleSignalList() {
+  const list = document.getElementById('signalList');
+  const btn = document.getElementById('viewAllBtn');
+  list.classList.toggle('open');
+  btn.textContent = list.classList.contains('open') ? 'Hide signals' : 'View all 12 signals →';
+}
+
+buildBrief();
+buildSignalList();
+
+/* ══════════════════════════════════════
+   SPLIT CALENDAR + FEED
+══════════════════════════════════════ */
+const calItems = [
+  { name: 'Equinor — CEO transition window opens', date: '2026-06-08', category: 'Energy', color: '#d4850a' },
+  { name: 'Diageo — VP Corp Affairs deadline', date: '2026-06-09', category: 'FMCG', color: '#27ae60' },
+  { name: 'Rolls-Royce — IR Head search kickoff', date: '2026-06-06', category: 'Industrials', color: '#7f8c8d' },
+  { name: 'NatWest — ESG Comms brief due', date: '2026-06-12', category: 'Finance', color: '#2980b9' },
+  { name: 'Unilever — VP Internal Comms shortlist', date: '2026-06-16', category: 'FMCG', color: '#27ae60' },
+  { name: 'Haleon — Restructure comms review', date: '2026-06-11', category: 'Healthcare', color: '#27ae60' },
+  { name: 'HSBC — APAC Comms scoping call', date: '2026-06-18', category: 'Finance', color: '#2980b9' },
+  { name: 'Shell — IR expansion brief', date: '2026-06-23', category: 'Energy', color: '#d4850a' },
+  { name: 'BP — Gov Affairs monitoring review', date: '2026-06-27', category: 'Energy', color: '#d4850a' },
+  { name: 'AstraZeneca — Corp Affairs check-in', date: '2026-06-30', category: 'Pharma', color: '#8e44ad' },
+  { name: 'Barclays — Digital Comms discovery', date: '2026-06-20', category: 'Finance', color: '#2980b9' },
+  { name: 'GSK — Public Affairs pipeline review', date: '2026-07-03', category: 'Pharma', color: '#8e44ad' }
+];
+
+let currentMonth = 5; // June (0-indexed)
+let currentYear = 2026;
+let selectedDate = null;
+
+function renderCalendar() {
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('calMonthTitle').textContent = monthNames[currentMonth] + ' ' + currentYear;
+  const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  dayNames.forEach(d => {
+    const h = document.createElement('div');
+    h.className = 'cal-day-head';
+    h.textContent = d;
+    grid.appendChild(h);
+  });
+
+  const firstDay = new Date(currentYear, currentMonth, 1);
+  let startDow = firstDay.getDay(); // 0=Sun
+  startDow = startDow === 0 ? 6 : startDow - 1; // Convert to Mon=0
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const prevMonthDays = new Date(currentYear, currentMonth, 0).getDate();
+
+  const totalCells = Math.ceil((startDow + daysInMonth) / 7) * 7;
+
+  for (let i = 0; i < totalCells; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cal-day';
+    let dayNum, dateStr, isOther = false;
+
+    if (i < startDow) {
+      dayNum = prevMonthDays - startDow + i + 1;
+      const pm = currentMonth === 0 ? 11 : currentMonth - 1;
+      const py = currentMonth === 0 ? currentYear - 1 : currentYear;
+      dateStr = py + '-' + String(pm + 1).padStart(2, '0') + '-' + String(dayNum).padStart(2, '0');
+      isOther = true;
+    } else if (i - startDow >= daysInMonth) {
+      dayNum = i - startDow - daysInMonth + 1;
+      const nm = currentMonth === 11 ? 0 : currentMonth + 1;
+      const ny = currentMonth === 11 ? currentYear + 1 : currentYear;
+      dateStr = ny + '-' + String(nm + 1).padStart(2, '0') + '-' + String(dayNum).padStart(2, '0');
+      isOther = true;
+    } else {
+      dayNum = i - startDow + 1;
+      dateStr = currentYear + '-' + String(currentMonth + 1).padStart(2, '0') + '-' + String(dayNum).padStart(2, '0');
+    }
+
+    if (isOther) cell.classList.add('other-month');
+    if (selectedDate === dateStr) cell.classList.add('selected');
+
+    const numEl = document.createElement('div');
+    numEl.className = 'day-num';
+    numEl.textContent = dayNum;
+    const today = new Date();
+    const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    if (dateStr === todayStr) numEl.classList.add('today');
+    cell.appendChild(numEl);
+
+    // Dots
+    const dayItems = calItems.filter(it => it.date === dateStr);
+    if (dayItems.length > 0) {
+      const dotsDiv = document.createElement('div');
+      dotsDiv.className = 'day-dots';
+      dayItems.forEach(it => {
+        const dot = document.createElement('div');
+        dot.className = 'day-dot';
+        dot.style.background = it.color;
+        dotsDiv.appendChild(dot);
+      });
+      cell.appendChild(dotsDiv);
+    }
+
+    cell.addEventListener('click', () => { selectedDate = dateStr; renderCalendar(); renderFeed(dateStr); });
+    grid.appendChild(cell);
+  }
+}
+
+function renderFeed(dateStr) {
+  const feedList = document.getElementById('feedList');
+  const feedHeader = document.getElementById('feedHeader');
+  feedList.innerHTML = '';
+
+  let items;
+  if (!dateStr) {
+    feedHeader.textContent = 'This Week';
+    const today = new Date(2026, 5, 6);
+    const weekEnd = new Date(today); weekEnd.setDate(weekEnd.getDate() + 6);
+    items = calItems.filter(it => { const d = new Date(it.date); return d >= today && d <= weekEnd; });
+  } else {
+    const d = new Date(dateStr + 'T00:00:00');
+    feedHeader.textContent = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+    items = calItems.filter(it => it.date === dateStr);
+  }
+
+  items.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  if (items.length === 0) {
+    feedList.innerHTML = '<div class="feed-empty">No items for this period</div>';
+    return;
+  }
+
+  items.forEach(it => {
+    const today = new Date(2026, 5, 6);
+    const itemDate = new Date(it.date + 'T00:00:00');
+    const diff = Math.ceil((itemDate - today) / (1000 * 60 * 60 * 24));
+    let chipText, chipClass;
+    if (diff <= 0) { chipText = 'Today'; chipClass = 'chip-urgent'; }
+    else if (diff === 1) { chipText = 'Tomorrow'; chipClass = 'chip-urgent'; }
+    else if (diff <= 7) { chipText = diff + ' days'; chipClass = 'chip-soon'; }
+    else { chipText = diff + ' days'; chipClass = 'chip-normal'; }
+
+    const div = document.createElement('div');
+    div.className = 'feed-item';
+    div.innerHTML = '<div class="feed-bar" style="background:' + it.color + '"></div><div class="feed-content"><div class="feed-name">' + it.name + '</div><div class="feed-date">' + itemDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + '</div></div><div class="feed-countdown"><span class="countdown-chip ' + chipClass + '">' + chipText + '</span></div>';
+    feedList.appendChild(div);
+  });
+}
+
+function changeMonth(dir) {
+  currentMonth += dir;
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  selectedDate = null;
+  renderCalendar();
+  renderFeed(null);
+}
+
+renderCalendar();
+renderFeed(null);
+</script>
+</body>
+</html>

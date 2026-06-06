@@ -5546,63 +5546,92 @@ TEMPLATE = r"""
 
   <!-- ===== PAGE 3 · BD CALENDAR ===== -->
   <section class="page" id="cal">
-    <!-- radar-style hero: title + icon over the faded-blue gradient -->
-    <div class="wm-head">
-      <div class="brand">
-        <span class="brand-title">BD Calendar</span>
-        <span class="bdc-hero-ic" title="The moves that run on key dates"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></span>
+    <div class="cc-wrap">
+      <div class="cc-hero">
+        <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></div>
+        <h1 class="gemini-title">BD Calendar</h1>
+        <div class="cc-sub">The business-development moves that run on key dates.</div>
+      </div>
+      <div class="cc-cards">
+        <button class="cc-card" data-open="windows"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg></span><span class="cx"><span class="ct">Placement Windows</span><span class="cd">Statutory hiring windows that open on a known calendar.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
+        <button class="cc-card" data-open="events"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 17l-5.2 2.6 1-5.8L3.5 9.7l5.9-.9z"/></svg></span><span class="cx"><span class="ct">Events &amp; Networking</span><span class="cd">Awards, summits and networking dates worth showing up to.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
+        <button class="cc-card" data-open="frameworks"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 13h7M8.5 16.5h4.5"/></svg></span><span class="cx"><span class="ct">Framework Eligibility</span><span class="cd">Public-sector frameworks where VMA can bid.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
       </div>
     </div>
 
-    <!-- full-page dashboard: frameworks top-left, calendar top-right, windows bottom -->
-    <div class="bdc-page">
-      <div class="bdc-grid">
+    <div class="cal-host" id="cal-host">
 
-        <div class="bdc-card a-fw">
-          <div class="bdc-card-h"><h2>Approved Frameworks</h2><span class="meta">Where &amp; when VMA can bid</span></div>
-          <div class="bdc-fwa" id="framework-body">
-            {% if framework_events|length == 0 %}<div class="empty compact">No framework windows tracked.</div>{% endif %}
-            {% for fw in framework_events %}
-            {% set fwshort = (fw.ad_title or fw.title or '').split('—')[0] | trim | replace(' sector', '') %}
-            {% set kl = (fw.ad_title or fw.title or '') | lower %}
-            <div class="bdc-fw{% if fw.status == 'refresh_window' %} live{% endif %}">
-              <button type="button" class="bdc-fw-h">
-                <span class="bdc-fw-ic">
-                  {%- if 'health' in kl or 'nhs' in kl -%}
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg>
-                  {%- elif 'nuclear' in kl or 'energy' in kl -%}
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>
-                  {%- elif 'gov' in kl or 'devolved' in kl or 'central' in kl or 'crown' in kl -%}
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10M19 21V10M9 21v-6h6v6M12 3l8 5H4z"/></svg>
-                  {%- else -%}
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>
-                  {%- endif -%}
-                </span>
-                <span class="bdc-fw-t">{{ fwshort or (fw.ad_title or fw.title) }}</span>
-                <span class="bdc-fw-pill {{ 'open' if fw.status == 'refresh_window' else '' }}">{{ fw.window_pill }}</span>
-                <span class="bdc-fw-cv">&rsaquo;</span>
-              </button>
-              <div class="bdc-fw-d">
-                <div class="bdc-fw-by">{{ fw.buyer }}</div>
-                <div class="bdc-fw-sc">{{ fw.scope }}</div>
-                <a class="bdc-fw-link" href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify on portal &rsaquo;</a>
-              </div>
-            </div>
-            {% endfor %}
+      <div class="panel ctx-col" id="pulses-row" data-bd="windows">
+        <div class="panel-header">
+          <h2>Placement Windows</h2>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button class="cal-headnew" id="pulses-new" type="button" style="display:none;">
+              <span class="cal-nd"></span><span id="pulses-new-n">0</span>&nbsp;new</button>
+            <span class="count" id="pulses-count">—</span>
           </div>
         </div>
-
-        <div class="bdc-card a-cal">
-          <div class="bdc-card-h"><h2>Events &amp; Networking</h2><span class="bdc-yearnav" id="ev-yearnav"></span></div>
-          <div id="events-body"><div class="empty compact">Loading…</div></div>
+        <div class="panel-body" id="pulses-body">
+          <div class="empty compact">Loading…</div>
         </div>
-
-        <div class="bdc-card a-pw">
-          <div class="bdc-card-h"><h2>Mandate Windows</h2><span class="meta">click a window — it opens</span></div>
-          <div id="pulses-body"><div class="empty compact">Loading…</div></div>
-        </div>
-
       </div>
+
+      <div class="panel ctx-col" data-bd="events">
+        <div class="panel-header">
+          <h2>Events &amp; Networking</h2>
+          <span class="count" id="events-count">—</span>
+        </div>
+        <div class="panel-body" id="events-body">
+          <div class="empty compact">Loading…</div>
+        </div>
+      </div>
+
+      <div class="panel ctx-col" id="framework-row" data-bd="frameworks">
+        <div class="panel-header">
+          <h2>Framework Eligibility</h2>
+          <span class="count" id="framework-count">{{ framework_events|length }}</span>
+        </div>
+        <div class="filter-bar" id="fw-filter-bar">
+          <button class="lead-filter-pill active" data-filter="active">Active <span class="pill-count" id="fw-pc-active">{{ fw_active_count }}</span></button>
+          <button class="lead-filter-pill" data-filter="followed_up">Followed up <span class="pill-count" id="fw-pc-followed_up">{{ fw_followed_count }}</span></button>
+          <button class="lead-filter-pill" data-filter="dismissed">Dismissed <span class="pill-count" id="fw-pc-dismissed">{{ fw_dismissed_count }}</span></button>
+          <button class="lead-filter-pill" data-filter="all">All</button>
+        </div>
+        <div class="panel-body" id="framework-body">
+          <div class="fw-note">Where VMA can bid — public-sector framework windows. Eligibility &amp; BD groundwork, not a live lead list.</div>
+          {% if framework_events|length == 0 %}
+            <div class="empty compact">No framework windows tracked.</div>
+          {% endif %}
+          {% for fw in framework_events %}
+            <div class="row2 framework-row" data-status="{{ fw.triage }}" data-new="0" data-fwid="{{ fw.key }}">
+              <div class="row2-head">
+                <span class="typ fw">FW</span>
+                <span class="row2-title">{{ fw.ad_title or fw.title }}{% if fw.discovered %} <span class="found-pill" title="Auto-discovered from a live public source">Found</span>{% endif %}</span>
+                <span class="row2-tags">
+                  <span class="ipill {{ 'w' if fw.status == 'refresh_window' else 'mut' }}">{{ fw.window_pill }}</span>
+                  {% if fw.triage == 'followed_up' %}<span class="status-badge followed-up">&#10003;</span>{% elif fw.triage == 'dismissed' %}<span class="status-badge dismissed">dismissed</span>{% endif %}
+                </span>
+                <span class="row2-chev">&rsaquo;</span>
+              </div>
+              <div class="row2-detail">
+                <div class="row2-sub">{{ fw.ad_desc or fw.scope }}</div>
+                <div class="play">
+                  <div class="play-lab">&#9654; {{ fw.window_label }}</div>
+                  <div class="play-desc" title="{{ fw.notes }}">{{ fw.title }} · <a class="lnk" href="{{ fw.portal | safe_url }}" target="_blank" rel="noopener noreferrer">verify on portal &rsaquo;</a></div>
+                  <div class="item-actions">
+                    {% if fw.triage == 'active' %}
+                      <button class="btn-mini framework-action" data-status="followed_up" type="button">&#10003; Mark followed up</button>
+                      <button class="btn-mini framework-action ghost" data-status="dismissed" type="button">&#10005; Dismiss</button>
+                    {% else %}
+                      <button class="btn-mini framework-action" data-status="active" type="button">&#8634; Restore</button>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
     </div>
   </section>
 
