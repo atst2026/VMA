@@ -25,13 +25,30 @@ from __future__ import annotations
 import base64
 import datetime as _dt
 import html as _html
+import io as _io
 import logging
+import os as _os
 from functools import lru_cache
 from pathlib import Path
 
 log = logging.getLogger("pitch_proposal")
 
 _ASSETS = Path(__file__).resolve().parent / "assets"
+
+# ---- Cover client logo (logo.dev) -------------------------------------
+# When we can fetch a clean, real logo for the target company we show it on
+# the cover instead of the typographic wordmark. Domain comes from the
+# verified registry in tool/company_identity (NO guessing); the token comes
+# from the LOGODEV_TOKEN env var (passed from a GitHub Actions secret in
+# .github/workflows/pitch-pack.yml). Any failure — no token, unknown
+# company, network error, or a logo that fails the visibility gate — falls
+# back to the wordmark, so there is never a regression.
+_LOGODEV_REQUEST_SIZE = 256      # px we ask logo.dev for (retina doubles it)
+_LOGO_MIN_DIM = 128              # reject anything smaller on its long edge
+_LOGO_MAX_ASPECT = 8.0          # reject absurdly wide/tall strips
+_COVER_LOGO_MAX_H = 130         # matches the .cover-logo box height (CSS)
+_COVER_LOGO_MAX_W = 420         # matches .client-wordmark max-width (CSS)
+_LOGO_HTTP_TIMEOUT = 12
 
 # Steel-navy sampled from the template cover band / VMA brand.
 _BAND = "#385578"
@@ -67,8 +84,139 @@ def _generation_date(when: _dt.date | _dt.datetime | None = None) -> str:
     return f"{d.day} {d.strftime('%B %Y')}"
 
 
+def _logo_token() -> str:
+    return (_os.environ.get("LOGODEV_TOKEN") or "").strip()
+
+
+def _fetch_logo_png(domain: str, token: str) -> bytes | None:
+    """Fetch the logo PNG bytes from logo.dev for a verified domain, reusing
+    the project's hardened HTTP helper (retries, UA, timeout)."""
+    try:
+        from tool.sources._http import get as _get
+        r = _get(
+            f"https://img.logo.dev/{domain}",
+            params={"token": token, "size": _LOGODEV_REQUEST_SIZE,
+                    "format": "png", "retina": "true"},
+            timeout=_LOGO_HTTP_TIMEOUT,
+        )
+        if r is None or r.status_code != 200 or not r.content:
+            log.info("logo.dev: no usable response for %s", domain)
+            return None
+        return r.content
+    except Exception as e:  # pragma: no cover - network/runtime guard
+        log.info("logo.dev fetch failed for %s: %s", domain, e)
+        return None
+
+
+def _logo_is_placeholder(img) -> bool:
+    """Best-effort reject of a blank tile or logo.dev's generated monogram
+    fallback: one background colour covering almost the whole image with only
+    a handful of genuinely-present colours. Counts EXACT colours at native
+    resolution (resampling would smear in anti-alias colours and hide the
+    signal). Conservative — the verified-domain registry is the primary guard,
+    so this must not reject legitimately simple logos."""
+    rgb = img.convert("RGB")
+    colors = rgb.getcolors(maxcolors=8192)
+    if colors is None:
+        return False  # lots of distinct colours -> a real, rich image
+    total = sum(c for c, _ in colors)
+    if total == 0:
+        return True
+    dominant = max(c for c, _ in colors)
+    significant = sum(1 for c, _ in colors if c / total >= 0.01)
+    return dominant / total >= 0.96 and significant <= 3
+
+
+def _logo_content_bbox(img):
+    """Bounding box of the non-background content, for trimming whitespace.
+    Trims on alpha for transparent logos, else on difference from the
+    top-left (background) colour for solid-background logos."""
+    from PIL import Image, ImageChops
+    rgba = img.convert("RGBA")
+    alpha = rgba.getchannel("A")
+    if alpha.getextrema()[0] < 255:
+        return alpha.getbbox()
+    rgb = img.convert("RGB")
+    bg = Image.new("RGB", rgb.size, rgb.getpixel((0, 0)))
+    return ImageChops.difference(rgb, bg).getbbox()
+
+
+def _process_logo(png_bytes: bytes, box_h: int, max_w: int) -> str | None:
+    """Validate -> trim -> scale to fit the cover box -> return a data: URI."""
+    from PIL import Image
+    try:
+        img = Image.open(_io.BytesIO(png_bytes))
+        img.load()
+    except Exception as e:
+        log.info("logo.dev: not a decodable image (%s)", e)
+        return None
+
+    w, h = img.size
+    if max(w, h) < _LOGO_MIN_DIM:
+        log.info("logo.dev: image too small (%dx%d)", w, h)
+        return None
+
+    rgba = img.convert("RGBA")
+    if rgba.getchannel("A").getextrema()[1] == 0:
+        log.info("logo.dev: fully transparent image rejected")
+        return None
+    if _logo_is_placeholder(img):
+        log.info("logo.dev: looks like a generated monogram placeholder, rejected")
+        return None
+
+    bbox = _logo_content_bbox(img)
+    if bbox:
+        rgba = rgba.crop(bbox)
+    w, h = rgba.size
+    if w == 0 or h == 0:
+        return None
+    if max(w, h) / max(1, min(w, h)) > _LOGO_MAX_ASPECT:
+        log.info("logo.dev: aspect ratio %dx%d out of range, rejected", w, h)
+        return None
+
+    # Embed at ~2x the display box for crisp print rendering; the CSS caps the
+    # on-page size. Fit within both height and width, never upscaling past 2x.
+    scale = min(box_h * 2 / h, max_w * 2 / w, 2.0)
+    rgba = rgba.resize((max(1, round(w * scale)), max(1, round(h * scale))),
+                       Image.LANCZOS)
+    out = _io.BytesIO()
+    rgba.save(out, format="PNG", optimize=True)
+    return f"data:image/png;base64,{base64.b64encode(out.getvalue()).decode('ascii')}"
+
+
+def _company_logo_data_uri(company: str, box_h: int, max_w: int) -> str | None:
+    """Real-logo data URI for a company, or None to use the text wordmark.
+    Domain is taken from the verified registry in tool.company_identity."""
+    token = _logo_token()
+    if not token:
+        log.info("LOGODEV_TOKEN not set — cover uses the text wordmark")
+        return None
+    try:
+        from tool import company_identity
+        domain = company_identity.resolve(company).domain
+    except Exception as e:  # UnknownCompanyError or import issue
+        log.info("no verified domain for %r (%s) — using text wordmark", company, e)
+        return None
+    if not domain:
+        log.info("registry has no domain for %r — using text wordmark", company)
+        return None
+    png = _fetch_logo_png(domain, token)
+    if not png:
+        return None
+    return _process_logo(png, box_h, max_w)
+
+
 def _cover_logo_html(company: str) -> str:
-    """The company name on the cover as a clean typographic wordmark."""
+    """Cover client identity: the company's real logo when we can fetch a
+    clean one (logo.dev), otherwise the company name as a typographic
+    wordmark (the original, always-safe fallback)."""
+    try:
+        uri = _company_logo_data_uri(company, _COVER_LOGO_MAX_H, _COVER_LOGO_MAX_W)
+    except Exception as e:  # never let a logo lookup break PDF generation
+        log.info("cover logo lookup failed for %r: %s", company, e)
+        uri = None
+    if uri:
+        return f'<img class="client-logo" src="{uri}" alt="{_esc(company)}">'
     return f'<div class="client-wordmark">{_esc(company)}</div>'
 
 
@@ -389,6 +537,10 @@ body {{
   max-width: 420px; color: {_NAVY}; font-weight: 800;
   font-size: 30pt; line-height: 1.1; letter-spacing: .3px; text-align: center;
   overflow-wrap: break-word; word-wrap: break-word;
+}}
+.cover-logo .client-logo {{
+  max-width: 420px; max-height: 130px; width: auto; height: auto;
+  object-fit: contain;
 }}
 .cover-title {{
   position: absolute; top: 470px; left: 0; right: 0; margin: 0;

@@ -80,6 +80,11 @@ jobs:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           GMAIL_FROM_NAME: ${{ secrets.GMAIL_FROM_NAME }}
+          # logo.dev publishable token (pk_...) for the cover logo. Add it under
+          # Settings → Secrets and variables → Actions → New repository secret,
+          # name LOGODEV_TOKEN. If unset, the cover falls back to the company
+          # name as a wordmark — no failure.
+          LOGODEV_TOKEN: ${{ secrets.LOGODEV_TOKEN }}
           PYTHONUNBUFFERED: "1"
           PYTHONPATH: "."
           VMA_PROFILE: ${{ github.event.inputs.profile }}
