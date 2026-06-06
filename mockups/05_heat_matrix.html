@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMA Group — Heat Matrix / AI Agenda</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #f0f2f5; color: #1a1f36; }
+
+  /* ── Tabs ── */
+  .tab-bar { display: flex; background: #1a1f36; padding: 0 32px; gap: 4px; }
+  .tab-btn { padding: 14px 28px; font-size: 13px; font-weight: 600; letter-spacing: .4px; text-transform: uppercase; color: rgba(255,255,255,.5); background: transparent; border: none; cursor: pointer; border-bottom: 3px solid transparent; transition: all .2s; }
+  .tab-btn:hover { color: rgba(255,255,255,.8); }
+  .tab-btn.active { color: #fff; border-bottom-color: #5b9bd5; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── Shared chrome ── */
+  .page-header { background: #1a1f36; color: #fff; padding: 28px 40px 20px; }
+  .page-header h1 { font-size: 22px; font-weight: 700; }
+  .page-header p { font-size: 13px; color: rgba(255,255,255,.55); margin-top: 4px; }
+  .container { max-width: 1120px; margin: 0 auto; padding: 28px 40px 48px; }
+
+  /* ════════════════════════════════════
+     PAGE 1 — HEAT MATRIX (Radar)
+     ════════════════════════════════════ */
+
+  /* Summary strip */
+  .summary-strip { background: linear-gradient(135deg, #1a1f36, #2a3150); color: #fff; border-radius: 10px; padding: 16px 24px; margin-bottom: 24px; display: flex; align-items: center; gap: 14px; }
+  .summary-strip .icon { width: 36px; height: 36px; background: rgba(91,155,213,.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .summary-strip .text { font-size: 14px; font-weight: 500; }
+  .summary-strip .text span { color: #5b9bd5; font-weight: 700; }
+
+  /* Matrix */
+  .matrix-wrap { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .matrix-table { width: 100%; border-collapse: collapse; }
+  .matrix-table thead th { background: #f6f7f9; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #6b7280; padding: 12px 16px; text-align: center; border-bottom: 2px solid #e5e7eb; }
+  .matrix-table thead th:first-child { text-align: left; width: 200px; }
+  .matrix-table tbody tr { transition: background .15s; }
+  .matrix-table tbody tr:hover { background: #f9fafb; }
+  .matrix-table tbody td { padding: 0; text-align: center; border-bottom: 1px solid #f0f1f3; height: 48px; vertical-align: middle; }
+  .matrix-table tbody td:first-child { text-align: left; padding: 0 16px; font-size: 13px; font-weight: 600; color: #1a1f36; cursor: pointer; }
+  .matrix-table tbody td:first-child:hover { color: #5b9bd5; text-decoration: underline; }
+  .matrix-table tbody td:first-child .sector { display: block; font-size: 11px; font-weight: 400; color: #9ca3af; margin-top: 1px; }
+
+  /* Heat cells */
+  .heat-cell { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
+  .heat-pip { width: 36px; height: 36px; border-radius: 6px; cursor: default; position: relative; }
+  .heat-pip.empty { background: #f6f7f9; border: 1px dashed #e5e7eb; }
+  .heat-pip.low { background: #d4e4f7; }
+  .heat-pip.med { background: #385578; }
+  .heat-pip.high { background: #1a1f36; }
+
+  /* Tooltip */
+  .heat-pip .tip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: #1a1f36; color: #fff; font-size: 12px; line-height: 1.45; padding: 10px 14px; border-radius: 8px; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .15s; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,.25); }
+  .heat-pip .tip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: #1a1f36; }
+  .heat-pip:hover .tip { opacity: 1; }
+
+  /* Legend */
+  .matrix-legend { display: flex; align-items: center; gap: 18px; padding: 14px 20px; border-top: 1px solid #f0f1f3; font-size: 11px; color: #9ca3af; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 3px; }
+
+
+  /* ════════════════════════════════════
+     PAGE 2 — AI AGENDA (Calendar)
+     ════════════════════════════════════ */
+
+  .agenda-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+  .agenda-item { background: #fff; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.05); overflow: hidden; display: flex; }
+  .agenda-item .cat-bar { width: 5px; flex-shrink: 0; }
+  .cat-regulatory { background: #ef4444; }
+  .cat-framework { background: #3b82f6; }
+  .cat-event { background: #22c55e; }
+  .cat-pipeline { background: #f59e0b; }
+  .cat-internal { background: #8b5cf6; }
+
+  .agenda-body { flex: 1; padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; }
+  .agenda-top { display: flex; align-items: center; gap: 12px; }
+  .agenda-check { width: 20px; height: 20px; border: 2px solid #d1d5db; border-radius: 5px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+  .agenda-check.checked { background: #1a1f36; border-color: #1a1f36; }
+  .agenda-check.checked::after { content: '\2713'; color: #fff; font-size: 12px; font-weight: 700; }
+  .agenda-rank { width: 24px; height: 24px; border-radius: 50%; background: #1a1f36; color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .agenda-desc { font-size: 14px; font-weight: 600; color: #1a1f36; flex: 1; }
+  .agenda-countdown { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: #f0f2f5; color: #6b7280; white-space: nowrap; flex-shrink: 0; }
+  .agenda-countdown.urgent { background: #fef2f2; color: #ef4444; }
+  .agenda-chevron { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #9ca3af; font-size: 14px; transition: transform .2s; flex-shrink: 0; border: none; background: none; }
+  .agenda-chevron.open { transform: rotate(90deg); }
+  .agenda-details { padding: 0 20px 16px 56px; font-size: 13px; color: #6b7280; line-height: 1.6; display: none; }
+  .agenda-details.open { display: block; }
+
+  /* Calendar toggle */
+  .cal-toggle-wrap { text-align: center; margin-bottom: 24px; }
+  .cal-toggle { padding: 10px 24px; font-size: 13px; font-weight: 600; background: #1a1f36; color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: background .15s; }
+  .cal-toggle:hover { background: #385578; }
+
+  /* Month grid */
+  .month-grid-wrap { display: none; background: #fff; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.05); padding: 24px; }
+  .month-grid-wrap.open { display: block; }
+  .month-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: #1a1f36; }
+  .month-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; }
+  .month-grid .day-header { font-size: 11px; font-weight: 700; color: #9ca3af; text-align: center; padding: 8px 0; text-transform: uppercase; }
+  .month-grid .day-cell { min-height: 72px; border: 1px solid #f0f1f3; border-radius: 6px; padding: 6px 8px; font-size: 12px; color: #6b7280; position: relative; }
+  .month-grid .day-cell .day-num { font-weight: 700; color: #1a1f36; font-size: 12px; }
+  .month-grid .day-cell.today { background: #f0f5ff; border-color: #5b9bd5; }
+  .month-grid .day-cell .day-event { font-size: 10px; margin-top: 3px; padding: 2px 5px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; font-weight: 600; }
+  .month-grid .day-cell.empty-cell { background: #fafafa; border-color: transparent; }
+</style>
+</head>
+<body>
+
+<!-- Tab bar -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('radar')">Communications Radar</button>
+  <button class="tab-btn" onclick="switchTab('calendar')">BD Calendar</button>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE 1 — HEAT MATRIX
+     ═══════════════════════════════════════ -->
+<div id="page-radar" class="page active">
+  <div class="page-header">
+    <h1>Heat Matrix</h1>
+    <p>Signal density across target accounts — week of 2 Jun 2026</p>
+  </div>
+  <div class="container">
+
+    <!-- Summary strip -->
+    <div class="summary-strip">
+      <div class="icon">&#9670;</div>
+      <div class="text">Strongest cluster: <span>Consumer FMCG</span> — 4 leadership signals this week. Secondary: <span>Energy</span> with 3 M&amp;A indicators.</div>
+    </div>
+
+    <!-- Matrix table -->
+    <div class="matrix-wrap">
+      <table class="matrix-table">
+        <thead>
+          <tr>
+            <th>Company</th>
+            <th>Leadership</th>
+            <th>Funding</th>
+            <th>M&amp;A</th>
+            <th>Restructure</th>
+            <th>Regulatory</th>
+          </tr>
+        </thead>
+        <tbody id="matrix-body"></tbody>
+      </table>
+      <div class="matrix-legend">
+        <span style="color:#6b7280; font-weight:600;">Signal strength:</span>
+        <div class="legend-item"><div class="legend-swatch" style="background:#f6f7f9;border:1px dashed #e5e7eb;"></div> None</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#d4e4f7;"></div> Low</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#385578;"></div> Medium</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#1a1f36;"></div> High</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE 2 — AI AGENDA
+     ═══════════════════════════════════════ -->
+<div id="page-calendar" class="page">
+  <div class="page-header">
+    <h1>AI Agenda</h1>
+    <p>Prioritised actions generated 6 Jun 2026 — 8 items across 4 categories</p>
+  </div>
+  <div class="container">
+
+    <div class="agenda-list" id="agenda-list"></div>
+
+    <div class="cal-toggle-wrap">
+      <button class="cal-toggle" id="cal-toggle-btn" onclick="toggleCalendar()">&#9662; Full Calendar</button>
+    </div>
+
+    <div class="month-grid-wrap" id="month-grid-wrap">
+      <div class="month-title">June 2026</div>
+      <div class="month-grid" id="month-grid"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── Tab switching ── */
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  if (tab === 'radar') {
+    document.querySelectorAll('.tab-btn')[0].classList.add('active');
+    document.getElementById('page-radar').classList.add('active');
+  } else {
+    document.querySelectorAll('.tab-btn')[1].classList.add('active');
+    document.getElementById('page-calendar').classList.add('active');
+  }
+}
+
+/* ── Heat Matrix data ── */
+const companies = [
+  { name: 'Diageo', sector: 'Consumer FMCG', signals: {
+    Leadership: { level: 'high', tip: 'CEO succession plan leaked; CFO departure confirmed 28 May' },
+    Funding: { level: 'empty' },
+    'M&A': { level: 'low', tip: 'Early talks with craft spirits portfolio — advisory stage' },
+    Restructure: { level: 'high', tip: 'Global restructure: 3 regional layers merging to 2' },
+    Regulatory: { level: 'empty' }
+  }},
+  { name: 'Unilever', sector: 'Consumer FMCG', signals: {
+    Leadership: { level: 'high', tip: 'New Chief Growth Officer role created; search imminent' },
+    Funding: { level: 'empty' },
+    'M&A': { level: 'med', tip: 'Divesting ice cream division — exec team reshaping' },
+    Restructure: { level: 'med', tip: 'Splitting into 5 business groups by Q3' },
+    Regulatory: { level: 'low', tip: 'EU plastics directive — compliance officer needed' }
+  }},
+  { name: 'Tesco', sector: 'Retail', signals: {
+    Leadership: { level: 'med', tip: 'CTO retiring Dec 2026 — replacement search starting' },
+    Funding: { level: 'empty' },
+    'M&A': { level: 'empty' },
+    Restructure: { level: 'low', tip: 'Store operations restructure — regional leads shifting' },
+    Regulatory: { level: 'empty' }
+  }},
+  { name: 'BP', sector: 'Energy', signals: {
+    Leadership: { level: 'low', tip: 'Board refresh: 2 non-exec seats opening H2 2026' },
+    Funding: { level: 'med', tip: '$2.1bn green hydrogen fund raising — leadership TBD' },
+    'M&A': { level: 'high', tip: 'Acquiring Lightsource — entire renewables C-suite needed' },
+    Restructure: { level: 'empty' },
+    Regulatory: { level: 'med', tip: 'FCA energy trading compliance review triggered' }
+  }},
+  { name: 'Shell', sector: 'Energy', signals: {
+    Leadership: { level: 'empty' },
+    Funding: { level: 'low', tip: 'EV charging JV fundraise — GM-level hire expected' },
+    'M&A': { level: 'high', tip: 'Merging downstream & chemicals — 40+ leadership roles affected' },
+    Restructure: { level: 'high', tip: 'HQ relocation London to The Hague — talent flight risk' },
+    Regulatory: { level: 'med', tip: 'Dutch court carbon ruling — Chief Sustainability Officer search' }
+  }},
+  { name: 'GSK', sector: 'Pharma', signals: {
+    Leadership: { level: 'med', tip: 'Chief Scientific Officer retiring Q4; shortlist forming' },
+    Funding: { level: 'high', tip: '$4bn oncology R&D fund — VP Oncology role created' },
+    'M&A': { level: 'empty' },
+    Restructure: { level: 'empty' },
+    Regulatory: { level: 'high', tip: 'MHRA fast-track pathway — Head of Regulatory Affairs needed' }
+  }},
+  { name: 'Barclays', sector: 'Financial Services', signals: {
+    Leadership: { level: 'low', tip: 'Chief Risk Officer lateral move rumoured — gap expected' },
+    Funding: { level: 'empty' },
+    'M&A': { level: 'med', tip: 'Wealth management bolt-on acquisition — integration lead needed' },
+    Restructure: { level: 'med', tip: 'Investment bank restructure — MD layer thinning' },
+    Regulatory: { level: 'high', tip: 'Basel III.1 implementation — regulatory programme director search' }
+  }},
+  { name: 'Rolls-Royce', sector: 'Aerospace & Defence', signals: {
+    Leadership: { level: 'high', tip: 'COO departure confirmed; interim appointed, permanent search live' },
+    Funding: { level: 'med', tip: 'SMR nuclear division raising £500m — divisional CEO role' },
+    'M&A': { level: 'empty' },
+    Restructure: { level: 'low', tip: 'Civil aerospace margin improvement — VP Operations review' },
+    Regulatory: { level: 'empty' }
+  }},
+  { name: 'BT Group', sector: 'Telecoms', signals: {
+    Leadership: { level: 'empty' },
+    Funding: { level: 'empty' },
+    'M&A': { level: 'low', tip: 'Potential Openreach separation — board-level implications' },
+    Restructure: { level: 'high', tip: '55,000 headcount reduction plan — senior leadership redesign' },
+    Regulatory: { level: 'med', tip: 'Ofcom fibre regulation review — Government Affairs Director' }
+  }},
+  { name: 'Astrazeneca', sector: 'Pharma', signals: {
+    Leadership: { level: 'med', tip: 'EVP Commercial stepping down end of year; search brief issued' },
+    Funding: { level: 'low', tip: 'Gene therapy JV with Daiichi — leadership positions opening' },
+    'M&A': { level: 'med', tip: '$39bn Alexion integration ongoing — synergy leads rotating out' },
+    Restructure: { level: 'empty' },
+    Regulatory: { level: 'low', tip: 'China pricing regulations — APAC compliance lead hire' }
+  }}
+];
+
+const cols = ['Leadership','Funding','M&A','Restructure','Regulatory'];
+
+(function buildMatrix() {
+  const tbody = document.getElementById('matrix-body');
+  companies.forEach(c => {
+    const tr = document.createElement('tr');
+    // Company name cell
+    const tdName = document.createElement('td');
+    tdName.innerHTML = `${c.name}<span class="sector">${c.sector}</span>`;
+    tdName.onclick = () => alert('Opening profile: ' + c.name);
+    tr.appendChild(tdName);
+    // Signal cells
+    cols.forEach(col => {
+      const td = document.createElement('td');
+      const sig = c.signals[col];
+      const div = document.createElement('div');
+      div.className = 'heat-cell';
+      const pip = document.createElement('div');
+      pip.className = 'heat-pip ' + sig.level;
+      if (sig.level !== 'empty') {
+        const tip = document.createElement('div');
+        tip.className = 'tip';
+        tip.textContent = sig.tip;
+        pip.appendChild(tip);
+      }
+      div.appendChild(pip);
+      td.appendChild(div);
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+})();
+
+/* ── AI Agenda data ── */
+const agendaItems = [
+  { rank: 1, cat: 'regulatory', desc: 'Review ESMA regulatory window — closes in 12 days, 4 named targets', countdown: '12 days', urgent: true, details: 'The European Securities and Markets Authority consultation on fund manager remuneration closes 18 Jun. Four VMA targets (Barclays, Schroders, LGIM, abrdn) will need Chief Compliance Officer upgrades. Draft outreach briefs for each and schedule calls with existing contacts at those firms.' },
+  { rank: 2, cat: 'pipeline', desc: 'Follow up Rolls-Royce COO search — interim window closing, client expects shortlist', countdown: '5 days', urgent: true, details: 'Client sponsor (CHRO Sarah Mitchell) expects 5-name shortlist by 11 Jun. Three candidates confirmed; two more pipeline candidates need availability checks. Prepare candidate comparison grid and schedule panel debrief with R-R board committee.' },
+  { rank: 3, cat: 'framework', desc: 'Refresh Shell leadership map — M&A and restructure signals require updated org chart', countdown: '8 days', urgent: false, details: 'Shell\'s downstream/chemicals merger and HQ relocation are creating 40+ leadership changes. Map new reporting lines, identify decision-makers for upcoming mandates, and update CRM with latest intel from 3 Jun FT article and LinkedIn announcements.' },
+  { rank: 4, cat: 'event', desc: 'Prepare for FT Future of Energy Summit — 3 VMA targets speaking, book meetings', countdown: '18 days', urgent: false, details: 'BP, Shell, and SSE executives confirmed as panellists on 24 Jun. Request bilateral meetings via event app. Prepare 1-page VMA capability decks tailored to each company\'s current signal profile. Coordinate with Liam (Energy sector lead).' },
+  { rank: 5, cat: 'pipeline', desc: 'GSK Oncology VP brief — client approved, begin candidate sourcing sprint', countdown: '14 days', urgent: false, details: 'GSK has signed engagement letter for VP Oncology (London/Philadelphia dual base). Target profile: 15+ years pharma, Phase III trial leadership, P&L experience >$500m. Begin sourcing from Roche, Novartis, Merck, and AZ oncology divisions. First progress call 20 Jun.' },
+  { rank: 6, cat: 'regulatory', desc: 'Monitor Basel III.1 implementation timeline — Barclays mandate depends on regulatory pace', countdown: '30 days', urgent: false, details: 'PRA expected to confirm implementation date in early July. If accelerated, Barclays will fast-track their Regulatory Programme Director search (VMA exclusive). Set up Google Alerts and brief the FS team to maintain fortnightly check-ins with Barclays Chief Risk Officer.' },
+  { rank: 7, cat: 'internal', desc: 'Update heat matrix scoring model — add "Digital Transformation" as new signal column', countdown: '21 days', urgent: false, details: 'Multiple clients have flagged CDO/CTO/CIO searches driven by AI/digital mandates. Propose adding a sixth signal column to the heat matrix. Draft methodology note for partner review at 27 Jun team meeting. Pull last 6 months of digital-tagged placements for evidence.' },
+  { rank: 8, cat: 'event', desc: 'CHRO Roundtable invitations — confirm speakers and send final guest list to venue', countdown: '25 days', urgent: false, details: 'VMA-hosted CHRO Roundtable on 1 Jul at The Ned. 18 of 24 invitations accepted. Chase remaining 6 RSVPs. Confirm keynote speaker (Prof. Lynda Gratton). Send dietary requirements and AV brief to venue. Prepare attendee booklets with personalised company signal summaries.' }
+];
+
+const catColors = { regulatory: '#ef4444', framework: '#3b82f6', event: '#22c55e', pipeline: '#f59e0b', internal: '#8b5cf6' };
+
+(function buildAgenda() {
+  const list = document.getElementById('agenda-list');
+  agendaItems.forEach((item, i) => {
+    const el = document.createElement('div');
+    el.className = 'agenda-item';
+    el.innerHTML = `
+      <div class="cat-bar cat-${item.cat}"></div>
+      <div class="agenda-body">
+        <div class="agenda-top">
+          <div class="agenda-check" onclick="this.classList.toggle('checked')"></div>
+          <div class="agenda-rank">${item.rank}</div>
+          <div class="agenda-desc">${item.desc}</div>
+          <div class="agenda-countdown ${item.urgent ? 'urgent' : ''}">${item.countdown}</div>
+          <button class="agenda-chevron" onclick="toggleDetails(this)" aria-label="Expand">&#9656;</button>
+        </div>
+        <div class="agenda-details">${item.details}</div>
+      </div>`;
+    list.appendChild(el);
+  });
+})();
+
+function toggleDetails(btn) {
+  btn.classList.toggle('open');
+  const details = btn.closest('.agenda-body').querySelector('.agenda-details');
+  details.classList.toggle('open');
+}
+
+/* ── Calendar grid ── */
+function toggleCalendar() {
+  const wrap = document.getElementById('month-grid-wrap');
+  const btn = document.getElementById('cal-toggle-btn');
+  wrap.classList.toggle('open');
+  btn.innerHTML = wrap.classList.contains('open') ? '&#9652; Hide Calendar' : '&#9662; Full Calendar';
+}
+
+(function buildCalendar() {
+  const grid = document.getElementById('month-grid');
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  days.forEach(d => {
+    const dh = document.createElement('div');
+    dh.className = 'day-header';
+    dh.textContent = d;
+    grid.appendChild(dh);
+  });
+  // June 2026 starts on Monday
+  const events = {
+    6: { text: 'Heat Matrix review', color: '#3b82f6' },
+    11: { text: 'R-R shortlist due', color: '#f59e0b' },
+    18: { text: 'ESMA window closes', color: '#ef4444' },
+    20: { text: 'GSK progress call', color: '#f59e0b' },
+    24: { text: 'FT Energy Summit', color: '#22c55e' },
+    27: { text: 'Partner meeting', color: '#8b5cf6' },
+    1: { text: 'CHRO Roundtable', color: '#22c55e' }
+  };
+  for (let d = 1; d <= 30; d++) {
+    const cell = document.createElement('div');
+    cell.className = 'day-cell' + (d === 6 ? ' today' : '');
+    let html = `<div class="day-num">${d}</div>`;
+    if (events[d]) {
+      html += `<div class="day-event" style="background:${events[d].color}">${events[d].text}</div>`;
+    }
+    cell.innerHTML = html;
+    grid.appendChild(cell);
+  }
+  // Fill remaining cells for last row
+  const remaining = (7 - (30 % 7)) % 7;
+  for (let i = 0; i < remaining; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'day-cell empty-cell';
+    grid.appendChild(cell);
+  }
+})();
+</script>
+</body>
+</html>

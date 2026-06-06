@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMA Group — Dual Pane / Gantt Planner</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1f36; color: #e0e4ec; min-height: 100vh; }
+
+  /* ── Top Bar ── */
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; background: #141829; border-bottom: 1px solid #2a2f48; }
+  .topbar .logo { font-size: 18px; font-weight: 700; letter-spacing: 1px; color: #fff; }
+  .topbar .logo span { color: #5b8fb9; }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 4px; }
+  .tab-btn { padding: 8px 22px; border: none; border-radius: 6px 6px 0 0; cursor: pointer; font-size: 13px; font-weight: 600; background: #232840; color: #8a90a8; transition: all .2s; }
+  .tab-btn.active { background: #1a1f36; color: #fff; }
+  .tab-btn:hover:not(.active) { color: #c0c6d8; }
+
+  .page { display: none; padding: 24px 32px; }
+  .page.active { display: block; }
+
+  /* ── RADAR PAGE ── */
+  .dual-pane { display: flex; gap: 0; height: calc(100vh - 130px); }
+  .pane { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .pane-header { padding: 14px 18px; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; background: #1e2340; border-bottom: 1px solid #2a2f48; display: flex; align-items: center; justify-content: space-between; }
+  .pane-header .count { font-size: 12px; color: #5b8fb9; font-weight: 400; }
+  .pane-list { flex: 1; overflow-y: auto; padding: 6px 0; }
+
+  /* Signal row */
+  .signal-row { display: flex; align-items: center; gap: 12px; padding: 11px 18px; cursor: pointer; border-left: 3px solid transparent; transition: all .15s; }
+  .signal-row:hover { background: #232840; }
+  .signal-row.selected { background: #232840; border-left-color: #5b8fb9; }
+  .signal-company { font-weight: 600; font-size: 13px; color: #fff; min-width: 120px; }
+  .signal-role { font-size: 12px; color: #8a90a8; flex: 1; }
+  .strength-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .strength-high { background: #4ade80; box-shadow: 0 0 6px #4ade8055; }
+  .strength-med { background: #fbbf24; box-shadow: 0 0 6px #fbbf2455; }
+  .strength-low { background: #f87171; box-shadow: 0 0 6px #f8717155; }
+  .trigger-badge { font-size: 10px; padding: 3px 8px; border-radius: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; flex-shrink: 0; }
+  .trigger-exec { background: #3b235a; color: #c084fc; }
+  .trigger-hire { background: #1e3a2a; color: #4ade80; }
+  .trigger-reorg { background: #3a2a1e; color: #fbbf24; }
+  .trigger-funding { background: #1e2e3a; color: #60a5fa; }
+  .trigger-expansion { background: #2a1e3a; color: #f0abfc; }
+
+  /* AI strip */
+  .ai-strip { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; background: linear-gradient(180deg, #1e2340 0%, #1a1f36 100%); border-left: 1px solid #2a2f48; border-right: 1px solid #2a2f48; }
+  .ai-strip-header { padding: 14px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #5b8fb9; background: #1e2340; border-bottom: 1px solid #2a2f48; display: flex; align-items: center; gap: 6px; }
+  .ai-strip-header .ai-icon { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; background: #5b8fb9; color: #1a1f36; border-radius: 4px; font-size: 10px; font-weight: 800; }
+  .ai-strip-body { padding: 16px; flex: 1; overflow-y: auto; }
+  .ai-insight { background: #232840; border-radius: 8px; padding: 14px; margin-bottom: 12px; font-size: 12px; line-height: 1.6; color: #c0c6d8; border-left: 3px solid #5b8fb9; }
+  .ai-insight strong { color: #fff; }
+  .ai-insight .conviction { display: inline-block; margin-top: 8px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; padding: 3px 8px; border-radius: 10px; }
+  .conviction-high { background: #1e3a2a; color: #4ade80; }
+  .conviction-med { background: #3a2a1e; color: #fbbf24; }
+
+  /* Job row */
+  .job-row { display: flex; align-items: center; gap: 12px; padding: 11px 18px; transition: all .2s; border-left: 3px solid transparent; }
+  .job-row.highlighted { background: #1e3a2a22; border-left-color: #4ade80; }
+  .job-row.dimmed { opacity: .3; }
+  .job-company { font-weight: 600; font-size: 13px; color: #fff; min-width: 120px; }
+  .job-title { font-size: 12px; color: #8a90a8; flex: 1; }
+  .source-badge { font-size: 10px; padding: 3px 8px; border-radius: 10px; font-weight: 600; flex-shrink: 0; }
+  .source-linkedin { background: #1e2e3a; color: #60a5fa; }
+  .source-adzuna { background: #2a1e3a; color: #f0abfc; }
+  .source-indeed { background: #3a2a1e; color: #fbbf24; }
+  .source-direct { background: #1e3a2a; color: #4ade80; }
+
+  /* ── CALENDAR PAGE ── */
+  .gantt-container { height: calc(100vh - 170px); display: flex; flex-direction: column; }
+  .gantt-header-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .gantt-title { font-size: 16px; font-weight: 700; color: #fff; }
+  .gantt-legend { display: flex; gap: 16px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #8a90a8; }
+  .legend-color { width: 12px; height: 12px; border-radius: 3px; }
+
+  .gantt-scroll { flex: 1; overflow: auto; border: 1px solid #2a2f48; border-radius: 8px; background: #141829; }
+  .gantt-table { width: max-content; min-width: 100%; border-collapse: collapse; }
+  .gantt-table th { position: sticky; top: 0; z-index: 2; background: #1e2340; padding: 8px 4px; font-size: 10px; font-weight: 600; color: #5b8fb9; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid #2a2f48; white-space: nowrap; }
+  .gantt-table th.label-col { min-width: 200px; text-align: left; padding-left: 16px; position: sticky; left: 0; z-index: 3; }
+  .gantt-table th.week-col { min-width: 54px; text-align: center; }
+  .gantt-table th.today-col { background: #232840; color: #fff; }
+  .gantt-table td { padding: 0; height: 38px; border-bottom: 1px solid #1e2340; position: relative; }
+  .gantt-table td.label-cell { padding: 0 16px; font-size: 12px; font-weight: 600; color: #e0e4ec; white-space: nowrap; position: sticky; left: 0; background: #141829; z-index: 1; }
+  .gantt-table td.week-cell { }
+  .gantt-table td.today-cell { background: #ffffff06; }
+  .gantt-table tr.group-row td { background: #1a1f36; padding: 10px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #5b8fb9; cursor: pointer; }
+  .gantt-table tr.group-row td .collapse-icon { display: inline-block; width: 16px; margin-right: 6px; transition: transform .2s; }
+  .gantt-table tr.group-row.collapsed td .collapse-icon { transform: rotate(-90deg); }
+  .gantt-table tr.item-row.hidden { display: none; }
+
+  .bar { position: absolute; top: 8px; height: 22px; border-radius: 4px; opacity: .85; }
+  .bar-blue { background: linear-gradient(90deg, #385578, #5b8fb9); }
+  .bar-green { background: linear-gradient(90deg, #2a6648, #4ade80); }
+  .bar-amber { background: linear-gradient(90deg, #6b5a1e, #fbbf24); }
+  .diamond { position: absolute; top: 5px; width: 10px; height: 10px; background: #fff; transform: rotate(45deg); border: 2px solid #1a1f36; z-index: 1; }
+
+  /* Mini-map */
+  .minimap { height: 32px; margin-top: 12px; background: #141829; border: 1px solid #2a2f48; border-radius: 6px; position: relative; overflow: hidden; }
+  .minimap-bar { position: absolute; top: 4px; height: 24px; border-radius: 3px; opacity: .4; }
+  .minimap-viewport { position: absolute; top: 0; height: 100%; background: #5b8fb922; border: 1px solid #5b8fb9; border-radius: 4px; }
+  .minimap-label { position: absolute; top: 50%; transform: translateY(-50%); font-size: 9px; color: #5b8fb9; font-weight: 600; }
+  .minimap-today { position: absolute; top: 0; bottom: 0; width: 1px; background: #fff; opacity: .4; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">VMA<span>Group</span></div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('radar')">Communications Radar</button>
+    <button class="tab-btn" onclick="switchTab('calendar')">BD Calendar</button>
+  </div>
+</div>
+
+<!-- ═══════════════ RADAR PAGE ═══════════════ -->
+<div class="page active" id="page-radar">
+  <div class="dual-pane">
+    <!-- Left: BD Signals -->
+    <div class="pane" style="border-right: none;">
+      <div class="pane-header">BD Signals <span class="count">8 signals</span></div>
+      <div class="pane-list" id="signal-list"></div>
+    </div>
+
+    <!-- AI Insight Strip -->
+    <div class="ai-strip">
+      <div class="ai-strip-header"><span class="ai-icon">AI</span> Insight Engine</div>
+      <div class="ai-strip-body" id="ai-insights">
+        <div class="ai-insight">
+          <strong>Unilever</strong> has 2 signals AND an open Head of Comms role — <strong>high conviction</strong> business development opportunity.
+          <span class="conviction conviction-high">High Conviction</span>
+        </div>
+        <div class="ai-insight">
+          <strong>Shell</strong> leadership reshuffle aligns with active Head of External Affairs role — likely replacement hire.
+          <span class="conviction conviction-high">High Conviction</span>
+        </div>
+        <div class="ai-insight">
+          <strong>Barclays</strong> restructuring their corporate affairs team — monitor for additional openings.
+          <span class="conviction conviction-med">Medium Conviction</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Live Jobs -->
+    <div class="pane" style="border-left: none;">
+      <div class="pane-header">Live Jobs <span class="count" id="jobs-count">10 jobs</span></div>
+      <div class="pane-list" id="jobs-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ CALENDAR PAGE ═══════════════ -->
+<div class="page" id="page-calendar">
+  <div class="gantt-container">
+    <div class="gantt-header-bar">
+      <div class="gantt-title">Gantt Planner — Active Items</div>
+      <div class="gantt-legend">
+        <div class="legend-item"><div class="legend-color" style="background:#5b8fb9;"></div> Frameworks</div>
+        <div class="legend-item"><div class="legend-color" style="background:#4ade80;"></div> Events</div>
+        <div class="legend-item"><div class="legend-color" style="background:#fbbf24;"></div> Windows</div>
+        <div class="legend-item"><div style="width:10px;height:10px;background:#fff;transform:rotate(45deg);margin:1px;"></div> Act-by Date</div>
+      </div>
+    </div>
+    <div class="gantt-scroll" id="gantt-scroll"></div>
+    <div class="minimap" id="minimap"></div>
+  </div>
+</div>
+
+<script>
+// ── Tab Switching ──
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', (tab === 'radar' && i === 0) || (tab === 'calendar' && i === 1));
+  });
+  document.getElementById('page-radar').classList.toggle('active', tab === 'radar');
+  document.getElementById('page-calendar').classList.toggle('active', tab === 'calendar');
+}
+
+// ── RADAR DATA ──
+const signals = [
+  { company: 'Unilever', role: 'VP Corporate Affairs', strength: 'high', trigger: 'exec', triggerLabel: 'Exec Move' },
+  { company: 'Unilever', role: 'Brand Comms Director', strength: 'high', trigger: 'reorg', triggerLabel: 'Reorg' },
+  { company: 'Shell', role: 'Head of External Affairs', strength: 'high', trigger: 'exec', triggerLabel: 'Exec Move' },
+  { company: 'Barclays', role: 'Dir. Corporate Comms', strength: 'med', trigger: 'reorg', triggerLabel: 'Reorg' },
+  { company: 'AstraZeneca', role: 'Global Comms Lead', strength: 'med', trigger: 'expansion', triggerLabel: 'Expansion' },
+  { company: 'Diageo', role: 'Head of Public Affairs', strength: 'low', trigger: 'hire', triggerLabel: 'New Hire' },
+  { company: 'GSK', role: 'Investor Relations Dir.', strength: 'med', trigger: 'funding', triggerLabel: 'Funding' },
+  { company: 'Rolls-Royce', role: 'Comms Transformation Mgr', strength: 'low', trigger: 'reorg', triggerLabel: 'Reorg' }
+];
+
+const jobs = [
+  { company: 'Unilever', title: 'Head of Communications, UK & Ireland', source: 'linkedin' },
+  { company: 'Shell', title: 'Head of External Affairs', source: 'linkedin' },
+  { company: 'Barclays', title: 'Senior Comms Manager', source: 'adzuna' },
+  { company: 'AstraZeneca', title: 'Director of Global Comms', source: 'indeed' },
+  { company: 'HSBC', title: 'VP Corporate Communications', source: 'linkedin' },
+  { company: 'BP', title: 'Internal Communications Lead', source: 'adzuna' },
+  { company: 'Vodafone', title: 'Head of Brand & Comms', source: 'linkedin' },
+  { company: 'Tesco', title: 'Corporate Affairs Manager', source: 'indeed' },
+  { company: 'GSK', title: 'Public Affairs Specialist', source: 'direct' },
+  { company: 'Unilever', title: 'Brand Communications Manager', source: 'adzuna' }
+];
+
+// overlapping companies: Unilever, Shell, Barclays, AstraZeneca, GSK
+
+let selectedCompany = null;
+
+function renderSignals() {
+  const list = document.getElementById('signal-list');
+  list.innerHTML = signals.map((s, i) => `
+    <div class="signal-row ${selectedCompany === s.company ? 'selected' : ''}" onclick="selectSignal('${s.company}', this)">
+      <span class="signal-company">${s.company}</span>
+      <span class="signal-role">${s.role}</span>
+      <span class="strength-dot strength-${s.strength}" title="${s.strength} strength"></span>
+      <span class="trigger-badge trigger-${s.trigger}">${s.triggerLabel}</span>
+    </div>
+  `).join('');
+}
+
+function renderJobs() {
+  const list = document.getElementById('jobs-list');
+  const overlapping = signals.map(s => s.company);
+  list.innerHTML = jobs.map(j => {
+    let cls = '';
+    if (selectedCompany) {
+      cls = j.company === selectedCompany ? 'highlighted' : 'dimmed';
+    }
+    return `<div class="job-row ${cls}">
+      <span class="job-company">${j.company}</span>
+      <span class="job-title">${j.title}</span>
+      <span class="source-badge source-${j.source}">${j.source.charAt(0).toUpperCase() + j.source.slice(1)}</span>
+    </div>`;
+  }).join('');
+
+  const count = selectedCompany ? jobs.filter(j => j.company === selectedCompany).length : jobs.length;
+  document.getElementById('jobs-count').textContent = selectedCompany ? `${count} matching` : `${jobs.length} jobs`;
+}
+
+function selectSignal(company, el) {
+  if (selectedCompany === company) {
+    selectedCompany = null;
+  } else {
+    selectedCompany = company;
+  }
+  renderSignals();
+  renderJobs();
+}
+
+renderSignals();
+renderJobs();
+
+// ── GANTT CALENDAR ──
+const today = new Date(2026, 5, 6); // June 6 2026
+const weekStart = new Date(today);
+weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1); // Monday
+
+// Generate 16 weeks of columns starting ~2 weeks before today
+const ganttStart = new Date(weekStart);
+ganttStart.setDate(ganttStart.getDate() - 14);
+const weeks = [];
+for (let i = 0; i < 16; i++) {
+  const d = new Date(ganttStart);
+  d.setDate(d.getDate() + i * 7);
+  weeks.push(d);
+}
+
+function weekLabel(d) {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${d.getDate()} ${months[d.getMonth()]}`;
+}
+
+function isToday(weekDate) {
+  return today >= weekDate && today < new Date(weekDate.getTime() + 7 * 86400000);
+}
+
+function weeksBetween(start, end) {
+  return Math.round((end - start) / (7 * 86400000));
+}
+
+const ganttItems = [
+  // Frameworks
+  { cat: 'Frameworks', name: 'NHS England Comms Framework', start: new Date(2026, 4, 11), end: new Date(2026, 7, 2), actBy: new Date(2026, 5, 20), color: 'blue' },
+  { cat: 'Frameworks', name: 'Crown Commercial Service', start: new Date(2026, 5, 1), end: new Date(2026, 8, 13), actBy: new Date(2026, 6, 10), color: 'blue' },
+  { cat: 'Frameworks', name: 'Cabinet Office PA Framework', start: new Date(2026, 5, 15), end: new Date(2026, 7, 30), actBy: new Date(2026, 6, 1), color: 'blue' },
+  { cat: 'Frameworks', name: 'Local Gov Comms Panel', start: new Date(2026, 4, 25), end: new Date(2026, 6, 20), actBy: null, color: 'blue' },
+  // Events
+  { cat: 'Events', name: 'CIPR Excellence Awards', start: new Date(2026, 5, 22), end: new Date(2026, 5, 24), actBy: new Date(2026, 5, 15), color: 'green' },
+  { cat: 'Events', name: 'Public Sector Comms Summit', start: new Date(2026, 6, 6), end: new Date(2026, 6, 8), actBy: new Date(2026, 5, 28), color: 'green' },
+  { cat: 'Events', name: 'PRCA National Conference', start: new Date(2026, 7, 10), end: new Date(2026, 7, 12), actBy: null, color: 'green' },
+  // Windows
+  { cat: 'Windows', name: 'Q3 Budget Planning Window', start: new Date(2026, 5, 1), end: new Date(2026, 6, 15), actBy: new Date(2026, 5, 30), color: 'amber' },
+  { cat: 'Windows', name: 'Annual Review Period', start: new Date(2026, 6, 1), end: new Date(2026, 7, 31), actBy: new Date(2026, 6, 15), color: 'amber' },
+  { cat: 'Windows', name: 'Interim Placement Season', start: new Date(2026, 4, 18), end: new Date(2026, 6, 30), actBy: null, color: 'amber' }
+];
+
+function buildGantt() {
+  const container = document.getElementById('gantt-scroll');
+  let html = '<table class="gantt-table"><thead><tr><th class="label-col">Item</th>';
+  weeks.forEach(w => {
+    html += `<th class="week-col ${isToday(w) ? 'today-col' : ''}">${weekLabel(w)}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  const categories = ['Frameworks', 'Events', 'Windows'];
+  categories.forEach(cat => {
+    const items = ganttItems.filter(it => it.cat === cat);
+    html += `<tr class="group-row" data-cat="${cat}" onclick="toggleGroup('${cat}')">
+      <td colspan="${weeks.length + 1}"><span class="collapse-icon">&#9660;</span> ${cat} (${items.length})</td>
+    </tr>`;
+    items.forEach(item => {
+      html += `<tr class="item-row" data-cat="${cat}"><td class="label-cell">${item.name}</td>`;
+      weeks.forEach(w => {
+        const wEnd = new Date(w.getTime() + 7 * 86400000);
+        const isTodayCol = isToday(w);
+        let cellContent = '';
+        // Check if bar starts or spans this week
+        if (item.start < wEnd && item.end > w) {
+          // Calculate bar position within multi-cell context
+          const barStart = Math.max(item.start.getTime(), w.getTime());
+          const barEnd = Math.min(item.end.getTime(), wEnd.getTime());
+          const leftPct = ((barStart - w.getTime()) / (wEnd - w.getTime())) * 100;
+          const widthPct = ((barEnd - w.getTime()) / (wEnd - w.getTime())) * 100 - leftPct;
+          cellContent += `<div class="bar bar-${item.color}" style="left:${leftPct}%;width:${widthPct}%;"></div>`;
+        }
+        // Diamond for act-by date
+        if (item.actBy && item.actBy >= w && item.actBy < wEnd) {
+          const dPct = ((item.actBy.getTime() - w.getTime()) / (wEnd - w.getTime())) * 100;
+          cellContent += `<div class="diamond" style="left:calc(${dPct}% - 5px);"></div>`;
+        }
+        html += `<td class="week-cell ${isTodayCol ? 'today-cell' : ''}">${cellContent}</td>`;
+      });
+      html += '</tr>';
+    });
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+
+  buildMinimap();
+}
+
+function toggleGroup(cat) {
+  const groupRow = document.querySelector(`.group-row[data-cat="${cat}"]`);
+  groupRow.classList.toggle('collapsed');
+  document.querySelectorAll(`.item-row[data-cat="${cat}"]`).forEach(r => r.classList.toggle('hidden'));
+}
+
+function buildMinimap() {
+  const mm = document.getElementById('minimap');
+  const yearStart = new Date(2026, 0, 1);
+  const yearEnd = new Date(2026, 11, 31);
+  const yearMs = yearEnd - yearStart;
+
+  let html = '';
+  // Month labels
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  months.forEach((m, i) => {
+    const x = ((new Date(2026, i, 1) - yearStart) / yearMs) * 100;
+    html += `<span class="minimap-label" style="left:${x}%;">${m}</span>`;
+  });
+
+  // Mini bars for items
+  ganttItems.forEach(item => {
+    const left = Math.max(0, ((item.start - yearStart) / yearMs) * 100);
+    const right = Math.min(100, ((item.end - yearStart) / yearMs) * 100);
+    const colors = { blue: '#5b8fb9', green: '#4ade80', amber: '#fbbf24' };
+    html += `<div class="minimap-bar" style="left:${left}%;width:${right - left}%;background:${colors[item.color]};"></div>`;
+  });
+
+  // Today marker
+  const todayPct = ((today - yearStart) / yearMs) * 100;
+  html += `<div class="minimap-today" style="left:${todayPct}%;"></div>`;
+
+  // Viewport highlight
+  const vpLeft = ((weeks[0] - yearStart) / yearMs) * 100;
+  const vpRight = ((new Date(weeks[weeks.length - 1].getTime() + 7 * 86400000) - yearStart) / yearMs) * 100;
+  html += `<div class="minimap-viewport" style="left:${vpLeft}%;width:${vpRight - vpLeft}%;"></div>`;
+
+  mm.innerHTML = html;
+}
+
+buildGantt();
+</script>
+</body>
+</html>
