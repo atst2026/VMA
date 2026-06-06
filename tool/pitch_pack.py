@@ -966,17 +966,12 @@ def _run_comms_proposal(target: str, role: str, mode: str) -> int:
     from tool import pitch_proposal
     log.info("Building comms SEARCH PROPOSAL PDF for %r · seat %r · mode %r",
              target, role, mode)
-    pdf_bytes, meta = pitch_proposal.generate(target, role)
+    pdf_bytes = pitch_proposal.generate(target, role)
     safe = "".join(c if c.isalnum() else "_" for c in target.lower())[:40]
     stamp = datetime.now().strftime("%Y%m%d_%H%M")
     pdf_path = STATE_DIR / f"pitch_pack_{safe}_{stamp}.pdf"
     pdf_path.write_bytes(pdf_bytes)
-    logo_source = meta.get("logo_source")
-    log.info("Proposal PDF: %d bytes (logo: %s) -> %s",
-             len(pdf_bytes), logo_source, pdf_path)
-    if logo_source == "none":
-        log.info("No logo sourced from %r's website — cover shows the company "
-                 "name as text.", target)
+    log.info("Proposal PDF: %d bytes -> %s", len(pdf_bytes), pdf_path)
 
     if mode in ("send", "test") and getattr(config, "NON_BRIEF_EMAIL_ENABLED", False):
         to = config.TEST_RECIPIENT if mode == "test" else config.RECIPIENT

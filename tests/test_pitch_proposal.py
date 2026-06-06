@@ -4,10 +4,10 @@ Verifies the wired-in template behaviour:
   * the example client ("Belron") is replaced by the target company everywhere;
   * the consultant-team page and the cover "Prepared by" line are dropped;
   * the cover carries the predicted seat and the generation date (no time);
-  * a real logo is embedded when supplied, with a clean wordmark fallback;
+  * the cover shows the company name (logo-pulling logic removed);
   * the comms profile routes to this PDF (marketing keeps the dynamic pack).
 
-These run offline (fetch_logo=False), so no network is required.
+These run offline (no logo logic), so no network is required.
 """
 import datetime as dt
 import os
@@ -68,12 +68,10 @@ def test_generation_date_has_no_time():
 
 
 # ---- end-to-end render invariants -------------------------------------
-# (Logo sourcing is covered in tests/test_lead_logo.py.)
 
 def test_company_replaces_belron_everywhere():
     from tool import pitch_proposal as pp
-    pdf, meta = pp.generate("Diageo", "Head of Corporate Communications",
-                            fetch_logo=False)
+    pdf = pp.generate("Diageo", "Head of Corporate Communications")
     text = _pdf_text(pdf)
     assert "Belron" not in text
     # company woven through the body (why-VMA, timing table, exclusivity, …)
@@ -82,7 +80,7 @@ def test_company_replaces_belron_everywhere():
 
 def test_team_page_and_prepared_by_removed():
     from tool import pitch_proposal as pp
-    pdf, _ = pp.generate("Diageo", "Head of Communications", fetch_logo=False)
+    pdf = pp.generate("Diageo", "Head of Communications")
     text = _pdf_text(pdf)
     assert "CONSULTANT TEAM" not in text.upper()
     assert "Prepared by" not in text
@@ -93,8 +91,7 @@ def test_team_page_and_prepared_by_removed():
 def test_cover_carries_seat_and_date():
     from tool import pitch_proposal as pp
     seat = "Director of Corporate Affairs"
-    pdf, _ = pp.generate("Tesco", seat, when=dt.datetime(2026, 6, 5, 9, 0),
-                         fetch_logo=False)
+    pdf = pp.generate("Tesco", seat, when=dt.datetime(2026, 6, 5, 9, 0))
     text = _pdf_text(pdf)
     assert "For the position of:" in text
     assert seat in text
@@ -102,47 +99,14 @@ def test_cover_carries_seat_and_date():
     assert "5 June 2026" in text
 
 
-def test_name_fallback_when_no_logo():
+def test_cover_shows_company_name_no_logo_logic():
+    # Logo-pulling logic has been removed: the cover carries the company name
+    # where the template's example logo sat.
     from tool import pitch_proposal as pp
-    pdf, meta = pp.generate("Riverside Housing Association",
-                            "Head of Communications", fetch_logo=False)
-    assert meta["logo_source"] == "none"
-    # the company name appears on the cover as plain text
-    assert "Riverside Housing Association" in _pdf_text(pdf)
-
-
-def test_supplied_logo_is_embedded():
-    from tool import pitch_proposal as pp
-    # a tiny but valid PNG (1x1) — exercises the image-embed path
-    import base64
-    png = base64.b64decode(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=")
-    pdf, meta = pp.generate("Diageo", "Head of Communications",
-                            fetch_logo=False, logo_bytes=png)
-    assert meta["logo_source"] == "supplied"
-    assert _page_count(pdf) == 8
-
-
-def test_cover_logo_embedded_unchanged():
-    # The logo is embedded EXACTLY as sourced — only the cover box (CSS) sizes
-    # it. The bytes in the data URI must be byte-identical to what was supplied.
-    import base64
-    from tool import pitch_proposal as pp
-    png = base64.b64decode(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=")
-    html = pp._cover_logo_html("Acme", png)
-    assert 'class="client-logo"' in html
-    data_uri = html.split('src="', 1)[1].split('"', 1)[0]
-    embedded = base64.b64decode(data_uri.split(",", 1)[1])
-    assert embedded == png            # unchanged — no trim, no recolour
-
-
-def test_cover_name_when_logo_bytes_none():
-    # No logo -> the cover prints the company name as plain text, so it can never
-    # render blank.
-    from tool import pitch_proposal as pp
-    html = pp._cover_logo_html("Acme Corporation", None)
-    assert "client-name" in html and "Acme Corporation" in html
+    assert pp._cover_logo_html("Acme Corporation") == (
+        '<div class="client-name">Acme Corporation</div>')
+    assert "Acme Corporation" in _pdf_text(
+        pp.generate("Acme Corporation", "Head of Communications"))
 
 
 # ---- profile routing ---------------------------------------------------

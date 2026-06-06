@@ -6,9 +6,7 @@ the supplied VMA proposal template, parameterised per company. Compared with
 the source template:
 
   * the example client's logo on the cover is replaced by the TARGET company's
-    own logo, taken directly from the company's official website (tool/lead_logo)
-    and embedded UNCHANGED, sized only to fit the cover box; if no logo can be
-    sourced the company name is shown as plain text;
+    name as text (logo-pulling logic has been removed);
   * every place the template named the example client now carries the target
     company name (woven through the body — "present a proposal to <company>",
     the weekly-update timing table, the exclusivity clause, etc.);
@@ -31,8 +29,6 @@ import html as _html
 import logging
 from functools import lru_cache
 from pathlib import Path
-
-from tool import lead_logo
 
 log = logging.getLogger("pitch_proposal")
 
@@ -72,14 +68,9 @@ def _generation_date(when: _dt.date | _dt.datetime | None = None) -> str:
     return f"{d.day} {d.strftime('%B %Y')}"
 
 
-def _cover_logo_html(company: str, logo_bytes: bytes | None) -> str:
-    """Place the BD lead company's logo on the cover where the template's
-    example logo sat. The logo is embedded EXACTLY as sourced from the company's
-    official website — only the cover box sizes it to fit. If no logo can be
-    sourced, the company name is shown as plain text so the cover isn't blank."""
-    if logo_bytes:
-        return (f'<img class="client-logo" src="{lead_logo.logo_data_uri(logo_bytes)}" '
-                f'alt="{_esc(company)}">')
+def _cover_logo_html(company: str) -> str:
+    """The company name on the cover, where the template's example logo sat.
+    (Logo-pulling logic has been removed.)"""
     return f'<div class="client-name">{_esc(company)}</div>'
 
 
@@ -96,7 +87,6 @@ def _interior(inner: str, *, first: bool = False) -> str:
 
 
 def render_proposal_html(company: str, seat: str,
-                         logo_bytes: bytes | None = None,
                          when: _dt.date | _dt.datetime | None = None) -> str:
     """The full multi-page proposal as print-styled HTML (A4)."""
     co = _esc(company)
@@ -109,7 +99,7 @@ def render_proposal_html(company: str, seat: str,
       <div class="cover-band">
         <img class="vma-wordmark" src="{_asset_data_uri('vma_wordmark_white.png')}" alt="VMA Group">
       </div>
-      <div class="cover-logo">{_cover_logo_html(company, logo_bytes)}</div>
+      <div class="cover-logo">{_cover_logo_html(company)}</div>
       <h1 class="cover-title">SEARCH PROPOSAL</h1>
       <div class="cover-sub">STRICTLY PRIVATE &amp; CONFIDENTIAL</div>
       <div class="cover-fields">
@@ -353,22 +343,12 @@ def render_proposal_html(company: str, seat: str,
 # Public entry point
 # --------------------------------------------------------------------------
 def generate(company: str, seat: str,
-             when: _dt.date | _dt.datetime | None = None,
-             fetch_logo: bool = True,
-             logo_bytes: bytes | None = None) -> tuple[bytes, dict]:
-    """Render the comms proposal to PDF bytes.
-
-    Returns (pdf_bytes, meta) where meta = {"logo_source": str}. `logo_bytes`
-    lets a caller inject a logo (used by tests); otherwise the company's logo is
-    fetched from its official website, falling back to the company name."""
-    source = "supplied" if logo_bytes else "none"
-    if logo_bytes is None and fetch_logo:
-        logo_bytes = lead_logo.fetch_logo(company)
-        source = "website" if logo_bytes else "none"
-    html = render_proposal_html(company, seat, logo_bytes=logo_bytes, when=when)
+             when: _dt.date | _dt.datetime | None = None) -> bytes:
+    """Render the comms proposal to PDF bytes. (No logo logic — the cover shows
+    the company name.)"""
+    html = render_proposal_html(company, seat, when=when)
     from weasyprint import HTML
-    pdf = HTML(string=html).write_pdf()
-    return pdf, {"logo_source": source}
+    return HTML(string=html).write_pdf()
 
 
 # --------------------------------------------------------------------------
