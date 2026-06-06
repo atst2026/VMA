@@ -353,21 +353,49 @@ def render_proposal_html(company: str, seat: str,
 # --------------------------------------------------------------------------
 def _fetch_client_logo(company: str) -> tuple[bytes, str] | None:
     """Best-effort logo fetch: resolve the company to its verified domain,
-    then try to grab their logo from the web.  Returns None (and logs) on
-    any failure — the cover silently falls back to the text wordmark."""
+    then try to grab their logo from the web.  For companies not in the
+    registry, guesses common domain patterns (acme.com, acme.co.uk).
+    Returns None (and logs) on any failure — the cover silently falls back
+    to the text wordmark."""
+    from tool.logo_fetch import fetch_logo
+
+    # 1 — verified domain from the registry (highest confidence)
     try:
         identity = _resolve_company(company)
+        if identity.domain:
+            try:
+                result = fetch_logo(identity.domain)
+                if result:
+                    return result
+            except Exception as exc:
+                log.warning("logo fetch failed for %s: %s", identity.domain, exc)
     except UnknownCompanyError:
-        log.info("company %r not in registry — skipping logo fetch", company)
+        pass
+
+    # 2 — guess the domain from the company name
+    slug = _company_slug(company)
+    if not slug:
         return None
-    if not identity.domain:
-        return None
-    try:
-        from tool.logo_fetch import fetch_logo
-        return fetch_logo(identity.domain)
-    except Exception as exc:
-        log.warning("logo fetch failed for %s: %s", identity.domain, exc)
-        return None
+    for suffix in (".com", ".co.uk"):
+        try:
+            result = fetch_logo(slug + suffix)
+            if result:
+                return result
+        except Exception:
+            pass
+
+    return None
+
+
+def _company_slug(name: str) -> str:
+    """'Marks & Spencer plc' → 'marksandspencer', 'BP' → 'bp'."""
+    import re
+    s = name.lower()
+    for noise in (" plc", " ltd", " limited", " inc", " corp",
+                  " group", " holdings"):
+        s = s.replace(noise, "")
+    s = s.replace("&", "and")
+    return re.sub(r"[^a-z0-9]", "", s)
 
 
 def generate(company: str, seat: str,
