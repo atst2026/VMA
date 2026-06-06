@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BD Calendar — Mockup</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#F7F9FC;color:#1F1F1F;min-height:100vh;display:flex;flex-direction:column}
+
+/* ── Hero header (matches live site) ── */
+.wm-head{padding:24px 32px 15px;background:radial-gradient(ellipse 86% 165% at 50% -16%,#a4c6e8 0%,#bdd4ea 16%,#d4e2ef 34%,#e9f0f7 58%,#f4f8fc 78%,rgba(247,249,252,0) 100%)}
+.brand{display:flex;align-items:center;gap:13px;max-width:1240px;margin:0 auto}
+.bdc-hero-ic{display:grid;place-items:center;color:#1F1F1F;flex-shrink:0}
+.bdc-hero-ic svg{width:30px;height:30px}
+.brand-title{font-size:30px;font-weight:700;letter-spacing:-.3px}
+
+/* ── Grid layout ── */
+.bdc-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:14px;max-width:1240px;margin:14px auto 24px;padding:0 20px;flex:1;min-height:0;height:calc(100vh - 90px)}
+
+/* ── Card base ── */
+.card{background:#fff;border-radius:14px;border:1px solid rgba(60,64,67,.12);overflow:hidden;display:flex;flex-direction:column}
+.card-head{padding:14px 18px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(60,64,67,.08);flex-shrink:0}
+.card-head h3{font-size:14px;font-weight:700;letter-spacing:.2px}
+.card-body{flex:1;overflow-y:auto;padding:10px 14px 14px;min-height:0}
+
+/* ── TL: Interactive Calendar ── */
+.cal-nav{display:flex;align-items:center;gap:10px}
+.cal-nav button{background:none;border:none;cursor:pointer;font-size:16px;color:#385578;padding:4px 8px;border-radius:6px}
+.cal-nav button:hover{background:#E8F0FE}
+.cal-nav span{font-size:13px;font-weight:600;color:#385578;min-width:100px;text-align:center}
+
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:8px}
+.cal-hdr{font-size:10px;font-weight:700;color:#777;text-align:center;padding:4px 0}
+.cal-day{position:relative;text-align:center;padding:6px 2px;border-radius:8px;font-size:12px;cursor:pointer;min-height:48px;transition:background .15s}
+.cal-day:hover{background:#E8F0FE}
+.cal-day.today{background:#385578;color:#fff;font-weight:700;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;margin:0 auto}
+.cal-day.today:hover{background:#24486f}
+.cal-day.other{color:#ccc}
+.cal-day .day-num{display:block}
+.dots{display:flex;gap:2px;justify-content:center;margin-top:2px;flex-wrap:wrap}
+.dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.dot.fw{background:#4285F4}
+.dot.ev{background:#1E7A41}
+.dot.pw{background:#B98235}
+
+/* signal bars spanning active windows */
+.cal-day .bars{position:absolute;bottom:1px;left:2px;right:2px;display:flex;flex-direction:column;gap:1px}
+.bar{height:3px;border-radius:1.5px;opacity:.55}
+.bar.fw{background:#4285F4}
+.bar.ev{background:#1E7A41}
+.bar.pw{background:#B98235}
+
+.cal-legend{display:flex;gap:14px;margin-top:10px;padding:6px 0}
+.cal-legend span{display:flex;align-items:center;gap:5px;font-size:10px;color:#666}
+.cal-legend .swatch{width:10px;height:10px;border-radius:3px}
+
+/* day detail popover */
+.day-detail{margin-top:10px;border-top:1px solid rgba(60,64,67,.08);padding-top:10px}
+.day-detail h4{font-size:12px;font-weight:700;color:#385578;margin-bottom:6px}
+.dd-item{display:flex;align-items:flex-start;gap:8px;padding:5px 0;font-size:11px;border-bottom:1px solid rgba(60,64,67,.04)}
+.dd-item:last-child{border-bottom:none}
+.dd-cat{width:4px;border-radius:2px;min-height:28px;flex-shrink:0}
+
+/* ── TR: Quick Stats ── */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:8px}
+.stat-card{background:#F7F9FC;border-radius:12px;padding:18px 16px;text-align:center}
+.stat-num{font-size:36px;font-weight:800;color:#385578;line-height:1}
+.stat-delta{font-size:11px;font-weight:600;margin-top:4px}
+.stat-delta.up{color:#1E7A41}
+.stat-delta.down{color:#d93025}
+.stat-delta.flat{color:#999}
+.stat-label{font-size:11px;color:#777;margin-top:6px;font-weight:500}
+
+/* ── BL: Card Stack ── */
+.filter-pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;border:1.5px solid rgba(60,64,67,.15);background:#fff;cursor:pointer;transition:all .15s}
+.pill:hover{border-color:#385578;color:#385578}
+.pill.active{background:#385578;color:#fff;border-color:#385578}
+
+.stack-list{margin-top:10px}
+.stack-item{display:flex;align-items:flex-start;gap:10px;padding:10px 8px;border-bottom:1px solid rgba(60,64,67,.06);cursor:pointer;border-radius:8px;transition:background .12s}
+.stack-item:hover{background:#F7F9FC}
+.stack-item:last-child{border-bottom:none}
+.si-bar{width:4px;border-radius:2px;min-height:36px;flex-shrink:0}
+.si-bar.fw{background:#4285F4}
+.si-bar.ev{background:#1E7A41}
+.si-bar.pw{background:#B98235}
+.si-body{flex:1;min-width:0}
+.si-name{font-size:12.5px;font-weight:600;color:#1F1F1F}
+.si-meta{font-size:10.5px;color:#777;margin-top:2px}
+.si-status{display:inline-block;padding:2px 8px;border-radius:10px;font-size:9.5px;font-weight:700;margin-top:4px}
+.si-status.live{background:#E8F5EC;color:#1E7A41}
+.si-status.upcoming{background:#E8F0FE;color:#385578}
+.si-status.closing{background:#FFF3E0;color:#9A6516}
+.si-status.closed{background:#f0f0f0;color:#999}
+
+/* expanded detail */
+.si-detail{max-height:0;overflow:hidden;transition:max-height .3s ease;font-size:11px;color:#555;line-height:1.5}
+.stack-item.expanded .si-detail{max-height:300px;padding-top:8px}
+.si-detail p{margin-bottom:4px}
+.si-detail .si-tag{display:inline-block;background:#F7F9FC;padding:2px 7px;border-radius:8px;font-size:10px;color:#385578;font-weight:600;margin:2px 2px 2px 0}
+
+/* ── BR: Expiring Soon ── */
+.exp-item{display:flex;align-items:center;gap:10px;padding:10px 8px;border-bottom:1px solid rgba(60,64,67,.06)}
+.exp-item:last-child{border-bottom:none}
+.exp-bar{width:4px;border-radius:2px;height:36px;flex-shrink:0}
+.exp-body{flex:1;min-width:0}
+.exp-name{font-size:12px;font-weight:600}
+.exp-sub{font-size:10px;color:#888;margin-top:1px}
+.countdown{padding:4px 10px;border-radius:10px;font-size:11px;font-weight:800;white-space:nowrap;flex-shrink:0}
+.countdown.urgent{background:#fce8e6;color:#d93025}
+.countdown.warning{background:#FFF3E0;color:#9A6516}
+.countdown.ok{background:#E8F5EC;color:#1E7A41}
+</style>
+</head>
+<body>
+
+<!-- ── Hero ── -->
+<div class="wm-head">
+  <div class="brand">
+    <span class="bdc-hero-ic" title="The moves that run on key dates">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/>
+        <path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>
+      </svg>
+    </span>
+    <span class="brand-title">BD Calendar</span>
+  </div>
+</div>
+
+<!-- ── 2×2 Grid ── -->
+<div class="bdc-grid">
+
+  <!-- TL: Interactive Calendar -->
+  <div class="card" id="cal-card">
+    <div class="card-head">
+      <h3>Calendar</h3>
+      <div class="cal-nav">
+        <button onclick="changeMonth(-1)">‹</button>
+        <span id="cal-month-label"></span>
+        <button onclick="changeMonth(1)">›</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="cal-legend">
+        <span><span class="swatch" style="background:#4285F4"></span>Frameworks</span>
+        <span><span class="swatch" style="background:#1E7A41"></span>Events</span>
+        <span><span class="swatch" style="background:#B98235"></span>Windows</span>
+      </div>
+      <div id="day-detail"></div>
+    </div>
+  </div>
+
+  <!-- TR: Quick Stats -->
+  <div class="card">
+    <div class="card-head"><h3>Quick Stats</h3></div>
+    <div class="card-body" style="display:flex;align-items:center">
+      <div class="stats-grid" style="width:100%">
+        <div class="stat-card">
+          <div class="stat-num">4</div>
+          <div class="stat-delta up">▲ 1 new</div>
+          <div class="stat-label">Frameworks</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">6</div>
+          <div class="stat-delta flat">— no change</div>
+          <div class="stat-label">Events</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">7</div>
+          <div class="stat-delta down">▼ 1 closed</div>
+          <div class="stat-label">Mandate Windows</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">3</div>
+          <div class="stat-delta up" style="color:#d93025">● urgent</div>
+          <div class="stat-label">Expiring &lt;30 days</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BL: Card Stack (filterable) -->
+  <div class="card" id="stack-card">
+    <div class="card-head">
+      <h3>All Items</h3>
+      <div class="filter-pills">
+        <div class="pill active" onclick="filterStack('all',this)">All</div>
+        <div class="pill" onclick="filterStack('fw',this)">Frameworks</div>
+        <div class="pill" onclick="filterStack('ev',this)">Events</div>
+        <div class="pill" onclick="filterStack('pw',this)">Windows</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="stack-list" id="stack-list"></div>
+    </div>
+  </div>
+
+  <!-- BR: Expiring Soon -->
+  <div class="card">
+    <div class="card-head"><h3>Expiring Soon</h3></div>
+    <div class="card-body" id="exp-list"></div>
+  </div>
+
+</div>
+
+<script>
+// ── Live data ──
+const DATA = {
+  frameworks: [
+    {type:"fw",name:"NHS Workforce Alliance — Exec Search & Interim",code:"RM6380",buyer:"NHS Workforce Alliance (via CCS)",scope:"Executive search & interim for NHS / health-sector senior leadership, including comms & corporate affairs.",start:"2024-12-01",end:"2026-12-31",status:"live",sector:"Health"},
+    {type:"fw",name:"Nuclear Decommissioning Authority — Shared Services (Lot 6)",buyer:"NDA Shared Services Alliance",scope:"Recruitment / executive search for NDA group bodies; Lot 6 covers senior / specialist roles.",start:"2026-10-01",end:"2027-03-31",status:"upcoming",sector:"Nuclear"},
+    {type:"fw",name:"Devolved Government — Executive Search",buyer:"Scottish / Welsh / NI Governments",scope:"Executive search frameworks for senior public-appointment & comms roles.",start:"2027-01-01",end:"2027-09-30",status:"upcoming",sector:"Government"},
+    {type:"fw",name:"Crown Commercial Service — Executive Search 3",code:"RM6394",buyer:"Crown Commercial Service",scope:"Executive search & permanent recruitment for senior public-sector roles (incl. comms/corporate-affairs leadership).",start:"2027-06-01",end:"2028-05-31",status:"upcoming",sector:"Government"}
+  ],
+  events: [
+    {type:"ev",name:"CIPR Excellence Awards",date:"2026-07-01",location:"Royal Lancaster Hotel, London",focus:"external",start:"2026-05-01",end:"2026-07-01",why:"UK PR practitioner gold standard; 145 orgs across 33 categories. Senior in-house comms judges + finalists = direct relationship route."},
+    {type:"ev",name:"Internal Comms & Engagement Live",date:"2026-07-08",location:"The Brewery, London",focus:"internal",start:"2026-05-08",end:"2026-07-08",why:"One-day UK IC conference; delegates + speakers skew Head of IC / Director of IC at large UK employers."},
+    {type:"ev",name:"IoIC Awards",date:"2026-09-17",location:"London",focus:"internal",start:"2026-07-17",end:"2026-09-17",why:"Premier UK internal-comms awards. Finalists = visible Heads of IC and IC Directors at large UK employers."},
+    {type:"ev",name:"ICCO Global Summit",date:"2026-11-11",location:"Milan",focus:"external",start:"2026-09-11",end:"2026-11-11",why:"Consultancy CEOs + senior in-house clients attend; relationship-building venue."},
+    {type:"ev",name:"CIPR Annual Conference",date:"2026-11-18",location:"London",focus:"external",start:"2026-09-18",end:"2026-11-18",why:"Theme: Organisational Resilience. Speaker line-up is a tier-1 list of senior in-house comms leaders."},
+    {type:"ev",name:"European Excellence Awards",date:"2026-12-11",location:"Europe",focus:"mixed",start:"2026-10-11",end:"2026-12-11",why:"Pan-EU comms awards. UK + EU CCO attendance; useful for European-headquartered briefs."}
+  ],
+  windows: [
+    {type:"pw",name:"FCA Consumer Duty — annual board-report ramp",start:"2026-04-01",end:"2026-07-31",deadline:"2026-07-31",seat:"Head of Regulatory / Customer Communications",scope:"FCA-regulated retail financial-services firms.",sector:"Financial Services",targets:12,confidence:"high"},
+    {type:"pw",name:"UK SRS — first sustainability-reporting build-up",start:"2026-01-01",end:"2026-12-31",deadline:"2026-12-31",seat:"Head of Sustainability / ESG Communications",scope:"FTSE-weight UK-listed issuers in high-exposure sectors.",sector:"Cross-sector",targets:12,confidence:"medium"},
+    {type:"pw",name:"Machinery-of-government — post-SR reshuffle",start:"2026-04-01",end:"2026-12-31",deadline:"2026-12-31",seat:"Director of Communications (GCS)",scope:"UK central-government departments and major ALBs.",sector:"Public Sector",targets:12,confidence:"medium"},
+    {type:"pw",name:"UK annual-report & AGM season",start:"2026-02-01",end:"2026-06-30",deadline:"2026-06-30",seat:"Head of Investor Relations / Corporate-Reporting Communications",scope:"FTSE-weight Dec-year-end UK-listed issuers.",sector:"Cross-sector",targets:12,confidence:"high"},
+    {type:"pw",name:"Gender Pay Gap — reporting & scrutiny window",start:"2026-03-01",end:"2026-06-30",deadline:"2026-06-30",seat:"Head of Internal / DEI Communications",scope:"UK employers with 250+ staff.",sector:"Cross-sector",targets:12,confidence:"high"},
+    {type:"pw",name:"NHS operational-planning & restructure round",start:"2026-01-01",end:"2026-05-31",deadline:"2026-05-31",seat:"Director of Communications — NHS",scope:"NHS trusts, ICBs and arm's-length bodies.",sector:"Public Sector",targets:12,confidence:"medium"},
+    {type:"pw",name:"Higher-Education clearing & new-intake comms",start:"2026-06-15",end:"2026-09-30",deadline:"2026-09-30",seat:"Head of Communications / Student Recruitment",scope:"UK universities and higher-education providers.",sector:"Public Sector",targets:12,confidence:"medium"}
+  ]
+};
+
+const TODAY = new Date(2026,5,6); // June 6 2026
+let curYear = 2026, curMonth = 5; // June
+
+// ── Helpers ──
+function daysLeft(dateStr){
+  const d = new Date(dateStr);
+  return Math.ceil((d - TODAY)/(1000*60*60*24));
+}
+function fmtDate(s){
+  const d=new Date(s);
+  return d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
+}
+function dateInRange(y,m,d,start,end){
+  const check=new Date(y,m,d);
+  return check>=new Date(start) && check<=new Date(end);
+}
+
+// ── Calendar ──
+function renderCalendar(){
+  const grid=document.getElementById("cal-grid");
+  const label=document.getElementById("cal-month-label");
+  label.textContent=new Date(curYear,curMonth).toLocaleDateString("en-GB",{month:"long",year:"numeric"});
+
+  let html="";
+  ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].forEach(d=>html+=`<div class="cal-hdr">${d}</div>`);
+
+  const first=new Date(curYear,curMonth,1);
+  let startDay=(first.getDay()+6)%7;
+  const daysInMonth=new Date(curYear,curMonth+1,0).getDate();
+  const prevDays=new Date(curYear,curMonth,0).getDate();
+
+  // all items for bar rendering
+  const allItems=[...DATA.frameworks,...DATA.events,...DATA.windows];
+
+  // prev month padding
+  for(let i=startDay-1;i>=0;i--){
+    html+=`<div class="cal-day other"><span class="day-num">${prevDays-i}</span></div>`;
+  }
+  // days
+  for(let d=1;d<=daysInMonth;d++){
+    const isToday=curYear===2026&&curMonth===5&&d===6;
+    // find active items on this day (items whose start-end range covers this day)
+    let bars="";
+    let dots="";
+    const activeOnDay=[];
+    allItems.forEach(item=>{
+      const s=item.start, e=item.end||item.date;
+      if(dateInRange(curYear,curMonth,d,s,e)){
+        activeOnDay.push(item);
+      }
+    });
+    // unique types active
+    const types=[...new Set(activeOnDay.map(i=>i.type))];
+    types.forEach(t=>{
+      bars+=`<div class="bar ${t}"></div>`;
+    });
+    // dots for event days specifically
+    allItems.forEach(item=>{
+      if(item.date){
+        const ed=new Date(item.date);
+        if(ed.getFullYear()===curYear&&ed.getMonth()===curMonth&&ed.getDate()===d){
+          dots+=`<div class="dot ${item.type}"></div>`;
+        }
+      }
+    });
+    // deadline dots for windows
+    allItems.forEach(item=>{
+      if(item.deadline){
+        const dd=new Date(item.deadline);
+        if(dd.getFullYear()===curYear&&dd.getMonth()===curMonth&&dd.getDate()===d){
+          dots+=`<div class="dot ${item.type}" style="outline:1.5px solid #d93025;outline-offset:1px"></div>`;
+        }
+      }
+    });
+
+    html+=`<div class="cal-day${isToday?" today":""}" onclick="showDay(${d})">
+      <span class="day-num">${d}</span>
+      ${dots?`<div class="dots">${dots}</div>`:""}
+      ${bars?`<div class="bars">${bars}</div>`:""}
+    </div>`;
+  }
+  // next month padding
+  const total=startDay+daysInMonth;
+  const rem=7-(total%7);
+  if(rem<7) for(let i=1;i<=rem;i++) html+=`<div class="cal-day other"><span class="day-num">${i}</span></div>`;
+
+  grid.innerHTML=html;
+}
+
+function changeMonth(delta){
+  curMonth+=delta;
+  if(curMonth>11){curMonth=0;curYear++}
+  if(curMonth<0){curMonth=11;curYear--}
+  renderCalendar();
+  document.getElementById("day-detail").innerHTML="";
+}
+
+function showDay(d){
+  const allItems=[...DATA.frameworks,...DATA.events,...DATA.windows];
+  const active=allItems.filter(item=>{
+    const s=item.start, e=item.end||item.date;
+    return dateInRange(curYear,curMonth,d,s,e);
+  });
+  const el=document.getElementById("day-detail");
+  if(!active.length){el.innerHTML=`<div class="day-detail"><h4>${d} ${new Date(curYear,curMonth).toLocaleDateString("en-GB",{month:"long"})}</h4><p style="font-size:11px;color:#999;margin-top:6px">No active items on this day.</p></div>`;return}
+  let html=`<div class="day-detail"><h4>${d} ${new Date(curYear,curMonth).toLocaleDateString("en-GB",{month:"long"})} — ${active.length} active item${active.length>1?"s":""}</h4>`;
+  active.forEach(item=>{
+    const cat=item.type==="fw"?"#4285F4":item.type==="ev"?"#1E7A41":"#B98235";
+    const label=item.type==="fw"?"Framework":item.type==="ev"?"Event":"Window";
+    html+=`<div class="dd-item"><div class="dd-cat" style="background:${cat}"></div><div><strong>${item.name}</strong><br><span style="color:#888">${label}${item.location?" · "+item.location:""}${item.sector?" · "+item.sector:""}</span>${item.seat?"<br><span style='color:#385578'>"+item.seat+"</span>":""}</div></div>`;
+  });
+  html+="</div>";
+  el.innerHTML=html;
+}
+
+// ── Card Stack ──
+function getAllItems(){
+  return [
+    ...DATA.frameworks.map(f=>({...f,sortDate:f.end})),
+    ...DATA.events.map(e=>({...e,sortDate:e.date||e.end})),
+    ...DATA.windows.map(w=>({...w,sortDate:w.deadline||w.end}))
+  ].sort((a,b)=>new Date(a.sortDate)-new Date(b.sortDate));
+}
+
+function renderStack(filter){
+  const items=getAllItems().filter(i=>filter==="all"||i.type===filter);
+  const el=document.getElementById("stack-list");
+  el.innerHTML=items.map((item,idx)=>{
+    const dl=daysLeft(item.deadline||item.end||item.date);
+    let statusCls="upcoming",statusTxt="Upcoming";
+    if(item.status==="live"){statusCls="live";statusTxt="Live"}
+    else if(dl<0){statusCls="closed";statusTxt="Closed"}
+    else if(dl<=30){statusCls="closing";statusTxt=dl+" days left"}
+    else if(dl<=90){statusCls="upcoming";statusTxt=dl+" days left"}
+    else{statusCls="upcoming";statusTxt=dl+" days"}
+
+    const label=item.type==="fw"?"Framework":item.type==="ev"?"Event":"Window";
+    let meta=label;
+    if(item.location) meta+=" · "+item.location;
+    if(item.sector) meta+=" · "+item.sector;
+    if(item.date) meta+=" · "+fmtDate(item.date);
+    else meta+=" · "+fmtDate(item.start)+" → "+fmtDate(item.end);
+
+    let detail="";
+    if(item.scope) detail+=`<p>${item.scope}</p>`;
+    if(item.why) detail+=`<p>${item.why}</p>`;
+    if(item.seat) detail+=`<p><strong>Seat:</strong> ${item.seat}</p>`;
+    if(item.buyer) detail+=`<span class="si-tag">${item.buyer}</span>`;
+    if(item.focus) detail+=`<span class="si-tag">${item.focus}</span>`;
+    if(item.confidence) detail+=`<span class="si-tag">${item.confidence} confidence</span>`;
+    if(item.targets) detail+=`<span class="si-tag">${item.targets} targets</span>`;
+
+    return `<div class="stack-item" onclick="this.classList.toggle('expanded')">
+      <div class="si-bar ${item.type}"></div>
+      <div class="si-body">
+        <div class="si-name">${item.name}</div>
+        <div class="si-meta">${meta}</div>
+        <span class="si-status ${statusCls}">${statusTxt}</span>
+        <div class="si-detail">${detail}</div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function filterStack(filter,el){
+  document.querySelectorAll(".filter-pills .pill").forEach(p=>p.classList.remove("active"));
+  el.classList.add("active");
+  renderStack(filter);
+}
+
+// ── Expiring Soon ──
+function renderExpiring(){
+  const all=[
+    ...DATA.frameworks.map(f=>({...f,dl:daysLeft(f.end),label:"Framework"})),
+    ...DATA.events.map(e=>({...e,dl:daysLeft(e.date||e.end),label:"Event"})),
+    ...DATA.windows.map(w=>({...w,dl:daysLeft(w.deadline||w.end),label:"Window"}))
+  ].filter(i=>i.dl>=0&&i.dl<=90).sort((a,b)=>a.dl-b.dl);
+
+  const el=document.getElementById("exp-list");
+  el.innerHTML=all.map(item=>{
+    const cat=item.type==="fw"?"#4285F4":item.type==="ev"?"#1E7A41":"#B98235";
+    let cls="ok";
+    if(item.dl<=7) cls="urgent";
+    else if(item.dl<=30) cls="warning";
+    let countTxt=item.dl===0?"TODAY":item.dl===1?"TOMORROW":item.dl+" days";
+    return `<div class="exp-item">
+      <div class="exp-bar" style="background:${cat}"></div>
+      <div class="exp-body">
+        <div class="exp-name">${item.name}</div>
+        <div class="exp-sub">${item.label}${item.sector?" · "+item.sector:""}</div>
+      </div>
+      <div class="countdown ${cls}">${countTxt}</div>
+    </div>`;
+  }).join("");
+}
+
+// ── Init ──
+renderCalendar();
+renderStack("all");
+renderExpiring();
+</script>
+</body>
+</html>
