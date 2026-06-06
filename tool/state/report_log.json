@@ -1,5 +1,12 @@
 [
   {
+    "ts": "2026-06-06T00:10:23.759988+00:00",
+    "type": "Pitch Pack",
+    "company": "Oxford Quantum Circuits",
+    "name": "",
+    "artifact": "pitch-pack-e73137ccab"
+  },
+  {
     "ts": "2026-06-05T23:52:30.959775+00:00",
     "type": "Pitch Pack",
     "company": "Entain",
