@@ -956,20 +956,16 @@ def render_text(target: str, role: str, ch_snapshot: dict,
 
 def _run_comms_proposal(target: str, role: str, mode: str) -> int:
     """Comms desk pitch pack: the branded, client-facing VMA "Search Proposal"
-    PDF (tool/pitch_proposal). The target company's own logo, the predicted
-    seat and the generation date are wired onto the cover, and the company name
-    replaces the template's example client throughout. Saves a .pdf into the
-    per-profile state dir and, in send/test mode, emails it as an attachment.
+    PDF (tool/pitch_proposal). The predicted seat and the generation date are
+    wired onto the cover, and the company name replaces the template's example
+    client throughout. Saves a .pdf into the per-profile state dir and, in
+    send/test mode, emails it as an attachment.
 
     This is the comms-only output (the marketing desk keeps the dynamic pack in
     main()). Returns a process exit code."""
     from tool import pitch_proposal
     log.info("Building comms SEARCH PROPOSAL PDF for %r · seat %r · mode %r",
              target, role, mode)
-    # The cover logo is pulled from the target company's own website, validated
-    # and confidence-gated (never a wrong logo). If no confident logo is found,
-    # generate() falls back to a clean text wordmark, so a pack is always
-    # produced for whatever company a BD lead names.
     pdf_bytes = pitch_proposal.generate(target, role)
     safe = "".join(c if c.isalnum() else "_" for c in target.lower())[:40]
     stamp = datetime.now().strftime("%Y%m%d_%H%M")

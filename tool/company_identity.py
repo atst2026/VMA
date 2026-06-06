@@ -4,12 +4,8 @@ untrusted company NAME into a verified identity object.
 
 Why this exists
 ---------------
-Logo correctness failed for years because resolution started from a fuzzy
-company-name string and guessed everything downstream (search, TLD probes,
-same-named entities). This module eliminates that: a pitch pack can only be
-generated for a company we can resolve to a CANONICAL IDENTITY, and logo
-resolution (tool/logo_service) keys off the identity's VERIFIED DOMAIN /
-verified logo URL — never the raw name.
+A pitch pack can only be generated for a company we can resolve to a CANONICAL
+IDENTITY keyed on a VERIFIED DOMAIN — never the raw name.
 
 Guarantees
 ----------
@@ -24,9 +20,6 @@ Each entry is a ``Company`` with:
   id      stable internal unique id (the slug; never changes once shipped)
   name    canonical display name
   domain  the company's verified official domain (required wherever possible)
-  logo_url  OPTIONAL verified logo asset (the company's own/hosted file). When
-            present it is the highest-confidence source and is used before any
-            domain-derived source.
   aliases   extra exact spellings / trading names / acronyms that map here.
 """
 from __future__ import annotations
@@ -37,7 +30,7 @@ from dataclasses import dataclass, field
 
 class UnknownCompanyError(Exception):
     """Raised when a company name cannot be resolved to a canonical identity.
-    Logo resolution (and pitch-pack generation) MUST fail rather than guess."""
+    Pitch-pack generation MUST fail rather than guess."""
 
 
 @dataclass(frozen=True)
@@ -45,7 +38,6 @@ class Company:
     id: str
     name: str
     domain: str | None = None
-    logo_url: str | None = None
     aliases: tuple[str, ...] = field(default_factory=tuple)
 
 
@@ -59,12 +51,10 @@ def slugify(value: str) -> str:
 # The registry. id == slug of the canonical name. Domains are held with high
 # confidence; a WRONG domain here would defeat the whole system, so the bar for
 # an entry is "verified". Extend it with one line per company.
-# (logo_url is pinned only where a specific verified asset is known.)
 # ======================================================================
 _COMPANIES: tuple[Company, ...] = (
     # ---- Deep-tech / startup BD radar (the hard cases) -----------------
     Company("oqc", "OQC", "oqc.tech",
-            logo_url="https://oqc.tech/wp-content/uploads/2024/09/OQC-Logo-White.svg",
             aliases=("oxford quantum circuits",)),
     Company("geordieai", "Geordie AI", "geordie.ai", aliases=("geordie",)),
     Company("quantinuum", "Quantinuum", "quantinuum.com"),

@@ -5,9 +5,7 @@ This is the comms-profile pitch pack: a true, client-facing PDF rendered from
 the supplied VMA proposal template, parameterised per company. Compared with
 the source template:
 
-  * the example client's logo on the cover is replaced by the TARGET company's
-    own logo, resolved + validated by tool/logo_service (deterministic, keyed on
-    the company's verified domain; generation FAILS if it can't be resolved);
+  * the cover displays the target company name as a clean typographic wordmark;
   * every place the template named the example client now carries the target
     company name (woven through the body — "present a proposal to <company>",
     the weekly-update timing table, the exclusivity clause, etc.);
@@ -30,8 +28,6 @@ import html as _html
 import logging
 from functools import lru_cache
 from pathlib import Path
-
-from tool import logo_service
 
 log = logging.getLogger("pitch_proposal")
 
@@ -71,16 +67,8 @@ def _generation_date(when: _dt.date | _dt.datetime | None = None) -> str:
     return f"{d.day} {d.strftime('%B %Y')}"
 
 
-def _cover_logo_html(company: str, logo_data_uri: str | None) -> str:
-    """The company's logo on the cover, where the template's example (Belron)
-    logo sat. When the logo has been resolved from the company's website it is
-    embedded as an image; when no confident logo could be found, a clean
-    typographic wordmark of the company name is rendered instead, so the pack is
-    always produced (never blank, never a wrong logo). The cover box (CSS) sizes
-    either to fit."""
-    if logo_data_uri:
-        return (f'<img class="client-logo" src="{logo_data_uri}" '
-                f'alt="{_esc(company)} logo">')
+def _cover_logo_html(company: str) -> str:
+    """The company name on the cover as a clean typographic wordmark."""
     return f'<div class="client-wordmark">{_esc(company)}</div>'
 
 
@@ -96,11 +84,10 @@ def _interior(inner: str, *, first: bool = False) -> str:
     )
 
 
-def render_proposal_html(company: str, seat: str, logo_data_uri: str | None,
+def render_proposal_html(company: str, seat: str,
                          when: _dt.date | _dt.datetime | None = None) -> str:
-    """The full multi-page proposal as print-styled HTML (A4). `logo_data_uri`
-    is the company's logo resolved by tool/logo_service, or None — in which case
-    the cover falls back to a text wordmark of the company name."""
+    """The full multi-page proposal as print-styled HTML (A4). The cover
+    displays the company name as a clean typographic wordmark."""
     co = _esc(company)
     seat_disp = _esc(seat or "Head of Communications")
     date_disp = _esc(_generation_date(when))
@@ -111,7 +98,7 @@ def render_proposal_html(company: str, seat: str, logo_data_uri: str | None,
       <div class="cover-band">
         <img class="vma-wordmark" src="{_asset_data_uri('vma_wordmark_white.png')}" alt="VMA Group">
       </div>
-      <div class="cover-logo">{_cover_logo_html(company, logo_data_uri)}</div>
+      <div class="cover-logo">{_cover_logo_html(company)}</div>
       <h1 class="cover-title">SEARCH PROPOSAL</h1>
       <div class="cover-sub">STRICTLY PRIVATE &amp; CONFIDENTIAL</div>
       <div class="cover-fields">
@@ -356,19 +343,9 @@ def render_proposal_html(company: str, seat: str, logo_data_uri: str | None,
 # --------------------------------------------------------------------------
 def generate(company: str, seat: str,
              when: _dt.date | _dt.datetime | None = None) -> bytes:
-    """Render the comms proposal to PDF bytes.
-
-    The company's logo is resolved from its own website up front via
-    tool/logo_service.get_logo (validated, confidence-gated — never a wrong
-    logo). If no confident logo can be found, the cover falls back to a clean
-    text wordmark of the company name, so a pack is ALWAYS produced for whatever
-    company a BD lead names."""
-    try:
-        logo_uri = logo_service.get_logo(company).data_uri()
-    except logo_service.LogoError as e:
-        log.info("no logo resolved for %r (%s) — using text wordmark", company, e)
-        logo_uri = None
-    html = render_proposal_html(company, seat, logo_uri, when=when)
+    """Render the comms proposal to PDF bytes. The cover displays the company
+    name as a clean typographic wordmark."""
+    html = render_proposal_html(company, seat, when=when)
     from weasyprint import HTML
     return HTML(string=html).write_pdf()
 
@@ -407,10 +384,6 @@ body {{
   position: absolute; top: 300px; left: 60px; right: 60px; height: 130px;
   display: flex; align-items: center; justify-content: center;
   text-align: center;
-}}
-.cover-logo .client-logo {{
-  max-width: 300px; max-height: 130px; width: auto; height: auto;
-  object-fit: contain;
 }}
 .cover-logo .client-wordmark {{
   max-width: 420px; color: {_NAVY}; font-weight: 800;
