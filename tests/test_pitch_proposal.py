@@ -68,7 +68,7 @@ def test_generation_date_has_no_time():
 
 
 # ---- end-to-end render invariants -------------------------------------
-# (Logo-resolution internals are covered in tests/test_logo_finder.py.)
+# (Logo sourcing is covered in tests/test_lead_logo.py.)
 
 def test_company_replaces_belron_everywhere():
     from tool import pitch_proposal as pp
@@ -102,12 +102,12 @@ def test_cover_carries_seat_and_date():
     assert "5 June 2026" in text
 
 
-def test_wordmark_fallback_when_no_logo():
+def test_name_fallback_when_no_logo():
     from tool import pitch_proposal as pp
     pdf, meta = pp.generate("Riverside Housing Association",
                             "Head of Communications", fetch_logo=False)
-    assert meta["logo_source"] == "wordmark"
-    # the company name appears on the cover as the wordmark
+    assert meta["logo_source"] == "none"
+    # the company name appears on the cover as plain text
     assert "Riverside Housing Association" in _pdf_text(pdf)
 
 
@@ -123,42 +123,26 @@ def test_supplied_logo_is_embedded():
     assert _page_count(pdf) == 8
 
 
-def test_company_logo_delegates_to_finder():
-    # pitch_proposal.company_logo is logo_finder.find_logo; an empty name
-    # resolves to the wordmark sentinel with no network calls.
-    from tool import pitch_proposal as pp
-    from tool import logo_finder
-    assert pp.company_logo is logo_finder.find_logo
-    assert pp.company_logo("") == (None, "wordmark")
-
-
-def test_cover_logo_is_trimmed_to_fill_the_box():
-    # The cover trims surrounding padding so the logo sits at a sensible size
-    # rather than floating tiny in a sea of whitespace ("appropriately sized").
-    pytest.importorskip("PIL")
+def test_cover_logo_embedded_unchanged():
+    # The logo is embedded EXACTLY as sourced — only the cover box (CSS) sizes
+    # it. The bytes in the data URI must be byte-identical to what was supplied.
     import base64
-    import io
-    from PIL import Image, ImageDraw
     from tool import pitch_proposal as pp
-
-    pad = Image.new("RGBA", (240, 120), (255, 255, 255, 0))
-    ImageDraw.Draw(pad).rectangle((100, 50, 140, 70), fill=(20, 20, 20, 255))
-    buf = io.BytesIO()
-    pad.save(buf, format="PNG")
-
-    html = pp._cover_logo_html("Acme", buf.getvalue())
+    png = base64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=")
+    html = pp._cover_logo_html("Acme", png)
     assert 'class="client-logo"' in html
     data_uri = html.split('src="', 1)[1].split('"', 1)[0]
     embedded = base64.b64decode(data_uri.split(",", 1)[1])
-    assert Image.open(io.BytesIO(embedded)).size < (240, 120)
+    assert embedded == png            # unchanged — no trim, no recolour
 
 
-def test_cover_wordmark_when_logo_bytes_none():
-    # No logo -> the cover always prints the company name as a wordmark, so it can
-    # never render blank (the reported PDF that showed neither logo nor name).
+def test_cover_name_when_logo_bytes_none():
+    # No logo -> the cover prints the company name as plain text, so it can never
+    # render blank.
     from tool import pitch_proposal as pp
     html = pp._cover_logo_html("Acme Corporation", None)
-    assert "client-wordmark" in html and "Acme Corporation" in html
+    assert "client-name" in html and "Acme Corporation" in html
 
 
 # ---- profile routing ---------------------------------------------------

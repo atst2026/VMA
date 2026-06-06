@@ -6,8 +6,9 @@ the supplied VMA proposal template, parameterised per company. Compared with
 the source template:
 
   * the example client's logo on the cover is replaced by the TARGET company's
-    own logo (fetched at good quality, fitted to the cover), with a clean
-    typographic wordmark as the fallback when no logo can be sourced;
+    own logo, taken directly from the company's official website (tool/lead_logo)
+    and embedded UNCHANGED, sized only to fit the cover box; if no logo can be
+    sourced the company name is shown as plain text;
   * every place the template named the example client now carries the target
     company name (woven through the body — "present a proposal to <company>",
     the weekly-update timing table, the exclusivity clause, etc.);
@@ -31,7 +32,7 @@ import logging
 from functools import lru_cache
 from pathlib import Path
 
-from tool import logo_finder
+from tool import lead_logo
 
 log = logging.getLogger("pitch_proposal")
 
@@ -59,21 +60,6 @@ def _asset_data_uri(name: str) -> str:
 
 
 # --------------------------------------------------------------------------
-# Company logo resolution lives in tool/logo_finder: it finds the target's
-# real logo from its name (official website -> Wikidata/Wikipedia -> domain
-# logo services), which is what makes startup accounts like "Geordie AI" or
-# "OQC" resolve rather than printing the company name as text. The cover falls
-# back to a typographic wordmark only when nothing resolves.
-# --------------------------------------------------------------------------
-company_logo = logo_finder.find_logo
-_img_data_uri = logo_finder.img_data_uri
-# Trim padding AND recolour a white-on-dark mark so it shows on the light cover
-# (a logo with real colour is left untouched). This is what lets the OQC-style
-# white header logo appear instead of being discarded for a visible wrong badge.
-_prepare_cover_logo = logo_finder.prepare_cover_logo
-
-
-# --------------------------------------------------------------------------
 # Rendering helpers
 # --------------------------------------------------------------------------
 def _esc(s) -> str:
@@ -87,15 +73,14 @@ def _generation_date(when: _dt.date | _dt.datetime | None = None) -> str:
 
 
 def _cover_logo_html(company: str, logo_bytes: bytes | None) -> str:
-    """The target company's logo on the cover, or a clean typographic
-    wordmark fallback (so the cover is always presentable). The logo is trimmed
-    of surrounding padding and recoloured if it would otherwise be invisible on
-    the white cover, so it fills the box at a sensible size and always shows."""
+    """Place the BD lead company's logo on the cover where the template's
+    example logo sat. The logo is embedded EXACTLY as sourced from the company's
+    official website — only the cover box sizes it to fit. If no logo can be
+    sourced, the company name is shown as plain text so the cover isn't blank."""
     if logo_bytes:
-        logo_bytes = _prepare_cover_logo(logo_bytes)
-        return (f'<img class="client-logo" src="{_img_data_uri(logo_bytes)}" '
+        return (f'<img class="client-logo" src="{lead_logo.logo_data_uri(logo_bytes)}" '
                 f'alt="{_esc(company)}">')
-    return f'<div class="client-wordmark">{_esc(company)}</div>'
+    return f'<div class="client-name">{_esc(company)}</div>'
 
 
 def _interior(inner: str, *, first: bool = False) -> str:
@@ -373,12 +358,13 @@ def generate(company: str, seat: str,
              logo_bytes: bytes | None = None) -> tuple[bytes, dict]:
     """Render the comms proposal to PDF bytes.
 
-    Returns (pdf_bytes, meta) where meta = {"logo_source": str, "pages": int}.
-    `logo_bytes` lets a caller inject a logo (used by tests); otherwise the
-    target's logo is fetched best-effort, falling back to a wordmark."""
-    source = "supplied" if logo_bytes else "wordmark"
+    Returns (pdf_bytes, meta) where meta = {"logo_source": str}. `logo_bytes`
+    lets a caller inject a logo (used by tests); otherwise the company's logo is
+    fetched from its official website, falling back to the company name."""
+    source = "supplied" if logo_bytes else "none"
     if logo_bytes is None and fetch_logo:
-        logo_bytes, source = company_logo(company)
+        logo_bytes = lead_logo.fetch_logo(company)
+        source = "website" if logo_bytes else "none"
     html = render_proposal_html(company, seat, logo_bytes=logo_bytes, when=when)
     from weasyprint import HTML
     pdf = HTML(string=html).write_pdf()
@@ -424,7 +410,7 @@ body {{
   max-width: 300px; max-height: 130px; width: auto; height: auto;
   object-fit: contain;
 }}
-.cover-logo .client-wordmark {{
+.cover-logo .client-name {{
   font-size: 30pt; font-weight: 700; color: {_NAVY}; letter-spacing: .5px;
   line-height: 1.15;
 }}
