@@ -344,38 +344,63 @@ def _registry_domain(name: str) -> str | None:
         return None
 
 
-def _resolve_via_wikidata(name: str) -> str | None:
-    """Search Wikidata and accept the best eligible candidate: an organisation
-    with an official website whose name closely matches the lead.
+_SCORED_CACHE: dict[str, list[dict]] = {}
 
-    Two passes so an EXACT normalised name match always wins over a merely
-    close one — e.g. "Cambridge University" resolves to the University (exact
-    via its alias) rather than "Cambridge University Press" (a fuzzy 0.86
-    sequence match that would otherwise pass on search-order alone)."""
-    scored = []  # (score, qid, domain) for eligible, domain-bearing candidates
+
+def _scored_candidates(name: str) -> list[dict]:
+    """Wikidata candidates for a name, each scored: [{qid, is_org, domain,
+    score}, ...] in search-relevance order. Cached per process (one search +
+    entity fetch per name), shared by domain resolution and the P154 logo
+    lookup so neither path double-hits Wikidata."""
+    key = _normalize(name)
+    if key in _SCORED_CACHE:
+        return _SCORED_CACHE[key]
+    out = []
     for cand in _search_entities(name):
         is_org, domain, names = _entity_company_and_domain(cand["id"], name)
-        if not is_org or not domain:
-            continue
         pool = names or [cand["label"]]
         score = max((_name_match_score(name, n) for n in pool), default=0.0)
-        scored.append((score, cand["id"], domain))
+        out.append({"qid": cand["id"], "is_org": is_org,
+                    "domain": domain, "score": score})
+    _SCORED_CACHE[key] = out
+    return out
 
-    # Pass 1: an exact normalised match (score == 1.0), preserving search order.
-    for score, qid, domain in scored:
-        if score >= 0.999:
-            log.info("wikidata: %r -> %s via %s (exact match)", name, domain, qid)
-            return domain
-    # Pass 2: first candidate clearing the confidence threshold.
-    for score, qid, domain in scored:
-        if score >= _ACCEPT_SCORE:
-            log.info("wikidata: %r -> %s via %s (confidence %.2f)",
-                     name, domain, qid, score)
-            return domain
-    if scored:
-        log.info("wikidata: no confident match for %r (best %.2f)",
-                 name, max(s for s, _, _ in scored))
+
+def _pick_best(candidates: list[dict]):
+    """Two-pass pick over already-scored candidates (search order preserved):
+    an EXACT normalised match wins over a merely-close one."""
+    for c in candidates:
+        if c["score"] >= 0.999:
+            return c
+    for c in candidates:
+        if c["score"] >= _ACCEPT_SCORE:
+            return c
     return None
+
+
+def _best_entity(name: str) -> tuple[str | None, str | None]:
+    """(qid, domain) of the best eligible ORG with an official website whose
+    name matches the lead — the domain-resolution entity. (None, None) if none."""
+    best = _pick_best([c for c in _scored_candidates(name)
+                       if c["is_org"] and c["domain"]])
+    if best:
+        log.info("wikidata: %r -> %s via %s (score %.2f)",
+                 name, best["domain"], best["qid"], best["score"])
+        return best["qid"], best["domain"]
+    return None, None
+
+
+def _logo_qid(name: str) -> str | None:
+    """QID of the best eligible ORG whose name matches the lead, WITHOUT
+    requiring an official website (P856) — so we can read a P154 logo even for
+    registry-resolved companies or orgs that list no website."""
+    best = _pick_best([c for c in _scored_candidates(name) if c["is_org"]])
+    return best["qid"] if best else None
+
+
+def _resolve_via_wikidata(name: str) -> str | None:
+    """Domain for a name via Wikidata (see _best_entity)."""
+    return _best_entity(name)[1]
 
 
 def resolve_domain(name: str) -> str | None:
@@ -400,3 +425,88 @@ def resolve_domain(name: str) -> str | None:
     domain = _resolve_via_wikidata(name)
     _DOMAIN_CACHE[key] = domain
     return domain
+
+
+# ======================================================================
+# Wikidata logo image (P154) — the PREFERRED cover logo source
+# ----------------------------------------------------------------------
+# logo.dev's image API returns the brand SYMBOL, often without the company
+# name. Wikidata's "logo image" (P154) is frequently the full logo WITH the
+# name. So the cover prefers P154 when one exists and passes the quality +
+# visible-on-white gates (applied by the caller in pitch_proposal); otherwise
+# it falls back to logo.dev. This needs the entity QID for EVERY company —
+# including registry-resolved ones — so wikidata_logo_png looks the entity up
+# by name via the shared, cached candidate scorer (one extra Wikidata lookup
+# per company, cached for the run).
+#
+# Many P154 files are SVG; rasterising them needs cairosvg (a real dependency,
+# riding the cairo stack WeasyPrint already requires — the CI workflow apt-
+# installs libcairo2). If cairosvg is unavailable or a file fails to
+# rasterise, we fall back to logo.dev rather than failing.
+# ======================================================================
+_COMMONS_FILEPATH = "https://commons.wikimedia.org/wiki/Special:FilePath/"
+_P154_MAX_BYTES = 4_000_000
+_P154_RASTER_WIDTH = 600          # px width we rasterise SVGs to
+_P154_CACHE: dict[str, bytes | None] = {}   # keyed on QID
+
+
+def _p154_filename(qid: str) -> str | None:
+    data = _wd_get({"action": "wbgetentities", "ids": qid,
+                    "props": "claims", "languages": "en"})
+    if not data:
+        return None
+    claims = ((data.get("entities") or {}).get(qid) or {}).get("claims") or {}
+    for c in claims.get("P154", []) or []:
+        if c.get("rank") == "deprecated":
+            continue
+        try:
+            return c["mainsnak"]["datavalue"]["value"]
+        except (KeyError, TypeError):
+            continue
+    return None
+
+
+def _fetch_p154_raster(filename: str) -> bytes | None:
+    """Fetch a Commons P154 image as raster bytes. PNG/JPEG/WebP returned as
+    downloaded; SVG rasterised via cairosvg. None on any failure / size cap."""
+    import urllib.parse
+    try:
+        from tool.sources._http import get as _get
+        url = _COMMONS_FILEPATH + urllib.parse.quote(filename.replace(" ", "_"))
+        r = _get(url, headers={"User-Agent": _USER_AGENT}, timeout=_HTTP_TIMEOUT)
+        if r is None or r.status_code != 200 or not r.content:
+            return None
+        raw = r.content
+        if len(raw) > _P154_MAX_BYTES:
+            log.info("P154 %s too large (%d bytes) — skipped", filename, len(raw))
+            return None
+        if filename.lower().endswith(".svg"):
+            try:
+                import cairosvg
+                return cairosvg.svg2png(bytestring=raw,
+                                        output_width=_P154_RASTER_WIDTH)
+            except Exception as e:
+                log.info("P154 svg raster failed for %s (%s) — fallback", filename, e)
+                return None
+        return raw
+    except Exception as e:  # pragma: no cover - network/runtime guard
+        log.info("P154 fetch failed for %s: %s", filename, e)
+        return None
+
+
+def wikidata_logo_png(company: str) -> bytes | None:
+    """Raster bytes of the company's Wikidata logo image (P154), or None.
+    Works for any company (registry- or Wikidata-resolved) by name-matching an
+    eligible org entity. Cached per process. The caller must still run the
+    bytes through its quality + visible-on-white gates before use."""
+    if not company or not company.strip():
+        return None
+    qid = _logo_qid(company)
+    if not qid:
+        return None
+    if qid in _P154_CACHE:
+        return _P154_CACHE[qid]
+    fn = _p154_filename(qid)
+    out = _fetch_p154_raster(fn) if fn else None
+    _P154_CACHE[qid] = out
+    return out
