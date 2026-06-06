@@ -186,19 +186,21 @@ def _process_logo(png_bytes: bytes, box_h: int, max_w: int) -> str | None:
 
 def _company_logo_data_uri(company: str, box_h: int, max_w: int) -> str | None:
     """Real-logo data URI for a company, or None to use the text wordmark.
-    Domain is taken from the verified registry in tool.company_identity."""
+    The domain is resolved by tool.company_domain (verified registry first,
+    then a Wikidata lookup with company-type + name-match confidence gates),
+    then run through the logo.dev image fetch + Pillow quality gate below."""
     token = _logo_token()
     if not token:
         log.info("LOGODEV_TOKEN not set — cover uses the text wordmark")
         return None
     try:
-        from tool import company_identity
-        domain = company_identity.resolve(company).domain
-    except Exception as e:  # UnknownCompanyError or import issue
-        log.info("no verified domain for %r (%s) — using text wordmark", company, e)
+        from tool import company_domain
+        domain = company_domain.resolve_domain(company)
+    except Exception as e:
+        log.info("domain resolution failed for %r (%s) — using text wordmark", company, e)
         return None
     if not domain:
-        log.info("registry has no domain for %r — using text wordmark", company)
+        log.info("no confident domain for %r — using text wordmark", company)
         return None
     png = _fetch_logo_png(domain, token)
     if not png:
