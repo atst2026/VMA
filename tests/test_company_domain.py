@@ -15,21 +15,67 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(cd._normalize("J D Wetherspoon PLC"), "j d wetherspoon")
         self.assertEqual(cd._normalize("Deliveroo Ltd"), "deliveroo")
 
-    def test_name_match(self):
+    def test_name_match_basic(self):
         self.assertEqual(cd._name_match_score("Deliveroo", "Deliveroo"), 1.0)
-        self.assertGreaterEqual(cd._name_match_score("Wetherspoons", "Wetherspoons"), cd._ACCEPT_SCORE)
-        self.assertLess(cd._name_match_score("Deliveroo", "Just Eat"), cd._ACCEPT_SCORE)
         self.assertLess(cd._name_match_score("Monzo", "Mondelez"), cd._ACCEPT_SCORE)
+
+    def test_containment_bonus_when_clean(self):
+        # "sainsbury" inside "j sainsbury" — legitimate containment.
+        self.assertGreaterEqual(cd._name_match_score("Sainsbury", "J Sainsbury"), 0.9)
+
+    def test_containment_withheld_for_subentity(self):
+        # Parent org must NOT match a named sub-entity sharing the prefix.
+        self.assertLess(
+            cd._name_match_score("Cambridge University", "Cambridge University Cricket Club"),
+            cd._ACCEPT_SCORE)
 
     def test_strip_domain(self):
         self.assertEqual(cd._strip_domain("https://www.deliveroo.co.uk/menu"), "deliveroo.co.uk")
         self.assertEqual(cd._strip_domain("http://jdwetherspoon.com?x=1"), "jdwetherspoon.com")
 
-    def test_pick_domain_prefers_primary_tld(self):
-        # Deliveroo lists the Italian site first; we want the .co.uk one.
-        self.assertEqual(cd._pick_domain(["deliveroo.it", "deliveroo.co.uk"]), "deliveroo.co.uk")
-        self.assertEqual(cd._pick_domain(["jdwetherspoon.co.uk", "jdwetherspoon.com"]), "jdwetherspoon.com")
-        self.assertIsNone(cd._pick_domain([]))
+    def test_registrable_apex(self):
+        self.assertEqual(cd._registrable_apex("en.powys.gov.uk"), "powys.gov.uk")
+        self.assertEqual(cd._registrable_apex("cy.powys.gov.uk"), "powys.gov.uk")
+        self.assertEqual(cd._registrable_apex("cam.ac.uk"), "cam.ac.uk")
+        self.assertEqual(cd._registrable_apex("entaingroup.com"), "entaingroup.com")
+
+    def test_domain_label(self):
+        self.assertEqual(cd._domain_label("entaingroup.com"), "entaingroup")
+        self.assertEqual(cd._domain_label("gvc-plc.com"), "gvc plc")
+        self.assertEqual(cd._domain_label("powys.gov.uk"), "powys")
+
+    def test_eligible_org_covers_public_sector(self):
+        # Fix B1: universities, councils, NHS trusts, charities are eligible.
+        for qid in ("Q5341295", "Q3354859",   # educational org / collegiate uni
+                    "Q837766",                 # local authority
+                    "Q6954187", "Q6954197",    # NHS (foundation) trust
+                    "Q708676", "Q163740"):     # charity / nonprofit
+            self.assertIn(qid, cd._ELIGIBLE_ORG_QIDS)
+
+
+class TestPickDomain(unittest.TestCase):
+    def test_name_match_beats_stale_alias_domain(self):
+        # Fix A: Entain lists both gvc-plc.com (stale) and entaingroup.com.
+        # The label must be matched against the LEAD name, so entaingroup wins.
+        cands = [("gvc-plc.com", "normal"), ("entaingroup.com", "normal")]
+        self.assertEqual(cd._pick_domain(cands, "Entain"), "entaingroup.com")
+
+    def test_apex_dedupe_for_subdomains(self):
+        cands = [("en.powys.gov.uk", "normal"), ("cy.powys.gov.uk", "normal")]
+        self.assertEqual(cd._pick_domain(cands, "Powys County Council"), "powys.gov.uk")
+
+    def test_tld_preference_when_label_ties(self):
+        cands = [("deliveroo.it", "normal"), ("deliveroo.co.uk", "normal")]
+        self.assertEqual(cd._pick_domain(cands, "Deliveroo"), "deliveroo.co.uk")
+
+    def test_preferred_rank_breaks_tie(self):
+        # Equal name score (no lead match); preferred rank beats normal even
+        # though .com out-ranks .org on TLD.
+        cands = [("brandx.com", "normal"), ("brandx.org", "preferred")]
+        self.assertEqual(cd._pick_domain(cands, "", ["Brand X"]), "brandx.org")
+
+    def test_empty(self):
+        self.assertIsNone(cd._pick_domain([], "Whatever"))
 
 
 class TestResolveDomain(unittest.TestCase):
@@ -40,7 +86,6 @@ class TestResolveDomain(unittest.TestCase):
         cd._DOMAIN_CACHE.clear()
 
     def _patch(self, search, entity):
-        """Install fake Wikidata layers; return the originals for restore."""
         o1, o2 = cd._search_entities, cd._entity_company_and_domain
         cd._search_entities, cd._entity_company_and_domain = search, entity
         return o1, o2
@@ -52,41 +97,58 @@ class TestResolveDomain(unittest.TestCase):
         called = {"n": 0}
         orig = self._patch(
             lambda name: called.__setitem__("n", called["n"] + 1) or [],
-            lambda qid: (False, None, []),
+            lambda qid, lead="": (False, None, []),
         )
         try:
-            # Diageo is in tool/company_identity with a verified domain.
             self.assertEqual(cd.resolve_domain("Diageo"), "diageo.com")
         finally:
             self._restore(orig)
-        self.assertEqual(called["n"], 0)  # never touched Wikidata
+        self.assertEqual(called["n"], 0)
 
-    def test_company_with_website_and_name_match_accepted(self):
+    def test_university_accepted_after_org_broadening(self):
         orig = self._patch(
-            lambda name: [{"id": "Q1", "label": "Deliveroo", "match": "", "description": ""}],
-            lambda qid: (True, "deliveroo.co.uk", ["Deliveroo"]),
+            lambda name: [{"id": "Q35794", "label": "University of Cambridge", "match": "", "description": ""}],
+            lambda qid, lead="": (True, "cam.ac.uk",
+                                  ["University of Cambridge", "Cambridge University"]),
         )
         try:
-            self.assertEqual(cd.resolve_domain("Deliveroo"), "deliveroo.co.uk")
+            self.assertEqual(cd.resolve_domain("Cambridge University"), "cam.ac.uk")
         finally:
             self._restore(orig)
 
-    def test_name_match_uses_aliases(self):
-        # Label differs ("J D Wetherspoon") but an alias matches the lead.
+    def test_council_accepted(self):
         orig = self._patch(
-            lambda name: [{"id": "Q6109362", "label": "J D Wetherspoon", "match": "", "description": ""}],
-            lambda qid: (True, "jdwetherspoon.com", ["J D Wetherspoon", "Wetherspoons"]),
+            lambda name: [{"id": "Q7236943", "label": "Powys County Council", "match": "", "description": ""}],
+            lambda qid, lead="": (True, "powys.gov.uk", ["Powys County Council", "Powys Council"]),
         )
         try:
-            self.assertEqual(cd.resolve_domain("Wetherspoons"), "jdwetherspoon.com")
+            self.assertEqual(cd.resolve_domain("Powys County Council"), "powys.gov.uk")
         finally:
             self._restore(orig)
 
-    def test_non_company_entity_rejected(self):
-        # A real entity with a website, but NOT instance-of a company.
+    def test_exact_match_preferred_over_fuzzy_subentity(self):
+        # Press (fuzzy ~0.87) is returned first; the University (exact via
+        # alias) is second. Exact-match pass must pick the University.
+        def _search(name):
+            return [
+                {"id": "QPRESS", "label": "Cambridge University Press", "match": "", "description": "publisher"},
+                {"id": "QUNI", "label": "University of Cambridge", "match": "", "description": "university"},
+            ]
+        def _entity(qid, lead=""):
+            return {
+                "QPRESS": (True, "cambridge.org", ["Cambridge University Press"]),
+                "QUNI": (True, "cam.ac.uk", ["University of Cambridge", "Cambridge University"]),
+            }[qid]
+        orig = self._patch(_search, _entity)
+        try:
+            self.assertEqual(cd.resolve_domain("Cambridge University"), "cam.ac.uk")
+        finally:
+            self._restore(orig)
+
+    def test_non_org_rejected(self):
         orig = self._patch(
             lambda name: [{"id": "Q2", "label": "Mercury", "match": "", "description": "planet"}],
-            lambda qid: (False, "nasa.gov", ["Mercury"]),
+            lambda qid, lead="": (False, "nasa.gov", ["Mercury"]),
         )
         try:
             self.assertIsNone(cd.resolve_domain("Mercury"))
@@ -94,28 +156,27 @@ class TestResolveDomain(unittest.TestCase):
             self._restore(orig)
 
     def test_low_name_match_rejected(self):
-        # A company with a website, but the name is clearly different.
         orig = self._patch(
             lambda name: [{"id": "Q3", "label": "Totally Different Brand", "match": "", "description": "company"}],
-            lambda qid: (True, "elsewhere.com", ["Totally Different Brand"]),
+            lambda qid, lead="": (True, "elsewhere.com", ["Totally Different Brand"]),
         )
         try:
             self.assertIsNone(cd.resolve_domain("Deliveroo"))
         finally:
             self._restore(orig)
 
-    def test_company_without_website_rejected(self):
+    def test_org_without_website_rejected(self):
         orig = self._patch(
             lambda name: [{"id": "Q4", "label": "Deliveroo", "match": "", "description": "company"}],
-            lambda qid: (True, None, ["Deliveroo"]),
+            lambda qid, lead="": (True, None, ["Deliveroo"]),
         )
         try:
             self.assertIsNone(cd.resolve_domain("Deliveroo"))
         finally:
             self._restore(orig)
 
-    def test_no_search_results_falls_back(self):
-        orig = self._patch(lambda name: [], lambda qid: (False, None, []))
+    def test_no_results_falls_back(self):
+        orig = self._patch(lambda name: [], lambda qid, lead="": (False, None, []))
         try:
             self.assertIsNone(cd.resolve_domain("Some Obscure Startup XYZ"))
         finally:
@@ -127,30 +188,14 @@ class TestResolveDomain(unittest.TestCase):
         def _search(name):
             calls["n"] += 1
             return [{"id": "Q1", "label": "Deliveroo", "match": "", "description": ""}]
-        orig = self._patch(_search, lambda qid: (True, "deliveroo.co.uk", ["Deliveroo"]))
+        orig = self._patch(_search, lambda qid, lead="": (True, "deliveroo.co.uk", ["Deliveroo"]))
         try:
             cd.resolve_domain("Deliveroo")
-            cd.resolve_domain("deliveroo")   # same normalised key
-            cd.resolve_domain("Deliveroo Ltd")  # also normalises to "deliveroo"
+            cd.resolve_domain("deliveroo")
+            cd.resolve_domain("Deliveroo Ltd")
         finally:
             self._restore(orig)
         self.assertEqual(calls["n"], 1)
-
-    def test_first_candidate_wrong_second_right(self):
-        # Search returns an unrelated entity first, the real company second.
-        def _search(name):
-            return [
-                {"id": "QA", "label": "Deliveroo (song)", "match": "", "description": "single"},
-                {"id": "QB", "label": "Deliveroo", "match": "", "description": "company"},
-            ]
-        def _entity(qid):
-            return {"QA": (False, None, ["Deliveroo (song)"]),
-                    "QB": (True, "deliveroo.co.uk", ["Deliveroo"])}[qid]
-        orig = self._patch(_search, _entity)
-        try:
-            self.assertEqual(cd.resolve_domain("Deliveroo"), "deliveroo.co.uk")
-        finally:
-            self._restore(orig)
 
 
 if __name__ == "__main__":
