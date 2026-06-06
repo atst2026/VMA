@@ -184,23 +184,63 @@ def _process_logo(png_bytes: bytes, box_h: int, max_w: int) -> str | None:
     return f"data:image/png;base64,{base64.b64encode(out.getvalue()).decode('ascii')}"
 
 
+def _passes_visibility(png_bytes: bytes) -> bool:
+    """True if the image stays visible composited on the WHITE cover — guards
+    against white/near-transparent logos that would vanish on the page (the
+    Wetherspoon-white-'W' failure mode). Requires >= 2% of pixels to be
+    meaningfully dark/inked after compositing on white."""
+    from PIL import Image
+    try:
+        img = Image.open(_io.BytesIO(png_bytes)).convert("RGBA")
+        img.load()
+    except Exception:
+        return False
+    bg = Image.new("RGBA", img.size, (255, 255, 255, 255))
+    bg.alpha_composite(img)
+    lum = bg.convert("L")
+    total = img.size[0] * img.size[1]
+    if total == 0:
+        return False
+    ink = sum(1 for p in lum.getdata() if p < 190) / total
+    return ink >= 0.02
+
+
 def _company_logo_data_uri(company: str, box_h: int, max_w: int) -> str | None:
     """Real-logo data URI for a company, or None to use the text wordmark.
-    The domain is resolved by tool.company_domain (verified registry first,
-    then a Wikidata lookup with company-type + name-match confidence gates),
-    then run through the logo.dev image fetch + Pillow quality gate below."""
+
+    Source priority:
+      1. Wikidata logo image (P154) — PREFERRED, because it frequently includes
+         the company NAME (a full wordmark), not just the bare symbol. Used only
+         when it passes the Pillow quality gate AND the visible-on-white check.
+      2. logo.dev brand image for the resolved domain — the fallback (today's
+         behaviour) when there is no usable P154.
+      3. None -> the caller renders the text wordmark.
+    """
+    # 1) Wikidata P154 first.
+    try:
+        from tool import company_domain
+        p154 = company_domain.wikidata_logo_png(company)
+        if p154 and _passes_visibility(p154):
+            uri = _process_logo(p154, box_h, max_w)
+            if uri:
+                log.info("cover: using Wikidata P154 logo for %r", company)
+                return uri
+    except Exception as e:
+        log.info("P154 logo lookup failed for %r (%s) — trying logo.dev", company, e)
+
+    # 2) logo.dev fallback.
     token = _logo_token()
     if not token:
-        log.info("LOGODEV_TOKEN not set — cover uses the text wordmark")
+        log.info("no P154 and LOGODEV_TOKEN unset for %r — text wordmark", company)
         return None
     try:
         from tool import company_domain
         domain = company_domain.resolve_domain(company)
     except Exception as e:
-        log.info("domain resolution failed for %r (%s) — using text wordmark", company, e)
+        log.info("domain resolution failed for %r (%s) — text wordmark", company, e)
         return None
     if not domain:
-        log.info("no confident domain for %r — using text wordmark", company)
+        log.info("no confident domain for %r — text wordmark", company)
         return None
     png = _fetch_logo_png(domain, token)
     if not png:

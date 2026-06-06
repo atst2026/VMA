@@ -5,6 +5,8 @@ Network-free: the registry path uses the real tool.company_identity; the
 Wikidata calls (_search_entities / _entity_company_and_domain) are monkeypatched.
 """
 import os
+import sys
+import types
 import unittest
 
 from tool import company_domain as cd
@@ -81,9 +83,13 @@ class TestPickDomain(unittest.TestCase):
 class TestResolveDomain(unittest.TestCase):
     def setUp(self):
         cd._DOMAIN_CACHE.clear()
+        cd._SCORED_CACHE.clear()
+        cd._P154_CACHE.clear()
 
     def tearDown(self):
         cd._DOMAIN_CACHE.clear()
+        cd._SCORED_CACHE.clear()
+        cd._P154_CACHE.clear()
 
     def _patch(self, search, entity):
         o1, o2 = cd._search_entities, cd._entity_company_and_domain
@@ -195,6 +201,101 @@ class TestResolveDomain(unittest.TestCase):
             cd.resolve_domain("Deliveroo Ltd")
         finally:
             self._restore(orig)
+        self.assertEqual(calls["n"], 1)
+
+
+class TestWikidataLogo(unittest.TestCase):
+    """P154 logo fetch + rasterisation + the cross-cutting logo-qid lookup."""
+
+    def setUp(self):
+        cd._DOMAIN_CACHE.clear()
+        cd._SCORED_CACHE.clear()
+        cd._P154_CACHE.clear()
+        self._saved = (cd._logo_qid, cd._p154_filename, cd._fetch_p154_raster)
+
+    def tearDown(self):
+        cd._logo_qid, cd._p154_filename, cd._fetch_p154_raster = self._saved
+        cd._SCORED_CACHE.clear()
+        cd._P154_CACHE.clear()
+        sys.modules.pop("cairosvg", None)
+
+    def test_fetch_raster_png_returned_raw(self):
+        # Non-SVG files are returned as downloaded (Pillow handles them later).
+        import tool.sources._http as http
+        orig = http.get
+        http.get = lambda *a, **k: type("R", (), {"status_code": 200, "content": b"PNGDATA"})()
+        try:
+            self.assertEqual(cd._fetch_p154_raster("Some Logo.png"), b"PNGDATA")
+        finally:
+            http.get = orig
+
+    def test_fetch_raster_svg_uses_cairosvg(self):
+        import tool.sources._http as http
+        orig = http.get
+        http.get = lambda *a, **k: type("R", (), {"status_code": 200, "content": b"<svg/>"})()
+        fake = types.ModuleType("cairosvg")
+        fake.svg2png = lambda bytestring=None, output_width=None: b"RASTERED"
+        sys.modules["cairosvg"] = fake
+        try:
+            self.assertEqual(cd._fetch_p154_raster("Brand.svg"), b"RASTERED")
+        finally:
+            http.get = orig
+
+    def test_fetch_raster_svg_without_cairosvg_returns_none(self):
+        import tool.sources._http as http
+        orig = http.get
+        http.get = lambda *a, **k: type("R", (), {"status_code": 200, "content": b"<svg/>"})()
+        sys.modules["cairosvg"] = None   # force ImportError on `import cairosvg`
+        try:
+            self.assertIsNone(cd._fetch_p154_raster("Brand.svg"))
+        finally:
+            http.get = orig
+
+    def test_fetch_raster_size_capped(self):
+        import tool.sources._http as http
+        orig = http.get
+        big = b"x" * (cd._P154_MAX_BYTES + 1)
+        http.get = lambda *a, **k: type("R", (), {"status_code": 200, "content": big})()
+        try:
+            self.assertIsNone(cd._fetch_p154_raster("Huge.png"))
+        finally:
+            http.get = orig
+
+    def test_registry_company_gets_p154_lookup(self):
+        # Diageo resolves via the registry (no Wikidata for the DOMAIN), but the
+        # LOGO path must still look it up by name and return its P154.
+        seen = {"qid": False}
+
+        def _qid(name):
+            seen["qid"] = True
+            return "Q12345"
+        cd._logo_qid = _qid
+        cd._p154_filename = lambda qid: "Diageo.png"
+        cd._fetch_p154_raster = lambda fn: b"LOGOBYTES"
+        self.assertEqual(cd.wikidata_logo_png("Diageo"), b"LOGOBYTES")
+        self.assertTrue(seen["qid"])
+
+    def test_no_qid_returns_none(self):
+        cd._logo_qid = lambda name: None
+        cd._p154_filename = lambda qid: (_ for _ in ()).throw(AssertionError("not reached"))
+        self.assertIsNone(cd.wikidata_logo_png("Whoever"))
+
+    def test_no_p154_returns_none(self):
+        cd._logo_qid = lambda name: "Q1"
+        cd._p154_filename = lambda qid: None
+        self.assertIsNone(cd.wikidata_logo_png("Whoever"))
+
+    def test_result_cached_by_qid(self):
+        cd._logo_qid = lambda name: "Q1"
+        cd._p154_filename = lambda qid: "L.png"
+        calls = {"n": 0}
+
+        def _fetch(fn):
+            calls["n"] += 1
+            return b"B"
+        cd._fetch_p154_raster = _fetch
+        cd.wikidata_logo_png("Whoever")
+        cd.wikidata_logo_png("Whoever")
         self.assertEqual(calls["n"], 1)
 
 
