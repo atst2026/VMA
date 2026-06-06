@@ -101,6 +101,26 @@ def test_cover_renders_wordmark():
         '<div class="client-wordmark">Acme &amp; Co</div>'
 
 
+def test_cover_renders_logo_when_provided():
+    from tool import pitch_proposal as pp
+    # 1x1 red PNG
+    import base64
+    red_px = base64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4"
+        "nGP4z8BQDwAEgAF/pooBPQAAAABJRU5ErkJggg==")
+    html = pp._cover_logo_html("TestCo", logo=(red_px, "image/png"))
+    assert '<img class="client-logo"' in html
+    assert 'alt="TestCo"' in html
+    assert "data:image/png;base64," in html
+
+
+def test_cover_falls_back_to_wordmark_without_logo():
+    from tool import pitch_proposal as pp
+    html = pp._cover_logo_html("TestCo", logo=None)
+    assert "client-wordmark" in html
+    assert "TestCo" in html
+
+
 def test_generate_handles_any_company_name():
     from tool import pitch_proposal as pp
     pdf = pp.generate("Totally Unlisted Startup Ltd", "Head of Communications")

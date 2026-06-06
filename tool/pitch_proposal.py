@@ -29,6 +29,8 @@ import logging
 from functools import lru_cache
 from pathlib import Path
 
+from tool.company_identity import UnknownCompanyError, resolve as _resolve_company
+
 log = logging.getLogger("pitch_proposal")
 
 _ASSETS = Path(__file__).resolve().parent / "assets"
@@ -67,8 +69,14 @@ def _generation_date(when: _dt.date | _dt.datetime | None = None) -> str:
     return f"{d.day} {d.strftime('%B %Y')}"
 
 
-def _cover_logo_html(company: str) -> str:
-    """The company name on the cover as a clean typographic wordmark."""
+def _cover_logo_html(company: str,
+                     logo: tuple[bytes, str] | None = None) -> str:
+    """Company identity on the cover: their logo if we have one, otherwise
+    the company name rendered as a clean typographic wordmark."""
+    if logo:
+        data, mime = logo
+        uri = f"data:{mime};base64,{base64.b64encode(data).decode('ascii')}"
+        return f'<img class="client-logo" src="{uri}" alt="{_esc(company)}">'
     return f'<div class="client-wordmark">{_esc(company)}</div>'
 
 
@@ -85,9 +93,11 @@ def _interior(inner: str, *, first: bool = False) -> str:
 
 
 def render_proposal_html(company: str, seat: str,
-                         when: _dt.date | _dt.datetime | None = None) -> str:
+                         when: _dt.date | _dt.datetime | None = None,
+                         logo: tuple[bytes, str] | None = None) -> str:
     """The full multi-page proposal as print-styled HTML (A4). The cover
-    displays the company name as a clean typographic wordmark."""
+    displays the company logo when available, falling back to the company
+    name rendered as a clean typographic wordmark."""
     co = _esc(company)
     seat_disp = _esc(seat or "Head of Communications")
     date_disp = _esc(_generation_date(when))
@@ -98,7 +108,7 @@ def render_proposal_html(company: str, seat: str,
       <div class="cover-band">
         <img class="vma-wordmark" src="{_asset_data_uri('vma_wordmark_white.png')}" alt="VMA Group">
       </div>
-      <div class="cover-logo">{_cover_logo_html(company)}</div>
+      <div class="cover-logo">{_cover_logo_html(company, logo=logo)}</div>
       <h1 class="cover-title">SEARCH PROPOSAL</h1>
       <div class="cover-sub">STRICTLY PRIVATE &amp; CONFIDENTIAL</div>
       <div class="cover-fields">
@@ -341,11 +351,31 @@ def render_proposal_html(company: str, seat: str,
 # --------------------------------------------------------------------------
 # Public entry point
 # --------------------------------------------------------------------------
+def _fetch_client_logo(company: str) -> tuple[bytes, str] | None:
+    """Best-effort logo fetch: resolve the company to its verified domain,
+    then try to grab their logo from the web.  Returns None (and logs) on
+    any failure — the cover silently falls back to the text wordmark."""
+    try:
+        identity = _resolve_company(company)
+    except UnknownCompanyError:
+        log.info("company %r not in registry — skipping logo fetch", company)
+        return None
+    if not identity.domain:
+        return None
+    try:
+        from tool.logo_fetch import fetch_logo
+        return fetch_logo(identity.domain)
+    except Exception as exc:
+        log.warning("logo fetch failed for %s: %s", identity.domain, exc)
+        return None
+
+
 def generate(company: str, seat: str,
              when: _dt.date | _dt.datetime | None = None) -> bytes:
     """Render the comms proposal to PDF bytes. The cover displays the company
-    name as a clean typographic wordmark."""
-    html = render_proposal_html(company, seat, when=when)
+    logo when available, falling back to the company name as a wordmark."""
+    logo = _fetch_client_logo(company)
+    html = render_proposal_html(company, seat, when=when, logo=logo)
     from weasyprint import HTML
     return HTML(string=html).write_pdf()
 
@@ -389,6 +419,10 @@ body {{
   max-width: 420px; color: {_NAVY}; font-weight: 800;
   font-size: 30pt; line-height: 1.1; letter-spacing: .3px; text-align: center;
   overflow-wrap: break-word; word-wrap: break-word;
+}}
+.cover-logo .client-logo {{
+  max-height: 120px; max-width: 420px; width: auto; height: auto;
+  object-fit: contain;
 }}
 .cover-title {{
   position: absolute; top: 470px; left: 0; right: 0; margin: 0;
