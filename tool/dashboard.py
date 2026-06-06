@@ -4906,7 +4906,7 @@ TEMPLATE = r"""
        The frameworks body DOES scroll, so an opened section's bottom is reachable. */
     #cal #framework-body, #cal #events-body, #cal #pulses-body { flex: 1; min-height: 0; }
     #cal #events-body { overflow: hidden; }
-    #cal #pulses-body { overflow: hidden; }
+    #cal #pulses-body { overflow: hidden; display: flex; flex-direction: column; }
     #cal #framework-body { overflow-y: auto; }
     #cal #events-body { display: flex; flex-direction: column; }
     /* frameworks — minimalist accordion: 4 rows, one open at a time, no scroll */
@@ -4914,7 +4914,9 @@ TEMPLATE = r"""
        collapsed by default; the brief (buyer / scope / verify) only appears
        on click, like the events + mandate-windows cards. */
     .bdc-fwa { display: flex; flex-direction: column; }
-    .bdc-fw { border: none; border-radius: 10px; background: transparent; overflow: hidden; transition: background .14s; }
+    /* flex:none so a row never shrinks below its content (which, with
+       overflow:hidden, would clip the title); instead the body scrolls. */
+    .bdc-fw { flex: none; border: none; border-radius: 10px; background: transparent; overflow: hidden; transition: background .14s; }
     .bdc-fw + .bdc-fw { border-top: 1px solid var(--hairline); }
     .bdc-fw.open { background: var(--elevated); }
     .bdc-fw.open, .bdc-fw.open + .bdc-fw { border-top-color: transparent; }
@@ -5044,13 +5046,17 @@ TEMPLATE = r"""
        rows deep however many the feed yields (they just get a little narrower
        as more appear). Opening one grows its row + pane to give the brief
        room; the rest stay as small panes (peek). */
-    #cal #pulses-body .mw-rows { display: flex; flex-direction: column; gap: 12px; min-height: 100%;
+    /* height is flex-driven all the way down (no percentage heights, which can
+       collapse to zero in some ancestor contexts): pulses-body is a flex
+       column, .mw-rows fills it, each .mw-row takes half, and the panes stretch
+       to their row via align-items:stretch. */
+    #cal #pulses-body .mw-rows { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0;
       padding: 4px 2px; }
     #cal #pulses-body .mw-row { display: flex; gap: 12px; justify-content: center; align-items: stretch;
       flex: 1 1 0; min-height: 0; perspective: 1500px; transition: flex .45s cubic-bezier(.5,.02,.2,1); }
     #cal #pulses-body .mw-rows.has-open .mw-row { flex: 0.78 1 0; }
     #cal #pulses-body .mw-rows.has-open .mw-row.row-open { flex: 2 1 0; }
-    .mw-win { position: relative; flex: 1 1 0; min-width: 0; max-width: 400px; height: 100%; cursor: pointer;
+    .mw-win { position: relative; flex: 1 1 0; min-width: 0; max-width: 400px; cursor: pointer;
       border: 1.6px solid #1f1f1f; border-radius: 3px; background: #fff; box-shadow: 0 6px 16px rgba(40,60,90,.10);
       transition: flex .45s cubic-bezier(.5,.02,.2,1); }
     .mw-win.open { flex: 3 1 0; max-width: none; cursor: default; }
@@ -6485,10 +6491,10 @@ async function loadEvents() {
     root.querySelectorAll('.bdc-fw').forEach(function (x) { x.classList.remove('open'); });
     if (!wasOpen) {
       node.classList.add('open');
-      // bring the opened detail (its end + the portal link) fully into view
+      // bring the opened row into view, header first, so it never hides
+      // behind the row above it.
       setTimeout(function () {
-        var d = node.querySelector('.bdc-fw-d');
-        try { (d || node).scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+        try { node.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
       }, 70);
     }
   });
