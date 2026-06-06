@@ -1,5 +1,12 @@
 [
   {
+    "ts": "2026-06-06T18:01:49.183031+00:00",
+    "type": "Pitch Pack",
+    "company": "Oxford Quantum Circuits",
+    "name": "",
+    "artifact": "pitch-pack-70fddaed9d"
+  },
+  {
     "ts": "2026-06-06T18:01:42.242451+00:00",
     "type": "Pitch Pack",
     "company": "Geordie AI",
