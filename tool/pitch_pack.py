@@ -186,6 +186,30 @@ def render_html(target: str, role: str, ch_snapshot: dict,
     low, high, matched = salary_band
     mid = (low + high) // 2
 
+    # Cover identity: prefer the client's real logo over their name typed as
+    # text. logo.dev source via tool/company_logo; any failure (no token, no
+    # verified domain, bad logo) returns None and we fall back to the text
+    # wordmark below — no regression.
+    cover_logo_uri = None
+    try:
+        from tool import company_logo
+        cover_logo_uri = company_logo.logo_data_uri(target, box_h=96)
+    except Exception as e:  # never let a logo lookup break pack generation
+        log.info("cover logo lookup failed for %s: %s", target, e)
+
+    if cover_logo_uri:
+        cover_id_html = (
+            f'<div style="margin:0 0 6px 0;">'
+            f'<img src="{cover_logo_uri}" alt="{_esc(target)}" '
+            f'style="height:48px;max-width:320px;object-fit:contain;display:block;">'
+            f'</div>'
+            f'<h2 style="margin:0 0 4px 0;">Retained Pitch Pack</h2>'
+        )
+    else:
+        cover_id_html = (
+            f'<h2 style="margin:0 0 4px 0;">Retained Pitch Pack - {_esc(target)}</h2>'
+        )
+
     # CH is demoted to a small audit footnote — the company number and street
     # address aren't useful to an AD pitching. The AD-useful snapshot (sector /
     # fee / cost-of-vacancy / pipeline) is assembled below as snapshot_html.
@@ -358,7 +382,7 @@ def render_html(target: str, role: str, ch_snapshot: dict,
     return f"""<!doctype html>
 <html><head><meta charset="utf-8"></head><body style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px;color:#111;">
 {note_banner}
-<h2 style="margin:0 0 4px 0;">Retained Pitch Pack - {_esc(target)}</h2>
+{cover_id_html}
 <div style="color:#666;font-size:13px;margin-bottom:18px;">
   Role: {_esc(role)} · Generated {_esc(datetime.now().strftime('%a %d %b %Y · %H:%M'))} · For Sara Tehrani, VMA Group
 </div>

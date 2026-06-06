@@ -43,7 +43,7 @@ jobs:
       - name: Install Python deps
         run: |
           python -m pip install --upgrade pip
-          pip install requests beautifulsoup4 lxml python-dateutil pypdf pdfplumber
+          pip install requests beautifulsoup4 lxml python-dateutil pypdf pdfplumber pillow
 
       - name: Generate pitch pack
         env:
@@ -55,6 +55,11 @@ jobs:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           GMAIL_FROM_NAME: ${{ secrets.GMAIL_FROM_NAME }}
+          # logo.dev publishable token (pk_...) for the cover logo. Add it
+          # under Settings → Secrets and variables → Actions → New repository
+          # secret, name LOGODEV_TOKEN. If unset, the pack falls back to the
+          # company name as text — no failure.
+          LOGODEV_TOKEN: ${{ secrets.LOGODEV_TOKEN }}
           PYTHONUNBUFFERED: "1"
           PYTHONPATH: "."
           PITCH_ROLE: ${{ github.event.inputs.role }}
