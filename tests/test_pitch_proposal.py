@@ -4,13 +4,8 @@ Verifies the wired-in template behaviour:
   * the example client ("Belron") is replaced by the target company everywhere;
   * the consultant-team page and the cover "Prepared by" line are dropped;
   * the cover carries the predicted seat and the generation date (no time);
-  * the cover embeds the company logo (resolved by tool/logo_service, which is
-    stubbed here; its own behaviour is in tests/test_logo_service.py), and falls
-    back to a clean text wordmark when no confident logo can be resolved, so a
-    pack is always produced;
+  * the cover displays the company name as a clean typographic wordmark;
   * the comms profile routes to this PDF (marketing keeps the dynamic pack).
-
-These run offline (the logo service is stubbed), so no network is required.
 """
 import datetime as dt
 import os
@@ -71,52 +66,25 @@ def test_generation_date_has_no_time():
 
 
 # ---- end-to-end render invariants -------------------------------------
-# generate() resolves the logo via tool/logo_service; stub it so these render
-# tests stay offline and deterministic. Logo-service behaviour has its own
-# suite (tests/test_logo_service.py).
 
-_PNG = (b"\x89PNG\r\n\x1a\n" + b"\x00" * 400)
-
-
-@pytest.fixture
-def _stub_logo(monkeypatch):
-    from tool import pitch_proposal as pp
-    from tool import logo_service as ls
-
-    def fake(name):
-        c = __import__("tool.company_identity", fromlist=["resolve"])
-        try:
-            comp = c.resolve(name)
-            cid, cname = comp.id, comp.name
-        except Exception:
-            cid, cname = "stub", name
-        return ls.ResolvedLogo(cid, cname, f"https://{cid}.example/logo.png",
-                               _PNG, "image/png", "domain:clearbit")
-
-    monkeypatch.setattr(pp.logo_service, "get_logo", fake)
-    return fake
-
-
-def test_company_replaces_belron_everywhere(_stub_logo):
+def test_company_replaces_belron_everywhere():
     from tool import pitch_proposal as pp
     pdf = pp.generate("Diageo", "Head of Corporate Communications")
     text = _pdf_text(pdf)
     assert "Belron" not in text
-    # company woven through the body (why-VMA, timing table, exclusivity, …)
     assert text.count("Diageo") >= 5
 
 
-def test_team_page_and_prepared_by_removed(_stub_logo):
+def test_team_page_and_prepared_by_removed():
     from tool import pitch_proposal as pp
     pdf = pp.generate("Diageo", "Head of Communications")
     text = _pdf_text(pdf)
     assert "CONSULTANT TEAM" not in text.upper()
     assert "Prepared by" not in text
-    # 9-page template minus the consultant-team page == 8.
     assert _page_count(pdf) == 8
 
 
-def test_cover_carries_seat_and_date(_stub_logo):
+def test_cover_carries_seat_and_date():
     from tool import pitch_proposal as pp
     seat = "Director of Corporate Affairs"
     pdf = pp.generate("Tesco", seat, when=dt.datetime(2026, 6, 5, 9, 0))
@@ -127,43 +95,14 @@ def test_cover_carries_seat_and_date(_stub_logo):
     assert "5 June 2026" in text
 
 
-def test_cover_embeds_the_resolved_logo(_stub_logo):
-    # the cover always carries the validated logo image (no text fallback)
+def test_cover_renders_wordmark():
     from tool import pitch_proposal as pp
-    html = pp._cover_logo_html("Acme", "data:image/png;base64,QUJD")
-    assert html == '<img class="client-logo" src="data:image/png;base64,QUJD" alt="Acme logo">'
-
-
-def test_cover_falls_back_to_wordmark_html():
-    # when no logo data-uri is supplied, the cover renders a text wordmark (not
-    # an <img>), so the pack is still produced.
-    from tool import pitch_proposal as pp
-    assert pp._cover_logo_html("Acme & Co", None) == \
+    assert pp._cover_logo_html("Acme & Co") == \
         '<div class="client-wordmark">Acme &amp; Co</div>'
 
 
-def test_generate_uses_wordmark_when_logo_unresolved(monkeypatch):
-    # new contract: if no confident logo can be resolved, generation does NOT
-    # fail — the cover falls back to a clean text wordmark and a pack is produced.
+def test_generate_handles_any_company_name():
     from tool import pitch_proposal as pp
-    from tool import logo_service as ls
-
-    def boom(name):
-        raise ls.LogoResolutionError("no valid logo")
-    monkeypatch.setattr(pp.logo_service, "get_logo", boom)
-    pdf = pp.generate("Wonka Industries", "Head of Communications")
-    text = _pdf_text(pdf)
-    assert "Wonka Industries" in text          # wordmark cover + woven body
-    assert _page_count(pdf) == 8               # still the full proposal
-
-
-def test_generate_handles_any_company_name(monkeypatch):
-    # a BD lead can name ANY company; generation must always produce a pack,
-    # falling back to the wordmark when the logo can't be resolved.
-    from tool import pitch_proposal as pp
-    from tool import logo_service as ls
-    monkeypatch.setattr(pp.logo_service, "get_logo",
-                        lambda name: (_ for _ in ()).throw(ls.LogoResolutionError("x")))
     pdf = pp.generate("Totally Unlisted Startup Ltd", "Head of Communications")
     assert pdf[:4] == b"%PDF" and len(pdf) > 1000
 
