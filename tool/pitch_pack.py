@@ -974,15 +974,9 @@ def _run_comms_proposal(target: str, role: str, mode: str) -> int:
     logo_source = meta.get("logo_source")
     log.info("Proposal PDF: %d bytes (logo: %s) -> %s",
              len(pdf_bytes), logo_source, pdf_path)
-    # Surface a missing logo so it's actionable rather than silent — the cover
-    # printed the company name as a wordmark. To lock the real logo, drop a file
-    # into tool/assets/company_logos/ (see that folder's README) and re-run.
-    if logo_source == "wordmark":
-        from tool.company_logos import slugify
-        log.warning("No logo resolved for %r — cover used a typographic "
-                    "wordmark. To pin the real logo, add "
-                    "tool/assets/company_logos/%s.svg (or .png). See that "
-                    "folder's README.", target, slugify(target))
+    if logo_source == "none":
+        log.info("No logo sourced from %r's website — cover shows the company "
+                 "name as text.", target)
 
     if mode in ("send", "test") and getattr(config, "NON_BRIEF_EMAIL_ENABLED", False):
         to = config.TEST_RECIPIENT if mode == "test" else config.RECIPIENT
