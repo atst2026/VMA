@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BD Calendar — Action Horizon</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#F7F9FC;color:#1F1F1F;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wm-head{padding:24px 32px 15px;background:radial-gradient(ellipse 86% 165% at 50% -16%,#a4c6e8 0%,#bdd4ea 16%,#d4e2ef 34%,#e9f0f7 58%,#f4f8fc 78%,rgba(247,249,252,0) 100%)}
+.hdr{display:flex;align-items:center;gap:12px}
+.bdc-hero-ic{display:inline-flex;width:32px;height:32px;color:#385578}
+.bdc-hero-ic svg{width:100%;height:100%}
+.hdr h1{font-size:22px;font-weight:700;color:#1F1F1F;letter-spacing:-.3px}
+.hdr .sub{font-size:13px;color:#5a6a7a;margin-left:auto;font-weight:500}
+.view-label{font-size:12px;font-weight:600;color:#385578;text-transform:uppercase;letter-spacing:.8px;margin-top:8px}
+
+.columns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;padding:24px 32px 40px;align-items:start}
+
+.column{background:#fff;border:1px solid #e8ecf1;border-radius:14px;overflow:hidden}
+.column.urgent .col-head{background:linear-gradient(135deg,#fef3f1,#fff5f3);border-bottom:2px solid #e8bcb6}
+.col-head{padding:18px 20px 14px;border-bottom:1px solid #f0f3f7}
+.col-head h2{font-size:14px;font-weight:700;color:#1F1F1F;display:flex;align-items:center;gap:8px}
+.col-head .col-count{font-size:11px;background:#edf1f5;color:#5a6a7a;border-radius:10px;padding:2px 8px;font-weight:600}
+.col-head .col-range{font-size:11px;color:#8a95a5;margin-top:4px}
+
+.col-body{padding:12px}
+.card{background:#fff;border:1px solid #edf1f5;border-radius:10px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:box-shadow .2s,border-color .2s;position:relative;overflow:hidden}
+.card:hover{box-shadow:0 4px 16px rgba(0,0,0,.06);border-color:#d0d8e2}
+.card:last-child{margin-bottom:0}
+.card-accent{position:absolute;top:0;left:0;bottom:0;width:4px;border-radius:4px 0 0 4px}
+.card-accent.fw{background:#4285F4}
+.card-accent.ev{background:#1E7A41}
+.card-accent.mw{background:#B98235}
+
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;padding-left:10px}
+.card-name{font-size:13px;font-weight:700;color:#1F1F1F}
+.card-countdown{font-size:11px;font-weight:700;border-radius:8px;padding:2px 8px;white-space:nowrap}
+.card-countdown.urgent{background:#fef3f1;color:#c0392b}
+.card-countdown.soon{background:#fef9ef;color:#B98235}
+.card-countdown.later{background:#edf5f1;color:#1E7A41}
+.card-countdown.closed{background:#f5f5f5;color:#999}
+
+.card-cat{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;padding-left:10px}
+.card-cat.fw{color:#4285F4}
+.card-cat.ev{color:#1E7A41}
+.card-cat.mw{color:#B98235}
+
+.card-desc{font-size:12px;color:#6b7a8a;padding-left:10px;margin-bottom:8px;line-height:1.5}
+.card-act{font-size:11px;color:#5a6a7a;padding-left:10px;display:flex;align-items:center;gap:6px}
+.card-act svg{width:12px;height:12px;stroke:#8a95a5;fill:none;flex-shrink:0}
+.card-act strong{color:#385578}
+
+.card.in-progress{border-left:3px solid #4285F4}
+.card.in-progress .card-accent{display:none}
+
+.empty-col{text-align:center;padding:32px 20px;color:#b0b8c5;font-size:13px}
+</style>
+</head>
+<body>
+
+<div class="wm-head">
+  <div class="hdr">
+    <span class="bdc-hero-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></span>
+    <h1>BD Calendar</h1>
+    <span class="sub">Action Horizon</span>
+  </div>
+  <div class="view-label">Organised by when to act &middot; Today: 6 Jun 2026</div>
+</div>
+
+<div class="columns" id="columns"></div>
+
+<script>
+const TODAY = new Date(2026, 5, 6);
+
+const allItems = [
+  // Frameworks
+  {name:'NHS Workforce Alliance',cat:'fw',catLabel:'Approved Framework',actionDate:new Date(2026,5,6),desc:'RM6380 — Exec Search & Interim. Live now, expires 31 Dec 2026.',action:'Review current lot requirements and prepare bid pipeline',endDate:new Date(2026,11,31),inProgress:true},
+  {name:'Nuclear Decommissioning Authority',cat:'fw',catLabel:'Approved Framework',actionDate:new Date(2026,7,15),desc:'Shared Services Lot 6. Opens ~Oct 2026.',action:'Prepare pre-qualification documents and team CVs',endDate:new Date(2027,2,31)},
+  {name:'Devolved Government — Exec Search',cat:'fw',catLabel:'Approved Framework',actionDate:new Date(2026,10,1),desc:'Scottish/Welsh/NI Governments. Opens ~Jan 2027.',action:'Begin mapping devolved-government comms landscape',endDate:new Date(2027,8,30)},
+  {name:'CCS Executive Search 3',cat:'fw',catLabel:'Approved Framework',actionDate:new Date(2027,3,1),desc:'RM6394. Opens ~Jun 2027.',action:'Monitor CCS pipeline and prepare for PQQ',endDate:new Date(2028,4,31)},
+  // Events
+  {name:'CIPR Excellence Awards',cat:'ev',catLabel:'Events & Networking',actionDate:new Date(2026,4,6),desc:'1 Jul 2026 — Royal Lancaster Hotel, London. External.',action:'Start reaching out to CIPR finalists shortlist',endDate:new Date(2026,6,1),inProgress:true},
+  {name:'Internal Comms & Engagement Live',cat:'ev',catLabel:'Events & Networking',actionDate:new Date(2026,4,13),desc:'8 Jul 2026 — The Brewery, London. Internal.',action:'Book tickets, identify target delegates from attendee list',endDate:new Date(2026,6,8),inProgress:true},
+  {name:'IoIC Awards',cat:'ev',catLabel:'Events & Networking',actionDate:new Date(2026,6,22),desc:'17 Sep 2026 — London. Internal.',action:'Identify IoIC finalists and plan outreach sequence',endDate:new Date(2026,8,17)},
+  {name:'ICCO Global Summit',cat:'ev',catLabel:'Events & Networking',actionDate:new Date(2026,8,16),desc:'11 Nov 2026 — Milan. External.',action:'Register, book travel, map attendee CEO/CCO list',endDate:new Date(2026,10,11)},
+  {name:'CIPR Annual Conference',cat:'ev',catLabel:'Events & Networking',actionDate:new Date(2026,8,23),desc:'18 Nov 2026 — London. External.',action:'Secure speaking/sponsor slot; plan senior leader meetings',endDate:new Date(2026,10,18)},
+  {name:'European Excellence Awards',cat:'ev',catLabel:'Events & Networking',actionDate:new Date(2026,9,15),desc:'11 Dec 2026 — Europe. Mixed.',action:'Review nominees list for UK/EU CCOs to target',endDate:new Date(2026,11,11)},
+  // Mandates
+  {name:'FCA Consumer Duty',cat:'mw',catLabel:'Mandate Window',actionDate:new Date(2026,3,1),desc:'Annual board-report ramp. Seat: Head of Regulatory/Customer Comms.',action:'Map FS firms publishing Consumer Duty board reports',endDate:new Date(2026,6,31),inProgress:true},
+  {name:'UK Annual-Report & AGM Season',cat:'mw',catLabel:'Mandate Window',actionDate:new Date(2026,1,1),desc:'Seat: Head of IR/Corporate-Reporting Communications.',action:'Contact IR heads at FTSE 350 during peak reporting stress',endDate:new Date(2026,5,30),ending:true,inProgress:true},
+  {name:'Gender Pay Gap',cat:'mw',catLabel:'Mandate Window',actionDate:new Date(2026,2,1),desc:'Reporting & scrutiny window. Seat: Head of Internal/DEI Comms.',action:'Approach firms with negative pay-gap press for comms hire',endDate:new Date(2026,5,30),ending:true,inProgress:true},
+  {name:'Higher-Ed Clearing & Intake',cat:'mw',catLabel:'Mandate Window',actionDate:new Date(2026,4,15),desc:'Seat: Head of Communications/Student Recruitment.',action:'Reach out to university comms directors ahead of clearing',endDate:new Date(2026,8,30),inProgress:true},
+  {name:'UK SRS',cat:'mw',catLabel:'Mandate Window',actionDate:new Date(2026,5,1),desc:'First sustainability-reporting build-up. Seat: Head of Sustainability/ESG Communications.',action:'Target large corporates building ESG comms capacity',endDate:new Date(2026,11,31),inProgress:true},
+  {name:'Machinery-of-government',cat:'mw',catLabel:'Mandate Window',actionDate:new Date(2026,5,1),desc:'Post-SR reshuffle. Seat: Director of Communications (GCS).',action:'Monitor Whitehall restructures for new DirComms posts',endDate:new Date(2026,11,31),inProgress:true},
+  {name:'NHS Operational Planning',cat:'mw',catLabel:'Mandate Window',actionDate:new Date(2026,0,1),desc:'& restructure round. Seat: Director of Communications — NHS.',action:'Window has closed',endDate:new Date(2026,4,31),closed:true},
+];
+
+function daysBetween(a,b){return Math.ceil((b-a)/(1000*60*60*24))}
+
+const columns = [
+  {id:'now',title:'Prepare Now',range:'Next 4 weeks',items:[]},
+  {id:'radar',title:'On the Radar',range:'1 – 3 months',items:[]},
+  {id:'forward',title:'Forward Planning',range:'3+ months',items:[]},
+];
+
+allItems.forEach(item => {
+  const daysToAction = daysBetween(TODAY, item.actionDate);
+  const daysToEnd = daysBetween(TODAY, item.endDate);
+  item.daysToAction = daysToAction;
+  item.daysToEnd = daysToEnd;
+
+  if(item.closed || daysToEnd < 0){
+    // skip closed items unless ending very soon
+    if(item.ending && daysToEnd >= 0){
+      columns[0].items.push(item);
+    } else if(item.closed){
+      // show closed in forward as historical
+    }
+    return;
+  }
+
+  if(daysToAction <= 0 || item.inProgress){
+    columns[0].items.push(item);
+  } else if(daysToAction <= 28){
+    columns[0].items.push(item);
+  } else if(daysToAction <= 90){
+    columns[1].items.push(item);
+  } else {
+    columns[2].items.push(item);
+  }
+});
+
+// Sort each column
+columns.forEach(col => {
+  col.items.sort((a,b) => {
+    if(a.daysToAction <= 0 && b.daysToAction <= 0) return a.daysToEnd - b.daysToEnd;
+    return a.daysToAction - b.daysToAction;
+  });
+});
+
+const container = document.getElementById('columns');
+columns.forEach((col, ci) => {
+  const div = document.createElement('div');
+  div.className = 'column' + (ci === 0 ? ' urgent' : '');
+  div.innerHTML = `<div class="col-head"><h2>${col.title} <span class="col-count">${col.items.length}</span></h2><div class="col-range">${col.range}</div></div>`;
+
+  const body = document.createElement('div');
+  body.className = 'col-body';
+
+  if(col.items.length === 0){
+    body.innerHTML = '<div class="empty-col">Nothing in this window</div>';
+  }
+
+  col.items.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'card' + (item.inProgress ? ' in-progress' : '');
+
+    let countdownClass = 'later';
+    let countdownText = '';
+    if(item.closed){
+      countdownClass = 'closed';
+      countdownText = 'Closed';
+    } else if(item.ending && item.daysToEnd <= 30){
+      countdownClass = 'urgent';
+      countdownText = item.daysToEnd + 'd left';
+    } else if(item.daysToAction <= 0){
+      countdownClass = 'urgent';
+      countdownText = 'Act now';
+    } else if(item.daysToAction <= 28){
+      countdownClass = 'urgent';
+      countdownText = item.daysToAction + 'd to act';
+    } else if(item.daysToAction <= 90){
+      countdownClass = 'soon';
+      countdownText = item.daysToAction + 'd to act';
+    } else {
+      countdownClass = 'later';
+      countdownText = item.daysToAction + 'd to act';
+    }
+
+    card.innerHTML = `
+      <div class="card-accent ${item.cat}"></div>
+      <div class="card-cat ${item.cat}">${item.catLabel}</div>
+      <div class="card-top">
+        <div class="card-name">${item.name}</div>
+        <span class="card-countdown ${countdownClass}">${countdownText}</span>
+      </div>
+      <div class="card-desc">${item.desc}</div>
+      <div class="card-act">
+        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <span><strong>Action:</strong> ${item.action}</span>
+      </div>
+    `;
+    body.appendChild(card);
+  });
+
+  div.appendChild(body);
+  container.appendChild(div);
+});
+</script>
+</body>
+</html>

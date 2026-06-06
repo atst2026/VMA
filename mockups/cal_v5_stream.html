@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BD Calendar — Smart Stream</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#F7F9FC;color:#1F1F1F;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wm-head{padding:24px 32px 15px;background:radial-gradient(ellipse 86% 165% at 50% -16%,#a4c6e8 0%,#bdd4ea 16%,#d4e2ef 34%,#e9f0f7 58%,#f4f8fc 78%,rgba(247,249,252,0) 100%)}
+.hdr{display:flex;align-items:center;gap:12px}
+.bdc-hero-ic{display:inline-flex;width:32px;height:32px;color:#385578}
+.bdc-hero-ic svg{width:100%;height:100%}
+.hdr h1{font-size:22px;font-weight:700;color:#1F1F1F;letter-spacing:-.3px}
+.hdr .sub{font-size:13px;color:#5a6a7a;margin-left:auto;font-weight:500}
+.view-label{font-size:12px;font-weight:600;color:#385578;text-transform:uppercase;letter-spacing:.8px;margin-top:8px}
+
+.filters{display:flex;gap:8px;padding:16px 32px 0;flex-wrap:wrap}
+.filter-btn{font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;border:1.5px solid #e2e8f0;background:#fff;color:#5a6a7a;cursor:pointer;transition:all .15s}
+.filter-btn:hover{border-color:#385578;color:#385578}
+.filter-btn.active{background:#385578;color:#fff;border-color:#385578}
+
+.stream{max-width:680px;margin:0 auto;padding:24px 32px 60px}
+
+.stream-date{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#8a95a5;padding:16px 0 8px;display:flex;align-items:center;gap:10px}
+.stream-date::after{content:'';flex:1;height:1px;background:#e8ecf1}
+
+.s-card{background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:0;margin-bottom:12px;overflow:hidden;transition:box-shadow .2s,transform .15s;cursor:default}
+.s-card:hover{box-shadow:0 6px 20px rgba(0,0,0,.06);transform:translateY(-1px)}
+
+.s-card-inner{display:flex;gap:16px;padding:18px 20px}
+.s-accent{width:4px;border-radius:4px;flex-shrink:0;align-self:stretch}
+.s-accent.fw{background:#4285F4}
+.s-accent.ev{background:#1E7A41}
+.s-accent.mw{background:#B98235}
+
+.s-content{flex:1;min-width:0}
+.s-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px}
+.s-cat{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+.s-cat.fw{color:#4285F4}
+.s-cat.ev{color:#1E7A41}
+.s-cat.mw{color:#B98235}
+.s-name{font-size:15px;font-weight:700;color:#1F1F1F;margin-bottom:2px}
+
+.s-badge{flex-shrink:0;font-size:11px;font-weight:700;border-radius:8px;padding:4px 10px;white-space:nowrap}
+.s-badge.overdue{background:#fef3f1;color:#c0392b}
+.s-badge.now{background:#fff3e0;color:#B98235}
+.s-badge.upcoming{background:#edf5f1;color:#1E7A41}
+.s-badge.progress{background:#edf1ff;color:#4285F4}
+.s-badge.closed{background:#f5f5f5;color:#aaa}
+
+.s-action{font-size:13px;color:#385578;font-weight:600;margin:8px 0;padding:8px 12px;background:#f8fafd;border-radius:8px;border-left:3px solid #385578;line-height:1.5}
+
+.s-meta{font-size:12px;color:#7a8a9a;display:flex;flex-wrap:wrap;gap:12px;margin-top:8px}
+.s-meta span{display:flex;align-items:center;gap:4px}
+.s-meta svg{width:13px;height:13px;stroke:#9aa5b5;fill:none;flex-shrink:0}
+
+.progress-bar{height:4px;background:#edf1f5;border-radius:2px;margin-top:10px;overflow:hidden}
+.progress-fill{height:100%;border-radius:2px;transition:width .5s ease}
+
+.s-card.is-closed{opacity:.5}
+.s-card.is-closed:hover{opacity:.7}
+</style>
+</head>
+<body>
+
+<div class="wm-head">
+  <div class="hdr">
+    <span class="bdc-hero-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></span>
+    <h1>BD Calendar</h1>
+    <span class="sub">Smart Stream</span>
+  </div>
+  <div class="view-label">Sorted by next action date &middot; What needs your attention now</div>
+</div>
+
+<div class="filters">
+  <button class="filter-btn active" data-filter="all">All</button>
+  <button class="filter-btn" data-filter="fw">Frameworks</button>
+  <button class="filter-btn" data-filter="ev">Events</button>
+  <button class="filter-btn" data-filter="mw">Mandate Windows</button>
+</div>
+
+<div class="stream" id="stream"></div>
+
+<script>
+const TODAY = new Date(2026, 5, 6);
+
+function daysBetween(a,b){return Math.ceil((b-a)/(1000*60*60*24))}
+function fmtDate(d){return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}
+
+const items = [
+  // In-progress / past action date but still active
+  {name:'UK Annual-Report & AGM Season',cat:'mw',catLabel:'Mandate Window',
+   actionDate:new Date(2026,1,1),endDate:new Date(2026,5,30),
+   action:'Contact IR heads at FTSE 350 firms before window closes in 25 days',
+   detail:'Head of IR/Corporate-Reporting Communications',sector:'Cross-sector',confidence:'High'},
+  {name:'Gender Pay Gap — Reporting Window',cat:'mw',catLabel:'Mandate Window',
+   actionDate:new Date(2026,2,1),endDate:new Date(2026,5,30),
+   action:'Approach firms with negative pay-gap press coverage about comms hiring needs',
+   detail:'Head of Internal/DEI Communications',sector:'Cross-sector',confidence:'High'},
+  {name:'NHS Operational Planning',cat:'mw',catLabel:'Mandate Window',
+   actionDate:new Date(2026,0,1),endDate:new Date(2026,4,31),
+   action:'Window has closed. Review any outstanding leads for follow-up.',
+   detail:'Director of Communications — NHS',sector:'Public Sector',confidence:'Medium',closed:true},
+  {name:'FCA Consumer Duty',cat:'mw',catLabel:'Mandate Window',
+   actionDate:new Date(2026,3,1),endDate:new Date(2026,6,31),
+   action:'Map financial services firms publishing Consumer Duty board reports this quarter',
+   detail:'Head of Regulatory/Customer Communications',sector:'Financial Services',confidence:'High'},
+  {name:'NHS Workforce Alliance',cat:'fw',catLabel:'Approved Framework',
+   actionDate:new Date(2026,5,6),endDate:new Date(2026,11,31),
+   action:'Review current NHS executive search requirements and refresh candidate pipeline',
+   detail:'RM6380 — Exec Search & Interim. Live now, expires 31 Dec 2026.',inProgress:true},
+  {name:'CIPR Excellence Awards',cat:'ev',catLabel:'Events & Networking',
+   actionDate:new Date(2026,4,6),endDate:new Date(2026,6,1),
+   action:'Start reaching out to CIPR finalists shortlist — 145 organisations across 33 categories',
+   detail:'1 Jul 2026 — Royal Lancaster Hotel, London. External.',why:'Senior in-house comms judges + finalists = direct relationship route'},
+  {name:'Internal Comms & Engagement Live',cat:'ev',catLabel:'Events & Networking',
+   actionDate:new Date(2026,4,13),endDate:new Date(2026,6,8),
+   action:'Book tickets and identify target delegates from attendee list. Focus on Head/Director of IC.',
+   detail:'8 Jul 2026 — The Brewery, London. Internal.',why:'Delegates skew Head of IC / Director of IC at large UK employers'},
+  {name:'Higher-Ed Clearing & Intake Comms',cat:'mw',catLabel:'Mandate Window',
+   actionDate:new Date(2026,4,15),endDate:new Date(2026,8,30),
+   action:'Reach out to university communications directors ahead of clearing season',
+   detail:'Head of Communications/Student Recruitment',sector:'Public Sector',confidence:'Medium'},
+  {name:'UK SRS — Sustainability Reporting',cat:'mw',catLabel:'Mandate Window',
+   actionDate:new Date(2026,5,1),endDate:new Date(2026,11,31),
+   action:'Target large corporates building ESG communications capacity for new reporting requirements',
+   detail:'Head of Sustainability/ESG Communications',sector:'Cross-sector',confidence:'Medium'},
+  {name:'Machinery-of-government Reshuffle',cat:'mw',catLabel:'Mandate Window',
+   actionDate:new Date(2026,5,1),endDate:new Date(2026,11,31),
+   action:'Monitor Whitehall restructures for new Director of Communications posts across departments',
+   detail:'Director of Communications (GCS)',sector:'Public Sector',confidence:'Medium'},
+  // Upcoming
+  {name:'IoIC Awards',cat:'ev',catLabel:'Events & Networking',
+   actionDate:new Date(2026,6,22),endDate:new Date(2026,8,17),
+   action:'Identify IoIC finalists and plan outreach sequence targeting visible IC Directors',
+   detail:'17 Sep 2026 — London. Internal.',why:'Premier UK internal-comms awards. Finalists = visible IC Directors'},
+  {name:'Nuclear Decommissioning Authority',cat:'fw',catLabel:'Approved Framework',
+   actionDate:new Date(2026,7,15),endDate:new Date(2027,2,31),
+   action:'Prepare pre-qualification documents and assemble team CVs for Lot 6 bid',
+   detail:'Shared Services Lot 6. Opens ~Oct 2026.'},
+  {name:'ICCO Global Summit',cat:'ev',catLabel:'Events & Networking',
+   actionDate:new Date(2026,8,16),endDate:new Date(2026,10,11),
+   action:'Register and book Milan travel. Map attendee list for consultancy CEOs and senior in-house clients.',
+   detail:'11 Nov 2026 — Milan. External.',why:'Consultancy CEOs + senior in-house clients; relationship-building venue'},
+  {name:'CIPR Annual Conference',cat:'ev',catLabel:'Events & Networking',
+   actionDate:new Date(2026,8,23),endDate:new Date(2026,10,18),
+   action:'Secure speaking or sponsor slot. Plan meetings with Tier-1 senior in-house comms leaders.',
+   detail:'18 Nov 2026 — London. External.',why:'Theme: Organisational Resilience. Tier-1 senior in-house comms leaders'},
+  {name:'European Excellence Awards',cat:'ev',catLabel:'Events & Networking',
+   actionDate:new Date(2026,9,15),endDate:new Date(2026,11,11),
+   action:'Review nominees list for UK and EU CCOs to target. Plan attendance logistics.',
+   detail:'11 Dec 2026 — Europe. Mixed.',why:'Pan-EU comms awards. UK + EU CCO attendance'},
+  {name:'Devolved Government — Exec Search',cat:'fw',catLabel:'Approved Framework',
+   actionDate:new Date(2026,10,1),endDate:new Date(2027,8,30),
+   action:'Begin mapping devolved-government comms landscape and prepare bid team',
+   detail:'Scottish/Welsh/NI Governments. Opens ~Jan 2027.'},
+  {name:'CCS Executive Search 3',cat:'fw',catLabel:'Approved Framework',
+   actionDate:new Date(2027,3,1),endDate:new Date(2028,4,31),
+   action:'Monitor CCS procurement pipeline and prepare for pre-qualification questionnaire',
+   detail:'RM6394. Opens ~Jun 2027.'},
+];
+
+// Sort by action date
+items.sort((a,b) => {
+  if(a.closed && !b.closed) return 1;
+  if(!a.closed && b.closed) return -1;
+  const dA = daysBetween(TODAY, a.actionDate);
+  const dB = daysBetween(TODAY, b.actionDate);
+  // In-progress items (past action date, before end) come first, sorted by end date
+  const aActive = dA <= 0 && daysBetween(TODAY, a.endDate) > 0;
+  const bActive = dB <= 0 && daysBetween(TODAY, b.endDate) > 0;
+  if(aActive && bActive) return a.endDate - b.endDate;
+  if(aActive && !bActive) return -1;
+  if(!aActive && bActive) return 1;
+  return dA - dB;
+});
+
+const stream = document.getElementById('stream');
+let lastSection = '';
+
+function renderItems(filter){
+  stream.innerHTML = '';
+  lastSection = '';
+  let count = 0;
+
+  items.forEach(item => {
+    if(filter !== 'all' && item.cat !== filter) return;
+    count++;
+
+    const daysToAction = daysBetween(TODAY, item.actionDate);
+    const daysToEnd = daysBetween(TODAY, item.endDate);
+    const isActive = daysToAction <= 0 && daysToEnd > 0 && !item.closed;
+    const isUpcoming = daysToAction > 0;
+
+    // Section headers
+    let section = '';
+    if(item.closed) section = 'Closed';
+    else if(isActive && daysToEnd <= 30) section = 'Ending Soon';
+    else if(isActive) section = 'In Progress';
+    else if(daysToAction <= 28) section = 'Act Within 4 Weeks';
+    else if(daysToAction <= 90) section = 'Coming Up (1–3 Months)';
+    else section = 'Forward Planning (3+ Months)';
+
+    if(section !== lastSection){
+      const sd = document.createElement('div');
+      sd.className = 'stream-date';
+      sd.textContent = section;
+      stream.appendChild(sd);
+      lastSection = section;
+    }
+
+    const card = document.createElement('div');
+    card.className = 's-card' + (item.closed ? ' is-closed' : '');
+    card.setAttribute('data-cat', item.cat);
+
+    let badgeClass = 'upcoming';
+    let badgeText = daysToAction + ' days';
+    if(item.closed){badgeClass='closed';badgeText='Closed';}
+    else if(isActive && daysToEnd <= 30){badgeClass='overdue';badgeText=daysToEnd+'d left';}
+    else if(isActive){badgeClass='progress';badgeText='In progress';}
+    else if(daysToAction <= 14){badgeClass='overdue';badgeText=daysToAction+'d to act';}
+    else if(daysToAction <= 28){badgeClass='now';badgeText=daysToAction+'d to act';}
+
+    let progressHtml = '';
+    if(isActive && !item.closed){
+      const totalDays = daysBetween(item.actionDate, item.endDate);
+      const elapsed = daysBetween(item.actionDate, TODAY);
+      const pct = Math.min(100, Math.max(5, (elapsed/totalDays)*100));
+      let pColor = '#4285F4';
+      if(pct > 80) pColor = '#c0392b';
+      else if(pct > 50) pColor = '#B98235';
+      progressHtml = `<div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${pColor}"></div></div>`;
+    }
+
+    let metaHtml = '';
+    if(item.sector) metaHtml += `<span><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M9 8h1M9 12h1M9 16h1M14 8h1M14 12h1M14 16h1M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16"/></svg>${item.sector}</span>`;
+    if(item.confidence) metaHtml += `<span><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26z"/></svg>${item.confidence} confidence</span>`;
+    if(!item.closed && !isActive) metaHtml += `<span><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Act by ${fmtDate(item.actionDate)}</span>`;
+    if(!item.closed) metaHtml += `<span><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Ends ${fmtDate(item.endDate)}</span>`;
+
+    card.innerHTML = `
+      <div class="s-card-inner">
+        <div class="s-accent ${item.cat}"></div>
+        <div class="s-content">
+          <div class="s-top">
+            <div>
+              <div class="s-cat ${item.cat}">${item.catLabel}</div>
+              <div class="s-name">${item.name}</div>
+            </div>
+            <span class="s-badge ${badgeClass}">${badgeText}</span>
+          </div>
+          <div style="font-size:12px;color:#6b7a8a;margin-bottom:4px">${item.detail}</div>
+          <div class="s-action">${item.action}</div>
+          <div class="s-meta">${metaHtml}</div>
+          ${progressHtml}
+        </div>
+      </div>
+    `;
+
+    stream.appendChild(card);
+  });
+
+  if(count === 0){
+    stream.innerHTML = '<div style="text-align:center;padding:40px;color:#b0b8c5;font-size:14px">No items match this filter</div>';
+  }
+}
+
+renderItems('all');
+
+// Filter buttons
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderItems(btn.dataset.filter);
+  });
+});
+</script>
+</body>
+</html>
