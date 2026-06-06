@@ -4905,33 +4905,43 @@ TEMPLATE = r"""
     /* events + windows card bodies don't scroll; the windows LIST scrolls (below).
        The frameworks body DOES scroll, so an opened section's bottom is reachable. */
     #cal #framework-body, #cal #events-body, #cal #pulses-body { flex: 1; min-height: 0; }
-    #cal #events-body, #cal #pulses-body { overflow: hidden; }
+    #cal #events-body { overflow: hidden; }
+    #cal #pulses-body { overflow: hidden; }
     #cal #framework-body { overflow-y: auto; }
     #cal #events-body { display: flex; flex-direction: column; }
     /* frameworks — minimalist accordion: 4 rows, one open at a time, no scroll */
-    .bdc-fwa { display: flex; flex-direction: column; gap: 8px; }
-    .bdc-fw { border: 1px solid var(--border); border-radius: 12px; background: var(--card); overflow: hidden; transition: border-color .14s, box-shadow .14s; }
-    .bdc-fw.open { border-color: var(--border-hi); box-shadow: var(--shadow-sm); }
-    .bdc-fw-h { display: flex; align-items: center; gap: 10px; width: 100%; background: none; border: none; font: inherit;
-      text-align: left; padding: 11px 13px; cursor: pointer; }
-    .bdc-fw-h:hover { background: var(--elevated); }
-    .bdc-fw-ic { flex: none; width: 28px; height: 28px; border-radius: 8px; background: var(--elevated); color: var(--blue-deep);
+    /* minimalist accordion: a clean divided list of framework names — all
+       collapsed by default; the brief (buyer / scope / verify) only appears
+       on click, like the events + mandate-windows cards. */
+    .bdc-fwa { display: flex; flex-direction: column; }
+    .bdc-fw { border: none; border-radius: 10px; background: transparent; overflow: hidden; transition: background .14s; }
+    .bdc-fw + .bdc-fw { border-top: 1px solid var(--hairline); }
+    .bdc-fw.open { background: var(--elevated); }
+    .bdc-fw.open, .bdc-fw.open + .bdc-fw { border-top-color: transparent; }
+    .bdc-fw-h { display: flex; align-items: center; gap: 11px; width: 100%; background: none; border: none; font: inherit;
+      text-align: left; padding: 12px 10px; cursor: pointer; }
+    .bdc-fw-h:hover { background: rgba(60,64,67,.045); }
+    .bdc-fw.open .bdc-fw-h:hover { background: transparent; }
+    .bdc-fw-ic { flex: none; width: 26px; height: 26px; border-radius: 8px; background: var(--elevated); color: var(--blue-deep);
       display: grid; place-items: center; }
-    .bdc-fw-ic svg { width: 16px; height: 16px; }
+    .bdc-fw-ic svg { width: 15px; height: 15px; }
+    .bdc-fw.open .bdc-fw-ic { background: #fff; }
     .bdc-fw.live .bdc-fw-ic { background: var(--grn-bg); color: var(--grn-tx); }
-    .bdc-fw-t { flex: 1; min-width: 0; font-size: 13px; font-weight: 620; color: var(--ink); letter-spacing: -.01em;
+    .bdc-fw-t { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: var(--ink); letter-spacing: -.01em;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .bdc-fw-pill { flex: none; font-size: 9px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
       padding: 3px 8px; border-radius: 20px; background: var(--elevated); color: var(--muted); white-space: nowrap; }
+    .bdc-fw.open .bdc-fw-pill { background: #fff; }
     .bdc-fw-pill.open { background: var(--grn-bg); color: var(--grn-tx); }
+    .bdc-fw.open .bdc-fw-pill.open { background: var(--grn-bg); }
     .bdc-fw-cv { flex: none; color: var(--dim); font-size: 14px; transition: transform .2s; }
     .bdc-fw.open .bdc-fw-cv { transform: rotate(90deg); }
-    .bdc-fw-d { display: none; padding: 0 13px 13px 51px; }
+    .bdc-fw-d { display: none; padding: 2px 12px 14px 47px; }
     .bdc-fw.open .bdc-fw-d { display: block; }
     .bdc-fw-dt { font-size: 12px; font-weight: 600; color: var(--ink); margin-bottom: 4px; letter-spacing: -.01em; }
     .bdc-fw-by { font-size: 11.5px; color: var(--ink-2); font-weight: 500; }
-    .bdc-fw-sc { font-size: 11.5px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
-    .bdc-fw-link { font-size: 11.5px; font-weight: 600; color: var(--blue-deep); margin-top: 9px; display: inline-block; }
+    .bdc-fw-sc { font-size: 11.5px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+    .bdc-fw-link { font-size: 11.5px; font-weight: 600; color: var(--blue-deep); margin-top: 10px; display: inline-block; }
     /* events — a real month calendar + agenda */
     .bdc-split { display: grid; grid-template-columns: 1.05fr .95fr; gap: 16px; align-items: start; }
     .bdc-caltop { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
@@ -5029,13 +5039,22 @@ TEMPLATE = r"""
        row of closed panes (one per live pulse) that auto-distributes equal
        space for however many windows there are; click a pane and its glass
        swings open to reveal the brief on a soft sky-blue interior. ===== */
-    #cal #pulses-body .mw-row { width: 100%; height: 100%; display: flex; justify-content: center;
-      gap: 14px; perspective: 1700px; padding: 2px; align-items: center; }
-    .mw-win { position: relative; flex: 1 1 0; min-width: 0; height: 62%; align-self: center; cursor: pointer;
+    /* The section is ALWAYS two rows: the windows are split evenly across a
+       top and a bottom row and auto-size to fill each row, so it stays two
+       rows deep however many the feed yields (they just get a little narrower
+       as more appear). Opening one grows its row + pane to give the brief
+       room; the rest stay as small panes (peek). */
+    #cal #pulses-body .mw-rows { display: flex; flex-direction: column; gap: 12px; min-height: 100%;
+      padding: 4px 2px; }
+    #cal #pulses-body .mw-row { display: flex; gap: 12px; justify-content: center; align-items: stretch;
+      flex: 1 1 0; min-height: 0; perspective: 1500px; transition: flex .45s cubic-bezier(.5,.02,.2,1); }
+    #cal #pulses-body .mw-rows.has-open .mw-row { flex: 0.78 1 0; }
+    #cal #pulses-body .mw-rows.has-open .mw-row.row-open { flex: 2 1 0; }
+    .mw-win { position: relative; flex: 1 1 0; min-width: 0; max-width: 400px; height: 100%; cursor: pointer;
       border: 1.6px solid #1f1f1f; border-radius: 3px; background: #fff; box-shadow: 0 6px 16px rgba(40,60,90,.10);
-      transition: flex .5s cubic-bezier(.5,.02,.2,1), height .45s cubic-bezier(.5,.02,.2,1); }
-    .mw-win.open { flex: 3.1 1 0; height: 100%; cursor: default; }
-    .mw-inner { position: absolute; inset: 0; overflow: hidden; }
+      transition: flex .45s cubic-bezier(.5,.02,.2,1); }
+    .mw-win.open { flex: 3 1 0; max-width: none; cursor: default; }
+    .mw-inner { position: absolute; inset: 0; overflow: hidden; perspective: 1400px; }
     .mw-wrap { position: absolute; inset: 0; z-index: 1; opacity: 0; transition: opacity .35s .18s; overflow: auto; }
     .mw-win.open .mw-wrap { opacity: 1; }
     .mw-glass { position: absolute; inset: 0; z-index: 2; transform-origin: left center;
@@ -5085,10 +5104,11 @@ TEMPLATE = r"""
       #cal #framework-body, #cal #events-body, #cal #pulses-body { overflow: visible; }
       .bdc-md { grid-template-columns: 1fr } .bdc-split { grid-template-columns: 1fr }
       #cal .bdc-mcal { grid-template-columns: repeat(3, 1fr); }
-      /* mandate windows: wrap panes into rows on narrow screens */
-      #cal #pulses-body .mw-row { height: auto; flex-wrap: wrap; }
-      .mw-win { flex: 1 1 150px; height: 150px; }
-      .mw-win.open { flex: 1 1 100%; height: auto; min-height: 250px; }
+      /* mandate windows: full-width stacked panes on narrow screens */
+      #cal #pulses-body .mw-rows { min-height: 0; }
+      #cal #pulses-body .mw-row { flex-wrap: wrap; flex: none; }
+      .mw-win { flex-basis: 100%; max-width: 100%; height: 128px; }
+      .mw-win.open { height: auto; min-height: 250px; }
     }
 
     /* ============================================================
@@ -5539,7 +5559,7 @@ TEMPLATE = r"""
             {% for fw in framework_events %}
             {% set fwshort = (fw.ad_title or fw.title or '').split('—')[0] | trim | replace(' sector', '') %}
             {% set kl = (fw.ad_title or fw.title or '') | lower %}
-            <div class="bdc-fw{% if loop.first %} open{% endif %}{% if fw.status == 'refresh_window' %} live{% endif %}">
+            <div class="bdc-fw{% if fw.status == 'refresh_window' %} live{% endif %}">
               <button type="button" class="bdc-fw-h">
                 <span class="bdc-fw-ic">
                   {%- if 'health' in kl or 'nhs' in kl -%}
@@ -6282,7 +6302,7 @@ async function loadPulses() {
         'quiet outside those dated windows rather than show stale noise.</div>';
       return;
     }
-    const panes = rows.map((w) => {
+    function paneHtml(w) {
       const cc = bdcWinCat(w.name);
       const days = (typeof w.days_left === 'number') ? w.days_left + 'd' : '';
       return '<div class="mw-win" data-key="' + esc(w.key || w.name || '') + '" style="--mw-tint:' + cc[0] + '">' +
@@ -6293,15 +6313,27 @@ async function loadPulses() {
           '</div>' +
           '<div class="mw-sill"></div><div class="mw-x">&times; close</div>' +
         '</div>';
-    }).join('');
-    body.innerHTML = '<div class="mw-row">' + panes + '</div>';
-    const row = body.querySelector('.mw-row');
-    row.addEventListener('click', (ev) => {
-      if (ev.target.closest('.mw-src')) return;          // let the source link work
+    }
+    // ALWAYS two rows: split the windows across a top and a bottom row so the
+    // section stays two rows deep however many windows the feed yields.
+    const half = Math.ceil(rows.length / 2);
+    const top = rows.slice(0, half).map(paneHtml).join('');
+    const bot = rows.slice(half).map(paneHtml).join('');
+    body.innerHTML = '<div class="mw-rows">' +
+      '<div class="mw-row">' + top + '</div>' +
+      (bot ? '<div class="mw-row">' + bot + '</div>' : '') + '</div>';
+    const rowsEl = body.querySelector('.mw-rows');
+    function closeAllWins() {
+      rowsEl.classList.remove('has-open');
+      rowsEl.querySelectorAll('.mw-win.open').forEach((x) => x.classList.remove('open'));
+      rowsEl.querySelectorAll('.mw-row.row-open').forEach((x) => x.classList.remove('row-open'));
+    }
+    rowsEl.addEventListener('click', (ev) => {
+      if (ev.target.closest('.mw-src')) return;            // let the source link work
       const rm = ev.target.closest('.bdc-rm');
       const no = ev.target.closest('.bdc-rm-no');
       const yes = ev.target.closest('.bdc-rm-yes');
-      if (rm || no || yes) {                              // remove / two-step confirm
+      if (rm || no || yes) {                                // remove / two-step confirm
         const winEl = ev.target.closest('.mw-win');
         const acts = winEl ? winEl.querySelector('.bdc-actions') : null;
         if (rm && acts) acts.innerHTML = bdcConfirm(rm.dataset.key, 'Remove this window?');
@@ -6310,10 +6342,14 @@ async function loadPulses() {
         return;
       }
       const win = ev.target.closest('.mw-win'); if (!win) return;
-      if (ev.target.closest('.mw-x')) { win.classList.remove('open'); return; }
-      const was = win.classList.contains('open');
-      row.querySelectorAll('.mw-win').forEach((x) => x.classList.remove('open'));
-      if (!was) win.classList.add('open');
+      if (ev.target.closest('.mw-x')) { closeAllWins(); return; }
+      const wasOpen = win.classList.contains('open');
+      closeAllWins();
+      if (!wasOpen) {
+        win.classList.add('open');
+        win.parentNode.classList.add('row-open');
+        rowsEl.classList.add('has-open');
+      }
     });
   } catch (e) {
     body.innerHTML = '<div class="empty compact">Failed to load: ' + esc(e.message) + '</div>';
