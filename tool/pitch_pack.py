@@ -964,9 +964,18 @@ def _run_comms_proposal(target: str, role: str, mode: str) -> int:
     This is the comms-only output (the marketing desk keeps the dynamic pack in
     main()). Returns a process exit code."""
     from tool import pitch_proposal
+    from tool import logo_service
     log.info("Building comms SEARCH PROPOSAL PDF for %r · seat %r · mode %r",
              target, role, mode)
-    pdf_bytes = pitch_proposal.generate(target, role)
+    # Logo correctness is a hard gate: generate() resolves + validates the
+    # company's logo first and RAISES if it can't. We do NOT produce a pack with
+    # a wrong / missing logo — we fail loudly so the run is visibly red.
+    try:
+        pdf_bytes = pitch_proposal.generate(target, role)
+    except logo_service.LogoError as e:
+        log.error("ABORTED: no correct logo for %r — %s", target, e)
+        print(f"\n--- PITCH PACK ABORTED: {e} ---", file=sys.stderr)
+        return 3
     safe = "".join(c if c.isalnum() else "_" for c in target.lower())[:40]
     stamp = datetime.now().strftime("%Y%m%d_%H%M")
     pdf_path = STATE_DIR / f"pitch_pack_{safe}_{stamp}.pdf"

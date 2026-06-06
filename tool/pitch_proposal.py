@@ -6,7 +6,8 @@ the supplied VMA proposal template, parameterised per company. Compared with
 the source template:
 
   * the example client's logo on the cover is replaced by the TARGET company's
-    name as text (logo-pulling logic has been removed);
+    own logo, resolved + validated by tool/logo_service (deterministic, keyed on
+    the company's verified domain; generation FAILS if it can't be resolved);
   * every place the template named the example client now carries the target
     company name (woven through the body — "present a proposal to <company>",
     the weekly-update timing table, the exclusivity clause, etc.);
@@ -29,6 +30,8 @@ import html as _html
 import logging
 from functools import lru_cache
 from pathlib import Path
+
+from tool import logo_service
 
 log = logging.getLogger("pitch_proposal")
 
@@ -68,10 +71,13 @@ def _generation_date(when: _dt.date | _dt.datetime | None = None) -> str:
     return f"{d.day} {d.strftime('%B %Y')}"
 
 
-def _cover_logo_html(company: str) -> str:
-    """The company name on the cover, where the template's example logo sat.
-    (Logo-pulling logic has been removed.)"""
-    return f'<div class="client-name">{_esc(company)}</div>'
+def _cover_logo_html(company: str, logo_data_uri: str) -> str:
+    """The company's validated logo on the cover, where the template's example
+    (Belron) logo sat. The logo is always present — generation fails earlier
+    (in tool/logo_service) if a correct one can't be resolved, so there is no
+    text fallback here. Only the cover box (CSS) sizes it to fit."""
+    return (f'<img class="client-logo" src="{logo_data_uri}" '
+            f'alt="{_esc(company)} logo">')
 
 
 def _interior(inner: str, *, first: bool = False) -> str:
@@ -86,9 +92,10 @@ def _interior(inner: str, *, first: bool = False) -> str:
     )
 
 
-def render_proposal_html(company: str, seat: str,
+def render_proposal_html(company: str, seat: str, logo_data_uri: str,
                          when: _dt.date | _dt.datetime | None = None) -> str:
-    """The full multi-page proposal as print-styled HTML (A4)."""
+    """The full multi-page proposal as print-styled HTML (A4). `logo_data_uri`
+    is the company's validated logo (resolved by tool/logo_service)."""
     co = _esc(company)
     seat_disp = _esc(seat or "Head of Communications")
     date_disp = _esc(_generation_date(when))
@@ -99,7 +106,7 @@ def render_proposal_html(company: str, seat: str,
       <div class="cover-band">
         <img class="vma-wordmark" src="{_asset_data_uri('vma_wordmark_white.png')}" alt="VMA Group">
       </div>
-      <div class="cover-logo">{_cover_logo_html(company)}</div>
+      <div class="cover-logo">{_cover_logo_html(company, logo_data_uri)}</div>
       <h1 class="cover-title">SEARCH PROPOSAL</h1>
       <div class="cover-sub">STRICTLY PRIVATE &amp; CONFIDENTIAL</div>
       <div class="cover-fields">
@@ -344,9 +351,15 @@ def render_proposal_html(company: str, seat: str,
 # --------------------------------------------------------------------------
 def generate(company: str, seat: str,
              when: _dt.date | _dt.datetime | None = None) -> bytes:
-    """Render the comms proposal to PDF bytes. (No logo logic — the cover shows
-    the company name.)"""
-    html = render_proposal_html(company, seat, when=when)
+    """Render the comms proposal to PDF bytes.
+
+    The company's CORRECT logo is resolved and validated up front via
+    tool/logo_service.get_logo. If it can't be resolved with confidence this
+    RAISES (UnknownCompanyError / LogoResolutionError) and NO pdf is produced —
+    by design it is better to fail than to ship a pack with the wrong or no
+    logo."""
+    logo = logo_service.get_logo(company)        # raises on any logo failure
+    html = render_proposal_html(company, seat, logo.data_uri(), when=when)
     from weasyprint import HTML
     return HTML(string=html).write_pdf()
 
@@ -389,10 +402,6 @@ body {{
 .cover-logo .client-logo {{
   max-width: 300px; max-height: 130px; width: auto; height: auto;
   object-fit: contain;
-}}
-.cover-logo .client-name {{
-  font-size: 30pt; font-weight: 700; color: {_NAVY}; letter-spacing: .5px;
-  line-height: 1.15;
 }}
 .cover-title {{
   position: absolute; top: 470px; left: 0; right: 0; margin: 0;
