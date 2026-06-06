@@ -4,9 +4,10 @@ Verifies the wired-in template behaviour:
   * the example client ("Belron") is replaced by the target company everywhere;
   * the consultant-team page and the cover "Prepared by" line are dropped;
   * the cover carries the predicted seat and the generation date (no time);
-  * the cover embeds the validated company logo (resolved by tool/logo_service,
-    which is stubbed here; its own behaviour is in tests/test_logo_service.py),
-    and generation FAILS rather than ship a pack without a correct logo;
+  * the cover embeds the company logo (resolved by tool/logo_service, which is
+    stubbed here; its own behaviour is in tests/test_logo_service.py), and falls
+    back to a clean text wordmark when no confident logo can be resolved, so a
+    pack is always produced;
   * the comms profile routes to this PDF (marketing keeps the dynamic pack).
 
 These run offline (the logo service is stubbed), so no network is required.
@@ -133,25 +134,38 @@ def test_cover_embeds_the_resolved_logo(_stub_logo):
     assert html == '<img class="client-logo" src="data:image/png;base64,QUJD" alt="Acme logo">'
 
 
-def test_generate_fails_when_logo_unresolved(monkeypatch):
-    # the hard gate: if the logo can't be resolved, generate RAISES — no pdf,
-    # no silent text fallback.
+def test_cover_falls_back_to_wordmark_html():
+    # when no logo data-uri is supplied, the cover renders a text wordmark (not
+    # an <img>), so the pack is still produced.
+    from tool import pitch_proposal as pp
+    assert pp._cover_logo_html("Acme & Co", None) == \
+        '<div class="client-wordmark">Acme &amp; Co</div>'
+
+
+def test_generate_uses_wordmark_when_logo_unresolved(monkeypatch):
+    # new contract: if no confident logo can be resolved, generation does NOT
+    # fail — the cover falls back to a clean text wordmark and a pack is produced.
     from tool import pitch_proposal as pp
     from tool import logo_service as ls
 
     def boom(name):
         raise ls.LogoResolutionError("no valid logo")
     monkeypatch.setattr(pp.logo_service, "get_logo", boom)
-    with pytest.raises(ls.LogoResolutionError):
-        pp.generate("Diageo", "Head of Communications")
+    pdf = pp.generate("Wonka Industries", "Head of Communications")
+    text = _pdf_text(pdf)
+    assert "Wonka Industries" in text          # wordmark cover + woven body
+    assert _page_count(pdf) == 8               # still the full proposal
 
 
-def test_generate_fails_for_unknown_company():
-    # an unknown company can't be resolved to an identity -> generation fails.
+def test_generate_handles_any_company_name(monkeypatch):
+    # a BD lead can name ANY company; generation must always produce a pack,
+    # falling back to the wordmark when the logo can't be resolved.
     from tool import pitch_proposal as pp
-    from tool import company_identity as ci
-    with pytest.raises(ci.UnknownCompanyError):
-        pp.generate("Totally Unknown Co Ltd", "Head of Communications")
+    from tool import logo_service as ls
+    monkeypatch.setattr(pp.logo_service, "get_logo",
+                        lambda name: (_ for _ in ()).throw(ls.LogoResolutionError("x")))
+    pdf = pp.generate("Totally Unlisted Startup Ltd", "Head of Communications")
+    assert pdf[:4] == b"%PDF" and len(pdf) > 1000
 
 
 # ---- profile routing ---------------------------------------------------

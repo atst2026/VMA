@@ -71,13 +71,17 @@ def _generation_date(when: _dt.date | _dt.datetime | None = None) -> str:
     return f"{d.day} {d.strftime('%B %Y')}"
 
 
-def _cover_logo_html(company: str, logo_data_uri: str) -> str:
-    """The company's validated logo on the cover, where the template's example
-    (Belron) logo sat. The logo is always present — generation fails earlier
-    (in tool/logo_service) if a correct one can't be resolved, so there is no
-    text fallback here. Only the cover box (CSS) sizes it to fit."""
-    return (f'<img class="client-logo" src="{logo_data_uri}" '
-            f'alt="{_esc(company)} logo">')
+def _cover_logo_html(company: str, logo_data_uri: str | None) -> str:
+    """The company's logo on the cover, where the template's example (Belron)
+    logo sat. When the logo has been resolved from the company's website it is
+    embedded as an image; when no confident logo could be found, a clean
+    typographic wordmark of the company name is rendered instead, so the pack is
+    always produced (never blank, never a wrong logo). The cover box (CSS) sizes
+    either to fit."""
+    if logo_data_uri:
+        return (f'<img class="client-logo" src="{logo_data_uri}" '
+                f'alt="{_esc(company)} logo">')
+    return f'<div class="client-wordmark">{_esc(company)}</div>'
 
 
 def _interior(inner: str, *, first: bool = False) -> str:
@@ -92,10 +96,11 @@ def _interior(inner: str, *, first: bool = False) -> str:
     )
 
 
-def render_proposal_html(company: str, seat: str, logo_data_uri: str,
+def render_proposal_html(company: str, seat: str, logo_data_uri: str | None,
                          when: _dt.date | _dt.datetime | None = None) -> str:
     """The full multi-page proposal as print-styled HTML (A4). `logo_data_uri`
-    is the company's validated logo (resolved by tool/logo_service)."""
+    is the company's logo resolved by tool/logo_service, or None — in which case
+    the cover falls back to a text wordmark of the company name."""
     co = _esc(company)
     seat_disp = _esc(seat or "Head of Communications")
     date_disp = _esc(_generation_date(when))
@@ -353,13 +358,17 @@ def generate(company: str, seat: str,
              when: _dt.date | _dt.datetime | None = None) -> bytes:
     """Render the comms proposal to PDF bytes.
 
-    The company's CORRECT logo is resolved and validated up front via
-    tool/logo_service.get_logo. If it can't be resolved with confidence this
-    RAISES (UnknownCompanyError / LogoResolutionError) and NO pdf is produced —
-    by design it is better to fail than to ship a pack with the wrong or no
-    logo."""
-    logo = logo_service.get_logo(company)        # raises on any logo failure
-    html = render_proposal_html(company, seat, logo.data_uri(), when=when)
+    The company's logo is resolved from its own website up front via
+    tool/logo_service.get_logo (validated, confidence-gated — never a wrong
+    logo). If no confident logo can be found, the cover falls back to a clean
+    text wordmark of the company name, so a pack is ALWAYS produced for whatever
+    company a BD lead names."""
+    try:
+        logo_uri = logo_service.get_logo(company).data_uri()
+    except logo_service.LogoError as e:
+        log.info("no logo resolved for %r (%s) — using text wordmark", company, e)
+        logo_uri = None
+    html = render_proposal_html(company, seat, logo_uri, when=when)
     from weasyprint import HTML
     return HTML(string=html).write_pdf()
 
@@ -402,6 +411,11 @@ body {{
 .cover-logo .client-logo {{
   max-width: 300px; max-height: 130px; width: auto; height: auto;
   object-fit: contain;
+}}
+.cover-logo .client-wordmark {{
+  max-width: 420px; color: {_NAVY}; font-weight: 800;
+  font-size: 30pt; line-height: 1.1; letter-spacing: .3px; text-align: center;
+  overflow-wrap: break-word; word-wrap: break-word;
 }}
 .cover-title {{
   position: absolute; top: 470px; left: 0; right: 0; margin: 0;

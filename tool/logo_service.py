@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
-"""The single, deterministic, fail-safe company-logo service.
+"""The single company-logo service: pull a company's logo from its own website.
 
-Design contract (non-negotiable)
---------------------------------
-Every pitch pack MUST carry the CORRECT company logo. The three historical
-failure modes — wrong company, right company/wrong logo, missing logo replaced
-by text — are eliminated by construction:
+A BD lead can name ANY company — there is no fixed list — so every pitch pack
+must be able to show that company's logo, taken from the company's own site.
+Resolution is ordered by confidence and every candidate is validated, so we get
+the RIGHT logo without shipping a wrong one:
 
-* Resolution starts from a CANONICAL IDENTITY (tool/company_identity), never a
-  raw name. The logo is keyed on the company's VERIFIED DOMAIN or a verified
-  logo URL — there is no search, no fuzzy matching, no "guessing".
-* Deterministic, ordered pipeline (see ``get_logo``). The sources are a verified
-  registry asset and the company's OWN website (its homepage-declared icon and
-  well-known apple-touch-icon path on the verified domain) — plus optional
-  domain-keyed services where configured. Every URL is keyed on the verified
-  identity; there is no search and no fuzzy matching.
-* Every candidate is VALIDATED (HTTP 200, real image bytes, not empty, logo
-  host matches the company domain where applicable) before it is accepted.
-* If nothing validates, ``get_logo`` RAISES ``LogoResolutionError``. It never
-  returns a placeholder, a wordmark, or a "best guess". Generation fails — by
-  design it is better to fail than to ship an incorrect pack.
+* VERIFIED FAST-PATH — a curated identity (tool/company_identity) gives a
+  hand-verified domain / logo asset for the companies we know. Highest
+  confidence, tried first.
+* DERIVED PATH (any other name) — find the company's official site from its
+  name (tool/company_web): guess the domain and confirm it against the live
+  homepage, falling back to a keyless web search, behind a CONFIDENCE GATE so a
+  stranger's domain is never accepted. The logo is then read off that landing
+  page (the header wordmark <img>, then the site-declared icons).
+* Every candidate is VALIDATED (HTTP 200, real image bytes, not empty; on
+  non-authoritative sources the host must match the company domain) before it is
+  accepted. Logos read from a company's OWN homepage are authoritative by
+  provenance (the host check is relaxed for them).
 * Results are cached per company id so we do not re-fetch on every generation.
+* If nothing validates, ``get_logo`` RAISES ``LogoResolutionError``. The caller
+  (tool/pitch_proposal) then renders a clean text wordmark of the company name,
+  so a pack is always produced — never a wrong logo, never a failed pack.
 
 This is the ONLY place pitch-pack logo logic lives; all generation routes go
 through ``get_logo``.
@@ -34,9 +35,10 @@ import os
 import re
 import time
 from dataclasses import dataclass
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
 
 from tool import company_identity
+from tool import company_web
 from tool.company_identity import Company, UnknownCompanyError  # re-exported
 from tool.sources._http import get
 from tool.state_paths import state_dir
@@ -226,114 +228,201 @@ def invalidate(name_or_id: str) -> None:
 # ======================================================================
 # the pipeline
 # ======================================================================
-def _homepage_declared_icon(domain: str) -> str | None:
-    """The icon URL the company's OWN homepage explicitly declares
-    (<link rel="apple-touch-icon"> preferred, then mask/svg icon, then a sized
-    icon). This is the site's own canonical brand mark — a declaration, not a
-    scrape of arbitrary <img>s, so it can't pick a partner/award badge. Returns
-    an absolute URL or None."""
-    r = get(f"https://{domain}", timeout=12)
-    if r is None or r.status_code != 200 or not r.text:
+def _try(company: Company, source: str, url: str, authoritative: bool,
+         failures: list[str]) -> ResolvedLogo | None:
+    """Fetch, validate and (on success) cache one candidate URL. ``authoritative``
+    is True for assets the company's own homepage declared/carries (provenance,
+    so the host check is relaxed); False for guessed/well-known/service URLs."""
+    fetched = _fetch(url)
+    if not fetched:
+        failures.append(f"{source}:{url} (no 200)")
         return None
-    best_rank, best_url = 0, None
-    for m in re.finditer(r"<link\b[^>]*>", r.text, re.I):
-        tag = m.group(0)
-        rel_m = re.search(r"""rel\s*=\s*["']([^"']+)""", tag, re.I)
-        href_m = re.search(r"""href\s*=\s*["']([^"']+)""", tag, re.I)
-        if not rel_m or not href_m:
-            continue
-        rel = rel_m.group(1).lower()
-        if "icon" not in rel:
-            continue
-        url = urljoin(f"https://{domain}/", href_m.group(1))
-        low = url.lower()
-        rank = (4 if "apple-touch-icon" in rel
-                else 3 if ("mask-icon" in rel or low.endswith(".svg"))
-                else 2 if low.endswith(".png")
-                else 1)
-        if rank > best_rank:
-            best_rank, best_url = rank, url
-    return best_url
+    content, content_type = fetched
+    mime, reason = _validate(url, content, content_type, company,
+                             enforce_domain=not authoritative)
+    if not mime:
+        failures.append(f"{source}:{url} ({reason})")
+        log.info("logo for %s: rejected %s — %s", company.name, url, reason)
+        return None
+    resolved = ResolvedLogo(company.id, company.name, url, content, mime, source)
+    _cache_put(resolved)
+    log.info("logo for %s (%s): %s via %s (%d bytes, %s)",
+             company.name, company.id, url, source, len(content), mime)
+    return resolved
 
 
-def get_logo(name_or_id: str) -> ResolvedLogo:
-    """Resolve the CORRECT logo for a company, or raise.
+def _homepage(domain: str) -> tuple[str | None, str]:
+    """Fetch a domain's homepage. Returns (html_or_None, base_url) — base_url is
+    the post-redirect URL when available so relative logo hrefs resolve right."""
+    r = get(f"https://{domain}", timeout=12)
+    base = getattr(r, "url", None) or f"https://{domain}"
+    if r is None or getattr(r, "status_code", 0) != 200 or not getattr(r, "text", ""):
+        return None, f"https://{domain}"
+    return r.text, base
 
-    Pipeline (first validated hit wins; sources tried LAZILY, in order):
-      1. canonical identity (raises UnknownCompanyError if not known);
-      2. cache (validated) for the company id;
-      3. verified registry logo asset;
-      4. the company's own homepage-DECLARED icon (apple-touch-icon etc.);
-      5. deterministic well-known paths on the company's own domain
-         (/apple-touch-icon.png …), plus any configured service (logo.dev /
-         Clearbit-style) where it resolves;
-      (no domain and no asset -> enrichment, which here means "add a verified
-       registry entry" — there is no safe automatic derivation);
-      6. otherwise raise LogoResolutionError.
 
-    Never guesses, never degrades to text. The chosen source is logged."""
-    company = company_identity.resolve(name_or_id)   # UnknownCompanyError
+def _from_domain(company: Company, domain: str, prefix: str,
+                 failures: list[str]) -> ResolvedLogo | None:
+    """The logo from a company's OWN site: the landing-page logo read out of the
+    homepage HTML (header wordmark <img>, then declared icons — authoritative by
+    provenance), then the deterministic well-known apple-touch paths. ``prefix``
+    labels the source ('domain' for verified identities, 'derived' otherwise)."""
+    html, base = _homepage(domain)
+    if html:
+        for kind, url in company_web.logo_urls_from_html(html, base):
+            src = f"{prefix}:{'logo-img' if kind == 'img' else 'declared'}"
+            r = _try(company, src, url, authoritative=True, failures=failures)
+            if r:
+                return r
+    for path in ("apple-touch-icon.png", "apple-touch-icon-precomposed.png"):
+        r = _try(company, f"{prefix}:apple-touch", f"https://{domain}/{path}",
+                 authoritative=False, failures=failures)
+        if r:
+            return r
+    return None
 
-    cached = _cache_get(company)
+
+def _from_services(company: Company, domain: str,
+                   failures: list[str]) -> ResolvedLogo | None:
+    """Optional domain-keyed logo services — OFF unless configured for the deploy
+    (see LOGO_DEV_TOKEN / LOGO_CLEARBIT_BASE)."""
+    if _LOGODEV_TOKEN:
+        r = _try(company, "domain:logodev",
+                 f"https://img.logo.dev/{domain}?token={_LOGODEV_TOKEN}&format=png&size=512",
+                 authoritative=False, failures=failures)
+        if r:
+            return r
+    if _CLEARBIT:
+        r = _try(company, "domain:clearbit", f"{_CLEARBIT}/{domain}",
+                 authoritative=False, failures=failures)
+        if r:
+            return r
+    return None
+
+
+_DDG_HTML = "https://html.duckduckgo.com/html/"
+
+
+def _search_domains(name: str) -> list[str]:
+    """Keyless name->domain fallback: the organic result domains for an official-
+    site search (directories/socials/press filtered out by company_web)."""
+    try:
+        r = get(_DDG_HTML, params={"q": f"{name} official website"}, timeout=12)
+    except Exception as e:                          # network is best-effort
+        log.info("logo search failed for %r: %s", name, e)
+        return []
+    if r is None or getattr(r, "status_code", 0) != 200 or not getattr(r, "text", ""):
+        return []
+    return company_web.search_result_domains(r.text)
+
+
+def _derive_logo(name: str) -> ResolvedLogo | None:
+    """Best-effort logo for a company NOT in the verified registry. Finds the
+    official site from the name (guess then web search), behind a confidence
+    gate (company_web.name_matches_site) so a wrong company's logo is never
+    used, and reads the logo off that site's landing page. None if nothing
+    confident resolves (caller then falls back to a text wordmark)."""
+    slug = company_identity.slugify(name) or "company"
+    stub = Company(slug, name, None)
+    cached = _cache_get(stub)
     if cached is not None:
-        log.info("logo for %s (%s): cache hit (%s)", company.name, company.id, cached.url)
+        log.info("logo for %r: cache hit (derived, %s)", name, cached.url)
         return cached
 
-    if not (company.logo_url or company.domain):
-        raise LogoResolutionError(
-            f"{company.name} ({company.id}) has no verified domain or logo asset; "
-            f"add one to tool/company_identity.py")
-
     failures: list[str] = []
+    tried: set[str] = set()
 
-    def _attempt(source: str, url: str, authoritative: bool) -> ResolvedLogo | None:
-        fetched = _fetch(url)
-        if not fetched:
-            failures.append(f"{source}:{url} (no 200)")
+    def _attempt_domain(raw_domain: str, via: str) -> ResolvedLogo | None:
+        domain = company_web.registrable(raw_domain)
+        if not domain or "." not in domain or domain in tried \
+                or company_web.is_excluded_host(domain):
             return None
-        content, content_type = fetched
-        mime, reason = _validate(url, content, content_type, company,
-                                 enforce_domain=not authoritative)
-        if not mime:
-            failures.append(f"{source}:{url} ({reason})")
-            log.info("logo for %s: rejected %s — %s", company.name, url, reason)
+        tried.add(domain)
+        html, base = _homepage(domain)
+        if not html:
+            failures.append(f"{via}:{domain} (no homepage)")
             return None
-        resolved = ResolvedLogo(company.id, company.name, url, content, mime, source)
-        _cache_put(resolved)
-        log.info("logo for %s (%s): %s via %s (%d bytes, %s)",
-                 company.name, company.id, url, source, len(content), mime)
-        return resolved
+        if not company_web.name_matches_site(name, domain, html):
+            failures.append(f"{via}:{domain} (name/site mismatch)")
+            return None
+        # Confident match — read the logo off this landing page.
+        company = Company(slug, name, domain)
+        for kind, url in company_web.logo_urls_from_html(html, base):
+            src = f"derived:{'logo-img' if kind == 'img' else 'declared'}"
+            r = _try(company, src, url, authoritative=True, failures=failures)
+            if r:
+                return r
+        for path in ("apple-touch-icon.png", "apple-touch-icon-precomposed.png"):
+            r = _try(company, "derived:apple-touch", f"https://{domain}/{path}",
+                     authoritative=False, failures=failures)
+            if r:
+                return r
+        return None
 
-    # 3. pinned verified registry asset
-    if company.logo_url:
-        r = _attempt("registry", company.logo_url, authoritative=False)
+    for dom in company_web.candidate_domains(name)[:8]:   # a. guessed domains
+        r = _attempt_domain(dom, "guess")
+        if r:
+            return r
+    for dom in _search_domains(name):                      # b. web-search fallback
+        r = _attempt_domain(dom, "search")
         if r:
             return r
 
-    d = company.domain
-    if d:
-        # 4. the company's OWN homepage-declared icon (authoritative by provenance)
-        declared = _homepage_declared_icon(d)
-        if declared:
-            r = _attempt("domain:declared", declared, authoritative=True)
-            if r:
-                return r
-        # 5. deterministic well-known paths on the company's own domain
-        for path in ("apple-touch-icon.png", "apple-touch-icon-precomposed.png"):
-            r = _attempt("domain:apple-touch", f"https://{d}/{path}", authoritative=False)
-            if r:
-                return r
-        # optional configured services (off unless they resolve in this deploy)
-        if _LOGODEV_TOKEN:
-            r = _attempt("domain:logodev",
-                         f"https://img.logo.dev/{d}?token={_LOGODEV_TOKEN}&format=png&size=512",
-                         authoritative=False)
-            if r:
-                return r
-        if _CLEARBIT:
-            r = _attempt("domain:clearbit", f"{_CLEARBIT}/{d}", authoritative=False)
-            if r:
-                return r
+    log.info("derive: no confident site/logo for %r; tried: %s",
+             name, "; ".join(failures[:8]))
+    return None
 
+
+def get_logo(name_or_id: str) -> ResolvedLogo:
+    """Resolve the company's logo from its own website, or raise.
+
+    Order (first validated hit wins; sources tried LAZILY):
+      1. VERIFIED identity (tool/company_identity) — cache, pinned asset, the
+         company's own homepage logo on the verified domain, well-known paths,
+         optional services;
+      2. otherwise DERIVE the site from the name (guess + web search, behind a
+         confidence gate) and read the logo off its landing page;
+      3. if nothing validates, raise LogoResolutionError. The caller falls back
+         to a text wordmark — this never returns a wrong/placeholder logo.
+
+    The chosen source is logged."""
+    name = (name_or_id or "").strip()
+
+    # 1. verified registry identity — highest confidence
+    try:
+        company = company_identity.resolve(name)
+    except UnknownCompanyError:
+        company = None
+
+    if company is not None:
+        cached = _cache_get(company)
+        if cached is not None:
+            log.info("logo for %s (%s): cache hit (%s)",
+                     company.name, company.id, cached.url)
+            return cached
+        if not (company.logo_url or company.domain):
+            raise LogoResolutionError(
+                f"{company.name} ({company.id}) has no verified domain or logo "
+                f"asset; add one to tool/company_identity.py")
+        failures: list[str] = []
+        if company.logo_url:
+            r = _try(company, "registry", company.logo_url,
+                     authoritative=False, failures=failures)
+            if r:
+                return r
+        if company.domain:
+            r = (_from_domain(company, company.domain, "domain", failures)
+                 or _from_services(company, company.domain, failures))
+            if r:
+                return r
+        raise LogoResolutionError(
+            f"no valid logo for {company.name} ({company.id}); tried: "
+            + "; ".join(failures))
+
+    # 2. unknown company — derive from the web (confidence-gated, best-effort)
+    resolved = _derive_logo(name)
+    if resolved is not None:
+        return resolved
     raise LogoResolutionError(
-        f"no valid logo for {company.name} ({company.id}); tried: " + "; ".join(failures))
+        f"no confident logo for unknown company {name!r} "
+        f"(no matching official site found)")
