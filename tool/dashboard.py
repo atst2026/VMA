@@ -1632,6 +1632,7 @@ _MR_TRIGGER = {
     "ipo_listing":           ("IPO / listing",    "fund"),
     "ic_platform_rfp":       ("IC platform RFP",  "lead"),
     "job_ad_cluster":        ("Hiring cluster",   "lead"),
+    "framework_award":       ("Framework win",    "fund"),
 }
 
 
