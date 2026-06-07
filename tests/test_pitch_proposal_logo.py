@@ -37,12 +37,47 @@ def _monogram(w=256, h=256) -> Image.Image:
     return img
 
 
+def _monogram_on_transparent(s=256) -> Image.Image:
+    """A square single-letter mark on a TRANSPARENT field (logo.dev's 'M'
+    fallback style) — must STILL be rejected after the white-composite fix."""
+    img = Image.new("RGBA", (s, s), (0, 0, 0, 0))
+    px = img.load()
+    for x in range(110, 146):
+        for y in range(90, 160):
+            px[x, y] = (0, 0, 0, 255)
+    return img
+
+
+def _black_wordmark_on_transparent(w=420, h=130) -> Image.Image:
+    """A WIDE monochrome (black) wordmark on a TRANSPARENT field — the
+    Morgan-Stanley class that used to collapse to one RGB colour and be wrongly
+    rejected. Must now be ACCEPTED. Proportions kept realistic (aspect ~3-4)."""
+    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    px = img.load()
+    for x in range(20, w - 20):
+        for y in range(35, 95):
+            if (x // 10) % 2 == 0:        # vertical strokes ~ "text"
+                px[x, y] = (0, 0, 0, 255)
+    return img
+
+
 class TestValidation(unittest.TestCase):
     def test_placeholder_rejected(self):
         self.assertTrue(pp._logo_is_placeholder(_monogram()))
 
     def test_rich_logo_accepted(self):
         self.assertFalse(pp._logo_is_placeholder(_rich()))
+
+    def test_square_monogram_on_transparent_still_rejected(self):
+        # Genuine blank/monogram tile on transparency stays rejected.
+        self.assertTrue(pp._logo_is_placeholder(_monogram_on_transparent()))
+
+    def test_black_wordmark_on_transparent_accepted(self):
+        # The fix: a monochrome wordmark on transparency is no longer collapsed
+        # to one colour, and the aspect guard keeps a wide mark from the flag.
+        wm = _black_wordmark_on_transparent()
+        self.assertFalse(pp._logo_is_placeholder(wm))
+        self.assertIsNotNone(pp._process_logo(_png(wm), pp._COVER_LOGO_MAX_H, pp._COVER_LOGO_MAX_W))
 
     def test_process_good_returns_data_uri(self):
         uri = pp._process_logo(_png(_rich()), pp._COVER_LOGO_MAX_H, pp._COVER_LOGO_MAX_W)
