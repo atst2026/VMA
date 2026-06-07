@@ -2865,7 +2865,6 @@ LANDING_TEMPLATE = r"""
     position:relative;overflow:hidden;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;
   }
-  #ascii{position:fixed;inset:0;width:100%;height:100%;z-index:-2;pointer-events:none;}
 
   /* Gemini halo — verbatim, recentred */
   body::before{
@@ -2989,7 +2988,6 @@ LANDING_TEMPLATE = r"""
 </style>
 </head>
 <body>
-  <canvas id="ascii"></canvas>
   <div class="stage">
     <div class="hero">
       <svg class="viz" viewBox="0 0 420 420" aria-hidden="true">
@@ -3088,68 +3086,6 @@ LANDING_TEMPLATE = r"""
         requestAnimationFrame(watch);
       }
       requestAnimationFrame(watch);
-    })();
-
-    // ASCII shimmer background — throttled to ~15fps to avoid starving
-    // the CSS chip animations and radar sweep of compositor time.
-    (function(){
-      var cv=document.getElementById('ascii');
-      if(!cv)return;
-      var ctx=cv.getContext('2d');
-      var W=0,H=0;
-      var cell=26,cols=0,rows=0;
-      var glyphs=['.','.',':','·','+','-','=','x','×','*','∘'];
-      var dense=['x','×','=','+','#','*'];
-      var grid=[];
-      var mouse={x:-9999,y:-9999,on:false};
-      function build(){
-        var r=cv.getBoundingClientRect();W=r.width;H=r.height;
-        cv.width=W;cv.height=H;
-        ctx.setTransform(1,0,0,1,0,0);
-        cols=Math.ceil(W/cell)+1;rows=Math.ceil(H/cell)+1;
-        grid=new Array(cols*rows);
-        for(var i=0;i<grid.length;i++){
-          grid[i]={g:glyphs[(Math.random()*glyphs.length)|0],s:Math.random()*Math.PI*2};
-        }
-        ctx.font='12px "JetBrains Mono",monospace';
-        ctx.textBaseline='middle';ctx.textAlign='center';
-      }
-      function draw(t){
-        ctx.clearRect(0,0,W,H);
-        var ts=t*0.00018;
-        for(var y=0;y<rows;y++){
-          for(var x=0;x<cols;x++){
-            var idx=y*cols+x,c=grid[idx];
-            var n=Math.sin(x*0.55+ts*1.7+c.s)*Math.cos(y*0.6-ts*1.3+c.s*0.5);
-            var a=0.045+0.05*(n*0.5+0.5);
-            var px=x*cell-(ts*14%cell);
-            var py=y*cell;
-            var ch=c.g;
-            if(mouse.on){
-              var dx=px-mouse.x,dy=py-mouse.y,d2=dx*dx+dy*dy;
-              var R=150;
-              if(d2<R*R){var f=1-Math.sqrt(d2)/R;a+=f*0.5;if(f>0.45)ch=dense[(x+y+((t*0.01)|0))%dense.length];}
-            }
-            if(a<0.03)continue;
-            ctx.fillStyle='rgba(180,195,220,'+a.toFixed(3)+')';
-            ctx.fillText(ch,px,py);
-          }
-        }
-      }
-      document.addEventListener('mousemove',function(e){mouse.x=e.clientX;mouse.y=e.clientY;mouse.on=true;});
-      document.addEventListener('mouseleave',function(){mouse.on=false;});
-      build();
-      window.addEventListener('resize',(function(){var to;return function(){clearTimeout(to);to=setTimeout(build,180);}})());
-      if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches){
-        draw(0);
-      }else{
-        var last=0;
-        (function loop(now){
-          requestAnimationFrame(loop);
-          if(now-last<66)return;
-          last=now;draw(now);
-        })(0);
-      }
     })();
   </script>
 </body>
