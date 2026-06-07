@@ -1363,7 +1363,7 @@ MR_CSS = r"""
 .mr-ab{display:inline-flex;align-items:center;justify-content:center;padding:3px 9px;font:700 9px/1.6 "Inter",sans-serif;letter-spacing:.03em;text-transform:uppercase;border-radius:7px;white-space:nowrap;justify-self:start}
 .mr-ab.ab-call_today{color:#fff;background:#D9633C}.mr-ab.ab-nurture{color:#1d4ed8;background:#e9effb}.mr-ab.ab-investigate{color:#8a5a00;background:#fff4e0}.mr-ab.ab-monitor{color:#6b7686;background:#eef1f5}
 .mr-q4{display:inline-flex;align-items:center;padding:2px 8px;font:600 9px/1.6 "Inter",sans-serif;letter-spacing:.03em;border-radius:7px;white-space:nowrap;color:#9a3412;background:#fff7ed;border:1px solid #fdba74}
-.mr-xdesk{display:inline-flex;align-items:center;margin-top:8px;padding:3px 10px;font:600 10px/1.6 "Inter",sans-serif;letter-spacing:.03em;border-radius:7px;white-space:nowrap;color:#6d28d9;background:#f5f3ff;border:1px solid #c4b5fd}
+.mr-xdesk{display:inline-block;width:fit-content;margin-top:8px;padding:3px 10px;font:600 10px/1.6 "Inter",sans-serif;letter-spacing:.03em;border-radius:7px;white-space:nowrap;color:#6d28d9;background:#f5f3ff;border:1px solid #c4b5fd}
 .mr-lmeta{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:2px 0 8px}
 .mr-anti{font:700 9px/1.5 "Inter",sans-serif;color:#c0392b;background:#fdecea;padding:2px 7px;border-radius:6px}
 .mr-laccess{font-size:11.5px;color:var(--blue-deep);background:rgba(62,92,132,.05);border-left:2px solid var(--vma);border-radius:5px;padding:6px 9px;margin:4px 0 8px}
@@ -1406,6 +1406,17 @@ MR_CSS = r"""
 .mr-rdet{max-height:0;opacity:0;overflow:hidden;transition:max-height .3s ease,opacity .25s,padding .25s;padding:0 14px 0 49px}.mr-row.open .mr-rdet{max-height:1600px;opacity:1;padding:2px 14px 15px 49px}
 .mr-badge-st{font:700 8px/1 "Inter",sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:3px 6px;border-radius:4px}.mr-badge-st.followed_up{background:rgba(34,139,87,.12);color:#1e7a41}.mr-badge-st.dismissed{background:rgba(120,120,120,.1);color:#888}
 .mr-empty{padding:40px;text-align:center;color:var(--dim)}
+@media(max-width:640px){
+.mr-gbd{grid-template-columns:20px 1fr;gap:6px}
+.mr-gbd .mr-tp,.mr-gbd .mr-seat,.mr-gbd .mr-why,.mr-gbd .mr-wb,.mr-gbd .mr-ab,.mr-gbd .mr-sc,.mr-gbd .mr-q4{grid-column:1/-1}
+.mr-gjobs{grid-template-columns:20px 1fr;gap:6px}
+.mr-gjobs .mr-badge,.mr-gjobs .mr-pcell{grid-column:1/-1}
+.mr-rsum{padding:10px 10px}
+.mr-row.open .mr-rdet{padding:2px 10px 12px 10px}
+.mr-co{font-size:13px}
+.mr-tabs{flex-wrap:wrap;gap:6px}
+.mr-tab{font-size:10px;padding:5px 10px}
+}
 """
 
 MR_JS = r"""
@@ -2158,7 +2169,7 @@ def _render_dashboard():
             _other_cos = {(v.get("company") or "").lower()
                           for v in (_other_data.get("predictors") or {}).values()
                           if v.get("status", "active") == "active"}
-            _other_label = "Also on Marketing" if _other_desk == "marketing" else "Also on Comms"
+            _other_label = "Also on Marketing — liaise with team" if _other_desk == "marketing" else "Also on Comms — liaise with team"
             for _r in premarket_rows:
                 if (_r.get("company") or "").lower() in _other_cos:
                     _r["_cross_desk"] = _other_label
@@ -4648,6 +4659,7 @@ TEMPLATE = r"""
     body.has-shell { overflow: hidden; }
 
     /* ----- left rail ----- */
+    .mob-ham { display: none; }
     .rail { position: fixed; top: 0; left: 0; bottom: 0; width: 62px; display: flex;
       flex-direction: column; align-items: center; gap: 8px; padding: 20px 0; z-index: 1000; }
     .rail .ri { width: 42px; height: 42px; border-radius: 12px; border: none; background: transparent;
@@ -5281,22 +5293,26 @@ TEMPLATE = r"""
       html, body { height: auto; }
       body.has-shell { overflow: auto; -webkit-text-size-adjust: 100%; }
 
-      /* rail -> bottom tab bar */
-      .rail { top: auto; right: 0; bottom: 0; width: 100%; height: 56px;
-        flex-direction: row; justify-content: space-around; align-items: center;
-        gap: 0; padding: 0; background: #fff;
-        border-top: 1px solid var(--border); box-shadow: 0 -2px 12px rgba(31,55,124,.06); }
-      .rail .ri { width: 46px; height: 40px; border-radius: 10px; }
-      /* the VMA logo is desktop rail chrome — hide it in the mobile tab bar so
-         the three nav icons stay evenly spaced (its desktop margins would
-         otherwise break the horizontal layout). */
+      /* hamburger toggle — two lines at top-left */
+      .mob-ham { display: flex; position: fixed; top: 14px; left: 14px; z-index: 1100;
+        width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--border);
+        background: #fff; flex-direction: column; align-items: center; justify-content: center;
+        gap: 5px; cursor: pointer; box-shadow: 0 2px 8px rgba(31,55,124,.08); }
+      .mob-ham span { display: block; width: 18px; height: 2px; background: var(--ink); border-radius: 1px; }
+
+      /* rail hidden by default, slides in as overlay */
+      .rail { top: 0; left: 0; bottom: 0; width: 62px; height: 100%;
+        flex-direction: column; align-items: center; gap: 8px; padding: 64px 0 20px;
+        background: #fff; border-right: 1px solid var(--border);
+        box-shadow: 4px 0 16px rgba(31,55,124,.08);
+        transform: translateX(-100%); transition: transform .22s ease; }
+      .rail.mob-open { transform: translateX(0); }
+      .rail .ri { width: 42px; height: 42px; border-radius: 12px; }
       .rail .rail-logo { display: none; }
-      /* tooltips would sit off-screen on a bottom bar — hide them on mobile */
       .rail [data-tip]:hover::after { display: none; }
 
-      /* unlock the viewport: pages flow in normal document scroll, with
-         room at the bottom for the tab bar */
-      .stage { padding: 0 14px 72px; height: auto; overflow: visible; }
+      /* unlock the viewport */
+      .stage { padding: 0 14px 24px; height: auto; overflow: visible; }
       .page { height: auto; overflow: visible; }
       .page.active { display: block; }
 
@@ -5341,7 +5357,8 @@ TEMPLATE = r"""
 <body class="has-shell">
 
 <!-- LEFT RAIL — page switcher. Active state toggled by render() (additive JS). -->
-<aside class="rail">
+<div class="mob-ham" id="mobHam" onclick="var r=document.querySelector('.rail');r.classList.toggle('mob-open');"><span></span><span></span></div>
+<aside class="rail" onclick="if(window.innerWidth<=640)this.classList.remove('mob-open');">
   <button class="ri active" id="nav-leads" data-tip="{{ radar_title }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 12 L12 3 A9 9 0 0 1 19.8 7.5 Z" fill="currentColor" stroke="none" opacity=".2"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></button>
   <button class="ri" id="nav-cal" data-tip="BD Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></button>
   <button class="ri" id="nav-agent" data-tip="Personal Assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7.5" width="17" height="13" rx="5"/><path d="M12 7.5V4.6"/><circle cx="12" cy="3.4" r="1.2"/><circle cx="9" cy="14" r="1.65" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.65" fill="currentColor" stroke="none"/></svg></button>
