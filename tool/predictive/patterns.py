@@ -1170,6 +1170,8 @@ _MARKETING_TRIGGER_KEYS = {
     "hiring_gap",              # scaling with no marketing function
     "seniority_gap",           # senior hire + junior-only team
     "framework_displacement",  # competitor agency disruption
+    "crisis_event",            # brand-trust / reputation rebuild → marketing hire
+    "activist_stake",          # activist defence → brand & comms refresh
 }
 
 
