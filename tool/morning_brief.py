@@ -325,9 +325,17 @@ def main() -> int:
     # (pre-enrichment) so signals are enriched with fresh data. The
     # ch_events list from that earlier call is reused here as part of
     # the all-events combination for the predictor pipeline.
+    # Hiring-gap detector: companies scaling heavily with zero comms roles.
+    try:
+        from tool.predictive.hiring_gap import detect_hiring_gaps
+        hiring_gap_events = detect_hiring_gaps()
+    except Exception as e:
+        log.info("hiring-gap detector: %s", e)
+        hiring_gap_events = []
+
     all_events = (trigger_events + cluster_events + ch_events + velocity_events
                   + ch_filing_events + ch_stream_events + charity_events
-                  + wayback_events + techno_events)
+                  + wayback_events + techno_events + hiring_gap_events)
     log.info("BD-strengthening lanes: %d CH-filing + %d CH-stream + %d charity "
              "+ %d wayback + %d technographics events",
              len(ch_filing_events), len(ch_stream_events),
