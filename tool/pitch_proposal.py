@@ -278,6 +278,13 @@ def render_proposal_html(company: str, seat: str,
                          when: _dt.date | _dt.datetime | None = None) -> str:
     """The full multi-page proposal as print-styled HTML (A4). The cover
     displays the company name as a clean typographic wordmark."""
+    # Strip market-data noise ("... Stock", "(03888)") so the heading, body
+    # copy and logo lookup all use the clean company name. No-op for clean names.
+    try:
+        from tool import company_domain
+        company = company_domain.clean_name(company)
+    except Exception:
+        pass
     co = _esc(company)
     seat_disp = _esc(seat or "Head of Communications")
     date_disp = _esc(_generation_date(when))
