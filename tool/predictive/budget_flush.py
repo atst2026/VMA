@@ -81,20 +81,24 @@ def _days_until_fye(today: date, fye_month: int, fye_day: int) -> int:
 def get_budget_flush_flags(
     companies: list[dict],
     window_days: int = _FLUSH_WINDOW_DAYS,
+    cache_only: bool = False,
 ) -> dict[str, dict]:
     """Check which companies are in their fiscal year-end flush window.
 
     `companies` is a list of dicts, each with at least 'company' (name)
     and optionally 'ch_number' (Companies House number).
 
+    When `cache_only=True`, only uses cached FYE data (no API calls).
+    Use cache_only=True on the dashboard render path to avoid blocking.
+    The cache is populated during the morning brief with cache_only=False.
+
     Returns {company_name_lower: {"days_left": N, "fye": "31 Mar", ...}}
     for companies within `window_days` of their year-end.
     """
-    from tool.sources.companies_house import resolve_company_number
-
     cache = _load_cache()
     today = date.today()
     results: dict[str, dict] = {}
+    dirty = False
 
     for row in companies:
         co = (row.get("company") or "").strip()
@@ -108,7 +112,8 @@ def get_budget_flush_flags(
         if key in cache:
             fye_month = cache[key].get("month", 0)
             fye_day = cache[key].get("day", 0)
-        else:
+        elif not cache_only:
+            from tool.sources.companies_house import resolve_company_number
             ch_num = row.get("ch_number") or ""
             if not ch_num:
                 ch_num = resolve_company_number(co) or ""
@@ -118,6 +123,7 @@ def get_budget_flush_flags(
                     fye_month, fye_day = result
                     cache[key] = {"month": fye_month, "day": fye_day,
                                   "ch_number": ch_num}
+                    dirty = True
 
         if not (1 <= fye_month <= 12 and 1 <= fye_day <= 31):
             continue
@@ -133,7 +139,8 @@ def get_budget_flush_flags(
                 "fye_day": fye_day,
             }
 
-    _save_cache(cache)
+    if dirty:
+        _save_cache(cache)
     log.info("Budget flush: %d of %d companies in Q4 window",
              len(results), len(companies))
     return results

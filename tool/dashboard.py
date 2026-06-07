@@ -2139,7 +2139,7 @@ def _render_dashboard():
     # Budget flush overlay: tag rows whose company is in their fiscal Q4
     try:
         from tool.predictive.budget_flush import get_budget_flush_flags
-        _flush = get_budget_flush_flags(premarket_rows)
+        _flush = get_budget_flush_flags(premarket_rows, cache_only=True)
         for _r in premarket_rows:
             _co_key = (_r.get("company") or "").lower()
             if _co_key in _flush:
@@ -3090,21 +3090,22 @@ LANDING_TEMPLATE = r"""
       requestAnimationFrame(watch);
     })();
 
-    // ASCII shimmer background
+    // ASCII shimmer background — throttled to ~15fps to avoid starving
+    // the CSS chip animations and radar sweep of compositor time.
     (function(){
       var cv=document.getElementById('ascii');
       if(!cv)return;
       var ctx=cv.getContext('2d');
-      var W=0,H=0,dpr=Math.min(window.devicePixelRatio||1,2);
-      var cell=22,cols=0,rows=0;
+      var W=0,H=0;
+      var cell=26,cols=0,rows=0;
       var glyphs=['.','.',':','·','+','-','=','x','×','*','∘'];
       var dense=['x','×','=','+','#','*'];
       var grid=[];
       var mouse={x:-9999,y:-9999,on:false};
       function build(){
         var r=cv.getBoundingClientRect();W=r.width;H=r.height;
-        cv.width=W*dpr;cv.height=H*dpr;
-        ctx.setTransform(dpr,0,0,dpr,0,0);
+        cv.width=W;cv.height=H;
+        ctx.setTransform(1,0,0,1,0,0);
         cols=Math.ceil(W/cell)+1;rows=Math.ceil(H/cell)+1;
         grid=new Array(cols*rows);
         for(var i=0;i<grid.length;i++){
@@ -3142,7 +3143,12 @@ LANDING_TEMPLATE = r"""
       if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches){
         draw(0);
       }else{
-        (function loop(now){draw(now);requestAnimationFrame(loop);})(0);
+        var last=0;
+        (function loop(now){
+          requestAnimationFrame(loop);
+          if(now-last<66)return;
+          last=now;draw(now);
+        })(0);
       }
     })();
   </script>
