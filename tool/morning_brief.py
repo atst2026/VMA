@@ -333,9 +333,26 @@ def main() -> int:
         log.info("hiring-gap detector: %s", e)
         hiring_gap_events = []
 
+    # Seniority-gap detector: new senior leader + junior-only team.
+    try:
+        from tool.predictive.seniority_gap import detect_seniority_gaps
+        seniority_gap_events = detect_seniority_gaps()
+    except Exception as e:
+        log.info("seniority-gap detector: %s", e)
+        seniority_gap_events = []
+
+    # Competitor framework displacement: agency disruption signals.
+    try:
+        from tool.predictive.framework_displacement import detect_framework_displacement
+        displacement_events = detect_framework_displacement(signals)
+    except Exception as e:
+        log.info("framework-displacement detector: %s", e)
+        displacement_events = []
+
     all_events = (trigger_events + cluster_events + ch_events + velocity_events
                   + ch_filing_events + ch_stream_events + charity_events
-                  + wayback_events + techno_events + hiring_gap_events)
+                  + wayback_events + techno_events + hiring_gap_events
+                  + seniority_gap_events + displacement_events)
     log.info("BD-strengthening lanes: %d CH-filing + %d CH-stream + %d charity "
              "+ %d wayback + %d technographics events",
              len(ch_filing_events), len(ch_stream_events),

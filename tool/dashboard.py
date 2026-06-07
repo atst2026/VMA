@@ -1634,6 +1634,8 @@ _MR_TRIGGER = {
     "job_ad_cluster":        ("Hiring cluster",   "lead"),
     "framework_award":       ("Framework win",    "fund"),
     "hiring_gap":            ("Hiring gap",       "lead"),
+    "seniority_gap":         ("Seniority gap",    "lead"),
+    "framework_displacement": ("Agency disruption", "warn"),
 }
 
 

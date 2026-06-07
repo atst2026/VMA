@@ -1168,6 +1168,8 @@ _MARKETING_TRIGGER_KEYS = {
     "ownership_change",        # new owner refreshes marketing
     "framework_award",         # agency scaling after gov win
     "hiring_gap",              # scaling with no marketing function
+    "seniority_gap",           # senior hire + junior-only team
+    "framework_displacement",  # competitor agency disruption
 }
 
 

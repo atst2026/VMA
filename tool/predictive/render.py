@@ -67,7 +67,8 @@ def _who_to_call(stk: Stack) -> str:
              "chair_change", "cfo_change", "ir_director_change",
              "chro_change", "restructure", "press_velocity_spike",
              "ned_trustee_appointment", "personal_brand_velocity",
-             "job_ad_cluster", "framework_award", "hiring_gap"]
+             "job_ad_cluster", "framework_award", "hiring_gap",
+             "seniority_gap", "framework_displacement"]
     for key in order:
         for e in stk.events:
             if e.trigger_key == key:
@@ -88,7 +89,8 @@ def _implication(stk: Stack) -> str:
              "chair_change", "cfo_change", "ir_director_change",
              "chro_change", "restructure", "press_velocity_spike",
              "ned_trustee_appointment", "personal_brand_velocity",
-             "job_ad_cluster", "framework_award", "hiring_gap"]
+             "job_ad_cluster", "framework_award", "hiring_gap",
+             "seniority_gap", "framework_displacement"]
     for key in order:
         for e in stk.events:
             if e.trigger_key == key:
