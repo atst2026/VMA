@@ -1363,7 +1363,7 @@ MR_CSS = r"""
 .mr-ab{display:inline-flex;align-items:center;justify-content:center;padding:3px 9px;font:700 9px/1.6 "Inter",sans-serif;letter-spacing:.03em;text-transform:uppercase;border-radius:7px;white-space:nowrap;justify-self:start}
 .mr-ab.ab-call_today{color:#fff;background:#D9633C}.mr-ab.ab-nurture{color:#1d4ed8;background:#e9effb}.mr-ab.ab-investigate{color:#8a5a00;background:#fff4e0}.mr-ab.ab-monitor{color:#6b7686;background:#eef1f5}
 .mr-q4{display:inline-flex;align-items:center;padding:2px 8px;font:600 9px/1.6 "Inter",sans-serif;letter-spacing:.03em;border-radius:7px;white-space:nowrap;color:#9a3412;background:#fff7ed;border:1px solid #fdba74}
-.mr-xdesk{display:block;width:fit-content;margin-top:2px;padding:1px 7px;font:600 9px/1.6 "Inter",sans-serif;letter-spacing:.03em;border-radius:7px;white-space:nowrap;color:#6d28d9;background:#f5f3ff;border:1px solid #c4b5fd}
+.mr-xdesk{display:inline-flex;align-items:center;margin-top:8px;padding:3px 10px;font:600 10px/1.6 "Inter",sans-serif;letter-spacing:.03em;border-radius:7px;white-space:nowrap;color:#6d28d9;background:#f5f3ff;border:1px solid #c4b5fd}
 .mr-lmeta{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:2px 0 8px}
 .mr-anti{font:700 9px/1.5 "Inter",sans-serif;color:#c0392b;background:#fdecea;padding:2px 7px;border-radius:6px}
 .mr-laccess{font-size:11.5px;color:var(--blue-deep);background:rgba(62,92,132,.05);border-left:2px solid var(--vma);border-radius:5px;padding:6px 9px;margin:4px 0 8px}
@@ -1462,7 +1462,7 @@ MR_JS = r"""
     return '<button class="mr-io icon" data-act="tri" data-id="'+l._id+'" data-st="active" title="Restore">'+IC.undo+'</button>'+rm;}
   function ab(l){return l.action?'<span class="mr-ab ab-'+l.action+'">'+esc(l.actionLabel)+'</span>':sc(l);}
   function q4b(l){return l.q4?'<span class="mr-q4">'+esc(l.q4)+'</span>':'';}
-  function xdb(l){return l.xdesk?'<span class="mr-xdesk">'+esc(l.xdesk)+'</span>':'';}
+  function xdb(l){return l.xdesk?'<span class="mr-xdesk">*'+esc(l.xdesk)+'</span>':'';}
   function dk(lab,val){return '<div class="mr-dk"><span class="mr-dlab">'+lab+'</span><span>'+val+'</span></div>';}
   function brief(l){
     var b=l.brief||(l.seat+' likely within '+l.win+'.');
@@ -1481,12 +1481,13 @@ MR_JS = r"""
       +warn
       +dk('Why now',esc(l.whyNow||l.why))
       +acts
+      +xdb(l)
       +(l.opener?'<div class="mr-dk mr-playwrap'+(l.drafted?' on':'')+'"><span class="mr-dlab">The play</span><span class="mr-play mr-playbox">'+(l.drafted?esc(l.opener):'')+'</span></div>':'')
       +'</div>';}
   function bdRow(l,idx){var top=(idx===0&&filter==='active');
     return '<div class="mr-row '+(open[l._id]?'open ':'')+(top?'top':'')+'" data-id="'+l._id+'">'
      +'<div class="mr-rsum mr-gbd" data-act="toggle" data-id="'+l._id+'">'
-     +'<span class="mr-rk">'+(idx+1)+'</span><span class="mr-co">'+esc(l.co)+newp(l)+xdb(l)+'</span>'+tp(l)
+     +'<span class="mr-rk">'+(idx+1)+'</span><span class="mr-co">'+esc(l.co)+newp(l)+'</span>'+tp(l)
      +'<span class="mr-seat">'+esc(l.seat)+'</span><span class="mr-why">'+esc(l.why)+'</span>'+wb(l)+ab(l)+q4b(l)
      +'<span class="mr-racts">'+(filter==='all'?stbadge(l):'')+triBtns(l)+'</span></div>'
      +'<div class="mr-rdet"><div class="mr-aibrief"><div class="mr-gen">'+brief(l)+'</div></div></div></div>';}
@@ -2864,7 +2865,7 @@ LANDING_TEMPLATE = r"""
     position:relative;overflow:hidden;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;
   }
-  #ascii{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;}
+  #ascii{position:fixed;inset:0;width:100%;height:100%;z-index:-2;pointer-events:none;}
 
   /* Gemini halo — verbatim, recentred */
   body::before{
