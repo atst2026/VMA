@@ -751,6 +751,47 @@ AGENCY_ACCOUNT_MOVE = TriggerType(
 )
 
 
+# ---- Public-sector framework award (agency scaling signal) ---------------
+# When a comms / PR / digital agency wins a slot on a government framework
+# (Find a Tender / Contracts Finder award notices), it will instantly need
+# to scale its delivery team to service the contract. The winning agency
+# is the lead — contact the agency MD the week the award is announced.
+FRAMEWORK_AWARD = TriggerType(
+    key="framework_award",
+    label="Public-sector framework award",
+    weight=0.7,
+    lead_time_weeks=(1, 8),
+    who_to_call="Agency MD / Head of Delivery at the winning agency",
+    implication=(
+        "Public-sector framework award involving {company}. Agencies winning "
+        "government PR / communications / digital engagement framework slots "
+        "need to scale delivery teams immediately. Contact the agency head "
+        "within the first week of the award announcement."
+    ),
+    patterns=[
+        re.compile(p, re.IGNORECASE) for p in (
+            # "awarded … communications/PR/digital … framework/contract/lot"
+            r"\baward(?:ed|s)?\b.{0,60}?\b(?:communications?|PR|public relations|"
+            r"digital engagement|media|campaigns?|stakeholder engagement|"
+            r"public affairs|creative)\b.{0,30}?\b(?:framework|contract|lot|agreement)\b",
+            # "framework … communications … awarded to <agency>"
+            r"\bframework\b.{0,40}?\b(?:communications?|PR|public relations|"
+            r"digital|media|public affairs|creative)\b.{0,60}?\bawarded\s+to\b",
+            # "appointed to … framework" for comms scope
+            r"\bappointed\s+(?:to|onto)\b.{0,40}?\b(?:communications?|PR|"
+            r"digital|media|public affairs)\b.{0,20}?\bframework\b",
+            # "<agency> wins … government/public-sector … contract"
+            r"\bwins?\b.{0,30}?\b(?:government|public[- ]sector|council|NHS|"
+            r"central gov(?:ernment)?|local authority)\b.{0,30}?\b(?:communications?|"
+            r"PR|digital|media|public affairs)\b.{0,15}?\b(?:contract|framework|brief)\b",
+            # Contract award notice phrasing from Find a Tender
+            r"\bcontract award(?:ed)? notice\b.{0,80}?\b(?:communications?|PR|"
+            r"public relations|digital|media|public affairs|stakeholder engagement)\b",
+        )
+    ],
+)
+
+
 # ---- ESG / B-Corp certification (CMA Green Claims Code) -----------------
 # A new B-Corp certification, science-based target, net-zero strategy or
 # CSRD obligation triggers a substantiation-and-comms build-out: someone
@@ -895,8 +936,9 @@ TRIGGERS = [CEO_CHANGE, CHAIR_CHANGE, CHRO_CHANGE, CFO_CHANGE,
             IPO_LISTING, CONTRACT_LOSS, PRESS_VELOCITY_SPIKE,
             PERSONAL_BRAND_VELOCITY, NED_TRUSTEE_APPOINTMENT,
             # BD-strengthening additions
-            REBRAND, AGENCY_ACCOUNT_MOVE, ESG_BCORP, MARTECH_ADOPTION,
-            LEADERSHIP_TENURE, SECURED_FINANCING, OWNERSHIP_CHANGE]
+            REBRAND, AGENCY_ACCOUNT_MOVE, FRAMEWORK_AWARD, ESG_BCORP,
+            MARTECH_ADOPTION, LEADERSHIP_TENURE, SECURED_FINANCING,
+            OWNERSHIP_CHANGE]
 BY_KEY = {t.key: t for t in TRIGGERS}
 
 # Marketing desk (FIRST DRAFT): the trigger DETECTION (regex patterns) is
@@ -967,6 +1009,10 @@ if _active_profile().key == "marketing":
         "agency_account_move": ("CMO / Marketing Director",
             "Agency account move at {company}. A PR / creative / media account win "
             "or loss drives a client-side marketing reshuffle within 4–16 weeks."),
+        "framework_award": ("Agency MD / Head of Delivery",
+            "Public-sector framework award at {company}. Winning a government "
+            "marketing / digital / creative framework slot requires immediate "
+            "delivery-team scaling."),
         "esg_bcorp": ("CMO / Head of Brand — brand-trust & sustainability marketing",
             "ESG / B-Corp certification at {company}. Substantiating green claims "
             "(CMA Green Claims Code) opens a brand-trust / sustainability-marketing brief."),
