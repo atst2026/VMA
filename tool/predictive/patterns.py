@@ -355,6 +355,46 @@ RESTRUCTURE = TriggerType(
 )
 
 
+# ---- Redundancy / layoffs -- always needs comms ----------------------
+# Redundancy programmes require internal messaging, consultation support,
+# and often interim IC cover. Previously treated as an anti-trigger only;
+# now a first-class BD signal because the comms need is immediate and
+# almost always goes external (interim or retained).
+REDUNDANCY = TriggerType(
+    key="redundancy",
+    label="Redundancy / layoffs announced",
+    weight=0.7,
+    lead_time_weeks=(1, 12),
+    who_to_call="CHRO / Head of IC — redundancy comms is immediate and usually goes external",
+    implication=(
+        "Redundancy programme / layoffs announced at {company}. Internal "
+        "messaging, consultation support, and change comms are immediate "
+        "requirements — often filled by an interim or retained senior IC "
+        "hire within 1–12 weeks. The comms need is urgent and almost always "
+        "goes to an external agency."
+    ),
+    patterns=[
+        re.compile(p, re.IGNORECASE) for p in (
+            r"\bredundanc(?:y|ies)\b",
+            r"\blay[\s-]?offs?\b",
+            r"\bjob cuts\b",
+            r"\bjob losses\b",
+            r"\bcutting \d+\s+(?:jobs|roles|positions|staff)\b",
+            r"\baxe[sd]? \d+\s+(?:jobs|roles|positions|staff)\b",
+            r"\bplanned? (?:to )?(?:cut|axe|lose|shed|eliminate) \d+\s+(?:jobs|roles|positions|staff)\b",
+            r"\b(?:workforce|headcount|staff) reduction\b",
+            r"\bconsultation (?:period|process)\b.{0,40}\b(?:redundan|job|role|position)\b",
+            r"\bsection 188\b",
+            r"\bcollective consultation\b",
+            r"\bHR1 form\b",
+            r"\bvoluntary redundan\b",
+            r"\bcompulsory redundan\b",
+            r"\b(?:announce[sd]?|confirm[sd]?) .{0,30}\b(?:redundanc|job cuts|job losses|lay[\s-]?offs?)\b",
+        )
+    ],
+)
+
+
 # ---- CFO change -- often drives investor-narrative refresh -----------
 CFO_CHANGE = TriggerType(
     key="cfo_change",
@@ -932,7 +972,7 @@ TRIGGERS = [CEO_CHANGE, CHAIR_CHANGE, CHRO_CHANGE, CFO_CHANGE,
             IR_DIRECTOR_CHANGE, COMMS_LEADER_DEPARTURE,
             MNA, ACTIVIST_STAKE, PE_ACQUISITION,
             REGULATOR_ACTION, REGULATOR_PROBE_EARLY, CRISIS_EVENT,
-            PROFIT_WARNING, RESTRUCTURE, IC_PLATFORM_RFP,
+            PROFIT_WARNING, RESTRUCTURE, REDUNDANCY, IC_PLATFORM_RFP,
             IPO_LISTING, CONTRACT_LOSS, PRESS_VELOCITY_SPIKE,
             PERSONAL_BRAND_VELOCITY, NED_TRUSTEE_APPOINTMENT,
             # BD-strengthening additions
@@ -982,6 +1022,9 @@ if _active_profile().key == "marketing":
         "restructure": ("CMO / Head of Marketing",
             "Restructure / strategic review at {company}. Marketing is commonly "
             "reorganised — a senior marketing brief often follows."),
+        "redundancy": ("CMO / Head of Employer Brand — change comms & employer-brand rebuild",
+            "Redundancy programme at {company}. Employer-brand repair and change-"
+            "comms messaging drive a senior marketing / employer-brand hire."),
         "cfo_change": ("CMO / Head of Growth",
             "New CFO at {company}. Budget and efficiency resets commonly reshape "
             "the marketing/growth leadership."),
@@ -1172,6 +1215,7 @@ _MARKETING_TRIGGER_KEYS = {
     "framework_displacement",  # competitor agency disruption
     "crisis_event",            # brand-trust / reputation rebuild → marketing hire
     "activist_stake",          # activist defence → brand & comms refresh
+    "redundancy",              # change comms / employer-brand rebuild
 }
 
 

@@ -1637,6 +1637,7 @@ _MR_TRIGGER = {
     "comms_leader_departure": ("Comms exit",      "lead"),
     "ir_director_change":    ("IR change",        "lead"),
     "restructure":           ("Restructure",      "restr"),
+    "redundancy":            ("Redundancy",       "warn"),
     "regulator_action":      ("Regulator action", "warn"),
     "regulator_probe_early": ("Regulator probe",  "warn"),
     "profit_warning":        ("Profit warning",   "warn"),

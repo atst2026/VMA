@@ -69,6 +69,7 @@ _COMMS_TAXONOMY = {
     "regulator_action":        (3, "demand", "fast"),
     "profit_warning":          (3, "demand", "fast"),
     "restructure":             (3, "demand", "fast"),
+    "redundancy":              (4, "demand", "fast"),
     "regulator_probe_early":   (2, "demand", "fast"),
     "contract_loss":           (2, "demand", "fast"),
     "ownership_change":         (3, "demand", "fast"),
@@ -109,6 +110,7 @@ _MKT_TAXONOMY = {
     "mna":                     (3, "demand", "fast"),
     "pe_acquisition":          (3, "demand", "fast"),
     "restructure":             (3, "demand", "fast"),
+    "redundancy":              (4, "demand", "fast"),
     "crisis_event":            (3, "demand", "fast"),
     "activist_stake":          (2, "demand", "fast"),
     "regulator_action":        (2, "demand", "fast"),
@@ -404,7 +406,7 @@ _EVENT_GRADE = {"funding", "ipo_listing", "job_ad_cluster", "ic_platform_rfp"}
 # layered on top later.
 _ANTI = [
     ("hiring_freeze",  re.compile(r"hiring freeze|freeze on hiring|recruitment freeze|pause(?:d|s)? hiring", re.I), "cap"),
-    ("layoffs",        re.compile(r"redundanc|lay[\s-]?offs?|job cuts|cutting \d+\s+jobs|axe[sd]? \d+", re.I), 0.3),
+    ("layoffs",        re.compile(r"redundanc|lay[\s-]?offs?|job cuts|cutting \d+\s+jobs|axe[sd]? \d+", re.I), 1.0),
     ("administration", re.compile(r"\benters? administration|goes into administration|insolvenc|liquidation", re.I), "cap"),
     ("in_house_team",  re.compile(r"in[\s-]house (?:team|function|capabilit|comms|marketing)|built .{0,25}in[\s-]house|grew? .{0,25}in[\s-]house|fully[\s-]staffed|\d+[\s-]person .{0,20}in[\s-]house|brought .{0,20}in[\s-]house", re.I), 0.5),
     ("competitor_lock", re.compile(r"exclusiv(?:e|ely) (?:retained|appointed|partner)|signed .{0,30}exclusiv|sole (?:agency|search|supplier)|appointed .{0,20}as (?:sole|exclusive)", re.I), 0.2),
@@ -434,6 +436,7 @@ _WHO = {
     "regulator_probe_early": "General Counsel / Corporate Affairs",
     "profit_warning": "CFO / Head of IR",
     "restructure": "CHRO / Transformation lead",
+    "redundancy": "CHRO / Head of IC — redundancy comms almost always goes external",
     "contract_loss": "CEO office / Corporate Affairs",
     "rebrand": "CCO / Head of Brand & Reputation",
     "agency_account_move": "Head of Brand / Corporate Affairs",
@@ -478,6 +481,7 @@ _MKT_WHO = {
     "mna": "Brand / Integration Director",
     "pe_acquisition": "Deal team / incoming CMO",
     "restructure": "CMO / Transformation lead",
+    "redundancy": "CMO / Head of Employer Brand — change comms & employer-brand rebuild",
     "crisis_event": "CMO / Corporate Affairs",
     "rebrand": "CMO / Head of Brand",
     "agency_account_move": "CMO / Marketing Director",
@@ -826,8 +830,11 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
         n_pro = (1 if quality_trigger else 0) + n_dim
 
         # negative scoring: a trigger sitting beside a contradiction is a watch
+        # Exception: when redundancy IS the trigger, cuts are the signal, not a
+        # contradiction — redundancy programmes always need comms.
+        _is_redundancy_lead = "redundancy" in live_keys
         contradictions = []
-        if fin["direction"] in ("anti", "conflicting") or "layoffs" in anti_flags:
+        if not _is_redundancy_lead and (fin["direction"] in ("anti", "conflicting") or "layoffs" in anti_flags):
             contradictions.append("budget pressure or cuts point the other way")
         if posture["direction"] == "internal":
             contradictions.append("the hiring looks likely to be absorbed in-house")

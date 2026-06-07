@@ -94,11 +94,11 @@ def test_low_fit_high_signal_investigates():
 
 
 # ---- ANTI-TRIGGERS ----
-def test_layoffs_suppress_signal():
-    clean = LE.score_lead(_pred(events=[_ev("restructure", 1, evidence="reorganisation announced")]))
+def test_layoffs_flag_without_suppression():
+    """Layoffs are flagged but no longer suppress signal — redundancy is a BD signal."""
     cut = LE.score_lead(_pred(events=[_ev("restructure", 1, evidence="redundancies and job cuts announced")]))
     assert "layoffs" in cut["anti_triggers"]
-    assert cut["signal"] < clean["signal"]
+    assert cut["signal"] > 0
 
 
 def test_administration_caps_to_monitor():
