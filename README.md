@@ -35,6 +35,7 @@ Set in GitHub repo → Settings → Secrets and variables → Actions:
 | `BRIGHT_DATA_KEY` | Bright Data key for licensed LinkedIn public surface (free 5k/month) |
 | `GMAIL_FROM_NAME` | *Optional*. Default: `Sara's Morning Brief` |
 | `ADZUNA_APP_ID` + `ADZUNA_APP_KEY` | *Optional*. Adds Indeed + 10 more job boards via Adzuna API (free) |
+| `CRUNCHBASE_API_KEY` | *Optional*. Proactive UK funding-round detection via Crunchbase API (free tier) |
 
 Resend (previously used) is no longer wired in — Gmail SMTP handles delivery
 to any inbox with no domain verification.
