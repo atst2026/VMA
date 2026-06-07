@@ -527,6 +527,16 @@ def main() -> int:
     # scoured). Distinct population from the IPO_LISTING predictor.
     try:
         from tool import funding_round as _fund
+        # Crunchbase API enrichment: proactive funding detection alongside
+        # the reactive news-based detector.
+        try:
+            from tool.sources.crunchbase import fetch_funding_rounds as _cb_fetch
+            cb_signals = _cb_fetch()
+            if cb_signals:
+                log.info("Crunchbase: %d funding signals merged", len(cb_signals))
+                signals = list(signals) + cb_signals
+        except Exception as e:
+            log.info("Crunchbase enrichment skipped: %s", e)
         detected = _fund.detect_funding(signals)
         # Merge into the rolling store: persist each round for its whole
         # BD-Leads window (30d, or 90d once followed up) and age the rest
