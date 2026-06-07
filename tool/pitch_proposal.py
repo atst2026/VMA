@@ -111,20 +111,36 @@ def _fetch_logo_png(domain: str, token: str) -> bytes | None:
 def _logo_is_placeholder(img) -> bool:
     """Best-effort reject of a blank tile or logo.dev's generated monogram
     fallback: one background colour covering almost the whole image with only
-    a handful of genuinely-present colours. Counts EXACT colours at native
-    resolution (resampling would smear in anti-alias colours and hide the
+    a handful of genuinely-present colours.
+
+    The image is composited onto WHITE first (the cover background), so the
+    colours counted are the ones that will actually appear. This is essential
+    for transparent logos: a monochrome wordmark on transparency (e.g. a black
+    "Morgan Stanley") would otherwise collapse to a single RGB colour with the
+    alpha ignored and be wrongly classed as a blank tile. Counts EXACT colours
+    (no resampling, which would smear in anti-alias colours and hide the
     signal). Conservative — the verified-domain registry is the primary guard,
-    so this must not reject legitimately simple logos."""
-    rgb = img.convert("RGB")
+    so this must not reject legitimately simple logos.
+
+    The monogram/blank flag also requires the image to be roughly SQUARE: a
+    generated monogram or blank tile is square, whereas a wide wordmark never
+    is, so a wordmark can never be misclassed as a placeholder."""
+    from PIL import Image
+    rgba = img.convert("RGBA")
+    bg = Image.new("RGBA", rgba.size, (255, 255, 255, 255))
+    bg.alpha_composite(rgba)
+    rgb = bg.convert("RGB")
     colors = rgb.getcolors(maxcolors=8192)
     if colors is None:
         return False  # lots of distinct colours -> a real, rich image
     total = sum(c for c, _ in colors)
     if total == 0:
         return True
+    w, h = rgb.size
+    aspect = max(w, h) / max(1, min(w, h))
     dominant = max(c for c, _ in colors)
     significant = sum(1 for c, _ in colors if c / total >= 0.01)
-    return dominant / total >= 0.96 and significant <= 3
+    return aspect < 1.6 and dominant / total >= 0.96 and significant <= 3
 
 
 def _logo_content_bbox(img):
