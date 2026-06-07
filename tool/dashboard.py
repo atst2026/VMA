@@ -1633,6 +1633,7 @@ _MR_TRIGGER = {
     "ic_platform_rfp":       ("IC platform RFP",  "lead"),
     "job_ad_cluster":        ("Hiring cluster",   "lead"),
     "framework_award":       ("Framework win",    "fund"),
+    "hiring_gap":            ("Hiring gap",       "lead"),
 }
 
 

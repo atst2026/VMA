@@ -1166,6 +1166,8 @@ _MARKETING_TRIGGER_KEYS = {
     "leadership_tenure",       # candidate signal (specialism-agnostic)
     "secured_financing",       # growth capital → marketing build
     "ownership_change",        # new owner refreshes marketing
+    "framework_award",         # agency scaling after gov win
+    "hiring_gap",              # scaling with no marketing function
 }
 
 

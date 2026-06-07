@@ -76,6 +76,7 @@ _COMMS_TAXONOMY = {
     "rebrand":                 (2, "demand", "fast"),
     "agency_account_move":     (2, "demand", "fast"),
     "framework_award":         (3, "demand", "fast"),
+    "hiring_gap":              (3, "demand", "fast"),
     "esg_bcorp":               (2, "demand", "fast"),
     # Access triggers
     "ic_platform_rfp":         (4, "access", "fast"),
@@ -115,6 +116,7 @@ _MKT_TAXONOMY = {
     "rebrand":                 (4, "demand", "fast"),        # marketing brand trigger
     "agency_account_move":     (4, "demand", "fast"),        # client + agency-side reshuffle
     "framework_award":         (3, "demand", "fast"),        # agency scaling after gov win
+    "hiring_gap":              (3, "demand", "fast"),        # scaling with no comms
     "ownership_change":         (3, "demand", "fast"),
     "secured_financing":        (3, "demand", "fast"),
     "martech_adoption":        (3, "access", "fast"),        # marketing-ops decision
@@ -432,6 +434,7 @@ _WHO = {
     "rebrand": "CCO / Head of Brand & Reputation",
     "agency_account_move": "Head of Brand / Corporate Affairs",
     "framework_award": "Agency MD / Head of Delivery",
+    "hiring_gap": "CEO / CHRO — no comms function exists yet",
     "esg_bcorp": "Head of Sustainability / Corporate Affairs",
     "martech_adoption": "Head of Digital Comms / Marketing Ops",
     "secured_financing": "CFO / CEO",
@@ -473,6 +476,7 @@ _MKT_WHO = {
     "rebrand": "CMO / Head of Brand",
     "agency_account_move": "CMO / Marketing Director",
     "framework_award": "Agency MD / Head of Delivery",
+    "hiring_gap": "CEO / CHRO — no marketing function exists yet",
     "esg_bcorp": "CMO / Head of Brand (sustainability marketing)",
     "martech_adoption": "CMO / Head of Marketing Ops",
     "secured_financing": "CFO / CMO",

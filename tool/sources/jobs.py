@@ -168,10 +168,13 @@ def fetch_greenhouse() -> list[dict]:
             data = r.json()
         except Exception:
             continue
-        for j in data.get("jobs", []):
+        all_jobs = data.get("jobs", [])
+        comms_count = 0
+        for j in all_jobs:
             title = j.get("title", "")
             if not _has_role_match(title):
                 continue
+            comms_count += 1
             loc = (j.get("location") or {}).get("name", "")
             out.append({
                 "id": signal_id("greenhouse", str(j.get("id"))),
@@ -185,6 +188,7 @@ def fetch_greenhouse() -> list[dict]:
                 "summary": loc,
                 "weight": 1.0,
             })
+        _record_ats_headcount(slug, len(all_jobs), comms_count)
     return out
 
 
@@ -199,10 +203,12 @@ def fetch_lever() -> list[dict]:
             data = r.json()
         except Exception:
             continue
+        comms_count = 0
         for j in data:
             title = j.get("text", "")
             if not _has_role_match(title):
                 continue
+            comms_count += 1
             loc = (j.get("categories") or {}).get("location") or ""
             out.append({
                 "id": signal_id("lever", j.get("id", "")),
@@ -216,6 +222,7 @@ def fetch_lever() -> list[dict]:
                 "summary": loc,
                 "weight": 1.0,
             })
+        _record_ats_headcount(slug, len(data) if isinstance(data, list) else 0, comms_count)
     return out
 
 
@@ -230,10 +237,13 @@ def fetch_ashby() -> list[dict]:
             data = r.json()
         except Exception:
             continue
-        for j in data.get("jobs", []):
+        all_jobs = data.get("jobs", [])
+        comms_count = 0
+        for j in all_jobs:
             title = j.get("title", "")
             if not _has_role_match(title):
                 continue
+            comms_count += 1
             loc = j.get("locationName", "") or ""
             out.append({
                 "id": signal_id("ashby", j.get("id", "")),
@@ -247,6 +257,7 @@ def fetch_ashby() -> list[dict]:
                 "summary": loc,
                 "weight": 1.0,
             })
+        _record_ats_headcount(slug, len(all_jobs), comms_count)
     return out
 
 
@@ -265,12 +276,14 @@ def fetch_workable() -> list[dict]:
         except Exception:
             continue
         jobs = data.get("results") or data.get("jobs") or []
+        comms_count = 0
         for j in jobs:
             if not isinstance(j, dict):
                 continue
             title = j.get("title", "")
             if not _has_role_match(title):
                 continue
+            comms_count += 1
             loc_obj = j.get("location") or {}
             if isinstance(loc_obj, dict):
                 loc = (loc_obj.get("location_str") or loc_obj.get("city")
@@ -292,6 +305,7 @@ def fetch_workable() -> list[dict]:
                 "summary": loc,
                 "weight": 1.0,
             })
+        _record_ats_headcount(slug, len([j for j in jobs if isinstance(j, dict)]), comms_count)
     return out
 
 
@@ -385,7 +399,22 @@ def fetch_linkedin_jobs_public() -> list[dict]:
     return out
 
 
+_ats_headcounts: dict[str, tuple[int, int]] = {}
+
+
+def _record_ats_headcount(slug: str, total: int, comms: int) -> None:
+    """Track total vs comms job count per ATS board for hiring-gap detection."""
+    prev = _ats_headcounts.get(slug, (0, 0))
+    _ats_headcounts[slug] = (prev[0] + total, prev[1] + comms)
+
+
+def get_ats_headcounts() -> dict[str, tuple[int, int]]:
+    """Return {slug: (total_jobs, comms_jobs)} from the most recent fetch."""
+    return dict(_ats_headcounts)
+
+
 def fetch_all() -> list[dict]:
+    _ats_headcounts.clear()
     out: list[dict] = []
     for fn in (fetch_adzuna, fetch_greenhouse, fetch_lever, fetch_ashby,
                fetch_workable, fetch_linkedin_jobs_public):
