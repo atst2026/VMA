@@ -1362,6 +1362,7 @@ MR_CSS = r"""
 .mr-sc.high{color:#2e7d50;background:#e7f3ec}.mr-sc.med{color:#8a5a00;background:#fff4e0}.mr-sc.low{color:#6b7686;background:#eef1f5}
 .mr-ab{display:inline-flex;align-items:center;justify-content:center;padding:3px 9px;font:700 9px/1.6 "Inter",sans-serif;letter-spacing:.03em;text-transform:uppercase;border-radius:7px;white-space:nowrap;justify-self:start}
 .mr-ab.ab-call_today{color:#fff;background:#D9633C}.mr-ab.ab-nurture{color:#1d4ed8;background:#e9effb}.mr-ab.ab-investigate{color:#8a5a00;background:#fff4e0}.mr-ab.ab-monitor{color:#6b7686;background:#eef1f5}
+.mr-q4{display:inline-flex;align-items:center;padding:2px 8px;font:600 9px/1.6 "Inter",sans-serif;letter-spacing:.03em;border-radius:7px;white-space:nowrap;color:#9a3412;background:#fff7ed;border:1px solid #fdba74}
 .mr-lmeta{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:2px 0 8px}
 .mr-anti{font:700 9px/1.5 "Inter",sans-serif;color:#c0392b;background:#fdecea;padding:2px 7px;border-radius:6px}
 .mr-laccess{font-size:11.5px;color:var(--blue-deep);background:rgba(62,92,132,.05);border-left:2px solid var(--vma);border-radius:5px;padding:6px 9px;margin:4px 0 8px}
@@ -1459,6 +1460,7 @@ MR_JS = r"""
     var rm=(page==='bd')?'<button class="mr-io icon trm" data-act="remove" data-id="'+l._id+'" title="Remove entirely (never relist)">'+IC.trash+'</button>':'';
     return '<button class="mr-io icon" data-act="tri" data-id="'+l._id+'" data-st="active" title="Restore">'+IC.undo+'</button>'+rm;}
   function ab(l){return l.action?'<span class="mr-ab ab-'+l.action+'">'+esc(l.actionLabel)+'</span>':sc(l);}
+  function q4b(l){return l.q4?'<span class="mr-q4">'+esc(l.q4)+'</span>':'';}
   function dk(lab,val){return '<div class="mr-dk"><span class="mr-dlab">'+lab+'</span><span>'+val+'</span></div>';}
   function brief(l){
     var b=l.brief||(l.seat+' likely within '+l.win+'.');
@@ -1483,7 +1485,7 @@ MR_JS = r"""
     return '<div class="mr-row '+(open[l._id]?'open ':'')+(top?'top':'')+'" data-id="'+l._id+'">'
      +'<div class="mr-rsum mr-gbd" data-act="toggle" data-id="'+l._id+'">'
      +'<span class="mr-rk">'+(idx+1)+'</span><span class="mr-co">'+esc(l.co)+newp(l)+'</span>'+tp(l)
-     +'<span class="mr-seat">'+esc(l.seat)+'</span><span class="mr-why">'+esc(l.why)+'</span>'+wb(l)+ab(l)
+     +'<span class="mr-seat">'+esc(l.seat)+'</span><span class="mr-why">'+esc(l.why)+'</span>'+wb(l)+ab(l)+q4b(l)
      +'<span class="mr-racts">'+(filter==='all'?stbadge(l):'')+triBtns(l)+'</span></div>'
      +'<div class="mr-rdet"><div class="mr-aibrief"><div class="mr-gen">'+brief(l)+'</div></div></div></div>';}
   function jobRow(l,idx){
@@ -1772,6 +1774,13 @@ def _mr_lead_fields(row):
     }
 
 
+def _mr_q4_field(row):
+    bf = row.get("_budget_flush")
+    if bf:
+        return {"q4": f"Q4 · FYE {bf['fye']} ({bf['days_left']}d)"}
+    return {}
+
+
 # Why there's a hiring opportunity now — a concise demand thesis per trigger
 # (NOT a repeat of the trigger label). Desk-aware; British, no em dashes.
 def _why_now(trigger_key: str | None, mkt: bool, seat: str | None, window: str | None) -> str:
@@ -1855,6 +1864,7 @@ def _build_mr_rows(premarket_rows, leads, role_label):
                 "pitchRole": role_label,
                 "pitchTrigger": brief,
                 **_mr_lead_fields(row),
+                **_mr_q4_field(row),
             })
         elif _kind == "funding":
             amount = (row.get("amount") or "").strip()
@@ -1894,6 +1904,7 @@ def _build_mr_rows(premarket_rows, leads, role_label):
                 "pitchRole": role_label,
                 "pitchTrigger": f"a recent {why} funding round at {row.get('company') or ''}".strip(),
                 **_mr_lead_fields(row),
+                **_mr_q4_field(row),
             })
         else:
             evs = row.get("events") or []
@@ -1923,6 +1934,7 @@ def _build_mr_rows(premarket_rows, leads, role_label):
                 "pitchRole": row.get("predicted_role") or "",
                 "pitchTrigger": row.get("pitch_trigger") or "",
                 **_mr_lead_fields(row),
+                **_mr_q4_field(row),
             })
     jobs = []
     for s in leads:
@@ -2111,6 +2123,16 @@ def _render_dashboard():
     if _tomb:
         premarket_rows = [r for r in premarket_rows
                           if not bd_tombstone.is_tombstoned(r.get("company"), _tomb)]
+    # Budget flush overlay: tag rows whose company is in their fiscal Q4
+    try:
+        from tool.predictive.budget_flush import get_budget_flush_flags
+        _flush = get_budget_flush_flags(premarket_rows)
+        for _r in premarket_rows:
+            _co_key = (_r.get("company") or "").lower()
+            if _co_key in _flush:
+                _r["_budget_flush"] = _flush[_co_key]
+    except Exception as _e:
+        log.info("budget flush overlay: %s", _e)
     from tool import framework_status as _fws
     _fwst = _fws.get_statuses()
     # `status` already holds the refresh-window state (refresh_window/live);
