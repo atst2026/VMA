@@ -1363,6 +1363,7 @@ MR_CSS = r"""
 .mr-ab{display:inline-flex;align-items:center;justify-content:center;padding:3px 9px;font:700 9px/1.6 "Inter",sans-serif;letter-spacing:.03em;text-transform:uppercase;border-radius:7px;white-space:nowrap;justify-self:start}
 .mr-ab.ab-call_today{color:#fff;background:#D9633C}.mr-ab.ab-nurture{color:#1d4ed8;background:#e9effb}.mr-ab.ab-investigate{color:#8a5a00;background:#fff4e0}.mr-ab.ab-monitor{color:#6b7686;background:#eef1f5}
 .mr-q4{display:inline-flex;align-items:center;padding:2px 8px;font:600 9px/1.6 "Inter",sans-serif;letter-spacing:.03em;border-radius:7px;white-space:nowrap;color:#9a3412;background:#fff7ed;border:1px solid #fdba74}
+.mr-xdesk{display:inline-flex;align-items:center;padding:2px 8px;font:600 9px/1.6 "Inter",sans-serif;letter-spacing:.03em;border-radius:7px;white-space:nowrap;color:#6d28d9;background:#f5f3ff;border:1px solid #c4b5fd}
 .mr-lmeta{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:2px 0 8px}
 .mr-anti{font:700 9px/1.5 "Inter",sans-serif;color:#c0392b;background:#fdecea;padding:2px 7px;border-radius:6px}
 .mr-laccess{font-size:11.5px;color:var(--blue-deep);background:rgba(62,92,132,.05);border-left:2px solid var(--vma);border-radius:5px;padding:6px 9px;margin:4px 0 8px}
@@ -1461,6 +1462,7 @@ MR_JS = r"""
     return '<button class="mr-io icon" data-act="tri" data-id="'+l._id+'" data-st="active" title="Restore">'+IC.undo+'</button>'+rm;}
   function ab(l){return l.action?'<span class="mr-ab ab-'+l.action+'">'+esc(l.actionLabel)+'</span>':sc(l);}
   function q4b(l){return l.q4?'<span class="mr-q4">'+esc(l.q4)+'</span>':'';}
+  function xdb(l){return l.xdesk?'<span class="mr-xdesk">'+esc(l.xdesk)+'</span>':'';}
   function dk(lab,val){return '<div class="mr-dk"><span class="mr-dlab">'+lab+'</span><span>'+val+'</span></div>';}
   function brief(l){
     var b=l.brief||(l.seat+' likely within '+l.win+'.');
@@ -1485,7 +1487,7 @@ MR_JS = r"""
     return '<div class="mr-row '+(open[l._id]?'open ':'')+(top?'top':'')+'" data-id="'+l._id+'">'
      +'<div class="mr-rsum mr-gbd" data-act="toggle" data-id="'+l._id+'">'
      +'<span class="mr-rk">'+(idx+1)+'</span><span class="mr-co">'+esc(l.co)+newp(l)+'</span>'+tp(l)
-     +'<span class="mr-seat">'+esc(l.seat)+'</span><span class="mr-why">'+esc(l.why)+'</span>'+wb(l)+ab(l)+q4b(l)
+     +'<span class="mr-seat">'+esc(l.seat)+'</span><span class="mr-why">'+esc(l.why)+'</span>'+wb(l)+ab(l)+q4b(l)+xdb(l)
      +'<span class="mr-racts">'+(filter==='all'?stbadge(l):'')+triBtns(l)+'</span></div>'
      +'<div class="mr-rdet"><div class="mr-aibrief"><div class="mr-gen">'+brief(l)+'</div></div></div></div>';}
   function jobRow(l,idx){
@@ -1781,6 +1783,13 @@ def _mr_q4_field(row):
     return {}
 
 
+def _mr_cross_desk_field(row):
+    cd = row.get("_cross_desk")
+    if cd:
+        return {"xdesk": cd}
+    return {}
+
+
 # Why there's a hiring opportunity now — a concise demand thesis per trigger
 # (NOT a repeat of the trigger label). Desk-aware; British, no em dashes.
 def _why_now(trigger_key: str | None, mkt: bool, seat: str | None, window: str | None) -> str:
@@ -1865,6 +1874,7 @@ def _build_mr_rows(premarket_rows, leads, role_label):
                 "pitchTrigger": brief,
                 **_mr_lead_fields(row),
                 **_mr_q4_field(row),
+                **_mr_cross_desk_field(row),
             })
         elif _kind == "funding":
             amount = (row.get("amount") or "").strip()
@@ -1905,6 +1915,7 @@ def _build_mr_rows(premarket_rows, leads, role_label):
                 "pitchTrigger": f"a recent {why} funding round at {row.get('company') or ''}".strip(),
                 **_mr_lead_fields(row),
                 **_mr_q4_field(row),
+                **_mr_cross_desk_field(row),
             })
         else:
             evs = row.get("events") or []
@@ -1935,6 +1946,7 @@ def _build_mr_rows(premarket_rows, leads, role_label):
                 "pitchTrigger": row.get("pitch_trigger") or "",
                 **_mr_lead_fields(row),
                 **_mr_q4_field(row),
+                **_mr_cross_desk_field(row),
             })
     jobs = []
     for s in leads:
@@ -2133,6 +2145,24 @@ def _render_dashboard():
                 _r["_budget_flush"] = _flush[_co_key]
     except Exception as _e:
         log.info("budget flush overlay: %s", _e)
+    # Cross-desk overlap: tag rows that also appear on the other desk so
+    # recruiters don't double-approach the same company.
+    try:
+        _this_desk = active_profile().key
+        _other_desk = "comms" if _this_desk == "marketing" else "marketing"
+        _other_state = state_root(_other_desk)
+        _other_pipe = _other_state / "predictor_pipeline.json"
+        if _other_pipe.exists():
+            _other_data = json.loads(Path(_other_pipe).read_text())
+            _other_cos = {(v.get("company") or "").lower()
+                          for v in (_other_data.get("predictors") or {}).values()
+                          if v.get("status", "active") == "active"}
+            _other_label = "Also on Marketing" if _other_desk == "marketing" else "Also on Comms"
+            for _r in premarket_rows:
+                if (_r.get("company") or "").lower() in _other_cos:
+                    _r["_cross_desk"] = _other_label
+    except Exception as _e:
+        log.info("cross-desk overlay: %s", _e)
     from tool import framework_status as _fws
     _fwst = _fws.get_statuses()
     # `status` already holds the refresh-window state (refresh_window/live);
