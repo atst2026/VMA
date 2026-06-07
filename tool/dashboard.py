@@ -1636,6 +1636,10 @@ _MR_TRIGGER = {
     "hiring_gap":            ("Hiring gap",       "lead"),
     "seniority_gap":         ("Seniority gap",    "lead"),
     "framework_displacement": ("Agency disruption", "warn"),
+    "stale_mandate":          ("Stale mandate",     "warn"),
+    "water_sar":              ("Water SAR",          "warn"),
+    "contract_end":           ("Contract end",       "warn"),
+    "cascade":                ("Senior move",        "lead"),
 }
 
 
@@ -1828,7 +1832,31 @@ def _build_mr_rows(premarket_rows, leads, role_label):
         _mkt = False
     bd = []
     for row in premarket_rows:
-        if row.get("_kind") == "funding":
+        _kind = row.get("_kind", "predictor")
+        if _kind in ("stale_mandate", "water_sar", "contract_end", "cascade"):
+            typ, key = _MR_TRIGGER.get(_kind, ("Signal", "lead"))
+            co = row.get("company") or "—"
+            brief = (row.get("evidence") or row.get("title") or "")[:220] or typ
+            url = row.get("url") or row.get("article_url") or ""
+            bd.append({
+                "co": co,
+                "isNew": 0,
+                "age": "",
+                "type": typ, "key": key,
+                "seat": role_label, "why": typ,
+                "whyNow": (row.get("lead") or {}).get("why_now") or brief,
+                "brief": brief,
+                "url": url, "src": _mr_domain(url),
+                "win": "",
+                "st": _mr_st(row.get("strength")),
+                "opp": row.get("_opp") or 0.0,
+                "idtype": _kind, "rid": row.get("fid") or "",
+                "status": row.get("status", "active"),
+                "pitchRole": role_label,
+                "pitchTrigger": brief,
+                **_mr_lead_fields(row),
+            })
+        elif _kind == "funding":
             amount = (row.get("amount") or "").strip()
             rnd = (row.get("round") or "").strip()
             why = (amount + (" " + rnd if rnd else "")).strip() or "Funding round"
@@ -1937,6 +1965,67 @@ def _render_dashboard():
     funding_events = load_funding(limit=30)
     from tool.framework_watch import load_frameworks_live
     framework_events = load_frameworks_live()
+
+    # ---- Specialist signals folded into BD Leads as additional row types ----
+    from tool.competitor_mandates import stale_mandates as _stale_mandates
+    from tool.water_sar import load_water_sar as _load_water_sar
+    from tool.contract_end import load_contract_end as _load_contract_end
+    _stale_rows = []
+    try:
+        for _sm in _stale_mandates(limit=20):
+            _sm_id = f"stale_{_sm.get('id', '')}"
+            _stale_rows.append({
+                **_sm, "_kind": "stale_mandate", "fid": _sm_id,
+                "status": "active", "_opp": 0.5,
+            })
+    except Exception as _e:
+        log.info("stale mandates load: %s", _e)
+    _water_rows = []
+    try:
+        for _ws in _load_water_sar(limit=10):
+            _ws_id = f"water_{(_ws.get('company') or '').lower().replace(' ', '_')}"
+            _water_rows.append({
+                **_ws, "_kind": "water_sar", "fid": _ws_id,
+                "status": "active", "_opp": 2.0,
+            })
+    except Exception as _e:
+        log.info("water SAR load: %s", _e)
+    _contract_rows = []
+    try:
+        for _ce in _load_contract_end(limit=20):
+            _ce_id = f"contract_{(_ce.get('company') or '').lower().replace(' ', '_')}"
+            _contract_rows.append({
+                **_ce, "_kind": "contract_end", "fid": _ce_id,
+                "status": "active", "_opp": 0.8,
+            })
+    except Exception as _e:
+        log.info("contract-end load: %s", _e)
+    _cascade_rows = []
+    try:
+        for _cs in raw_cascade:
+            if cascade.event_bucket(_cs) != "active":
+                continue
+            _cs_id = _cs.get("event_id", "")
+            _old = _cs.get("old_company") or ""
+            _new = _cs.get("new_company") or ""
+            _person = _cs.get("person_name") or ""
+            _role = _cs.get("role") or ""
+            _cascade_rows.append({
+                "company": _old or _new,
+                "evidence": (f"{_person} moved from {_old} to {_new} as {_role}"
+                             if _old and _new
+                             else f"{_person} joined {_new} as {_role}" if _new
+                             else f"{_person} left {_old} ({_role})"),
+                "url": _cs.get("article_url", ""),
+                "source": _cs.get("source", ""),
+                "_kind": "cascade", "fid": f"cascade_{_cs_id}",
+                "status": "active", "_opp": 1.5,
+                "_cascade_event": _cs,
+            })
+    except Exception as _e:
+        log.info("cascade rows load: %s", _e)
+
+    _specialist_rows = _stale_rows + _water_rows + _contract_rows + _cascade_rows
     # Decorate with stable id + persisted triage status so the
     # Followed-up / Dismissed buttons can survive a refresh.
     from tool import funding_status as _fs
@@ -1987,8 +2076,10 @@ def _render_dashboard():
         _enrich(_p, "predictor", _p.get("pid"))
     for _f in funding_events:
         _enrich(_f, "funding", _f.get("fid"))
+    for _sp in _specialist_rows:
+        _enrich(_sp, _sp.get("_kind", "specialist"), _sp.get("fid"))
     _mr_cal = lead_outcomes.calibration()
-    premarket_rows = sorted(predictors + funding_events,
+    premarket_rows = sorted(predictors + funding_events + _specialist_rows,
                             key=lambda d: d.get("_legacy_opp") or 0.0, reverse=True)
     # Entity resolution: one row per company (OQC == Oxford Quantum Circuits).
     premarket_rows = _dedupe_rows(premarket_rows)
@@ -2030,7 +2121,7 @@ def _render_dashboard():
     ]
     # Pre-Market pills roll up predictors + funding only. Framework windows
     # live in their own panel with their own triage filter.
-    _extra_triage = [f["status"] for f in funding_events]
+    _extra_triage = [f["status"] for f in funding_events] + [s.get("status", "active") for s in _specialist_rows]
     _fw_counts = {"active": 0, "followed_up": 0, "dismissed": 0}
     for fw in framework_events:
         _fw_counts[fw.get("triage", "active")] = _fw_counts.get(fw.get("triage", "active"), 0) + 1
