@@ -427,6 +427,15 @@ def main() -> int:
     # ages out after 30d). Returns the new-since-yesterday delta we'll
     # render into the email; the full active pipeline is shown on the
     # dashboard.
+    # Warm the fiscal year-end cache so the dashboard can use it without
+    # making live API calls (cache_only=True on the render path).
+    try:
+        from tool.predictive.budget_flush import get_budget_flush_flags
+        _flush_companies = [{"company": stk.company} for stk, _ in ranked_stacks]
+        get_budget_flush_flags(_flush_companies, cache_only=False)
+    except Exception as _e:
+        log.info("Budget flush cache warm: %s", _e)
+
     pipeline_result = predictor_pipeline.upsert(ranked_stacks)
     new_pids = pipeline_result["new_pids"]
     delta_stacks = [
