@@ -106,6 +106,52 @@ _ELIGIBLE_ORG_QIDS = {
     "Q163740",     # nonprofit organization
 }
 
+# The set above is a fast-path SEED. The authoritative test is "is this P31
+# type a subclass* of organization (Q43229)?" via the P279 chain — so any
+# legitimate org subtype (e.g. 'public limited company' Q5225895, which is what
+# made Whitbread's good logo unreachable) qualifies without enumerating it.
+_ORG_ROOT = "Q43229"            # organization
+_MAX_SUBCLASS_DEPTH = 6         # plc -> public company -> company -> business -> org
+_SUBCLASS_ORG_CACHE: dict[str, bool] = {}   # type QID -> is-subclass*-of-org
+
+
+def _type_is_org(qid: str, _depth: int = 0, _seen: set | None = None) -> bool:
+    """True if a P31 type QID is the organization root or a (transitive)
+    subclass of it via P279. Memoised per type QID, so each unusual type is
+    walked at most once for the whole process."""
+    if qid in _ELIGIBLE_ORG_QIDS or qid == _ORG_ROOT:
+        return True
+    if qid in _SUBCLASS_ORG_CACHE:
+        return _SUBCLASS_ORG_CACHE[qid]
+    if _depth >= _MAX_SUBCLASS_DEPTH:
+        return False
+    if _seen is None:
+        _seen = set()
+    if qid in _seen:
+        return False
+    _seen.add(qid)
+    data = _wd_get({"action": "wbgetentities", "ids": qid,
+                    "props": "claims", "languages": "en"})
+    parents = []
+    if data:
+        claims = ((data.get("entities") or {}).get(qid) or {}).get("claims") or {}
+        for c in claims.get("P279", []) or []:
+            try:
+                parents.append(c["mainsnak"]["datavalue"]["value"]["id"])
+            except (KeyError, TypeError):
+                continue
+    result = any(_type_is_org(p, _depth + 1, _seen) for p in parents)
+    _SUBCLASS_ORG_CACHE[qid] = result
+    return result
+
+
+def _p31_is_org(p31_qids: set) -> bool:
+    """Is an entity an organisation, given its set of P31 (instance-of) types?
+    Fast path: any type in the seed set (no network). Else: P279 subclass walk."""
+    if p31_qids & _ELIGIBLE_ORG_QIDS:
+        return True
+    return any(_type_is_org(q) for q in p31_qids)
+
 _NONWORD_RX = re.compile(r"[^a-z0-9 ]+")
 _WS_RX = re.compile(r"\s+")
 _SUFFIX_RX = re.compile(
@@ -141,6 +187,54 @@ def _normalize(name: str) -> str:
     s = _NONWORD_RX.sub(" ", s)
     s = _SUFFIX_RX.sub(" ", s)
     return _WS_RX.sub(" ", s).strip()
+
+
+# --- Lead-name cleaning -------------------------------------------------
+# BD-lead company names arrive with market-data noise that breaks Wikidata
+# search and domain resolution outright — e.g. "Elior Group Stock",
+# "Kingsoft Corporation (03888)". We strip ONLY unambiguous noise: a trailing
+# stock/share word, and a trailing parenthetical that is clearly a ticker or
+# exchange code (has a digit, or an exchange prefix like "LON:"). We do NOT
+# touch legal suffixes or meaningful tokens (Group, Holdings, Corporation,
+# "(UK)") so currently-good names are returned unchanged.
+_TICKER_PAREN_RX = re.compile(r"\s*\(([^)]*)\)\s*$")
+_TRAILING_MARKET_RX = re.compile(
+    r"\s+(stock price|share price|stock|shares)\s*$", re.IGNORECASE)
+_EXCHANGE_PREFIX_RX = re.compile(
+    r"^(?:LON|LSE|NYSE|NASDAQ|NYSEARCA|AMEX|HKG|HKEX|SEHK|ASX|TSE|TYO|EPA|ETR|"
+    r"FRA|AMS|BIT|BME|SWX|STO|OTC|OTCMKTS)\s*[:.]", re.IGNORECASE)
+
+
+def _looks_like_ticker(inner: str) -> bool:
+    s = (inner or "").strip()
+    if not s:
+        return False
+    if any(ch.isdigit() for ch in s):     # e.g. 03888, 700
+        return True
+    if _EXCHANGE_PREFIX_RX.match(s):       # e.g. "LON: WTB", "NASDAQ:MSFT"
+        return True
+    return False                           # leave "(UK)", "(Holdings)", etc.
+
+
+def clean_name(name: str) -> str:
+    """Strip clear market-data noise from a lead company name. Conservative:
+    returns currently-good names unchanged. Used for BOTH resolution and the
+    cover heading text."""
+    if not name:
+        return name
+    s = name.strip()
+    # Strip a trailing ticker/exchange parenthetical (possibly more than one).
+    m = _TICKER_PAREN_RX.search(s)
+    while m and _looks_like_ticker(m.group(1)):
+        s = s[:m.start()].strip()
+        m = _TICKER_PAREN_RX.search(s)
+    # Strip trailing market words (e.g. "... Stock", "... Share Price").
+    while True:
+        s2 = _TRAILING_MARKET_RX.sub("", s).strip()
+        if s2 == s:
+            break
+        s = s2
+    return s or name.strip()
 
 
 def _name_match_score(a: str, b: str) -> float:
@@ -305,7 +399,7 @@ def _entity_company_and_domain(qid: str, lead_name: str = "") -> tuple[bool, str
             p31_qids.add(c["mainsnak"]["datavalue"]["value"]["id"])
         except (KeyError, TypeError):
             continue
-    is_org = bool(p31_qids & _ELIGIBLE_ORG_QIDS)
+    is_org = _p31_is_org(p31_qids)
 
     # names: label + en aliases (needed to score domain candidates below).
     names = []
@@ -412,6 +506,7 @@ def resolve_domain(name: str) -> str | None:
     """
     if not name or not name.strip():
         return None
+    name = clean_name(name)   # strip market-data noise before any lookup
 
     # Registry override — highest confidence, no network call.
     reg = _registry_domain(name)
@@ -501,6 +596,7 @@ def wikidata_logo_png(company: str) -> bytes | None:
     bytes through its quality + visible-on-white gates before use."""
     if not company or not company.strip():
         return None
+    company = clean_name(company)   # strip market-data noise before lookup
     qid = _logo_qid(company)
     if not qid:
         return None

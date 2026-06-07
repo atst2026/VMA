@@ -299,5 +299,93 @@ class TestWikidataLogo(unittest.TestCase):
         self.assertEqual(calls["n"], 1)
 
 
+class TestCleanName(unittest.TestCase):
+    def test_strips_market_noise(self):
+        self.assertEqual(cd.clean_name("Elior Group Stock"), "Elior Group")
+        self.assertEqual(cd.clean_name("Diageo Shares"), "Diageo")
+        self.assertEqual(cd.clean_name("Apple Inc. Stock"), "Apple Inc.")
+
+    def test_strips_ticker_parentheticals(self):
+        self.assertEqual(cd.clean_name("Kingsoft Corporation (03888)"), "Kingsoft Corporation")
+        self.assertEqual(cd.clean_name("Vodafone (LON: VOD)"), "Vodafone")
+        self.assertEqual(cd.clean_name("BP (LSE:BP.)"), "BP")
+        self.assertEqual(cd.clean_name("Tencent (00700)"), "Tencent")
+
+    def test_preserves_good_names(self):
+        for n in ["HSBC Holdings", "Elior Group", "Whitbread", "Marks & Spencer",
+                  "Compass Group", "Currys (UK)", "Woodstock", "Reckitt Benckiser"]:
+            self.assertEqual(cd.clean_name(n), n)
+
+    def test_idempotent_and_safe(self):
+        self.assertEqual(cd.clean_name(cd.clean_name("Kingsoft Corporation (03888)")),
+                         "Kingsoft Corporation")
+        self.assertEqual(cd.clean_name(""), "")
+        self.assertEqual(cd.clean_name("Stock"), "Stock")  # never empties to junk
+
+
+class TestSubclassOrg(unittest.TestCase):
+    """The P279 subclass-of-organization walk (Fix 1)."""
+
+    def setUp(self):
+        cd._SUBCLASS_ORG_CACHE.clear()
+        self._saved = cd._wd_get
+
+    def tearDown(self):
+        cd._wd_get = self._saved
+        cd._SUBCLASS_ORG_CACHE.clear()
+
+    def _graph(self, edges):
+        """edges: {qid: [parent_qids]} -> fake _wd_get returning P279 claims."""
+        def _fake(params):
+            qid = params.get("ids")
+            parents = edges.get(qid, [])
+            return {"entities": {qid: {"claims": {"P279": [
+                {"mainsnak": {"datavalue": {"value": {"id": p}}}} for p in parents]}}}}
+        return _fake
+
+    def test_accepts_subclass_chain_to_org(self):
+        # public limited company -> public company -> company -> organization
+        cd._wd_get = self._graph({
+            "Q5225895": ["QPUBCO"], "QPUBCO": ["QCOMPANY"], "QCOMPANY": [cd._ORG_ROOT],
+        })
+        self.assertTrue(cd._type_is_org("Q5225895"))
+
+    def test_rejects_non_org(self):
+        cd._wd_get = self._graph({"QPLANET": ["QASTRO"], "QASTRO": []})
+        self.assertFalse(cd._type_is_org("QPLANET"))
+
+    def test_seed_type_is_fastpath_no_network(self):
+        def _boom(params):
+            raise AssertionError("seed type must not hit the network")
+        cd._wd_get = _boom
+        self.assertTrue(cd._type_is_org("Q4830453"))  # 'business' is in the seed set
+
+    def test_p31_fastpath_no_network(self):
+        def _boom(params):
+            raise AssertionError("fast path must not walk")
+        cd._wd_get = _boom
+        self.assertTrue(cd._p31_is_org({"Q891723", "QWHATEVER"}))  # public company in seed
+
+    def test_walk_result_cached(self):
+        calls = {"n": 0}
+        base = self._graph({"QX": ["QY"], "QY": [cd._ORG_ROOT]})
+
+        def _counting(params):
+            calls["n"] += 1
+            return base(params)
+        cd._wd_get = _counting
+        cd._type_is_org("QX")
+        n1 = calls["n"]
+        cd._type_is_org("QX")          # cached -> no further calls
+        self.assertEqual(calls["n"], n1)
+        self.assertGreater(n1, 0)
+
+    def test_depth_bounded(self):
+        # A long chain that never reaches org within the depth limit -> False.
+        edges = {f"Q{i}": [f"Q{i+1}"] for i in range(0, 20)}
+        cd._wd_get = self._graph(edges)
+        self.assertFalse(cd._type_is_org("Q0"))
+
+
 if __name__ == "__main__":
     unittest.main()
