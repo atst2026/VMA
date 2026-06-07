@@ -489,6 +489,7 @@ _MKT_WHO = {
     "martech_adoption": "CMO / Head of Marketing Ops",
     "secured_financing": "CFO / CMO",
     "ownership_change": "Incoming owner / CMO",
+    "activist_stake": "CMO / Head of Brand — activist defence repositioning",
     "leadership_tenure": "The individual directly / CMO (succession watch)",
 }
 _MKT_WHO_DEFAULT = "CMO / Marketing Director"
