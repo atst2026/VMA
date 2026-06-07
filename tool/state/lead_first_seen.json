@@ -132,7 +132,7 @@
   "9baa5a86f5dc383a": {
     "anchor": "2026-05-31",
     "first_seen": "2026-06-06",
-    "expired": false
+    "expired": true
   },
   "2fa3ad1c747abe81": {
     "anchor": "2026-06-01",
@@ -212,12 +212,12 @@
   "58b8ea84f3f39572": {
     "anchor": "2026-05-31",
     "first_seen": "2026-06-06",
-    "expired": false
+    "expired": true
   },
   "9664c7e62271bb58": {
     "anchor": "2026-05-31",
     "first_seen": "2026-06-06",
-    "expired": false
+    "expired": true
   },
   "0323fcb91a3b85a0": {
     "anchor": "2026-05-13",
@@ -582,7 +582,7 @@
   "d9baafdf47de9903": {
     "anchor": "2026-05-31",
     "first_seen": "2026-06-06",
-    "expired": false
+    "expired": true
   },
   "47913db182a1f951": {
     "anchor": "2026-06-02",
@@ -592,7 +592,7 @@
   "cef583c39a35b008": {
     "anchor": "2026-05-31",
     "first_seen": "2026-06-06",
-    "expired": false
+    "expired": true
   },
   "90f8ddaf2e9fbe16": {
     "anchor": "2026-05-20",
