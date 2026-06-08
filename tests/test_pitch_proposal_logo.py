@@ -8,7 +8,7 @@ import io
 import os
 import unittest
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from tool import pitch_proposal as pp
 
@@ -78,6 +78,16 @@ class TestValidation(unittest.TestCase):
         wm = _black_wordmark_on_transparent()
         self.assertFalse(pp._logo_is_placeholder(wm))
         self.assertIsNotNone(pp._process_logo(_png(wm), pp._COVER_LOGO_MAX_H, pp._COVER_LOGO_MAX_W))
+
+    def test_letter_monogram_rejected_despite_antialiasing(self):
+        # logo.dev's generated letter-monogram: a single anti-aliased glyph
+        # (many grey edge colours, so NOT colour-uniform) on a square white
+        # canvas with tiny ink coverage -> must be rejected by the ink backstop.
+        img = Image.new("RGB", (256, 256), (255, 255, 255))
+        d = ImageDraw.Draw(img)
+        d.ellipse((96, 80, 160, 176), outline=(20, 20, 20), width=10)  # an "O" ring
+        self.assertTrue(pp._logo_is_placeholder(img))
+        self.assertIsNone(pp._process_logo(_png(img), pp._COVER_LOGO_MAX_H, pp._COVER_LOGO_MAX_W))
 
     def test_process_good_returns_data_uri(self):
         uri = pp._process_logo(_png(_rich()), pp._COVER_LOGO_MAX_H, pp._COVER_LOGO_MAX_W)
