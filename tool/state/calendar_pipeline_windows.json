@@ -16,11 +16,12 @@
       "scope_note": "FCA-regulated retail financial-services firms (banks, insurers, asset & wealth managers).",
       "confidence": "high",
       "source": "FCA Consumer Duty (PRIN 2A) \u2014 annual board report, recurring 31 July cadence.",
+      "source_url": "https://www.fca.org.uk/firms/consumer-duty",
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-05T08:58:39.768678+00:00"
+      "last_seen": "2026-06-08T10:09:32.551699+00:00"
     },
     "uk_srs_2026": {
       "key": "uk_srs_2026",
@@ -41,11 +42,12 @@
       "scope_note": "FTSE-weight UK-listed issuers in the high-exposure sectors (financials, energy/utilities, pharma, industrials).",
       "confidence": "medium",
       "source": "DBT/FRC UK SRS endorsement programme + FCA consultation on listed-company sustainability disclosure, 2026.",
+      "source_url": "https://www.frc.org.uk/",
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-05T08:58:39.768678+00:00"
+      "last_seen": "2026-06-08T10:09:32.551699+00:00"
     },
     "mog_post_sr_2026": {
       "key": "mog_post_sr_2026",
@@ -63,11 +65,12 @@
       "scope_note": "UK central-government departments and major ALBs (plus large charities exposed to the same funding cycle).",
       "confidence": "medium",
       "source": "HM Treasury Spending Review 2025 settlements \u2192 departmental delivery-plan / reorganisation cycle, FY2026/27.",
+      "source_url": "https://gcs.civilservice.gov.uk/",
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-05T08:58:39.768678+00:00"
+      "last_seen": "2026-06-08T10:09:32.551699+00:00"
     },
     "agm_reporting_2026": {
       "key": "agm_reporting_2026",
@@ -88,11 +91,12 @@
       "scope_note": "FTSE-weight Dec-year-end UK-listed issuers (financials, energy/utilities, industrials, pharma).",
       "confidence": "high",
       "source": "Companies Act annual-report + Listing Rules AGM cycle (December year-ends), 2026.",
+      "source_url": "https://www.legislation.gov.uk/ukpga/2006/46/contents",
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-05T08:58:39.768678+00:00"
+      "last_seen": "2026-06-08T10:09:32.551699+00:00"
     },
     "gender_pay_gap_2026": {
       "key": "gender_pay_gap_2026",
@@ -112,11 +116,12 @@
       "scope_note": "UK employers with 250+ staff (statutory GPG reporters).",
       "confidence": "high",
       "source": "Equality Act 2010 (Gender Pay Gap Information) Regulations 2017 \u2014 annual 4 Apr / 30 Mar deadlines.",
+      "source_url": "https://www.gov.uk/report-gender-pay-gap-data",
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-05T08:58:39.768678+00:00"
+      "last_seen": "2026-06-08T10:09:32.551699+00:00"
     },
     "nhs_planning_2026": {
       "key": "nhs_planning_2026",
@@ -134,11 +139,12 @@
       "scope_note": "NHS trusts, ICBs and arm's-length bodies.",
       "confidence": "medium",
       "source": "NHS England operational planning guidance + FY2026/27 cycle.",
+      "source_url": "https://www.england.nhs.uk/operational-planning-and-contracting/",
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-05T08:58:39.768678+00:00"
+      "last_seen": "2026-06-08T10:09:32.551699+00:00"
     },
     "he_clearing_2026": {
       "key": "he_clearing_2026",
@@ -156,17 +162,18 @@
       "scope_note": "UK universities and higher-education providers.",
       "confidence": "medium",
       "source": "UCAS Clearing cycle + academic year 2026/27.",
+      "source_url": "https://www.ucas.com/advisers/help-and-training/guides/clearing",
       "first_seen": "2026-06-02T00:36:54.254305+00:00",
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-05T08:58:39.768678+00:00"
+      "last_seen": "2026-06-08T10:09:32.551699+00:00"
     },
     "pw_70a28958c3025030": {
       "key": "pw_70a28958c3025030",
       "name": "FCA: Firms have improved but must do more to prevent sanctions breaches",
       "window": [
-        "2026-06-05",
+        "2026-06-08",
         "2026-08-20"
       ],
       "legal_date": "2026-08-20",
@@ -184,13 +191,13 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-05T08:58:39.768678+00:00"
+      "last_seen": "2026-06-08T10:09:32.551699+00:00"
     },
     "pw_01bfae8c6aa87557": {
       "key": "pw_01bfae8c6aa87557",
       "name": "FCA: Review of financial promotion approvers finds some firms need to raise standards",
       "window": [
-        "2026-06-05",
+        "2026-06-08",
         "2026-08-19"
       ],
       "legal_date": "2026-08-19",
@@ -208,13 +215,13 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-05T08:58:39.768678+00:00"
+      "last_seen": "2026-06-08T10:09:32.551699+00:00"
     },
     "pw_0f0511d5803afdb0": {
       "key": "pw_0f0511d5803afdb0",
       "name": "FCA: Vacancies open for FCA Smaller Business Practitioner Panel",
       "window": [
-        "2026-06-05",
+        "2026-06-08",
         "2026-06-28"
       ],
       "legal_date": "2026-06-28",
@@ -232,7 +239,7 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-05T08:58:39.768678+00:00"
+      "last_seen": "2026-06-08T10:09:32.551699+00:00"
     },
     "pw_e58da72b53caddd7": {
       "key": "pw_e58da72b53caddd7",
@@ -431,7 +438,7 @@
       "key": "pw_cad9486e521cfb17",
       "name": "FCA: Open banking takes next step forward with launch of UK Payments Initiative scheme",
       "window": [
-        "2026-06-05",
+        "2026-06-08",
         "2026-08-25"
       ],
       "legal_date": "2026-08-25",
@@ -449,7 +456,7 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-05T08:58:39.768678+00:00"
+      "last_seen": "2026-06-08T10:09:32.551699+00:00"
     },
     "pw_fc6df6bf51c1cc25": {
       "key": "pw_fc6df6bf51c1cc25",
@@ -479,7 +486,7 @@
       "key": "pw_1713fa75ec56aa2d",
       "name": "CMA: CMA secures fairer deal for publishers and improves Google search services in UK",
       "window": [
-        "2026-06-05",
+        "2026-06-08",
         "2026-08-26"
       ],
       "legal_date": "2026-08-26",
@@ -498,13 +505,13 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-05T08:58:39.768678+00:00"
+      "last_seen": "2026-06-08T10:09:32.551699+00:00"
     },
     "pw_0d8a5a5a6779836c": {
       "key": "pw_0d8a5a5a6779836c",
       "name": "CMA: Google\u2019s general search services: proposed conduct requirements",
       "window": [
-        "2026-06-05",
+        "2026-06-08",
         "2026-08-26"
       ],
       "legal_date": "2026-08-26",
@@ -523,13 +530,13 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-05T08:58:39.768678+00:00"
+      "last_seen": "2026-06-08T10:09:32.551699+00:00"
     },
     "pw_6dd8eaaf0295b80d": {
       "key": "pw_6dd8eaaf0295b80d",
       "name": "CMA: Corporate report: Annual report on concurrency 2026",
       "window": [
-        "2026-06-05",
+        "2026-06-08",
         "2026-08-25"
       ],
       "legal_date": "2026-08-25",
@@ -548,13 +555,13 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-05T08:58:39.768678+00:00"
+      "last_seen": "2026-06-08T10:09:32.551699+00:00"
     },
     "pw_7e25b8962d2ca0f0": {
       "key": "pw_7e25b8962d2ca0f0",
       "name": "FCA: FCA launches investigation into second motor finance claims management company",
       "window": [
-        "2026-06-05",
+        "2026-06-08",
         "2026-08-27"
       ],
       "legal_date": "2026-08-27",
@@ -572,7 +579,7 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-05T08:58:39.768678+00:00"
+      "last_seen": "2026-06-08T10:09:32.551699+00:00"
     },
     "pw_841af1c82eed78f9": {
       "key": "pw_841af1c82eed78f9",
@@ -602,7 +609,7 @@
       "key": "pw_5a5c299f7712a655",
       "name": "FCA: Simpler climate reporting rules could save firms \u00a320m annually",
       "window": [
-        "2026-06-05",
+        "2026-06-08",
         "2026-07-13"
       ],
       "legal_date": "2026-07-13",
@@ -617,11 +624,83 @@
       "url": "https://www.fca.org.uk/news/press-releases/simpler-climate-reporting-rules-could-save-firms-20m-annually",
       "discovered": true,
       "first_seen": "2026-06-05T08:58:39.768678+00:00",
-      "last_seen": "2026-06-05T08:58:39.768678+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null,
+      "last_seen": "2026-06-08T10:09:32.551699+00:00"
+    },
+    "pw_8926d00c5e0098d7": {
+      "key": "pw_8926d00c5e0098d7",
+      "name": "FCA: Consumers warned about misleading car finance 'money tips' claims ads",
+      "window": [
+        "2026-06-08",
+        "2026-08-31"
+      ],
+      "legal_date": "2026-08-31",
+      "sectors": [
+        "financial_services"
+      ],
+      "seat": "Head of Regulatory / Corporate Communications",
+      "angle": "FCA obligation creates a dated comms-capacity build-up in the regulated cohort \u2014 pitch the retained brief before it's advertised.",
+      "scope_note": "FCA-regulated firms in scope of this notice.",
+      "confidence": "medium",
+      "source": "FCA \u2014 Consumers are being warned to be wary of misleading car finance 'money tips' adv",
+      "url": "https://www.fca.org.uk/news/press-releases/consumers-warned-about-misleading-car-finance-money-tips-claims-ads",
+      "discovered": true,
+      "first_seen": "2026-06-08T10:09:32.551699+00:00",
+      "last_seen": "2026-06-08T10:09:32.551699+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "pw_b66381a39f638126": {
+      "key": "pw_b66381a39f638126",
+      "name": "FCA: FCA imposes requirements on Euro Exchange Securities UK Limited and interim managers appointed by the Court",
+      "window": [
+        "2026-06-08",
+        "2026-08-28"
+      ],
+      "legal_date": "2026-08-28",
+      "sectors": [
+        "financial_services"
+      ],
+      "seat": "Head of Regulatory / Corporate Communications",
+      "angle": "FCA obligation creates a dated comms-capacity build-up in the regulated cohort \u2014 pitch the retained brief before it's advertised.",
+      "scope_note": "FCA-regulated firms in scope of this notice.",
+      "confidence": "medium",
+      "source": "FCA \u2014 On 4 June 2026, the FCA required Euro Exchange Securities UK Limited (EES) to ce",
+      "url": "https://www.fca.org.uk/news/press-releases/fca-imposes-requirements-euro-exchange-securities-uk-limited-and-interim-managers-appointed-court",
+      "discovered": true,
+      "first_seen": "2026-06-08T10:09:32.551699+00:00",
+      "last_seen": "2026-06-08T10:09:32.551699+00:00",
+      "status": "active",
+      "followed_up_at": null,
+      "dismissed_at": null
+    },
+    "pw_bbc65c391f76b681": {
+      "key": "pw_bbc65c391f76b681",
+      "name": "FCA: Bank of England and FCA MoU on supervision of market infrastructure: 2025/26 review",
+      "window": [
+        "2026-06-08",
+        "2026-08-28"
+      ],
+      "legal_date": "2026-08-28",
+      "sectors": [
+        "financial_services"
+      ],
+      "seat": "Head of Regulatory / Corporate Communications",
+      "angle": "FCA obligation creates a dated comms-capacity build-up in the regulated cohort \u2014 pitch the retained brief before it's advertised.",
+      "scope_note": "FCA-regulated firms in scope of this notice.",
+      "confidence": "medium",
+      "source": "FCA \u2014 The Bank of England has published a joint review with the FCA on how the Memoran",
+      "url": "https://www.fca.org.uk/news/statements/bank-england-fca-mou-supervision-market-infrastructure-review-2025-26",
+      "discovered": true,
+      "first_seen": "2026-06-08T10:09:32.551699+00:00",
+      "last_seen": "2026-06-08T10:09:32.551699+00:00",
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null
     }
   },
-  "updated_at": "2026-06-05T08:58:39.770016+00:00"
+  "updated_at": "2026-06-08T10:09:32.552469+00:00"
 }
