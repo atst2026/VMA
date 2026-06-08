@@ -95,8 +95,13 @@ def _fetch_logo_png(domain: str, token: str) -> bytes | None:
         from tool.sources._http import get as _get
         r = _get(
             f"https://img.logo.dev/{domain}",
+            # fallback=404: when logo.dev has NO real logo for the domain it
+            # otherwise generates a single-letter monogram (e.g. a bare "O").
+            # Asking for a 404 instead means a no-logo domain returns nothing,
+            # so the pipeline falls to Wikidata or clean text — never a
+            # meaningless letter. Domains with a real logo are unaffected (200).
             params={"token": token, "size": _LOGODEV_REQUEST_SIZE,
-                    "format": "png", "retina": "true"},
+                    "format": "png", "retina": "true", "fallback": "404"},
             timeout=_LOGO_HTTP_TIMEOUT,
         )
         if r is None or r.status_code != 200 or not r.content:
@@ -124,7 +129,17 @@ def _logo_is_placeholder(img) -> bool:
 
     The monogram/blank flag also requires the image to be roughly SQUARE: a
     generated monogram or blank tile is square, whereas a wide wordmark never
-    is, so a wordmark can never be misclassed as a placeholder."""
+    is, so a wordmark can never be misclassed as a placeholder.
+
+    Two square-only signals catch a placeholder:
+      * uniform tile — one colour covers ~all of the image (a blank/solid tile);
+      * sparse single glyph — very little ink on the page (logo.dev's
+        generated letter-monogram, e.g. a bare "O", is a thin anti-aliased
+        glyph covering only a few percent of a square canvas; the anti-alias
+        edges give it many grey colours so the uniform-tile test alone misses
+        it, but its ink coverage is tiny).
+    A real wordmark/logo is either wide (aspect >= 1.6) or has far more ink, so
+    neither signal fires on it."""
     from PIL import Image
     rgba = img.convert("RGBA")
     bg = Image.new("RGBA", rgba.size, (255, 255, 255, 255))
@@ -138,9 +153,15 @@ def _logo_is_placeholder(img) -> bool:
         return True
     w, h = rgb.size
     aspect = max(w, h) / max(1, min(w, h))
+    if aspect >= 1.6:
+        return False  # wide -> a wordmark, never a monogram/blank tile
     dominant = max(c for c, _ in colors)
     significant = sum(1 for c, _ in colors if c / total >= 0.01)
-    return aspect < 1.6 and dominant / total >= 0.96 and significant <= 3
+    # Fraction of pixels with meaningful ink once shown on the white cover.
+    ink = sum(n for n, (r, g, b) in colors if (r + g + b) / 3 < 200) / total
+    uniform_tile = dominant / total >= 0.96 and significant <= 3
+    sparse_glyph = ink < 0.10 and significant <= 4
+    return uniform_tile or sparse_glyph
 
 
 def _logo_content_bbox(img):
