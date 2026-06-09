@@ -114,6 +114,22 @@ _BACKER_COMPOUND_RX = re.compile(
     r"(?:company|business|firm)\b"
 )
 
+# Source-attribution prefixes ("Companies House: Trustpilot filed …").
+# Same bug class as the backer compound: the ATTRIBUTING source is not
+# the SUBJECT of the event — and "Companies House" is itself a watchlist
+# employer, so without this strip every CH-prefixed evidence line
+# resolved its subject to Companies House and unrelated companies'
+# filings (Trustpilot, M&G, …) merged into one phantom account. Strips
+# the colon-attached form only, so a genuine "Companies House appoints
+# Head of Comms" headline (no colon) still resolves to Companies House
+# as the real subject.
+_SOURCE_LABEL_RX = re.compile(
+    r"\b(?:companies house|sec edgar|find a tender|contracts finder|"
+    r"charity commission|google news|gdelt|wayback machine|"
+    r"public contracts scotland|sell2wales|etendersni)\s*:",
+    re.I,
+)
+
 
 def _has_bare_occurrence(pat: re.Pattern, text: str) -> bool:
     """True if `pat` matches at least once as a genuine SUBJECT mention —
@@ -231,6 +247,9 @@ def resolve_account(company: str | None, *texts: str) -> str | None:
     # Strip "<X>-backed" / "<X> portfolio company" BEFORE the watchlist
     # scan so a PE backer can't be mis-read as the deal's subject.
     original = _BACKER_COMPOUND_RX.sub(" ", original)
+    # Strip "Companies House:" / "SEC EDGAR:"-style source attributions so
+    # the reporting registry can't be mis-read as the filing's subject.
+    original = _SOURCE_LABEL_RX.sub(" ", original)
     norm_text = _norm(original)
 
     if norm_text:

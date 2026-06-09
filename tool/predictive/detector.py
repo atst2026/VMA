@@ -76,6 +76,11 @@ def extract_company(title: str, summary: str = "") -> str:
     if not title:
         return ""
     t = title.strip()
+    # A colon-attached source attribution ("Companies House: X filed…")
+    # is never the subject — strip it before the separator split, or the
+    # registry name wins the RNS-style extraction.
+    from tool.account_match import _SOURCE_LABEL_RX
+    t = _SOURCE_LABEL_RX.sub(" ", t).strip()
     t_nopfx = _LSE_TICKER.sub("", t).strip()
     parts = _RNS_SEPARATORS.split(t_nopfx, maxsplit=1)
     had_separator = len(parts) > 1
@@ -91,7 +96,7 @@ def extract_company(title: str, summary: str = "") -> str:
             return candidate.rstrip(",.;:")
 
     # 2) Peer-name scan with word boundaries; try full name + stem.
-    haystack = f" {title} {summary} ".lower()
+    haystack = f" {t} {summary} ".lower()   # t: attribution prefix stripped
     try:
         from tool.peers import SECTOR_PEERS
         all_peers = [p for names in SECTOR_PEERS.values() for p in names]
