@@ -658,8 +658,8 @@ def detect_officer_changes(max_companies: int | None = None,
                 continue
             title_display = occ or role or trigger.label
             evidence = (
-                f"Companies House: {officer_name} departed as "
-                f"{title_display} at {name}."
+                f"{officer_name} departed as {title_display} at {name} "
+                f"(Companies House filing)."
             )
             log.info("CH event: %s — %s left %s (%s)",
                      trigger_key, officer_name, name, title_display)
@@ -768,7 +768,7 @@ def _charge_events(name: str, number: str, cutoff: datetime) -> list[TriggerEven
             if isinstance(p, dict)
         )[:120]
         cid = ch.get("charge_id") or ch.get("id") or (ch.get("links") or {}).get("self", "")
-        ev = (f"Companies House: {name} registered a charge "
+        ev = (f"{name} registered a charge at Companies House "
               f"({ch.get('classification', {}).get('description', 'secured financing')}"
               f"{(' to ' + persons) if persons else ''}) on "
               f"{created.date().isoformat()}.")
@@ -805,8 +805,8 @@ def _psc_events(name: str, number: str, cutoff: datetime) -> list[TriggerEvent]:
             continue
         who = psc.get("name") or "a new controlling party"
         verb = "ceased as" if (ceased and recent == ceased) else "filed as"
-        ev = (f"Companies House: {who} {verb} a person with significant control "
-              f"of {name} on {recent.date().isoformat()}.")
+        ev = (f"{who} {verb} a person with significant control of {name} "
+              f"on {recent.date().isoformat()} (Companies House filing).")
         pid = (psc.get("links") or {}).get("self", "") or who
         out.append(TriggerEvent(
             trigger_key="ownership_change",
@@ -845,8 +845,8 @@ def _filing_events(name: str, number: str, cutoff: datetime) -> list[TriggerEven
                 trigger_key="rebrand",
                 trigger_label="Rebrand / change of name",
                 company=name,
-                evidence=(f"Companies House: {name} filed a change of name "
-                          f"on {fdate.date().isoformat()} (a corporate rebrand)."),
+                evidence=(f"{name} filed a change of name on {fdate.date().isoformat()} "
+                          f"— a corporate rebrand (Companies House filing)."),
                 url=f"https://find-and-update.company-information.service.gov.uk/company/{number}/filing-history",
                 source_label="Companies House (change of name)",
                 published=fdate,
@@ -858,8 +858,9 @@ def _filing_events(name: str, number: str, cutoff: datetime) -> list[TriggerEven
                 trigger_key="secured_financing",
                 trigger_label="Share allotment (capital raise)",
                 company=name,
-                evidence=(f"Companies House: {name} filed an allotment of shares "
-                          f"(SH01) on {fdate.date().isoformat()} — fresh equity capital."),
+                evidence=(f"{name} filed an allotment of shares (SH01) on "
+                          f"{fdate.date().isoformat()} — fresh equity capital "
+                          f"(Companies House filing)."),
                 url=f"https://find-and-update.company-information.service.gov.uk/company/{number}/filing-history",
                 source_label="Companies House (share allotment)",
                 published=fdate,
@@ -896,7 +897,7 @@ def _tenure_events(name: str, number: str, officers: list[dict]) -> list[Trigger
             trigger_key="leadership_tenure",
             trigger_label="Leadership tenure (flight-risk / succession watch)",
             company=name,
-            evidence=(f"Companies House: {officer_name} has held {occ} at {name} "
+            evidence=(f"{officer_name} has held {occ} at {name} "
                       f"for ~{years} years (appointed {appointed.date().isoformat()}) "
                       f"— a long tenure in a short-tenure seat."),
             url=_ch_officers_url(number),
