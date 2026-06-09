@@ -1587,8 +1587,8 @@ MR_JS = r"""
   root.innerHTML='<div class="mr-bar">'
    +'<div class="mr-filt mr-pgsel"><button class="mr-filtbtn" data-act="pgbtn"><span class="mr-pgi" id="mr-pgico">'+IC.lead+'</span><span class="mr-lbl" id="mr-pglbl">BD Leads</span><span class="mr-cv">'+IC.chevd+'</span></button>'
    +'<div class="mr-filtmenu" id="mr-pgmenu">'
-   +'<button data-act="pg" data-pg="bd" class="on">'+IC.lead+'BD Leads</button>'
-   +'<button data-act="pg" data-pg="jobs">'+IC.jobs+'Live Jobs</button></div></div>'
+   +'<button data-act="pg" data-pg="bd" class="on">'+IC.lead+'BD Leads<span class="v2b" data-tip="v2 demand-first rebuild: three counter-cyclical detectors now feed this board — In-house search failing (senior roles aged 45+ days or pulled-and-reposted with no agency), Hiring restart (first senior posting after a 6+ month freeze) and Mishire reversal (a leader out within ~18 months of arriving). Each targets buyers who MUST pay a fee in a quiet market, not just companies that happen to be hiring.">v2</span></button>'
+   +'<button data-act="pg" data-pg="jobs">'+IC.jobs+'Live Jobs<span class="v2b" data-tip="v2: every posting on this board now also feeds the in-house failure ledger. A senior role still open after 45 days, or withdrawn and reposted, automatically becomes a BD Lead — the company is visibly failing to fill it without an agency, the highest-converting call in a quiet market.">v2</span></button></div></div>'
    +'<div class="mr-filt"><button class="mr-filtbtn" data-act="filtbtn">'+IC.funnel+'<span class="mr-lbl" id="mr-filtlbl">Active</span><span class="mr-cv">'+IC.chevd+'</span></button>'
    +'<div class="mr-filtmenu" id="mr-filtmenu">'
    +'<button data-act="filt" data-f="active" class="on">Active <span class="mr-mc" id="mr-m-active"></span></button>'
@@ -1657,6 +1657,10 @@ _MR_TRIGGER = {
     "water_sar":              ("Water SAR",          "warn"),
     "contract_end":           ("Contract end",       "warn"),
     "cascade":                ("Senior move",        "lead"),
+    # v2 demand-first triggers (fee-probability over hire-probability)
+    "inhouse_search_failing": ("In-house failing",   "warn"),
+    "hiring_restart":         ("Hiring restart",     "fund"),
+    "mishire_reversal":       ("Mishire exit",       "warn"),
 }
 
 
@@ -3893,6 +3897,73 @@ TEMPLATE = r"""
       padding-bottom: 4px;
     }
 
+    /* ===== v2 badge — the demand-first BD rebuild marker. A tiny pill
+       next to each upgraded section title; hovering it explains what v2
+       changes for THAT section. Pure CSS tooltip (no JS) so it works in
+       the server-rendered panels AND inside the JS-built modern bar. */
+    .v2b {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      margin-left: 7px;
+      padding: 1px 6px 2px;
+      font: 700 9px/1.2 "Inter", sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #b5530e;
+      background: #fdecdb;
+      border: 1px solid rgba(217, 122, 43, 0.35);
+      border-radius: 999px;
+      cursor: help;
+      vertical-align: middle;
+    }
+    .v2b::after {
+      content: attr(data-tip);
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      z-index: 99;
+      width: 280px;
+      padding: 10px 12px;
+      font: 400 11.5px/1.5 "Inter", sans-serif;
+      letter-spacing: 0;
+      text-transform: none;
+      white-space: normal;
+      text-align: left;
+      color: #fff;
+      background: var(--navy-deep, #0F1A2E);
+      border-radius: 9px;
+      box-shadow: 0 10px 28px rgba(15, 26, 46, 0.28);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-3px);
+      transition: opacity 0.14s ease, transform 0.14s ease;
+      pointer-events: none;
+    }
+    .v2b::before {
+      content: "";
+      position: absolute;
+      top: calc(100% + 3px);
+      left: 12px;
+      z-index: 99;
+      border: 5px solid transparent;
+      border-bottom-color: var(--navy-deep, #0F1A2E);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.14s ease;
+      pointer-events: none;
+    }
+    .v2b:hover::after, .v2b:hover::before {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    /* Inside the compact dropdown menus the tooltip anchors right so it
+       never clips off the left viewport edge. */
+    .mr-filtmenu .v2b { margin-left: auto; }
+    .mr-filtmenu .v2b::after { left: auto; right: 0; }
+    .mr-filtmenu .v2b::before { left: auto; right: 12px; }
+
     /* PREDICTORS */
     .window-badge {
       display: inline-block;
@@ -5724,13 +5795,13 @@ TEMPLATE = r"""
     <div class="cc-wrap">
       <div class="cc-hero">
         <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></div>
-        <h1 class="gemini-title">BD Calendar</h1>
+        <h1 class="gemini-title">BD Calendar<span class="v2b" data-tip="v2 role: deadline-forced demand. Everything on this page happens on the calendar, not the budget cycle — statutory placement windows, re-tenders and framework refreshes create comms briefs that cannot be deferred or done in-house, whatever the market mood. In a quiet market this is the demand that survives.">v2</span></h1>
         <div class="cc-sub">The business-development moves that run on key dates.</div>
       </div>
       <div class="cc-cards">
-        <button class="cc-card" data-open="windows"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg></span><span class="cx"><span class="ct">Placement Windows</span><span class="cd">Statutory hiring windows that open on a known calendar.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
-        <button class="cc-card" data-open="events"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 17l-5.2 2.6 1-5.8L3.5 9.7l5.9-.9z"/></svg></span><span class="cx"><span class="ct">Events &amp; Networking</span><span class="cd">Awards, summits and networking dates worth showing up to.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
-        <button class="cc-card" data-open="frameworks"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 13h7M8.5 16.5h4.5"/></svg></span><span class="cx"><span class="ct">Approved Frameworks</span><span class="cd">Public-sector frameworks where VMA can bid.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
+        <button class="cc-card" data-open="windows"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg></span><span class="cx"><span class="ct">Placement Windows<span class="v2b" data-tip="v2 role: date-driven, non-discretionary demand — these windows open on a statutory calendar regardless of hiring sentiment. Being first into the window is the whole game.">v2</span></span><span class="cd">Statutory hiring windows that open on a known calendar.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
+        <button class="cc-card" data-open="events"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 17l-5.2 2.6 1-5.8L3.5 9.7l5.9-.9z"/></svg></span><span class="cx"><span class="ct">Events &amp; Networking<span class="v2b" data-tip="v2 role: relationship-led BD. In a quiet market the meeting comes before the mandate — these are the rooms where the next briefs are decided, months before any role is advertised.">v2</span></span><span class="cd">Awards, summits and networking dates worth showing up to.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
+        <button class="cc-card" data-open="frameworks"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 13h7M8.5 16.5h4.5"/></svg></span><span class="cx"><span class="ct">Approved Frameworks<span class="v2b" data-tip="v2 role: budget-proof demand. Public-sector re-tenders run to fixed expiry dates and must go to market — fee opportunities that exist independent of private-sector hiring freezes.">v2</span></span><span class="cd">Public-sector frameworks where VMA can bid.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
       </div>
     </div>
 

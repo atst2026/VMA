@@ -320,6 +320,16 @@ def main() -> int:
     except Exception as e:
         log.info("technographics fingerprint: %s", e)
         techno_events = []
+    # v2 demand-first lane: posting ledger → in-house-failure (aged /
+    # reposted senior roles) + hiring-restart (account thaw) events.
+    try:
+        from tool.predictive import inhouse_failure as _ihf
+        _ihf.ingest_jobs(signals)
+        inhouse_events = _ihf.detect_inhouse_failure()
+        restart_events = _ihf.detect_hiring_restart()
+    except Exception as e:
+        log.info("in-house failure ledger: %s", e)
+        inhouse_events, restart_events = [], []
 
     # CH officer-change scan + contacts auto-update already ran earlier
     # (pre-enrichment) so signals are enriched with fresh data. The
@@ -352,11 +362,14 @@ def main() -> int:
     all_events = (trigger_events + cluster_events + ch_events + velocity_events
                   + ch_filing_events + ch_stream_events + charity_events
                   + wayback_events + techno_events + hiring_gap_events
-                  + seniority_gap_events + displacement_events)
+                  + seniority_gap_events + displacement_events
+                  + inhouse_events + restart_events)
     log.info("BD-strengthening lanes: %d CH-filing + %d CH-stream + %d charity "
-             "+ %d wayback + %d technographics events",
+             "+ %d wayback + %d technographics + %d in-house-failure "
+             "+ %d hiring-restart events",
              len(ch_filing_events), len(ch_stream_events),
-             len(charity_events), len(wayback_events), len(techno_events))
+             len(charity_events), len(wayback_events), len(techno_events),
+             len(inhouse_events), len(restart_events))
     # Specialism relevance: marketing keeps only triggers that predict a
     # MARKETING hire (comms keeps all). So a regulator / IR / governance
     # trigger surfaces as a comms BD lead but NOT a marketing one — the

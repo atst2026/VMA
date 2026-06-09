@@ -42,6 +42,13 @@ STATE_DIR.mkdir(parents=True, exist_ok=True)
 # predictor's actionable window.
 LOOKBACK_DAYS = 45
 
+# v2 mishire classification: a departed leader ABSENT from a snapshot
+# this far back joined within the window — a short-tenure exit, the
+# failed-hire signature. Emitted as mishire_reversal instead of an
+# ordinary departure (never both, so the stack depth is not inflated
+# by one fact).
+SHORT_TENURE_DAYS = 540  # ~18 months
+
 # Curated company -> leadership/team/people page URL. Seed set; extend to
 # the full ~550 watchlist as URLs are confirmed. A page that 404s or has no
 # archived snapshot is skipped (non-fatal).
@@ -205,11 +212,27 @@ def _fetch(url: str) -> str | None:
     return r.text
 
 
+def split_short_tenure(departed: set[str],
+                       people_long_ago: set[str] | None) -> tuple[set[str], set[str]]:
+    """Split departures into (ordinary, short_tenure). A departed person
+    absent from the ~SHORT_TENURE_DAYS-old snapshot joined within the
+    window — a short-tenure exit. With no usable old snapshot (None or a
+    zero-people parse) everyone stays ordinary: never fabricate a mishire
+    from a missing or unparseable page."""
+    if not people_long_ago:
+        return set(departed), set()
+    short = {p for p in departed if p not in people_long_ago}
+    return departed - short, short
+
+
 def diff_company(company: str, url: str,
                  lookback_days: int = LOOKBACK_DAYS) -> list[TriggerEvent]:
     """Compare the current leadership page against the nearest archived
     snapshot ~lookback_days ago; emit a departure event for each senior
-    leader present THEN and absent NOW."""
+    leader present THEN and absent NOW. Departures are tenure-checked
+    against a ~SHORT_TENURE_DAYS-old snapshot: a leader who joined within
+    that window is emitted as mishire_reversal (failed-hire signature)
+    instead of an ordinary departure."""
     live_html = _fetch(url)
     if not live_html:
         return []
@@ -229,9 +252,18 @@ def diff_company(company: str, url: str,
     if not now_people and departed:
         log.info("wayback: %s live page parsed 0 leaders — skipping (likely JS-rendered)", company)
         return []
+    # Tenure check (one extra archived fetch, only when something departed).
+    people_18mo: set[str] | None = None
+    if departed:
+        ts_old = _cdx_nearest(url, SHORT_TENURE_DAYS)
+        if ts_old and ts_old != ts:
+            html_18mo = _fetch(f"{WAYBACK_BASE}/{ts_old}id_/{url}")
+            if html_18mo:
+                people_18mo = people_with_senior_role(html_18mo)
+    ordinary, short_tenure = split_short_tenure(departed, people_18mo)
     out: list[TriggerEvent] = []
     now = datetime.now(timezone.utc)
-    for person in sorted(departed):
+    for person in sorted(ordinary):
         out.append(TriggerEvent(
             trigger_key="comms_leader_departure",
             trigger_label="Senior leader removed from leadership page (pre-announcement)",
@@ -243,6 +275,21 @@ def diff_company(company: str, url: str,
             source_label="Wayback careers-page diff",
             published=now,
             raw_signal_id=signal_id("wayback_dep", f"{company}|{person}"),
+            tier_hint="covered",
+        ))
+    for person in sorted(short_tenure):
+        out.append(TriggerEvent(
+            trigger_key="mishire_reversal",
+            trigger_label="Short-tenure exit (failed-hire signature)",
+            company=company,
+            evidence=(f"{person} joined {company}'s leadership page within the "
+                      f"last ~18 months and has now been removed — a short-tenure "
+                      f"exit. A failed senior hire forces an urgent, usually "
+                      f"confidential replacement search."),
+            url=url,
+            source_label="Wayback careers-page diff (tenure-checked)",
+            published=now,
+            raw_signal_id=signal_id("wayback_mishire", f"{company}|{person}"),
             tier_hint="covered",
         ))
     return out
