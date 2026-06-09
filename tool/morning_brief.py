@@ -459,6 +459,43 @@ def main() -> int:
     log.info("Pipeline delta: %d new predictors today; %d active in pipeline",
              len(delta_stacks), total_active)
 
+    # Presentation gate + compounding dossiers, in one pass over the full
+    # active pipeline: the gate decides what earns a card; the email delta
+    # is filtered to presented-only (capped at the gate's daily limit) so
+    # the inbox never shows a watching brief dressed up as a lead; and
+    # every entry's signals + gate decision fold into its company dossier.
+    # Non-fatal: any failure falls back to the ungated delta.
+    try:
+        from tool import gate as _gate, lead_engine as _le, dossier as _dos
+        from tool import verdict_log as _vlog, investigations as _invmod
+        _entries = predictor_pipeline.all_predictors()
+        _verds = _vlog.get_all()
+        _invs = _invmod.get_all()
+        _desk = config._PROFILE.key
+        _gate_map = {}
+        for _entry in _entries:
+            _pid = _entry.get("pid")
+            if not _pid:
+                continue
+            _lead = _le.score_lead(_entry, "predictor", _desk)
+            _gate_map[_pid] = _gate.assess(_entry, _lead, verdicts=_verds,
+                                           investigation=_invs.get(_pid))
+        _dos.update_dossiers(_entries, _gate_map, _verds)
+        _gated = []
+        for stk, sc in delta_stacks:
+            _g = _gate_map.get(predictor_pipeline._pid(stk.company))
+            if _g is None or _g["presented"]:   # never lose a lead to a miss
+                _gated.append((stk, sc))
+        _cap = _gate.acceptance(_verds)["cap"]
+        if len(_gated) > _cap:
+            _gated = _gated[:_cap]
+        log.info("Email gate: %d of %d new predictors presented (cap %d); "
+                 "%d dossiers updated",
+                 len(_gated), len(delta_stacks), _cap, len(_gate_map))
+        delta_stacks = _gated
+    except Exception as _e:
+        log.info("email presentation gate skipped (%s)", _e)
+
     now = datetime.now()
     now_str = now.strftime("%A %d %B %Y · %H:%M")
     covered = covered_window()

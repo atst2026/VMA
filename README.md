@@ -115,6 +115,37 @@ New demand-creation commands (run in Claude Code, no API cost):
   house calculators, in-house vs retained route comparison. Wins the
   sign-off fight that kills fees in a budget-cut market.
 
+## BD Build v3 — the investigation engine (deep-research blueprint)
+
+v2 found the demand; v3 governs what an Account Director actually sees.
+An AD must never be shown a watching brief dressed up as a lead:
+
+- **Presentation gate** (`tool/gate.py`) — hard rules between the pipeline
+  and the board: 3+ independent source families with a primary presents at
+  full strength, hard blockers and amplifier-only signals never present,
+  lapsed windows and too-fresh triggers queue with a recheck date. Queued
+  hypotheses stay visible under the board's **Queued** filter.
+- **Lead cards** now carry calibrated confidence (High/Moderate), the
+  evidence-independence count, **"What kills this"** (the playbook's kill
+  conditions plus the live weakest link) and a **suggested first move**.
+- **Acceptance governance** — Call today / Nurture / Reject buttons on
+  every card feed `tool/verdict_log.py`; the trailing-7-day acceptance
+  rate shows in the board bar and **auto-throttles** the gate (acceptance
+  <50% over 10+ verdicts → evidence bar rises, daily cap drops 7→5).
+  The board caps at ~7 cards; overflow demotes to the queue, never
+  silently dropped.
+- **Window re-tool** — the flat 21-day "too fresh" hold is now per-family:
+  leadership changes present in the 4–12-week window (hold 28d), funding
+  keeps 21d, and a fresh event no longer re-freezes a mature stack.
+- **Compounding dossiers** (`tool/dossier.py`) — every company accumulates
+  a living file under `tool/state/dossiers/`: full signal timeline with
+  sources, gate history, AD verdicts, investigation notes. The next look
+  starts from memory, never zero.
+- **`/investigate <company>|next`** — the per-trigger playbook (leadership,
+  funding, job-cluster, team-page/mishire) run in Claude Code: corroborate
+  or kill a queued hypothesis; the verdict overlay
+  (`tool/investigations.py`) outranks every other gate rule for 21 days.
+
 ## What the tool deliberately does not do
 
 - Touch Sara's LinkedIn / Sales Nav / Recruiter seat

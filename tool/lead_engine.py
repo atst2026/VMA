@@ -137,6 +137,13 @@ _SOFT_CAP = 2.0          # soft modifiers add at most +2, and only alongside a r
 _SIGNAL_HIGH = 6.0       # effective-points threshold for "High SIGNAL"
 _FIT_HIGH = 7            # 0-10 threshold for "High FIT"
 
+# Too-fresh holds, per anticipatory family (v2 window re-tool). A leadership
+# change presents in the 4-12 week window — hold 28 days, then the lead is
+# live until its predicted window closes (the gate enforces the far edge).
+# Funding / IPO budget is actionable sooner — hold 21 days, as before.
+LEADERSHIP_HOLD_DAYS = 28
+EVENT_HOLD_DAYS = 21
+
 # --------------------------------------------------------------------------
 # Layer 3 — MARKET STATE (global macro modifier). The report's central
 # insight: in a contracting hiring market the SAME trigger means something
@@ -852,12 +859,30 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
             contradictions.append("the search looks locked to an incumbent")
         material_contradiction = bool(contradictions)
 
-        # too-fresh hold: a fresh leadership/funding trigger with no active
-        # hiring is premature (the new leader has no plan for 8-12 weeks).
-        anticipatory = ("leadership" in live_fams) or bool(live_keys & {"funding", "ipo_listing"})
+        # ---- the too-fresh hold, per family (v2 window re-tool) -------------
+        # Leadership changes present in the 4-12 week window: a new leader
+        # needs ~a month in seat before a hiring plan exists (the research's
+        # "honeymoon" timing — a CMO at month 2-4 is prime), so the hold is
+        # 28 days. Funding / IPO keep the shorter 21-day hold — budget is
+        # real sooner. The hold binds per anticipatory trigger (a fresh
+        # crisis next to a mature leadership change no longer re-freezes the
+        # stack). Active demand always bypasses the hold.
+        _hold_pairs = []
+        for t in live:
+            _age = t.get("age_days")
+            if _age is None:
+                continue
+            if t.get("family") == "leadership":
+                _hold_pairs.append((LEADERSHIP_HOLD_DAYS, _age))
+            elif t.get("key") in ("funding", "ipo_listing"):
+                _hold_pairs.append((EVENT_HOLD_DAYS, _age))
+        _binding = max(((h, a) for h, a in _hold_pairs if a < h),
+                       key=lambda p: p[0] - p[1], default=None)
         freshest = min((t.get("age_days") for t in live if t.get("age_days") is not None),
                        default=999)
-        too_fresh = anticipatory and freshest < 21 and not demand_now
+        too_fresh = _binding is not None and not demand_now
+        fresh_hold_days = _binding[0] if _binding else 0
+        freshest_age_days = _binding[1] if _binding else freshest
 
         strength, action = _assess(
             fit_band=fit_band, demand_now=demand_now, n_dim=n_dim,
@@ -912,6 +937,8 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
             "n_pro": n_pro,
             "contradictions": contradictions,
             "premature": too_fresh,
+            "fresh_hold_days": fresh_hold_days,
+            "freshest_age_days": freshest_age_days,
             "financial": fin,
             "posture": posture,
             "market_state": {"state": mkt["state"], "note": mkt["note"]},
@@ -927,5 +954,6 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
                 "anti_triggers": [], "triggers": [],
                 "strength": "watch", "strength_rank": 0.4, "stack": [], "n_pro": 0,
                 "contradictions": [], "premature": False,
+                "fresh_hold_days": 0, "freshest_age_days": 999,
                 "financial": {"direction": "neutral"}, "posture": {"direction": "neutral"},
                 "market_state": {"state": "flat", "note": ""}, "why_now": ""}

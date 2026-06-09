@@ -1375,6 +1375,17 @@ MR_CSS = r"""
 .mr-ab.ab-call_today{color:#fff;background:#D9633C}.mr-ab.ab-nurture{color:#1d4ed8;background:#e9effb}.mr-ab.ab-investigate{color:#8a5a00;background:#fff4e0}.mr-ab.ab-monitor{color:#6b7686;background:#eef1f5}
 .mr-q4{display:inline-flex;align-items:center;padding:2px 8px;font:600 9px/1.6 "Inter",sans-serif;letter-spacing:.03em;border-radius:7px;white-space:nowrap;color:#9a3412;background:#fff7ed;border:1px solid #fdba74}
 .mr-feeb{display:inline-flex;align-items:center;margin-right:7px;padding:2px 8px;font:700 9px/1.6 "Inter",sans-serif;letter-spacing:.05em;text-transform:uppercase;border-radius:999px;white-space:nowrap;vertical-align:middle;color:#b5530e;background:#fdecdb;border:1px solid rgba(217,122,43,.35);cursor:help}
+.mr-qd{display:inline-block;margin-left:5px;padding:1px 6px;font:700 8.5px/1.5 "Inter",sans-serif;letter-spacing:.07em;text-transform:uppercase;border-radius:4px;color:#6b7689;background:#edf0f4;border:1px solid #d8dee8;vertical-align:middle}
+.mr-confb{display:inline-flex;align-items:center;margin-right:8px;padding:2px 9px;font:700 10px/1.6 "Inter",sans-serif;letter-spacing:.04em;border-radius:999px}
+.mr-confb.hi{color:#1e7a41;background:#e7f3ec;border:1px solid rgba(30,122,65,.3)}
+.mr-confb.md{color:#9a3412;background:#fff7ed;border:1px solid #fdba74}
+.mr-evs{font:500 11px/1.5 "Inter",sans-serif;color:var(--dim)}
+.mr-verd{display:inline-flex;gap:7px;flex-wrap:wrap}
+.mr-vb{font:600 11.5px/1 "Inter",sans-serif;color:var(--ink2);background:#fff;border:1px solid var(--mrborder);border-radius:8px;padding:6px 11px;cursor:pointer}
+.mr-vb:hover{background:var(--elevated)}
+.mr-vb.on{color:#fff;background:#1A3D7C;border-color:#1A3D7C}
+.mr-acc{font:600 11px/1 "Inter",sans-serif;color:var(--dim);white-space:nowrap;align-self:center;padding:0 4px}
+.mr-acc.bad{color:#b5530e}
 .mr-xdesk{display:inline-block;width:fit-content;margin-top:8px;padding:3px 10px;font:600 10px/1.6 "Inter",sans-serif;letter-spacing:.03em;border-radius:7px;white-space:nowrap;color:#6d28d9;background:#f5f3ff;border:1px solid #c4b5fd}
 .mr-lmeta{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:2px 0 8px}
 .mr-anti{font:700 9px/1.5 "Inter",sans-serif;color:#c0392b;background:#fdecea;padding:2px 7px;border-radius:6px}
@@ -1467,7 +1478,8 @@ MR_JS = r"""
   function newp(l){return l.isNew?' <span class="mr-newp">NEW</span>':'';}
   function srcl(l){return l.url?'<a class="mr-srcl" href="'+esc(l.url)+'" target="_blank" rel="noopener">'+IC.ext+'<span>View source</span></a>':'';}
   function toast(m){var t=$('mr-toast');if(!t)return;t.innerHTML='<span class="mr-spk">'+IC.spark+'</span> '+esc(m);t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},2400);}
-  function match(l){if(filter==='active')return l.status==='active';if(filter==='new')return l.isNew&&l.status==='active';if(filter==='followed_up')return l.status==='followed_up';if(filter==='dismissed')return l.status==='dismissed';return true;}
+  function pres(l){return l.presented===undefined||!!l.presented;}
+  function match(l){if(filter==='active')return l.status==='active'&&pres(l);if(filter==='new')return l.isNew&&l.status==='active'&&pres(l);if(filter==='queued')return l.status==='active'&&!pres(l);if(filter==='followed_up')return l.status==='followed_up';if(filter==='dismissed')return l.status==='dismissed';return true;}
   function winWeeks(s){s=(''+(s||'')).toLowerCase();var m=s.match(/(\d+)/);if(!m)return 9999;var n=parseInt(m[1],10);return /mo|month/.test(s)?n*4.33:n;}
   function rowAge(l){return (l.age==null?9999:l.age);}
   function sortd(a){
@@ -1501,17 +1513,31 @@ MR_JS = r"""
     var warn=(l.conflict||anti2.length)?'<div class="mr-drow">'
       +(l.conflict?'<span class="mr-anti">⚠ competing recruiter</span>':'')
       +(anti2.length?'<span class="mr-anti">⚠ '+esc(anti2.join(' · '))+'</span>':'')+'</div>':'';
+    var gtop='';
+    if(pres(l)&&l.conf){gtop=dk('Confidence','<span class="mr-confb '+(l.conf==='High'?'hi':'md')+'">'+esc(l.conf)+'</span><span class="mr-evs">'+(l.evFams||0)+' independent source'+((l.evFams||0)===1?'':'s')+((l.evPrim||0)?' · '+l.evPrim+' primary':'')+'</span>');}
+    else if(!pres(l)&&l.gateWhy!==undefined){var qt=l.gateWhy||'Queued';if(l.recheck)qt+=' · recheck in '+l.recheck+'d';if(l.needsInv)qt+=' · run /investigate';gtop=dk('Queued',esc(qt));}
+    var kill=(pres(l)&&l.kill)?dk('What kills this',esc(l.kill)):'';
+    var move=(pres(l)&&l.move)?dk('First move',esc(l.move)):'';
+    var verd='';
+    if(pres(l)&&l.verdict!==undefined){
+      function vb(v,lab){return '<button class="mr-vb'+(l.verdict===v?' on':'')+'" data-act="verdict" data-v="'+v+'" data-id="'+l._id+'">'+lab+'</button>';}
+      verd='<div class="mr-dk"><span class="mr-dlab">Verdict</span><span class="mr-verd">'+vb('call_today','Call today')+vb('nurture','Nurture')+vb('reject','Reject')+'</span></div>';}
     return '<div class="mr-doss">'
       +warn
+      +gtop
       +dk('Why now<span class="v2b" data-tip="v2: this narrative is now composed from the FULL signal stack in date order — every corroborating trigger with its date — plus the fee case: the structural reason this company pays a search fee instead of running the hire itself.">v2</span>',fb(l)+esc(l.whyNow||l.why))
+      +kill
+      +move
       +acts
+      +verd
       +xdb(l)
       +(l.opener?'<div class="mr-dk mr-playwrap'+(l.drafted?' on':'')+'"><span class="mr-dlab">The play</span><span class="mr-play mr-playbox">'+(l.drafted?esc(l.opener):'')+'</span></div>':'')
       +'</div>';}
+  function qd(l){return (l.presented===undefined||l.presented)?'':' <span class="mr-qd">queued</span>';}
   function bdRow(l,idx){var top=(idx===0&&filter==='active');
     return '<div class="mr-row '+(open[l._id]?'open ':'')+(top?'top':'')+'" data-id="'+l._id+'">'
      +'<div class="mr-rsum mr-gbd" data-act="toggle" data-id="'+l._id+'">'
-     +'<span class="mr-rk">'+(idx+1)+'</span><span class="mr-co">'+esc(l.co)+newp(l)+'</span>'+tp(l)
+     +'<span class="mr-rk">'+(idx+1)+'</span><span class="mr-co">'+esc(l.co)+newp(l)+qd(l)+'</span>'+tp(l)
      +'<span class="mr-seat">'+esc(l.seat)+'</span><span class="mr-why">'+esc(l.why)+'</span>'+wb(l)+ab(l)+q4b(l)
      +'<span class="mr-racts">'+(filter==='all'?stbadge(l):'')+triBtns(l)+'</span></div>'
      +'<div class="mr-rdet"><div class="mr-aibrief"><div class="mr-gen">'+brief(l)+'</div></div></div></div>';}
@@ -1547,12 +1573,15 @@ MR_JS = r"""
     toast(t?('Outreach copied for '+l.co):('No outreach draft for '+l.co));}
   function setc(id,v){var e=$(id);if(e)e.textContent=v;}
   function counts(){var ds=active();function c(f){return ds.filter(f).length;}
-    setc('mr-m-active',c(function(l){return l.status==='active';}));
-    setc('mr-m-new',c(function(l){return l.isNew&&l.status==='active';}));
+    setc('mr-m-active',c(function(l){return l.status==='active'&&pres(l);}));
+    setc('mr-m-new',c(function(l){return l.isNew&&l.status==='active'&&pres(l);}));
+    setc('mr-m-queued',c(function(l){return l.status==='active'&&!pres(l);}));
     setc('mr-m-fu',c(function(l){return l.status==='followed_up';}));
     setc('mr-m-dis',c(function(l){return l.status==='dismissed';}));
-    var lbl={active:'Active','new':'New today',followed_up:'Followed up',dismissed:'Dismissed',all:'All'}[filter];
-    setc('mr-filtlbl',lbl);}
+    var lbl={active:'Active','new':'New today',queued:'Queued',followed_up:'Followed up',dismissed:'Dismissed',all:'All'}[filter];
+    setc('mr-filtlbl',lbl);
+    var m=window.MR_META,el=$('mr-acc');
+    if(el){if(page==='bd'&&m&&m.accN>0&&m.accRate!==null){el.style.display='';el.textContent='7d acceptance '+Math.round(m.accRate*100)+'% of '+m.accN+(m.throttled?' · gate throttled':'');el.className='mr-acc'+(m.throttled?' bad':'');}else{el.style.display='none';}}}
   function render(){var arr=sortd(active().filter(match));var box=$('mr-rows');if(!box)return;
     if(!arr.length){box.innerHTML='<div class="mr-empty">Nothing here. Pick another filter.</div>';counts();return;}
     box.innerHTML=arr.map(function(l,i){return page==='bd'?bdRow(l,i):jobRow(l,i);}).join('');counts();}
@@ -1566,9 +1595,21 @@ MR_JS = r"""
     var fm=$('mr-filtmenu');if(fm)fm.classList.remove('open');
     // The sort options (signal / window) are BD-lead concepts; hide on Jobs.
     var ss=document.querySelector('.mr-sortsel');if(ss)ss.style.display=(pg==='jobs'?'none':'');
+    // Queued (gate) and the acceptance meter are BD-lead concepts too.
+    var qb=document.querySelector('#mr-filtmenu [data-f="queued"]');if(qb)qb.style.display=(pg==='jobs'?'none':'');
     render();}
   function setFilter(f,btn){filter=f;var fb=document.querySelectorAll('#mr-filtmenu [data-act="filt"]');for(var i=0;i<fb.length;i++){fb[i].classList.toggle('on',fb[i]===btn);}var m=$('mr-filtmenu');if(m)m.classList.remove('open');render();}
   function setSort(s,btn){sort=s;var sb=document.querySelectorAll('#mr-sortmenu [data-act="sort"]');for(var i=0;i<sb.length;i++){sb[i].classList.toggle('on',sb[i]===btn);}var lbl=$('mr-sortlbl');if(lbl)lbl.textContent=(btn.textContent||'').trim();var m=$('mr-sortmenu');if(m)m.classList.remove('open');render();}
+  function verdict(id,v){var l=BYID[id];if(!l)return;var prev=l.verdict;l.verdict=v;render();
+    fetch('/api/lead/verdict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rid:l.rid,idtype:l.idtype,verdict:v,company:l.co})})
+      .then(function(r){return r.json();}).then(function(j){
+        if(!j||!j.ok){l.verdict=prev;toast('Could not save verdict');render();return;}
+        if(j.acceptance&&window.MR_META){window.MR_META.accRate=j.acceptance.rate;window.MR_META.accN=j.acceptance.n;window.MR_META.throttled=j.acceptance.throttled;window.MR_META.cap=j.acceptance.cap;}
+        toast(l.co+' — '+(v==='call_today'?'marked call today':v==='nurture'?'marked nurture':'rejected'));
+        if(v==='reject'&&l.status==='active'){triage(id,'dismissed');}
+        else if(v==='call_today'&&l.status==='active'){triage(id,'followed_up');}
+        else{render();}
+      }).catch(function(){l.verdict=prev;render();toast('Could not save verdict');});}
   function triage(id,st){var l=BYID[id];if(!l)return;var prev=l.status;l.status=st;
     var row=document.querySelector('#mr-rows .mr-row[data-id="'+id+'"]');
     var hide=(filter==='active'||filter==='new')&&st!=='active';
@@ -1606,9 +1647,11 @@ MR_JS = r"""
    +'<div class="mr-filtmenu" id="mr-filtmenu">'
    +'<button data-act="filt" data-f="active" class="on">Active <span class="mr-mc" id="mr-m-active"></span></button>'
    +'<button data-act="filt" data-f="new">New today <span class="mr-mc" id="mr-m-new"></span></button>'
+   +'<button data-act="filt" data-f="queued">Queued <span class="mr-mc" id="mr-m-queued"></span></button>'
    +'<button data-act="filt" data-f="followed_up">Followed up <span class="mr-mc" id="mr-m-fu"></span></button>'
    +'<button data-act="filt" data-f="dismissed">Dismissed <span class="mr-mc" id="mr-m-dis"></span></button>'
    +'<button data-act="filt" data-f="all">All</button></div></div>'
+   +'<span class="mr-acc" id="mr-acc" style="display:none"></span>'
    +'<span class="mr-spacer"></span>'
    +'<div class="mr-filt mr-sortsel"><button class="mr-filtbtn" data-act="sortbtn">'+IC.sort+'<span class="mr-lbl" id="mr-sortlbl">Strongest signal</span><span class="mr-cv">'+IC.chevd+'</span></button>'
    +'<div class="mr-filtmenu" id="mr-sortmenu">'
@@ -1621,6 +1664,7 @@ MR_JS = r"""
     var a=e.target.closest('[data-act]');if(!a||!root.contains(a))return;
     var act=a.getAttribute('data-act');var id=a.getAttribute('data-id');
     if(act==='tri'){e.stopPropagation();triage(id,a.getAttribute('data-st'));return;}
+    if(act==='verdict'){e.stopPropagation();verdict(id,a.getAttribute('data-v'));return;}
     if(act==='remove'){e.stopPropagation();removeEntirely(id);return;}
     if(act==='pitch'){e.stopPropagation();pitch(id,a);return;}
     if(act==='viewsrc'){e.stopPropagation();viewSources(id);return;}
@@ -1806,6 +1850,28 @@ def _mr_lead_fields(row):
     }
 
 
+def _mr_gate_fields(row):
+    """Flatten the presentation-gate decision onto the console row. Rows
+    without a gate (defensive) present as before — the gate can only
+    *narrow* what the Active board shows, never error it empty."""
+    g = row.get("gate")
+    if not isinstance(g, dict):
+        return {"presented": 1}
+    ev = g.get("evidence") or {}
+    return {
+        "presented": 1 if g.get("presented") else 0,
+        "conf": g.get("confidence") or "",
+        "gateWhy": " · ".join(g.get("reasons") or []),
+        "recheck": g.get("recheck_days"),
+        "needsInv": 1 if g.get("investigate") else 0,
+        "kill": g.get("kill") or "",
+        "move": g.get("move") or "",
+        "evFams": ev.get("families") or 0,
+        "evPrim": ev.get("primary") or 0,
+        "verdict": row.get("verdict") or "",
+    }
+
+
 def _mr_q4_field(row):
     bf = row.get("_budget_flush")
     if bf:
@@ -1869,10 +1935,12 @@ def _mr_row_age(first_seen: str | None) -> int:
         return 9999
 
 
-def _build_mr_rows(premarket_rows, leads, role_label):
+def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
     """Project the live predictor/funding/lead data onto the flat row shape
     the Radar console renders (BD Leads + Live Jobs). Pre-sorted upstream by
-    opportunity value; we just carry _opp through for a stable client sort."""
+    opportunity value; we just carry _opp through for a stable client sort.
+    `cap` is the gate's daily card limit: presented rows beyond it are
+    demoted to the queue (visible, honest) rather than silently dropped."""
     today = datetime.now(timezone.utc).date().isoformat()
     try:
         _mkt = active_profile().key == "marketing"
@@ -1908,6 +1976,7 @@ def _build_mr_rows(premarket_rows, leads, role_label):
                 "pitchRole": role_label,
                 "pitchTrigger": brief,
                 **_mr_lead_fields(row),
+                **_mr_gate_fields(row),
                 **_mr_q4_field(row),
                 **_mr_cross_desk_field(row),
             })
@@ -1954,6 +2023,7 @@ def _build_mr_rows(premarket_rows, leads, role_label):
                 "pitchRole": role_label,
                 "pitchTrigger": f"a recent {why} funding round at {row.get('company') or ''}".strip(),
                 **_mr_lead_fields(row),
+                **_mr_gate_fields(row),
                 **_mr_q4_field(row),
                 **_mr_cross_desk_field(row),
             })
@@ -1990,9 +2060,27 @@ def _build_mr_rows(premarket_rows, leads, role_label):
                 "pitchRole": row.get("predicted_role") or "",
                 "pitchTrigger": row.get("pitch_trigger") or "",
                 **_mr_lead_fields(row),
+                **_mr_gate_fields(row),
                 **_mr_q4_field(row),
                 **_mr_cross_desk_field(row),
             })
+    # Daily cap (the blueprint's ~7 cards): rows arrive board-ordered, so
+    # the strongest fill the board and the overflow queues by capacity —
+    # still visible under the Queued filter, never silently dropped.
+    shown = 0
+    for r in bd:
+        if not r.get("presented"):
+            continue
+        shown += 1
+        if shown > max(1, cap):
+            r["presented"] = 0
+            r["conf"] = ""
+            r["gateWhy"] = (f"Above today's cap of {cap} — stronger leads "
+                            f"filled the board")
+            r["recheck"] = 1
+            r["needsInv"] = 0
+            r["kill"] = ""
+            r["move"] = ""
     jobs = []
     for s in leads:
         jobs.append({
@@ -2124,8 +2212,18 @@ def _render_dashboard():
     # marketing taxonomies). Additive: attaches a `lead` sub-dict, changes
     # nothing else about ordering or the existing fields.
     from tool import lead_engine, lead_outcomes
+    from tool import gate as _gatemod, verdict_log as _vlog
+    from tool import investigations as _invmod
     _desk = active_profile().key
     _outc = lead_outcomes.get_all()
+    # Presentation-gate inputs, loaded once per render: the AD verdict log
+    # (drives the acceptance auto-throttle) and any /investigate overlays.
+    _verds = _vlog.get_all()
+    _invs = _invmod.get_all()
+    _vmap: dict = {}
+    for _rec in _verds:                      # later records overwrite earlier
+        if _rec.get("rid"):
+            _vmap[_rec["rid"]] = _rec.get("verdict")
     # Relationship proxy: do we already hold a contact for this account? (Warm
     # vs cold cold-open in the dossier.) Best-effort; never blocks the render.
     try:
@@ -2140,6 +2238,12 @@ def _render_dashboard():
         _r["contact_on_file"] = _on_file(_r.get("company"))
         _r["lead"] = lead_engine.score_lead(_r, _kind, _desk)
         _r["outcome"] = _outc.get(_id)
+        # The presentation gate: presented (earns a card) vs queued (a
+        # hypothesis with a reason + recheck). Investigation overlays and
+        # the acceptance auto-throttle feed in here.
+        _r["gate"] = _gatemod.assess(_r, _r["lead"], verdicts=_verds,
+                                     investigation=_invs.get(_id))
+        _r["verdict"] = _vmap.get(_id) or ""
         _r["_legacy_opp"] = _r.get("_opp") or 0.0   # kept as the within-band tiebreaker
     for _p in predictors:
         _enrich(_p, "predictor", _p.get("pid"))
@@ -2231,8 +2335,19 @@ def _render_dashboard():
     _fw_counts = {"active": 0, "followed_up": 0, "dismissed": 0}
     for fw in framework_events:
         _fw_counts[fw.get("triage", "active")] = _fw_counts.get(fw.get("triage", "active"), 0) + 1
+    # Board meta first — the gate's daily cap (throttle-aware) feeds the
+    # row builder, which demotes over-cap rows into the queue.
+    try:
+        from tool import gate as _gm, verdict_log as _vl
+        _acc = _gm.acceptance(_vl.get_all())
+    except Exception:
+        _acc = {"n": 0, "rate": None, "throttled": False, "cap": 7}
+    _mr_meta = {"cap": _acc.get("cap", 7),
+                "throttled": bool(_acc.get("throttled")),
+                "accRate": _acc.get("rate"), "accN": _acc.get("n", 0)}
     _mr_bd, _mr_jobs = _build_mr_rows(premarket_rows, leads,
-                                      _default_role_label())
+                                      _default_role_label(),
+                                      cap=_mr_meta["cap"])
     return render_template_string(
         TEMPLATE,
         example_role=_default_role_label(),
@@ -2244,6 +2359,7 @@ def _render_dashboard():
         mr_js=MR_JS,
         mr_bd=_mr_bd,
         mr_jobs=_mr_jobs,
+        mr_meta=_mr_meta,
         leads=leads,
         predictors=predictors,
         funding_events=funding_events,
@@ -2274,6 +2390,28 @@ def _render_dashboard():
         build_stamp=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         deploy_rev=_DEPLOY_REV,
     )
+
+
+@app.route("/api/lead/verdict", methods=["POST"])
+@_auth_required
+def api_lead_verdict():
+    """Record an AD verdict on a presented lead (Call today / Nurture /
+    Reject). The verdict log is the acceptance-rate ground truth that
+    drives the gate's auto-throttle; returns the refreshed acceptance
+    snapshot so the console can update its meter in place."""
+    from tool import gate as _g, verdict_log
+    data = _safe_json_body()
+    ok = verdict_log.record(
+        str(data.get("rid") or "").strip(),
+        str(data.get("idtype") or "").strip(),
+        str(data.get("verdict") or "").strip(),
+        str(data.get("company") or "").strip())
+    if not ok:
+        return jsonify({"ok": False, "detail": "invalid rid or verdict"}), 400
+    acc = _g.acceptance(verdict_log.get_all())
+    return jsonify({"ok": True, "acceptance": {
+        "n": acc["n"], "rate": acc["rate"], "throttled": acc["throttled"],
+        "cap": acc["cap"]}})
 
 
 @app.route("/api/predictor/<pid>/status", methods=["POST"])
@@ -5504,7 +5642,7 @@ TEMPLATE = r"""
     <div id="mr"></div>
   </div>
   <div class="mr-toast" id="mr-toast"></div>
-  <script>window.MR_BD={{ mr_bd|tojson }};window.MR_JOBS={{ mr_jobs|tojson }};window.MR_CAL={{ mr_cal|tojson }};</script>
+  <script>window.MR_BD={{ mr_bd|tojson }};window.MR_JOBS={{ mr_jobs|tojson }};window.MR_CAL={{ mr_cal|tojson }};window.MR_META={{ mr_meta|tojson }};</script>
   <script>{{ mr_js|safe }}</script>
 
   <!-- LEADS + PREDICTORS (legacy panels — hidden; retained for refresh JS) -->
