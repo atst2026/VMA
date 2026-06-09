@@ -290,6 +290,8 @@ def load_ch_snapshot_for_autoupdate() -> dict[str, dict]:
                 "name": details.get("name") or "",
                 "occupation": details.get("occupation") or "",
                 "officer_role": details.get("officer_role") or "",
+                # absent in snapshots written before this key was captured
+                "appointed_on": details.get("appointed_on"),
             })
         out[name] = {"officers": officers}
     return out

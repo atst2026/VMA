@@ -225,13 +225,23 @@ def _passes_visibility(png_bytes: bytes) -> bool:
     """True if the image stays visible composited on the WHITE cover — guards
     against white/near-transparent logos that would vanish on the page (the
     Wetherspoon-white-'W' failure mode). Requires >= 2% of pixels to be
-    meaningfully dark/inked after compositing on white."""
+    meaningfully dark/inked after compositing on white.
+
+    Ink is measured over the CONTENT box (what _process_logo will actually
+    crop to and display), not the raw canvas — Commons P154 files often pad a
+    perfectly good logo on a large canvas, which diluted the ink fraction
+    below the threshold and silently discarded the better wordmark in favour
+    of the bare logo.dev symbol. A white-on-transparent logo still fails: its
+    cropped content composites to pure white (zero ink)."""
     from PIL import Image
     try:
         img = Image.open(_io.BytesIO(png_bytes)).convert("RGBA")
         img.load()
     except Exception:
         return False
+    bbox = _logo_content_bbox(img)
+    if bbox:
+        img = img.crop(bbox)
     bg = Image.new("RGBA", img.size, (255, 255, 255, 255))
     bg.alpha_composite(img)
     lum = bg.convert("L")
@@ -281,6 +291,14 @@ def _company_logo_data_uri(company: str, box_h: int, max_w: int) -> str | None:
         return None
     png = _fetch_logo_png(domain, token)
     if not png:
+        return None
+    # Same visible-on-white gate as the P154 branch: logo.dev serves some
+    # brands as a white/light mark on transparency, which _process_logo's
+    # placeholder check deliberately exempts when wide (a wordmark) — without
+    # this gate it would land invisible on the white cover.
+    if not _passes_visibility(png):
+        log.info("logo.dev: logo for %s fails visible-on-white — text wordmark",
+                 domain)
         return None
     return _process_logo(png, box_h, max_w)
 

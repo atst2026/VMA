@@ -19,6 +19,7 @@ Required env (set in .env):
 from __future__ import annotations
 import base64
 import functools
+import hmac
 import json
 import logging
 import os
@@ -104,7 +105,10 @@ def _auth_required(f):
         if not DASHBOARD_PASSWORD:
             return f(*args, **kwargs)
         auth = request.authorization
-        if not auth or auth.password != DASHBOARD_PASSWORD:
+        # Any username is accepted by design (see RENDER_DEPLOY.md); the
+        # password is compared constant-time to avoid a timing side-channel.
+        if not auth or not hmac.compare_digest(auth.password or "",
+                                               DASHBOARD_PASSWORD):
             return Response(
                 "Auth required", 401,
                 {"WWW-Authenticate": 'Basic realm="VMA Dashboard"'},
@@ -1263,8 +1267,15 @@ def _desk_response(profile_key: str):
     # backgrounding the tab / opening from a home-screen shortcut — otherwise
     # a dropped session cookie sends the desk's own API calls back to the
     # comms default. Identical for both desks, so comms is unaffected.
+    # httponly: nothing client-side reads this cookie — only the server
+    # resolves the desk from it. secure: set whenever the request arrived
+    # over HTTPS (Render terminates TLS and forwards the proto header);
+    # plain-HTTP localhost keeps a non-secure cookie so local dev works.
+    https = (request.is_secure
+             or request.headers.get("X-Forwarded-Proto", "") == "https")
     resp.set_cookie("vma_profile", profile_key, samesite="Lax",
-                    path="/", max_age=60 * 60 * 24 * 180)
+                    path="/", max_age=60 * 60 * 24 * 180,
+                    httponly=True, secure=https)
     return resp
 
 
@@ -2477,6 +2488,9 @@ def api_output_view():
         return Response("Invalid artifact id.", status=400,
                         mimetype="text/plain")
     art = (request.args.get("artifact") or "report").strip()
+    # Sanitise: this goes into the Content-Disposition header, so strip
+    # anything that could split the header or break the quoted filename.
+    art = "".join(c for c in art if c.isalnum() or c in "-_.") or "report"
     # The comms pitch pack ships as a branded PDF; serve it directly (inline,
     # so the browser tab renders it). Everything else is HTML.
     pdf = _artifact_pdf(artifact_id)

@@ -124,25 +124,32 @@ def push(repo_path: str, text: str, message: str, namespaced: bool = True) -> bo
     log that annotates the shared report artifacts."""
     if not _enabled():
         return False
-    _remote, sha = _get_remote(repo_path, namespaced)
-    body = {
-        "message": message,
-        "content": base64.b64encode(text.encode("utf-8")).decode("ascii"),
-        "branch": BRANCH,
-    }
-    if sha:
-        body["sha"] = sha
-    try:
-        r = requests.put(_contents_url(repo_path, namespaced), headers=_headers(),
-                          json=body, timeout=15)
-        if r.status_code in (200, 201):
-            return True
-        log.info("github_state PUT %s -> HTTP %s %s",
-                 repo_path, r.status_code, r.text[:160])
-        return False
-    except Exception as e:
-        log.info("github_state PUT %s failed: %s", repo_path, e)
-        return False
+    # Retry once on a 409/422 conflict: another writer (the other desk's
+    # brief workflow, or a concurrent dashboard mutation) may have committed
+    # to the branch between our sha fetch and our PUT. Re-fetch the sha and
+    # try again so the state isn't silently dropped until the next mutation.
+    for attempt in range(2):
+        _remote, sha = _get_remote(repo_path, namespaced)
+        body = {
+            "message": message,
+            "content": base64.b64encode(text.encode("utf-8")).decode("ascii"),
+            "branch": BRANCH,
+        }
+        if sha:
+            body["sha"] = sha
+        try:
+            r = requests.put(_contents_url(repo_path, namespaced), headers=_headers(),
+                              json=body, timeout=15)
+            if r.status_code in (200, 201):
+                return True
+            log.info("github_state PUT %s -> HTTP %s %s",
+                     repo_path, r.status_code, r.text[:160])
+            if r.status_code not in (409, 422) or attempt:
+                return False
+        except Exception as e:
+            log.info("github_state PUT %s failed: %s", repo_path, e)
+            return False
+    return False
 
 
 def push_async(repo_path: str, text: str, message: str, namespaced: bool = True) -> None:

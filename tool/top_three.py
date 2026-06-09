@@ -485,9 +485,9 @@ def _candidates_from_funding() -> list[Action]:
         key = hashlib.sha1(company.lower().encode("utf-8")).hexdigest()[:12]
         score = 30.0
         # Window-proximity boost — comms hire ~3-6mo after close.
-        days_since = f.get("days_since_announce")
+        days_since_i: int | None = None
         try:
-            days_since_i = int(days_since)
+            days_since_i = int(f.get("days_since_announce"))
             if 30 <= days_since_i <= 120:
                 score += 18.0   # sweet spot
             elif 0 <= days_since_i < 30:
@@ -498,7 +498,7 @@ def _candidates_from_funding() -> list[Action]:
         stage = (f.get("stage") or "").strip()
         why_bits = [b for b in [amount, stage,
                                 f"{days_since_i}d ago"
-                                if days_since is not None else ""]
+                                if days_since_i is not None else ""]
                     if b]
         actions.append(Action(
             action_id=f"funding:{key}",

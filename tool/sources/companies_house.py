@@ -439,15 +439,26 @@ def resolve_company_number(name: str) -> str | None:
 
 # ---- Officer snapshot diff ----------------------------------------------
 def company_officers(company_number: str) -> list[dict]:
-    """Current officers of a given company number. Returns [] on error."""
+    """Current officers of a given company number. Returns [] on error.
+
+    The endpoint pages at items_per_page (max 100); large group structures
+    can list more, so follow start_index until exhausted (capped at 5 pages
+    = 500 officers as a runtime bound) rather than silently dropping the
+    rest — a departure on page 2 would otherwise never be detected."""
     if not COMPANIES_HOUSE_KEY or not company_number:
         return []
     url = f"{SOURCES['companies_house_api']}/company/{company_number}/officers"
-    r = get(url, params={"items_per_page": 100},
-            auth=(COMPANIES_HOUSE_KEY, ""))
-    if not r or r.status_code != 200:
-        return []
-    return r.json().get("items", [])
+    items: list[dict] = []
+    for page in range(5):
+        r = get(url, params={"items_per_page": 100, "start_index": page * 100},
+                auth=(COMPANIES_HOUSE_KEY, ""))
+        if not r or r.status_code != 200:
+            break
+        batch = r.json().get("items", [])
+        items.extend(batch)
+        if len(batch) < 100:
+            break
+    return items
 
 
 def _officer_id(officer: dict) -> str:
@@ -616,6 +627,8 @@ def detect_officer_changes(max_companies: int | None = None,
                     "name": o.get("name"),
                     "occupation": o.get("occupation"),
                     "officer_role": o.get("officer_role"),
+                    # contacts/auto_update reads this for tenure_start
+                    "appointed_on": o.get("appointed_on"),
                 }
                 for oid, o in today_ids.items()
             },
