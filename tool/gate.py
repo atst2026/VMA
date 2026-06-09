@@ -223,44 +223,69 @@ def first_move(lead: dict, company: str) -> str:
 
 
 # ---- Lead Strength (the board's 0-100 ordering score) --------------------
-# Composed entirely from components the engine already computes — fit,
-# signal, evidence independence, stack dimensions, timing and
-# contradictions — so the number is an honest summary, not a new claim.
-# The card still shows the evidence behind it; the score is for scanning.
+# Weighted the way a recruitment AD qualifies, on two axes: COMMERCIAL
+# value (fit 20 + trigger signal 30 + fee-propensity 25 + timing 10 = 85)
+# and TRUTH (evidence independence 15). Source-counting verifies a lead;
+# it does not dominate its value. Fee-propensity is the research's
+# "will they pay" axis: a company demonstrably buying recruitment scores
+# 25, unknown 10, one visibly building its own TA team 0 (its in-house
+# contradiction already blocks the Call-ready tier upstream). The card
+# shows the evidence behind every component; the number is for scanning.
 SCORE_READY = 70      # >= this renders green
 SCORE_DEVELOPING = 45  # >= this renders amber; below renders grey
 
+# Fee-propensity points by posture; authoritative facts beat inference.
+PROP_PROVEN = 25      # award notice / AD seed: a proven fee-payer
+PROP_EXTERNAL = 16    # inferred external lean (cluster w/o recruiter, text)
+PROP_NEUTRAL = 10     # nothing known either way
+PROP_INTERNAL = 0     # building / running the in-house route
 
-def strength_score(lead: dict, g: dict) -> int:
+
+def propensity_points(lead: dict, item: dict | None = None) -> tuple[int, str]:
+    """(points, basis) for the will-they-pay axis. Authoritative flags on
+    the item (propensity store / AD seeds, via tool.propensity.annotate)
+    outrank the engine's inferred posture direction."""
+    item = item or {}
+    if item.get("internal_ta") is True:
+        return PROP_INTERNAL, "authoritative"
+    if item.get("psl_status") in ("on", "yes", True):
+        return PROP_PROVEN, "authoritative"
+    direction = ((lead or {}).get("posture") or {}).get("direction")
+    if direction == "internal":
+        return PROP_INTERNAL, "inferred"
+    if direction == "external":
+        return PROP_EXTERNAL, "inferred"
+    return PROP_NEUTRAL, "unknown"
+
+
+def strength_score(lead: dict, g: dict, item: dict | None = None) -> int:
     """0-100 Lead Strength. Deterministic; never raises."""
     try:
         lead, g = lead or {}, g or {}
         ev = g.get("evidence") or {}
-        # Fit (0-10 -> 0-26): is this even VMA's buyer?
-        score = min(max(float(lead.get("fit") or 0), 0), 10) * 2.6
+        # Fit (0-10 -> 0-20): is this even VMA's buyer?
+        score = min(max(float(lead.get("fit") or 0), 0), 10) * 2.0
         # Signal (0-~10 soft-capped -> 0-30): trigger weight x recency x
-        # confidence, the conjunction model's continuous scale.
+        # confidence — multi-event stacks already accumulate here.
         score += min(max(float(lead.get("signal") or 0), 0), 10) * 3.0
-        # Evidence independence (0-18): families capped at 3, primary bonus.
+        # Fee-propensity (0-25): the will-they-pay axis.
+        score += propensity_points(lead, item)[0]
+        # Evidence independence (0-15): the truth axis — verifies, never
+        # dominates. Families capped at 3, primary-source bonus.
         fams = min(int(ev.get("families") or 0), 3)
-        score += fams / 3 * 14
+        score += fams / 3 * 11
         if (ev.get("primary") or 0) >= 1:
             score += 4
-        # Stack dimensions (0-12): extra same-direction layers.
-        score += min(int(lead.get("n_pro") or 0), 3) * 4
-        # Timing (0-8): in-window beats premature beats lapsed.
+        # Timing (0-10): in-window beats premature beats lapsed.
         reasons = " ".join(g.get("reasons") or [])
         if lead.get("premature"):
-            score += 2
+            score += 3
         elif "lapsed" in reasons:
             score += 0
         else:
-            score += 8
+            score += 10
         # Contradictions pull hard (-8 each, max -16).
         score -= min(len(lead.get("contradictions") or []), 2) * 8
-        # The gate's own judgement: a presented card is call-ready.
-        if g.get("presented"):
-            score += 6
         # Hard blocks floor the score into the Blocked band.
         anti = set(lead.get("anti_triggers") or [])
         if lead.get("conflict") or anti & {"administration", "hiring_freeze"}:

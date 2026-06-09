@@ -17,12 +17,38 @@ def _g(presented=True, families=3, primary=1, reasons=None):
 
 
 def test_score_bounds_and_strong_lead_reads_high():
+    # Commercial axes only (propensity unknown -> neutral 10): 20 fit +
+    # 30 signal + 10 propensity + 15 evidence + 10 timing = 85.
     s = gate.strength_score(_lead(fit=10, signal=10, n_pro=3),
                             _g(families=3, primary=1))
-    assert 90 <= s <= 100
+    assert s == 85
+    # A proven fee-payer maxes the scale.
+    full = gate.strength_score(_lead(fit=10, signal=10, n_pro=3),
+                               _g(families=3, primary=1),
+                               {"psl_status": "on"})
+    assert full == 100
     # Degenerate input never raises and lands at the floor of the scale
-    # (only the open-window timing credit, no fit/signal/evidence).
-    assert gate.strength_score(None, None) == gate.strength_score({}, {}) <= 10
+    # (neutral propensity + open-window timing only).
+    assert gate.strength_score(None, None) == gate.strength_score({}, {}) <= 25
+
+
+def test_propensity_axis_orders_the_score():
+    lead, g = _lead(), _g()
+    neutral = gate.strength_score(lead, g)
+    proven = gate.strength_score(lead, g, {"psl_status": "on"})
+    inhouse = gate.strength_score(lead, g, {"internal_ta": True})
+    external = gate.strength_score(
+        dict(lead, posture={"direction": "external", "reasons": []}), g)
+    assert proven - neutral == gate.PROP_PROVEN - gate.PROP_NEUTRAL
+    assert neutral - inhouse == gate.PROP_NEUTRAL - gate.PROP_INTERNAL
+    assert external - neutral == gate.PROP_EXTERNAL - gate.PROP_NEUTRAL
+    assert proven > external > neutral > inhouse
+
+
+def test_authoritative_flags_beat_inferred_posture():
+    lead = _lead(posture={"direction": "external", "reasons": []})
+    pts, basis = gate.propensity_points(lead, {"internal_ta": True})
+    assert pts == gate.PROP_INTERNAL and basis == "authoritative"
 
 
 def test_score_orders_evidence_and_contradictions():
