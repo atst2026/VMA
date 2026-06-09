@@ -968,6 +968,56 @@ OWNERSHIP_CHANGE = TriggerType(
 )
 
 
+# ---- v2 demand-first triggers (down-market engine) ----------------------
+# These three target FEE-PROBABILITY rather than hire-probability: buyers
+# who must use an agency because their own route has visibly failed, or
+# whose budget has visibly unfrozen. None are regex-driven — they are
+# emitted by dedicated detectors:
+#   inhouse_search_failing / hiring_restart — tool/predictive/inhouse_failure.py
+#   mishire_reversal — tool/sources/wayback.py short-tenure classification
+INHOUSE_SEARCH_FAILING = TriggerType(
+    key="inhouse_search_failing",
+    label="In-house search failing",
+    weight=0.95,
+    lead_time_weeks=(0, 4),
+    who_to_call="Hiring manager (CCO / Head of Comms) — they own the unfilled-seat pain, not HR",
+    implication=(
+        "A senior comms/marketing role at {company} is going unfilled without "
+        "an agency — aged or pulled-and-reposted. They have already paid the "
+        "cost of the DIY route; this is the highest-converting call in a "
+        "quiet market. {evidence}"
+    ),
+    patterns=[],   # emitted by tool/predictive/inhouse_failure.py, not regex
+)
+HIRING_RESTART = TriggerType(
+    key="hiring_restart",
+    label="Hiring restart (account thaw)",
+    weight=0.85,
+    lead_time_weeks=(0, 6),
+    who_to_call="CCO / Head of Comms + CHRO — the first agency through the door when budget unfreezes wins the year",
+    implication=(
+        "{company} has resumed senior hiring after a long freeze — budget is "
+        "moving again, and most competitors are still treating the account "
+        "as dormant. {evidence}"
+    ),
+    patterns=[],   # emitted by tool/predictive/inhouse_failure.py, not regex
+)
+MISHIRE_REVERSAL = TriggerType(
+    key="mishire_reversal",
+    label="Mishire reversal (short-tenure exit)",
+    weight=1.0,
+    lead_time_weeks=(0, 8),
+    who_to_call="CEO / CHRO — a failed senior hire is a board-visible cost; a guaranteed retained search is the de-risked fix",
+    implication=(
+        "A senior comms/marketing leader left {company} within roughly 18 "
+        "months of arriving — a failed-hire signature. The replacement is "
+        "forced, urgent and usually confidential, and confidence in the "
+        "do-it-themselves route is broken. {evidence}"
+    ),
+    patterns=[],   # emitted by tool/sources/wayback.py, not regex
+)
+
+
 TRIGGERS = [CEO_CHANGE, CHAIR_CHANGE, CHRO_CHANGE, CFO_CHANGE,
             IR_DIRECTOR_CHANGE, COMMS_LEADER_DEPARTURE,
             MNA, ACTIVIST_STAKE, PE_ACQUISITION,
@@ -978,7 +1028,9 @@ TRIGGERS = [CEO_CHANGE, CHAIR_CHANGE, CHRO_CHANGE, CFO_CHANGE,
             # BD-strengthening additions
             REBRAND, AGENCY_ACCOUNT_MOVE, FRAMEWORK_AWARD, ESG_BCORP,
             MARTECH_ADOPTION, LEADERSHIP_TENURE, SECURED_FINANCING,
-            OWNERSHIP_CHANGE]
+            OWNERSHIP_CHANGE,
+            # v2 demand-first additions
+            INHOUSE_SEARCH_FAILING, HIRING_RESTART, MISHIRE_REVERSAL]
 BY_KEY = {t.key: t for t in TRIGGERS}
 
 # Marketing desk (FIRST DRAFT): the trigger DETECTION (regex patterns) is
@@ -1068,6 +1120,20 @@ if _active_profile().key == "marketing":
         "ownership_change": ("Incoming owner / CMO",
             "Ownership change at {company}. New owners commonly refresh the marketing "
             "leadership in the first 6 months."),
+        "inhouse_search_failing": ("Hiring manager (CMO / Marketing Director) — they own the unfilled-seat pain, not HR",
+            "A senior marketing role at {company} is going unfilled without an "
+            "agency — aged or pulled-and-reposted. They have already paid the "
+            "cost of the DIY route; this is the highest-converting call in a "
+            "quiet market. {evidence}"),
+        "hiring_restart": ("CMO / Marketing Director + CHRO — the first agency through the door when budget unfreezes wins the year",
+            "{company} has resumed senior hiring after a long freeze — budget is "
+            "moving again, and most competitors are still treating the account "
+            "as dormant. {evidence}"),
+        "mishire_reversal": ("CEO / CHRO — a failed senior hire is a board-visible cost; a guaranteed retained search is the de-risked fix",
+            "A senior marketing leader left {company} within roughly 18 months "
+            "of arriving — a failed-hire signature. The replacement is forced, "
+            "urgent and usually confidential, and confidence in the "
+            "do-it-themselves route is broken. {evidence}"),
     }
     for _k, (_w, _i) in _MKT_COPY.items():
         _t = BY_KEY.get(_k)
@@ -1216,6 +1282,12 @@ _MARKETING_TRIGGER_KEYS = {
     "crisis_event",            # brand-trust / reputation rebuild → marketing hire
     "activist_stake",          # activist defence → brand & comms refresh
     "redundancy",              # change comms / employer-brand rebuild
+    # v2 demand-first additions — desk-agnostic by construction: the job
+    # signals feeding the posting ledger are already profile-filtered
+    # upstream, and a failed marketing hire is a marketing-desk lead.
+    "inhouse_search_failing",  # aged / reposted senior marketing role
+    "hiring_restart",          # marketing account coming out of freeze
+    "mishire_reversal",        # failed senior marketing hire → forced search
 }
 
 

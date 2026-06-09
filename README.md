@@ -88,6 +88,33 @@ Manual dispatch bypasses the 08:30–10:30 window check.
 - Score = base × kind-multiplier × geo-weight × freshness × (1 + 0.25 × role-strength)
 - Top 5 by score form the ranked call list; the rest appear below as a full signal set
 
+## BD Build v2 — the demand-first upgrade
+
+v1 answered "who is hiring?". In a quiet market that is the wrong question —
+fewer companies hire, and the ones that do in-house it. v2 targets
+**willingness to pay a fee** and **creates demand where none is advertised**.
+Hover any `v2` badge on the dashboard for the per-section explanation.
+
+New counter-cyclical detectors (zero new fetches, stack into the existing
+ranker):
+
+| Trigger | What it catches | Why it converts |
+|---|---|---|
+| `inhouse_search_failing` | A senior role aged 45+ days, or withdrawn-and-reposted, with no recruiter attached (`tool/predictive/inhouse_failure.py` posting ledger) | The buyer already paid the cost of the DIY route — the highest-converting call in a down market |
+| `hiring_restart` | First senior posting after 6+ months of company-level silence | The freeze just ended; competitors still treat the account as dormant |
+| `mishire_reversal` | A leader removed from the team page within ~18 months of joining (tenure-checked Wayback diff) | A failed hire forces an urgent, usually confidential replacement — work that cannot be done in-house |
+
+New demand-creation commands (run in Claude Code, no API cost):
+
+- `/mpc "<candidate>" [company] [title]` — Most Placeable Candidate
+  spec-marketing: builds on `tool/reverse_match.py`, verifies each target's
+  why-now live, and writes an anonymised spec-memo pack that creates roles
+  where none are advertised.
+- `/cfo-memo "<company>" [role]` — the internal business case the CCO/CMO
+  takes into their own budget meeting: cost-of-vacancy vs fee from the
+  house calculators, in-house vs retained route comparison. Wins the
+  sign-off fight that kills fees in a budget-cut market.
+
 ## What the tool deliberately does not do
 
 - Touch Sara's LinkedIn / Sales Nav / Recruiter seat
