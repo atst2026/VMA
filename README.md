@@ -120,20 +120,24 @@ New demand-creation commands (run in Claude Code, no API cost):
 v2 found the demand; v3 governs what an Account Director actually sees.
 An AD must never be shown a watching brief dressed up as a lead:
 
-- **Presentation gate** (`tool/gate.py`) — hard rules between the pipeline
-  and the board: 3+ independent source families with a primary presents at
-  full strength, hard blockers and amplifier-only signals never present,
-  lapsed windows and too-fresh triggers queue with a recheck date. Queued
-  hypotheses stay visible under the board's **Queued** filter.
-- **Lead cards** now carry calibrated confidence (High/Moderate), the
+- **Tiered board with Lead Strength** — every active lead shows a 0–100
+  strength score (fit × signal × corroboration × timing; contradictions
+  subtract) and the board groups into four sections: **Call-ready**
+  (cleared the gate, capped ~7), **Developing**, **Early signals**
+  (collapsed by default) and **Blocked**. Nothing is hidden; the gate
+  grades instead of gatekeeping.
+- **Presentation gate** (`tool/gate.py`) — hard rules decide Call-ready:
+  3+ independent source families with a primary presents at full
+  strength; hard blockers and amplifier-only signals never present;
+  lapsed windows and too-fresh triggers wait with a recheck date and the
+  reason shown on the card ("Why not call-ready").
+- **Lead cards** carry calibrated confidence (High/Moderate), the
   evidence-independence count, **"What kills this"** (the playbook's kill
   conditions plus the live weakest link) and a **suggested first move**.
-- **Acceptance governance** — Call today / Nurture / Reject buttons on
-  every card feed `tool/verdict_log.py`; the trailing-7-day acceptance
-  rate shows in the board bar and **auto-throttles** the gate (acceptance
-  <50% over 10+ verdicts → evidence bar rises, daily cap drops 7→5).
-  The board caps at ~7 cards; overflow demotes to the queue, never
-  silently dropped.
+- **Acceptance plumbing (dormant)** — `tool/verdict_log.py`, the
+  `/api/lead/verdict` endpoint and the gate's auto-throttle remain wired
+  but the card buttons were removed by AD preference; re-adding the
+  buttons re-enables the acceptance metric unchanged.
 - **Window re-tool** — the flat 21-day "too fresh" hold is now per-family:
   leadership changes present in the 4–12-week window (hold 28d), funding
   keeps 21d, and a fresh event no longer re-freezes a mature stack.
