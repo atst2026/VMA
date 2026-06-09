@@ -43,8 +43,18 @@ def _slug(pid: str) -> str:
 
 def write_overlay(pid: str, verdict: str, note: str = "",
                   recheck_days: int | None = None,
-                  evidence_added: list[str] | None = None) -> bool:
-    """Used by the /investigate command. Returns False on bad input."""
+                  evidence_added: list[str] | None = None,
+                  *,
+                  red_team: bool = False,
+                  conviction: int | None = None,
+                  business_case: str = "",
+                  warm_opening: str = "",
+                  economic_buyer: str = "",
+                  champion_path: str = "",
+                  kill_reasons: list[str] | None = None) -> bool:
+    """Used by /investigate and /red-team. The conviction fields are the
+    red-team run's typed verdict; the gate carries them onto the card.
+    Returns False on bad input."""
     if verdict not in VALID_VERDICTS or not pid:
         return False
     d = _dir()
@@ -53,6 +63,19 @@ def write_overlay(pid: str, verdict: str, note: str = "",
                "date": datetime.now(timezone.utc).isoformat(),
                "recheck_days": recheck_days,
                "evidence_added": evidence_added or []}
+    if red_team:
+        payload["red_team"] = True
+        if conviction is not None:
+            try:
+                payload["conviction"] = max(0, min(100, int(conviction)))
+            except (TypeError, ValueError):
+                pass
+        payload["business_case"] = str(business_case or "")[:600]
+        payload["warm_opening"] = str(warm_opening or "")[:400]
+        payload["economic_buyer"] = str(economic_buyer or "")[:200]
+        payload["champion_path"] = str(champion_path or "")[:200]
+        payload["kill_reasons"] = [str(k)[:200] for k in (kill_reasons or [])
+                                   if k][:5]
     path = d / f"{_slug(pid)}.json"
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(payload, indent=1), encoding="utf-8")

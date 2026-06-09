@@ -697,7 +697,11 @@ _CH_EVENT_WINDOW_DAYS = 90
 # Long-tenure threshold for the flight-risk signal. CMO/CCO tenure is among
 # the shortest in the C-suite (~4–5 years); a comms/marketing board officer
 # past this is a soft succession-watch signal.
-_TENURE_FLIGHT_RISK_DAYS = 365 * 4
+# Spencer Stuart 2025: mean CMO tenure is 4.1 years (shortest in the
+# C-suite), so the APPROACH to four years is the succession-watch window
+# — fire from 3.5y, with 3.5-4.5y flagged as the peak-churn band.
+_TENURE_FLIGHT_RISK_DAYS = int(365 * 3.5)
+_TENURE_PEAK_MAX_DAYS = int(365 * 4.5)
 
 
 def _ch_get_json(path: str, params: dict | None = None) -> dict | None:
@@ -880,13 +884,17 @@ def _tenure_events(name: str, number: str, officers: list[dict]) -> list[Trigger
             continue
         officer_name = o.get("name") or "A senior officer"
         years = round(tenure_days / 365.0, 1)
+        in_peak = tenure_days <= _TENURE_PEAK_MAX_DAYS
         out.append(TriggerEvent(
             trigger_key="leadership_tenure",
             trigger_label="Leadership tenure (flight-risk / succession watch)",
             company=name,
             evidence=(f"{officer_name} has held {occ} at {name} "
                       f"for ~{years} years (appointed {appointed.date().isoformat()}) "
-                      f"— a long tenure in a short-tenure seat."),
+                      + ("— inside the 3.5-4.5 year peak-churn window "
+                         "for senior marketing/comms seats."
+                         if in_peak else
+                         "— a long tenure in a short-tenure seat.")),
             url=_ch_officers_url(number),
             source_label="Companies House (tenure / appointed_on)",
             # Soft, slow-decaying restlessness signal; date it to now so it
