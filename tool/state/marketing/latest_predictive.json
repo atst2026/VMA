@@ -1,136 +1,5 @@
 [
   {
-    "company": "Oxford Biomedica",
-    "score": 1.224,
-    "depth": 2,
-    "account_tier": "watchlist",
-    "predicted_role": "Brand-Integration Director",
-    "window_weeks_min": 8,
-    "window_weeks_max": 26,
-    "window_label": "8\u201326 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
-    "linkedin_profile_url": null,
-    "linkedin_profile_role": null,
-    "linkedin_profile_name": null,
-    "seeded_contact_name": null,
-    "seeded_contact_role": null,
-    "events": [
-      {
-        "trigger_key": "mna",
-        "trigger_label": "M&A (integration)",
-        "evidence": "Oxford BioMedica leaves door open to private equity takeover .",
-        "url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxPZ185SlltcUQ3elg4eUxGTjAzZ2lQVC1uYVZSZlcxTHNmQmZpem5GQWt0Q3dXM3M3eVozdTgyeUFRbzBKR3VKQVR1bXJLNFRrQ2R0bVVVSXFNUHl4NFZabGZVa1VQYnN4UGc3MVg1bUE4QU9MR0wyVjFMN09EM1VkSllhQWo?oc=5",
-        "source": "Google News",
-        "published": "2026-06-05T04:02:01+00:00",
-        "tier": "other"
-      },
-      {
-        "trigger_key": "secured_financing",
-        "trigger_label": "Share allotment (capital raise)",
-        "evidence": "Companies House: Oxford Biomedica filed an allotment of shares (SH01) on 2026-06-07 \u2014 fresh equity capital.",
-        "url": "https://find-and-update.company-information.service.gov.uk/company/03252665/filing-history",
-        "source": "Companies House (share allotment)",
-        "published": "2026-06-07T00:00:00+00:00",
-        "tier": "listed"
-      },
-      {
-        "trigger_key": "secured_financing",
-        "trigger_label": "Share allotment (capital raise)",
-        "evidence": "Companies House: Oxford Biomedica filed an allotment of shares (SH01) on 2026-06-07 \u2014 fresh equity capital.",
-        "url": "https://find-and-update.company-information.service.gov.uk/company/03252665/filing-history",
-        "source": "Companies House (share allotment)",
-        "published": "2026-06-07T00:00:00+00:00",
-        "tier": "listed"
-      },
-      {
-        "trigger_key": "secured_financing",
-        "trigger_label": "Share allotment (capital raise)",
-        "evidence": "Companies House: Oxford Biomedica filed an allotment of shares (SH01) on 2026-06-07 \u2014 fresh equity capital.",
-        "url": "https://find-and-update.company-information.service.gov.uk/company/03252665/filing-history",
-        "source": "Companies House (share allotment)",
-        "published": "2026-06-07T00:00:00+00:00",
-        "tier": "listed"
-      },
-      {
-        "trigger_key": "secured_financing",
-        "trigger_label": "Share allotment (capital raise)",
-        "evidence": "Companies House: Oxford Biomedica filed an allotment of shares (SH01) on 2026-05-27 \u2014 fresh equity capital.",
-        "url": "https://find-and-update.company-information.service.gov.uk/company/03252665/filing-history",
-        "source": "Companies House (share allotment)",
-        "published": "2026-05-27T00:00:00+00:00",
-        "tier": "listed"
-      },
-      {
-        "trigger_key": "secured_financing",
-        "trigger_label": "Share allotment (capital raise)",
-        "evidence": "Companies House: Oxford Biomedica filed an allotment of shares (SH01) on 2026-05-27 \u2014 fresh equity capital.",
-        "url": "https://find-and-update.company-information.service.gov.uk/company/03252665/filing-history",
-        "source": "Companies House (share allotment)",
-        "published": "2026-05-27T00:00:00+00:00",
-        "tier": "listed"
-      },
-      {
-        "trigger_key": "secured_financing",
-        "trigger_label": "Share allotment (capital raise)",
-        "evidence": "Companies House: Oxford Biomedica filed an allotment of shares (SH01) on 2026-05-26 \u2014 fresh equity capital.",
-        "url": "https://find-and-update.company-information.service.gov.uk/company/03252665/filing-history",
-        "source": "Companies House (share allotment)",
-        "published": "2026-05-26T00:00:00+00:00",
-        "tier": "listed"
-      },
-      {
-        "trigger_key": "secured_financing",
-        "trigger_label": "Share allotment (capital raise)",
-        "evidence": "Companies House: Oxford Biomedica filed an allotment of shares (SH01) on 2026-05-26 \u2014 fresh equity capital.",
-        "url": "https://find-and-update.company-information.service.gov.uk/company/03252665/filing-history",
-        "source": "Companies House (share allotment)",
-        "published": "2026-05-26T00:00:00+00:00",
-        "tier": "listed"
-      },
-      {
-        "trigger_key": "secured_financing",
-        "trigger_label": "Share allotment (capital raise)",
-        "evidence": "Companies House: Oxford Biomedica filed an allotment of shares (SH01) on 2026-05-22 \u2014 fresh equity capital.",
-        "url": "https://find-and-update.company-information.service.gov.uk/company/03252665/filing-history",
-        "source": "Companies House (share allotment)",
-        "published": "2026-05-22T00:00:00+00:00",
-        "tier": "listed"
-      },
-      {
-        "trigger_key": "secured_financing",
-        "trigger_label": "Share allotment (capital raise)",
-        "evidence": "Companies House: Oxford Biomedica filed an allotment of shares (SH01) on 2026-05-22 \u2014 fresh equity capital.",
-        "url": "https://find-and-update.company-information.service.gov.uk/company/03252665/filing-history",
-        "source": "Companies House (share allotment)",
-        "published": "2026-05-22T00:00:00+00:00",
-        "tier": "listed"
-      },
-      {
-        "trigger_key": "secured_financing",
-        "trigger_label": "Share allotment (capital raise)",
-        "evidence": "Companies House: Oxford Biomedica filed an allotment of shares (SH01) on 2026-05-14 \u2014 fresh equity capital.",
-        "url": "https://find-and-update.company-information.service.gov.uk/company/03252665/filing-history",
-        "source": "Companies House (share allotment)",
-        "published": "2026-05-14T00:00:00+00:00",
-        "tier": "listed"
-      },
-      {
-        "trigger_key": "secured_financing",
-        "trigger_label": "Share allotment (capital raise)",
-        "evidence": "Companies House: Oxford Biomedica filed an allotment of shares (SH01) on 2026-05-14 \u2014 fresh equity capital.",
-        "url": "https://find-and-update.company-information.service.gov.uk/company/03252665/filing-history",
-        "source": "Companies House (share allotment)",
-        "published": "2026-05-14T00:00:00+00:00",
-        "tier": "listed"
-      }
-    ],
-    "pid": "oxford_biomedica",
-    "first_seen": "2026-06-08T10:18:27.673022+00:00",
-    "status": "active",
-    "followed_up_at": null,
-    "dismissed_at": null
-  },
-  {
     "company": "JD Sports",
     "score": 1.134,
     "depth": 2,
@@ -172,6 +41,56 @@
     "dismissed_at": null
   },
   {
+    "company": "BP",
+    "score": 1.109,
+    "depth": 3,
+    "account_tier": "watchlist",
+    "predicted_role": "Crisis / Brand-Trust Director",
+    "window_weeks_min": 8,
+    "window_weeks_max": 24,
+    "window_label": "8\u201324 weeks",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
+    "linkedin_profile_url": null,
+    "linkedin_profile_role": null,
+    "linkedin_profile_name": null,
+    "seeded_contact_name": null,
+    "seeded_contact_role": null,
+    "events": [
+      {
+        "trigger_key": "mna",
+        "trigger_label": "M&A (integration)",
+        "evidence": "(LSE: BP.) agreed to acquire 40% stake in Six Blocks in North Ustyurt Region of the Republic of Uzbekistan from State Oil Company of Azerbaijan Republic and Joint-Stock Company Uzbekneftegaz.",
+        "url": "https://news.google.com/rss/articles/CBMi4gFBVV95cUxNWktkZ2pEWklCNU5aSmZJR2Y1alo1Y2RTZFZ3SDFiRW5UdVkySlJKaWJpSGhoYVJrcDdBRl8xQldkSE93WERMTGVjT09pX0tOblNHaFdOc1BjekhOT2d6ek45cUFwdHJsUUJYaHpJRnBZM3pSZ01idnQtbEM2SjAwWHZBU0ZaRDFVNkRJSDhMLWZWZWowSlFQT0tuMnVGRGpSVW12Nnp6alJuVEttR19md3pYU1EtZWZWRm5SN1NBMzFCTDRkQ0RYZmtLdGNSenk1YmJJbkVjczkxUHEtNWlyQURB?oc=5",
+        "source": "Google News",
+        "published": "2026-05-12T07:00:00+00:00",
+        "tier": "other"
+      },
+      {
+        "trigger_key": "activist_stake",
+        "trigger_label": "Activist stake / shareholder pressure",
+        "evidence": "(LSE: BP.) agreed to acquire 40% stake in Six Blocks in North Ustyurt Region of the Republic of Uzbekistan from State Oil Company of Azerbaijan Republic and Joint-Stock Company Uzbekneftegaz.",
+        "url": "https://news.google.com/rss/articles/CBMi4gFBVV95cUxNWktkZ2pEWklCNU5aSmZJR2Y1alo1Y2RTZFZ3SDFiRW5UdVkySlJKaWJpSGhoYVJrcDdBRl8xQldkSE93WERMTGVjT09pX0tOblNHaFdOc1BjekhOT2d6ek45cUFwdHJsUUJYaHpJRnBZM3pSZ01idnQtbEM2SjAwWHZBU0ZaRDFVNkRJSDhMLWZWZWowSlFQT0tuMnVGRGpSVW12Nnp6alJuVEttR19md3pYU1EtZWZWRm5SN1NBMzFCTDRkQ0RYZmtLdGNSenk1YmJJbkVjczkxUHEtNWlyQURB?oc=5",
+        "source": "Google News",
+        "published": "2026-05-12T07:00:00+00:00",
+        "tier": "other"
+      },
+      {
+        "trigger_key": "restructure",
+        "trigger_label": "Restructure / transformation announced",
+        "evidence": "BP Weighs Egyptian Gas Asset Sale in Restructuring Drive .",
+        "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxNNUw2ZV9KT2d1bjJxdDdJRHlvS1I2MmttZFV1Wk14c1R0b0ZkWFA5YkxJaUtiYnp0bi1iT0hmc1BSZzFkQXVoOWoxN2JBc3BzV3N2dnloSFh1VFFhTlFqWFhudW5XSldJSWRVZzBUZjZ5SEZVNmFGTnVSSXEyLU5OcUc5dUlfQWdhZDZ4SFZYcW1qX09RS0hmeDg5VDNzS1MtS2Y2bTU0anJvZ1FacEtuS0V30gG3AUFVX3lxTE12Q2ZxYzE4bERiSF83UVVreDJuTm9ublJkX3dNeGFYaUpTUzhIRktKTzZZTkprbkFHZndweTRkMVBBVlA1NjdsUjlKZDlMLWV4RE16TVlPZ0pMc3Q0bG4xVXE0eXVIc1BpaVZKUEV5SFVLUUhpWEtCWDhZV25FQ0RtUUlERHFZNExGZDZicFdncGFtRXJ3R0VTUXk3UzhZd1JTQVJPZldGNHNpR1A5eXhOVWppeEVFTQ?oc=5",
+        "source": "Google News",
+        "published": "2026-05-15T07:00:00+00:00",
+        "tier": "other"
+      }
+    ],
+    "pid": "bp",
+    "first_seen": "2026-06-02T00:51:26.339437+00:00",
+    "status": "active",
+    "followed_up_at": null,
+    "dismissed_at": null
+  },
+  {
     "company": "Pets at Home",
     "score": 0.945,
     "depth": 1,
@@ -180,7 +99,7 @@
     "window_weeks_min": 6,
     "window_weeks_max": 12,
     "window_label": "6\u201312 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -244,7 +163,7 @@
     "window_weeks_min": 6,
     "window_weeks_max": 12,
     "window_label": "6\u201312 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -258,6 +177,15 @@
         "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxOaklGd2p4VU1OT1NaZmJGd3dHYWpmc2hWeHBhcnpEYWttWElxMXBfR2hmaklRamt2cDdmN3lsNGZLcWJjMEp1dGo5RFBMbkdwOThld0NMcTlRbVhlQUJYV1JOcE4tRHhfbGdOLV9BTEtIa1JYWXBQQlo5YVQwNlB4MXFncHppUlFhLV84Y3BWbk1EOW1hZ1k5Q2xzRmplV1dwcXd3MXdWZ3luajhvTTlqVHFJd3dYSzhUZ3Nrb9IBwgFBVV95cUxPNXR6UjBMYkRRd1NQSGg0VHp1QmNhRVJDWkF3YnNyNXRYR1ZObmp6bmNibi1IMWdsRktFd0VFcU50LU0wTXVTeTFwaVNBWWdpek1YcW92N05jLU9pazhzVS1YS216ckhERFIzVTdFWklCUTBUZFZKN1lfdjFZcVVERG15UGFIdXdmOXdjTEJXeDV6Y0NmdF9mTUx6OUhIbk5YQVUzMzlYTEZEdEhqVHFDMEhVLUllbkw2Y1dIQy1MLVZkdw?oc=5",
         "source": "Google News",
         "published": "2026-06-03T08:14:13+00:00",
+        "tier": "other"
+      },
+      {
+        "trigger_key": "ceo_change",
+        "trigger_label": "CEO change",
+        "evidence": "Currys new CEO gets muted reaction but analysts hail continuity move .",
+        "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxOQmJ0WGJnTlNyLVc0em8tYXJfendzZGRaVFdRWE1URExLUTRMdWRwazNZOW5FSkxMVjJiczlFSnhlSHAtMmFEajRMN0UzR2ZVMjZVUzF4Smt6eC1qSUlpamVxa1R3ZXpaOG4za3NKR2VORnJmZGZJb3JFaHduZTNGMTM4NUY1Zw?oc=5",
+        "source": "Google News",
+        "published": "2026-06-03T11:31:00+00:00",
         "tier": "other"
       }
     ],
@@ -276,7 +204,7 @@
     "window_weeks_min": 6,
     "window_weeks_max": 12,
     "window_label": "6\u201312 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -340,7 +268,7 @@
     "window_weeks_min": 8,
     "window_weeks_max": 26,
     "window_label": "8\u201326 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -413,7 +341,7 @@
     "window_weeks_min": 8,
     "window_weeks_max": 26,
     "window_label": "8\u201326 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -431,47 +359,6 @@
       }
     ],
     "pid": "st_james_s_place",
-    "first_seen": "2026-06-08T10:18:27.673022+00:00",
-    "status": "active",
-    "followed_up_at": null,
-    "dismissed_at": null
-  },
-  {
-    "company": "Rathbones Group",
-    "score": 0.892,
-    "depth": 1,
-    "account_tier": "watchlist",
-    "predicted_role": "Brand / Corporate Marketing Director",
-    "window_weeks_min": 8,
-    "window_weeks_max": 26,
-    "window_label": "8\u201326 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
-    "linkedin_profile_url": null,
-    "linkedin_profile_role": null,
-    "linkedin_profile_name": null,
-    "seeded_contact_name": null,
-    "seeded_contact_role": null,
-    "events": [
-      {
-        "trigger_key": "secured_financing",
-        "trigger_label": "Share allotment (capital raise)",
-        "evidence": "Companies House: Rathbones Group filed an allotment of shares (SH01) on 2026-06-05 \u2014 fresh equity capital.",
-        "url": "https://find-and-update.company-information.service.gov.uk/company/01000403/filing-history",
-        "source": "Companies House (share allotment)",
-        "published": "2026-06-05T00:00:00+00:00",
-        "tier": "listed"
-      },
-      {
-        "trigger_key": "secured_financing",
-        "trigger_label": "Share allotment (capital raise)",
-        "evidence": "Companies House: Rathbones Group filed an allotment of shares (SH01) on 2026-06-01 \u2014 fresh equity capital.",
-        "url": "https://find-and-update.company-information.service.gov.uk/company/01000403/filing-history",
-        "source": "Companies House (share allotment)",
-        "published": "2026-06-01T00:00:00+00:00",
-        "tier": "listed"
-      }
-    ],
-    "pid": "rathbones_group",
     "first_seen": "2026-06-08T10:18:27.673022+00:00",
     "status": "active",
     "followed_up_at": null,
@@ -578,15 +465,15 @@
     "dismissed_at": null
   },
   {
-    "company": "BP",
-    "score": 0.806,
-    "depth": 2,
+    "company": "Unilever",
+    "score": 0.851,
+    "depth": 1,
     "account_tier": "watchlist",
     "predicted_role": "Crisis / Brand-Trust Director",
     "window_weeks_min": 12,
     "window_weeks_max": 26,
     "window_label": "12\u201326 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -594,26 +481,17 @@
     "seeded_contact_role": null,
     "events": [
       {
-        "trigger_key": "mna",
-        "trigger_label": "M&A (integration)",
-        "evidence": "(LSE: BP.) agreed to acquire 40% stake in Six Blocks in North Ustyurt Region of the Republic of Uzbekistan from State Oil Company of Azerbaijan Republic and Joint-Stock Company Uzbekneftegaz.",
-        "url": "https://news.google.com/rss/articles/CBMi4gFBVV95cUxNWktkZ2pEWklCNU5aSmZJR2Y1alo1Y2RTZFZ3SDFiRW5UdVkySlJKaWJpSGhoYVJrcDdBRl8xQldkSE93WERMTGVjT09pX0tOblNHaFdOc1BjekhOT2d6ek45cUFwdHJsUUJYaHpJRnBZM3pSZ01idnQtbEM2SjAwWHZBU0ZaRDFVNkRJSDhMLWZWZWowSlFQT0tuMnVGRGpSVW12Nnp6alJuVEttR19md3pYU1EtZWZWRm5SN1NBMzFCTDRkQ0RYZmtLdGNSenk1YmJJbkVjczkxUHEtNWlyQURB?oc=5",
-        "source": "Google News",
-        "published": "2026-05-12T07:00:00+00:00",
-        "tier": "other"
-      },
-      {
         "trigger_key": "activist_stake",
         "trigger_label": "Activist stake / shareholder pressure",
-        "evidence": "(LSE: BP.) agreed to acquire 40% stake in Six Blocks in North Ustyurt Region of the Republic of Uzbekistan from State Oil Company of Azerbaijan Republic and Joint-Stock Company Uzbekneftegaz.",
-        "url": "https://news.google.com/rss/articles/CBMi4gFBVV95cUxNWktkZ2pEWklCNU5aSmZJR2Y1alo1Y2RTZFZ3SDFiRW5UdVkySlJKaWJpSGhoYVJrcDdBRl8xQldkSE93WERMTGVjT09pX0tOblNHaFdOc1BjekhOT2d6ek45cUFwdHJsUUJYaHpJRnBZM3pSZ01idnQtbEM2SjAwWHZBU0ZaRDFVNkRJSDhMLWZWZWowSlFQT0tuMnVGRGpSVW12Nnp6alJuVEttR19md3pYU1EtZWZWRm5SN1NBMzFCTDRkQ0RYZmtLdGNSenk1YmJJbkVjczkxUHEtNWlyQURB?oc=5",
+        "evidence": "McCormick stock ticks up slightly as Toms Capital builds stake after Unilever deal .",
+        "url": "https://news.google.com/rss/articles/CBMi3AFBVV95cUxOTVB0SnJwTTRuLW9GWEozdHFrZXFCZkFCcHJYTlFmcG5JZENPdnBYc0hrSTItcUdtMXFocWRsY01oTHU0SENYQnRWRkxVSHdxZy1NUGtfZkJPeF9wd2IyaGFpWm9fQ3pnM25jVmxHMWtqVWJ6NHFsMjdiOVNMU2hGME1LdzdNa0dya1dDQ2FuRXFTVlZZcnd2ZlhLTF9yR3diZkRIWUMwU1dFdlJYR2R0OUdsRllXQ3dkSG02c2hLVHFoSkVJVkw0U2t0LVB5b2kxVTBNSzBMVUhzSkNJ?oc=5",
         "source": "Google News",
-        "published": "2026-05-12T07:00:00+00:00",
+        "published": "2026-05-29T07:00:00+00:00",
         "tier": "other"
       }
     ],
-    "pid": "bp",
-    "first_seen": "2026-06-02T00:51:26.339437+00:00",
+    "pid": "unilever",
+    "first_seen": "2026-06-09T08:59:46.252304+00:00",
     "status": "active",
     "followed_up_at": null,
     "dismissed_at": null
@@ -731,7 +609,7 @@
     "window_weeks_min": 6,
     "window_weeks_max": 12,
     "window_label": "6\u201312 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -755,6 +633,65 @@
     "dismissed_at": null
   },
   {
+    "company": "Amazon",
+    "score": 0.672,
+    "depth": 2,
+    "account_tier": "watchlist",
+    "predicted_role": "Chief Marketing Officer",
+    "window_weeks_min": 1,
+    "window_weeks_max": 12,
+    "window_label": "1\u201312 weeks",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
+    "linkedin_profile_url": null,
+    "linkedin_profile_role": null,
+    "linkedin_profile_name": null,
+    "seeded_contact_name": null,
+    "seeded_contact_role": null,
+    "events": [
+      {
+        "trigger_key": "ceo_change",
+        "trigger_label": "CEO change",
+        "evidence": "BSH UK appoints Amazon director as new CEO .",
+        "url": "https://news.google.com/rss/articles/CBMihwFBVV95cUxQZVVkYlBfZ2VLMDl6TUJseTZUdzNjeFQ5M2VIODFSZmwxNXNDRVc2WF92UUF3TEZ0SkJFREdYOWxjUm1pZHoxWlBKSXkybHFDd3k5dG1sa1dUb1NBZjBYYTNidmxqNlZDRU5Jc2l2UVZ5YlRqR19DdTJNSlB4WHJLMUs5RnJFTUE?oc=5",
+        "source": "Google News",
+        "published": "2026-05-11T07:00:00+00:00",
+        "tier": "other"
+      },
+      {
+        "trigger_key": "redundancy",
+        "trigger_label": "Redundancy / layoffs announced",
+        "evidence": "Amazon cuts more jobs months after mass layoffs .",
+        "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTE9KdHh0YzF5dW9nSndYQ0tjUTMwQ0FNYW5ORjVERVFuZW9tVUE0RlVSelhqRkJibjh5cG8wNVlvM0gxV1NSM1VEcDN3MDdURG54RFp3QnpWZ3pIWVdtSzVoVmdkV3liWWYwMGhfdzVhTkhNajlpVl9rUU5qRGtnVWc?oc=5",
+        "source": "Google News",
+        "published": "2026-05-13T07:00:00+00:00",
+        "tier": "other"
+      },
+      {
+        "trigger_key": "redundancy",
+        "trigger_label": "Redundancy / layoffs announced",
+        "evidence": "Amazon Announces Fresh Layoffs, Taking Recent Job Cuts Close To 30,000 .",
+        "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxNM2xiT3N1UWhIcDBaTjdVUk1yV0FzdEx3ZmpOWFJCQV9yQ3VPUkxVX0g3bm9uYUdTdG9VdU8zbmhWeWlfdUZnb3ZDZm5FQkFZV0V1UmRQMzNLbFo3RWE2QjNadEtaTUxEWmduYjlmS1lZWlJ1WXJXbjNPTXpKVVMzLWhiVnpkSGNpRnpiNFBKcDJ1ckJNT3NWYm4taXUyNjlxSmVPbTRNYkprRFQ4?oc=5",
+        "source": "Google News",
+        "published": "2026-05-15T07:00:00+00:00",
+        "tier": "other"
+      },
+      {
+        "trigger_key": "redundancy",
+        "trigger_label": "Redundancy / layoffs announced",
+        "evidence": "Amazon cuts more jobs after 30,000 layoffs announced over last six months; company says: We regularly rev .",
+        "url": "https://news.google.com/rss/articles/CBMivAJBVV95cUxOUVh2MkNEM1MwTE8yYUxhYkZWN3kybUE5dld2NDY4TW45MVlLdXo1dGRWdUkwckhoV2gyclJQRzd0V01WUlYtem9KaEc1NXpiemk2SFpXTnpSc3ZYQVR4NTQ2Wkh5TzF2czJHX09tODVVel8tRWM3X0swR0JOWWlHemN4VzVZX2RlWFhCcUZIbTFSRDRyYVF2X3dBaTA4RzV3WmJ5VFh6eERkSTUtdzdWXzMzMkxGbFl6X05uaGJwRHZvYVhMVEMzbUdjNXNncUY0QS1obGVuUnFOQTlUN2Vld0d1NGVCWGtlWXdJcnFhb3FQVmR5WXpwX0JBYklBejZ0QWVCbko4ZjdXZWc4V1A5ck5HU001bGxfVUpDd180UER6RTc4OHFScFh4cG5TQ01Ba3ZTR0Npd0ROQjZm0gHCAkFVX3lxTE9xOXJHRFRBUXhPTDItUUY5LWNqQ0prR1JlRVZNbGp6WmlIejNzNWZ3UmVCcGZnYWZfU2hDc2FLQ1EzdEVIZE1faFFaM2pfNjl6RnBYT1BVb3dMd0VCaHM5N2NRRVRZcUVGcHBfbmFWMl96VnRTbHRicXZodmxjX3JNZTNMb3AyZHQwOXVmWTlCYUpyVHU3RzhLUTRiQU84T1A1Rm5aWFI0c2M1bFNJRWFGWDlmR2RsQnphSTY3cXBYNkctZTVxNVpBZkIwZ0xzcmJySmpobjFSUzJpZnNUbHY5UWpzVXhLN0RvTHlZckNkajF4anVHLVJEWEs3Q2ZnTWpTTWo4bDJUU1kwNmFaQnZkbDFSTkpYWDI5UnN0enpqX2xRdkc1VTF3MExhbld5Wm5EalZaSjAySXlfQXRqLWUzZXc?oc=5",
+        "source": "Google News",
+        "published": "2026-05-15T07:00:00+00:00",
+        "tier": "other"
+      }
+    ],
+    "pid": "amazon",
+    "first_seen": "2026-06-05T09:04:02.765479+00:00",
+    "status": "active",
+    "followed_up_at": null,
+    "dismissed_at": null
+  },
+  {
     "company": "British Land",
     "score": 0.665,
     "depth": 1,
@@ -763,7 +700,7 @@
     "window_weeks_min": 6,
     "window_weeks_max": 12,
     "window_label": "6\u201312 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -786,6 +723,15 @@
         "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxNZ3A4RkRwZVYtemUxNmFrbHVSMmxqeXBHeXFDaVBJVl9aeGZ1M3ZjbFpKaHJmNzRuYjJWZ1J6ZFRkWGxhVFc0MGlyX1ZrQ19sMS1GOXdtNW00ZF9zM1NqeXVrS002NkZ1SkNyRTVjUnNqWnB3ZFNsSGN6UkpwMW5tV19VTXVELUstTGpWWV80aw?oc=5",
         "source": "Google News",
         "published": "2026-06-02T09:12:58+00:00",
+        "tier": "other"
+      },
+      {
+        "trigger_key": "ceo_change",
+        "trigger_label": "CEO change",
+        "evidence": "British Land appoints \"highly respected\" property expert Joanne McNamara new CEO .",
+        "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNSVg2VGJlcldhcTNRTU1aaU1VaWFCVzVnTE5VSzItNUhPUUFiMnROYXcwYnIxS3VSaUZWT1hJMWw0WGg5cWVBRHA0Mi1EenZqeWtBQnlVeTFGcGpGWEpUR2NBVlRUcVlnQU03c3U1bWhJRG9qT0lZU0lxaVBCc0d4M1VqYnk0SGZUWUlxSldxa25yc0RPalU0U1BHMnVCcElLbDM0OUlTYm9iNWxVVElUdkliQXk1eWJVLW5zbzVnYV82UUht?oc=5",
+        "source": "Google News",
+        "published": "2026-06-02T15:26:30+00:00",
         "tier": "other"
       },
       {
@@ -877,7 +823,7 @@
     "window_weeks_min": 26,
     "window_weeks_max": 52,
     "window_label": "26\u201352 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -909,7 +855,7 @@
     "window_weeks_min": 12,
     "window_weeks_max": 26,
     "window_label": "12\u201326 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -969,6 +915,38 @@
     "dismissed_at": null
   },
   {
+    "company": "Accenture",
+    "score": 0.63,
+    "depth": 1,
+    "account_tier": "watchlist",
+    "predicted_role": "Brand-Integration Director",
+    "window_weeks_min": 26,
+    "window_weeks_max": 52,
+    "window_label": "26\u201352 weeks",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
+    "linkedin_profile_url": null,
+    "linkedin_profile_role": null,
+    "linkedin_profile_name": null,
+    "seeded_contact_name": null,
+    "seeded_contact_role": null,
+    "events": [
+      {
+        "trigger_key": "mna",
+        "trigger_label": "M&A (integration)",
+        "evidence": "Accenture to Acquire Leading Creator and Social Agency Whalar, from Whalar Group .",
+        "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxNZ0FLVjJHcW51VUpCcV8yMkZVUl9NbFdETlNELWNsMVFidndnTEpFeUUwc2xrMHYwaTJ4NVYzUUlySG9YRHhoV3gweDJlVTQ5eWp0RFdvbUI3ZVZUSFozTGxtU2xkRTRhUFljZElfUTdjV3dzZXBTaXQ0S0dTQXUyNWwxUmcxcFlwZDl6RXYzc3Zqbmd0N2FFWkczSVJ2bGZ3M1FaZXFpTF9QUmFlVXZwT290dl9TNWpNRWM0Rw?oc=5",
+        "source": "Google News",
+        "published": "2026-06-08T15:32:43+00:00",
+        "tier": "other"
+      }
+    ],
+    "pid": "accenture",
+    "first_seen": "2026-06-09T08:59:46.252304+00:00",
+    "status": "active",
+    "followed_up_at": null,
+    "dismissed_at": null
+  },
+  {
     "company": "Segro",
     "score": 0.598,
     "depth": 1,
@@ -977,13 +955,22 @@
     "window_weeks_min": 12,
     "window_weeks_max": 26,
     "window_label": "12\u201326 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
     "seeded_contact_name": null,
     "seeded_contact_role": null,
     "events": [
+      {
+        "trigger_key": "activist_stake",
+        "trigger_label": "Activist stake / shareholder pressure",
+        "evidence": "Activist investor urges Segro to spin off data center business - report .",
+        "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxNaFVoYjF1RElieU85R2hsdm43d3dDTERVVzBBNGxTUHpUVVJ6UUJjM1g0eGpmbnA0clFIcVhYendtNzg3YTVxNVNRWDcwaTJMMXUxcnFQV2dDTVNPSDZEV1BXd3preE1qZ29PRlMtNXRLaWdma2xvdWZOWEFqb1BRenlFQjU5a1pmUUtueDlUbkJYcEpoZ3RwYllnSHVodm9LUkwyd0MzVnkxdlZsMVR0RnYzQQ?oc=5",
+        "source": "Google News",
+        "published": "2026-06-08T14:42:47+00:00",
+        "tier": "other"
+      },
       {
         "trigger_key": "activist_stake",
         "trigger_label": "Activist stake / shareholder pressure",
@@ -1071,7 +1058,7 @@
     "window_weeks_min": 26,
     "window_weeks_max": 52,
     "window_label": "26\u201352 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -1127,6 +1114,38 @@
     "dismissed_at": null
   },
   {
+    "company": "Oxford Biomedica",
+    "score": 0.535,
+    "depth": 1,
+    "account_tier": "watchlist",
+    "predicted_role": "Brand-Integration Director",
+    "window_weeks_min": 26,
+    "window_weeks_max": 52,
+    "window_label": "26\u201352 weeks",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
+    "linkedin_profile_url": null,
+    "linkedin_profile_role": null,
+    "linkedin_profile_name": null,
+    "seeded_contact_name": null,
+    "seeded_contact_role": null,
+    "events": [
+      {
+        "trigger_key": "mna",
+        "trigger_label": "M&A (integration)",
+        "evidence": "Oxford BioMedica leaves door open to private equity takeover .",
+        "url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxPZ185SlltcUQ3elg4eUxGTjAzZ2lQVC1uYVZSZlcxTHNmQmZpem5GQWt0Q3dXM3M3eVozdTgyeUFRbzBKR3VKQVR1bXJLNFRrQ2R0bVVVSXFNUHl4NFZabGZVa1VQYnN4UGc3MVg1bUE4QU9MR0wyVjFMN09EM1VkSllhQWo?oc=5",
+        "source": "Google News",
+        "published": "2026-06-05T04:02:01+00:00",
+        "tier": "other"
+      }
+    ],
+    "pid": "oxford_biomedica",
+    "first_seen": "2026-06-08T10:18:27.673022+00:00",
+    "status": "active",
+    "followed_up_at": null,
+    "dismissed_at": null
+  },
+  {
     "company": "Standard Chartered",
     "score": 0.514,
     "depth": 1,
@@ -1135,22 +1154,13 @@
     "window_weeks_min": 1,
     "window_weeks_max": 12,
     "window_label": "1\u201312 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
     "seeded_contact_name": null,
     "seeded_contact_role": null,
     "events": [
-      {
-        "trigger_key": "redundancy",
-        "trigger_label": "Redundancy / layoffs announced",
-        "evidence": "Standard Chartered Plans Significant Job Cuts Amid AI Integration and Profit Growth .",
-        "url": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxQQlNmNmVmeFpUZzBOaVJoSHBRQmd0S3VNeGt6Rkt0SFRRYlFIaThDLTgzdmxHLXZna2g1ZXlUNEI1RkpWOTZzSVZuSU1Zdl83MGJJX2lNdVd5c21EbmJjeG1kd3REZGxaTFlxcU92ZHdCSWJPTzBZcnFRaXhDLWlhNGdlb193aWxLVTJtajVJcDhUYUZWUnNYRFVJZURSQ282Smw4SGdtX2I?oc=5",
-        "source": "Google News",
-        "published": "2026-05-19T07:00:00+00:00",
-        "tier": "other"
-      },
       {
         "trigger_key": "redundancy",
         "trigger_label": "Redundancy / layoffs announced",
@@ -1176,7 +1186,7 @@
     "window_weeks_min": 1,
     "window_weeks_max": 12,
     "window_label": "1\u201312 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -1217,7 +1227,7 @@
     "window_weeks_min": 2,
     "window_weeks_max": 26,
     "window_label": "2\u201326 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -1245,6 +1255,38 @@
     ],
     "pid": "barratt_developments",
     "first_seen": "2026-06-02T00:51:26.339437+00:00",
+    "status": "active",
+    "followed_up_at": null,
+    "dismissed_at": null
+  },
+  {
+    "company": "MJ Gleeson",
+    "score": 0.499,
+    "depth": 1,
+    "account_tier": "watchlist",
+    "predicted_role": "Head of Demand Generation",
+    "window_weeks_min": 2,
+    "window_weeks_max": 26,
+    "window_label": "2\u201326 weeks",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
+    "linkedin_profile_url": null,
+    "linkedin_profile_role": null,
+    "linkedin_profile_name": null,
+    "seeded_contact_name": null,
+    "seeded_contact_role": null,
+    "events": [
+      {
+        "trigger_key": "profit_warning",
+        "trigger_label": "Profit warning / negative trading update",
+        "evidence": "UK\u2019s MJ Gleeson warns on profit as weak market delays land sale .",
+        "url": "https://news.google.com/rss/articles/CBMizgFBVV95cUxQUloxckhnckw2ajRLTnp4TEVvS1ZTalpaUnlReGRWR21WbHJ6d0VHN0EyZ3FLUU9qdmtrX1VfZGgyd3cwUzc4T09qWVVzMm5uY3R3a1FLcVRqVDloTWtCRXQ4bHR4ZUZEc1BzaVdwSzZ5Y2RGTTN3Y1hvemw2VWVmT1Y5cVk2VXM5bmFQbndKNGVKaE41bkVDNTRRM1BtWVVOMU5XV3R2TFZTZ0FPcGstak9QRE0wX2ZLcGh2ajNqenhkN3VmVkNENnVJdGRnUQ?oc=5",
+        "source": "Google News",
+        "published": "2026-06-09T06:59:00+00:00",
+        "tier": "other"
+      }
+    ],
+    "pid": "mj_gleeson",
+    "first_seen": "2026-06-09T08:59:46.252304+00:00",
     "status": "active",
     "followed_up_at": null,
     "dismissed_at": null
@@ -1408,7 +1450,7 @@
     "window_weeks_min": 6,
     "window_weeks_max": 12,
     "window_label": "6\u201312 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -1422,6 +1464,15 @@
         "url": "https://news.google.com/rss/articles/CBMivwFBVV95cUxNLVpNZ2c1eml0enRXSHp1S3A2azdsXzlFQlduN1ZkRGxuakpXSE9zVVM5QVZicmVYUldpbkpIRnVLRVVMQVZnWEVzbG91bEVVeEwyU2t5RjFqRFZyNzZZUlkwX0hUX2RwU3NUVnNRQnp4eHpOWVQxeWt4dDZueVNENmJNQ1hZVzk0YkZLZmlaQ0g1ZXFQazQwdnlaMXNGZTRjWllmQTFmNWpHZlYwVGhLbFd6R3VMbk5FRHdFUHg3SQ?oc=5",
         "source": "Google News",
         "published": "2026-05-18T07:00:00+00:00",
+        "tier": "other"
+      },
+      {
+        "trigger_key": "ceo_change",
+        "trigger_label": "CEO change",
+        "evidence": "Siemens UK and Ireland appoints Brian Holliday as new CEO .",
+        "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxOV1FCSnVQM1pNdHFmZXpfWnVXU0JBNUtEdXhMTXd6T3JYQTg3VHB2QzZsVjNwZzZPdGQ2eS1aVXlYNWJGVkdIUndUODFNZlMzS21ja2lGVmFZNFI2cEZTdnZCZzU0Q0RYakhYZklmcjBGZU1EelNpNlhyYm04akdLekZmN1dhTmNkNUtqYjRoUkNjT1RzWmhvTnNrZGwwTTZU?oc=5",
+        "source": "Google News",
+        "published": "2026-05-19T04:39:26+00:00",
         "tier": "other"
       }
     ],
@@ -1568,7 +1619,7 @@
     "window_weeks_min": 6,
     "window_weeks_max": 12,
     "window_label": "6\u201312 weeks",
-    "last_seen": "2026-06-05T09:04:02.765479+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -1632,7 +1683,7 @@
     "window_weeks_min": 6,
     "window_weeks_max": 12,
     "window_label": "6\u201312 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -1656,6 +1707,38 @@
     "dismissed_at": null
   },
   {
+    "company": "PwC",
+    "score": 0.42,
+    "depth": 1,
+    "account_tier": "watchlist",
+    "predicted_role": "Chief Marketing Officer",
+    "window_weeks_min": 8,
+    "window_weeks_max": 24,
+    "window_label": "8\u201324 weeks",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
+    "linkedin_profile_url": null,
+    "linkedin_profile_role": null,
+    "linkedin_profile_name": null,
+    "seeded_contact_name": null,
+    "seeded_contact_role": null,
+    "events": [
+      {
+        "trigger_key": "restructure",
+        "trigger_label": "Restructure / transformation announced",
+        "evidence": "PwC appoints Haroon Ahmed as partner in Restructuring practice - Consultancy-me.com .",
+        "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxOTlVnOEtvazZQVDhmUFFKTzIyZlZsZC1jbU5qQ2pET193cm9hUDlJMXAyQXlnUlBiVGlMd2p1cjg1cWVnQzlPZHpHcVA0NDZ2b3F2TFFfOEQtOEkxWXBySi1IbnNwVGlsRlEyWllCNTlvN0I0VlVzTGFBR2NEMlpwbkEzeXo2aXlTdm9zdml6VDcyVzhZRUFfamVnOWZTUVNSU1QyWWZlb9IBrAFBVV95cUxPNkhCdENUNDN6ZjZBc3RaM0ItTV9NLUlxY0pKRkZKa0pieV8zTkNsWEg1Wl9GV3FlUkVRbmFXcXdsalk2YnNsaWNxSkk1cGsxTkQycC1KZ3V6dHJ2SllhTHBJalNTbEdPYXJZQk4wX2U2RHRDMHY4MWFnVG1nckFPT3lFUmszOGRncFEyNWNOOXozdFAyTXU5UVdPQk5RUTQ0R1lJdW1YMkFGcGQy?oc=5",
+        "source": "Google News",
+        "published": "2026-06-05T10:22:31+00:00",
+        "tier": "other"
+      }
+    ],
+    "pid": "pwc",
+    "first_seen": "2026-06-09T08:59:46.252304+00:00",
+    "status": "active",
+    "followed_up_at": null,
+    "dismissed_at": null
+  },
+  {
     "company": "Deutsche Beteiligungs AG stock (DE000A1TNUT7)",
     "score": 0.399,
     "depth": 1,
@@ -1664,7 +1747,7 @@
     "window_weeks_min": 8,
     "window_weeks_max": 17,
     "window_label": "8\u201317 weeks",
-    "last_seen": "2026-06-03T10:32:09.360304+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -1696,7 +1779,7 @@
     "window_weeks_min": 8,
     "window_weeks_max": 24,
     "window_label": "8\u201324 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -1728,7 +1811,7 @@
     "window_weeks_min": 26,
     "window_weeks_max": 52,
     "window_label": "26\u201352 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -1824,7 +1907,7 @@
     "window_weeks_min": 26,
     "window_weeks_max": 52,
     "window_label": "26\u201352 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -1888,7 +1971,7 @@
     "window_weeks_min": 26,
     "window_weeks_max": 52,
     "window_label": "26\u201352 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -1952,7 +2035,7 @@
     "window_weeks_min": 26,
     "window_weeks_max": 52,
     "window_label": "26\u201352 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -1984,7 +2067,7 @@
     "window_weeks_min": 12,
     "window_weeks_max": 26,
     "window_label": "12\u201326 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -1999,19 +2082,42 @@
         "source": "Google News",
         "published": "2026-05-15T07:00:00+00:00",
         "tier": "other"
-      },
-      {
-        "trigger_key": "activist_stake",
-        "trigger_label": "Activist stake / shareholder pressure",
-        "evidence": "Gates foundation exits Microsoft as Ackman builds stake .",
-        "url": "https://news.google.com/rss/articles/CBMi7wFBVV95cUxPUnpBaEZoSkJ5ZHBnSGJVUHVMVG1QY1VkUmhmMEFXVlo3dWZJMW84dEtqbUtYUG1SYmZiMVVZWl90dldBNllSVV9meVZYa09BYS1kb0hNLWdsRms4TmtpVXZwUUEtTzFLbWtDbV9ESFBiQ0xZMnZWYUQzNFZCbXN3OEozVE01YlVVWm82RWhOQlZNa2FJVDRGYWZLWGNYWDR1VU9aaUM0bEtFcURSV2JhZHNaSlhJQ08tSFRiZFFSZzVTSHFiakg4Y0Z4WUFmMGZEd0MySW5aLWM1U2FWQjE0M2xaOUtmWVdRTFk2WjdKbw?oc=5",
-        "source": "Google News",
-        "published": "2026-05-24T07:00:00+00:00",
-        "tier": "other"
       }
     ],
     "pid": "microsoft",
     "first_seen": "2026-06-08T10:18:27.673022+00:00",
+    "status": "active",
+    "followed_up_at": null,
+    "dismissed_at": null
+  },
+  {
+    "company": "Allianz",
+    "score": 0.378,
+    "depth": 1,
+    "account_tier": "watchlist",
+    "predicted_role": "Brand-Integration Director",
+    "window_weeks_min": 26,
+    "window_weeks_max": 52,
+    "window_label": "26\u201352 weeks",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
+    "linkedin_profile_url": null,
+    "linkedin_profile_role": null,
+    "linkedin_profile_name": null,
+    "seeded_contact_name": null,
+    "seeded_contact_role": null,
+    "events": [
+      {
+        "trigger_key": "mna",
+        "trigger_label": "M&A (integration)",
+        "evidence": "Allianz Partners SAS agreed to acquire Nib's Australian and New Zealand Travel Insurance portfolio from nib holdings limited for AUD 50 million.",
+        "url": "https://news.google.com/rss/articles/CBMi6AFBVV95cUxOU1RiWHVPRUs0eV9VSEpWeGowS2hZWlNabGhrY1ZOUFhlYTNqNlp2T0lGeHQyemRtelhhcVBkZk9Jd0IzRnNuZEVDcnZiWEJubDZJQThWSkhrbnQ5LWhYcnZqSXpvZ3ZTdHcwdlNwU2lPSmd6X205NHlVd09sc1BzWm1nU3RsbWtBbXpHclBxNWFGMXB3TlR1ZzBmRDdXUDBoeDlBMVhDNU95T00zS3ZCNUR5VFNvSS16TUcwbDl2Z2tJQnE4X25LRGFYOHVLbE5zNVZnTG5jX2lKS2R2S2l1T1hSYmt5UjE2?oc=5",
+        "source": "Google News",
+        "published": "2026-06-04T22:00:00+00:00",
+        "tier": "other"
+      }
+    ],
+    "pid": "allianz",
+    "first_seen": "2026-06-09T08:59:46.252304+00:00",
     "status": "active",
     "followed_up_at": null,
     "dismissed_at": null
@@ -2025,7 +2131,7 @@
     "window_weeks_min": 2,
     "window_weeks_max": 26,
     "window_label": "2\u201326 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -2039,15 +2145,6 @@
         "url": "https://news.google.com/rss/articles/CBMitwFBVV95cUxNWVR3eDBSd19KU1Q5dlhEdjA0YnlVVjVmZU83bWVFdzhEVDVYcmNUSWV4ckhfWl9CNVFXNXhlejJGaUdKZ1hRQUhfZUlmbEd3NVd4VlZFTTcyREZsRlR2dk9oN1NvMVJCWlBGVUs1UE8zb1cwdE1Ua2ozNkJpWjVSaEFzTkhhdFAybTF4SlgwLTduN1VFck80YWtuNF9ROEc0UHZqbWV4Z1REamxYWjVGNlFuNFEtSVXSAbwBQVVfeXFMUEJvLWhfRVg5T0JBc0ZtSDlCd0F1OXpyRFh5c2M4SUF5ZzhTZzNDZ0RrSTF6TDdLV01Ydl9FdUYtOG11TEx2dENTdktmYl9kVVlDR09XOWxjb3ZTMXJHSzdpS3k3N3FSQlZIUEQyZ3VaRHBvSGgyR2JKTUVtQlZ6NFd1NTJQc2dDcWRYaGV4Skt3SzJWSmt0a19vYWRRQVhIeHp3Q2hBVXJhemNGSzZJV2k4LWZxX19DSnAtNC0?oc=5",
         "source": "Google News",
         "published": "2026-05-12T07:00:00+00:00",
-        "tier": "other"
-      },
-      {
-        "trigger_key": "profit_warning",
-        "trigger_label": "Profit warning / negative trading update",
-        "evidence": "Nintendo shares plunge after profit warning .",
-        "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxPdmZiU0FXRnFSXzRQd2wzVy10c21IVFN5Z3NMYU8tcTJUeVE3MGwyX3lpXzNvdmlnUHFZZ240T2FISWlIcF9jZ3JyZ1hXN3pkeW5sRF9YbkRRbWY4UVFLQkJ6Vm1MVWZtWTFHWHVHODBYLWtuTEd0aXJRWTVnMXFMVC1TQUxGQ1pPS19BRG9CZFFkZjMtTW5OazNwX3V4VjZ6YUdlaVR4dnVyUQ?oc=5",
-        "source": "Google News",
-        "published": "2026-05-11T07:00:00+00:00",
         "tier": "other"
       }
     ],
@@ -2066,7 +2163,7 @@
     "window_weeks_min": 2,
     "window_weeks_max": 26,
     "window_label": "2\u201326 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -2098,7 +2195,7 @@
     "window_weeks_min": 1,
     "window_weeks_max": 12,
     "window_label": "1\u201312 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -2130,7 +2227,7 @@
     "window_weeks_min": 1,
     "window_weeks_max": 12,
     "window_label": "1\u201312 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
+    "last_seen": "2026-06-09T08:59:46.252304+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -2145,69 +2242,10 @@
         "source": "Google News",
         "published": "2026-05-15T07:00:00+00:00",
         "tier": "other"
-      },
-      {
-        "trigger_key": "redundancy",
-        "trigger_label": "Redundancy / layoffs announced",
-        "evidence": "In its third round of layoffs under CEO Brian Niccol, Starbucks is cutting hundreds of jobs in America; c .",
-        "url": "https://news.google.com/rss/articles/CBMiwgJBVV95cUxPXzN2RFA0MjBfQWV5UFl3bjd5em55TlRLYmpiTnRieVZ3T2JCdTl4TW5YbVcyajBfZmtqdVFoYnlMVVVWd1FCWEhsN0g1RmRURi12NTBJQWxmZGY3N0tMb1RWa0Zpal9kaFA2NGxvajhIX1AtdjlnS2l2bjkwN3hfNVlobDR5SnVtbnF2Q0xJRVpUU0lpdXhHU3dPbURoeWdfRURvd0txbFRqcl9naldPZzdkQkFKT3dmbDBCR3ZtNEM0SldpT2hGWXNoU2oweWlRLWxVT3pxY0ljRzFDRG1pR0cwV183dnVreEJ6Y3JEWFgycGR4cERsU1JlWThvSTZkT2tBcmFnWEQxajFqejdIanRHbjFsMmx4TDNKRER6cXhucHZNVGwtZDcxbVRUc0RpalRZb3p2R3NMRXE4UUtzdnBn0gHHAkFVX3lxTFBDTWpsandCLTFrVi1zQ1Z1ZEhRMmE1MlN0bWtETV9WdzQ4UEgzdjUyYkNWV3hvWm5IZWxBbW9LWXhIVWJwRnBxMWxRLTlmS094ZDB4ZFlxYVMzdkUxYlUwdXBOdjVKbkNLM3FmV3JrLWxMV3JLVlhrVU1tN1RvQmJwMWp5Rnh2cjNGYjVjMlVpU3ZkM3V5NnZtcmhaeWdmZWNRbEVYTE5SX0djbXR3UkFWNUpITmFoZWF4MTVDVGhOdXRIcTNTSWNNeHFtNWRncXVCNVMzWlVHd01vQjdCMXVOekJpeTMxMTlIYXZ5NjAzbU9hdjk4MDNlVHFqWVhzWEx4dXVUdlFFMEhHSUhubXVGWUEyaGpxLUtUazVYaWZqTUZ2MzZaeXFzOGpzQjQtaVo3QTcwSEU1aHNSMkU2WUFjdENSVzNsaw?oc=5",
-        "source": "Google News",
-        "published": "2026-05-18T07:00:00+00:00",
-        "tier": "other"
       }
     ],
     "pid": "starbucks",
     "first_seen": "2026-06-02T00:51:26.339437+00:00",
-    "status": "active",
-    "followed_up_at": null,
-    "dismissed_at": null
-  },
-  {
-    "company": "Amazon",
-    "score": 0.294,
-    "depth": 1,
-    "account_tier": "watchlist",
-    "predicted_role": "Senior Marketing hire",
-    "window_weeks_min": 1,
-    "window_weeks_max": 12,
-    "window_label": "1\u201312 weeks",
-    "last_seen": "2026-06-08T10:18:27.673022+00:00",
-    "linkedin_profile_url": null,
-    "linkedin_profile_role": null,
-    "linkedin_profile_name": null,
-    "seeded_contact_name": null,
-    "seeded_contact_role": null,
-    "events": [
-      {
-        "trigger_key": "redundancy",
-        "trigger_label": "Redundancy / layoffs announced",
-        "evidence": "Amazon cuts more jobs months after mass layoffs .",
-        "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTE9KdHh0YzF5dW9nSndYQ0tjUTMwQ0FNYW5ORjVERVFuZW9tVUE0RlVSelhqRkJibjh5cG8wNVlvM0gxV1NSM1VEcDN3MDdURG54RFp3QnpWZ3pIWVdtSzVoVmdkV3liWWYwMGhfdzVhTkhNajlpVl9rUU5qRGtnVWc?oc=5",
-        "source": "Google News",
-        "published": "2026-05-13T07:00:00+00:00",
-        "tier": "other"
-      },
-      {
-        "trigger_key": "redundancy",
-        "trigger_label": "Redundancy / layoffs announced",
-        "evidence": "Amazon Announces Fresh Layoffs, Taking Recent Job Cuts Close To 30,000 .",
-        "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxNM2xiT3N1UWhIcDBaTjdVUk1yV0FzdEx3ZmpOWFJCQV9yQ3VPUkxVX0g3bm9uYUdTdG9VdU8zbmhWeWlfdUZnb3ZDZm5FQkFZV0V1UmRQMzNLbFo3RWE2QjNadEtaTUxEWmduYjlmS1lZWlJ1WXJXbjNPTXpKVVMzLWhiVnpkSGNpRnpiNFBKcDJ1ckJNT3NWYm4taXUyNjlxSmVPbTRNYkprRFQ4?oc=5",
-        "source": "Google News",
-        "published": "2026-05-15T07:00:00+00:00",
-        "tier": "other"
-      },
-      {
-        "trigger_key": "redundancy",
-        "trigger_label": "Redundancy / layoffs announced",
-        "evidence": "Amazon cuts more jobs after 30,000 layoffs announced over last six months; company says: We regularly rev .",
-        "url": "https://news.google.com/rss/articles/CBMivAJBVV95cUxOUVh2MkNEM1MwTE8yYUxhYkZWN3kybUE5dld2NDY4TW45MVlLdXo1dGRWdUkwckhoV2gyclJQRzd0V01WUlYtem9KaEc1NXpiemk2SFpXTnpSc3ZYQVR4NTQ2Wkh5TzF2czJHX09tODVVel8tRWM3X0swR0JOWWlHemN4VzVZX2RlWFhCcUZIbTFSRDRyYVF2X3dBaTA4RzV3WmJ5VFh6eERkSTUtdzdWXzMzMkxGbFl6X05uaGJwRHZvYVhMVEMzbUdjNXNncUY0QS1obGVuUnFOQTlUN2Vld0d1NGVCWGtlWXdJcnFhb3FQVmR5WXpwX0JBYklBejZ0QWVCbko4ZjdXZWc4V1A5ck5HU001bGxfVUpDd180UER6RTc4OHFScFh4cG5TQ01Ba3ZTR0Npd0ROQjZm0gHCAkFVX3lxTE9xOXJHRFRBUXhPTDItUUY5LWNqQ0prR1JlRVZNbGp6WmlIejNzNWZ3UmVCcGZnYWZfU2hDc2FLQ1EzdEVIZE1faFFaM2pfNjl6RnBYT1BVb3dMd0VCaHM5N2NRRVRZcUVGcHBfbmFWMl96VnRTbHRicXZodmxjX3JNZTNMb3AyZHQwOXVmWTlCYUpyVHU3RzhLUTRiQU84T1A1Rm5aWFI0c2M1bFNJRWFGWDlmR2RsQnphSTY3cXBYNkctZTVxNVpBZkIwZ0xzcmJySmpobjFSUzJpZnNUbHY5UWpzVXhLN0RvTHlZckNkajF4anVHLVJEWEs3Q2ZnTWpTTWo4bDJUU1kwNmFaQnZkbDFSTkpYWDI5UnN0enpqX2xRdkc1VTF3MExhbld5Wm5EalZaSjAySXlfQXRqLWUzZXc?oc=5",
-        "source": "Google News",
-        "published": "2026-05-15T07:00:00+00:00",
-        "tier": "other"
-      }
-    ],
-    "pid": "amazon",
-    "first_seen": "2026-06-05T09:04:02.765479+00:00",
     "status": "active",
     "followed_up_at": null,
     "dismissed_at": null
