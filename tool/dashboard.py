@@ -2159,17 +2159,26 @@ def _render_dashboard():
     except Exception as _e:
         log.info("budget flush overlay: %s", _e)
     # Cross-desk overlap: tag rows that also appear on the other desk so
-    # recruiters don't double-approach the same company.
+    # recruiters don't double-approach the same company. Checks ALL lead
+    # sources (predictors, funding events, specialist rows) not just predictors.
     try:
         _this_desk = active_profile().key
         _other_desk = "comms" if _this_desk == "marketing" else "marketing"
         _other_state = state_root(_other_desk)
+        _other_cos = set()
         _other_pipe = _other_state / "predictor_pipeline.json"
         if _other_pipe.exists():
             _other_data = json.loads(Path(_other_pipe).read_text())
-            _other_cos = {(v.get("company") or "").lower()
-                          for v in (_other_data.get("predictors") or {}).values()
-                          if v.get("status", "active") == "active"}
+            _other_cos |= {(v.get("company") or "").lower()
+                           for v in (_other_data.get("predictors") or {}).values()
+                           if v.get("status", "active") == "active"}
+        _other_fund = _other_state / "latest_funding.json"
+        if _other_fund.exists():
+            _fund_data = json.loads(Path(_other_fund).read_text())
+            _fund_list = _fund_data if isinstance(_fund_data, list) else _fund_data.get("events", [])
+            _other_cos |= {(f.get("company") or "").lower()
+                           for f in _fund_list}
+        if _other_cos:
             _other_label = "Also on Marketing — liaise with team" if _other_desk == "marketing" else "Also on Comms — liaise with team"
             for _r in premarket_rows:
                 if (_r.get("company") or "").lower() in _other_cos:
