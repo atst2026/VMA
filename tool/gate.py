@@ -46,6 +46,14 @@ THROTTLE_ACCEPT_FLOOR = 0.5
 AMPLIFIER_ONLY = {"press_velocity_spike", "personal_brand_velocity",
                   "leadership_tenure"}
 
+# Bronze-tier triggers: genuinely predictive only as corroboration of a
+# Tier-1/2 trigger (leadership change, M&A, PE, crisis, funding...), per
+# the research tiering. Deliberately EXCLUDES job_ad_cluster and
+# hiring_gap — a live cluster with no internal recruiter is direct
+# evidence of external hiring happening now, our strongest call route.
+BRONZE_KEYS = {"rebrand", "agency_account_move", "framework_award",
+               "esg_bcorp", "martech_adoption"}
+
 # Primary (registry-grade) and credible (major-outlet) source fingerprints.
 _PRIMARY_RX = re.compile(
     r"companies\s*house|companieshouse|investegate|\brns\b|london stock|"
@@ -330,11 +338,22 @@ def assess(item: dict, lead: dict, *, verdicts: list[dict] | None = None,
                "kill": "", "move": "", "cap": thr["cap"],
                "throttled": thr["throttled"]}
 
-        # 1. Investigation overlay outranks everything.
+        # 1. Investigation overlay outranks everything. A /red-team run's
+        # conviction fields ride along onto the card.
         inv = investigation or {}
+        if inv.get("red_team"):
+            out["red_team"] = True
+            out["conviction"] = inv.get("conviction")
+            out["case"] = (inv.get("business_case") or "")[:600]
+            out["opening"] = (inv.get("warm_opening") or "")[:400]
+            out["buyer"] = (inv.get("economic_buyer") or "")[:200]
+            out["champion"] = (inv.get("champion_path") or "")[:200]
         if inv.get("verdict") == "killed":
-            out["reasons"].append("Killed by investigation"
-                                  + (f": {inv.get('note')}" if inv.get("note") else ""))
+            reason = "Killed by red-team" if inv.get("red_team") else \
+                     "Killed by investigation"
+            kr = [k for k in (inv.get("kill_reasons") or []) if k][:2]
+            detail = "; ".join(kr) or (inv.get("note") or "")
+            out["reasons"].append(reason + (f": {detail}" if detail else ""))
             out["recheck_days"] = inv.get("recheck_days")
             return out
         confirmed = inv.get("verdict") == "confirmed"
@@ -357,6 +376,21 @@ def assess(item: dict, lead: dict, *, verdicts: list[dict] | None = None,
         if live_keys and live_keys <= AMPLIFIER_ONLY:
             out["reasons"].append("Amplifier-only signal (velocity / person watch) "
                                   "— corroborates a trigger, never a lead alone")
+            out["recheck_days"] = 7
+            return out
+
+        # 3b. Bronze triggers corroborate, never carry a lead alone. The
+        # research tiering: rebrands, agency moves, framework awards, ESG
+        # badges and martech adoptions are real but weak signals — they
+        # present only alongside a Tier-1/2 trigger (a /red-team confirmed
+        # verdict also clears them).
+        if (live_keys and not confirmed
+                and live_keys <= (BRONZE_KEYS | AMPLIFIER_ONLY)
+                and live_keys & BRONZE_KEYS):
+            out["reasons"].append("Bronze trigger alone (rebrand / framework "
+                                  "/ martech) — needs a Tier-1/2 trigger or "
+                                  "an investigation to corroborate")
+            out["investigate"] = True
             out["recheck_days"] = 7
             return out
 

@@ -187,7 +187,9 @@ ACTIVIST_STAKE = TriggerType(
 PE_ACQUISITION = TriggerType(
     key="pe_acquisition",
     label="PE acquisition / take-private (completed)",
-    weight=0.95,
+    # Tier-1: sponsors retain the incumbent CFO only ~25% of the time;
+    # the first-100-days playbook is a senior talent-refresh sprint.
+    weight=1.0,
     lead_time_weeks=(8, 17),
     who_to_call="Incoming CFO/CCO under new ownership; Corporate Affairs Director",
     implication=(
@@ -276,7 +278,9 @@ REGULATOR_PROBE_EARLY = TriggerType(
 CRISIS_EVENT = TriggerType(
     key="crisis_event",
     label="Crisis event (breach / litigation / suspension)",
-    weight=0.75,
+    # Tier-1 trigger (Conference Board: crisis elevates the CCO role) and
+    # forced + confidential work that cannot be deferred or done in-house.
+    weight=0.9,
     lead_time_weeks=(2, 16),
     who_to_call="CCO / GC — pitch the retained search for the permanent reputation hire immediately",
     implication=(
