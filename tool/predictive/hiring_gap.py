@@ -43,7 +43,8 @@ def detect_hiring_gaps() -> list[TriggerEvent]:
     events: list[TriggerEvent] = []
     now = datetime.now(timezone.utc)
 
-    for slug, (total, comms) in counts.items():
+    for slug, tally in counts.items():
+        total, comms = tally[0], tally[1]   # tally may carry a 3rd TA count
         if total < MIN_TOTAL_JOBS or comms > 0:
             continue
 

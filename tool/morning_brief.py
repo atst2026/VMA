@@ -331,6 +331,18 @@ def main() -> int:
         log.info("in-house failure ledger: %s", e)
         inhouse_events, restart_events = [], []
 
+    # Fee-propensity store: TA-hiring observed on the company's own ATS
+    # boards (anti-signal) + procurement awards naming recruitment
+    # suppliers (proven fee-payer). Feeds the posture layer's previously
+    # dead authoritative inputs at score time.
+    try:
+        from tool import propensity as _propmod
+        from tool.sources.jobs import get_ats_headcounts as _ats_counts
+        _propmod.ingest_ats_counts(_ats_counts())
+        _propmod.scan_signals_for_agency_awards(signals)
+    except Exception as e:
+        log.info("propensity store: %s", e)
+
     # CH officer-change scan + contacts auto-update already ran earlier
     # (pre-enrichment) so signals are enriched with fresh data. The
     # ch_events list from that earlier call is reused here as part of
@@ -472,11 +484,13 @@ def main() -> int:
         _verds = _vlog.get_all()
         _invs = _invmod.get_all()
         _desk = config._PROFILE.key
+        from tool import propensity as _prop
         _gate_map = {}
         for _entry in _entries:
             _pid = _entry.get("pid")
             if not _pid:
                 continue
+            _prop.annotate(_entry)
             _lead = _le.score_lead(_entry, "predictor", _desk)
             _gate_map[_pid] = _gate.assess(_entry, _lead, verdicts=_verds,
                                            investigation=_invs.get(_pid))

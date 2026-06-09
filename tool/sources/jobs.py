@@ -188,7 +188,8 @@ def fetch_greenhouse() -> list[dict]:
                 "summary": loc,
                 "weight": 1.0,
             })
-        _record_ats_headcount(slug, len(all_jobs), comms_count)
+        _record_ats_headcount(slug, len(all_jobs), comms_count,
+                              _ta_count(all_jobs, "title"))
     return out
 
 
@@ -222,7 +223,8 @@ def fetch_lever() -> list[dict]:
                 "summary": loc,
                 "weight": 1.0,
             })
-        _record_ats_headcount(slug, len(data) if isinstance(data, list) else 0, comms_count)
+        _record_ats_headcount(slug, len(data) if isinstance(data, list) else 0,
+                              comms_count, _ta_count(data if isinstance(data, list) else [], "text"))
     return out
 
 
@@ -257,7 +259,8 @@ def fetch_ashby() -> list[dict]:
                 "summary": loc,
                 "weight": 1.0,
             })
-        _record_ats_headcount(slug, len(all_jobs), comms_count)
+        _record_ats_headcount(slug, len(all_jobs), comms_count,
+                              _ta_count(all_jobs, "title"))
     return out
 
 
@@ -305,7 +308,8 @@ def fetch_workable() -> list[dict]:
                 "summary": loc,
                 "weight": 1.0,
             })
-        _record_ats_headcount(slug, len([j for j in jobs if isinstance(j, dict)]), comms_count)
+        _record_ats_headcount(slug, len([j for j in jobs if isinstance(j, dict)]),
+                              comms_count, _ta_count(jobs, "title"))
     return out
 
 
@@ -399,17 +403,40 @@ def fetch_linkedin_jobs_public() -> list[dict]:
     return out
 
 
-_ats_headcounts: dict[str, tuple[int, int]] = {}
+_ats_headcounts: dict[str, tuple[int, int, int]] = {}
+
+# Talent-acquisition / internal-recruiter titles. These postings are
+# (rightly) dropped by the comms role filter, but their EXISTENCE is the
+# strongest free fee-propensity anti-signal there is: a company hiring
+# its own recruiters is building the in-house route and stops paying
+# agency fees (the research's ~10-15 hires/yr in-house threshold).
+_TA_TITLE_RX = re.compile(
+    r"\b(?:talent acquisition|talent partner|talent sourcer|sourcer|"
+    r"in[\s-]house recruit\w*|internal recruit\w*|recruiter|"
+    r"recruitment (?:partner|specialist|coordinator|advisor|manager|lead)|"
+    r"head of talent|people operations)\b", re.I)
 
 
-def _record_ats_headcount(slug: str, total: int, comms: int) -> None:
-    """Track total vs comms job count per ATS board for hiring-gap detection."""
-    prev = _ats_headcounts.get(slug, (0, 0))
-    _ats_headcounts[slug] = (prev[0] + total, prev[1] + comms)
+def _ta_count(items, key: str) -> int:
+    """Count TA/recruiter-titled postings in a raw ATS job list."""
+    n = 0
+    for j in items or []:
+        if isinstance(j, dict) and _TA_TITLE_RX.search(str(j.get(key) or "")):
+            n += 1
+    return n
 
 
-def get_ats_headcounts() -> dict[str, tuple[int, int]]:
-    """Return {slug: (total_jobs, comms_jobs)} from the most recent fetch."""
+def _record_ats_headcount(slug: str, total: int, comms: int,
+                          ta: int = 0) -> None:
+    """Track total vs comms vs TA job counts per ATS board — feeds the
+    hiring-gap detector and the fee-propensity store."""
+    prev = _ats_headcounts.get(slug, (0, 0, 0))
+    _ats_headcounts[slug] = (prev[0] + total, prev[1] + comms, prev[2] + ta)
+
+
+def get_ats_headcounts() -> dict[str, tuple[int, int, int]]:
+    """Return {slug: (total_jobs, comms_jobs, ta_jobs)} from the most
+    recent fetch."""
     return dict(_ats_headcounts)
 
 

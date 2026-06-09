@@ -1,0 +1,132 @@
+"""Tests for the fee-propensity store (tool/propensity.py), the TA-title
+counting in the ATS layer, and the end-to-end effect through the posture
+layer and Lead Strength score."""
+from datetime import datetime, timedelta, timezone
+
+import tool.propensity as PR
+from tool.sources.jobs import _TA_TITLE_RX, _ta_count
+
+
+def _setup(tmp_path, monkeypatch):
+    monkeypatch.setattr(PR, "_store_path", lambda: tmp_path / "propensity.json")
+    monkeypatch.setattr(PR, "_seeds_path", lambda: tmp_path / "seeds.json")
+
+
+# ====================================================================
+# TA-title detection (ATS layer)
+# ====================================================================
+def test_ta_titles_match_and_comms_titles_do_not():
+    hits = ["Talent Acquisition Partner", "Senior Recruiter",
+            "Recruitment Manager", "In-House Recruitment Lead",
+            "Head of Talent"]
+    misses = ["Director of Communications", "Head of Corporate Affairs",
+              "Marketing Manager", "Software Engineer"]
+    for t in hits:
+        assert _TA_TITLE_RX.search(t), t
+    for t in misses:
+        assert not _TA_TITLE_RX.search(t), t
+    items = [{"title": t} for t in hits + misses] + [None, {}]
+    assert _ta_count(items, "title") == len(hits)
+
+
+# ====================================================================
+# Store: ATS ingest, expiry, clearing
+# ====================================================================
+def test_ats_ingest_sets_and_clears_internal_ta(tmp_path, monkeypatch):
+    _setup(tmp_path, monkeypatch)
+    assert PR.ingest_ats_counts({"acme-co": (20, 0, 3)}) == 1
+    f = PR.flags_for("Acme Co")
+    assert f.get("internal_ta") is True
+    assert "3 talent-acquisition/recruiter roles" in f["internal_ta_evidence"]
+    # Board now shows zero TA roles: the flag clears.
+    PR.ingest_ats_counts({"acme-co": (18, 1, 0)})
+    assert PR.flags_for("Acme Co") == {}
+
+
+def test_ta_flag_expires(tmp_path, monkeypatch):
+    _setup(tmp_path, monkeypatch)
+    PR.ingest_ats_counts({"acme-co": (20, 0, 2)})
+    later = datetime.now(timezone.utc) + timedelta(days=PR.TA_EXPIRE_DAYS + 1)
+    assert PR.flags_for("Acme Co", now=later) == {}
+
+
+# ====================================================================
+# Store: procurement award scan (proven fee-payer)
+# ====================================================================
+def test_award_scan_records_watchlist_buyer(tmp_path, monkeypatch):
+    _setup(tmp_path, monkeypatch)
+    signals = [
+        {"title": "Contract award notice: Executive Search Services",
+         "summary": "Severn Trent has awarded a contract for executive "
+                    "search services to an external supplier.",
+         "url": "https://www.find-tender.service.gov.uk/Notice/1"},
+        # Recruitment terms but no award verb — ignored.
+        {"title": "Tender: recruitment services framework consultation",
+         "summary": "Market engagement only."},
+        # Award but nothing to do with recruitment — ignored.
+        {"title": "Contract award: grounds maintenance", "summary": "x"},
+    ]
+    assert PR.scan_signals_for_agency_awards(signals) == 1
+    f = PR.flags_for("Severn Trent")
+    assert f.get("agency_user") is True
+    assert "proven fee-payer" in f["agency_evidence"]
+
+
+# ====================================================================
+# Seeds outrank machine observations
+# ====================================================================
+def test_seeds_win(tmp_path, monkeypatch):
+    _setup(tmp_path, monkeypatch)
+    PR.ingest_ats_counts({"acme-co": (20, 0, 4)})   # machine: in-house
+    (tmp_path / "seeds.json").write_text(
+        '{"acme co": {"internal_ta": false, "agency_user": true, '
+        '"note": "VMA placed their Head of Comms in 2024"}}')
+    f = PR.flags_for("Acme Co")
+    assert f["internal_ta"] is False and f["agency_user"] is True
+    assert "VMA placed" in f["agency_evidence"]
+
+
+# ====================================================================
+# annotate() lights up the posture layer end-to-end
+# ====================================================================
+def test_annotate_drives_posture_and_score(tmp_path, monkeypatch):
+    _setup(tmp_path, monkeypatch)
+    from tool import lead_engine as LE, gate
+
+    def _iso(d):
+        return (datetime.now(timezone.utc) - timedelta(days=d)).isoformat()
+
+    def _item(company):
+        return {"company": company, "account_tier": "watchlist",
+                "last_seen": _iso(1), "events": [
+                    {"trigger_key": "ceo_change", "trigger_label": "CEO change",
+                     "url": "https://investegate.co.uk/x", "source": "RNS",
+                     "tier": "listed", "published": _iso(40), "evidence": ""}]}
+
+    # Proven agency user: posture flips external-authoritative, score +15.
+    PR.scan_signals_for_agency_awards([
+        {"title": "Contract award notice: recruitment services",
+         "summary": "Severn Trent awarded a permanent recruitment contract."}])
+    base_item, prop_item = _item("Tesco"), PR.annotate(_item("Severn Trent"))
+    assert prop_item.get("psl_status") == "on"
+    lead = LE.score_lead(prop_item)
+    assert lead["posture"]["direction"] == "external"
+    assert any("agency use" in r for r in lead["posture"]["reasons"])
+    g = gate.assess(prop_item, lead)
+    base_lead = LE.score_lead(base_item)
+    base_g = gate.assess(base_item, base_lead)
+    assert (gate.strength_score(lead, g, prop_item)
+            - gate.strength_score(base_lead, base_g, base_item)) == \
+        gate.PROP_PROVEN - gate.PROP_NEUTRAL
+
+    # TA-hiring company: posture internal -> contradiction -> never ready.
+    PR.ingest_ats_counts({"unilever": (30, 0, 5)})
+    ta_item = PR.annotate(_item("Unilever"))
+    assert ta_item.get("internal_ta") is True
+    ta_lead = LE.score_lead(ta_item)
+    assert ta_lead["posture"]["direction"] == "internal"
+    assert any("in-house" in c for c in ta_lead["contradictions"])
+    ta_g = gate.assess(ta_item, ta_lead)
+    assert not ta_g["presented"]
+    assert gate.tier_for(ta_lead, ta_g,
+                         gate.strength_score(ta_lead, ta_g, ta_item)) != "ready"

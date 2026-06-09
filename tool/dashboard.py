@@ -1368,6 +1368,11 @@ MR_CSS = r"""
 .mr-confb.hi{color:#1e7a41;background:#e7f3ec;border:1px solid rgba(30,122,65,.3)}
 .mr-confb.md{color:#9a3412;background:#fff7ed;border:1px solid #fdba74}
 .mr-evs{font:500 11px/1.5 "Inter",sans-serif;color:var(--dim)}
+.mr-propb{display:inline-flex;align-items:center;margin-right:8px;padding:2px 9px;font:700 10px/1.6 "Inter",sans-serif;letter-spacing:.04em;border-radius:999px}
+.mr-propb.pro{color:#1e7a41;background:#e7f3ec;border:1px solid rgba(30,122,65,.3)}
+.mr-propb.ext{color:#9a3412;background:#fff7ed;border:1px solid #fdba74}
+.mr-propb.unk{color:#6b7689;background:#eef1f5;border:1px solid #d8dee8}
+.mr-propb.int{color:#b5530e;background:#fdecdb;border:1px solid rgba(217,122,43,.45)}
 .mr-score{display:inline-flex;align-items:center;justify-content:center;min-width:34px;padding:2px 8px;font:800 11px/1.5 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.02em;border-radius:7px;white-space:nowrap;cursor:help}
 .mr-score.s-hi{color:#1e7a41;background:#e7f3ec;border:1px solid rgba(30,122,65,.35)}
 .mr-score.s-md{color:#9a3412;background:#fff7ed;border:1px solid #fdba74}
@@ -1511,11 +1516,13 @@ MR_JS = r"""
     var gtop='';
     if(pres(l)&&l.conf){gtop=dk('Confidence','<span class="mr-confb '+(l.conf==='High'?'hi':'md')+'">'+esc(l.conf)+'</span><span class="mr-evs">'+(l.evFams||0)+' independent source'+((l.evFams||0)===1?'':'s')+((l.evPrim||0)?' · '+l.evPrim+' primary':'')+'</span>');}
     else if(!pres(l)&&l.gateWhy!==undefined){var qt=l.gateWhy||'Needs more corroboration';if(l.recheck)qt+=' · recheck in '+l.recheck+'d';if(l.needsInv)qt+=' · run /investigate';gtop=dk('Why not call-ready',esc(qt));}
+    var prop=l.prop?dk('Fee propensity','<span class="mr-propb '+(l.propCls||'unk')+'">'+esc(l.prop)+'</span><span class="mr-evs">'+esc(l.propWhy||'')+'</span>'):'';
     var kill=(pres(l)&&l.kill)?dk('What kills this',esc(l.kill)):'';
     var move=(pres(l)&&l.move)?dk('First move',esc(l.move)):'';
     return '<div class="mr-doss">'
       +warn
       +gtop
+      +prop
       +dk('Why now<span class="v2b" data-tip="v2: this narrative is now composed from the FULL signal stack in date order — every corroborating trigger with its date — plus the fee case: the structural reason this company pays a search fee instead of running the hire itself.">v2</span>',fb(l)+esc(l.whyNow||l.why))
       +kill
       +move
@@ -1848,11 +1855,31 @@ def _mr_gate_fields(row):
     from tool import gate as _g
     ev = g.get("evidence") or {}
     lead = row.get("lead") or {}
-    score = _g.strength_score(lead, g)
+    score = _g.strength_score(lead, g, row)
+    prop_pts, prop_basis = _g.propensity_points(lead, row)
+    if prop_pts >= _g.PROP_PROVEN:
+        prop, prop_why = "Proven agency user", (
+            row.get("_propensity_note") or "history of agency use on file")
+    elif prop_pts == _g.PROP_INTERNAL:
+        prop, prop_why = "In-house route", (
+            row.get("_propensity_note")
+            or "; ".join(((lead.get("posture") or {}).get("reasons")) or [])
+            or "in-house TA signals detected")
+    elif prop_pts == _g.PROP_EXTERNAL:
+        prop, prop_why = "Leans external", (
+            "; ".join(((lead.get("posture") or {}).get("reasons")) or [])
+            or "external-hiring signals")
+    else:
+        prop, prop_why = "Unknown", ("no fee-propensity evidence yet — "
+                                     "score carries the neutral default")
     return {
         "presented": 1 if g.get("presented") else 0,
         "score": score,
         "tier": _g.tier_for(lead, g, score),
+        "prop": prop, "propWhy": prop_why,
+        "propCls": ("pro" if prop_pts >= _g.PROP_PROVEN
+                    else "int" if prop_pts == _g.PROP_INTERNAL
+                    else "ext" if prop_pts == _g.PROP_EXTERNAL else "unk"),
         "conf": g.get("confidence") or "",
         "gateWhy": " · ".join(g.get("reasons") or []),
         "recheck": g.get("recheck_days"),
@@ -2229,6 +2256,13 @@ def _render_dashboard():
             return False
     def _enrich(_r, _kind, _id):
         _r["contact_on_file"] = _on_file(_r.get("company"))
+        # Fee-propensity flags (TA-hiring / proven agency user) feed the
+        # posture layer's authoritative inputs before scoring.
+        try:
+            from tool import propensity as _prop
+            _prop.annotate(_r)
+        except Exception:
+            pass
         _r["lead"] = lead_engine.score_lead(_r, _kind, _desk)
         _r["outcome"] = _outc.get(_id)
         # The presentation gate: presented (earns a card) vs queued (a
