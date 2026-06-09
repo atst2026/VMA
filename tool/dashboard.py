@@ -1374,6 +1374,7 @@ MR_CSS = r"""
 .mr-ab{display:inline-flex;align-items:center;justify-content:center;padding:3px 9px;font:700 9px/1.6 "Inter",sans-serif;letter-spacing:.03em;text-transform:uppercase;border-radius:7px;white-space:nowrap;justify-self:start}
 .mr-ab.ab-call_today{color:#fff;background:#D9633C}.mr-ab.ab-nurture{color:#1d4ed8;background:#e9effb}.mr-ab.ab-investigate{color:#8a5a00;background:#fff4e0}.mr-ab.ab-monitor{color:#6b7686;background:#eef1f5}
 .mr-q4{display:inline-flex;align-items:center;padding:2px 8px;font:600 9px/1.6 "Inter",sans-serif;letter-spacing:.03em;border-radius:7px;white-space:nowrap;color:#9a3412;background:#fff7ed;border:1px solid #fdba74}
+.mr-feeb{display:inline-flex;align-items:center;padding:2px 8px;font:700 9px/1.6 "Inter",sans-serif;letter-spacing:.05em;text-transform:uppercase;border-radius:999px;white-space:nowrap;color:#b5530e;background:#fdecdb;border:1px solid rgba(217,122,43,.35);cursor:help}
 .mr-xdesk{display:inline-block;width:fit-content;margin-top:8px;padding:3px 10px;font:600 10px/1.6 "Inter",sans-serif;letter-spacing:.03em;border-radius:7px;white-space:nowrap;color:#6d28d9;background:#f5f3ff;border:1px solid #c4b5fd}
 .mr-lmeta{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:2px 0 8px}
 .mr-anti{font:700 9px/1.5 "Inter",sans-serif;color:#c0392b;background:#fdecea;padding:2px 7px;border-radius:6px}
@@ -1419,7 +1420,7 @@ MR_CSS = r"""
 .mr-empty{padding:40px;text-align:center;color:var(--dim)}
 @media(max-width:640px){
 .mr-gbd{grid-template-columns:20px 1fr;gap:6px}
-.mr-gbd .mr-tp,.mr-gbd .mr-seat,.mr-gbd .mr-why,.mr-gbd .mr-wb,.mr-gbd .mr-ab,.mr-gbd .mr-sc,.mr-gbd .mr-q4{grid-column:1/-1}
+.mr-gbd .mr-tp,.mr-gbd .mr-seat,.mr-gbd .mr-why,.mr-gbd .mr-wb,.mr-gbd .mr-ab,.mr-gbd .mr-sc,.mr-gbd .mr-q4,.mr-gbd .mr-feeb{grid-column:1/-1}
 .mr-gjobs{grid-template-columns:20px 1fr;gap:6px}
 .mr-gjobs .mr-badge,.mr-gjobs .mr-pcell{grid-column:1/-1}
 .mr-rsum{padding:10px 10px}
@@ -1484,6 +1485,7 @@ MR_JS = r"""
     return '<button class="mr-io icon" data-act="tri" data-id="'+l._id+'" data-st="active" title="Restore">'+IC.undo+'</button>'+rm;}
   function ab(l){return l.action?'<span class="mr-ab ab-'+l.action+'">'+esc(l.actionLabel)+'</span>':sc(l);}
   function q4b(l){return l.q4?'<span class="mr-q4">'+esc(l.q4)+'</span>':'';}
+  function fb(l){return l.fee?'<span class="mr-feeb" title="'+esc(l.feeTip||'')+'">'+esc(l.fee)+'</span>':'';}
   function xdb(l){return l.xdesk?'<span class="mr-xdesk">*'+esc(l.xdesk)+'</span>':'';}
   function dk(lab,val){return '<div class="mr-dk"><span class="mr-dlab">'+lab+'</span><span>'+val+'</span></div>';}
   function brief(l){
@@ -1501,7 +1503,7 @@ MR_JS = r"""
       +(anti2.length?'<span class="mr-anti">⚠ '+esc(anti2.join(' · '))+'</span>':'')+'</div>':'';
     return '<div class="mr-doss">'
       +warn
-      +dk('Why now',esc(l.whyNow||l.why))
+      +dk('Why now<span class="v2b" data-tip="v2: this narrative is now composed from the FULL signal stack in date order — every corroborating trigger with its date — plus the fee case: the structural reason this company pays a search fee instead of running the hire itself.">v2</span>',esc(l.whyNow||l.why))
       +acts
       +xdb(l)
       +(l.opener?'<div class="mr-dk mr-playwrap'+(l.drafted?' on':'')+'"><span class="mr-dlab">The play</span><span class="mr-play mr-playbox">'+(l.drafted?esc(l.opener):'')+'</span></div>':'')
@@ -1510,7 +1512,7 @@ MR_JS = r"""
     return '<div class="mr-row '+(open[l._id]?'open ':'')+(top?'top':'')+'" data-id="'+l._id+'">'
      +'<div class="mr-rsum mr-gbd" data-act="toggle" data-id="'+l._id+'">'
      +'<span class="mr-rk">'+(idx+1)+'</span><span class="mr-co">'+esc(l.co)+newp(l)+'</span>'+tp(l)
-     +'<span class="mr-seat">'+esc(l.seat)+'</span><span class="mr-why">'+esc(l.why)+'</span>'+wb(l)+ab(l)+q4b(l)
+     +'<span class="mr-seat">'+esc(l.seat)+'</span><span class="mr-why">'+esc(l.why)+'</span>'+fb(l)+wb(l)+ab(l)+q4b(l)
      +'<span class="mr-racts">'+(filter==='all'?stbadge(l):'')+triBtns(l)+'</span></div>'
      +'<div class="mr-rdet"><div class="mr-aibrief"><div class="mr-gen">'+brief(l)+'</div></div></div></div>';}
   function jobRow(l,idx){
@@ -1877,6 +1879,7 @@ def _build_mr_rows(premarket_rows, leads, role_label):
     except Exception:
         _mkt = False
     bd = []
+    from tool import why_now as _wn
     for row in premarket_rows:
         _kind = row.get("_kind", "predictor")
         if _kind in ("stale_mandate", "water_sar", "contract_end", "cascade"):
@@ -1884,13 +1887,17 @@ def _build_mr_rows(premarket_rows, leads, role_label):
             co = row.get("company") or "—"
             brief = (row.get("evidence") or row.get("title") or "")[:220] or typ
             url = row.get("url") or row.get("article_url") or ""
+            _fee, _fee_tip = _wn.fee_driver([_kind])
             bd.append({
                 "co": co,
                 "isNew": 0,
                 "age": "",
                 "type": typ, "key": key,
                 "seat": role_label, "why": typ,
-                "whyNow": (row.get("lead") or {}).get("why_now") or brief,
+                "whyNow": _wn.compose_why_now(
+                    [], (row.get("lead") or {}).get("why_now") or brief,
+                    _fee_tip),
+                "fee": _fee, "feeTip": _fee_tip,
                 "brief": brief,
                 "url": url, "src": _mr_domain(url),
                 "win": "",
@@ -1924,14 +1931,19 @@ def _build_mr_rows(premarket_rows, leads, role_label):
                     "events": [{"trigger_key": "funding", "trigger_label": why,
                                 "evidence": row.get("evidence") or ""}],
                 })
+            _fee, _fee_tip = _wn.fee_driver(["funding"])
             bd.append({
                 "co": row.get("company") or "—",
                 "isNew": 1 if first_seen.startswith(today) else 0,
                 "age": _mr_row_age(first_seen),
                 "type": "Funding", "key": "fund",
                 "seat": role_label, "why": why,
-                "whyNow": (row.get("lead") or {}).get("why_now")
-                          or _why_now("funding", _mkt, role_label, _mr_compact_window(row.get("window"))),
+                "whyNow": _wn.compose_why_now(
+                    [], (row.get("lead") or {}).get("why_now")
+                    or _why_now("funding", _mkt, role_label,
+                                _mr_compact_window(row.get("window"))),
+                    _fee_tip),
+                "fee": _fee, "feeTip": _fee_tip,
                 "brief": brief or "Funding round — senior build-out likely.",
                 "url": url, "src": _mr_domain(url),
                 "win": _mr_compact_window(row.get("window")),
@@ -1955,14 +1967,19 @@ def _build_mr_rows(premarket_rows, leads, role_label):
             brief = (ev0.get("evidence") or "")[:220] or row.get("advisory") or why
             url = ev0.get("url") or ""
             seat = row.get("predicted_role") or role_label
+            _fee, _fee_tip = _wn.fee_driver(
+                [e.get("trigger_key") for e in evs if isinstance(e, dict)])
             bd.append({
                 "co": row.get("company") or "—",
                 "isNew": 1 if row.get("is_new") else 0,
                 "age": _mr_row_age(row.get("first_seen")),
                 "type": typ, "key": key,
                 "seat": seat, "why": why,
-                "whyNow": (row.get("lead") or {}).get("why_now")
-                          or _why_now(tkey, _mkt, seat, row.get("window_label")),
+                "whyNow": _wn.compose_why_now(
+                    evs, (row.get("lead") or {}).get("why_now")
+                    or _why_now(tkey, _mkt, seat, row.get("window_label")),
+                    _fee_tip),
+                "fee": _fee, "feeTip": _fee_tip,
                 "brief": brief,
                 "url": url, "src": _mr_domain(url),
                 "win": row.get("window_label") or "",
@@ -5809,13 +5826,13 @@ TEMPLATE = r"""
     <div class="cc-wrap">
       <div class="cc-hero">
         <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></div>
-        <h1 class="gemini-title">BD Calendar<span class="v2b" data-tip="v2 role: deadline-forced demand. Everything on this page happens on the calendar, not the budget cycle — statutory placement windows, re-tenders and framework refreshes create comms briefs that cannot be deferred or done in-house, whatever the market mood. In a quiet market this is the demand that survives.">v2</span></h1>
+        <h1 class="gemini-title">BD Calendar</h1>
         <div class="cc-sub">The business-development moves that run on key dates.</div>
       </div>
       <div class="cc-cards">
-        <button class="cc-card" data-open="windows"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg></span><span class="cx"><span class="ct">Placement Windows<span class="v2b" data-tip="v2 role: date-driven, non-discretionary demand — these windows open on a statutory calendar regardless of hiring sentiment. Being first into the window is the whole game.">v2</span></span><span class="cd">Statutory hiring windows that open on a known calendar.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
-        <button class="cc-card" data-open="events"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 17l-5.2 2.6 1-5.8L3.5 9.7l5.9-.9z"/></svg></span><span class="cx"><span class="ct">Events &amp; Networking<span class="v2b" data-tip="v2 role: relationship-led BD. In a quiet market the meeting comes before the mandate — these are the rooms where the next briefs are decided, months before any role is advertised.">v2</span></span><span class="cd">Awards, summits and networking dates worth showing up to.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
-        <button class="cc-card" data-open="frameworks"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 13h7M8.5 16.5h4.5"/></svg></span><span class="cx"><span class="ct">Approved Frameworks<span class="v2b" data-tip="v2 role: budget-proof demand. Public-sector re-tenders run to fixed expiry dates and must go to market — fee opportunities that exist independent of private-sector hiring freezes.">v2</span></span><span class="cd">Public-sector frameworks where VMA can bid.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
+        <button class="cc-card" data-open="windows"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg></span><span class="cx"><span class="ct">Placement Windows</span><span class="cd">Statutory hiring windows that open on a known calendar.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
+        <button class="cc-card" data-open="events"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 17l-5.2 2.6 1-5.8L3.5 9.7l5.9-.9z"/></svg></span><span class="cx"><span class="ct">Events &amp; Networking</span><span class="cd">Awards, summits and networking dates worth showing up to.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
+        <button class="cc-card" data-open="frameworks"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 13h7M8.5 16.5h4.5"/></svg></span><span class="cx"><span class="ct">Approved Frameworks</span><span class="cd">Public-sector frameworks where VMA can bid.</span></span><span class="cbadge"></span><span class="cv">›</span></button>
       </div>
     </div>
 
