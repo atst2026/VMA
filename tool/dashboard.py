@@ -1374,7 +1374,7 @@ MR_CSS = r"""
 .mr-ab{display:inline-flex;align-items:center;justify-content:center;padding:3px 9px;font:700 9px/1.6 "Inter",sans-serif;letter-spacing:.03em;text-transform:uppercase;border-radius:7px;white-space:nowrap;justify-self:start}
 .mr-ab.ab-call_today{color:#fff;background:#D9633C}.mr-ab.ab-nurture{color:#1d4ed8;background:#e9effb}.mr-ab.ab-investigate{color:#8a5a00;background:#fff4e0}.mr-ab.ab-monitor{color:#6b7686;background:#eef1f5}
 .mr-q4{display:inline-flex;align-items:center;padding:2px 8px;font:600 9px/1.6 "Inter",sans-serif;letter-spacing:.03em;border-radius:7px;white-space:nowrap;color:#9a3412;background:#fff7ed;border:1px solid #fdba74}
-.mr-feeb{display:inline-flex;align-items:center;padding:2px 8px;font:700 9px/1.6 "Inter",sans-serif;letter-spacing:.05em;text-transform:uppercase;border-radius:999px;white-space:nowrap;color:#b5530e;background:#fdecdb;border:1px solid rgba(217,122,43,.35);cursor:help}
+.mr-feeb{display:inline-flex;align-items:center;margin-right:7px;padding:2px 8px;font:700 9px/1.6 "Inter",sans-serif;letter-spacing:.05em;text-transform:uppercase;border-radius:999px;white-space:nowrap;vertical-align:middle;color:#b5530e;background:#fdecdb;border:1px solid rgba(217,122,43,.35);cursor:help}
 .mr-xdesk{display:inline-block;width:fit-content;margin-top:8px;padding:3px 10px;font:600 10px/1.6 "Inter",sans-serif;letter-spacing:.03em;border-radius:7px;white-space:nowrap;color:#6d28d9;background:#f5f3ff;border:1px solid #c4b5fd}
 .mr-lmeta{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:2px 0 8px}
 .mr-anti{font:700 9px/1.5 "Inter",sans-serif;color:#c0392b;background:#fdecea;padding:2px 7px;border-radius:6px}
@@ -1420,7 +1420,7 @@ MR_CSS = r"""
 .mr-empty{padding:40px;text-align:center;color:var(--dim)}
 @media(max-width:640px){
 .mr-gbd{grid-template-columns:20px 1fr;gap:6px}
-.mr-gbd .mr-tp,.mr-gbd .mr-seat,.mr-gbd .mr-why,.mr-gbd .mr-wb,.mr-gbd .mr-ab,.mr-gbd .mr-sc,.mr-gbd .mr-q4,.mr-gbd .mr-feeb{grid-column:1/-1}
+.mr-gbd .mr-tp,.mr-gbd .mr-seat,.mr-gbd .mr-why,.mr-gbd .mr-wb,.mr-gbd .mr-ab,.mr-gbd .mr-sc,.mr-gbd .mr-q4{grid-column:1/-1}
 .mr-gjobs{grid-template-columns:20px 1fr;gap:6px}
 .mr-gjobs .mr-badge,.mr-gjobs .mr-pcell{grid-column:1/-1}
 .mr-rsum{padding:10px 10px}
@@ -1503,7 +1503,7 @@ MR_JS = r"""
       +(anti2.length?'<span class="mr-anti">⚠ '+esc(anti2.join(' · '))+'</span>':'')+'</div>':'';
     return '<div class="mr-doss">'
       +warn
-      +dk('Why now<span class="v2b" data-tip="v2: this narrative is now composed from the FULL signal stack in date order — every corroborating trigger with its date — plus the fee case: the structural reason this company pays a search fee instead of running the hire itself.">v2</span>',esc(l.whyNow||l.why))
+      +dk('Why now<span class="v2b" data-tip="v2: this narrative is now composed from the FULL signal stack in date order — every corroborating trigger with its date — plus the fee case: the structural reason this company pays a search fee instead of running the hire itself.">v2</span>',fb(l)+esc(l.whyNow||l.why))
       +acts
       +xdb(l)
       +(l.opener?'<div class="mr-dk mr-playwrap'+(l.drafted?' on':'')+'"><span class="mr-dlab">The play</span><span class="mr-play mr-playbox">'+(l.drafted?esc(l.opener):'')+'</span></div>':'')
@@ -1512,7 +1512,7 @@ MR_JS = r"""
     return '<div class="mr-row '+(open[l._id]?'open ':'')+(top?'top':'')+'" data-id="'+l._id+'">'
      +'<div class="mr-rsum mr-gbd" data-act="toggle" data-id="'+l._id+'">'
      +'<span class="mr-rk">'+(idx+1)+'</span><span class="mr-co">'+esc(l.co)+newp(l)+'</span>'+tp(l)
-     +'<span class="mr-seat">'+esc(l.seat)+'</span><span class="mr-why">'+esc(l.why)+'</span>'+fb(l)+wb(l)+ab(l)+q4b(l)
+     +'<span class="mr-seat">'+esc(l.seat)+'</span><span class="mr-why">'+esc(l.why)+'</span>'+wb(l)+ab(l)+q4b(l)
      +'<span class="mr-racts">'+(filter==='all'?stbadge(l):'')+triBtns(l)+'</span></div>'
      +'<div class="mr-rdet"><div class="mr-aibrief"><div class="mr-gen">'+brief(l)+'</div></div></div></div>';}
   function jobRow(l,idx){
