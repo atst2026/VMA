@@ -520,24 +520,35 @@ def _age_days(iso: str | None, fallback: str | None = None) -> float:
     return 0.0
 
 
-def _recency_mult(age_days: float, decay: str) -> float:
-    """Layer 2. Leadership change stays meaningful across the first ~90 days;
-    event signals decay within weeks."""
-    if decay == "slow":
-        if age_days <= 90:
-            return 1.0
-        if age_days <= 120:
-            return 0.6
-        if age_days <= 150:
-            return 0.3
-        return 0.1
-    if age_days <= 7:
+def _recency_mult(age_days: float, decay: str,
+                   lead_time_weeks: tuple[int, int] | None = None) -> float:
+    """Layer 2. Decay anchored to the trigger's own hiring window.
+
+    A signal stays at full value (1.0) through the START of its lead-time
+    window, then decays smoothly toward 0.1 by TWICE the end of the window.
+    No cliff edges — a lead that's "call today" on Monday won't vanish
+    on Tuesday.
+
+    If no lead_time_weeks is provided, falls back to category defaults
+    (slow = leadership, fast = event).
+    """
+    import math
+    if lead_time_weeks:
+        flat_days = lead_time_weeks[0] * 7
+        end_days = lead_time_weeks[1] * 7
+    elif decay == "slow":
+        flat_days = 42       # ~6 weeks
+        end_days = 168       # ~24 weeks
+    else:
+        flat_days = 14       # ~2 weeks
+        end_days = 84        # ~12 weeks
+
+    if age_days <= flat_days:
         return 1.0
-    if age_days <= 21:
-        return 0.6
-    if age_days <= 45:
-        return 0.3
-    return 0.1
+    decay_span = max(end_days - flat_days, 14)
+    # smooth decay: reaches ~0.15 at 2x the window end, floors at 0.1
+    t = (age_days - flat_days) / decay_span
+    return max(0.1, math.exp(-1.2 * t))
 
 
 def _confidence(event: dict, independent_sources: int) -> tuple[str, float]:
@@ -621,7 +632,10 @@ def _signal(events: list[dict], fallback_date: str | None, taxonomy: dict):
             continue
         pts, family, decay = spec
         age = _age_days(e.get("published"), fallback_date)
-        rmult = _recency_mult(age, decay)
+        from tool.predictive.patterns import BY_KEY as _BY_KEY
+        _ttype = _BY_KEY.get(e.get("trigger_key"))
+        _ltw = _ttype.lead_time_weeks if _ttype else None
+        rmult = _recency_mult(age, decay, lead_time_weeks=_ltw)
         ctier, cmult = _confidence(e, independent)
         eff = round(pts * rmult * cmult, 2)
         triggers.append({

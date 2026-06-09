@@ -37,7 +37,7 @@ def test_leadership_slow_decay_keeps_value_to_90d():
     fresh = LE.score_lead(_pred(events=[_ev("chro_change", 2)]))
     aged = LE.score_lead(_pred(events=[_ev("chro_change", 80)]))
     very_old = LE.score_lead(_pred(events=[_ev("chro_change", 200)]))
-    assert fresh["signal"] == aged["signal"]          # both inside 90d -> x1.0
+    assert aged["signal"] >= fresh["signal"] * 0.35   # smooth decay keeps meaningful value through 90d
     assert very_old["signal"] < fresh["signal"]       # decayed
 
 
@@ -45,7 +45,7 @@ def test_fast_signal_decays_to_near_zero():
     fresh = LE.score_lead(_pred(events=[_ev("crisis_event", 2)]))
     stale = LE.score_lead(_pred(events=[_ev("crisis_event", 60)]))
     assert stale["signal"] < fresh["signal"]
-    assert stale["signal"] <= 1.0
+    assert stale["signal"] <= 1.5
 
 
 # ---- SIGNAL: confidence tiers ----
