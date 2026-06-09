@@ -1,5 +1,20 @@
 [
   {
+    "company": "PhysicsX",
+    "round": "Series C",
+    "amount": "\u00a3225m",
+    "evidence": "PhysicsX raises \u00a3225m to accelerate AI for industrial engineering",
+    "investor": "",
+    "url": "https://www.uktech.news/ai/physicsx-raises-225m-to-accelerate-ai-for-industrial-engineering-20260609",
+    "source": "UKTN",
+    "sector": "",
+    "window": "Senior-comms window ~6 mo",
+    "advisory": "Advisory: comms-function design-for-scale + benchmarking; build the senior-comms market map ahead of the ~6-month hire.",
+    "confidence": "high",
+    "fid": "30718d132b44bf84",
+    "first_seen": "2026-06-09T08:51:03.871134+00:00"
+  },
+  {
     "company": "Oxford Quantum Circuits",
     "round": "Series C",
     "amount": "\u00a3260m",
