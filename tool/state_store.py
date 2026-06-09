@@ -22,7 +22,12 @@ def _load() -> dict:
 
 
 def _save(data: dict) -> None:
-    SEEN_FILE.write_text(json.dumps(data, indent=0))
+    # Atomic write: a crash mid-write would otherwise leave a truncated
+    # file, _load() would fall back to {}, and every recent signal would
+    # be re-sent as new on the next run.
+    tmp = Path(str(SEEN_FILE) + ".tmp")
+    tmp.write_text(json.dumps(data, indent=0))
+    os.replace(tmp, Path(str(SEEN_FILE)))
 
 
 def filter_unseen(signals: list[dict]) -> list[dict]:
