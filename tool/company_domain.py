@@ -546,19 +546,30 @@ _P154_CACHE: dict[str, bytes | None] = {}   # keyed on QID
 
 
 def _p154_filename(qid: str) -> str | None:
+    """The entity's CURRENT logo filename. Entities with a logo history keep
+    every past logo as a P154 statement: the current one is usually marked
+    rank=preferred, and superseded ones carry an end-time (P582) qualifier.
+    Taking the first claim regardless put an OUTDATED logo on a client-facing
+    cover — so prefer preferred-rank claims, then claims without an end time,
+    keeping statement order as the tiebreak."""
     data = _wd_get({"action": "wbgetentities", "ids": qid,
                     "props": "claims", "languages": "en"})
     if not data:
         return None
     claims = ((data.get("entities") or {}).get(qid) or {}).get("claims") or {}
+    best, best_key = None, None
     for c in claims.get("P154", []) or []:
         if c.get("rank") == "deprecated":
             continue
         try:
-            return c["mainsnak"]["datavalue"]["value"]
+            fn = c["mainsnak"]["datavalue"]["value"]
         except (KeyError, TypeError):
             continue
-    return None
+        ended = "P582" in (c.get("qualifiers") or {})
+        key = (0 if c.get("rank") == "preferred" else 1, 1 if ended else 0)
+        if best is None or key < best_key:
+            best, best_key = fn, key
+    return best
 
 
 def _fetch_p154_raster(filename: str) -> bytes | None:

@@ -183,6 +183,17 @@ class TestVisibility(unittest.TestCase):
                 px[x, y] = (255, 255, 255, 255)
         self.assertFalse(pp._passes_visibility(_png(img)))
 
+    def test_padded_canvas_logo_visible(self):
+        # A genuine dark logo on a big padded Commons canvas: the ink fraction
+        # over the RAW canvas is < 2%, but the content-box measure must pass
+        # it (previously this silently fell back to the bare logo.dev symbol).
+        img = Image.new("RGBA", (1200, 1200), (0, 0, 0, 0))
+        px = img.load()
+        for x in range(500, 700):
+            for y in range(550, 650):
+                px[x, y] = (10, 30, 60, 255)
+        self.assertTrue(pp._passes_visibility(_png(img)))
+
 
 class TestWikidataFirst(unittest.TestCase):
     """P154 is preferred over logo.dev, with quality + visibility fallbacks."""
@@ -226,6 +237,53 @@ class TestWikidataFirst(unittest.TestCase):
         self.cd.wikidata_logo_png = lambda company: _png(_rich(40, 40))
         self.assertEqual(self._uri(),
                          pp._process_logo(self.icon, pp._COVER_LOGO_MAX_H, pp._COVER_LOGO_MAX_W))
+
+    def test_logodev_white_wordmark_rejected(self):
+        # The visible-on-white gate must also cover the logo.dev branch: a
+        # wide white-on-transparent wordmark is exempt from the placeholder
+        # check (wide = wordmark) and would land invisible on the white cover.
+        self.cd.wikidata_logo_png = lambda company: None
+        white = Image.new("RGBA", (420, 130), (0, 0, 0, 0))
+        px = white.load()
+        for x in range(20, 400):
+            for y in range(35, 95):
+                px[x, y] = (255, 255, 255, 255)
+        pp._fetch_logo_png = lambda domain, token: _png(white)
+        self.assertIsNone(self._uri())
+
+
+class TestP154CurrentLogo(unittest.TestCase):
+    """_p154_filename must pick the CURRENT logo: preferred rank first, then
+    claims without an end-time (P582) qualifier, else statement order."""
+
+    def setUp(self):
+        from tool import company_domain
+        self.cd = company_domain
+        self._orig = self.cd._wd_get
+        self.claims = [
+            {"rank": "normal", "qualifiers": {"P582": [{}]},
+             "mainsnak": {"datavalue": {"value": "Old logo.svg"}}},
+            {"rank": "normal",
+             "mainsnak": {"datavalue": {"value": "Mid logo.svg"}}},
+            {"rank": "preferred",
+             "mainsnak": {"datavalue": {"value": "Current logo.svg"}}},
+        ]
+        self.cd._wd_get = lambda params: {
+            "entities": {"Q1": {"claims": {"P154": self.claims}}}}
+
+    def tearDown(self):
+        self.cd._wd_get = self._orig
+
+    def test_preferred_rank_wins(self):
+        self.assertEqual(self.cd._p154_filename("Q1"), "Current logo.svg")
+
+    def test_unended_claim_wins_without_preferred(self):
+        self.claims[2]["rank"] = "normal"
+        self.assertEqual(self.cd._p154_filename("Q1"), "Mid logo.svg")
+
+    def test_deprecated_skipped(self):
+        self.claims[1]["rank"] = self.claims[2]["rank"] = "deprecated"
+        self.assertEqual(self.cd._p154_filename("Q1"), "Old logo.svg")
 
 
 if __name__ == "__main__":
