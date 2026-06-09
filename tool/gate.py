@@ -222,6 +222,66 @@ def first_move(lead: dict, company: str) -> str:
     return move
 
 
+# ---- Lead Strength (the board's 0-100 ordering score) --------------------
+# Composed entirely from components the engine already computes — fit,
+# signal, evidence independence, stack dimensions, timing and
+# contradictions — so the number is an honest summary, not a new claim.
+# The card still shows the evidence behind it; the score is for scanning.
+SCORE_READY = 70      # >= this renders green
+SCORE_DEVELOPING = 45  # >= this renders amber; below renders grey
+
+
+def strength_score(lead: dict, g: dict) -> int:
+    """0-100 Lead Strength. Deterministic; never raises."""
+    try:
+        lead, g = lead or {}, g or {}
+        ev = g.get("evidence") or {}
+        # Fit (0-10 -> 0-26): is this even VMA's buyer?
+        score = min(max(float(lead.get("fit") or 0), 0), 10) * 2.6
+        # Signal (0-~10 soft-capped -> 0-30): trigger weight x recency x
+        # confidence, the conjunction model's continuous scale.
+        score += min(max(float(lead.get("signal") or 0), 0), 10) * 3.0
+        # Evidence independence (0-18): families capped at 3, primary bonus.
+        fams = min(int(ev.get("families") or 0), 3)
+        score += fams / 3 * 14
+        if (ev.get("primary") or 0) >= 1:
+            score += 4
+        # Stack dimensions (0-12): extra same-direction layers.
+        score += min(int(lead.get("n_pro") or 0), 3) * 4
+        # Timing (0-8): in-window beats premature beats lapsed.
+        reasons = " ".join(g.get("reasons") or [])
+        if lead.get("premature"):
+            score += 2
+        elif "lapsed" in reasons:
+            score += 0
+        else:
+            score += 8
+        # Contradictions pull hard (-8 each, max -16).
+        score -= min(len(lead.get("contradictions") or []), 2) * 8
+        # The gate's own judgement: a presented card is call-ready.
+        if g.get("presented"):
+            score += 6
+        # Hard blocks floor the score into the Blocked band.
+        anti = set(lead.get("anti_triggers") or [])
+        if lead.get("conflict") or anti & {"administration", "hiring_freeze"}:
+            score = min(score, 15)
+        return int(round(min(max(score, 0), 100)))
+    except Exception:
+        return 0
+
+
+def tier_for(lead: dict, g: dict, score: int) -> str:
+    """Board section: 'ready' (gate-presented), 'blocked' (hard-stopped),
+    'dev' (worth developing), 'early' (weak signals)."""
+    lead, g = lead or {}, g or {}
+    anti = set(lead.get("anti_triggers") or [])
+    if lead.get("conflict") or anti & {"administration", "hiring_freeze"}:
+        return "blocked"
+    if g.get("presented"):
+        return "ready"
+    return "dev" if score >= SCORE_DEVELOPING else "early"
+
+
 def assess(item: dict, lead: dict, *, verdicts: list[dict] | None = None,
            investigation: dict | None = None,
            now: datetime | None = None) -> dict:

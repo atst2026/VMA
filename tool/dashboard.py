@@ -1364,17 +1364,22 @@ MR_CSS = r"""
 .mr-ab.ab-call_today{color:#fff;background:#D9633C}.mr-ab.ab-nurture{color:#1d4ed8;background:#e9effb}.mr-ab.ab-investigate{color:#8a5a00;background:#fff4e0}.mr-ab.ab-monitor{color:#6b7686;background:#eef1f5}
 .mr-q4{display:inline-flex;align-items:center;padding:2px 8px;font:600 9px/1.6 "Inter",sans-serif;letter-spacing:.03em;border-radius:7px;white-space:nowrap;color:#9a3412;background:#fff7ed;border:1px solid #fdba74}
 .mr-feeb{display:inline-flex;align-items:center;margin-right:7px;padding:2px 8px;font:700 9px/1.6 "Inter",sans-serif;letter-spacing:.05em;text-transform:uppercase;border-radius:999px;white-space:nowrap;vertical-align:middle;color:#b5530e;background:#fdecdb;border:1px solid rgba(217,122,43,.35);cursor:help}
-.mr-qd{display:inline-block;margin-left:5px;padding:1px 6px;font:700 8.5px/1.5 "Inter",sans-serif;letter-spacing:.07em;text-transform:uppercase;border-radius:4px;color:#6b7689;background:#edf0f4;border:1px solid #d8dee8;vertical-align:middle}
 .mr-confb{display:inline-flex;align-items:center;margin-right:8px;padding:2px 9px;font:700 10px/1.6 "Inter",sans-serif;letter-spacing:.04em;border-radius:999px}
 .mr-confb.hi{color:#1e7a41;background:#e7f3ec;border:1px solid rgba(30,122,65,.3)}
 .mr-confb.md{color:#9a3412;background:#fff7ed;border:1px solid #fdba74}
 .mr-evs{font:500 11px/1.5 "Inter",sans-serif;color:var(--dim)}
-.mr-verd{display:inline-flex;gap:7px;flex-wrap:wrap}
-.mr-vb{font:600 11.5px/1 "Inter",sans-serif;color:var(--ink2);background:#fff;border:1px solid var(--mrborder);border-radius:8px;padding:6px 11px;cursor:pointer}
-.mr-vb:hover{background:var(--elevated)}
-.mr-vb.on{color:#fff;background:#1A3D7C;border-color:#1A3D7C}
-.mr-acc{font:600 11px/1 "Inter",sans-serif;color:var(--dim);white-space:nowrap;align-self:center;padding:0 4px}
-.mr-acc.bad{color:#b5530e}
+.mr-score{display:inline-flex;align-items:center;justify-content:center;min-width:34px;padding:2px 8px;font:800 11px/1.5 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.02em;border-radius:7px;white-space:nowrap;cursor:help}
+.mr-score.s-hi{color:#1e7a41;background:#e7f3ec;border:1px solid rgba(30,122,65,.35)}
+.mr-score.s-md{color:#9a3412;background:#fff7ed;border:1px solid #fdba74}
+.mr-score.s-lo{color:#6b7689;background:#eef1f5;border:1px solid #d8dee8}
+.mr-tierh{display:flex;align-items:center;gap:9px;margin:14px 2px 7px;padding:7px 12px;border:1px solid var(--mrborder);border-radius:10px;background:var(--elevated);cursor:pointer;user-select:none}
+.mr-tierh:first-child{margin-top:2px}
+.mr-tierh .mr-tdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.mr-tdot.ready{background:#34A853}.mr-tdot.dev{background:#D97A2B}.mr-tdot.early{background:#9aa4b5}.mr-tdot.blocked{background:#b5530e}
+.mr-tierh .mr-tlab{font:700 10.5px/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--ink)}
+.mr-tierh .mr-tn{font:700 10.5px/1 "Inter",sans-serif;color:var(--dim);background:#fff;border:1px solid var(--mrborder);border-radius:999px;padding:2px 8px}
+.mr-tierh .mr-tcv{margin-left:auto;font:600 10.5px/1 "Inter",sans-serif;color:var(--dim)}
+.mr-tierh.closed{opacity:.78}
 .mr-xdesk{display:inline-block;width:fit-content;margin-top:8px;padding:3px 10px;font:600 10px/1.6 "Inter",sans-serif;letter-spacing:.03em;border-radius:7px;white-space:nowrap;color:#6d28d9;background:#f5f3ff;border:1px solid #c4b5fd}
 .mr-lmeta{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:2px 0 8px}
 .mr-anti{font:700 9px/1.5 "Inter",sans-serif;color:#c0392b;background:#fdecea;padding:2px 7px;border-radius:6px}
@@ -1420,7 +1425,7 @@ MR_CSS = r"""
 .mr-empty{padding:40px;text-align:center;color:var(--dim)}
 @media(max-width:640px){
 .mr-gbd{grid-template-columns:20px 1fr;gap:6px}
-.mr-gbd .mr-tp,.mr-gbd .mr-seat,.mr-gbd .mr-why,.mr-gbd .mr-wb,.mr-gbd .mr-ab,.mr-gbd .mr-sc,.mr-gbd .mr-q4{grid-column:1/-1}
+.mr-gbd .mr-tp,.mr-gbd .mr-seat,.mr-gbd .mr-why,.mr-gbd .mr-wb,.mr-gbd .mr-score,.mr-gbd .mr-q4{grid-column:1/-1}
 .mr-gjobs{grid-template-columns:20px 1fr;gap:6px}
 .mr-gjobs .mr-badge,.mr-gjobs .mr-pcell{grid-column:1/-1}
 .mr-rsum{padding:10px 10px}
@@ -1462,20 +1467,19 @@ MR_JS = r"""
   function esc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   function active(){return page==='bd'?BD:JOBS;}
   function tp(l){return '<span class="mr-tp '+l.key+'">'+esc(l.type)+'</span>';}
-  function sc(l){return '<span class="mr-sc '+l.st+'">'+l.st+'</span>';}
   function wb(l){return '<span class="mr-wb">'+esc(l.win)+'</span>';}
   function newp(l){return l.isNew?' <span class="mr-newp">NEW</span>':'';}
   function srcl(l){return l.url?'<a class="mr-srcl" href="'+esc(l.url)+'" target="_blank" rel="noopener">'+IC.ext+'<span>View source</span></a>':'';}
   function toast(m){var t=$('mr-toast');if(!t)return;t.innerHTML='<span class="mr-spk">'+IC.spark+'</span> '+esc(m);t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},2400);}
   function pres(l){return l.presented===undefined||!!l.presented;}
-  function match(l){if(filter==='active')return l.status==='active'&&pres(l);if(filter==='new')return l.isNew&&l.status==='active'&&pres(l);if(filter==='queued')return l.status==='active'&&!pres(l);if(filter==='followed_up')return l.status==='followed_up';if(filter==='dismissed')return l.status==='dismissed';return true;}
+  function match(l){if(filter==='active')return l.status==='active';if(filter==='new')return l.isNew&&l.status==='active';if(filter==='followed_up')return l.status==='followed_up';if(filter==='dismissed')return l.status==='dismissed';return true;}
   function winWeeks(s){s=(''+(s||'')).toLowerCase();var m=s.match(/(\d+)/);if(!m)return 9999;var n=parseInt(m[1],10);return /mo|month/.test(s)?n*4.33:n;}
   function rowAge(l){return (l.age==null?9999:l.age);}
   function sortd(a){
     if(page==='jobs')return a.sort(function(x,y){return (y.isNew-x.isNew)||x.co.localeCompare(y.co);});
     if(sort==='window')return a.sort(function(x,y){return (winWeeks(x.win)-winWeeks(y.win))||(y.opp-x.opp);});
     if(sort==='new')return a.sort(function(x,y){return (rowAge(x)-rowAge(y))||(y.isNew-x.isNew)||(y.opp-x.opp);});
-    return a.sort(function(x,y){return y.opp-x.opp;});   // strongest signal (band-first)
+    return a.sort(function(x,y){return ((y.score||0)-(x.score||0))||(y.opp-x.opp);});   // Lead Strength
   }
   function stbadge(l){return l.status!=='active'?'<span class="mr-badge-st '+l.status+'">'+(l.status==='followed_up'?'✓ followed up':'dismissed')+'</span>':'';}
   function triBtns(l){if(l.status==='active')
@@ -1484,7 +1488,9 @@ MR_JS = r"""
     // delete that tombstones the account so it never relists.
     var rm=(page==='bd')?'<button class="mr-io icon trm" data-act="remove" data-id="'+l._id+'" title="Remove entirely (never relist)">'+IC.trash+'</button>':'';
     return '<button class="mr-io icon" data-act="tri" data-id="'+l._id+'" data-st="active" title="Restore">'+IC.undo+'</button>'+rm;}
-  function ab(l){return l.action?'<span class="mr-ab ab-'+l.action+'">'+esc(l.actionLabel)+'</span>':sc(l);}
+  function scb(l){var s=l.score;if(s===undefined||s===null)return '<span class="mr-score s-lo">—</span>';
+    var c=s>=70?'s-hi':(s>=45?'s-md':'s-lo');
+    return '<span class="mr-score '+c+'" title="Lead Strength 0–100: fit × signal × corroboration × timing, contradictions subtract">'+s+'</span>';}
   function q4b(l){return l.q4?'<span class="mr-q4">'+esc(l.q4)+'</span>':'';}
   function fb(l){return l.fee?'<span class="mr-feeb" title="'+esc(l.feeTip||'')+'">'+esc(l.fee)+'</span>':'';}
   function xdb(l){return l.xdesk?'<span class="mr-xdesk">*'+esc(l.xdesk)+'</span>':'';}
@@ -1504,13 +1510,9 @@ MR_JS = r"""
       +(anti2.length?'<span class="mr-anti">⚠ '+esc(anti2.join(' · '))+'</span>':'')+'</div>':'';
     var gtop='';
     if(pres(l)&&l.conf){gtop=dk('Confidence','<span class="mr-confb '+(l.conf==='High'?'hi':'md')+'">'+esc(l.conf)+'</span><span class="mr-evs">'+(l.evFams||0)+' independent source'+((l.evFams||0)===1?'':'s')+((l.evPrim||0)?' · '+l.evPrim+' primary':'')+'</span>');}
-    else if(!pres(l)&&l.gateWhy!==undefined){var qt=l.gateWhy||'Queued';if(l.recheck)qt+=' · recheck in '+l.recheck+'d';if(l.needsInv)qt+=' · run /investigate';gtop=dk('Queued',esc(qt));}
+    else if(!pres(l)&&l.gateWhy!==undefined){var qt=l.gateWhy||'Needs more corroboration';if(l.recheck)qt+=' · recheck in '+l.recheck+'d';if(l.needsInv)qt+=' · run /investigate';gtop=dk('Why not call-ready',esc(qt));}
     var kill=(pres(l)&&l.kill)?dk('What kills this',esc(l.kill)):'';
     var move=(pres(l)&&l.move)?dk('First move',esc(l.move)):'';
-    var verd='';
-    if(pres(l)&&l.verdict!==undefined){
-      function vb(v,lab){return '<button class="mr-vb'+(l.verdict===v?' on':'')+'" data-act="verdict" data-v="'+v+'" data-id="'+l._id+'">'+lab+'</button>';}
-      verd='<div class="mr-dk"><span class="mr-dlab">Verdict</span><span class="mr-verd">'+vb('call_today','Call today')+vb('nurture','Nurture')+vb('reject','Reject')+'</span></div>';}
     return '<div class="mr-doss">'
       +warn
       +gtop
@@ -1518,16 +1520,14 @@ MR_JS = r"""
       +kill
       +move
       +acts
-      +verd
       +xdb(l)
       +(l.opener?'<div class="mr-dk mr-playwrap'+(l.drafted?' on':'')+'"><span class="mr-dlab">The play</span><span class="mr-play mr-playbox">'+(l.drafted?esc(l.opener):'')+'</span></div>':'')
       +'</div>';}
-  function qd(l){return (l.presented===undefined||l.presented)?'':' <span class="mr-qd">queued</span>';}
   function bdRow(l,idx){var top=(idx===0&&filter==='active');
     return '<div class="mr-row '+(open[l._id]?'open ':'')+(top?'top':'')+'" data-id="'+l._id+'">'
      +'<div class="mr-rsum mr-gbd" data-act="toggle" data-id="'+l._id+'">'
-     +'<span class="mr-rk">'+(idx+1)+'</span><span class="mr-co">'+esc(l.co)+newp(l)+qd(l)+'</span>'+tp(l)
-     +'<span class="mr-seat">'+esc(l.seat)+'</span><span class="mr-why">'+esc(l.why)+'</span>'+wb(l)+ab(l)+q4b(l)
+     +'<span class="mr-rk">'+(idx+1)+'</span><span class="mr-co">'+esc(l.co)+newp(l)+'</span>'+tp(l)
+     +'<span class="mr-seat">'+esc(l.seat)+'</span><span class="mr-why">'+esc(l.why)+'</span>'+wb(l)+scb(l)+q4b(l)
      +'<span class="mr-racts">'+(filter==='all'?stbadge(l):'')+triBtns(l)+'</span></div>'
      +'<div class="mr-rdet"><div class="mr-aibrief"><div class="mr-gen">'+brief(l)+'</div></div></div></div>';}
   function jobRow(l,idx){
@@ -1562,18 +1562,31 @@ MR_JS = r"""
     toast(t?('Outreach copied for '+l.co):('No outreach draft for '+l.co));}
   function setc(id,v){var e=$(id);if(e)e.textContent=v;}
   function counts(){var ds=active();function c(f){return ds.filter(f).length;}
-    setc('mr-m-active',c(function(l){return l.status==='active'&&pres(l);}));
-    setc('mr-m-new',c(function(l){return l.isNew&&l.status==='active'&&pres(l);}));
-    setc('mr-m-queued',c(function(l){return l.status==='active'&&!pres(l);}));
+    setc('mr-m-active',c(function(l){return l.status==='active';}));
+    setc('mr-m-new',c(function(l){return l.isNew&&l.status==='active';}));
     setc('mr-m-fu',c(function(l){return l.status==='followed_up';}));
     setc('mr-m-dis',c(function(l){return l.status==='dismissed';}));
-    var lbl={active:'Active','new':'New today',queued:'Queued',followed_up:'Followed up',dismissed:'Dismissed',all:'All'}[filter];
-    setc('mr-filtlbl',lbl);
-    var m=window.MR_META,el=$('mr-acc');
-    if(el){if(page==='bd'&&m&&m.accN>0&&m.accRate!==null){el.style.display='';el.textContent='7d acceptance '+Math.round(m.accRate*100)+'% of '+m.accN+(m.throttled?' · gate throttled':'');el.className='mr-acc'+(m.throttled?' bad':'');}else{el.style.display='none';}}}
+    var lbl={active:'Active','new':'New today',followed_up:'Followed up',dismissed:'Dismissed',all:'All'}[filter];
+    setc('mr-filtlbl',lbl);}
+  var TIERS=[['ready','Call-ready','Cleared the evidence gate — corroborated, in-window, no blockers'],
+             ['dev','Developing','Real triggers still earning their corroboration — nurture or /investigate'],
+             ['early','Early signals','Single-source or watch-grade — too thin to action yet'],
+             ['blocked','Blocked','Competing recruiter, administration or hiring freeze — never call']];
+  var tierOpen={ready:true,dev:true,early:false,blocked:false};
+  function tierOf(l){return l.tier||'ready';}
   function render(){var arr=sortd(active().filter(match));var box=$('mr-rows');if(!box)return;
     if(!arr.length){box.innerHTML='<div class="mr-empty">Nothing here. Pick another filter.</div>';counts();return;}
-    box.innerHTML=arr.map(function(l,i){return page==='bd'?bdRow(l,i):jobRow(l,i);}).join('');counts();}
+    if(page!=='bd'){box.innerHTML=arr.map(function(l,i){return jobRow(l,i);}).join('');counts();return;}
+    var html='',idx=0;
+    for(var t=0;t<TIERS.length;t++){var key=TIERS[t][0];
+      var seg=arr.filter(function(l){return tierOf(l)===key;});
+      if(!seg.length)continue;
+      var openT=!!tierOpen[key];
+      html+='<div class="mr-tierh'+(openT?'':' closed')+'" data-act="tier" data-t="'+key+'" title="'+TIERS[t][2]+'">'
+        +'<span class="mr-tdot '+key+'"></span><span class="mr-tlab">'+TIERS[t][1]+'</span>'
+        +'<span class="mr-tn">'+seg.length+'</span><span class="mr-tcv">'+(openT?'hide':'show')+'</span></div>';
+      if(openT){html+=seg.map(function(l){var r=bdRow(l,idx);idx++;return r;}).join('');}else{idx+=seg.length;}}
+    box.innerHTML=html;counts();}
   function toggle(id){if(open[id]){delete open[id];}else{open[id]=1;}render();}
   function openjob(id){var l=BYID[id];if(l&&l.url){window.open(l.url,'_blank','noopener');}else{toast('No posting link'+(l?' for '+l.co:''));}}
   function setPage(pg){page=pg;filter='active';open={};
@@ -1584,21 +1597,9 @@ MR_JS = r"""
     var fm=$('mr-filtmenu');if(fm)fm.classList.remove('open');
     // The sort options (signal / window) are BD-lead concepts; hide on Jobs.
     var ss=document.querySelector('.mr-sortsel');if(ss)ss.style.display=(pg==='jobs'?'none':'');
-    // Queued (gate) and the acceptance meter are BD-lead concepts too.
-    var qb=document.querySelector('#mr-filtmenu [data-f="queued"]');if(qb)qb.style.display=(pg==='jobs'?'none':'');
     render();}
   function setFilter(f,btn){filter=f;var fb=document.querySelectorAll('#mr-filtmenu [data-act="filt"]');for(var i=0;i<fb.length;i++){fb[i].classList.toggle('on',fb[i]===btn);}var m=$('mr-filtmenu');if(m)m.classList.remove('open');render();}
   function setSort(s,btn){sort=s;var sb=document.querySelectorAll('#mr-sortmenu [data-act="sort"]');for(var i=0;i<sb.length;i++){sb[i].classList.toggle('on',sb[i]===btn);}var lbl=$('mr-sortlbl');if(lbl)lbl.textContent=(btn.textContent||'').trim();var m=$('mr-sortmenu');if(m)m.classList.remove('open');render();}
-  function verdict(id,v){var l=BYID[id];if(!l)return;var prev=l.verdict;l.verdict=v;render();
-    fetch('/api/lead/verdict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rid:l.rid,idtype:l.idtype,verdict:v,company:l.co})})
-      .then(function(r){return r.json();}).then(function(j){
-        if(!j||!j.ok){l.verdict=prev;toast('Could not save verdict');render();return;}
-        if(j.acceptance&&window.MR_META){window.MR_META.accRate=j.acceptance.rate;window.MR_META.accN=j.acceptance.n;window.MR_META.throttled=j.acceptance.throttled;window.MR_META.cap=j.acceptance.cap;}
-        toast(l.co+' — '+(v==='call_today'?'marked call today':v==='nurture'?'marked nurture':'rejected'));
-        if(v==='reject'&&l.status==='active'){triage(id,'dismissed');}
-        else if(v==='call_today'&&l.status==='active'){triage(id,'followed_up');}
-        else{render();}
-      }).catch(function(){l.verdict=prev;render();toast('Could not save verdict');});}
   function triage(id,st){var l=BYID[id];if(!l)return;var prev=l.status;l.status=st;
     var row=document.querySelector('#mr-rows .mr-row[data-id="'+id+'"]');
     var hide=(filter==='active'||filter==='new')&&st!=='active';
@@ -1636,11 +1637,9 @@ MR_JS = r"""
    +'<div class="mr-filtmenu" id="mr-filtmenu">'
    +'<button data-act="filt" data-f="active" class="on">Active <span class="mr-mc" id="mr-m-active"></span></button>'
    +'<button data-act="filt" data-f="new">New today <span class="mr-mc" id="mr-m-new"></span></button>'
-   +'<button data-act="filt" data-f="queued">Queued <span class="mr-mc" id="mr-m-queued"></span></button>'
    +'<button data-act="filt" data-f="followed_up">Followed up <span class="mr-mc" id="mr-m-fu"></span></button>'
    +'<button data-act="filt" data-f="dismissed">Dismissed <span class="mr-mc" id="mr-m-dis"></span></button>'
    +'<button data-act="filt" data-f="all">All</button></div></div>'
-   +'<span class="mr-acc" id="mr-acc" style="display:none"></span>'
    +'<span class="mr-spacer"></span>'
    +'<div class="mr-filt mr-sortsel"><button class="mr-filtbtn" data-act="sortbtn">'+IC.sort+'<span class="mr-lbl" id="mr-sortlbl">Strongest signal</span><span class="mr-cv">'+IC.chevd+'</span></button>'
    +'<div class="mr-filtmenu" id="mr-sortmenu">'
@@ -1653,7 +1652,7 @@ MR_JS = r"""
     var a=e.target.closest('[data-act]');if(!a||!root.contains(a))return;
     var act=a.getAttribute('data-act');var id=a.getAttribute('data-id');
     if(act==='tri'){e.stopPropagation();triage(id,a.getAttribute('data-st'));return;}
-    if(act==='verdict'){e.stopPropagation();verdict(id,a.getAttribute('data-v'));return;}
+    if(act==='tier'){e.stopPropagation();var tk=a.getAttribute('data-t');tierOpen[tk]=!tierOpen[tk];render();return;}
     if(act==='remove'){e.stopPropagation();removeEntirely(id);return;}
     if(act==='pitch'){e.stopPropagation();pitch(id,a);return;}
     if(act==='viewsrc'){e.stopPropagation();viewSources(id);return;}
@@ -1845,10 +1844,15 @@ def _mr_gate_fields(row):
     *narrow* what the Active board shows, never error it empty."""
     g = row.get("gate")
     if not isinstance(g, dict):
-        return {"presented": 1}
+        return {"presented": 1, "score": 50, "tier": "ready"}
+    from tool import gate as _g
     ev = g.get("evidence") or {}
+    lead = row.get("lead") or {}
+    score = _g.strength_score(lead, g)
     return {
         "presented": 1 if g.get("presented") else 0,
+        "score": score,
+        "tier": _g.tier_for(lead, g, score),
         "conf": g.get("confidence") or "",
         "gateWhy": " · ".join(g.get("reasons") or []),
         "recheck": g.get("recheck_days"),
@@ -1857,7 +1861,6 @@ def _mr_gate_fields(row):
         "move": g.get("move") or "",
         "evFams": ev.get("families") or 0,
         "evPrim": ev.get("primary") or 0,
-        "verdict": row.get("verdict") or "",
     }
 
 
@@ -2063,6 +2066,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
         shown += 1
         if shown > max(1, cap):
             r["presented"] = 0
+            r["tier"] = "dev"   # cap overflow tops the Developing section
             r["conf"] = ""
             r["gateWhy"] = (f"Above today's cap of {cap} — stronger leads "
                             f"filled the board")

@@ -61,14 +61,18 @@ def test_gate_fields_flatten_onto_row():
     assert f["presented"] == 1 and f["conf"] == "High"
     assert f["evFams"] == 3 and f["evPrim"] == 1
     assert f["kill"] and f["move"]
+    assert isinstance(f["score"], int) and 0 <= f["score"] <= 100
+    assert f["tier"] == "ready"
     q = _mr_gate_fields(_row(presented=False))
     assert q["presented"] == 0 and q["gateWhy"] == "Watch-grade"
     assert q["recheck"] == 7
+    assert q["tier"] in ("dev", "early")
 
 
 def test_rows_without_gate_present_by_default():
     # Defensive: the gate can narrow the board, never error it empty.
-    assert _mr_gate_fields({})["presented"] == 1
+    f = _mr_gate_fields({})
+    assert f["presented"] == 1 and f["tier"] == "ready"
 
 
 # ====================================================================
@@ -82,6 +86,9 @@ def test_cap_demotes_overflow_to_queue():
     assert len(presented) == 7 and len(queued) == 3
     assert all("cap of 7" in r["gateWhy"] for r in queued)
     assert all(not r["conf"] for r in queued)
+    # Overflow tops the Developing tier — never hidden, never 'early'.
+    assert all(r["tier"] == "dev" for r in queued)
+    assert all(r["tier"] == "ready" for r in presented)
 
 
 def test_cap_does_not_touch_already_queued_rows():
