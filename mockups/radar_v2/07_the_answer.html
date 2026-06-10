@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMA · Communications Radar — Take 2 · Concept 07 · The Answer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,340;0,9..144,420;0,9..144,520;1,9..144,380;1,9..144,460&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#fbfbfa; --ink:#161617; --grey:#8a8a90; --faint:rgba(22,22,23,.34);
+    --hair:rgba(22,22,23,.09); --serif:"Fraunces",Georgia,serif; --sans:"Inter",-apple-system,sans-serif;
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--sans);
+    -webkit-font-smoothing:antialiased; overflow-x:hidden;
+  }
+  /* ---------- aurora ---------- */
+  .aurora{
+    position:fixed; left:-10%; right:-10%; top:-22%; height:58vh; pointer-events:none; z-index:0;
+    background:
+      radial-gradient(42% 60% at 30% 30%, rgba(122,170,235,.16), transparent 70%),
+      radial-gradient(38% 55% at 68% 22%, rgba(140,120,220,.12), transparent 70%),
+      radial-gradient(30% 50% at 50% 40%, rgba(110,205,170,.10), transparent 70%);
+    filter:blur(48px); animation:drift 34s ease-in-out infinite alternate;
+  }
+  @keyframes drift{
+    from{transform:translateX(-2.5%) rotate(-1.2deg)}
+    to{transform:translateX(2.5%) rotate(1.2deg)}
+  }
+  /* ---------- whisper chrome ---------- */
+  .chrome{
+    position:fixed; top:26px; left:0; right:0; text-align:center; z-index:5;
+    font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--faint);
+    font-weight:500; user-select:none;
+  }
+  /* ---------- stage ---------- */
+  .stage{
+    position:relative; z-index:1; min-height:100svh; display:flex; align-items:center; justify-content:center;
+    padding:96px 24px 120px;
+  }
+  .column{width:min(720px,100%)}
+  /* ---------- ask bar ---------- */
+  .askbar{
+    display:flex; align-items:center; gap:14px; height:56px; padding:0 24px;
+    background:#fff; border:1px solid var(--hair); border-radius:999px;
+    box-shadow:inset 0 1.5px 3px rgba(22,22,23,.045), 0 1px 2px rgba(22,22,23,.03);
+    transition:border-color .4s var(--ease), box-shadow .4s var(--ease);
+  }
+  .askbar:focus-within{
+    border-color:rgba(120,110,225,.32);
+    box-shadow:inset 0 1.5px 3px rgba(22,22,23,.04), 0 0 0 4px rgba(120,110,225,.07);
+  }
+  .ai-dot{
+    position:relative; width:9px; height:9px; flex:none; border-radius:50%;
+    background:linear-gradient(135deg,#5ad7b0,#7a6cf0); cursor:pointer; border:none; padding:0;
+  }
+  .ai-dot::after{
+    content:""; position:absolute; inset:-5px; border-radius:50%;
+    border:1px solid rgba(122,108,240,.45); animation:pulse 2.6s var(--ease) infinite;
+  }
+  @keyframes pulse{
+    0%{transform:scale(.55); opacity:.9} 70%{transform:scale(1.45); opacity:0} 100%{opacity:0}
+  }
+  #ask{
+    flex:1; border:none; outline:none; background:transparent; min-width:0;
+    font:400 16px/1 var(--sans); color:var(--ink); caret-color:#7a6cf0;
+  }
+  #ask::placeholder{color:rgba(22,22,23,.26)}
+  /* ---------- answer ---------- */
+  .answer{min-height:340px; padding-top:54px; transition:opacity .34s var(--ease), transform .34s var(--ease)}
+  .answer.out{opacity:0; transform:translateY(6px)}
+  .land{animation:land .85s var(--ease) both}
+  @keyframes land{
+    from{opacity:0; transform:translateY(16px); filter:blur(7px)}
+    to{opacity:1; transform:none; filter:blur(0)}
+  }
+  .hero{
+    font-family:var(--serif); font-weight:520; letter-spacing:-.022em;
+    font-size:clamp(44px,8.4vw,88px); line-height:1.02; font-variation-settings:"opsz" 100;
+  }
+  .hero.duo{font-size:clamp(38px,6.4vw,68px)}
+  .sub{
+    margin-top:22px; max-width:33em; font-size:16px; line-height:1.65; color:var(--grey); font-weight:400;
+  }
+  .sub b{color:var(--ink); font-weight:500}
+  .lines{display:flex; flex-direction:column; gap:20px; max-width:21em}
+  .lines .line{
+    font-family:var(--serif); font-weight:420; font-size:clamp(23px,3.4vw,30px); line-height:1.32;
+    letter-spacing:-.012em; animation:land .8s var(--ease) both; animation-delay:var(--d,0s);
+  }
+  .lines .line.risk{font-style:italic; font-weight:380; color:#8a6a45}
+  .lines .line.dim{color:var(--grey)}
+  .whisper-to{
+    font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--faint);
+    font-weight:500; margin-bottom:20px;
+  }
+  .opener{
+    font-family:var(--serif); font-style:italic; font-weight:440; font-variation-settings:"opsz" 40;
+    font-size:clamp(21px,3.1vw,27px); line-height:1.48; letter-spacing:-.008em; max-width:24em; min-height:5.9em;
+  }
+  .opener.typing::after{
+    content:""; display:inline-block; width:2px; height:.95em; margin-left:3px; vertical-align:-.12em;
+    background:#7a6cf0; animation:blink 1s steps(1) infinite;
+  }
+  @keyframes blink{50%{opacity:0}}
+  .copy-btn{
+    margin-top:26px; opacity:0; transform:translateY(6px); pointer-events:none;
+    transition:opacity .6s var(--ease), transform .6s var(--ease), background .25s;
+    font:500 13px/1 var(--sans); color:var(--ink); background:transparent;
+    border:1px solid var(--hair); border-radius:999px; padding:10px 20px; cursor:pointer;
+  }
+  .copy-btn.show{opacity:1; transform:none; pointer-events:auto}
+  .copy-btn:hover{background:rgba(22,22,23,.045)}
+  .pairline{display:flex; flex-direction:column; gap:10px; margin-top:24px}
+  .pairline .sub{margin-top:0}
+  .freeform{
+    display:inline-block; max-width:30em; background:rgba(22,22,23,.045); border:1px solid var(--hair);
+    border-radius:18px; padding:16px 22px; font-size:14.5px; line-height:1.6; color:var(--grey);
+  }
+  .freeform b{color:var(--ink); font-weight:500}
+  /* ---------- chips ---------- */
+  .chips{display:flex; flex-wrap:wrap; gap:10px; margin-top:46px; min-height:38px}
+  .chip{
+    font:500 13px/1 var(--sans); color:rgba(22,22,23,.62); background:transparent;
+    border:1px solid var(--hair); border-radius:999px; padding:10.5px 18px; cursor:pointer;
+    animation:land .7s var(--ease) both; animation-delay:var(--d,0s);
+    transition:background .25s, color .25s, border-color .25s, transform .25s var(--ease);
+  }
+  .chip:hover{background:#fff; color:var(--ink); border-color:rgba(22,22,23,.18); transform:translateY(-1px)}
+  .chip.secret{color:#6b5fd6; border-color:rgba(122,108,240,.35)}
+  .chip.secret:hover{background:rgba(122,108,240,.06)}
+  /* ---------- history dots ---------- */
+  .dots{display:flex; gap:9px; margin-top:30px; min-height:6px; align-items:center}
+  .dot{
+    width:6px; height:6px; border-radius:50%; border:none; padding:0; cursor:pointer;
+    background:rgba(22,22,23,.14); transition:background .3s, transform .3s var(--ease);
+  }
+  .dot:hover{background:rgba(22,22,23,.4); transform:scale(1.35)}
+  .dot.on{background:rgba(22,22,23,.55)}
+  /* ---------- furniture ---------- */
+  .stats{
+    position:fixed; bottom:20px; left:0; right:0; text-align:center; z-index:4;
+    font-size:11px; letter-spacing:.06em; color:rgba(22,22,23,.28); cursor:pointer; user-select:none;
+  }
+  .legal{
+    position:fixed; bottom:20px; left:22px; z-index:5; font-size:10px;
+    color:rgba(22,22,23,.24); letter-spacing:.04em; user-select:none;
+  }
+  .navchip{
+    position:fixed; bottom:16px; right:18px; z-index:6; display:flex; align-items:center; gap:9px;
+    background:rgba(255,255,255,.82); backdrop-filter:blur(8px); border:1px solid var(--hair);
+    border-radius:999px; padding:7px 14px; font-size:11.5px; color:rgba(22,22,23,.5); font-weight:500;
+  }
+  .navchip a{color:rgba(22,22,23,.55); text-decoration:none; transition:color .2s}
+  .navchip a:hover{color:var(--ink)}
+  .navchip span{color:rgba(22,22,23,.22)}
+  .toast{
+    position:fixed; bottom:60px; left:50%; transform:translate(-50%,12px); z-index:9;
+    background:var(--ink); color:#fbfbfa; font-size:12.5px; font-weight:500; letter-spacing:.01em;
+    border-radius:999px; padding:10px 20px; opacity:0; pointer-events:none;
+    transition:opacity .4s var(--ease), transform .4s var(--ease);
+  }
+  .toast.show{opacity:1; transform:translate(-50%,0)}
+  @media (max-width:768px){
+    .stage{padding:84px 20px 130px}
+    .answer{padding-top:44px; min-height:300px}
+    .stats{display:none}
+    .legal{bottom:58px}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important}
+  }
+</style>
+</head>
+<body>
+  <div class="aurora" aria-hidden="true"></div>
+  <header class="chrome">VMA Group · Communications Radar · Wednesday 10 June 2026</header>
+
+  <main class="stage">
+    <div class="column">
+      <div class="askbar">
+        <button class="ai-dot" id="aidot" aria-label="Radar status" title="Radar"></button>
+        <input id="ask" type="text" autocomplete="off" spellcheck="false"
+               aria-label="Ask the radar" placeholder="Ask me anything about this morning…">
+      </div>
+      <section class="answer" id="answer" aria-live="polite"></section>
+      <nav class="chips" id="chips" aria-label="Follow-up questions"></nav>
+      <div class="dots" id="dots" aria-label="Question history"></div>
+    </div>
+  </main>
+
+  <div class="stats" id="stats">1,284 sources swept overnight&ensp;·&ensp;£196k on the board&ensp;·&ensp;7 call-ready&ensp;·&ensp;2 windows close Friday</div>
+  <div class="legal">Illustrative sample data — design review only.</div>
+  <nav class="navchip">07 / 10 <span>·</span> <a href="06_the_glance.html">←</a> <span>·</span> <a href="index.html">Index</a> <span>·</span> <a href="08_the_number.html">→</a></nav>
+  <div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+  "use strict";
+  const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const ask = document.getElementById("ask");
+  const answerEl = document.getElementById("answer");
+  const chipsEl = document.getElementById("chips");
+  const dotsEl = document.getElementById("dots");
+
+  /* ---------------- content ---------------- */
+  const OPENER_NG = "Hi Sasha — the Head of Media Relations brief has been live for eight weeks now. We placed three of the last five seats like it; I can have a vetted shortlist with you by the 24th. Worth fifteen minutes this week?";
+  const OPENER_OC = "Hi — after yesterday’s profit warning, an empty comms chair is a board-level risk. I can have a Director of Communications shortlist with you inside ten days. Worth fifteen minutes today?";
+  const OPENER_MZ = "Amara — congratulations on the £380m. When Monzo scales corporate comms for what’s next, I’d like to be your first call. Coffee this week?";
+
+  const VIEWS = {
+    first:{ q:"Who do I call first?", label:"Who do I call first?", chips:["why_ng","say_ng","next"],
+      html:`<h1 class="hero land">National Grid.</h1>
+            <p class="sub land" style="animation-delay:.22s">Their search is 54 days old and failing in public. <b>£32k</b> — and nobody else has noticed.</p>` },
+    why_ng:{ q:"Why them?", label:"Why them?", chips:["say_ng","next","first"],
+      html:`<div class="lines">
+              <p class="line">Their own search is 54 days old and failing in public.</p>
+              <p class="line dim" style="--d:.7s">I red-teamed it at 88/100.</p>
+              <p class="line risk" style="--d:1.4s">They may have quietly filled it — check the careers page first.</p>
+            </div>` },
+    say_ng:{ q:"What do I say?", label:"What do I say?", chips:["why_ng","next","first"],
+      opener:OPENER_NG, to:"To Sasha Kemp · National Grid" },
+    next:{ q:"Who's next?", label:"Who's next?", chips:["why_oc","why_mz","first"],
+      html:`<h1 class="hero duo land">Ocado. Then Monzo.</h1>
+            <div class="pairline">
+              <p class="sub land" style="animation-delay:.3s"><b>Ocado</b> — a profit warning landed and the comms chair is empty. £28k.</p>
+              <p class="sub land" style="animation-delay:.55s"><b>Monzo</b> — £380m confirmed overnight; warm path via Amara Osei. £30k.</p>
+            </div>` },
+    why_oc:{ q:"Why Ocado?", label:"Why Ocado?", chips:["say_oc","why_mz","first"],
+      html:`<div class="lines">
+              <p class="line">A profit warning landed — and the comms chair is empty.</p>
+              <p class="line dim" style="--d:.7s">Boards buy reassurance fast after bad news. £28k if you move first.</p>
+            </div>` },
+    say_oc:{ q:"What do I say?", label:"What do I say?", chips:["why_oc","why_mz","first"],
+      opener:OPENER_OC, to:"To Ocado · Director of Communications" },
+    why_mz:{ q:"Why Monzo?", label:"Why Monzo?", chips:["say_mz","why_oc","first"],
+      html:`<div class="lines">
+              <p class="line">£380m confirmed at Companies House overnight.</p>
+              <p class="line dim" style="--d:.7s">And you have a warm path — Amara Osei, placed 2024. £30k.</p>
+            </div>` },
+    say_mz:{ q:"What do I say?", label:"What do I say?", chips:["why_mz","why_oc","first"],
+      opener:OPENER_MZ, to:"Via Amara Osei · placed 2024" },
+    hidden:{ q:"What aren't you showing me?", label:"What aren't you showing me?", chips:["first","next","say_ng"],
+      html:`<h1 class="hero duo land">Four more are warming.</h1>
+            <p class="sub land" style="animation-delay:.25s">Burberry, Octopus Energy, Wise, Bupa — and I’m watching five others.<br>None of them beats a call this morning.</p>` }
+  };
+  const SEEN_KEY = { why_ng:"why", say_ng:"say", next:"next" };
+
+  /* ---------------- state ---------------- */
+  let gen = 0, current = "first", visited = [];
+  const seen = new Set();
+  const unlocked = () => seen.size === 3;
+
+  /* ---------------- toast ---------------- */
+  let toastTimer;
+  function toast(msg){
+    const el = document.getElementById("toast");
+    el.textContent = msg; el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("show"), 2200);
+  }
+
+  /* ---------------- typing engine ---------------- */
+  function typewrite(setter, text, speed, g, done){
+    if (RM){ setter(text); done && done(); return; }
+    let i = 0;
+    (function tick(){
+      if (g !== gen) return;
+      i++;
+      setter(text.slice(0, i));
+      if (i < text.length){
+        const ch = text[i - 1];
+        const pause = (ch === "—" || ch === "." || ch === "?" || ch === ";") ? speed * 6 : speed;
+        setTimeout(tick, pause + Math.random() * speed * .6);
+      } else if (done) done();
+    })();
+  }
+
+  /* ---------------- renderers ---------------- */
+  function renderAnswer(id, g){
+    const v = VIEWS[id];
+    if (v.opener){
+      answerEl.innerHTML =
+        `<p class="whisper-to land">${v.to}</p>
+         <blockquote class="opener typing" id="opener-text"></blockquote>
+         <button class="copy-btn" id="copy-btn">Copy opener</button>`;
+      const q = document.getElementById("opener-text");
+      const btn = document.getElementById("copy-btn");
+      btn.addEventListener("click", () => copyText(v.opener));
+      typewrite(t => { q.textContent = t; }, v.opener, 24, g, () => {
+        q.classList.remove("typing");
+        btn.classList.add("show");
+      });
+    } else {
+      answerEl.innerHTML = `<div class="land">${v.html}</div>`;
+    }
+    answerEl.classList.remove("out");
+  }
+
+  function renderChips(ids, g){
+    if (g !== gen) return;
+    const list = ids.slice();
+    if (unlocked() && current !== "hidden" && !list.includes("hidden")) list.push("hidden");
+    chipsEl.innerHTML = "";
+    list.forEach((id, i) => {
+      const b = document.createElement("button");
+      b.className = "chip" + (id === "hidden" ? " secret" : "");
+      b.textContent = VIEWS[id].label;
+      b.style.setProperty("--d", (RM ? 0 : .25 + i * .09) + "s");
+      b.addEventListener("click", () => go(id));
+      chipsEl.appendChild(b);
+    });
+  }
+
+  function renderDots(){
+    dotsEl.innerHTML = "";
+    if (visited.length < 2) return;
+    visited.forEach(id => {
+      const d = document.createElement("button");
+      d.className = "dot" + (id === current ? " on" : "");
+      d.title = VIEWS[id].q;
+      d.setAttribute("aria-label", "Revisit: " + VIEWS[id].q);
+      d.addEventListener("click", () => { if (id !== current) go(id); });
+      dotsEl.appendChild(d);
+    });
+  }
+
+  /* ---------------- navigation ---------------- */
+  function go(id){
+    gen++; const g = gen;
+    current = id;
+    if (SEEN_KEY[id]) seen.add(SEEN_KEY[id]);
+    if (!visited.includes(id)) visited.push(id);
+    renderDots();
+    answerEl.classList.add("out");
+    chipsEl.innerHTML = "";
+    ask.value = "";
+    typewrite(t => { ask.value = t; }, VIEWS[id].q, 30, g, () => {
+      setTimeout(() => {
+        if (g !== gen) return;
+        renderAnswer(id, g);
+        renderChips(VIEWS[id].chips, g);
+      }, RM ? 0 : 420);
+    });
+  }
+
+  function freeform(){
+    gen++; const g = gen;
+    answerEl.classList.add("out");
+    setTimeout(() => {
+      if (g !== gen) return;
+      answerEl.innerHTML =
+        `<div class="freeform land">That’s wired to the live engine in production — <b>here, I only know this morning.</b></div>`;
+      answerEl.classList.remove("out");
+      renderChips(VIEWS[current].chips, g);
+      renderDots();
+    }, RM ? 0 : 360);
+  }
+
+  /* ---------------- clipboard ---------------- */
+  function copyText(text){
+    const ok = () => toast("Opener copied.");
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(ok).catch(() => fallbackCopy(text, ok));
+    } else fallbackCopy(text, ok);
+  }
+  function fallbackCopy(text, ok){
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); ok(); } catch(e){ toast("Copy blocked by browser."); }
+    document.body.removeChild(ta);
+  }
+
+  /* ---------------- ask bar input ---------------- */
+  ask.addEventListener("keydown", e => {
+    if (e.key !== "Enter") return;
+    const t = ask.value.trim();
+    if (!t) return;
+    const match = Object.keys(VIEWS).find(k => VIEWS[k].q.toLowerCase() === t.toLowerCase());
+    if (match) go(match); else freeform();
+  });
+  ask.addEventListener("input", () => { gen++; chipsEl.querySelectorAll(".chip").length || renderChips(VIEWS[current].chips, gen); });
+
+  /* ---------------- decorative ---------------- */
+  document.getElementById("aidot").addEventListener("click", () => toast("Wired in production."));
+  document.getElementById("stats").addEventListener("click", () => toast("Wired in production."));
+
+  /* ---------------- opening sequence ---------------- */
+  setTimeout(() => go("first"), RM ? 0 : 650);
+})();
+</script>
+</body>
+</html>
