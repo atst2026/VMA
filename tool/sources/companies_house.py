@@ -600,8 +600,9 @@ def detect_officer_changes(max_companies: int | None = None,
                 trigger_key=trigger_key,
                 trigger_label=trigger.label,
                 company=name,
-                evidence=(f"Companies House (historical): {officer_name} "
-                          f"resigned as {title_display} at {name} on {resigned_str}."),
+                evidence=(f"{officer_name} resigned as {title_display} "
+                          f"at {name} on {resigned_str} "
+                          f"(Companies House filing, historical)."),
                 url=(f"https://find-and-update.company-information.service.gov.uk"
                      f"/company/{number}/officers"),
                 source_label="Companies House (historical termination)",
@@ -1085,8 +1086,9 @@ def _stream_record_to_event(rec: dict, watch: set[str]) -> TriggerEvent | None:
         trigger_key=key,
         trigger_label=trig.label,
         company=company_name,
-        evidence=(f"Companies House stream: {company_name} filed "
-                  f"{data.get('description') or category} on {when.date().isoformat()}."),
+        evidence=(f"{company_name} filed "
+                  f"{data.get('description') or category} on "
+                  f"{when.date().isoformat()} (Companies House stream)."),
         url="https://find-and-update.company-information.service.gov.uk",
         source_label="Companies House (streaming)",
         published=when,

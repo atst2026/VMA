@@ -177,8 +177,8 @@ def fetch_charity_signals() -> list[TriggerEvent]:
             trigger_key="chair_change",
             trigger_label="Charity board change (governance)",
             company=name,
-            evidence=(f"Charity Commission: board change at {name} "
-                      f"({'; '.join(bits)})."),
+            evidence=(f"{name} board change — {'; '.join(bits)} "
+                      f"(Charity Commission register)."),
             url=f"https://register-of-charities.charitycommission.gov.uk/charity-search/-/charity-details/{regno}",
             source_label="Charity Commission (trustee board)",
             published=now,
