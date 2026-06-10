@@ -1103,7 +1103,7 @@ function reckittAnswer(){
 function octopusAnswer(){
   const o = leadsById.octopus;
   return {
-    text: 'The economic buyer is ' + o.buyer + ' — ' + o.qual.buyer_why.toLowerCase() +
+    text: 'The economic buyer is ' + o.buyer + ' — ' + o.qual.buyer_why +
       '. The route in is ' + o.champion + '. ' + o.opening,
     links: [{ id:o.id, label:'open the call file →' }]
   };
@@ -1129,7 +1129,8 @@ function snapshotAnswer(l){
   } else if (l.tier === 'blocked'){
     text = l.co + ' is blocked at ' + l.score + '. ' + l.hook + ' Blocked: ' + l.gateWhy + '.';
   } else {
-    text = l.co + ' sits on the ' + TIER_LABEL[l.tier].toLowerCase() + ' at ' + l.score + '. ' + l.hook +
+    const where = l.tier === 'early' ? 'on the watchlist' : 'still developing';
+    text = l.co + ' is ' + where + ' at ' + l.score + '. ' + l.hook +
       ' Held back because: ' + l.gateWhy + '.';
   }
   return { text, links: [{ id:l.id, label: l.tier === 'ready' ? 'open the call file →' : 'open the file →' }] };
@@ -1224,7 +1225,9 @@ document.addEventListener('keydown', e => {
 });
 
 /* ---------- boot ---------- */
-$('#scan').textContent = M.dateLabel + ' · ' + M.signals + ' signals · ' + M.sources + ' sources · scanned ' + M.scanTime;
+// The date and scan time already live in the eyebrow line below — the
+// header keeps only the counters so it fits the 680px column.
+$('#scan').textContent = M.signals + ' signals · ' + M.sources + ' sources';
 $('#eyebrow').innerHTML = '<span class="sp">✦</span> VMA INTELLIGENCE · ' + esc(M.dateLabel.toUpperCase()) +
   ' · SCANNED ' + esc(M.scanTime) + ' · ' + M.signals + ' SIGNALS';
 $('#queueNote').textContent = M.callReady + ' CALL-READY · SCORE ORDER';
