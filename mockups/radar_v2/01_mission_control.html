@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMA · Communications Radar — Concept 01 · Mission Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   01 · MISSION CONTROL — "the trading floor for fees"
+   VMA Group · Communications Radar · design concept
+   ============================================================ */
+
+/* ---------- 1. Tokens ---------- */
+:root{
+  --bg:        #070b14;
+  --panel:     #0b1220;
+  --panel-2:   #0d1526;
+  --panel-3:   #101a30;
+  --line:      rgba(255,255,255,.07);
+  --line-soft: rgba(255,255,255,.045);
+  --line-hard: rgba(255,255,255,.12);
+  --ink:       #e8eef9;
+  --ink-2:     #a7b4cc;
+  --ink-3:     #6b7891;
+  --ink-4:     #46526b;
+  --blue:      #4D9FFF;
+  --blue-dim:  rgba(77,159,255,.14);
+  --green:     #34d399;
+  --green-dim: rgba(52,211,153,.12);
+  --amber:     #fbbf24;
+  --amber-dim: rgba(251,191,36,.10);
+  --red:       #f87171;
+  --red-dim:   rgba(248,113,113,.10);
+  --mono:      'JetBrains Mono', ui-monospace, monospace;
+  --sans:      'Inter', -apple-system, sans-serif;
+  --r-lg:      16px;
+  --r-md:      12px;
+  --r-sm:      8px;
+  --glow-blue:  0 0 0 1px rgba(77,159,255,.35), 0 0 24px rgba(77,159,255,.18);
+  --shadow-1:   0 1px 0 rgba(255,255,255,.04) inset, 0 12px 32px rgba(0,0,0,.45);
+  --shadow-2:   0 1px 0 rgba(255,255,255,.05) inset, 0 18px 48px rgba(0,0,0,.55);
+}
+
+/* ---------- 2. Reset / base ---------- */
+*,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+html{ scroll-behavior:smooth; }
+body{
+  font-family:var(--sans);
+  background:var(--bg);
+  color:var(--ink);
+  font-size:14px;
+  line-height:1.5;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+button{ font-family:inherit; cursor:pointer; border:none; background:none; color:inherit; }
+a{ color:inherit; }
+::selection{ background:rgba(77,159,255,.35); }
+:focus-visible{ outline:none; box-shadow:var(--glow-blue); border-radius:6px; }
+
+/* ---------- 3. Background texture: grid + scanlines + aurora ---------- */
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    linear-gradient(rgba(77,159,255,.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(77,159,255,.028) 1px, transparent 1px);
+  background-size:44px 44px;
+  mask-image:radial-gradient(ellipse 120% 90% at 50% 0%, #000 30%, transparent 90%);
+}
+body::after{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(900px 420px at 18% -8%, rgba(77,159,255,.10), transparent 65%),
+    radial-gradient(700px 380px at 88% -10%, rgba(52,211,153,.05), transparent 60%),
+    repeating-linear-gradient(0deg, transparent 0 3px, rgba(0,0,0,.10) 3px 4px);
+}
+.shell{ position:relative; z-index:1; max-width:1680px; margin:0 auto; }
+
+/* ---------- 4. Top status strip ---------- */
+.strip{
+  display:flex; align-items:center; gap:22px;
+  padding:14px 26px;
+  border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg, rgba(13,21,38,.85), rgba(7,11,20,.6));
+  backdrop-filter:blur(8px);
+}
+.wordmark{ display:flex; align-items:baseline; gap:10px; white-space:nowrap; }
+.wordmark .vma{
+  font-weight:800; font-size:17px; letter-spacing:.14em; color:var(--ink);
+}
+.wordmark .vma em{ font-style:normal; color:var(--blue); }
+.wordmark .grp{ font-size:10px; letter-spacing:.32em; color:var(--ink-3); font-weight:600; }
+.strip-divider{ width:1px; height:22px; background:var(--line-hard); flex:none; }
+.live{
+  display:flex; align-items:center; gap:9px;
+  font-family:var(--mono); font-size:11px; letter-spacing:.18em; color:var(--ink-2); font-weight:500;
+  white-space:nowrap;
+}
+.live .dot{
+  width:8px; height:8px; border-radius:50%; background:var(--green); flex:none;
+  box-shadow:0 0 0 0 rgba(52,211,153,.6);
+  animation:pulse 2.2s ease-out infinite;
+}
+@keyframes pulse{
+  0%{ box-shadow:0 0 0 0 rgba(52,211,153,.55); }
+  70%{ box-shadow:0 0 0 9px rgba(52,211,153,0); }
+  100%{ box-shadow:0 0 0 0 rgba(52,211,153,0); }
+}
+.sweep-stats{
+  font-family:var(--mono); font-size:11px; letter-spacing:.08em; color:var(--ink-3);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.sweep-stats b{ color:var(--ink-2); font-weight:500; }
+.strip-spacer{ flex:1; min-width:8px; }
+.pulse-spark{ display:flex; align-items:center; gap:8px; flex:none; }
+.pulse-spark .lbl{ font-family:var(--mono); font-size:10px; letter-spacing:.22em; color:var(--ink-4); }
+.pulse-spark svg{ display:block; }
+.strip-date{
+  font-size:12.5px; color:var(--ink-2); font-weight:600; white-space:nowrap; flex:none;
+}
+
+/* ---------- 5. Hero ribbon (board total) ---------- */
+.ribbon{
+  display:flex; align-items:flex-end; justify-content:space-between; gap:24px;
+  padding:26px 26px 8px;
+}
+.ribbon h1{
+  font-size:30px; font-weight:800; letter-spacing:-.02em; line-height:1.1;
+}
+.ribbon h1 .money{
+  color:transparent;
+  background:linear-gradient(100deg, #7ec3ff 0%, var(--blue) 45%, #b8dcff 100%);
+  -webkit-background-clip:text; background-clip:text;
+  font-variant-numeric:tabular-nums;
+}
+.ribbon .sub{ margin-top:6px; font-size:13px; color:var(--ink-3); max-width:62ch; }
+.ribbon .sub b{ color:var(--ink-2); font-weight:600; }
+.ribbon-kpis{ display:flex; gap:14px; flex:none; }
+.kpi{
+  min-width:108px; padding:12px 16px; border:1px solid var(--line); border-radius:var(--r-md);
+  background:linear-gradient(180deg, var(--panel-2), var(--panel));
+  box-shadow:var(--shadow-1);
+}
+.kpi .v{ font-family:var(--mono); font-size:21px; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; }
+.kpi .v.green{ color:var(--green); } .kpi .v.amber{ color:var(--amber); }
+.kpi .k{ margin-top:2px; font-size:10px; letter-spacing:.18em; color:var(--ink-4); font-weight:600; text-transform:uppercase; }
+
+/* ---------- 6. Cockpit grid ---------- */
+.cockpit{
+  display:grid; grid-template-columns:300px minmax(0,1fr) 322px;
+  gap:18px; padding:18px 26px 28px; align-items:start;
+}
+.panel{
+  background:linear-gradient(180deg, var(--panel-2), var(--panel));
+  border:1px solid var(--line); border-radius:var(--r-lg);
+  box-shadow:var(--shadow-1);
+}
+.panel-head{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:14px 16px 11px; border-bottom:1px solid var(--line-soft);
+}
+.panel-head h2{
+  font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:.22em;
+  color:var(--ink-3); text-transform:uppercase;
+}
+.panel-head .tag{
+  font-family:var(--mono); font-size:10px; color:var(--ink-4); letter-spacing:.1em;
+}
+
+/* ---------- 7. Call queue (left) ---------- */
+.queue{ padding:8px; display:flex; flex-direction:column; gap:6px; }
+.q-row{
+  position:relative; width:100%; text-align:left;
+  display:grid; grid-template-columns:26px 1fr auto; gap:4px 10px; align-items:center;
+  padding:11px 12px; border-radius:var(--r-md);
+  border:1px solid transparent;
+  transition:transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
+  animation:rise .5s cubic-bezier(.2,.7,.2,1) both;
+}
+.q-row:hover{ background:var(--panel-3); border-color:var(--line); transform:translateY(-1px); }
+.q-row.active{
+  background:linear-gradient(180deg, rgba(77,159,255,.10), rgba(77,159,255,.04));
+  border-color:rgba(77,159,255,.4);
+  box-shadow:0 0 22px rgba(77,159,255,.12), 0 1px 0 rgba(255,255,255,.05) inset;
+}
+.q-row.active::before{
+  content:""; position:absolute; left:-1px; top:18%; bottom:18%; width:2px;
+  background:var(--blue); border-radius:2px; box-shadow:0 0 10px var(--blue);
+}
+.q-row.dismissed{ opacity:.34; }
+.q-row.dismissed .q-co{ text-decoration:line-through; }
+.q-rank{
+  grid-row:1 / span 2; font-family:var(--mono); font-size:15px; font-weight:700;
+  color:var(--ink-4); text-align:center;
+}
+.q-row.active .q-rank{ color:var(--blue); }
+.q-co{ font-size:13.5px; font-weight:700; letter-spacing:-.01em; display:flex; align-items:center; gap:6px; }
+.q-co .done{ color:var(--green); font-size:11px; }
+.q-fee{ font-family:var(--mono); font-size:13px; font-weight:700; color:var(--green); font-variant-numeric:tabular-nums; }
+.q-meta{ grid-column:2; display:flex; align-items:center; gap:7px; min-width:0; }
+.q-strength{
+  grid-column:3; font-family:var(--mono); font-size:11px; color:var(--ink-3);
+  display:flex; align-items:center; gap:5px; justify-self:end;
+}
+.q-strength .bar{ width:34px; height:3px; border-radius:2px; background:rgba(255,255,255,.08); overflow:hidden; }
+.q-strength .bar i{ display:block; height:100%; border-radius:2px; background:linear-gradient(90deg, var(--blue), #8ec6ff); }
+.pill{
+  font-family:var(--mono); font-size:9px; font-weight:500; letter-spacing:.08em;
+  padding:2.5px 7px; border-radius:99px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  border:1px solid var(--line); color:var(--ink-3); background:rgba(255,255,255,.02);
+  text-transform:uppercase;
+}
+.pill.hot{ color:#ffd28a; border-color:rgba(251,191,36,.32); background:var(--amber-dim); }
+.pill.reg{ color:#86e8c2; border-color:rgba(52,211,153,.3); background:var(--green-dim); }
+.pill.blue{ color:#9ccaff; border-color:rgba(77,159,255,.32); background:var(--blue-dim); }
+.deadline{
+  grid-column:1 / -1; margin-top:6px;
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:6px 9px; border-radius:7px;
+  background:linear-gradient(90deg, rgba(251,191,36,.14), rgba(251,191,36,.04));
+  border:1px solid rgba(251,191,36,.3);
+}
+.deadline .dl-lbl{ font-family:var(--mono); font-size:9.5px; font-weight:700; letter-spacing:.14em; color:var(--amber); }
+.deadline .dl-clock{
+  font-family:var(--mono); font-size:13px; font-weight:700; color:var(--amber);
+  font-variant-numeric:tabular-nums; text-shadow:0 0 14px rgba(251,191,36,.5);
+}
+.deadline.critical{ border-color:rgba(248,113,113,.45); background:linear-gradient(90deg, rgba(248,113,113,.16), rgba(248,113,113,.04)); }
+.deadline.critical .dl-lbl, .deadline.critical .dl-clock{ color:var(--red); }
+
+/* ---------- 8. Tier strips ---------- */
+.tiers{ padding:4px 8px 10px; display:flex; flex-direction:column; gap:6px; }
+.tier{
+  border:1px solid var(--line-soft); border-radius:var(--r-md); overflow:hidden;
+  background:rgba(255,255,255,.012);
+}
+.tier-head{
+  width:100%; display:flex; align-items:center; gap:9px; padding:9px 12px; text-align:left;
+  transition:background .15s ease;
+}
+.tier-head:hover{ background:rgba(255,255,255,.03); }
+.tier-head .sw{ width:7px; height:7px; border-radius:2px; flex:none; }
+.tier-head .nm{ font-size:11.5px; font-weight:700; letter-spacing:.05em; color:var(--ink-2); text-transform:uppercase; }
+.tier-head .ct{ font-family:var(--mono); font-size:10.5px; color:var(--ink-4); margin-left:auto; }
+.tier-head .chev{ color:var(--ink-4); font-size:10px; transition:transform .25s ease; }
+.tier.open .chev{ transform:rotate(90deg); }
+.tier-body{ max-height:0; overflow:hidden; transition:max-height .35s ease; }
+.tier.open .tier-body{ max-height:280px; }
+.tier-item{
+  display:flex; align-items:baseline; gap:8px; padding:8px 12px 8px 28px;
+  border-top:1px solid var(--line-soft); font-size:12px;
+}
+.tier-item .co{ font-weight:600; color:var(--ink-2); }
+.tier-item .why{ color:var(--ink-4); font-size:11px; flex:1; min-width:0; }
+.tier-item .s{ font-family:var(--mono); font-size:10.5px; color:var(--ink-4); }
+
+/* ---------- 9. Dossier (centre) ---------- */
+.dossier{ overflow:hidden; }
+.dossier-inner{ padding:22px 24px 24px; }
+.dossier-inner.swap{ animation:dossier-in .4s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes dossier-in{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
+.d-top{ display:flex; gap:24px; align-items:flex-start; justify-content:space-between; }
+.d-id{ min-width:0; }
+.d-trigger{
+  display:inline-flex; align-items:center; gap:7px; margin-bottom:10px;
+  font-family:var(--mono); font-size:10px; font-weight:700; letter-spacing:.18em;
+  color:#ffd28a; text-transform:uppercase;
+  padding:4px 10px; border:1px solid rgba(251,191,36,.3); border-radius:99px; background:var(--amber-dim);
+}
+.d-co{
+  font-size:38px; font-weight:800; letter-spacing:-.03em; line-height:1.02;
+  background:linear-gradient(180deg, #fff 30%, #b9c6df); -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.d-seat{ margin-top:7px; font-size:15px; color:var(--ink-2); font-weight:500; }
+.d-seat b{ color:var(--ink); font-weight:700; }
+.d-badges{ display:flex; flex-wrap:wrap; gap:7px; margin-top:13px; }
+.badge{
+  display:inline-flex; align-items:center; gap:6px;
+  font-family:var(--mono); font-size:10px; font-weight:700; letter-spacing:.1em;
+  padding:4.5px 10px; border-radius:6px; border:1px solid var(--line); color:var(--ink-2);
+  background:rgba(255,255,255,.02); text-transform:uppercase;
+}
+.badge.green{ color:var(--green); border-color:rgba(52,211,153,.32); background:var(--green-dim); }
+.badge.blue{ color:#9ccaff; border-color:rgba(77,159,255,.32); background:var(--blue-dim); }
+.badge.amber{ color:var(--amber); border-color:rgba(251,191,36,.3); background:var(--amber-dim); }
+/* gauge */
+.gauge-wrap{ flex:none; text-align:center; }
+.gauge{ position:relative; width:128px; height:128px; }
+.gauge svg{ transform:rotate(-90deg); display:block; }
+.gauge .track{ stroke:rgba(255,255,255,.07); }
+.gauge .arc{
+  stroke:url(#arcGrad); stroke-linecap:round;
+  transition:stroke-dashoffset 1.1s cubic-bezier(.2,.7,.2,1);
+  filter:drop-shadow(0 0 7px rgba(77,159,255,.55));
+}
+.gauge .num{
+  position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+}
+.gauge .num b{ font-family:var(--mono); font-size:33px; font-weight:700; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+.gauge .num span{ font-size:9px; letter-spacing:.22em; color:var(--ink-4); font-weight:600; }
+.gauge-window{
+  margin-top:9px; font-family:var(--mono); font-size:10.5px; color:var(--amber); letter-spacing:.06em;
+}
+/* gate */
+.gate{ display:flex; gap:8px; margin-top:18px; flex-wrap:wrap; align-items:center; }
+.gate-chip{
+  display:flex; align-items:center; gap:8px;
+  padding:7px 12px; border-radius:var(--r-sm); border:1px solid var(--line);
+  background:rgba(255,255,255,.02); font-size:11.5px; font-weight:600; color:var(--ink-2);
+}
+.gate-chip .mk{ font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:.05em; }
+.gate-chip.g2 .mk{ color:var(--green); } .gate-chip.g2{ border-color:rgba(52,211,153,.28); }
+.gate-chip.g1 .mk{ color:var(--amber); }
+.gate-chip.g0 .mk{ color:var(--red); } .gate-chip.g0{ border-color:rgba(248,113,113,.28); }
+.gate-total{
+  margin-left:auto; font-family:var(--mono); font-size:12px; font-weight:700; color:var(--ink-2);
+  padding:7px 12px; border-radius:var(--r-sm); border:1px solid var(--line-hard); background:var(--panel-3);
+}
+.gate-total b{ color:var(--blue); }
+/* narrative blocks */
+.d-blocks{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:18px; }
+.block{
+  padding:14px 16px; border-radius:var(--r-md); border:1px solid var(--line);
+  background:rgba(255,255,255,.015);
+}
+.block h3{
+  font-family:var(--mono); font-size:9.5px; font-weight:700; letter-spacing:.24em;
+  color:var(--ink-4); text-transform:uppercase; margin-bottom:7px; display:flex; gap:7px; align-items:center;
+}
+.block p{ font-size:13px; color:var(--ink-2); line-height:1.6; }
+.block p b{ color:var(--ink); }
+.block.why{ grid-column:1 / -1; border-color:rgba(77,159,255,.22); background:linear-gradient(180deg, rgba(77,159,255,.06), rgba(77,159,255,.015)); }
+.block.why h3{ color:#9ccaff; }
+.block.kills{ border-left:3px solid var(--amber); background:linear-gradient(90deg, rgba(251,191,36,.06), transparent 70%); }
+.block.kills h3{ color:var(--amber); }
+.block.move h3{ color:var(--green); }
+.fee-math{
+  margin-top:12px; padding:11px 14px; border-radius:var(--r-md);
+  border:1px dashed rgba(52,211,153,.32); background:rgba(52,211,153,.045);
+  font-family:var(--mono); font-size:11.5px; color:#9fe9cb; line-height:1.55;
+}
+/* actions */
+.d-actions{ display:flex; flex-wrap:wrap; gap:9px; margin-top:18px; }
+.btn{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:10px 16px; border-radius:10px; font-size:12.5px; font-weight:700; letter-spacing:.01em;
+  border:1px solid var(--line-hard); color:var(--ink-2); background:var(--panel-3);
+  transition:transform .15s ease, box-shadow .2s ease, border-color .2s ease, color .2s ease, background .2s ease;
+}
+.btn:hover{ transform:translateY(-1px); border-color:rgba(255,255,255,.22); color:var(--ink); box-shadow:0 8px 22px rgba(0,0,0,.4); }
+.btn:active{ transform:translateY(0); }
+.btn.primary{
+  color:#04101f; border-color:transparent;
+  background:linear-gradient(135deg, #7ec3ff, var(--blue) 60%, #2f7fe0);
+  box-shadow:0 0 22px rgba(77,159,255,.3), 0 6px 16px rgba(0,0,0,.4);
+}
+.btn.primary:hover{ box-shadow:0 0 30px rgba(77,159,255,.45), 0 10px 22px rgba(0,0,0,.5); color:#04101f; }
+.btn.done{ color:var(--green); border-color:rgba(52,211,153,.4); background:var(--green-dim); }
+.btn.ghost{ color:var(--ink-3); border-color:transparent; background:transparent; }
+.btn.ghost:hover{ color:var(--red); box-shadow:none; }
+/* sources drawer */
+.sources{
+  max-height:0; overflow:hidden; transition:max-height .4s ease, margin .4s ease; margin-top:0;
+}
+.sources.open{ max-height:240px; margin-top:14px; }
+.sources-inner{
+  border:1px solid var(--line); border-radius:var(--r-md); background:#08101e; padding:13px 15px;
+}
+.sources-inner h4{ font-family:var(--mono); font-size:9.5px; letter-spacing:.24em; color:var(--ink-4); margin-bottom:8px; }
+.src-line{
+  display:flex; gap:9px; align-items:baseline; padding:4.5px 0;
+  font-family:var(--mono); font-size:11px; color:var(--ink-2); border-top:1px dotted var(--line-soft);
+}
+.src-line:first-of-type{ border-top:none; }
+.src-line .n{ color:var(--blue); flex:none; }
+/* opener console */
+.console{
+  margin-top:14px; border:1px solid rgba(77,159,255,.25); border-radius:var(--r-md);
+  background:#060b15; box-shadow:0 0 30px rgba(77,159,255,.07) inset; overflow:hidden;
+}
+.console-bar{
+  display:flex; align-items:center; gap:8px; padding:8px 13px;
+  border-bottom:1px solid var(--line-soft); background:rgba(77,159,255,.05);
+}
+.console-bar .led{ width:7px; height:7px; border-radius:50%; background:var(--ink-4); }
+.console-bar.busy .led{ background:var(--green); box-shadow:0 0 8px var(--green); }
+.console-bar span{ font-family:var(--mono); font-size:9.5px; letter-spacing:.22em; color:var(--ink-4); }
+.console-body{
+  padding:14px 16px; min-height:88px;
+  font-family:var(--mono); font-size:12.5px; line-height:1.75; color:#bcd6f6;
+}
+.console-body .placeholder{ color:var(--ink-4); font-style:italic; }
+.caret{
+  display:inline-block; width:7px; height:14px; margin-left:2px; vertical-align:-2px;
+  background:var(--blue); box-shadow:0 0 8px var(--blue);
+  animation:blink 1s steps(1) infinite;
+}
+@keyframes blink{ 50%{ opacity:0; } }
+
+/* ---------- 10. Copilot rail (right) ---------- */
+.rail{ display:flex; flex-direction:column; gap:18px; }
+.log{ padding:12px 14px 14px; max-height:318px; overflow-y:auto; }
+.log::-webkit-scrollbar{ width:5px; } .log::-webkit-scrollbar-thumb{ background:var(--line-hard); border-radius:3px; }
+.log-line{
+  display:flex; gap:10px; padding:5.5px 2px; align-items:baseline;
+  font-family:var(--mono); font-size:10.8px; line-height:1.55; color:var(--ink-3);
+  border-top:1px dotted var(--line-soft);
+  animation:rise .5s cubic-bezier(.2,.7,.2,1) both;
+}
+.log-line:first-child{ border-top:none; }
+.log-line .t{ color:var(--ink-4); flex:none; }
+.log-line .op{ font-weight:700; letter-spacing:.06em; flex:none; }
+.log-line .op.scan{ color:var(--blue); } .log-line .op.hit{ color:var(--green); }
+.log-line .op.kill{ color:var(--red); } .log-line .op.flag{ color:var(--amber); }
+.log-line .msg{ color:var(--ink-3); min-width:0; }
+.log-line .msg b{ color:var(--ink-2); font-weight:500; }
+/* copilot narrative */
+.copilot{
+  position:relative; border:1px solid rgba(77,159,255,.3); border-radius:var(--r-lg);
+  background:
+    radial-gradient(420px 180px at 20% 0%, rgba(77,159,255,.13), transparent 70%),
+    linear-gradient(180deg, var(--panel-3), var(--panel));
+  box-shadow:0 0 36px rgba(77,159,255,.10), var(--shadow-1);
+  padding:16px 18px 18px;
+}
+.copilot::before{
+  content:""; position:absolute; top:-1px; left:14%; right:14%; height:1px;
+  background:linear-gradient(90deg, transparent, rgba(126,195,255,.7), transparent);
+}
+.copilot-head{ display:flex; align-items:center; gap:9px; margin-bottom:10px; }
+.copilot-head .orb{
+  width:22px; height:22px; border-radius:50%; flex:none;
+  background:radial-gradient(circle at 32% 30%, #b8dcff, var(--blue) 55%, #1b4f97);
+  box-shadow:0 0 14px rgba(77,159,255,.55);
+}
+.copilot-head h2{ font-family:var(--mono); font-size:10.5px; font-weight:700; letter-spacing:.24em; color:#9ccaff; }
+.copilot-head .ts{ margin-left:auto; font-family:var(--mono); font-size:9.5px; color:var(--ink-4); }
+.copilot-body{ font-size:13.5px; line-height:1.7; color:var(--ink-2); min-height:128px; }
+.copilot-body b{ color:var(--ink); font-weight:700; }
+/* ask the radar */
+.ask h2{ margin-bottom:2px; }
+.chips{ padding:12px 14px 14px; display:flex; flex-direction:column; gap:8px; }
+.chip{
+  text-align:left; padding:10px 13px; border-radius:10px; font-size:12.5px; font-weight:600;
+  color:var(--ink-2); border:1px solid var(--line); background:rgba(255,255,255,.02);
+  transition:transform .15s ease, border-color .2s ease, color .2s ease, background .2s ease;
+  display:flex; align-items:center; gap:9px;
+}
+.chip:hover{ transform:translateY(-1px); border-color:rgba(77,159,255,.45); color:var(--ink); background:var(--blue-dim); }
+.chip .qm{ font-family:var(--mono); color:var(--blue); font-weight:700; flex:none; }
+.chip-answer{
+  margin:0 14px 14px; padding:12px 14px; border-radius:10px;
+  border:1px solid rgba(77,159,255,.22); background:rgba(77,159,255,.05);
+  font-size:12.5px; line-height:1.65; color:var(--ink-2); display:none;
+}
+.chip-answer.show{ display:block; animation:rise .4s ease both; }
+
+/* ---------- 11. Toast ---------- */
+.toast{
+  position:fixed; left:50%; bottom:30px; transform:translate(-50%, 16px);
+  padding:11px 20px; border-radius:99px; z-index:60;
+  background:rgba(13,21,38,.96); border:1px solid rgba(77,159,255,.4);
+  box-shadow:0 0 28px rgba(77,159,255,.2), 0 14px 36px rgba(0,0,0,.6);
+  font-size:12.5px; font-weight:600; color:var(--ink);
+  opacity:0; pointer-events:none; transition:opacity .3s ease, transform .3s ease;
+  max-width:min(86vw, 560px); text-align:center;
+}
+.toast.show{ opacity:1; transform:translate(-50%, 0); }
+
+/* ---------- 12. Concept nav chip ---------- */
+.concept-nav{
+  position:fixed; right:18px; bottom:18px; z-index:70;
+  display:flex; align-items:center; gap:10px;
+  padding:8px 13px; border-radius:99px;
+  background:rgba(10,16,30,.88); border:1px solid rgba(255,255,255,.14);
+  backdrop-filter:blur(10px);
+  box-shadow:0 10px 30px rgba(0,0,0,.5);
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; color:#aab6cf;
+}
+.concept-nav b{ color:#e8eef9; font-weight:700; }
+.concept-nav a{ text-decoration:none; color:#8ec6ff; padding:2px 4px; border-radius:5px; transition:background .15s ease; }
+.concept-nav a:hover{ background:rgba(77,159,255,.18); }
+.concept-nav .sep{ color:rgba(255,255,255,.18); }
+
+/* ---------- 13. Footer ---------- */
+.footer{
+  padding:10px 26px 70px; text-align:center;
+  font-size:11px; color:var(--ink-4); letter-spacing:.04em;
+}
+
+/* ---------- 14. Entrance animations ---------- */
+@keyframes rise{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+.anim-in{ animation:rise .55s cubic-bezier(.2,.7,.2,1) both; }
+
+/* ---------- 15. Responsive ---------- */
+@media (max-width:1180px){
+  .cockpit{ grid-template-columns:280px minmax(0,1fr); }
+  .rail{ grid-column:1 / -1; display:grid; grid-template-columns:1fr 1fr; align-items:start; }
+  .rail .ask{ grid-column:1 / -1; }
+}
+@media (max-width:860px){
+  .cockpit{ grid-template-columns:1fr; padding:14px 16px 24px; }
+  .rail{ grid-template-columns:1fr; }
+  .ribbon{ flex-direction:column; align-items:flex-start; padding:20px 16px 4px; }
+  .strip{ flex-wrap:wrap; gap:10px 16px; padding:12px 16px; }
+  .sweep-stats{ order:5; width:100%; }
+  .pulse-spark{ display:none; }
+  .d-top{ flex-direction:column-reverse; gap:14px; }
+  .d-co{ font-size:30px; }
+  .d-blocks{ grid-template-columns:1fr; }
+  .gate-total{ margin-left:0; }
+}
+
+/* ---------- 16. Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms !important; animation-iteration-count:1 !important;
+    transition-duration:.01ms !important; scroll-behavior:auto !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ================= TOP STATUS STRIP ================= -->
+  <header class="strip anim-in">
+    <div class="wordmark">
+      <span class="vma">VM<em>A</em></span>
+      <span class="grp">GROUP</span>
+    </div>
+    <div class="strip-divider" aria-hidden="true"></div>
+    <div class="live">
+      <span class="dot" aria-hidden="true"></span>
+      COMMUNICATIONS RADAR — LIVE
+    </div>
+    <div class="strip-divider" aria-hidden="true"></div>
+    <div class="sweep-stats">LAST SWEEP <b>06:12</b> &nbsp;·&nbsp; <b>1,284</b> SOURCES &nbsp;·&nbsp; <b>9</b> CORROBORATED &nbsp;·&nbsp; <b>2</b> KILLED &nbsp;·&nbsp; <b>1</b> PROMOTED</div>
+    <div class="strip-spacer"></div>
+    <div class="pulse-spark" title="Signal volume, last 14 sweeps">
+      <span class="lbl">PULSE</span>
+      <svg width="92" height="24" viewBox="0 0 92 24" fill="none" aria-hidden="true">
+        <polyline points="0,17 7,15 14,16 21,12 28,14 35,10 42,12 49,8 56,11 63,7 70,9 77,5 84,7 92,3"
+          stroke="#4D9FFF" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="92" cy="3" r="2.4" fill="#34d399"/>
+      </svg>
+    </div>
+    <div class="strip-date">Wednesday 10 June 2026 · <span style="font-family:var(--mono); color:var(--ink-3);">08:55</span></div>
+  </header>
+
+  <!-- ================= HERO RIBBON ================= -->
+  <section class="ribbon anim-in" style="animation-delay:.08s">
+    <div>
+      <h1>Morning, Sara — <span class="money" id="boardTotal">£0</span> is on the board.</h1>
+      <p class="sub">Seven call-ready leads. The agents worked while you slept; the two calls that matter before
+        <b>10:00</b> are <b>National Grid</b> and <b>Ocado</b> — both windows close inside a fortnight.</p>
+    </div>
+    <div class="ribbon-kpis">
+      <div class="kpi"><div class="v" data-count="7" id="kpiReady">0</div><div class="k">Call-ready</div></div>
+      <div class="kpi"><div class="v green" data-count="9" id="kpiSignals">0</div><div class="k">Signals corroborated</div></div>
+      <div class="kpi"><div class="v amber" data-count="2" id="kpiClosing">0</div><div class="k">Windows &lt; 14d</div></div>
+    </div>
+  </section>
+
+  <!-- ================= COCKPIT GRID ================= -->
+  <main class="cockpit">
+
+    <!-- ---------- LEFT · CALL QUEUE ---------- -->
+    <section class="panel anim-in" style="animation-delay:.14s" aria-label="Call queue">
+      <div class="panel-head">
+        <h2>Call queue</h2>
+        <span class="tag">RANKED · 06:12</span>
+      </div>
+      <div class="queue" id="queue" role="listbox" aria-label="Call-ready leads"></div>
+
+      <div class="tiers">
+        <div class="tier" id="tierDeveloping">
+          <button class="tier-head" data-tier="tierDeveloping" aria-expanded="false">
+            <span class="sw" style="background:var(--blue)"></span>
+            <span class="nm">Developing</span>
+            <span class="ct">3</span><span class="chev">▶</span>
+          </button>
+          <div class="tier-body">
+            <div class="tier-item"><span class="co">AstraZeneca</span><span class="why">Hiring restart after 7 mo of silence · single source · recheck 3d</span><span class="s">64</span></div>
+            <div class="tier-item"><span class="co">JD Sports</span><span class="why">Mishire exit — Comms Director off team page at 14 mo · /investigate queued</span><span class="s">58</span></div>
+            <div class="tier-item"><span class="co">Severn Trent</span><span class="why">Contract end — retained agency framework expires Q3</span><span class="s">52</span></div>
+          </div>
+        </div>
+        <div class="tier" id="tierEarly">
+          <button class="tier-head" data-tier="tierEarly" aria-expanded="false">
+            <span class="sw" style="background:var(--ink-4)"></span>
+            <span class="nm">Early signals</span>
+            <span class="ct">2</span><span class="chev">▶</span>
+          </button>
+          <div class="tier-body">
+            <div class="tier-item"><span class="co">Deliveroo</span><span class="why">M&amp;A chatter · single press source</span><span class="s">41</span></div>
+            <div class="tier-item"><span class="co">Greggs</span><span class="why">CEO transition rumoured</span><span class="s">38</span></div>
+          </div>
+        </div>
+        <div class="tier" id="tierBlocked">
+          <button class="tier-head" data-tier="tierBlocked" aria-expanded="false">
+            <span class="sw" style="background:var(--red)"></span>
+            <span class="nm">Blocked</span>
+            <span class="ct">2</span><span class="chev">▶</span>
+          </button>
+          <div class="tier-body">
+            <div class="tier-item"><span class="co">Frasers Group</span><span class="why">Competing recruiter holds an exclusive</span><span class="s">—</span></div>
+            <div class="tier-item"><span class="co">Thames Water</span><span class="why">Special-administration risk · spend frozen</span><span class="s">—</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- CENTRE · DOSSIER ---------- -->
+    <section class="panel dossier anim-in" style="animation-delay:.2s" aria-label="Lead dossier" aria-live="polite">
+      <div class="panel-head">
+        <h2>Lead dossier</h2>
+        <span class="tag" id="dRankTag">RANK 01 / 07</span>
+      </div>
+      <div class="dossier-inner" id="dossierInner">
+
+        <div class="d-top">
+          <div class="d-id">
+            <div class="d-trigger" id="dTrigger">⚡ In-house search failing</div>
+            <div class="d-co" id="dCompany">National Grid</div>
+            <div class="d-seat">Seat: <b id="dSeat">Head of Media Relations</b> · buyer: <span id="dBuyer">Group Corporate Affairs Director (Sasha Kemp)</span></div>
+            <div class="d-badges" id="dBadges"></div>
+          </div>
+          <div class="gauge-wrap">
+            <div class="gauge">
+              <svg width="128" height="128" viewBox="0 0 128 128">
+                <defs>
+                  <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#7ec3ff"/>
+                    <stop offset="100%" stop-color="#4D9FFF"/>
+                  </linearGradient>
+                </defs>
+                <circle class="track" cx="64" cy="64" r="55" fill="none" stroke-width="6"/>
+                <circle class="arc" id="dArc" cx="64" cy="64" r="55" fill="none" stroke-width="6"
+                        stroke-dasharray="345.6" stroke-dashoffset="345.6"/>
+              </svg>
+              <div class="num"><b id="dStrength">0</b><span>STRENGTH</span></div>
+            </div>
+            <div class="gauge-window" id="dWindow">⏳ ACT THIS WEEK</div>
+          </div>
+        </div>
+
+        <div class="gate" id="dGate" aria-label="Qualification gate"></div>
+
+        <div class="d-blocks">
+          <div class="block why">
+            <h3>Why now</h3>
+            <p id="dWhy"></p>
+          </div>
+          <div class="block kills">
+            <h3>⚠ What kills this</h3>
+            <p id="dKills"></p>
+          </div>
+          <div class="block move">
+            <h3>▸ First move</h3>
+            <p id="dMove"></p>
+          </div>
+        </div>
+
+        <div class="fee-math" id="dFeeMath"></div>
+
+        <div class="d-actions">
+          <button class="btn primary" id="btnDraft">⌁ Draft opener</button>
+          <button class="btn" id="btnPitch">Generate pitch</button>
+          <button class="btn" id="btnSources">View sources</button>
+          <button class="btn" id="btnFollow">Followed up ✓</button>
+          <button class="btn ghost" id="btnDismiss">Dismiss ✕</button>
+        </div>
+
+        <div class="sources" id="srcDrawer">
+          <div class="sources-inner">
+            <h4>EVIDENCE TRAIL</h4>
+            <div id="srcList"></div>
+          </div>
+        </div>
+
+        <div class="console">
+          <div class="console-bar" id="consoleBar">
+            <span class="led"></span>
+            <span id="consoleLabel">AI-DRAFTED OPENER · IDLE</span>
+          </div>
+          <div class="console-body">
+            <span id="openerText" class="placeholder">Press “Draft opener” — the radar writes the first line so you only have to dial.</span><span class="caret" id="openerCaret" style="display:none"></span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ---------- RIGHT · COPILOT RAIL ---------- -->
+    <aside class="rail">
+
+      <section class="panel anim-in" style="animation-delay:.26s" aria-label="Overnight agent log">
+        <div class="panel-head">
+          <h2>Overnight agent log</h2>
+          <span class="tag">05:42 → 06:12</span>
+        </div>
+        <div class="log" id="agentLog"></div>
+      </section>
+
+      <section class="copilot anim-in" style="animation-delay:.34s" aria-label="Morning narrative">
+        <div class="copilot-head">
+          <span class="orb" aria-hidden="true"></span>
+          <h2>RADAR COPILOT</h2>
+          <span class="ts">VERDICT 06:12</span>
+        </div>
+        <div class="copilot-body"><span id="narrative"></span><span class="caret" id="narrativeCaret"></span></div>
+      </section>
+
+      <section class="panel ask anim-in" style="animation-delay:.4s" aria-label="Ask the radar">
+        <div class="panel-head"><h2>Ask the radar</h2></div>
+        <div class="chips">
+          <button class="chip" data-ask="0"><span class="qm">?</span> Why is National Grid #1?</button>
+          <button class="chip" data-ask="1"><span class="qm">?</span> What changed overnight?</button>
+          <button class="chip" data-ask="2"><span class="qm">?</span> Which window closes first?</button>
+        </div>
+        <div class="chip-answer" id="chipAnswer"></div>
+      </section>
+
+    </aside>
+  </main>
+
+  <footer class="footer">Illustrative sample data for design review — not live intelligence.</footer>
+</div>
+
+<!-- Concept navigation -->
+<nav class="concept-nav" aria-label="Concept navigation">
+  <a href="10_win_the_week.html" title="Previous concept">←</a>
+  <span class="sep">|</span>
+  <b>Concept&nbsp;01&nbsp;/&nbsp;10</b>
+  <span class="sep">|</span>
+  <a href="index.html">Index</a>
+  <span class="sep">|</span>
+  <a href="02_morning_wire.html" title="Next concept">→</a>
+</nav>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ============================================================
+   MISSION CONTROL · runtime
+   ============================================================ */
+'use strict';
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = (s, el=document) => el.querySelector(s);
+
+/* ---------- 1. Dataset (Wednesday 10 June 2026, 08:55) ---------- */
+const LEADS = [
+  {
+    co:'National Grid', trigger:'In-house search failing', triggerClass:'hot',
+    seat:'Head of Media Relations', buyer:'Group Corporate Affairs Director (Sasha Kemp)',
+    strength:94, window:'⏳ ACT THIS WEEK', fee:'£32k',
+    confidence:'High', redteam:88, verify:'2+ sources',
+    gate:{Seat:2, Budget:2, Urgency:2, Buyer:1},
+    why:'Their own search for a Head of Media Relations is 54 days old, reposted twice, still no recruiter attached — the cost of the DIY route is already on their P&L.',
+    kills:'Role quietly filled internally — check the careers page before dialling.',
+    move:'Call the Group Corporate Affairs Director, not HR. Reference the 54-day vacancy and offer a vetted 3-candidate shortlist in 10 working days.',
+    feeMath:'COST OF VACANCY — 54 days × £760/day ≈ £41k of comms output already lost. Your £32k fee is cheaper than week 10 of the DIY search.',
+    opener:'Hi Sasha — I noticed the Head of Media Relations brief has been live for eight weeks now. We placed three of the last five seats like it in energy and utilities; I can have a vetted shortlist with you by the 24th. Worth fifteen minutes this week?',
+    sources:[
+      'Careers page — vacancy live 54 days, reposted ×2 (rechecked 06:08)',
+      'Job-board diff — salary band raised 8% on second repost',
+      'Agency-attribution scan — no recruiter attached on any board'
+    ]
+  },
+  {
+    co:'Monzo Bank', trigger:'Funding · £380m growth round', triggerClass:'reg',
+    seat:'Head of Corporate Communications', buyer:'warm path via Amara Osei (placed 2024)',
+    strength:89, window:'⏳ WINDOW 4–8 WEEKS', fee:'£30k',
+    confidence:'High', redteam:81, verify:'Registry-attested',
+    gate:{Seat:2, Budget:2, Urgency:1, Buyer:2},
+    why:'Fresh capital plus a stated European expansion: comms build-out typically lands within two quarters of a round this size.',
+    kills:'Comms budget parked until the incoming CFO lands — watch the CFO seat.',
+    move:'Warm path: Amara Osei (placed 2024) now leads their brand team — ask for the intro before the round press cycle ends.',
+    feeMath:'FEE CONTEXT — £30k ≈ 0.008% of a £380m raise. A rounding error against the round; a headline against your quarter.',
+    opener:'Hi Amara — congratulations on the round; the SH01 landed at Companies House overnight. When the European build-out starts pulling on corporate comms, I’d love Monzo to see our shortlist first. Could you point me to the right person this week?',
+    sources:[
+      'Companies House — SH01 allotment filed 09 Jun 23:41 (registry-attested)',
+      'Press — £380m growth round, European expansion stated',
+      'Team-page scan — no Head of Corporate Communications listed'
+    ]
+  },
+  {
+    co:'Ocado Group', trigger:'Profit warning + Comms Director exit', triggerClass:'hot',
+    seat:'Director of Communications', buyer:'CEO’s Chief of Staff (interim comms owner)',
+    strength:86, window:'⏳ WINDOW 2–6 WEEKS', fee:'£28k',
+    confidence:'High', redteam:79, verify:'Registry-attested',
+    gate:{Seat:2, Budget:1, Urgency:2, Buyer:2},
+    why:'A profit warning with the comms chair empty is the worst week to have no spokesperson — they know it.',
+    kills:'Deputy steps up — internal promotion closes the seat.',
+    move:'Call the CEO’s Chief of Staff today — in a profit-warning week the comms seat is a board-level problem, not an HR requisition.',
+    feeMath:'FEE CONTEXT — £28k vs one bad news cycle with no spokesperson. They did that maths the morning the RNS went out.',
+    opener:'Hi Marcus — with Friday’s RNS and the comms chair empty, every journalist call this week lands on a desk that didn’t sign up for it. I can put three crisis-grade communications directors in front of you inside a fortnight. Fifteen minutes today?',
+    sources:[
+      'RNS — profit warning filed (registry-attested)',
+      'Team-page diff — Director of Communications removed',
+      'Trade press — exit corroborated by second source, 06:06'
+    ]
+  },
+  {
+    co:'Burberry', trigger:'Restructure · turnaround announced', triggerClass:'blue',
+    seat:'Corporate Affairs Director', buyer:'Chief People Officer',
+    strength:81, window:'⏳ WINDOW 3–8 WEEKS', fee:'£34k',
+    confidence:'Moderate', redteam:null, verify:'2+ sources',
+    gate:{Seat:2, Budget:2, Urgency:1, Buyer:1},
+    why:'A turnaround plan announced with no Corporate Affairs Director to narrate it — the story gets written for them, daily.',
+    kills:'Turnaround pauses all senior hiring for two quarters.',
+    move:'Go above the freeze: pitch the Chief People Officer on a turnaround-critical exemption — the plan needs a narrator before Q2 results.',
+    feeMath:'FEE CONTEXT — £34k, the largest single fee on today’s board. Turnaround comms seats rarely come twice.',
+    opener:'Hi Daniel — with the turnaround plan now public, the corporate affairs story will be written every day, with or without a director in the chair. We’ve placed three turnaround comms leads in retail since 2024 — worth a short call?',
+    sources:[
+      'Press — turnaround plan announced, two outlets',
+      'Org scan — Corporate Affairs Director seat vacant',
+      'Analyst note — restructure timeline through Q2'
+    ]
+  },
+  {
+    co:'Octopus Energy', trigger:'Hiring cluster · 4 roles / 11 days', triggerClass:'blue',
+    seat:'Head of Internal Communications', buyer:'VP People & Communications',
+    strength:77, window:'⏳ WINDOW NOW–4 WEEKS', fee:'£24k',
+    confidence:'High', redteam:null, verify:'2+ sources',
+    gate:{Seat:2, Budget:1, Urgency:2, Buyer:1},
+    why:'Four comms roles posted in eleven days is a function being built, not backfilled — the senior seat usually follows the cluster.',
+    kills:'They keep hiring junior and never open the head-of seat.',
+    move:'Reference the four live postings — offer to scope the head-of seat before the cluster hires a layer with no leader.',
+    feeMath:'FEE CONTEXT — £24k now, and clusters this dense historically yield 2–3 follow-on briefs inside the quarter.',
+    opener:'Hi Rachel — four comms roles in eleven days says you’re building a function, not filling gaps. The head-of seat usually comes last and costs most when rushed — can I show you our internal comms bench before the cluster outpaces it?',
+    sources:[
+      'Job boards — 4 comms roles posted within 11 days',
+      'LinkedIn — hiring-manager activity spike on comms posts'
+    ]
+  },
+  {
+    co:'Wise plc', trigger:'IR & comms change · US listing shift', triggerClass:'reg',
+    seat:'Head of External Communications', buyer:'Head of Investor Relations',
+    strength:74, window:'⏳ WINDOW 4–10 WEEKS', fee:'£26k',
+    confidence:'Moderate', redteam:null, verify:'Registry-attested',
+    gate:{Seat:2, Budget:1, Urgency:1, Buyer:2},
+    why:'A primary-listing shift to the US rewires the IR and external comms brief — new market, new regulator, new narrative.',
+    kills:'The listing team hires the comms lead stateside instead of London.',
+    move:'Time the approach to the next listing milestone — pitch a dual-market external comms brief anchored in London.',
+    feeMath:'FEE CONTEXT — £26k, and dual-market briefs of this shape have historically extended into retained IR work.',
+    opener:'Hi Tomas — as the US listing shift firms up, the external comms brief changes shape entirely: new market, new regulator, new narrative. We’ve run three UK-to-US transitions like it; fifteen minutes before the next milestone?',
+    sources:[
+      'Registry filing — listing-shift documentation (attested)',
+      'IR page diff — comms contact structure changed'
+    ]
+  },
+  {
+    co:'Bupa', trigger:'CHRO change + IC platform RFP', triggerClass:'blue',
+    seat:'Head of Internal Comms', buyer:'incoming CHRO',
+    strength:71, window:'⏳ WINDOW 6–12 WEEKS', fee:'£22k',
+    confidence:'Moderate', redteam:null, verify:'2+ sources',
+    gate:{Seat:1, Budget:2, Urgency:1, Buyer:2},
+    why:'A new CHRO plus a live IC platform RFP — the internal comms budget is being re-cut right now, and the RFP tells you where.',
+    kills:'RFP scope folds comms into the wider HR transformation programme.',
+    move:'Get to the new CHRO inside the first 90 days — that is when the head-of seat decision lands.',
+    feeMath:'FEE CONTEXT — £22k, and the platform RFP signals the budget line is already approved upstream.',
+    opener:'Hi Elena — congratulations on the new role. With the IC platform RFP live, the head-of-internal-comms decision usually lands within the first quarter — happy to share what good looks like at Bupa’s scale.',
+    sources:[
+      'Press — CHRO appointment announced',
+      'Procurement portal — IC platform RFP live'
+    ]
+  }
+];
+
+const LOG_LINES = [
+  ['05:42','SWEEP','scan','1,284 sources queued — RNS, Companies House, regulators, job boards, press, team pages'],
+  ['05:51','PARSE','scan','312 RNS filings · <b>Ocado profit warning</b> flagged'],
+  ['05:58','DIFF','flag','<b>JD Sports</b> — Comms Director off team page after 14 months · /investigate queued'],
+  ['06:03','SH01','hit','<b>MONZO</b> — £380m allotment filed 23:41 · registry-attested'],
+  ['06:06','CORROB','hit','<b>Ocado</b> comms exit — second source confirms'],
+  ['06:08','RECHECK','flag','<b>NATIONAL GRID</b> — vacancy day 54 · reposted ×2 · still no agency attached'],
+  ['06:10','GATE','kill','2 leads killed — budget unconfirmed at gate'],
+  ['06:11','PROMOTE','hit','<b>OCTOPUS ENERGY</b> → CALL-READY · cluster hit 4 roles / 11 days'],
+  ['06:12','DONE','scan','Sweep complete · 9 signals corroborated · board valued <b>£196k</b>']
+];
+
+const NARRATIVE = 'Three things changed overnight: National Grid’s search hit day 54 with still no agency attached, Monzo’s SH01 filed at Companies House confirming the £380m round, and Ocado’s comms exit was corroborated by a second source. Your board is worth £196k today; the two calls that matter before 10:00 are National Grid and Ocado — both windows close inside a fortnight.';
+
+const ASK_ANSWERS = [
+  '<b>Stacked certainty.</b> The seat is provably open — their own posting, day 54. Budget is already on the P&L, urgency compounds daily, and no competing agency is attached. Strength 94 is the highest fit × timing product on the board, and it survived the red-team pass at 88. The window closes the moment they shortlist internally.',
+  '<b>Three moves.</b> Monzo’s SH01 hit Companies House at 23:41, confirming the £380m round (registry-attested). A second source corroborated Ocado’s comms exit at 06:06. And Octopus Energy was promoted to Call-ready after its fourth comms posting in eleven days.',
+  '<b>Ocado.</b> Two to six weeks — and the kill risk is an internal step-up, which usually happens within the first fortnight of a vacancy. Call before Friday or assume the deputy already has the seat.'
+];
+
+/* ---------- 2. Helpers ---------- */
+function toast(msg){
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._h);
+  toast._h = setTimeout(()=> t.classList.remove('show'), 2600);
+}
+function countUp(el, target, dur, fmt){
+  fmt = fmt || (v => Math.round(v).toString());
+  if (REDUCED){ el.textContent = fmt(target); return; }
+  const t0 = performance.now();
+  (function frame(now){
+    const p = Math.min((now - t0) / dur, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = fmt(target * eased);
+    if (p < 1) requestAnimationFrame(frame);
+  })(t0);
+}
+let typeToken = 0;
+function typeInto(el, html, caretEl, speed, onDone){
+  const token = ++typeToken;
+  // Strip tags for typing, then swap in rich HTML at the end.
+  const plain = html.replace(/<[^>]+>/g,'');
+  if (REDUCED){ el.innerHTML = html; if(caretEl) caretEl.style.display='none'; if(onDone) onDone(); return; }
+  el.textContent = '';
+  if (caretEl) caretEl.style.display = 'inline-block';
+  let i = 0;
+  (function step(){
+    if (token !== typeToken) return;
+    i = Math.min(i + 1 + (Math.random() < .3 ? 1 : 0), plain.length);
+    el.textContent = plain.slice(0, i);
+    if (i < plain.length){
+      setTimeout(step, speed + Math.random() * speed);
+    } else {
+      el.innerHTML = html;
+      if (caretEl) caretEl.style.display = 'none';
+      if (onDone) onDone();
+    }
+  })();
+}
+
+/* ---------- 3. Build call queue ---------- */
+const queueEl = $('#queue');
+let selected = 0;
+const followed = new Set();
+const dismissed = new Set();
+
+function renderQueue(){
+  queueEl.innerHTML = '';
+  LEADS.forEach((L, i) => {
+    const row = document.createElement('button');
+    row.className = 'q-row' + (i === selected ? ' active' : '') + (dismissed.has(i) ? ' dismissed' : '');
+    row.style.animationDelay = (0.18 + i * 0.07) + 's';
+    row.setAttribute('role','option');
+    row.setAttribute('aria-selected', i === selected);
+    row.innerHTML = `
+      <span class="q-rank">${String(i+1).padStart(2,'0')}</span>
+      <span class="q-co">${L.co}${followed.has(i) ? ' <span class="done">✓</span>' : ''}</span>
+      <span class="q-fee">${L.fee}</span>
+      <span class="q-meta"><span class="pill ${L.triggerClass}">${L.trigger}</span></span>
+      <span class="q-strength"><span class="bar"><i style="width:${L.strength}%"></i></span>${L.strength}</span>
+      ${i === 0 ? '<span class="deadline" id="deadline"><span class="dl-lbl">⚑ CALL BEFORE 10:00</span><span class="dl-clock" id="dlClock">65:00</span></span>' : ''}
+    `;
+    row.addEventListener('click', () => selectLead(i));
+    queueEl.appendChild(row);
+  });
+}
+
+/* ---------- 4. Dossier render ---------- */
+const ARC_C = 2 * Math.PI * 55; // ≈ 345.6
+function gateMark(v){ return v === 2 ? '✓✓' : v === 1 ? '✓' : '✗'; }
+
+function renderDossier(L, idx){
+  $('#dRankTag').textContent = `RANK ${String(idx+1).padStart(2,'0')} / 07`;
+  $('#dTrigger').textContent = '⚡ ' + L.trigger;
+  $('#dCompany').textContent = L.co;
+  $('#dSeat').textContent = L.seat;
+  $('#dBuyer').textContent = L.buyer;
+  $('#dWindow').textContent = L.window;
+  $('#dWhy').textContent = L.why;
+  $('#dKills').textContent = L.kills;
+  $('#dMove').textContent = L.move;
+  $('#dFeeMath').textContent = L.feeMath;
+
+  // badges
+  const b = [];
+  b.push(`<span class="badge ${L.confidence==='High' ? 'green' : 'amber'}">Confidence ${L.confidence}</span>`);
+  if (L.redteam) b.push(`<span class="badge blue">RED-TEAMED ✓ ${L.redteam}</span>`);
+  b.push(`<span class="badge ${L.verify==='Registry-attested' ? 'green' : ''}">${L.verify === 'Registry-attested' ? '◈ Registry-attested' : '◇ ' + L.verify}</span>`);
+  b.push(`<span class="badge">Fee ${L.fee}</span>`);
+  $('#dBadges').innerHTML = b.join('');
+
+  // gate
+  const total = Object.values(L.gate).reduce((a,v)=>a+v,0);
+  $('#dGate').innerHTML = Object.entries(L.gate).map(([k,v]) =>
+    `<span class="gate-chip g${v}">${k} <span class="mk">${gateMark(v)}</span></span>`
+  ).join('') + `<span class="gate-total">GATE <b>${total}/8</b></span>`;
+
+  // gauge
+  const arc = $('#dArc');
+  arc.style.strokeDashoffset = ARC_C;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    arc.style.strokeDashoffset = ARC_C * (1 - L.strength / 100);
+  }));
+  countUp($('#dStrength'), L.strength, 900);
+
+  // sources
+  $('#srcList').innerHTML = L.sources.map((s,i) =>
+    `<div class="src-line"><span class="n">[${i+1}]</span><span>${s}</span></div>`
+  ).join('');
+  $('#srcDrawer').classList.remove('open');
+  $('#btnSources').textContent = 'View sources';
+
+  // reset console
+  typeToken++;
+  $('#openerText').innerHTML = '<span class="placeholder">Press “Draft opener” — the radar writes the first line so you only have to dial.</span>';
+  $('#openerCaret').style.display = 'none';
+  $('#consoleBar').classList.remove('busy');
+  $('#consoleLabel').textContent = 'AI-DRAFTED OPENER · IDLE';
+
+  // followed state
+  const f = $('#btnFollow');
+  f.classList.toggle('done', followed.has(idx));
+  f.textContent = followed.has(idx) ? 'Followed up ✓ — logged' : 'Followed up ✓';
+
+  // re-trigger entrance
+  const inner = $('#dossierInner');
+  inner.classList.remove('swap');
+  void inner.offsetWidth;
+  inner.classList.add('swap');
+}
+
+function selectLead(i){
+  if (i === selected){ renderQueueStateOnly(); return; }
+  selected = i;
+  renderQueueStateOnly();
+  renderDossier(LEADS[i], i);
+}
+function renderQueueStateOnly(){
+  [...queueEl.children].forEach((row, i) => {
+    row.classList.toggle('active', i === selected);
+    row.setAttribute('aria-selected', i === selected);
+  });
+}
+
+/* ---------- 5. Actions ---------- */
+$('#btnDraft').addEventListener('click', () => {
+  const L = LEADS[selected];
+  $('#consoleBar').classList.add('busy');
+  $('#consoleLabel').textContent = 'AI-DRAFTED OPENER · COMPOSING…';
+  typeInto($('#openerText'), L.opener, $('#openerCaret'), 14, () => {
+    $('#consoleBar').classList.remove('busy');
+    $('#consoleLabel').textContent = 'AI-DRAFTED OPENER · READY — EDIT BEFORE SENDING';
+  });
+});
+$('#btnPitch').addEventListener('click', () => toast('Generate pitch — wired in production (3-page deck from the evidence trail).'));
+$('#btnSources').addEventListener('click', (e) => {
+  const d = $('#srcDrawer');
+  const open = d.classList.toggle('open');
+  e.currentTarget.textContent = open ? 'Hide sources' : 'View sources';
+});
+$('#btnFollow').addEventListener('click', (e) => {
+  const L = LEADS[selected];
+  if (followed.has(selected)){
+    followed.delete(selected);
+    e.currentTarget.classList.remove('done');
+    e.currentTarget.textContent = 'Followed up ✓';
+    toast(`${L.co} — follow-up unmarked.`);
+  } else {
+    followed.add(selected);
+    e.currentTarget.classList.add('done');
+    e.currentTarget.textContent = 'Followed up ✓ — logged';
+    toast(`${L.co} logged — the learning loop sees every follow-up.`);
+  }
+  renderQueue();
+});
+$('#btnDismiss').addEventListener('click', () => {
+  const L = LEADS[selected];
+  if (dismissed.has(selected)){
+    dismissed.delete(selected);
+    toast(`${L.co} restored to the queue.`);
+  } else {
+    dismissed.add(selected);
+    toast(`${L.co} dismissed — won’t resurface unless a new trigger fires.`);
+  }
+  renderQueue();
+});
+
+/* ---------- 6. Tier strips ---------- */
+document.querySelectorAll('.tier-head').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tier = document.getElementById(btn.dataset.tier);
+    const open = tier.classList.toggle('open');
+    btn.setAttribute('aria-expanded', open);
+  });
+});
+
+/* ---------- 7. Agent log (staggered) ---------- */
+const logEl = $('#agentLog');
+LOG_LINES.forEach(([t, op, cls, msg], i) => {
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.style.animationDelay = (0.4 + i * 0.13) + 's';
+  line.innerHTML = `<span class="t">${t}</span><span class="op ${cls}">${op}</span><span class="msg">${msg}</span>`;
+  logEl.appendChild(line);
+});
+
+/* ---------- 8. Copilot narrative typing ---------- */
+const narrativeHTML = NARRATIVE
+  .replace('National Grid’s search hit day 54', '<b>National Grid’s</b> search hit day 54')
+  .replace('Monzo’s SH01', '<b>Monzo’s</b> SH01')
+  .replace('Ocado’s comms exit', '<b>Ocado’s</b> comms exit')
+  .replace('£196k', '<b>£196k</b>')
+  .replace('National Grid and Ocado —', '<b>National Grid and Ocado</b> —');
+setTimeout(() => {
+  typeInto($('#narrative'), narrativeHTML, $('#narrativeCaret'), 9);
+}, REDUCED ? 0 : 700);
+
+/* ---------- 9. Ask-the-radar chips ---------- */
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const a = $('#chipAnswer');
+    a.classList.remove('show');
+    void a.offsetWidth;
+    a.innerHTML = ASK_ANSWERS[+chip.dataset.ask];
+    a.classList.add('show');
+  });
+});
+
+/* ---------- 10. Countdown: call before 10:00 (from 08:55 ≈ 65 min) ---------- */
+let remain = 65 * 60;
+function tick(){
+  remain = Math.max(0, remain - 1);
+  const clock = $('#dlClock');
+  if (!clock) return;
+  const m = Math.floor(remain / 60), s = remain % 60;
+  clock.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  const dl = $('#deadline');
+  if (dl && remain < 600) dl.classList.add('critical');
+}
+setInterval(tick, 1000);
+
+/* ---------- 11. Boot ---------- */
+renderQueue();
+renderDossier(LEADS[0], 0);
+countUp($('#boardTotal'), 196, 1400, v => '£' + Math.round(v) + 'k');
+countUp($('#kpiReady'), 7, 1100);
+countUp($('#kpiSignals'), 9, 1200);
+countUp($('#kpiClosing'), 2, 1000);
+tick();
+</script>
+</body>
+</html>
