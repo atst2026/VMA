@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMA · Communications Radar — Take 2 · Concept 09 · One Page</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#faf7f0;
+    --card:#fdfbf6;
+    --ink:#211b12;
+    --muted:rgba(33,27,18,.55);
+    --faint:rgba(33,27,18,.38);
+    --hair:rgba(33,27,18,.18);
+    --hair-soft:rgba(33,27,18,.10);
+    --oxblood:#7a2e1e;
+    --turn:450ms;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Fraunces",Georgia,serif;
+    font-optical-sizing:auto;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    overflow-x:hidden;
+    display:flex;flex-direction:column;align-items:center;
+    min-height:100vh;
+  }
+  ::selection{background:rgba(122,46,30,.14)}
+
+  /* ---------- whisper chrome ---------- */
+  .chrome{
+    margin-top:26px;
+    font-size:10px;letter-spacing:.32em;text-transform:uppercase;
+    color:var(--faint);cursor:pointer;user-select:none;
+    transition:color .3s ease;
+  }
+  .chrome:hover{color:var(--muted)}
+
+  /* ---------- AI whisper line ---------- */
+  .whisper{
+    margin-top:42px;
+    font-style:italic;font-weight:340;
+    font-size:17px;color:var(--muted);
+    letter-spacing:.01em;
+    transition:opacity .4s ease;
+    text-align:center;padding:0 24px;
+  }
+  .whisper.fading{opacity:0}
+
+  /* ---------- stage & page ---------- */
+  .stage{
+    position:relative;
+    width:min(600px,calc(100vw - 96px));
+    margin:30px 0 0;
+    perspective:1600px;
+    flex:0 0 auto;
+  }
+  .sheet{
+    position:relative;
+    background:var(--card);
+    border:1px solid var(--hair);
+    box-shadow:0 30px 70px -48px rgba(46,34,12,.38);
+    padding:58px 56px 44px;
+    text-align:center;
+    transform-origin:50% 0%;
+    overflow:hidden;
+  }
+  .sheet::before{ /* inner hairline — fine-menu double rule */
+    content:"";position:absolute;inset:6px;
+    border:1px solid var(--hair-soft);pointer-events:none;
+  }
+  .sheet.entering{animation:settle var(--turn) cubic-bezier(.22,.8,.3,1) both}
+  .sheet-ghost{
+    position:absolute;inset:0 0 auto 0;z-index:3;pointer-events:none;
+    transform-origin:50% 0%;
+  }
+  .sheet-ghost.lift-next{animation:liftL var(--turn) cubic-bezier(.5,.05,.6,1) both}
+  .sheet-ghost.lift-prev{animation:liftR var(--turn) cubic-bezier(.5,.05,.6,1) both}
+  @keyframes settle{
+    0%{opacity:0;transform:translateY(14px) rotateX(-3deg) scale(.992)}
+    45%{opacity:0}
+    100%{opacity:1;transform:none}
+  }
+  @keyframes liftL{
+    0%{opacity:1;transform:none}
+    100%{opacity:0;transform:translateY(-26px) rotateX(9deg) rotateZ(-1.4deg)}
+  }
+  @keyframes liftR{
+    0%{opacity:1;transform:none}
+    100%{opacity:0;transform:translateY(-26px) rotateX(9deg) rotateZ(1.4deg)}
+  }
+  @keyframes arrive{
+    0%{opacity:0;transform:translateY(18px)}
+    100%{opacity:1;transform:none}
+  }
+  .rise{animation:arrive .9s cubic-bezier(.22,.8,.3,1) both}
+  .rise.d1{animation-delay:.08s}.rise.d2{animation-delay:.18s}.rise.d3{animation-delay:.3s}
+
+  /* ---------- menu typography ---------- */
+  .numeral{
+    font-size:12px;letter-spacing:.3em;color:var(--faint);
+    font-weight:400;margin-bottom:30px;
+  }
+  .label{
+    font-size:9.5px;letter-spacing:.34em;text-transform:uppercase;
+    color:var(--faint);font-weight:500;margin-bottom:9px;
+  }
+  .who-co{
+    font-size:clamp(30px,4.6vw,38px);font-weight:560;
+    letter-spacing:.005em;line-height:1.08;
+    font-variation-settings:"opsz" 144;
+  }
+  .who-seat{
+    margin-top:7px;font-style:italic;font-weight:340;
+    font-size:16.5px;color:var(--muted);
+  }
+  .sentence{
+    font-size:16px;font-weight:380;line-height:1.55;
+    max-width:42ch;margin:0 auto;
+    hanging-punctuation:first last;
+  }
+  .fee-fig{
+    font-size:32px;font-weight:520;letter-spacing:.01em;
+    font-variation-settings:"opsz" 144;
+  }
+  .fee-note{
+    font-size:9.5px;letter-spacing:.34em;text-transform:uppercase;
+    color:var(--faint);margin-top:5px;
+  }
+  .risk{
+    font-style:italic;font-weight:350;font-size:15.5px;
+    color:var(--muted);line-height:1.55;max-width:40ch;margin:0 auto;
+    hanging-punctuation:first last;
+  }
+  .say{
+    font-style:italic;font-weight:360;font-size:16px;line-height:1.66;
+    max-width:46ch;margin:0 auto;
+    hanging-punctuation:first last;
+  }
+  .copy-btn{
+    display:inline-flex;vertical-align:baseline;
+    background:none;border:none;cursor:pointer;
+    padding:2px 0 0 7px;color:var(--faint);
+    transition:color .25s ease,transform .25s ease;
+  }
+  .copy-btn:hover{color:var(--oxblood);transform:translateY(-1px)}
+  .copy-btn svg{width:13px;height:13px;display:block}
+
+  /* ---------- fleuron divider ---------- */
+  .fleuron{
+    display:flex;align-items:center;justify-content:center;gap:12px;
+    margin:26px auto;width:120px;
+  }
+  .fleuron::before,.fleuron::after{
+    content:"";flex:1;height:1px;background:var(--hair-soft);
+  }
+  .fleuron span{font-size:11px;color:var(--faint);line-height:1;transform:translateY(-1px)}
+
+  /* ---------- called control & watermark ---------- */
+  .called-row{margin-top:34px}
+  .called-btn{
+    font-family:inherit;background:none;cursor:pointer;
+    border:1px solid var(--hair);border-radius:99px;
+    padding:7px 18px 8px;color:var(--muted);
+    font-size:9.5px;letter-spacing:.3em;text-transform:uppercase;
+    transition:all .3s ease;
+  }
+  .called-btn:hover{border-color:var(--ink);color:var(--ink)}
+  .called-btn.on{background:var(--ink);border-color:var(--ink);color:var(--card)}
+  .watermark{
+    position:absolute;inset:0;display:none;
+    align-items:center;justify-content:center;
+    pointer-events:none;z-index:2;
+  }
+  .sheet.is-called .watermark{display:flex}
+  .watermark span{
+    font-size:92px;font-weight:600;letter-spacing:.3em;
+    text-transform:uppercase;transform:rotate(-22deg);
+    color:rgba(33,27,18,.045);
+    text-shadow:0 1px 0 rgba(255,255,255,.6),0 -1px 0 rgba(33,27,18,.05);
+    user-select:none;white-space:nowrap;
+  }
+
+  /* ---------- dots ---------- */
+  .dots{display:flex;gap:13px;justify-content:center;margin:30px 0 0;padding-bottom:90px}
+  .dot{
+    width:7px;height:7px;border-radius:50%;
+    border:1px solid var(--faint);background:transparent;
+    cursor:pointer;padding:0;
+    transition:all .35s cubic-bezier(.22,.8,.3,1);
+  }
+  .dot:hover{border-color:var(--ink)}
+  .dot.called{background:var(--ink);border-color:var(--ink)}
+  .dot.current{transform:scale(1.5);border-color:var(--ink);box-shadow:0 0 0 3px var(--paper),0 0 0 4px var(--hair)}
+
+  /* ---------- edge-click zones ---------- */
+  .edge{
+    position:fixed;top:0;bottom:0;width:max(56px,calc((100vw - 660px)/2));
+    display:flex;align-items:center;cursor:pointer;z-index:5;
+    color:var(--faint);
+  }
+  .edge.left{left:0;justify-content:flex-start;padding-left:22px}
+  .edge.right{right:0;justify-content:flex-end;padding-right:22px}
+  .edge span{
+    font-size:22px;font-weight:300;opacity:0;
+    transition:opacity .3s ease,transform .3s ease;
+  }
+  .edge:hover span{opacity:.55}
+  .edge.left:hover span{transform:translateX(-3px)}
+  .edge.right:hover span{transform:translateX(3px)}
+
+  /* ---------- toast ---------- */
+  .toast{
+    position:fixed;left:50%;bottom:46px;transform:translate(-50%,12px);
+    background:var(--ink);color:var(--card);
+    font-size:11px;letter-spacing:.14em;font-style:italic;
+    padding:9px 22px;border-radius:99px;
+    opacity:0;pointer-events:none;z-index:50;
+    transition:opacity .35s ease,transform .35s ease;
+    box-shadow:0 12px 30px -12px rgba(33,27,18,.4);
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  /* ---------- corners ---------- */
+  .corner-note{
+    position:fixed;left:18px;bottom:16px;z-index:10;
+    font-size:9px;letter-spacing:.12em;font-style:italic;color:var(--faint);
+  }
+  .nav-chip{
+    position:fixed;right:18px;bottom:14px;z-index:10;
+    font-size:10px;letter-spacing:.16em;color:var(--faint);
+    border:1px solid var(--hair-soft);border-radius:99px;
+    padding:6px 14px;background:rgba(253,251,246,.8);
+    backdrop-filter:blur(6px);
+  }
+  .nav-chip a{color:var(--muted);text-decoration:none;transition:color .25s ease}
+  .nav-chip a:hover{color:var(--ink)}
+  .nav-chip .sep{margin:0 7px;color:var(--hair)}
+
+  @media (max-width:768px){
+    .stage{width:calc(100vw - 72px)}
+    .sheet{padding:44px 30px 36px}
+    .edge{width:36px}
+    .edge.left{padding-left:8px}.edge.right{padding-right:8px}
+    .watermark span{font-size:62px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important}
+  }
+</style>
+</head>
+<body>
+
+  <div class="chrome rise" id="chrome">VMA Group&ensp;·&ensp;Communications Radar&ensp;·&ensp;Wednesday 10 June 2026</div>
+
+  <p class="whisper rise d1" id="whisper" aria-live="polite">Seven calls, in the order I’d make them.</p>
+
+  <main class="stage rise d2" id="stage">
+    <article class="sheet" id="sheet" aria-live="polite"></article>
+  </main>
+
+  <nav class="dots rise d3" id="dots" aria-label="Pages"></nav>
+
+  <div class="edge left" id="edgeL" role="button" aria-label="Previous page" title="Previous"><span>←</span></div>
+  <div class="edge right" id="edgeR" role="button" aria-label="Next page" title="Next"><span>→</span></div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="corner-note">Illustrative sample data — design review only.</div>
+
+  <nav class="nav-chip" aria-label="Concept navigation">
+    09 / 10<span class="sep">·</span><a href="08_the_number.html" aria-label="Previous concept">←</a><span class="sep">·</span><a href="index.html">Index</a><span class="sep">·</span><a href="10_the_horizon.html" aria-label="Next concept">→</a>
+  </nav>
+
+<script>
+(function(){
+  "use strict";
+
+  var LEADS = [
+    { co:"National Grid", seat:"Head of Media Relations",
+      why:"Their own search is 54 days old, reposted twice, no recruiter attached. Failing in public.",
+      fee:"£32k", feeNote:"retained",
+      risk:"They may have quietly filled it — glance at the careers page first.",
+      say:"Hi Sasha — the Head of Media Relations brief has been live for eight weeks now. We placed three of the last five seats like it; I can have a vetted shortlist with you by the 24th. Worth fifteen minutes this week?" },
+    { co:"Ocado", seat:"Director of Communications",
+      why:"A profit warning landed and the comms chair is empty. They need a spokesperson this week.",
+      fee:"£28k", feeNote:"",
+      risk:"The deputy steps up.",
+      say:"Hi Daniel — rough fortnight in the headlines, and the comms chair is empty just when you need it most. I can have a confidential shortlist with you by Friday. Fifteen minutes today?" },
+    { co:"Monzo", seat:"Head of Corporate Communications",
+      why:"Their £380m round was confirmed at Companies House overnight. Comms build-out follows capital.",
+      fee:"£30k", feeNote:"",
+      risk:"Budget may wait for the incoming CFO.",
+      say:"Hi Tomas — congratulations on the round. Teams at your stage add a Head of Corporate Comms within two quarters; I mapped who’s available before the announcement even landed. Shall I send the three names worth meeting?" },
+    { co:"Burberry", seat:"Corporate Affairs Director",
+      why:"A turnaround plan was announced; corporate affairs is being rebuilt around it.",
+      fee:"£34k", feeNote:"",
+      risk:"Turnarounds can freeze senior hiring for two quarters.",
+      say:"Hi — when a turnaround lands, the corporate affairs chair decides how it reads. I know the three people who’ve done it before. Worth a conversation?" },
+    { co:"Octopus Energy", seat:"Head of Internal Communications",
+      why:"Four comms roles posted in eleven days. They’re scaling faster than they can hire.",
+      fee:"£24k", feeNote:"",
+      risk:"The cluster may be junior-heavy.",
+      say:"Hi — four comms roles in eleven days usually means the senior seat is next. I can save you the eleven weeks. Fifteen minutes?" },
+    { co:"Wise", seat:"Head of External Communications",
+      why:"The US listing shift moves their story to two markets at once.",
+      fee:"£26k", feeNote:"",
+      risk:"The centre of gravity may move to New York.",
+      say:"Hi — a dual-market story needs a London voice with US range. I know exactly three. Coffee this month?" },
+    { co:"Bupa", seat:"Head of Internal Comms",
+      why:"A new CHRO and a live IC platform RFP — the people agenda is being rebuilt.",
+      fee:"£22k", feeNote:"",
+      risk:"The RFP may be platform-only.",
+      say:"Hi — a new CHRO usually rewrites the comms operating model within two quarters. I can show you who’s led that before. Worth a look?" }
+  ];
+
+  var ROMAN = ["I","II","III","IV","V","VI","VII"];
+  var WORDS = ["Done. £196k touched in one morning.",
+               "One remains.","Two remain.","Three remain.","Four remain.",
+               "Five remain.","Six remain.",
+               "Seven calls, in the order I’d make them."];
+
+  var sheet   = document.getElementById("sheet");
+  var stage   = document.getElementById("stage");
+  var whisper = document.getElementById("whisper");
+  var dotsEl  = document.getElementById("dots");
+  var toastEl = document.getElementById("toast");
+
+  var current = 0;
+  var called  = [false,false,false,false,false,false,false];
+  var turning = false;
+  var toastT  = null;
+  var RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var COPY_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">' +
+    '<rect x="5" y="5" width="8.5" height="9.5" rx="1.5"/>' +
+    '<path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2H4A1.5 1.5 0 0 0 2.5 3.5V11A1.5 1.5 0 0 0 4 12.5H5"/></svg>';
+
+  function fleuron(){ return '<div class="fleuron" aria-hidden="true"><span>❧</span></div>'; }
+
+  function pageHTML(i){
+    var d = LEADS[i];
+    return '' +
+      '<div class="numeral">№ ' + ROMAN[i] + '</div>' +
+
+      '<section><div class="label">Who</div>' +
+      '<h1 class="who-co">' + d.co + '</h1>' +
+      '<div class="who-seat">' + d.seat + '</div></section>' +
+      fleuron() +
+
+      '<section><div class="label">Why now</div>' +
+      '<p class="sentence">' + d.why + '</p></section>' +
+      fleuron() +
+
+      '<section><div class="label">Fee</div>' +
+      '<div class="fee-fig">' + d.fee + '</div>' +
+      (d.feeNote ? '<div class="fee-note">' + d.feeNote + '</div>' : '') +
+      '</section>' +
+      fleuron() +
+
+      '<section><div class="label">The risk</div>' +
+      '<p class="risk">' + d.risk + '</p></section>' +
+      fleuron() +
+
+      '<section><div class="label">Say this</div>' +
+      '<p class="say">“' + d.say + '”' +
+      '<button class="copy-btn" id="copyBtn" aria-label="Copy the opener">' + COPY_SVG + '</button></p></section>' +
+
+      '<div class="called-row"><button class="called-btn' + (called[i] ? ' on' : '') + '" id="calledBtn">' +
+      (called[i] ? '✓ called' : '✓ called&thinsp;?') + '</button></div>' +
+
+      '<div class="watermark" aria-hidden="true"><span>Called</span></div>';
+  }
+
+  function renderDots(){
+    dotsEl.innerHTML = "";
+    for (var i = 0; i < 7; i++){
+      var b = document.createElement("button");
+      b.className = "dot" + (i === current ? " current" : "") + (called[i] ? " called" : "");
+      b.setAttribute("aria-label", "Page " + (i+1) + " of 7" + (called[i] ? " — called" : ""));
+      (function(n){ b.addEventListener("click", function(){ turnTo(n); }); })(i);
+      dotsEl.appendChild(b);
+    }
+  }
+
+  function wirePage(){
+    var i = current;
+    sheet.classList.toggle("is-called", called[i]);
+
+    document.getElementById("copyBtn").addEventListener("click", function(){
+      var text = LEADS[i].say;
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(
+          function(){ toast("Opener copied. Make the call."); },
+          function(){ fallbackCopy(text); });
+      } else { fallbackCopy(text); }
+    });
+
+    document.getElementById("calledBtn").addEventListener("click", function(){
+      called[i] = !called[i];
+      this.classList.toggle("on", called[i]);
+      this.innerHTML = called[i] ? "✓ called" : "✓ called&thinsp;?";
+      sheet.classList.toggle("is-called", called[i]);
+      renderDots();
+      updateWhisper();
+    });
+  }
+
+  function fallbackCopy(text){
+    var ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); toast("Opener copied. Make the call."); }
+    catch(e){ toast("Wired in production."); }
+    document.body.removeChild(ta);
+  }
+
+  function remaining(){
+    var n = 0;
+    for (var i = 0; i < 7; i++) if (!called[i]) n++;
+    return n;
+  }
+
+  function updateWhisper(){
+    var next = WORDS[remaining()];
+    if (whisper.textContent === next) return;
+    if (RM){ whisper.textContent = next; return; }
+    whisper.classList.add("fading");
+    setTimeout(function(){
+      whisper.textContent = next;
+      whisper.classList.remove("fading");
+    }, 380);
+  }
+
+  function renderPage(){
+    sheet.innerHTML = pageHTML(current);
+    wirePage();
+    renderDots();
+  }
+
+  function turnTo(n, viaKeys){
+    if (n === current || n < 0 || n > 6 || turning) return;
+    var forward = n > current;
+
+    if (RM){ current = n; renderPage(); return; }
+
+    turning = true;
+
+    /* lift the outgoing page like paper */
+    var ghost = sheet.cloneNode(true);
+    ghost.removeAttribute("id");
+    ghost.className = "sheet sheet-ghost " + (forward ? "lift-next" : "lift-prev");
+    stage.appendChild(ghost);
+
+    /* settle the incoming page */
+    current = n;
+    sheet.classList.remove("entering");
+    void sheet.offsetWidth;
+    renderPage();
+    sheet.classList.add("entering");
+
+    setTimeout(function(){
+      if (ghost.parentNode) ghost.parentNode.removeChild(ghost);
+      sheet.classList.remove("entering");
+      turning = false;
+    }, 470);
+  }
+
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastT);
+    toastT = setTimeout(function(){ toastEl.classList.remove("show"); }, 1900);
+  }
+
+  /* ---------- global controls ---------- */
+  document.getElementById("edgeL").addEventListener("click", function(){
+    if (current === 0){ toast("This is the first call."); return; }
+    turnTo(current - 1);
+  });
+  document.getElementById("edgeR").addEventListener("click", function(){
+    if (current === 6){ toast("That’s the whole menu."); return; }
+    turnTo(current + 1);
+  });
+  document.addEventListener("keydown", function(e){
+    if (e.key === "ArrowRight") turnTo(Math.min(6, current + 1));
+    if (e.key === "ArrowLeft")  turnTo(Math.max(0, current - 1));
+  });
+  document.getElementById("chrome").addEventListener("click", function(){
+    toast("Wired in production.");
+  });
+
+  renderPage();
+})();
+</script>
+</body>
+</html>
