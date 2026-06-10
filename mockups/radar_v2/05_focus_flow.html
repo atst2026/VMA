@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VMA · Communications Radar — Take 2 · Concept 05 · Focus Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Inter:wght@300;400;500;600&family=Spline+Sans+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ease: cubic-bezier(.16,1,.3,1);
+    --ink: #ffffff;
+    --whisper: rgba(255,255,255,.55);
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
+  html,body{ height:100%; overflow:hidden; background:#101113; }
+  body{ font-family:'Inter',sans-serif; color:var(--ink); }
+  button{ font:inherit; color:inherit; background:none; border:none; cursor:pointer; }
+  a{ color:inherit; text-decoration:none; }
+
+  /* ---------- progress filament ---------- */
+  #filament{ position:fixed; top:0; left:0; right:0; height:1px; background:rgba(255,255,255,.14); z-index:50; }
+  #filament i{ display:block; height:1px; background:rgba(255,255,255,.92); transform-origin:0 50%;
+    transform:scaleX(0); transition:transform .9s var(--ease); }
+
+  /* ---------- whisper chrome ---------- */
+  #chrome{ position:fixed; top:22px; left:0; right:0; text-align:center; z-index:40;
+    font-size:11px; font-weight:400; letter-spacing:.24em; text-transform:uppercase;
+    color:var(--whisper); cursor:default; user-select:none; }
+
+  /* ---------- the flow ---------- */
+  #flow{ height:100dvh; overflow-y:auto; scroll-snap-type:y mandatory; scroll-behavior:smooth; }
+  #flow::-webkit-scrollbar{ width:0; height:0; }
+  .scene{ position:relative; height:100dvh; scroll-snap-align:start; scroll-snap-stop:always;
+    display:flex; align-items:center; overflow:hidden; }
+  .scene::after{ content:""; position:absolute; inset:0; pointer-events:none;
+    background:
+      radial-gradient(110% 80% at 78% 14%, rgba(255,255,255,.07), transparent 58%),
+      radial-gradient(140% 100% at 50% 118%, rgba(0,0,0,.30), transparent 55%); }
+
+  /* duotone fields — one poster per company */
+  .g0{ background:#17181b; }                                                    /* intro / outro charcoal   */
+  .g1{ background:linear-gradient(163deg,#04323f 0%,#093a63 46%,#1173e8 110%); } /* Grid · petrol→electric  */
+  .g2{ background:linear-gradient(163deg,#23081f 0%,#471139 52%,#94407f 112%); } /* Ocado · aubergine→plum  */
+  .g3{ background:linear-gradient(163deg,#090d22 0%,#33122e 55%,#f4554a 118%); } /* Monzo · midnight→coral  */
+  .g4{ background:linear-gradient(163deg,#1d1006 0%,#4a2e12 55%,#b58547 116%); } /* Burberry · camel→espresso*/
+  .g5{ background:linear-gradient(163deg,#03332f 0%,#0a5a4a 55%,#54d6a2 118%); } /* Octopus · teal→mint     */
+  .g6{ background:linear-gradient(163deg,#0a2c18 0%,#1d5224 55%,#8edc52 120%); } /* Wise · forest→lime      */
+  .g7{ background:linear-gradient(163deg,#091a40 0%,#143468 55%,#5aa4ea 116%); } /* Bupa · navy→sky         */
+
+  /* ---------- stage (entrance choreography) ---------- */
+  .stage{ position:relative; z-index:2; width:100%; padding:0 9vw;
+    transition:transform .45s var(--ease), opacity .45s var(--ease); }
+  .stage.bye{ transform:translateX(-9vw); opacity:0; }
+  .stage > *{ opacity:0; transform:translateY(26px);
+    transition:opacity .95s var(--ease), transform .95s var(--ease); }
+  .scene.live .stage > *{ opacity:1; transform:none; }
+  .scene.live .stage > :nth-child(1){ transition-delay:.05s; }
+  .scene.live .stage > :nth-child(2){ transition-delay:.13s; }
+  .scene.live .stage > :nth-child(3){ transition-delay:.22s; }
+  .scene.live .stage > :nth-child(4){ transition-delay:.30s; }
+  .scene.live .stage > :nth-child(5){ transition-delay:.38s; }
+  .scene.live .stage > :nth-child(6){ transition-delay:.46s; }
+  .scene.live .stage > :nth-child(7){ transition-delay:.54s; }
+
+  /* ---------- lead typography ---------- */
+  .rank{ font-family:'Spline Sans Mono',monospace; font-size:12px; font-weight:400;
+    letter-spacing:.42em; color:var(--whisper); margin-bottom:3.4vh; cursor:default; }
+  .name{ font-family:'Fraunces',serif; font-variation-settings:'opsz' 144;
+    font-weight:480; font-size:clamp(64px,10.5vw,140px); line-height:.96;
+    letter-spacing:-.018em; max-width:11em; text-wrap:balance; }
+  .role{ margin-top:2.6vh; font-size:12px; font-weight:500; letter-spacing:.26em;
+    text-transform:uppercase; color:rgba(255,255,255,.72); }
+  .why{ margin-top:2.2vh; font-family:'Fraunces',serif; font-style:italic; font-weight:340;
+    font-variation-settings:'opsz' 28; font-size:clamp(19px,1.9vw,27px); line-height:1.45;
+    max-width:30ch; color:rgba(255,255,255,.92); }
+  .fee{ margin-top:2.6vh; font-family:'Spline Sans Mono',monospace; font-size:15px;
+    font-weight:400; letter-spacing:.14em; color:rgba(255,255,255,.82); cursor:default; }
+
+  .acts{ margin-top:5.2vh; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .pill{ padding:13px 30px; border-radius:999px; border:1px solid rgba(255,255,255,.34);
+    background:rgba(255,255,255,.05); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    font-size:13px; font-weight:500; letter-spacing:.08em; color:#fff;
+    transition:background .35s var(--ease), border-color .35s var(--ease), transform .35s var(--ease); }
+  .pill:hover{ background:rgba(255,255,255,.16); border-color:rgba(255,255,255,.6); transform:translateY(-1px); }
+  .pill:active{ transform:translateY(0); }
+  .opener-link{ margin-left:6px; font-size:12.5px; letter-spacing:.06em; color:rgba(255,255,255,.62);
+    border-bottom:1px dotted rgba(255,255,255,.4); padding-bottom:2px; transition:color .3s; }
+  .opener-link:hover{ color:#fff; }
+  .verdict{ margin-top:5.2vh; display:none; font-size:13px; letter-spacing:.18em;
+    text-transform:uppercase; color:rgba(255,255,255,.66); }
+  .scene.decided .acts{ display:none; }
+  .scene.decided .verdict{ display:block; }
+
+  /* ---------- intro / outro ---------- */
+  .center .stage{ text-align:center; display:flex; flex-direction:column; align-items:center; }
+  .intro-a, .outro-line{ font-family:'Fraunces',serif; font-variation-settings:'opsz' 144;
+    font-weight:430; font-size:clamp(34px,4.6vw,62px); line-height:1.18; letter-spacing:-.012em;
+    max-width:18em; text-wrap:balance; }
+  .intro-b{ margin-top:2.4vh; font-size:14px; font-weight:300; letter-spacing:.10em;
+    color:var(--whisper); }
+  .chev{ margin-top:7vh; opacity:.5; animation:breath 2.8s var(--ease) infinite; cursor:pointer; }
+  @keyframes breath{ 0%,100%{ transform:translateY(0); opacity:.35; } 50%{ transform:translateY(12px); opacity:.85; } }
+  .outro-sub{ margin-top:3vh; font-size:13px; font-weight:300; letter-spacing:.10em; color:var(--whisper); }
+  .restart{ margin-top:6.5vh; font-size:11px; letter-spacing:.34em; text-transform:uppercase;
+    color:rgba(255,255,255,.42); border-bottom:1px solid transparent; transition:color .3s, border-color .3s; }
+  .restart:hover{ color:#fff; border-color:rgba(255,255,255,.5); }
+
+  /* ---------- tick moment ---------- */
+  #tick{ position:fixed; inset:0; z-index:80; display:flex; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity .28s var(--ease); }
+  #tick.show{ opacity:1; }
+  #tick svg{ width:clamp(120px,16vw,200px); height:auto; }
+  #tick path{ fill:none; stroke:#fff; stroke-width:7; stroke-linecap:round; stroke-linejoin:round; }
+  #tick.show path{ transition:stroke-dashoffset .4s cubic-bezier(.3,.7,.2,1); }
+
+  /* ---------- opener sheet (dark glass) ---------- */
+  #veil{ position:fixed; inset:0; z-index:60; background:rgba(8,9,12,.42);
+    opacity:0; pointer-events:none; transition:opacity .4s var(--ease); }
+  #sheet{ position:fixed; left:50%; bottom:0; z-index:70; width:min(680px,94vw);
+    transform:translate(-50%,104%); transition:transform .6s var(--ease);
+    background:rgba(12,13,17,.74); backdrop-filter:blur(26px) saturate(150%);
+    -webkit-backdrop-filter:blur(26px) saturate(150%);
+    border:1px solid rgba(255,255,255,.12); border-bottom:none;
+    border-radius:22px 22px 0 0; padding:30px 36px 34px; }
+  body.sheet-on #veil{ opacity:1; pointer-events:auto; }
+  body.sheet-on #sheet{ transform:translate(-50%,0); }
+  #sheet-kicker{ font-size:10.5px; font-weight:500; letter-spacing:.34em; text-transform:uppercase;
+    color:rgba(255,255,255,.5); }
+  #sheet-text{ margin-top:18px; min-height:7.2em; font-family:'Spline Sans Mono',monospace;
+    font-size:14.5px; font-weight:300; line-height:1.75; color:rgba(255,255,255,.92); }
+  #sheet-text .caret{ display:inline-block; width:8px; height:1.1em; margin-left:2px;
+    vertical-align:text-bottom; background:rgba(255,255,255,.85); animation:blink 1s steps(1) infinite; }
+  @keyframes blink{ 50%{ opacity:0; } }
+  #sheet-row{ margin-top:22px; display:flex; justify-content:flex-end; }
+  #sheet-copy{ padding:10px 26px; border-radius:999px; border:1px solid rgba(255,255,255,.3);
+    font-size:12.5px; letter-spacing:.10em; transition:background .3s; }
+  #sheet-copy:hover{ background:rgba(255,255,255,.14); }
+
+  /* ---------- toast ---------- */
+  #toast{ position:fixed; left:50%; bottom:84px; z-index:90; transform:translate(-50%,14px);
+    opacity:0; pointer-events:none; transition:opacity .35s var(--ease), transform .35s var(--ease);
+    background:rgba(14,15,19,.82); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+    border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:10px 22px;
+    font-size:12.5px; letter-spacing:.05em; color:rgba(255,255,255,.92); }
+  #toast.on{ opacity:1; transform:translate(-50%,0); }
+
+  /* ---------- chrome corners ---------- */
+  #navchip{ position:fixed; right:22px; bottom:20px; z-index:45; display:flex; align-items:center; gap:10px;
+    padding:8px 16px; border-radius:999px; border:1px solid rgba(255,255,255,.14);
+    background:rgba(14,15,19,.5); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    font-size:11px; letter-spacing:.14em; color:rgba(255,255,255,.6); }
+  #navchip a{ transition:color .25s; } #navchip a:hover{ color:#fff; }
+  #navchip .dot{ opacity:.4; }
+  #corner{ position:fixed; left:22px; bottom:24px; z-index:45; font-size:10px;
+    letter-spacing:.12em; color:rgba(255,255,255,.34); user-select:none; }
+
+  @media (max-width:768px){
+    .stage{ padding:0 7vw; }
+    .name{ font-size:clamp(52px,13vw,96px); }
+    #corner{ display:none; }
+    #sheet{ padding:24px 22px 28px; }
+  }
+
+  /* ---------- reduced motion: instant everything ---------- */
+  @media (prefers-reduced-motion: reduce){
+    #flow{ scroll-behavior:auto; }
+    *, *::before, *::after{ transition-duration:.01ms !important; animation:none !important; }
+    .stage > *{ opacity:1 !important; transform:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="filament"><i></i></div>
+<header id="chrome" data-deco>VMA Group · Communications Radar · Wednesday 10 June 2026</header>
+
+<main id="flow" aria-label="Focus Flow — seven screens, one decision each">
+
+  <!-- Scene 0 · intro -->
+  <section class="scene center g0" data-idx="0">
+    <div class="stage">
+      <h1 class="intro-a">Seven calls are worth making.</h1>
+      <p class="intro-b">I&rsquo;ve ordered them. Swipe.</p>
+      <svg class="chev" id="chev" width="26" height="16" viewBox="0 0 26 16" aria-label="Begin">
+        <path d="M2 2 L13 13 L24 2" fill="none" stroke="#fff" stroke-width="2.4"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- Scenes 1–7 injected here -->
+
+  <!-- Scene 8 · outro -->
+  <section class="scene center g0" id="outro" data-idx="8">
+    <div class="stage">
+      <h1 class="outro-line" id="outro-line">All seven are waiting.</h1>
+      <p class="outro-sub" id="outro-sub">Decide as you go — I&rsquo;ll keep the tally.</p>
+      <button class="restart" id="restart">restart</button>
+    </div>
+  </section>
+</main>
+
+<!-- tick moment -->
+<div id="tick" aria-hidden="true">
+  <svg viewBox="0 0 120 120"><path id="tickpath" d="M28 63 L52 87 L94 35"/></svg>
+</div>
+
+<!-- opener sheet -->
+<div id="veil"></div>
+<aside id="sheet" role="dialog" aria-label="Suggested opener">
+  <div id="sheet-kicker">The opener</div>
+  <p id="sheet-text"></p>
+  <div id="sheet-row"><button id="sheet-copy">Copy</button></div>
+</aside>
+
+<div id="toast" role="status"></div>
+
+<nav id="navchip">
+  <span>05 / 10</span><span class="dot">·</span>
+  <a href="04_the_note.html" aria-label="Previous concept">&larr;</a><span class="dot">·</span>
+  <a href="index.html">Index</a><span class="dot">·</span>
+  <a href="06_the_glance.html" aria-label="Next concept">&rarr;</a>
+</nav>
+<div id="corner">Illustrative sample data — design review only.</div>
+
+<script>
+(function(){
+  'use strict';
+  var RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var $  = function(s){ return document.querySelector(s); };
+
+  /* ---------------- data ---------------- */
+  var LEADS = [
+    { name:'National Grid', role:'Head of Media Relations', fee:32, g:'g1',
+      why:'Their own search is 54 days old and failing in public.',
+      opener:'Hi Sasha — the Head of Media Relations brief has been live for eight weeks now. We placed three of the last five seats like it; I can have a vetted shortlist with you by the 24th. Worth fifteen minutes this week?' },
+    { name:'Ocado', role:'Director of Communications', fee:28, g:'g2',
+      why:'A profit warning landed and the comms chair is empty.',
+      opener:'Hi Daniel — rough fortnight in the headlines, and the comms chair is empty just when you need it most. I can have a confidential shortlist with you by Friday. Fifteen minutes today?' },
+    { name:'Monzo', role:'Head of Corporate Communications', fee:30, g:'g3',
+      why:'£380m confirmed at Companies House overnight.',
+      opener:'Hi Tomas — congratulations on the round. Teams at your stage add a Head of Corporate Comms within two quarters; I mapped who’s available before the announcement even landed. Shall I send the three names worth meeting?' },
+    { name:'Burberry', role:'', fee:34, g:'g4',
+      why:'Turnaround announced; corporate affairs rebuild likely.', opener:null },
+    { name:'Octopus Energy', role:'', fee:24, g:'g5',
+      why:'Four comms roles posted in eleven days.', opener:null },
+    { name:'Wise', role:'', fee:26, g:'g6',
+      why:'US listing shifts the comms centre of gravity.', opener:null },
+    { name:'Bupa', role:'', fee:22, g:'g7',
+      why:'New CHRO; internal comms platform RFP live.', opener:null }
+  ];
+  var decisions = [null,null,null,null,null,null,null];
+  var WORDS = ['No','One','Two','Three','Four','Five','Six','Seven'];
+
+  /* ---------------- build scenes 1–7 ---------------- */
+  var outro = $('#outro');
+  LEADS.forEach(function(l, i){
+    var s = document.createElement('section');
+    s.className = 'scene ' + l.g;
+    s.dataset.idx = String(i + 1);
+    s.innerHTML =
+      '<div class="stage">' +
+        '<div class="rank" data-deco>0' + (i+1) + ' / 07</div>' +
+        '<h1 class="name">' + l.name + '</h1>' +
+        (l.role ? '<div class="role">' + l.role + '</div>' : '') +
+        '<p class="why">' + l.why + '</p>' +
+        '<div class="fee" data-deco>£' + l.fee + 'k</div>' +
+        '<div class="acts">' +
+          '<button class="pill" data-act="call">Call it</button>' +
+          '<button class="pill" data-act="later">Later</button>' +
+          (l.opener ? '<button class="opener-link" data-act="opener">the opener</button>' : '') +
+        '</div>' +
+        '<div class="verdict"></div>' +
+      '</div>';
+    outro.parentNode.insertBefore(s, outro);
+  });
+
+  var flow   = $('#flow');
+  var scenes = Array.prototype.slice.call(document.querySelectorAll('.scene'));
+  var TOTAL  = scenes.length;            /* 9 */
+  var cur    = 0;
+
+  /* ---------------- navigation ---------------- */
+  function goTo(idx){
+    idx = Math.max(0, Math.min(TOTAL - 1, idx));
+    flow.scrollTo({ top: idx * flow.clientHeight, behavior: RM ? 'auto' : 'smooth' });
+  }
+  function syncCurrent(){
+    var idx = Math.round(flow.scrollTop / flow.clientHeight);
+    if (idx !== cur){
+      cur = idx;
+      $('#filament i').style.transform = 'scaleX(' + (cur / (TOTAL - 1)) + ')';
+      if (cur === TOTAL - 1) renderOutro();
+    }
+  }
+  flow.addEventListener('scroll', function(){ syncCurrent(); if (sheetOpen) closeSheet(); }, { passive:true });
+
+  /* entrance choreography */
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ e.target.classList.toggle('live', e.isIntersecting); });
+  }, { root: flow, threshold: 0.55 });
+  scenes.forEach(function(s){ io.observe(s); });
+
+  window.addEventListener('keydown', function(e){
+    if (e.key === 'Escape'){ if (sheetOpen) closeSheet(); return; }
+    if (sheetOpen) return;
+    if (e.key === 'ArrowDown' || e.key === 'PageDown'){ e.preventDefault(); goTo(cur + 1); }
+    else if (e.key === 'ArrowUp' || e.key === 'PageUp'){ e.preventDefault(); goTo(cur - 1); }
+    else if (e.key === 'Home'){ e.preventDefault(); goTo(0); }
+    else if (e.key === 'End'){ e.preventDefault(); goTo(TOTAL - 1); }
+    else if (/^[1-7]$/.test(e.key)){ e.preventDefault(); goTo(parseInt(e.key, 10)); }
+  });
+  $('#chev').addEventListener('click', function(){ goTo(1); });
+
+  /* ---------------- toast ---------------- */
+  var toastT = null;
+  function toast(msg){
+    var t = $('#toast');
+    t.textContent = msg;
+    t.classList.add('on');
+    clearTimeout(toastT);
+    toastT = setTimeout(function(){ t.classList.remove('on'); }, 1700);
+  }
+  document.addEventListener('click', function(e){
+    if (e.target.closest('[data-deco]')) toast('Wired in production.');
+  });
+
+  /* ---------------- decisions ---------------- */
+  function markDecided(i, kind){
+    decisions[i] = kind;
+    var s = scenes[i + 1];
+    s.classList.add('decided');
+    s.querySelector('.verdict').textContent = (kind === 'call') ? '✓ Called' : 'Kept for later';
+  }
+
+  var tick = $('#tick'), tickPath = $('#tickpath');
+  var TL = tickPath.getTotalLength();
+  tickPath.style.strokeDasharray = TL;
+  tickPath.style.strokeDashoffset = TL;
+
+  function doCall(i){
+    markDecided(i, 'call');
+    if (RM){
+      tick.className = 'show ' + LEADS[i].g;
+      tickPath.style.strokeDashoffset = 0;
+      setTimeout(function(){ tick.className = ''; tickPath.style.strokeDashoffset = TL; goTo(i + 2); }, 260);
+      return;
+    }
+    tickPath.style.transition = 'none';
+    tickPath.style.strokeDashoffset = TL;
+    void tickPath.getBoundingClientRect();
+    tickPath.style.transition = '';
+    tick.className = 'show ' + LEADS[i].g;
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ tickPath.style.strokeDashoffset = 0; });
+    });
+    setTimeout(function(){ goTo(i + 2); }, 620);
+    setTimeout(function(){ tick.classList.remove('show'); }, 980);
+  }
+
+  function doLater(i){
+    markDecided(i, 'later');
+    var stage = scenes[i + 1].querySelector('.stage');
+    if (RM){ goTo(i + 2); return; }
+    stage.classList.add('bye');
+    setTimeout(function(){ goTo(i + 2); }, 330);
+    setTimeout(function(){ stage.classList.remove('bye'); }, 1300);
+  }
+
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('[data-act]');
+    if (!b) return;
+    var scene = b.closest('.scene');
+    var i = parseInt(scene.dataset.idx, 10) - 1;
+    if (b.dataset.act === 'call')   doCall(i);
+    if (b.dataset.act === 'later')  doLater(i);
+    if (b.dataset.act === 'opener') openSheet(i);
+  });
+
+  /* ---------------- opener sheet ---------------- */
+  var sheetOpen = false, typeT = null, openerFull = '';
+  function openSheet(i){
+    sheetOpen = true;
+    openerFull = LEADS[i].opener;
+    $('#sheet-kicker').textContent = 'The opener — ' + LEADS[i].name;
+    var el = $('#sheet-text');
+    document.body.classList.add('sheet-on');
+    clearInterval(typeT);
+    if (RM){ el.textContent = openerFull; return; }
+    el.innerHTML = '<span class="caret"></span>';
+    var n = 0;
+    typeT = setInterval(function(){
+      n = Math.min(openerFull.length, n + 2);
+      el.innerHTML = openerFull.slice(0, n).replace(/\n/g,'<br>') +
+                     (n < openerFull.length ? '<span class="caret"></span>' : '');
+      if (n >= openerFull.length) clearInterval(typeT);
+    }, 13);
+  }
+  function closeSheet(){
+    sheetOpen = false;
+    clearInterval(typeT);
+    document.body.classList.remove('sheet-on');
+  }
+  $('#veil').addEventListener('click', closeSheet);
+  $('#sheet-copy').addEventListener('click', function(){
+    function done(){ toast('Opener copied.'); }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(openerFull).then(done, done);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = openerFull; document.body.appendChild(ta);
+      ta.select(); try{ document.execCommand('copy'); }catch(_){}
+      document.body.removeChild(ta); done();
+    }
+  });
+
+  /* ---------------- outro sentence ---------------- */
+  function renderOutro(){
+    var called = 0, sum = 0, later = 0;
+    decisions.forEach(function(d, i){
+      if (d === 'call'){ called++; sum += LEADS[i].fee; }
+      if (d === 'later') later++;
+    });
+    var keepers = 7 - called;
+    var line, sub;
+    if (called === 0 && later === 0){
+      line = 'All seven are waiting.';
+      sub  = 'Decide as you go — I’ll keep the tally.';
+    } else if (called === 0){
+      line = 'No calls today. All seven keep.';
+      sub  = 'I’ll bring tomorrow’s order at 08:55.';
+    } else {
+      line = WORDS[called] + ' call' + (called > 1 ? 's' : '') + '. £' + sum + 'k in motion.';
+      line += (keepers > 0)
+        ? ' The other ' + (keepers === 1 ? 'one keeps' : WORDS[keepers].toLowerCase() + ' keep') + '.'
+        : ' I’ll bring tomorrow’s order at 08:55.';
+      sub = (keepers > 0) ? 'I’ll bring tomorrow’s order at 08:55.' : 'Nothing else needs you today.';
+    }
+    $('#outro-line').textContent = line;
+    $('#outro-sub').textContent  = sub;
+  }
+
+  $('#restart').addEventListener('click', function(){
+    decisions = [null,null,null,null,null,null,null];
+    scenes.forEach(function(s){
+      s.classList.remove('decided');
+      var v = s.querySelector('.verdict'); if (v) v.textContent = '';
+    });
+    renderOutro();
+    goTo(0);
+  });
+
+  /* keep snap honest on resize */
+  window.addEventListener('resize', function(){
+    flow.scrollTo({ top: cur * flow.clientHeight, behavior: 'auto' });
+  });
+  syncCurrent();
+})();
+</script>
+</body>
+</html>
