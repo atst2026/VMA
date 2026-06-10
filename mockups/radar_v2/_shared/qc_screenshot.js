@@ -26,7 +26,7 @@ const OUT = path.join(ROOT, 'previews');
     page.on('pageerror', e => errors.push(String(e)));
     try {
       await page.goto('file://' + path.join(ROOT, path.basename(f)), { waitUntil: 'load' });
-      await page.waitForTimeout(2500); // let typewriters/entrances settle
+      await page.waitForTimeout(5200); // let boot sequences/typewriters/entrances settle
       await page.screenshot({ path: path.join(OUT, name + '.png') });
       const trig = page.locator('[data-qa="lead-trigger"]').first();
       const trigCount = await page.locator('[data-qa="lead-trigger"]').count();
