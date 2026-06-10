@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMA · Communications Radar — Concept 09 · The Dossier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   CONCEPT 09 · THE DOSSIER — keyboard-first operator split view
+   paper-white / ink / hairline / one teal accent / amber alerts
+   ============================================================ */
+:root{
+  --paper:#fafaf9;
+  --card:#ffffff;
+  --ink:#1a1c20;
+  --dim:#6f6b64;
+  --faint:#a3a099;
+  --hair:#e7e5e0;
+  --hair-soft:#efede8;
+  --teal:#0d7a68;
+  --teal-deep:#0a5f51;
+  --teal-wash:rgba(13,122,104,.065);
+  --teal-wash-2:rgba(13,122,104,.12);
+  --amber:#9a6a12;
+  --amber-bg:#fbf4e3;
+  --amber-line:#ead9ae;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --sans:'Inter',-apple-system,sans-serif;
+  --serif:'Newsreader',Georgia,serif;
+  --shadow-1:0 1px 2px rgba(26,28,32,.04),0 2px 8px rgba(26,28,32,.04);
+  --shadow-2:0 2px 6px rgba(26,28,32,.06),0 12px 40px rgba(26,28,32,.12);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:var(--sans);font-size:13px;line-height:1.55;color:var(--ink);
+  background:var(--paper);overflow:hidden;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+::selection{background:var(--teal-wash-2)}
+kbd{
+  font-family:var(--mono);font-size:10px;color:var(--dim);
+  border:1px solid var(--hair);border-bottom-width:2px;border-radius:4px;
+  padding:1px 5px;background:var(--card);
+}
+button{font-family:inherit;cursor:pointer}
+
+/* ---------- top bar ---------- */
+.topbar{
+  height:48px;border-bottom:1px solid var(--hair);background:var(--card);
+  display:flex;align-items:center;gap:16px;padding:0 20px;position:relative;z-index:40;
+}
+.wordmark{display:flex;align-items:center;gap:9px;flex:none}
+.wordmark .vm{
+  font-weight:700;font-size:13px;letter-spacing:.14em;color:var(--ink);
+  display:flex;align-items:center;gap:7px;
+}
+.wordmark .vm .tick{width:7px;height:7px;background:var(--teal);border-radius:2px;display:inline-block}
+.wordmark .grp{font-size:9px;letter-spacing:.32em;color:var(--faint);font-weight:600;margin-top:1px}
+.topbar .divider{width:1px;height:18px;background:var(--hair);flex:none}
+.topbar .product{font-size:12.5px;font-weight:600;letter-spacing:.01em;flex:none}
+.topbar .date{font-family:var(--mono);font-size:10.5px;color:var(--dim);flex:none}
+.cmdk-launch{
+  position:absolute;left:50%;transform:translateX(-50%);
+  width:min(380px,30vw);height:30px;border:1px solid var(--hair);border-radius:7px;
+  background:var(--paper);color:var(--faint);font-size:11.5px;
+  display:flex;align-items:center;gap:8px;padding:0 10px;transition:border-color .15s,color .15s;
+}
+.cmdk-launch:hover{border-color:#d5d2cb;color:var(--dim)}
+.cmdk-launch .k{font-family:var(--mono);font-size:10px;border:1px solid var(--hair);border-radius:4px;padding:0 4px;background:var(--card);color:var(--dim)}
+.topbar .right{margin-left:auto;display:flex;align-items:center;gap:14px;flex:none}
+.board-val{
+  font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--ink);
+  background:none;border:none;display:flex;align-items:baseline;gap:6px;padding:4px 2px;border-radius:6px;
+}
+.board-val:hover{color:var(--teal-deep)}
+.board-val em{font-style:normal;color:var(--dim);font-weight:400;font-size:10.5px}
+.sweep{font-family:var(--mono);font-size:10px;color:var(--dim);display:flex;align-items:center;gap:6px}
+.sweep .live{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(13,122,104,.3)}50%{opacity:.55;box-shadow:0 0 0 4px rgba(13,122,104,0)}}
+.drawer-toggle{display:none}
+
+/* ---------- split ---------- */
+.split{display:flex;height:calc(100vh - 48px - 26px)}
+
+/* ---------- left pane : the list ---------- */
+.list-pane{
+  width:360px;flex:none;border-right:1px solid var(--hair);background:var(--card);
+  display:flex;flex-direction:column;
+}
+.lead-scroll{flex:1;overflow-y:auto;overscroll-behavior:contain}
+.tier-head{
+  position:sticky;top:0;z-index:5;background:var(--card);
+  display:flex;align-items:center;gap:8px;
+  padding:9px 16px 7px;border-bottom:1px solid var(--hair-soft);
+  font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+}
+.tier-head .dot{width:7px;height:7px;border-radius:50%;flex:none}
+.tier-head .count{margin-left:auto;font-family:var(--mono);font-weight:500;color:var(--faint);letter-spacing:0}
+.dot-call{background:var(--teal)}
+.dot-dev{background:#c79a3a}
+.dot-early{background:#b5b1a8}
+.dot-blocked{background:#c0584a}
+.lead-row{
+  display:flex;gap:10px;padding:10px 14px 10px 16px;cursor:pointer;
+  border-bottom:1px solid var(--hair-soft);position:relative;
+  transition:background .12s;
+}
+.lead-row:hover{background:#f6f5f2}
+.lead-row.sel{background:var(--teal-wash)}
+.lead-row.sel::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--teal);
+}
+.lead-row .rank{font-family:var(--mono);font-size:10px;color:var(--faint);width:18px;flex:none;padding-top:2px}
+.lead-row .mid{flex:1;min-width:0}
+.lead-row .co{font-size:13px;font-weight:600;letter-spacing:-.005em;display:flex;align-items:center;gap:6px}
+.lead-row .co .tick-f{color:var(--teal);font-size:11px;display:none}
+.lead-row.followed .co .tick-f{display:inline}
+.lead-row .seat{font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.pill{
+  display:inline-block;font-size:9.5px;font-weight:600;letter-spacing:.04em;
+  border:1px solid var(--hair);border-radius:99px;padding:1.5px 8px;color:var(--dim);
+  background:var(--paper);margin-top:5px;white-space:nowrap;
+}
+.lead-row.blocked-row{opacity:.55}
+.lead-row .end{flex:none;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px;padding-top:1px}
+.lead-row .fee{font-family:var(--mono);font-size:12px;font-weight:600}
+.lead-row .fee.none{color:var(--faint);font-weight:400}
+.strength{display:flex;align-items:center;gap:6px}
+.strength .bar{width:36px;height:4px;border-radius:99px;background:var(--hair);overflow:hidden}
+.strength .bar i{display:block;height:100%;border-radius:99px;background:var(--teal);transition:width .5s cubic-bezier(.2,.7,.2,1)}
+.strength.grey .bar i{background:#b5b1a8}
+.strength .n{font-family:var(--mono);font-size:10px;color:var(--dim);width:18px;text-align:right}
+.hint-bar{
+  flex:none;border-top:1px solid var(--hair);background:var(--card);
+  padding:8px 14px;font-family:var(--mono);font-size:9.5px;color:var(--faint);
+  display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+}
+.hint-bar b{color:var(--dim);font-weight:600}
+
+/* ---------- right pane : the dossier ---------- */
+.dossier-pane{flex:1;overflow-y:auto;overscroll-behavior:contain;outline:none;scroll-behavior:smooth}
+.dossier-pane.flash{animation:flash .5s ease}
+@keyframes flash{0%{background:var(--teal-wash)}100%{background:var(--paper)}}
+.dossier{max-width:780px;margin:0 auto;padding:40px 48px 88px;animation:rise .28s cubic-bezier(.2,.7,.2,1)}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.d-head{display:flex;align-items:flex-start;gap:24px}
+.d-head .left{flex:1;min-width:0}
+.d-co{font-size:30px;font-weight:700;letter-spacing:-.022em;line-height:1.15}
+.d-seat{font-size:14px;color:var(--dim);margin-top:4px}
+.d-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}
+.d-window{
+  font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--amber);
+  background:var(--amber-bg);border:1px solid var(--amber-line);border-radius:99px;padding:2px 9px;
+}
+.d-window.calm{color:var(--dim);background:var(--paper);border-color:var(--hair)}
+.d-fee-block{flex:none;text-align:right}
+.d-fee{font-family:var(--mono);font-size:27px;font-weight:600;letter-spacing:-.02em}
+.d-fee-label{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-top:2px}
+.badges{display:flex;flex-wrap:wrap;gap:7px;margin-top:18px}
+.badge{
+  display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;
+  letter-spacing:.05em;border:1px solid var(--hair);border-radius:5px;
+  padding:3.5px 8px;color:var(--dim);background:var(--card);
+}
+.badge.teal{color:var(--teal-deep);border-color:rgba(13,122,104,.28);background:var(--teal-wash)}
+.badge .mono{font-family:var(--mono);font-weight:600}
+.badge svg{flex:none}
+
+.sect{margin-top:34px}
+.sect-label{
+  font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.2em;
+  color:var(--faint);text-transform:uppercase;display:flex;align-items:center;gap:10px;
+}
+.sect-label::after{content:"";flex:1;height:1px;background:var(--hair-soft)}
+.sect-body{margin-top:14px}
+
+.whynow{font-size:14.5px;line-height:1.65;color:var(--ink);max-width:62ch}
+.whynow b{font-weight:600}
+
+/* gate */
+.gate-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 28px}
+.gmeter{display:flex;align-items:center;gap:10px}
+.gmeter .gl{width:62px;font-size:11px;font-weight:600;color:var(--dim);flex:none}
+.gmeter .gtrack{flex:1;height:6px;border-radius:99px;background:var(--hair);position:relative;overflow:hidden}
+.gmeter .gtrack::after{
+  content:"";position:absolute;left:50%;top:0;bottom:0;width:1.5px;background:var(--card);z-index:2;
+}
+.gmeter .gfill{display:block;height:100%;border-radius:99px;background:var(--teal);width:0;transition:width .7s cubic-bezier(.2,.7,.2,1)}
+.gmeter .gv{font-family:var(--mono);font-size:10.5px;color:var(--dim);width:24px;text-align:right;flex:none}
+.gate-total{
+  margin-top:14px;font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--teal-deep);
+  display:flex;align-items:center;gap:8px;
+}
+.gate-total .sep{color:var(--faint);font-weight:400}
+.gate-note{font-size:12px;color:var(--dim);font-family:var(--sans);font-weight:400}
+
+/* evidence timeline */
+.timeline{position:relative;padding-left:2px}
+.tl-item{display:flex;gap:14px;position:relative;padding-bottom:18px}
+.tl-item:last-child{padding-bottom:2px}
+.tl-item .rail{width:11px;flex:none;display:flex;flex-direction:column;align-items:center}
+.tl-item .node{
+  width:9px;height:9px;border-radius:50%;background:var(--card);
+  border:2px solid #c9c5bd;flex:none;margin-top:4px;z-index:2;
+}
+.tl-item.fresh .node{border-color:var(--teal);background:var(--teal);animation:pulse 2s ease-in-out infinite}
+.tl-item .line{width:1.5px;flex:1;background:var(--hair);margin-top:3px}
+.tl-item:last-child .line{display:none}
+.tl-item .when{font-family:var(--mono);font-size:10.5px;color:var(--dim);width:52px;flex:none;padding-top:3px}
+.tl-item .what{flex:1;font-size:13px;padding-top:1px}
+.tl-item .src{
+  display:inline-block;font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:.04em;
+  border:1px solid var(--hair);border-radius:4px;padding:1px 6px;color:var(--dim);
+  background:var(--paper);margin-left:7px;vertical-align:1px;white-space:nowrap;
+}
+.tl-item .new-tag{
+  font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--teal);
+  margin-left:8px;
+}
+
+/* red team */
+.redteam{
+  display:flex;gap:22px;align-items:flex-start;
+  border:1px solid var(--hair);border-left:2px solid var(--ink);border-radius:0 8px 8px 0;
+  background:var(--card);padding:18px 22px;box-shadow:var(--shadow-1);
+}
+.redteam q{
+  font-family:var(--serif);font-style:italic;font-size:16px;line-height:1.6;color:#33352f;
+  quotes:"\201C" "\201D";flex:1;
+}
+.redteam .byline{font-family:var(--mono);font-size:9.5px;color:var(--faint);letter-spacing:.12em;text-transform:uppercase;margin-top:9px;font-style:normal}
+.stamp{
+  flex:none;font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.1em;
+  color:var(--teal-deep);border:1.5px solid var(--teal-deep);border-radius:6px;
+  padding:7px 11px;transform:rotate(-3deg);text-align:center;line-height:1.5;
+  background:var(--teal-wash);
+}
+.redteam-pending{font-size:12.5px;color:var(--dim);font-style:italic}
+
+/* fee math */
+.feemath{font-family:var(--mono);font-size:14px;font-weight:500;letter-spacing:-.01em}
+.feemath .approx{color:var(--teal-deep);font-weight:600}
+.feenote{font-size:12px;color:var(--dim);margin-top:7px}
+
+/* kills */
+.kills{
+  display:flex;gap:12px;align-items:flex-start;
+  background:var(--amber-bg);border:1px solid var(--amber-line);border-radius:8px;
+  padding:13px 16px;color:#6e4d0e;font-size:13px;line-height:1.55;
+}
+.kills svg{flex:none;margin-top:2px}
+.kills b{font-weight:700;letter-spacing:.08em;font-size:10px;text-transform:uppercase;display:block;margin-bottom:2px;color:var(--amber)}
+
+/* call script */
+.script-wrap{border:1px solid var(--hair);border-radius:10px;background:var(--card);box-shadow:var(--shadow-1);overflow:hidden}
+.script-sec{padding:18px 22px;border-bottom:1px solid var(--hair-soft)}
+.script-sec:last-child{border-bottom:none}
+.script-k{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.18em;color:var(--faint);text-transform:uppercase;margin-bottom:7px}
+.firstmove{font-size:14px;font-weight:500;line-height:1.6}
+.tracks{list-style:none}
+.tracks li{display:flex;gap:10px;font-size:13px;line-height:1.6;padding:3px 0}
+.tracks li::before{content:"—";color:var(--teal);font-weight:600;flex:none}
+.objection{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:13px}
+.objection .oq{font-weight:600;color:var(--ink)}
+.objection .oa{color:var(--ink)}
+.objection .tag{
+  font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.1em;color:var(--faint);
+  text-transform:uppercase;padding-top:3px;white-space:nowrap;
+}
+.opener-card{background:var(--paper)}
+.opener-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.opener-head .to{font-family:var(--mono);font-size:10px;color:var(--dim);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn{
+  font-size:11px;font-weight:600;border:1px solid var(--hair);border-radius:6px;
+  background:var(--card);color:var(--ink);padding:5px 11px;display:inline-flex;align-items:center;gap:6px;
+  transition:border-color .12s,background .12s,transform .05s;
+}
+.btn:hover{border-color:#cfccc5;background:#fcfcfb}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+.btn.primary:hover{background:var(--teal-deep);border-color:var(--teal-deep)}
+.btn .kk{font-family:var(--mono);font-size:9px;opacity:.65;border:1px solid currentColor;border-radius:3px;padding:0 3px}
+.opener-text{
+  font-size:14px;line-height:1.7;min-height:66px;color:var(--ink);max-width:64ch;
+}
+.opener-text.placeholder{color:var(--faint);font-style:italic}
+.caret{
+  display:inline-block;width:2px;height:1em;background:var(--teal);vertical-align:-2px;margin-left:1px;
+  animation:blink .9s steps(1) infinite;
+}
+@keyframes blink{50%{opacity:0}}
+
+/* status strip for non-call tiers */
+.status-strip{
+  border:1px solid var(--hair);border-left:2px solid #c79a3a;border-radius:0 8px 8px 0;
+  background:var(--card);padding:14px 18px;font-size:13px;line-height:1.6;box-shadow:var(--shadow-1);
+}
+.status-strip.blocked{border-left-color:#c0584a}
+.status-strip .s-k{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-bottom:4px}
+
+/* actions */
+.action-row{display:flex;flex-wrap:wrap;gap:9px;margin-top:36px;padding-top:20px;border-top:1px solid var(--hair-soft)}
+.action-row .spacer{flex:1}
+.btn.ghost-dim{color:var(--dim)}
+.btn.done{color:var(--teal-deep);border-color:rgba(13,122,104,.3);background:var(--teal-wash)}
+
+/* ---------- ⌘K palette ---------- */
+.overlay{
+  position:fixed;inset:0;background:rgba(26,28,32,.34);z-index:100;
+  display:none;align-items:flex-start;justify-content:center;padding-top:14vh;
+  animation:fadein .14s ease;
+}
+.overlay.open{display:flex}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.palette{
+  width:min(560px,92vw);background:var(--card);border:1px solid var(--hair);border-radius:12px;
+  box-shadow:var(--shadow-2);overflow:hidden;animation:popin .16s cubic-bezier(.2,.9,.3,1.2);
+}
+@keyframes popin{from{opacity:0;transform:scale(.97) translateY(-6px)}to{opacity:1;transform:none}}
+.palette input{
+  width:100%;border:none;outline:none;font-family:var(--sans);font-size:14.5px;
+  padding:15px 18px;background:transparent;color:var(--ink);
+}
+.palette input::placeholder{color:var(--faint)}
+.pal-list{max-height:368px;overflow-y:auto;border-top:1px solid var(--hair-soft);padding:6px}
+.pal-group{
+  font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--faint);padding:9px 12px 4px;
+}
+.pal-item{
+  display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:7px;cursor:pointer;font-size:13px;
+}
+.pal-item.active{background:var(--teal-wash)}
+.pal-item .pi-ico{
+  width:22px;height:22px;border:1px solid var(--hair);border-radius:6px;flex:none;
+  display:flex;align-items:center;justify-content:center;color:var(--dim);background:var(--paper);
+  font-family:var(--mono);font-size:9px;font-weight:600;
+}
+.pal-item.active .pi-ico{border-color:rgba(13,122,104,.3);color:var(--teal-deep)}
+.pal-item .pi-main{flex:1;min-width:0}
+.pal-item .pi-label{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pal-item .pi-sub{font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pal-item .pi-end{font-family:var(--mono);font-size:10.5px;color:var(--dim);flex:none}
+.pal-empty{padding:22px 14px;text-align:center;color:var(--faint);font-size:12.5px;font-style:italic}
+.pal-foot{
+  border-top:1px solid var(--hair-soft);padding:8px 14px;display:flex;gap:14px;
+  font-family:var(--mono);font-size:9.5px;color:var(--faint);
+}
+
+/* ---------- narrative modal ---------- */
+.modal{
+  width:min(620px,92vw);background:var(--card);border:1px solid var(--hair);border-radius:12px;
+  box-shadow:var(--shadow-2);padding:30px 34px;animation:popin .16s cubic-bezier(.2,.9,.3,1.2);
+}
+.modal h2{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;gap:10px}
+.modal h2 .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);animation:pulse 2.4s infinite}
+.modal .narr{font-size:15.5px;line-height:1.75;margin-top:16px;max-width:60ch}
+.modal .narr p+p{margin-top:12px}
+.modal .narr b{font-weight:600;color:var(--teal-deep)}
+.modal .agentlog{
+  margin-top:20px;padding-top:16px;border-top:1px solid var(--hair-soft);
+  font-family:var(--mono);font-size:10.5px;color:var(--dim);display:flex;flex-wrap:wrap;gap:6px 14px;
+}
+.modal .close-hint{margin-top:18px;font-family:var(--mono);font-size:9.5px;color:var(--faint)}
+
+/* ---------- toast ---------- */
+.toast{
+  position:fixed;bottom:46px;left:50%;transform:translate(-50%,12px);
+  background:var(--ink);color:var(--paper);font-size:12px;font-weight:500;
+  padding:9px 16px;border-radius:8px;box-shadow:var(--shadow-2);
+  opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;z-index:200;
+  display:flex;align-items:center;gap:8px;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast .t-ico{color:#7ed4c4;font-family:var(--mono);font-size:11px}
+
+/* ---------- footer + concept chip ---------- */
+.site-foot{
+  height:26px;border-top:1px solid var(--hair);background:var(--card);
+  display:flex;align-items:center;padding:0 20px;
+  font-size:10px;color:var(--faint);letter-spacing:.02em;
+}
+.concept-chip{
+  position:fixed;right:16px;bottom:36px;z-index:90;
+  background:var(--card);border:1px solid var(--hair);border-radius:99px;box-shadow:var(--shadow-1);
+  display:flex;align-items:center;gap:2px;padding:5px 8px;
+  font-family:var(--mono);font-size:10px;color:var(--dim);
+}
+.concept-chip .lbl{padding:0 7px;font-weight:600;color:var(--ink)}
+.concept-chip a{
+  color:var(--dim);text-decoration:none;padding:3px 8px;border-radius:99px;transition:background .12s,color .12s;
+}
+.concept-chip a:hover{background:var(--teal-wash);color:var(--teal-deep)}
+
+/* ---------- scrollbars ---------- */
+.lead-scroll::-webkit-scrollbar,.dossier-pane::-webkit-scrollbar,.pal-list::-webkit-scrollbar{width:9px}
+.lead-scroll::-webkit-scrollbar-thumb,.dossier-pane::-webkit-scrollbar-thumb,.pal-list::-webkit-scrollbar-thumb{
+  background:#dedbd4;border-radius:99px;border:2.5px solid var(--card);
+}
+.dossier-pane::-webkit-scrollbar-thumb{border-color:var(--paper)}
+
+/* ---------- responsive : drawer at 768 ---------- */
+@media (max-width:768px){
+  body{overflow:auto}
+  .topbar{padding:0 12px;gap:10px}
+  .cmdk-launch{display:none}
+  .topbar .date,.sweep,.topbar .divider{display:none}
+  .drawer-toggle{
+    display:inline-flex;align-items:center;gap:7px;margin-left:auto;
+    font-size:11.5px;font-weight:600;border:1px solid var(--hair);border-radius:7px;
+    background:var(--paper);padding:5px 11px;color:var(--ink);
+  }
+  .drawer-toggle .car{transition:transform .2s;font-size:9px;color:var(--dim)}
+  body.drawer-open .drawer-toggle .car{transform:rotate(180deg)}
+  .topbar .right{margin-left:0}
+  .split{display:block;height:auto}
+  .list-pane{
+    width:100%;border-right:none;border-bottom:1px solid var(--hair);
+    max-height:0;overflow:hidden;transition:max-height .25s ease;
+    box-shadow:0 14px 30px rgba(26,28,32,.10);
+  }
+  body.drawer-open .list-pane{max-height:52vh}
+  .lead-scroll{max-height:calc(52vh - 34px)}
+  .hint-bar{display:none}
+  .dossier{padding:26px 18px 110px}
+  .d-co{font-size:24px}
+  .d-fee{font-size:22px}
+  .gate-grid{grid-template-columns:1fr}
+  .redteam{flex-direction:column;gap:14px}
+  .stamp{transform:rotate(-2deg);align-self:flex-start}
+}
+
+/* ---------- reduced motion ---------- */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  .caret{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== TOP BAR ===================== -->
+<header class="topbar">
+  <div class="wordmark">
+    <span class="vm"><span class="tick"></span>VMA</span>
+    <span class="grp">GROUP</span>
+  </div>
+  <span class="divider"></span>
+  <span class="product">Communications Radar</span>
+  <span class="date">Wednesday 10 June 2026 · 08:55</span>
+
+  <button class="cmdk-launch" id="cmdkLaunch" aria-label="Open command palette">
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><circle cx="5" cy="5" r="3.6" stroke="currentColor" stroke-width="1.3"/><path d="M8 8l2.6 2.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Jump to lead, run a command…</span>
+    <span style="flex:1"></span>
+    <span class="k">⌘K</span>
+  </button>
+
+  <button class="drawer-toggle" id="drawerToggle">Leads <span id="drawerCount" style="font-family:var(--mono);font-size:10px;color:var(--dim)">14</span> <span class="car">▼</span></button>
+
+  <div class="right">
+    <button class="board-val" id="boardVal" title="Open morning narrative">£196k <em>board · 7 call-ready</em></button>
+    <span class="sweep"><span class="live"></span>sweep 06:14 · 1,284 sources</span>
+  </div>
+</header>
+
+<!-- ===================== SPLIT ===================== -->
+<main class="split">
+
+  <!-- LEFT : ranked list -->
+  <nav class="list-pane" id="listPane" aria-label="Ranked leads">
+    <div class="lead-scroll" id="leadScroll"></div>
+    <div class="hint-bar">
+      <span><b>j/k</b> navigate</span>
+      <span><b>o</b> opener</span>
+      <span><b>f</b> followed-up</span>
+      <span><b>⌘K</b> commands</span>
+    </div>
+  </nav>
+
+  <!-- RIGHT : the dossier -->
+  <section class="dossier-pane" id="dossierPane" tabindex="-1" aria-label="Lead dossier"></section>
+
+</main>
+
+<!-- ===================== FOOTER ===================== -->
+<footer class="site-foot">Illustrative sample data for design review — not live intelligence.</footer>
+
+<!-- ===================== ⌘K OVERLAY ===================== -->
+<div class="overlay" id="paletteOverlay" role="dialog" aria-modal="true" aria-label="Command palette">
+  <div class="palette">
+    <input id="paletteInput" type="text" placeholder="Jump to lead, run a command…" autocomplete="off" spellcheck="false">
+    <div class="pal-list" id="paletteList"></div>
+    <div class="pal-foot"><span>↑↓ choose</span><span>↵ run</span><span>esc close</span></div>
+  </div>
+</div>
+
+<!-- ===================== NARRATIVE MODAL ===================== -->
+<div class="overlay" id="narrativeOverlay" role="dialog" aria-modal="true" aria-label="Morning narrative">
+  <div class="modal">
+    <h2><span class="dot"></span>Morning narrative · 06:14</h2>
+    <div class="narr">
+      <p>Three things changed overnight. <b>Monzo’s SH01</b> hit Companies House at 06:11 — the £380m round is now registry-attested. <b>Ocado’s Comms Director exit</b> picked up a second source at 06:04, lifting it to High confidence. And <b>National Grid’s</b> Head of Media Relations vacancy passed day 54 with a second repost — the in-house route is visibly failing.</p>
+      <p>The board is worth <b>£196k</b> across seven call-ready leads. The two calls before 10:00 are <b>National Grid</b> and <b>Ocado</b>.</p>
+    </div>
+    <div class="agentlog">
+      <span>1,284 sources swept</span><span>·</span>
+      <span>9 corroborated</span><span>·</span>
+      <span>2 killed</span><span>·</span>
+      <span>1 promoted</span><span>·</span>
+      <span>finished 06:14</span>
+    </div>
+    <div class="close-hint">esc to close</div>
+  </div>
+</div>
+
+<!-- ===================== TOAST ===================== -->
+<div class="toast" id="toast" role="status"><span class="t-ico">✓</span><span id="toastMsg"></span></div>
+
+<!-- ===================== CONCEPT NAV ===================== -->
+<div class="concept-chip">
+  <a href="08_money_timeline.html" title="Previous concept">←</a>
+  <span class="lbl">Concept 09 / 10</span>
+  <a href="index.html">Index</a>
+  <a href="10_win_the_week.html" title="Next concept">→</a>
+</div>
+
+<script>
+/* ============================================================
+   DATA — Wednesday 10 June 2026 · board £196k · 7 call-ready
+   ============================================================ */
+const LEADS = [
+  {
+    id:"national-grid", tier:"call", rank:1, company:"National Grid",
+    seat:"Head of Media Relations", trigger:"In-house search failing",
+    strength:94, window:"Act this week", windowHot:true, fee:"£32k",
+    confidence:"High", redteam:88, verification:"2+ sources",
+    gate:{Seat:2, Budget:2, Urgency:2, Buyer:1},
+    buyer:"Sasha Kemp — Group Corporate Affairs Director",
+    whyNow:"Their own search for a Head of Media Relations is <b>54 days old</b>, reposted twice, still no recruiter attached — the cost of the DIY route is already on their P&amp;L.",
+    kills:"Role quietly filled internally — check the careers page before dialling.",
+    firstMove:"Call the Group Corporate Affairs Director, not HR. Reference the 54-day vacancy and offer a vetted 3-candidate shortlist in 10 working days.",
+    tracks:[
+      "“54 days is ~£41k of comms output lost — I can stop the bleed in 10 working days.”",
+      "“We placed 3 of the last 5 comparable seats in energy &amp; utilities.”"
+    ],
+    objection:{q:"“We’re handling it in-house.”", a:"“You have been, for eight weeks — what changes in week nine? If the answer is nothing, that’s exactly why a retained shortlist exists.”"},
+    opener:"Hi Sasha — I noticed the Head of Media Relations brief has been live for eight weeks now. We placed three of the last five seats like it in energy and utilities; I can have a vetted shortlist with you by the 24th. Worth fifteen minutes this week?",
+    feeMath:"£110k seat × 28% retained ≈ <span class=\"approx\">£31–32k</span>",
+    feeNote:"Cost of vacancy: day 54 ≈ £41k of comms output already lost.",
+    redteamNote:"Tried to kill it on ‘maybe they promoted internally’ — careers page still lists the vacancy and the deputy’s LinkedIn is unchanged. It survives.",
+    evidence:[
+      {d:"Apr 17", t:"First posting detected", s:"Greenhouse"},
+      {d:"May 12", t:"Reposted, salary band raised 8%", s:"posting ledger"},
+      {d:"Jun 02", t:"Still live, day 46, no agency tag", s:"sweep"},
+      {d:"Jun 10", t:"Day 54, second repost confirmed", s:"sweep", fresh:"NEW 06:09"}
+    ]
+  },
+  {
+    id:"monzo", tier:"call", rank:2, company:"Monzo Bank",
+    seat:"Head of Corporate Communications", trigger:"Funding £380m round",
+    strength:89, window:"4–8 weeks", fee:"£30k",
+    confidence:"High", redteam:81, verification:"Registry-attested",
+    gate:{Seat:2, Budget:2, Urgency:1, Buyer:2},
+    buyer:"Warm path: Amara Osei, Brand lead (VMA placement, 2024)",
+    whyNow:"Fresh capital plus a stated <b>European expansion</b>: comms build-out typically lands within two quarters of a round this size.",
+    kills:"Comms budget parked until the incoming CFO lands — watch the CFO seat.",
+    firstMove:"Warm path: Amara Osei (placed 2024) leads their brand team — ask for the intro before the press cycle ends.",
+    tracks:[
+      "“The SH01 landed this morning — the spec for the comms build-out is being written right now.”",
+      "“You pulled the Head of Comms role off the careers page on 30 May. The round changes the spec; let’s scope the bigger seat.”"
+    ],
+    objection:{q:"“We’ll go out when the CFO lands.”", a:"“The CFO inherits whatever shortlist exists in week one — better that it’s ours, ready and vetted.”"},
+    opener:"Hi Amara — congratulations on the round; I saw the SH01 land at Companies House this morning. When the comms build-out kicks off I’d like to be first in the room — I have two Heads of Corporate Comms who’ve run a European expansion from London. Coffee this week, before the press cycle ends?",
+    feeMath:"£105k seat × 28% retained ≈ <span class=\"approx\">£29–30k</span>",
+    redteamNote:"Tried to kill it on ‘the comms role was pulled because it’s filled’ — no announcement, no LinkedIn start, and a £380m round rewrites the spec anyway. It survives.",
+    evidence:[
+      {d:"May 30", t:"Head of Comms role quietly pulled from careers page", s:"posting ledger"},
+      {d:"Jun 08", t:"Round rumour breaks", s:"Sky News"},
+      {d:"Jun 10", t:"SH01 filed at Companies House", s:"Companies House", fresh:"NEW 06:11"}
+    ]
+  },
+  {
+    id:"ocado", tier:"call", rank:3, company:"Ocado Group",
+    seat:"Director of Communications", trigger:"Profit warning + exit",
+    strength:86, window:"2–6 weeks", windowHot:true, fee:"£28k",
+    confidence:"High", redteam:79, verification:"Registry-attested",
+    gate:{Seat:2, Budget:1, Urgency:2, Buyer:2},
+    buyer:"Chief of Staff, CEO office",
+    whyNow:"A trading statement that spooked the City and a <b>Comms Director walking out in the same week</b> — the press load doubles exactly as the chair empties.",
+    kills:"Deputy steps up — internal promotion closes the seat.",
+    firstMove:"Call the Chief of Staff before the deputy is confirmed — a profit warning compresses this decision to days, not weeks.",
+    tracks:[
+      "“Profit warnings double press volume overnight — an empty comms chair is a board-level risk this quarter.”",
+      "“I can field three sitting Directors of Communications — all profit-warning-tested — inside two weeks.”"
+    ],
+    objection:{q:"“The deputy will step up.”", a:"“Maybe — but the deputy has never fronted a trading statement. Run a parallel external search and let the board choose from strength.”"},
+    opener:"Hi — sorry to see the comms chair empty at the hardest possible moment. A trading statement like last Thursday’s needs a steady hand on the City desk fast; I can have three sitting Directors of Communications, all with profit-warning experience, in front of you inside two weeks.",
+    feeMath:"£100k seat × 28% retained ≈ <span class=\"approx\">£28k</span>",
+    redteamNote:"Tried to kill it on the deputy stepping up — the deputy is under twelve months in seat and the statement demands a heavyweight. Survives, but watch the internal route.",
+    evidence:[
+      {d:"Jun 04", t:"Trading statement — profit warning", s:"RNS"},
+      {d:"Jun 06", t:"Comms Director exit reported", s:"PR Week"},
+      {d:"Jun 10", t:"Exit corroborated by second source", s:"sweep", fresh:"NEW 06:04"}
+    ]
+  },
+  {
+    id:"burberry", tier:"call", rank:4, company:"Burberry",
+    seat:"Corporate Affairs Director", trigger:"Restructure",
+    strength:81, window:"3–8 weeks", fee:"£34k",
+    confidence:"Moderate", redteam:null, verification:"2+ sources",
+    gate:{Seat:2, Budget:2, Urgency:1, Buyer:1},
+    buyer:"CEO office / Chief People Officer",
+    whyNow:"The turnaround plan goes to the City with the Corporate Affairs seat flagged <b>interim</b> — a turnaround lives or dies on its narrative, and the storyteller’s chair is open in all but name.",
+    kills:"Turnaround pauses all senior hiring for two quarters.",
+    firstMove:"Approach the CEO’s office, not HR — turnaround narratives are owned at the top.",
+    tracks:[
+      "“A turnaround lives or dies on the City narrative — the Corporate Affairs seat is the storyteller-in-chief.”",
+      "“The interim tag on your team page says the seat is open in all but name — better to choose your storyteller than inherit one.”"
+    ],
+    objection:{q:"“Senior hiring is paused.”", a:"“Paused hiring is exactly when an interim-to-perm Corporate Affairs search de-risks the plan — one seat, ring-fenced, board-visible.”"},
+    opener:"Hi — I noticed Corporate Affairs is flagged interim just as the turnaround plan goes to the City. That’s the one seat a turnaround can’t leave open. I can show you three sitting Corporate Affairs Directors who’ve fronted one — fifteen minutes this week?",
+    feeMath:"£120k seat × 28% retained ≈ <span class=\"approx\">£34k</span>",
+    evidence:[
+      {d:"May 28", t:"Turnaround plan briefed to analysts", s:"City AM"},
+      {d:"Jun 03", t:"Corporate Affairs Director listed as “interim” on team page", s:"team-page diff"},
+      {d:"Jun 09", t:"Two comms team exits spotted", s:"LinkedIn"}
+    ]
+  },
+  {
+    id:"octopus", tier:"call", rank:5, company:"Octopus Energy",
+    seat:"Head of Internal Communications", trigger:"Hiring cluster",
+    strength:77, window:"Now–4 weeks", windowHot:true, fee:"£24k",
+    confidence:"High", redteam:null, verification:"2+ sources",
+    gate:{Seat:2, Budget:1, Urgency:2, Buyer:1},
+    buyer:"People Director (signed all four postings)",
+    whyNow:"<b>Four comms roles posted in eleven days</b> is a build-out, not backfill — and the senior IC seat is the one that anchors the other three.",
+    kills:"Cluster is junior-weighted — the senior seat may be a step-up for the sitting IC Manager.",
+    firstMove:"Call the People Director who signed all four postings — anchor the cluster with the senior IC seat first.",
+    tracks:[
+      "“Four comms roles in eleven days is a build-out, not backfill — the senior seat sets the bar for the other three.”",
+      "“Hire the Head first and you save two rounds of re-interviewing below.”"
+    ],
+    objection:{q:"“We’ll fill the senior seat last.”", a:"“Most teams do — and re-interview the juniors when the new Head arrives with their own bar. Hiring the Head first is the cheaper order.”"},
+    opener:"Hi — four comms roles in eleven days reads like a build-out. Most teams hire the Head of Internal Comms last and regret it; I can put a shortlist for the senior seat in front of you in two weeks so the rest of the cluster slots in underneath.",
+    feeMath:"£85k seat × 28% retained ≈ <span class=\"approx\">£24k</span>",
+    evidence:[
+      {d:"May 30", t:"Two comms roles posted same day", s:"posting ledger"},
+      {d:"Jun 05", t:"Third role added: IC Manager", s:"Workable"},
+      {d:"Jun 10", t:"Fourth posting — cluster confirmed at 4-in-11", s:"sweep", fresh:"NEW 06:14"}
+    ]
+  },
+  {
+    id:"wise", tier:"call", rank:6, company:"Wise plc",
+    seat:"Head of External Communications", trigger:"IR & comms change",
+    strength:74, window:"4–10 weeks", fee:"£26k",
+    confidence:"Moderate", redteam:null, verification:"Registry-attested",
+    gate:{Seat:2, Budget:1, Urgency:1, Buyer:2},
+    buyer:"VP Communications, London",
+    whyNow:"The <b>US primary-listing shift</b> splits the narrative across two markets — the IR Director moves to New York and London needs its own external comms lead.",
+    kills:"US agency-of-record absorbs the brief — watch for a retainer announcement.",
+    firstMove:"Track the IR Director’s relocation — the London external-comms seat opens when the US move is confirmed. Brief the Comms VP early.",
+    tracks:[
+      "“A US primary listing splits the narrative across two markets — London needs its own external comms lead.”",
+      "“Registry-attested: the circular is filed, the org change is real, and the seat follows it.”"
+    ],
+    objection:{q:"“Our US agency will cover it.”", a:"“An agency covers the announcement; it can’t own the London press relationships day to day. That’s a seat, not a retainer.”"},
+    opener:"Hi — with the primary listing moving to New York, the London comms desk gets heavier, not lighter. I work the IR-adjacent comms market; when the external comms seat is specced I’d like to show you three names who’ve run a dual-market narrative.",
+    feeMath:"£95k seat × 28% retained ≈ <span class=\"approx\">£26k</span>",
+    evidence:[
+      {d:"May 22", t:"Circular on US primary listing filed", s:"RNS"},
+      {d:"Jun 06", t:"IR Director relocating to New York", s:"LinkedIn"},
+      {d:"Jun 09", t:"Team page diff: External Comms lead removed", s:"team-page diff"}
+    ]
+  },
+  {
+    id:"bupa", tier:"call", rank:7, company:"Bupa",
+    seat:"Head of Internal Comms", trigger:"CHRO change + RFP",
+    strength:71, window:"6–12 weeks", fee:"£22k",
+    confidence:"Moderate", redteam:null, verification:"2+ sources",
+    gate:{Seat:1, Budget:2, Urgency:1, Buyer:2},
+    buyer:"Incoming CHRO (starts Q3)",
+    whyNow:"A new CHRO arrives in Q3 with an <b>IC platform RFP already in flight</b> — incoming people leaders rebuild their comms function within two quarters, and this rebuild has visibly started.",
+    kills:"New CHRO brings their own IC lead from the previous shop.",
+    firstMove:"Book the intro now via the IC platform RFP contact — be the first external call after the CHRO’s start date.",
+    tracks:[
+      "“New CHROs rebuild their comms function within two quarters — the RFP says this rebuild has already started.”",
+      "“Getting on the slate before day one beats competing after day ninety.”"
+    ],
+    objection:{q:"“The new CHRO hasn’t started yet.”", a:"“Exactly — which is why the market map should be on their desk in week one, not commissioned in month three.”"},
+    opener:"Hi — congratulations on the move. Most incoming CHROs find the IC function mid-replatform and understaffed at the top. When you’re ready to look at the Head of Internal Comms seat, I can have a full market map on your desk in week one.",
+    feeMath:"£80k seat × 28% retained ≈ <span class=\"approx\">£22k</span>",
+    evidence:[
+      {d:"May 19", t:"CHRO departure announced", s:"HR Magazine"},
+      {d:"Jun 02", t:"IC platform RFP issued", s:"tender portal"},
+      {d:"Jun 08", t:"Successor named — starts Q3", s:"press release"}
+    ]
+  },
+
+  /* ---- developing ---- */
+  {
+    id:"astrazeneca", tier:"dev", rank:8, company:"AstraZeneca",
+    seat:"Seat not yet specced", trigger:"Hiring restart", strength:64, fee:null,
+    verification:"Single source",
+    status:"Single source — recheck in 3 days. Promotes to Call-ready on a second source.",
+    whyNow:"Hiring restart detected: comms roles re-opening after the Q1 freeze. One source so far; the agents recheck in 72 hours.",
+    evidence:[
+      {d:"May 26", t:"Comms hiring freeze noted across postings", s:"sweep"},
+      {d:"Jun 07", t:"Senior Comms Manager role re-posted", s:"posting ledger"}
+    ]
+  },
+  {
+    id:"jdsports", tier:"dev", rank:9, company:"JD Sports",
+    seat:"Seat not yet specced", trigger:"Mishire exit", strength:58, fee:null,
+    verification:"Single source",
+    status:"/investigate queued — playbook runs in tonight’s sweep.",
+    whyNow:"Head of PR departed after seven months — a classic mishire pattern. The investigation playbook will look for the re-brief.",
+    evidence:[
+      {d:"Jun 05", t:"Head of PR departed after 7 months", s:"LinkedIn"},
+      {d:"Jun 09", t:"No replacement posting yet — watch list", s:"sweep"}
+    ]
+  },
+  {
+    id:"severn-trent", tier:"dev", rank:10, company:"Severn Trent",
+    seat:"Seat not yet specced", trigger:"Contract end", strength:52, fee:null,
+    verification:"Single source",
+    status:"Framework expires Q3 — monitoring for the re-tender or an in-house build.",
+    whyNow:"Comms agency framework expires Q3. If they bring the work in-house, a senior comms hire usually follows within a quarter.",
+    evidence:[
+      {d:"May 14", t:"Framework award notice — expiry flagged Q3", s:"tender portal"}
+    ]
+  },
+
+  /* ---- early signals ---- */
+  {
+    id:"deliveroo", tier:"early", rank:11, company:"Deliveroo",
+    seat:"Seat not yet specced", trigger:"M&A chatter", strength:41, fee:null,
+    verification:"Single source",
+    status:"Unverified press speculation only — parked on the watch list.",
+    whyNow:"Takeover speculation in the financial press. If a deal firms up, comms leadership churn typically follows within two quarters.",
+    evidence:[
+      {d:"Jun 08", t:"Takeover speculation", s:"FT Alphaville"}
+    ]
+  },
+  {
+    id:"greggs", tier:"early", rank:12, company:"Greggs",
+    seat:"Seat not yet specced", trigger:"CEO transition rumoured", strength:38, fee:null,
+    verification:"Single source",
+    status:"Single columnist mention — agents sweep for corroboration nightly.",
+    whyNow:"Succession speculation from one columnist. New CEOs reshape corporate comms in their first year — worth a quiet watch.",
+    evidence:[
+      {d:"Jun 06", t:"Succession speculation", s:"The Times"}
+    ]
+  },
+
+  /* ---- blocked ---- */
+  {
+    id:"frasers", tier:"blocked", rank:13, company:"Frasers Group",
+    seat:"—", trigger:"Recruiter exclusive", strength:33, fee:null,
+    verification:"2+ sources",
+    status:"Competing recruiter holds an exclusive — parked until the exclusivity lapses. Agents watch for the lapse date.",
+    whyNow:"There is live comms hiring here, but a competing recruiter holds the exclusive. Calling now burns the relationship for nothing.",
+    evidence:[
+      {d:"May 21", t:"Exclusive mandate confirmed via posting tag", s:"posting ledger"}
+    ]
+  },
+  {
+    id:"thames", tier:"blocked", rank:14, company:"Thames Water",
+    seat:"—", trigger:"Spend frozen", strength:29, fee:null,
+    verification:"2+ sources",
+    status:"Special-administration risk — all discretionary spend frozen. No fee path until the structure resolves.",
+    whyNow:"Comms churn is constant here, but special-administration risk has frozen discretionary spend. No buyer, no budget — blocked on the gate.",
+    evidence:[
+      {d:"May 30", t:"Special-administration contingency reported", s:"FT"},
+      {d:"Jun 03", t:"External hiring freeze corroborated", s:"sweep"}
+    ]
+  }
+];
+
+const TIERS = [
+  {key:"call",    label:"Call-ready",    dot:"dot-call"},
+  {key:"dev",     label:"Developing",    dot:"dot-dev"},
+  {key:"early",   label:"Early signals", dot:"dot-early"},
+  {key:"blocked", label:"Blocked",       dot:"dot-blocked"}
+];
+
+const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let selIdx = 0;
+let typingTimer = null;
+let paletteIdx = 0;
+let paletteItems = [];
+
+const $ = (id) => document.getElementById(id);
+const leadScroll = $("leadScroll");
+const dossierPane = $("dossierPane");
+const toastEl = $("toast");
+const paletteOverlay = $("paletteOverlay");
+const paletteInput = $("paletteInput");
+const paletteList = $("paletteList");
+const narrativeOverlay = $("narrativeOverlay");
+
+/* ============================================================
+   LEFT PANE — ranked list
+   ============================================================ */
+function buildList(){
+  let html = "";
+  TIERS.forEach(tier => {
+    const group = LEADS.filter(l => l.tier === tier.key);
+    html += `<div class="tier-head"><span class="dot ${tier.dot}"></span>${tier.label}<span class="count">${group.length}</span></div>`;
+    group.forEach(l => {
+      const i = LEADS.indexOf(l);
+      html += `
+      <div class="lead-row${i===selIdx?" sel":""}${l.followed?" followed":""}${l.tier==="blocked"?" blocked-row":""}" data-idx="${i}" id="row-${l.id}">
+        <span class="rank">${String(l.rank).padStart(2,"0")}</span>
+        <div class="mid">
+          <div class="co">${l.company}<span class="tick-f">✓</span></div>
+          <div class="seat">${l.seat}</div>
+          <span class="pill">${l.trigger}</span>
+        </div>
+        <div class="end">
+          <span class="fee ${l.fee?"":"none"}">${l.fee || "—"}</span>
+          <span class="strength${l.tier==="blocked"||l.tier==="early"?" grey":""}">
+            <span class="bar"><i style="width:${l.strength}%"></i></span>
+            <span class="n">${l.strength}</span>
+          </span>
+        </div>
+      </div>`;
+    });
+  });
+  leadScroll.innerHTML = html;
+  leadScroll.querySelectorAll(".lead-row").forEach(row => {
+    row.addEventListener("click", () => {
+      selectLead(parseInt(row.dataset.idx, 10));
+      document.body.classList.remove("drawer-open");
+    });
+  });
+}
+
+function refreshRowStates(){
+  leadScroll.querySelectorAll(".lead-row").forEach(row => {
+    const i = parseInt(row.dataset.idx, 10);
+    row.classList.toggle("sel", i === selIdx);
+    row.classList.toggle("followed", !!LEADS[i].followed);
+  });
+}
+
+/* ============================================================
+   RIGHT PANE — the dossier
+   ============================================================ */
+function badgeShield(){
+  return `<svg width="9" height="11" viewBox="0 0 9 11" fill="none"><path d="M4.5.8 8.2 2v3.4c0 2.6-1.6 4.2-3.7 5-2.1-.8-3.7-2.4-3.7-5V2L4.5.8Z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>`;
+}
+
+function renderGate(l){
+  if(!l.gate){
+    return `<div class="sect"><div class="sect-label">Qualification gate</div>
+      <div class="sect-body"><span class="redteam-pending">Gate not yet scored — needs corroboration before Seat / Budget / Urgency / Buyer can be marked.</span></div></div>`;
+  }
+  const total = Object.values(l.gate).reduce((a,b)=>a+b,0);
+  const meters = Object.entries(l.gate).map(([k,v]) => `
+    <div class="gmeter">
+      <span class="gl">${k}</span>
+      <span class="gtrack"><span class="gfill" data-w="${v/2*100}"></span></span>
+      <span class="gv">${v}/2</span>
+    </div>`).join("");
+  return `<div class="sect"><div class="sect-label">Qualification gate</div>
+    <div class="sect-body">
+      <div class="gate-grid">${meters}</div>
+      <div class="gate-total">${total}/8 <span class="sep">—</span> <span class="gate-note">${total>=7?"presents":"qualified, one gap to close"}</span></div>
+    </div></div>`;
+}
+
+function renderEvidence(l){
+  const items = l.evidence.map(e => `
+    <div class="tl-item${e.fresh?" fresh":""}">
+      <span class="rail"><span class="node"></span><span class="line"></span></span>
+      <span class="when">${e.d}</span>
+      <span class="what">${e.t}<span class="src">${e.s}</span>${e.fresh?`<span class="new-tag">● ${e.fresh}</span>`:""}</span>
+    </div>`).join("");
+  return `<div class="sect"><div class="sect-label">Evidence trail · ${l.verification}</div>
+    <div class="sect-body"><div class="timeline">${items}</div></div></div>`;
+}
+
+function renderRedteam(l){
+  if(l.redteam){
+    return `<div class="sect"><div class="sect-label">Red-team verdict</div>
+      <div class="sect-body"><div class="redteam">
+        <div><q>${l.redteamNote}</q><div class="byline">Sceptical-AD pass · overnight</div></div>
+        <span class="stamp">SURVIVES<br>${l.redteam}/100</span>
+      </div></div></div>`;
+  }
+  if(l.tier === "call"){
+    return `<div class="sect"><div class="sect-label">Red-team verdict</div>
+      <div class="sect-body"><span class="redteam-pending">Not yet red-teamed — queued for tonight’s sceptical-AD pass.</span></div></div>`;
+  }
+  return "";
+}
+
+function renderScript(l){
+  if(!l.opener) return "";
+  return `<div class="sect"><div class="sect-label">The call script · AI-composed</div>
+    <div class="sect-body"><div class="script-wrap">
+      <div class="script-sec">
+        <div class="script-k">First move</div>
+        <div class="firstmove">${l.firstMove}</div>
+      </div>
+      <div class="script-sec">
+        <div class="script-k">Talk tracks</div>
+        <ul class="tracks">${l.tracks.map(t=>`<li>${t}</li>`).join("")}</ul>
+      </div>
+      <div class="script-sec">
+        <div class="script-k">Handle the objection</div>
+        <div class="objection">
+          <span class="tag">They say</span><span class="oq">${l.objection.q}</span>
+          <span class="tag">You say</span><span class="oa">${l.objection.a}</span>
+        </div>
+      </div>
+      <div class="script-sec opener-card">
+        <div class="opener-head">
+          <span class="to">TO · ${l.buyer}</span>
+          <button class="btn primary" id="btnDraft">Draft <span class="kk">O</span></button>
+          <button class="btn" id="btnCopy">Copy</button>
+        </div>
+        <div class="opener-text placeholder" id="openerText">Press Draft — or hit O — and the agent composes the opener live.</div>
+      </div>
+    </div></div></div>`;
+}
+
+function renderDossier(){
+  const l = LEADS[selIdx];
+  const tierLabel = TIERS.find(t => t.key === l.tier).label;
+  const isCall = l.tier === "call";
+
+  const badges = [
+    l.confidence ? `<span class="badge ${l.confidence==="High"?"teal":""}">Confidence ${l.confidence}</span>` : "",
+    l.redteam ? `<span class="badge teal"><span class="mono">RED-TEAMED ✓ ${l.redteam}</span></span>` : "",
+    `<span class="badge">${badgeShield()} ${l.verification}</span>`,
+    `<span class="badge">${tierLabel}</span>`
+  ].join("");
+
+  dossierPane.innerHTML = `
+  <article class="dossier" aria-label="${l.company} dossier">
+    <header class="d-head">
+      <div class="left">
+        <h1 class="d-co">${l.company}</h1>
+        <div class="d-seat">${l.seat}</div>
+        <div class="d-meta">
+          <span class="pill" style="margin-top:0">${l.trigger}</span>
+          ${l.window?`<span class="d-window ${l.windowHot?"":"calm"}">${l.window}</span>`:""}
+          <span class="strength" style="margin-left:2px"><span class="bar" style="width:48px"><i style="width:${l.strength}%"></i></span><span class="n" style="width:auto">strength ${l.strength}</span></span>
+        </div>
+      </div>
+      ${l.fee?`<div class="d-fee-block"><div class="d-fee">${l.fee}</div><div class="d-fee-label">Fee estimate</div></div>`:""}
+    </header>
+    <div class="badges">${badges}</div>
+
+    ${l.status?`<div class="sect"><div class="sect-label">Tier status</div><div class="sect-body">
+      <div class="status-strip ${l.tier==="blocked"?"blocked":""}"><div class="s-k">${tierLabel}</div>${l.status}</div></div></div>`:""}
+
+    <div class="sect"><div class="sect-label">Why now</div>
+      <div class="sect-body"><p class="whynow">${l.whyNow}</p></div></div>
+
+    ${renderGate(l)}
+    ${renderEvidence(l)}
+    ${renderRedteam(l)}
+
+    ${l.feeMath?`<div class="sect"><div class="sect-label">Fee math</div><div class="sect-body">
+      <div class="feemath">${l.feeMath}</div>${l.feeNote?`<div class="feenote">${l.feeNote}</div>`:""}</div></div>`:""}
+
+    ${l.kills?`<div class="sect"><div class="sect-label">What kills this</div><div class="sect-body">
+      <div class="kills"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.4 13 12H1L7 1.4Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M7 5.6v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="7" cy="10.3" r=".8" fill="currentColor"/></svg>
+      <div><b>Kill condition</b>${l.kills}</div></div></div></div>`:""}
+
+    ${renderScript(l)}
+
+    <div class="action-row">
+      ${isCall?`<button class="btn" data-act="pitch">Generate pitch</button>`:`<button class="btn" data-act="investigate">Investigate now</button>`}
+      <button class="btn ghost-dim" data-act="sources">View sources</button>
+      <span class="spacer"></span>
+      <button class="btn ${l.followed?"done":""}" id="btnFollow">${l.followed?"Followed up ✓":"Followed up"} <span class="kk">F</span></button>
+      <button class="btn ghost-dim" data-act="dismiss">Dismiss ✕</button>
+    </div>
+  </article>`;
+
+  /* animate gate meters after paint */
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    dossierPane.querySelectorAll(".gfill").forEach(f => { f.style.width = f.dataset.w + "%"; });
+  }));
+
+  /* wire dossier controls */
+  const btnDraft = $("btnDraft");
+  if(btnDraft) btnDraft.addEventListener("click", draftOpener);
+  const btnCopy = $("btnCopy");
+  if(btnCopy) btnCopy.addEventListener("click", copyOpener);
+  const btnFollow = $("btnFollow");
+  if(btnFollow) btnFollow.addEventListener("click", markFollowed);
+  dossierPane.querySelectorAll("[data-act]").forEach(b =>
+    b.addEventListener("click", () => toast("Wired in production", "→")));
+  dossierPane.scrollTop = 0;
+}
+
+/* ============================================================
+   SELECTION + KEYBOARD
+   ============================================================ */
+function selectLead(i){
+  if(i < 0 || i >= LEADS.length) return;
+  clearTimeout(typingTimer);
+  selIdx = i;
+  refreshRowStates();
+  renderDossier();
+  const row = $("row-" + LEADS[i].id);
+  if(row) row.scrollIntoView({block:"nearest", behavior: REDUCED ? "auto" : "smooth"});
+}
+
+function moveSelection(delta){ selectLead(Math.min(LEADS.length - 1, Math.max(0, selIdx + delta))); }
+
+function draftOpener(){
+  const l = LEADS[selIdx];
+  if(!l.opener){ toast("No opener drafted for this lead yet", "·"); return; }
+  const el = $("openerText");
+  if(!el) return;
+  el.scrollIntoView({block:"center", behavior: REDUCED ? "auto" : "smooth"});
+  el.classList.remove("placeholder");
+  clearTimeout(typingTimer);
+  if(REDUCED){ el.textContent = l.opener; return; }
+  el.innerHTML = "<span class='caret'></span>";
+  let i = 0;
+  const step = () => {
+    i = Math.min(l.opener.length, i + (Math.random() < .12 ? 2 : 1));
+    el.innerHTML = l.opener.slice(0, i) + (i < l.opener.length ? "<span class='caret'></span>" : "");
+    if(i < l.opener.length) typingTimer = setTimeout(step, 12 + Math.random() * 22);
+    else toast("Opener composed — ready to copy", "✓");
+  };
+  typingTimer = setTimeout(step, 120);
+}
+
+function copyOpener(){
+  const l = LEADS[selIdx];
+  if(!l.opener) return;
+  const done = () => toast("Opener copied to clipboard", "✓");
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(l.opener).then(done).catch(() => fallbackCopy(l.opener, done));
+  } else fallbackCopy(l.opener, done);
+}
+function fallbackCopy(text, done){
+  const ta = document.createElement("textarea");
+  ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); done(); }catch(e){ toast("Copy blocked by browser", "·"); }
+  document.body.removeChild(ta);
+}
+
+function markFollowed(){
+  const l = LEADS[selIdx];
+  l.followed = !l.followed;
+  refreshRowStates();
+  const btn = $("btnFollow");
+  if(btn){
+    btn.classList.toggle("done", l.followed);
+    btn.innerHTML = (l.followed ? "Followed up ✓" : "Followed up") + " <span class='kk'>F</span>";
+  }
+  toast(l.followed ? l.company + " marked followed up" : l.company + " follow-up cleared", "✓");
+}
+
+document.addEventListener("keydown", (e) => {
+  /* ⌘K / Ctrl+K from anywhere */
+  if((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k"){
+    e.preventDefault();
+    paletteOverlay.classList.contains("open") ? closePalette() : openPalette();
+    return;
+  }
+  if(e.key === "Escape"){
+    if(paletteOverlay.classList.contains("open")) closePalette();
+    if(narrativeOverlay.classList.contains("open")) narrativeOverlay.classList.remove("open");
+    return;
+  }
+  /* palette captures its own keys */
+  if(paletteOverlay.classList.contains("open")){
+    if(e.key === "ArrowDown"){ e.preventDefault(); paletteMove(1); }
+    else if(e.key === "ArrowUp"){ e.preventDefault(); paletteMove(-1); }
+    else if(e.key === "Enter"){ e.preventDefault(); paletteExec(); }
+    return;
+  }
+  if(narrativeOverlay.classList.contains("open")) return;
+  if(e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+
+  switch(e.key){
+    case "j": case "ArrowDown": e.preventDefault(); moveSelection(1); break;
+    case "k": case "ArrowUp":   e.preventDefault(); moveSelection(-1); break;
+    case "Enter":
+      e.preventDefault();
+      dossierPane.focus({preventScroll:true});
+      dossierPane.classList.remove("flash");
+      void dossierPane.offsetWidth;
+      dossierPane.classList.add("flash");
+      break;
+    case "o": e.preventDefault(); draftOpener(); break;
+    case "f": e.preventDefault(); markFollowed(); break;
+  }
+});
+
+/* ============================================================
+   ⌘K PALETTE
+   ============================================================ */
+const COMMANDS = [
+  {label:"Draft opener for selected", sub:"Types the AI-composed opener into the dossier", ico:"O",
+   run:() => { closePalette(); draftOpener(); }},
+  {label:"Mark selected followed up", sub:"Tick the row and log the touch", ico:"F",
+   run:() => { closePalette(); markFollowed(); }},
+  {label:"Open morning narrative", sub:"What changed overnight · agent log", ico:"AM",
+   run:() => { closePalette(); narrativeOverlay.classList.add("open"); }}
+];
+
+function openPalette(){
+  paletteOverlay.classList.add("open");
+  paletteInput.value = "";
+  renderPalette("");
+  setTimeout(() => paletteInput.focus(), 10);
+}
+function closePalette(){ paletteOverlay.classList.remove("open"); }
+
+function renderPalette(q){
+  q = q.trim().toLowerCase();
+  paletteItems = [];
+  const cmds = COMMANDS.filter(c => !q || c.label.toLowerCase().includes(q));
+  const leads = LEADS.filter(l => !q || l.company.toLowerCase().includes(q));
+  let html = "";
+  if(cmds.length){
+    html += `<div class="pal-group">Commands</div>`;
+    cmds.forEach(c => {
+      const idx = paletteItems.length;
+      paletteItems.push({run:c.run});
+      html += `<div class="pal-item" data-pi="${idx}">
+        <span class="pi-ico">${c.ico}</span>
+        <span class="pi-main"><span class="pi-label">${c.label}</span><span class="pi-sub" style="display:block">${c.sub}</span></span>
+        <span class="pi-end">↵</span></div>`;
+    });
+  }
+  if(leads.length){
+    html += `<div class="pal-group">Leads</div>`;
+    leads.forEach(l => {
+      const idx = paletteItems.length;
+      const li = LEADS.indexOf(l);
+      paletteItems.push({run:() => { closePalette(); selectLead(li); }});
+      html += `<div class="pal-item" data-pi="${idx}">
+        <span class="pi-ico">${String(l.rank).padStart(2,"0")}</span>
+        <span class="pi-main"><span class="pi-label">${l.company}</span><span class="pi-sub" style="display:block">${l.trigger} · ${TIERS.find(t=>t.key===l.tier).label}</span></span>
+        <span class="pi-end">${l.fee || l.strength}</span></div>`;
+    });
+  }
+  if(!paletteItems.length) html = `<div class="pal-empty">Nothing on the board matches “${q}”.</div>`;
+  paletteList.innerHTML = html;
+  paletteIdx = 0;
+  highlightPalette();
+  paletteList.querySelectorAll(".pal-item").forEach(el => {
+    el.addEventListener("click", () => { paletteIdx = parseInt(el.dataset.pi, 10); paletteExec(); });
+    el.addEventListener("mousemove", () => { paletteIdx = parseInt(el.dataset.pi, 10); highlightPalette(); });
+  });
+}
+
+function highlightPalette(){
+  paletteList.querySelectorAll(".pal-item").forEach(el => {
+    const on = parseInt(el.dataset.pi, 10) === paletteIdx;
+    el.classList.toggle("active", on);
+    if(on) el.scrollIntoView({block:"nearest"});
+  });
+}
+function paletteMove(d){
+  if(!paletteItems.length) return;
+  paletteIdx = (paletteIdx + d + paletteItems.length) % paletteItems.length;
+  highlightPalette();
+}
+function paletteExec(){
+  const item = paletteItems[paletteIdx];
+  if(item) item.run();
+}
+
+paletteInput.addEventListener("input", () => renderPalette(paletteInput.value));
+paletteOverlay.addEventListener("click", (e) => { if(e.target === paletteOverlay) closePalette(); });
+narrativeOverlay.addEventListener("click", (e) => { if(e.target === narrativeOverlay) narrativeOverlay.classList.remove("open"); });
+
+/* ============================================================
+   TOAST + CHROME
+   ============================================================ */
+let toastTimer = null;
+function toast(msg, ico){
+  $("toastMsg").textContent = msg;
+  toastEl.querySelector(".t-ico").textContent = ico || "✓";
+  toastEl.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2200);
+}
+
+$("cmdkLaunch").addEventListener("click", openPalette);
+$("boardVal").addEventListener("click", () => narrativeOverlay.classList.add("open"));
+$("drawerToggle").addEventListener("click", () => document.body.classList.toggle("drawer-open"));
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+buildList();
+renderDossier();
+</script>
+</body>
+</html>
