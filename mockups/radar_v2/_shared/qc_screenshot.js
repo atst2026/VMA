@@ -19,7 +19,7 @@ const OUT = path.join(ROOT, 'previews');
   const report = [];
   for (const f of files) {
     const name = path.basename(f, '.html');
-    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, ignoreHTTPSErrors: true });
     const page = await ctx.newPage();
     const errors = [];
     page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
