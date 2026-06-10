@@ -146,6 +146,11 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .tchip .plus{position:absolute;top:-8px;right:-3px;font:700 8.5px var(--mono);color:#fff;
   background:var(--clay);border-radius:999px;padding:2px 6px;opacity:0;transform:translateY(3px);transition:.3s}
 .tchip.match .plus{opacity:1;transform:none}
+/* the daily stamp: this end-to-end flow runs fresh every day */
+.pipedate{font:700 9.5px var(--mono);letter-spacing:.18em;color:var(--muted);
+  padding:14px 2px 18px}
+.pipedate .sp{color:var(--clay)}
+.pipedate #pipeDate{color:var(--ink2)}
 .stages{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
 .stages.jobs4{grid-template-columns:repeat(4,1fr)}
 .stages.jobs4 .stg.s3{display:none}
@@ -543,6 +548,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 
     <!-- ============ VIEW: engine + board ============ -->
     <div class="view on" id="v-engine">
+      <div class="pipedate"><span class="sp">✦</span> AGENT PIPELINE · <span id="pipeDate"></span></div>
       <div class="tickwrap" id="jobsTick" style="display:none"><div class="ticktrack" id="jt"></div></div>
       <div class="stages" id="stagesEl">
         <div class="rail"><span class="fdot"></span><span class="fdot d2"></span><span class="fdot d3"></span></div>
@@ -906,38 +912,39 @@ $('vbEngine').addEventListener('click',()=>setView('engine'));
 $('vbCal').addEventListener('click',()=>setView('cal'));
 $('vbShop').addEventListener('click',()=>setView('shop'));
 
+/* the daily stamp — UK date, regenerated on every load */
+$('pipeDate').textContent=new Date().toLocaleDateString('en-GB',
+  {weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
+
 /* ---------- engine stages + trigger pills ---------- */
 const STAGES={
   leads:{slots:[1,2,3,4,5],
-    lbl:['GENERATED','FILTERED','COLLATED','STRESS-TESTED','READY LEADS'],
+    lbl:['SEARCHED','FILTERED','BUILT OUT','STRESS-TESTED','READY LEADS'],
     cap:['Automated agent search for any hiring signal',
-         'Curated models isolate senior-seat signals for this desk',
-         'Cross-source intelligence collated to VMA criteria',
-         'Rigorous testing to weed out pure cold calls',
-         'Scored, ranked and synthesised — ready for AD contact']},
+         'Back-end filters coded to pick up and pull senior seat signals for this desk',
+         'Cross-source intelligence to turn signals into comprehensive leads',
+         'Rigorous testing performed through the code, to minimise noise and cold calls',
+         'Scored, ranked, and synthesised into brief dossier — ready for AD']},
   jobs:{slots:[1,2,4,5],
-    lbl:['SCRAPED','FILTERED','VERIFIED','LIVE JOBS'],
+    lbl:['SEARCHED','FILTERED','VERIFIED','COMPILED AND READY'],
     cap:['Autonomous search of the internet for job vacancies',
          'Pull the listings relevant to VMA sectors',
          'Fits the back-end criteria to fit VMA business requirements.',
          'Organise and produce in sorted order - ready for outreach.']}};
-/* the job boards the scrape actually pulls — aggregators unpacked into
-   the boards behind them, so the loop shows Indeed etc., not 'Adzuna' */
+/* the job boards the scrape actually pulls — aggregators unpacked into the
+   boards behind them; the aggregator's own name never shows as a pill */
 function boardPillNames(){
   const out=[];
+  const add=s=>{s=(s||'').trim();
+    if(s&&!/aggregator|public|network|other|adzuna/i.test(s)&&out.indexOf(s)<0)out.push(s);};
   (window.MR_JOBS||[]).forEach(j=>{
     const raw=j.sourceRaw||j.source||'';
     const m=raw.match(/^([^(]+)\(([^)]+)\)/);
-    if(m){
-      m[2].split(/[+,/&]/).map(s=>s.trim())
-        .filter(s=>s&&!/aggregator|public|network|other/i.test(s))
-        .forEach(s=>{if(out.indexOf(s)<0)out.push(s);});
-      const base=m[1].trim();
-      if(base&&out.indexOf(base)<0)out.push(base);
-    }else if(raw.trim()&&out.indexOf(raw.trim())<0)out.push(raw.trim());
+    if(m){m[2].split(/[+,/&]/).forEach(add);add(m[1]);}
+    else add(raw);
   });
-  (window.JBOARDS||[]).forEach(b=>{if(b&&out.indexOf(b)<0&&!/adzuna/i.test(b))out.push(b);});
-  return out.length?out:(window.JBOARDS||[]);
+  (window.JBOARDS||[]).forEach(add);
+  return out.length?out:(window.JBOARDS||[]).filter(b=>!/adzuna/i.test(b));
 }
 function renderEngine(){
   const E=window.ENG||{};
@@ -1218,7 +1225,8 @@ function jobRow(l,i){
     +'</span>'
     +'<span class="lnk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg></span></div>';
 }
-/* aggregator sources unpack into the boards they pull from — one pill each */
+/* aggregator sources unpack into the boards they pull from — one pill
+   each; the aggregator's own name (Adzuna) is never shown */
 function srcPills(l){
   const raw=l.sourceRaw||l.source||'';
   let names=[];
@@ -1226,11 +1234,11 @@ function srcPills(l){
   if(m){
     const base=m[1].trim();
     names=m[2].split(/[+,/&]/).map(s=>s.trim())
-      .filter(s=>s&&!/aggregator|public|network|other/i.test(s));
-    if(!/adzuna/i.test(base))names.unshift(base);
-    else names.push('Adzuna');
+      .filter(s=>s&&!/aggregator|public|network|other|adzuna/i.test(s));
+    if(base&&!/adzuna/i.test(base))names.unshift(base);
   }else if(raw){names=[raw.trim()];}
-  if(!names.length)names=[l.source||''];
+  names=names.filter(n=>n&&!/adzuna/i.test(n));
+  if(!names.length&&l.source&&!/adzuna/i.test(l.source))names=[l.source];
   return names.slice(0,3).map(n=>'<span class="srcpill">'+esc(n)+'</span>').join('');
 }
 function winWeeks(s){s=(''+(s||'')).toLowerCase();const m=s.match(/(\d+)/);if(!m)return 9999;
