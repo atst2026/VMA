@@ -198,8 +198,10 @@ section{margin-top:36px}
 .s-label::after{content:'';flex:1;height:1px;background:var(--hair)}
 .s-body{font-size:14.5px;line-height:1.68;color:var(--sec)}
 .badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}
-.b-fee{border:1px solid rgba(217,119,87,.22);background:rgba(217,119,87,.12);color:var(--clay-ink)}
-.b-q4{background:var(--amber-bg);color:#B5530E}
+.b-fee{border:1px solid rgba(217,119,87,.22);background:rgba(217,119,87,.12);color:var(--clay-ink);cursor:help}
+.b-fee:hover{background:rgba(217,119,87,.18)}
+.b-fee:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.b-q4{background:var(--amber-bg);color:#B5530E;text-transform:none}
 
 .kv{display:flex;gap:16px;margin-top:11px}
 .kv:first-of-type{margin-top:0}
@@ -218,6 +220,7 @@ section{margin-top:36px}
 .gatebox{border:1px solid rgba(180,83,9,.24);background:rgba(253,236,219,.5);border-radius:10px;padding:14px 17px;font-size:14px;line-height:1.65;color:#7A4410}
 .gatebox.blocked{border-color:rgba(179,38,30,.28);background:#FBEAE9;color:#8C2722}
 .gatebox .gtag{display:inline-block;margin-bottom:9px}
+.gatebox.blocked .gtag{background:rgba(179,38,30,.12);color:var(--red)}
 
 .chips{display:flex;flex-wrap:wrap;gap:7px}
 .srcs{display:flex;flex-direction:column;gap:8px;margin-top:14px}

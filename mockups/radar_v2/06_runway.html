@@ -424,8 +424,8 @@
 <main>
   <div id="canvas">
     <div id="axisLayer"></div>
-    <div id="cardLayer"></div>
     <div id="connector"></div>
+    <div id="cardLayer"></div>
   </div>
 </main>
 
@@ -942,7 +942,10 @@ function buildCards(){
     el.className = "lead";
     el.dataset.qa = "lead-trigger";
     el.dataset.id = l.id;
-    el.style.animationDelay = (i * 45) + "ms";
+    /* second value times the one-off NEW pulse so it starts after the drop */
+    el.style.animationDelay = l.isNew
+      ? (i * 45) + "ms, " + (700 + i * 45) + "ms"
+      : (i * 45) + "ms";
     el.setAttribute("aria-label", l.co + " — " + l.seat + ", score " + l.score + ", window " + l.win);
     if (l.tier === "dev" || l.tier === "early") el.classList.add("ghost");
     if (l.tier === "blocked") el.classList.add("blocked");
@@ -1015,14 +1018,15 @@ function openDrawer(lead){
 
 function closeDrawer(){
   stopType();
+  const last = drawerLead;
+  /* move focus out before hiding so aria-hidden never traps a focused node */
+  if (last && cardEls[last.id]) cardEls[last.id].focus({ preventScroll: true });
   document.body.classList.remove("drawer-open", "drawer-short");
   drawer.setAttribute("aria-hidden", "true");
   Object.values(cardEls).forEach(el => el.classList.remove("selected"));
-  const last = drawerLead;
   drawerLead = null;
   connector.classList.remove("on");
   layout();
-  if (last && cardEls[last.id]) cardEls[last.id].focus({ preventScroll: true });
 }
 
 function ringSVG(score){
