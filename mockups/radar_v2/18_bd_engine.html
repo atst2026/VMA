@@ -148,8 +148,10 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .seg button{font:600 10.5px 'Inter';color:var(--muted);background:transparent;border:none;
   border-radius:999px;padding:5px 13px;cursor:pointer;transition:.2s;white-space:nowrap}
 .seg button.on{color:var(--ink);background:rgba(255,255,255,.92);box-shadow:0 2px 7px rgba(26,61,124,.1)}
-.ctrls{display:flex;gap:8px}
+.ctrls{display:flex;gap:8px;flex:1;align-items:center}
 .ctrl{position:relative}
+.ctrl.sortctl{margin-left:auto;margin-right:2px}
+.ctrlbtn.iconly{width:32px;height:32px;padding:0;justify-content:center}
 .ctrlbtn{display:inline-flex;align-items:center;gap:7px;font:600 10.5px 'Inter';color:var(--ink2);
   padding:6px 13px;border-radius:999px;background:rgba(255,255,255,.7);
   border:1px solid rgba(255,255,255,.85);box-shadow:0 1px 4px rgba(26,61,124,.06);cursor:pointer;transition:.15s}
@@ -163,6 +165,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
   font:600 11.5px 'Inter';color:var(--ink2);padding:8px 11px;border-radius:10px;cursor:pointer;text-align:left}
 .ctrlmenu button:hover{background:rgba(232,240,254,.7)}
 .ctrlmenu button.on{background:var(--wash);color:var(--deep)}
+.ctrlmenu button.on::after{content:"✓";margin-left:auto;font-weight:800;color:var(--deep)}
 /* strips */
 .strip{border-bottom:1px solid var(--hair)}
 .strip:last-of-type{border-bottom:none}
@@ -199,8 +202,16 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .strip.done-dis .idcell{opacity:.45;text-decoration:line-through}
 .dossier{max-height:0;overflow:hidden;transition:max-height .45s cubic-bezier(.2,.8,.25,1)}
 .strip.open .dossier{max-height:1200px}
-.jrow{display:grid;grid-template-columns:34px 1fr 150px 120px 70px 40px;gap:14px;align-items:center;
+.jrow{display:grid;grid-template-columns:34px 1fr 150px 120px 70px 64px 40px;gap:14px;align-items:center;
   padding:14px 4px;border-bottom:1px solid var(--hair);cursor:pointer;border-radius:16px;transition:.15s}
+.jacts{display:inline-flex;gap:6px;justify-self:end}
+.jact{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;
+  color:var(--ink2);cursor:pointer;border:1px solid rgba(60,64,67,.16);background:#fff;transition:.15s}
+.jact svg{width:12px;height:12px}
+.jact.fu:hover,.jact.fu.on{background:#e7f3ec;color:#1e7a41;border-color:#bfe3cd}
+.jact.dis:hover,.jact.dis.on{background:#fdecea;color:var(--red);border-color:#f0c5bd}
+.jrow.done-dis .jt,.jrow.done-dis .jc{opacity:.45;text-decoration:line-through}
+.jrow.done-fu .jt{color:#1e7a41}
 .jrow:last-of-type{border-bottom:none}
 .jrow:hover{background:rgba(255,255,255,.5)}
 .jrow .jt{font-weight:650;font-size:13px;color:#0c1326}
@@ -376,8 +387,8 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
   .strip-h{grid-template-columns:30px 1fr 96px 30px}
   .strip-h .tp,.strip-h .wincell{display:none}
   .prow{grid-template-columns:110px 1fr}
-  .jrow{grid-template-columns:30px 1fr 70px 40px}
-  .jrow .srcpill,.jrow .geo{display:none}
+  .jrow{grid-template-columns:30px 1fr 64px 40px}
+  .jrow .srcpill,.jrow .geo,.jrow .age2{display:none}
   .mainhead{flex-wrap:wrap}
 }
 </style>
@@ -441,14 +452,9 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
               <button data-f="followed">Followed up</button>
               <button data-f="dismissed">Dismissed</button>
             </div></div>
-          <div class="ctrl"><button type="button" class="ctrlbtn" data-menu="sortmenu">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 6h16M4 12h11M4 18h6"/></svg>
-            <span id="sortLbl">Strongest</span></button>
-            <div class="ctrlmenu" id="sortmenu">
-              <button data-s="strength" class="on">Strongest signal</button>
-              <button data-s="window">Soonest window</button>
-              <button data-s="new">Newest first</button>
-            </div></div>
+          <div class="ctrl sortctl"><button type="button" class="ctrlbtn iconly" data-menu="sortmenu" title="Sort">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 6h16M4 12h11M4 18h6"/></svg></button>
+            <div class="ctrlmenu" id="sortmenu"></div></div>
         </div>
       </div>
       <div id="strips"></div>
@@ -875,6 +881,18 @@ const VER_LABEL={reg:'Registry-attested',multi:'2+ sources',single:'Single sourc
 const TIER_WORD={dev:'Developing',early:'Watch',blocked:'Blocked'};
 let desk='comms',mode='leads',filt='ready',sort='strength',view='engine';
 const state={followed:new Set(),dismissed:new Set()};
+const jstate={followed:new Set(),dismissed:new Set()};
+/* filter is shared across modes; sort options differ where scores don't exist */
+const FILTS=[['ready',{leads:'Ready Leads',jobs:'Live Jobs'}],['unc',{leads:'Uncategorised',jobs:'Uncategorised'}],
+  ['new',{leads:'New today',jobs:'New today'}],['followed',{leads:'Followed up',jobs:'Followed up'}],
+  ['dismissed',{leads:'Dismissed',jobs:'Dismissed'}]];
+const SORTS={leads:[['strength','Strongest opportunity'],['window','Soonest window'],['new','Newest first']],
+  jobs:[['new','Newest first'],['az','Company A–Z']]};
+function renderCtrls(){
+  $('filtmenu').innerHTML=FILTS.map(f=>'<button data-f="'+f[0]+'"'+(filt===f[0]?' class="on"':'')+'>'+f[1][mode]+'</button>').join('');
+  $('filtLbl').textContent=FILTS.find(f=>f[0]===filt)[1][mode];
+  $('sortmenu').innerHTML=SORTS[mode].map(s=>'<button data-s="'+s[0]+'"'+(sort===s[0]?' class="on"':'')+'>'+s[1]+'</button>').join('');
+}
 let toastT=null,openerT=null;
 function D(){return DESKS[desk];}
 function toast(m){const t=$('toast');t.innerHTML='<span class="sp">✦</span> '+esc(m);
@@ -917,12 +935,21 @@ function positionPour(){
   if(!last||!first){pour.style.display='none';return;}
   pour.style.display='';
   const wrap=$('v-engine').getBoundingClientRect();
-  const lb=last.getBoundingClientRect(),fb=first.getBoundingClientRect();
-  /* centred under the final stage; fades out at the first row's score line */
+  const lb=last.getBoundingClientRect();
+  /* centred under the final stage… */
   const x=lb.left-wrap.left+lb.width/2;
   const top=lb.bottom-wrap.top+4;
   pour.style.left=x+'px';
   pour.style.top=top+'px';
+  /* …and the score column slides left so the line lands dead-centre on it */
+  const cells=document.querySelectorAll('#strips .strengthcell');
+  if(cells.length){
+    cells.forEach(c=>c.style.transform='');
+    const cb=cells[0].getBoundingClientRect();
+    const shift=(lb.left+lb.width/2)-(cb.left+cb.width/2);
+    cells.forEach(c=>c.style.transform='translateX('+shift.toFixed(1)+'px)');
+  }
+  const fb=first.getBoundingClientRect();
   pour.style.height=Math.max(30,(fb.top+fb.height/2)-wrap.top-top)+'px';
 }
 window.addEventListener('resize',positionPour);
@@ -1042,13 +1069,32 @@ function stripHTML(l,i){
     +'</div><div class="dossier">'+portfolioHTML(l)+'</div></div>';
 }
 function jobRow(j,i){
-  return '<div class="jrow" data-url="'+esc(j.url)+'" title="Open posting">'
+  const cls=(jstate.followed.has(j.jid)?' done-fu':'')+(jstate.dismissed.has(j.jid)?' done-dis':'');
+  return '<div class="jrow'+cls+'" data-url="'+esc(j.url)+'" title="Open posting">'
     +'<span class="rank">'+String(i+1).padStart(2,'0')+'</span>'
     +'<div><div class="jt">'+esc(j.jt)+'</div><div class="jc">'+esc(j.co)+'</div></div>'
     +'<span class="srcpill">'+esc(j.src)+'</span>'
     +'<span class="geo">'+esc(j.geo).toUpperCase()+'</span>'
     +'<span class="age2">'+(j.age===0?'TODAY':j.age+'D')+'</span>'
+    +'<span class="jacts">'
+    +'<button type="button" class="jact fu'+(jstate.followed.has(j.jid)?' on':'')+'" data-jtri="fu" data-jid="'+j.jid+'" title="Followed up">'
+    +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></button>'
+    +'<button type="button" class="jact dis'+(jstate.dismissed.has(j.jid)?' on':'')+'" data-jtri="dis" data-jid="'+j.jid+'" title="Dismiss">'
+    +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'
+    +'</span>'
     +'<span class="lnk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg></span></div>';
+}
+function jobsFiltered(){
+  let out=D().jobs.map((j,i)=>({...j,jid:desk+'-j'+i})).filter(j=>{
+    if(filt==='ready')return !jstate.dismissed.has(j.jid);
+    if(filt==='unc')return !jstate.followed.has(j.jid)&&!jstate.dismissed.has(j.jid);
+    if(filt==='new')return j.age===0&&!jstate.dismissed.has(j.jid);
+    if(filt==='followed')return jstate.followed.has(j.jid);
+    if(filt==='dismissed')return jstate.dismissed.has(j.jid);
+    return true;});
+  if(sort==='az')out.sort((a,b)=>a.co.localeCompare(b.co));
+  else out.sort((a,b)=>a.age-b.age||a.co.localeCompare(b.co));
+  return out;
 }
 function winWeeks(s){s=(''+(s||'')).toLowerCase();const m=s.match(/(\d+)/);if(!m)return 9999;
   const n=+m[1];return /mo|month/.test(s)?n*4.33:n;}
@@ -1067,11 +1113,13 @@ function applyFiltSort(arr){
 }
 function renderBoard(){
   const isLeads=mode==='leads';
-  $('leadCtrls').style.display=isLeads?'':'none';
   $('blToggle').style.display=isLeads?'':'none';
   $('blList').classList.remove('on');$('blToggle').classList.remove('on');
+  renderCtrls();
   if(!isLeads){
-    $('strips').innerHTML=D().jobs.map((j,i)=>jobRow(j,i)).join('');
+    const jobs=jobsFiltered();
+    $('strips').innerHTML=jobs.length?jobs.map((j,i)=>jobRow(j,i)).join('')
+      :'<div style="padding:26px 4px;font-size:12.5px;color:var(--dim)">Nothing under this filter.</div>';
     $('blLabel').textContent='';$('blList').innerHTML='';
     return;
   }
@@ -1184,8 +1232,9 @@ document.getElementById('nav').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||b.dataset.d===desk)return;
   desk=b.dataset.d;
   document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('on',x===b));
-  state.followed.clear();state.dismissed.clear();filt='ready';sort='strength';
-  $('filtLbl').textContent='Ready Leads';$('sortLbl').textContent='Strongest';
+  state.followed.clear();state.dismissed.clear();
+  jstate.followed.clear();jstate.dismissed.clear();
+  filt='ready';sort=(mode==='leads')?'strength':'new';
   renderAll();
   toast((desk==='comms'?'Communications':'Marketing')+' desk loaded');
 });
@@ -1196,20 +1245,30 @@ document.addEventListener('click',e=>{
   const ms=e.target.closest('#modeSeg button');
   if(ms&&ms.dataset.m!==mode){mode=ms.dataset.m;
     document.querySelectorAll('#modeSeg button').forEach(x=>x.classList.toggle('on',x===ms));
+    filt='ready';sort=(mode==='leads')?'strength':'new';
     renderEngine();renderBoard();return;}
   const mb=e.target.closest('[data-menu]');
   if(mb){const m=$(mb.dataset.menu);
     document.querySelectorAll('.ctrlmenu.open').forEach(x=>{if(x!==m)x.classList.remove('open');});
     m.classList.toggle('open');e.stopPropagation();return;}
   const fb=e.target.closest('#filtmenu button');
-  if(fb){filt=fb.dataset.f;$('filtLbl').textContent=fb.textContent;
-    document.querySelectorAll('#filtmenu button').forEach(x=>x.classList.toggle('on',x===fb));
+  if(fb){filt=fb.dataset.f;
     $('filtmenu').classList.remove('open');renderBoard();return;}
   const sb=e.target.closest('#sortmenu button');
-  if(sb){sort=sb.dataset.s;$('sortLbl').textContent=sb.textContent.split(' ')[0];
-    document.querySelectorAll('#sortmenu button').forEach(x=>x.classList.toggle('on',x===sb));
+  if(sb){sort=sb.dataset.s;
     $('sortmenu').classList.remove('open');renderBoard();return;}
   document.querySelectorAll('.ctrlmenu.open').forEach(x=>x.classList.remove('open'));
+  const jt=e.target.closest('[data-jtri]');
+  if(jt){e.stopPropagation();
+    const id=jt.dataset.jid,kind=jt.dataset.jtri;
+    if(kind==='fu'){
+      if(jstate.followed.has(id)){jstate.followed.delete(id);toast('Follow-up cleared');}
+      else{jstate.followed.add(id);jstate.dismissed.delete(id);toast('Marked followed up');}
+    }else{
+      if(jstate.dismissed.has(id)){jstate.dismissed.delete(id);toast('Restored');}
+      else{jstate.dismissed.add(id);jstate.followed.delete(id);toast('Dismissed');}
+    }
+    renderBoard();return;}
   const jr=e.target.closest('.jrow');
   if(jr){window.open(jr.dataset.url,'_blank','noopener');return;}
   const cal=e.target.closest('[data-cal]');
