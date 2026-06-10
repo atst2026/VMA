@@ -204,8 +204,10 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
   border-radius:999px;padding:4px 10px;font:600 8px var(--mono);color:var(--ink2);
   box-shadow:0 3px 10px rgba(26,61,124,.12);white-space:nowrap}
 .mini .ppill i{width:6px;height:6px;border-radius:2px;background:var(--clay);animation:breathe 1.4s ease-in-out infinite}
-/* m3 — structured output, values scrambling live */
-.mini .codebox{position:absolute;inset:8px 10px;font:500 7.5px/1.55 var(--mono);color:var(--dim);overflow:hidden}
+/* m3 — structured output, values scrambling live, centred in the box */
+.mini .codebox{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);
+  width:max-content;max-width:92%;font:500 7.5px/1.55 var(--mono);color:var(--dim);
+  text-align:left;overflow:hidden}
 .mini .codebox .k{color:var(--ink2);font-weight:700}
 .mini .codebox .v{color:var(--clay);font-weight:700}
 .mini .scrchip{position:absolute;right:8px;bottom:7px;background:#fff;border:1px solid rgba(16,22,38,.1);
@@ -230,22 +232,24 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .mini .sheetfly i.hl{background:var(--clay);opacity:.8}
 .mini .sheetfly.f2{top:38px;animation-delay:1.05s}
 .mini .sheetfly.f3{top:16px;animation-delay:2.1s}
-@keyframes flyin{0%{left:8%;opacity:0;transform:rotate(-6deg) scale(1)}
+@keyframes flyin{0%{left:6%;opacity:0;transform:rotate(-6deg) scale(1)}
   18%{opacity:1}62%{opacity:1;transform:rotate(3deg) scale(.92)}
-  82%{left:58%;opacity:0;transform:rotate(6deg) scale(.55)}100%{left:58%;opacity:0}}
-.mini .folderbox{position:absolute;right:14%;top:18px;width:46px;height:40px;z-index:3}
+  82%{left:42%;opacity:0;transform:rotate(6deg) scale(.55)}100%{left:42%;opacity:0}}
+.mini .folderbox{position:absolute;left:50%;transform:translateX(-50%);top:50%;
+  margin-top:-24px;width:46px;height:40px;z-index:3}
 .mini .folderbox svg{width:100%;height:100%;color:var(--deep);
   filter:drop-shadow(0 4px 8px rgba(26,61,124,.2))}
 .mini .folderbox::after{content:"";position:absolute;inset:-5px;border-radius:12px;
   border:1.5px solid rgba(217,119,87,.45);animation:breathe 3.2s ease-in-out infinite}
+/* the dissolve field — the radar landing's ASCII ground, light-page tuning */
+.mini .dissolve{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
 .mini .folderbox .ftag2{position:absolute;left:50%;transform:translateX(-50%);bottom:-13px;
   font:700 5.5px var(--mono);letter-spacing:.1em;color:var(--deep);white-space:nowrap}
 .stg .num{font-family:var(--disp);font-weight:700;font-size:36px;letter-spacing:-.02em;line-height:1;
   color:transparent;background:linear-gradient(125deg,var(--s1),var(--s2));
   -webkit-background-clip:text;background-clip:text}
 .stg .lbl{font:700 9px var(--mono);letter-spacing:.2em;color:var(--ink2);margin-top:8px}
-.stg .cap{font:600 8.5px 'Inter';letter-spacing:.05em;text-transform:uppercase;
-  color:var(--dim);margin:6px auto 0;line-height:1.6;max-width:190px}
+.stg .cap{font-size:10.5px;color:var(--dim);margin:6px auto 0;line-height:1.55;max-width:185px}
 .stg.s1{--s1:#9AA0A6;--s2:#4285F4}.stg.s2{--s1:#4285F4;--s2:#1A3D7C}
 .stg.s3{--s1:#3E5C84;--s2:#1A3D7C}.stg.s4{--s1:#D97A2B;--s2:#B45309}
 .stg.s5{--s1:#1E9E57;--s2:#1A3D7C}
@@ -518,10 +522,6 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 
 <nav class="siderail">
   <span class="sr-logo"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#3E5C84"/><text x="50" y="55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="30" letter-spacing="-1.5" fill="#fff">VMA</text><text x="51" y="76" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="300" font-size="13.5" letter-spacing="3" fill="#fff">GROUP</text></svg></span>
-  <span class="sr-desk">
-    <a href="/comms" class="{{ 'on' if desk_key=='comms' else '' }}" title="Communications desk">C</a>
-    <a href="/marketing" class="{{ 'on' if desk_key=='marketing' else '' }}" title="Marketing desk">M</a>
-  </span>
   <span class="sr-sep"></span>
   <button type="button" class="sr-btn on" id="vbEngine" title="Leads">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.6"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/></svg>
@@ -530,7 +530,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>
   </button>
   <button type="button" class="sr-btn" id="vbShop" title="Build-A-Deck Workshop">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.7-4.7"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5z"/><path d="M13.5 3v5.5H19"/><path d="M9.2 13l.55 1.65 1.65.55-1.65.55L9.2 17.4l-.55-1.65L7 15.2l1.65-.55z" fill="currentColor" stroke="none"/></svg>
   </button>
 </nav>
 
@@ -578,7 +578,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
             <span class="sheetfly f2"><i style="width:70%"></i><i class="hl" style="width:85%"></i><i style="width:50%"></i><i style="width:75%"></i></span>
             <span class="sheetfly f3"><i class="hl" style="width:88%"></i><i style="width:60%"></i><i style="width:78%"></i><i style="width:45%"></i></span>
             <span class="folderbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5V18a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9.5a2 2 0 0 0-2-2h-8l-2-2.5H5a2 2 0 0 0-2 2.5z"/><path d="M8 14.5h8M8 17h5" stroke-width="1.3"/></svg><span class="ftag2">BD PORTFOLIO</span></span></div>
-            <div class="embers" data-ember></div></div>
+            <canvas class="dissolve" id="m5fx"></canvas></div>
           <div class="num" id="st5">0</div><div class="lbl" id="sl5"></div><div class="cap" id="cap5"></div></div>
       </div>
       <div class="boardbar">
@@ -991,6 +991,59 @@ window.addEventListener('resize',sizeRail);
       }
     },110);
   });
+  /* m5: the ASCII dissolve field from the BD Lead Radar landing, running
+     through the whole box — same row-string mechanic and ' .:-=+X' density
+     ramp, retuned for the light page (VMA navy at low alpha) */
+  (function(){
+    const cv=$('m5fx');if(!cv)return;
+    const ctx=cv.getContext('2d');
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    const RAMP=' .:-=+X';
+    const COLOR='rgba(62,92,132,0.34)';
+    let W=0,H=0,CW=5,CH=10,cols=0,rows=0,phase=null;
+    function build(){
+      const r=cv.getBoundingClientRect();W=r.width;H=r.height;
+      if(!W||!H)return;
+      cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      ctx.font='8px "JetBrains Mono",monospace';
+      ctx.textBaseline='top';
+      CW=ctx.measureText('X').width||4.8;
+      CH=Math.round(CW*2.04);
+      cols=Math.ceil(W/CW)+1;rows=Math.ceil(H/CH)+1;
+      phase=new Float32Array(cols*rows);
+      for(let i=0;i<phase.length;i++)phase[i]=Math.random()*6.2832;
+    }
+    function draw(t){
+      if(!phase)return;
+      ctx.clearRect(0,0,W,H);
+      const ts=t*0.001;
+      ctx.fillStyle=COLOR;
+      for(let gy=0;gy<rows;gy++){
+        const y=gy*CH,vy=y/H;
+        let vert=(vy-0.05)/0.95;if(vert<0)vert=0;else if(vert>1)vert=1;vert*=vert;
+        if(vert<=0.0015)continue;
+        let row='';const base=gy*cols;
+        for(let gx=0;gx<cols;gx++){
+          const x=gx*CW,ph=phase[base+gx];
+          let l1=Math.sin(x*0.05+ts*0.30)*Math.sin(y*0.06-ts*0.24+ph*0.05);if(l1<0)l1=0;
+          let l2=Math.sin(x*0.09-ts*0.21)*Math.sin(y*0.10+ts*0.18);if(l2<0)l2=0;
+          const tex=0.5+0.5*Math.sin(x*0.16+y*0.13+ts*0.90+ph*0.30);
+          const tw=Math.sin(ts*12.0+ph);
+          const b=(vert*(1.10*l1+0.70*l2+0.10*tex)+0.12*tw*vert)*1.25;
+          let idx=(b*7)|0;if(idx<0)idx=0;else if(idx>6)idx=6;
+          row+=RAMP.charAt(idx);
+        }
+        ctx.fillText(row,0,y);
+      }
+    }
+    build();
+    window.addEventListener('resize',build);
+    (function frame(now){
+      if(!document.hidden&&cv.offsetParent!==null)draw(now||0);
+      requestAnimationFrame(frame);
+    })(0);
+  })();
   /* m3: structured output with live-scrambling values */
   const cb=$('codeBox');
   if(cb){
