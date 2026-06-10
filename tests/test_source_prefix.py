@@ -44,3 +44,56 @@ def test_other_registry_prefixes_stripped():
         name, _ = classify_account(
             "Companies House", f"{prefix}: Trustpilot filed a notice today.")
         assert name != prefix, prefix
+
+
+# --- Round 2: the phantom came back as 'Companies House' -> IMI PLC. ----
+# The first fix only stripped the bare colon-attached prefix. Three forms
+# survived and re-created the phantom: the QUALIFIED prefix ("Companies
+# House (historical): …"), the worded prefix ("Companies House stream:
+# …"), and the name-LAST parenthetical ("… at IMI (Companies House
+# filing).") — the last one defeats any prefix strip, and because the
+# watchlist scan is longest-name-first, 'Companies House' (distinctive,
+# multiword) always out-ranked an acronym-path subject like IMI.
+
+HIST_IMI = ("Companies House (historical): SMITH, John resigned as "
+            "Director of Corporate Communications at IMI on 2026-05-12.")
+PAREN_IMI = ("John Smith departed as Director of Communications at IMI "
+             "(Companies House filing).")
+
+
+def test_qualified_registry_prefix_never_steals_the_subject():
+    assert classify_account("IMI", HIST_IMI) == ("IMI", "watchlist")
+
+
+def test_stream_prefix_never_steals_the_subject():
+    name, tier = classify_account(
+        "Trustpilot",
+        "Companies House stream: Trustpilot filed change of registered "
+        "office address on 2026-06-01.")
+    assert (name, tier) == ("Trustpilot", "watchlist")
+
+
+def test_name_last_parenthetical_never_steals_the_subject():
+    assert classify_account("IMI", PAREN_IMI) == ("IMI", "watchlist")
+
+
+def test_bare_registry_mention_loses_to_any_other_subject():
+    # No prefix, no parenthetical — wording no strip regex anticipated.
+    # The registry demotion (scan-last) must still let the real subject win.
+    name, _ = classify_account(
+        "IMI", "IMI registered a charge at Companies House on 2026-06-01.")
+    assert name == "IMI"
+
+
+def test_charity_commission_never_steals_the_subject():
+    name, _ = classify_account(
+        "British Heart Foundation",
+        "British Heart Foundation board change — new trustee(s): A. Brown "
+        "(Charity Commission register).")
+    assert name == "British Heart Foundation"
+
+
+def test_extract_company_ignores_qualified_and_parenthetical_forms():
+    assert extract_company(HIST_IMI) != "Companies House"
+    assert extract_company(PAREN_IMI) != "Companies House"
+    assert extract_company("Officer departure", PAREN_IMI) != "Companies House"

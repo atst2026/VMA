@@ -76,11 +76,14 @@ def extract_company(title: str, summary: str = "") -> str:
     if not title:
         return ""
     t = title.strip()
-    # A colon-attached source attribution ("Companies House: X filed…")
-    # is never the subject — strip it before the separator split, or the
-    # registry name wins the RNS-style extraction.
-    from tool.account_match import _SOURCE_LABEL_RX
-    t = _SOURCE_LABEL_RX.sub(" ", t).strip()
+    # A source attribution — colon-prefixed ("Companies House: X filed…",
+    # "Companies House (historical): …") or parenthetical ("… at IMI
+    # (Companies House filing)") — is never the subject: strip both forms
+    # before the separator split, or the registry name wins the RNS-style
+    # extraction.
+    from tool.account_match import (_SOURCE_LABEL_RX, _SOURCE_PAREN_RX,
+                                    _SOURCE_NAME_SET)
+    t = _SOURCE_PAREN_RX.sub(" ", _SOURCE_LABEL_RX.sub(" ", t)).strip()
     t_nopfx = _LSE_TICKER.sub("", t).strip()
     parts = _RNS_SEPARATORS.split(t_nopfx, maxsplit=1)
     had_separator = len(parts) > 1
@@ -96,14 +99,20 @@ def extract_company(title: str, summary: str = "") -> str:
             return candidate.rstrip(",.;:")
 
     # 2) Peer-name scan with word boundaries; try full name + stem.
-    haystack = f" {t} {summary} ".lower()   # t: attribution prefix stripped
+    # The summary gets the same attribution strips as the title, and
+    # source-registry peers (Companies House, Charity Commission) sort
+    # LAST so a leftover attribution wording can never beat the subject.
+    haystack = _SOURCE_PAREN_RX.sub(
+        " ", _SOURCE_LABEL_RX.sub(" ", f" {t} {summary} ")).lower()
     try:
         from tool.peers import SECTOR_PEERS
         all_peers = [p for names in SECTOR_PEERS.values() for p in names]
         _PEER_SUFFIX_RX = re.compile(
             r"\s+(group|plc|limited|ltd|holdings|llp|uk)$", re.IGNORECASE,
         )
-        for peer in sorted(all_peers, key=len, reverse=True):
+        for peer in sorted(
+                all_peers,
+                key=lambda p: (p.lower() in _SOURCE_NAME_SET, -len(p))):
             peer_lc = peer.lower()
             # Try full name first
             if re.search(r"\b" + re.escape(peer_lc) + r"\b", haystack):

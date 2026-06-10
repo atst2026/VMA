@@ -114,19 +114,47 @@ _BACKER_COMPOUND_RX = re.compile(
     r"(?:company|business|firm)\b"
 )
 
-# Source-attribution prefixes ("Companies House: Trustpilot filed …").
-# Same bug class as the backer compound: the ATTRIBUTING source is not
-# the SUBJECT of the event — and "Companies House" is itself a watchlist
-# employer, so without this strip every CH-prefixed evidence line
-# resolved its subject to Companies House and unrelated companies'
-# filings (Trustpilot, M&G, …) merged into one phantom account. Strips
-# the colon-attached form only, so a genuine "Companies House appoints
-# Head of Comms" headline (no colon) still resolves to Companies House
-# as the real subject.
-_SOURCE_LABEL_RX = re.compile(
-    r"\b(?:companies house|sec edgar|find a tender|contracts finder|"
+# Source-attribution mentions ("Companies House: Trustpilot filed …",
+# "Companies House (historical): … at IMI …", "… at IMI (Companies House
+# filing)."). Same bug class as the backer compound: the ATTRIBUTING
+# source is not the SUBJECT of the event — and "Companies House" /
+# "Charity Commission" are themselves watchlist employers, so without
+# these strips a registry-mentioning evidence line resolved its subject
+# to the registry and unrelated companies' filings (Trustpilot, M&G,
+# IMI, …) merged into one phantom account. Defence is layered:
+#   1. _SOURCE_LABEL_RX strips the colon-attached prefix, including
+#      qualified forms ("Companies House (historical):", "Companies
+#      House stream:").
+#   2. _SOURCE_PAREN_RX strips name-last parenthetical attributions
+#      ("(Companies House filing)", "(Charity Commission register)").
+#   3. resolve_account demotes registry names to a LAST-resort scan
+#      pass (see _registry_patterns), so any leftover wording — "filed
+#      at Companies House", a form no regex anticipated — still can't
+#      out-rank the real subject. A genuine "Companies House appoints
+#      Head of Comms" headline (no other watchlist name present) still
+#      resolves to Companies House as the real subject.
+_SOURCE_NAMES_PART = (
+    r"(?:companies house|sec edgar|find a tender|contracts finder|"
     r"charity commission|google news|gdelt|wayback machine|"
-    r"public contracts scotland|sell2wales|etendersni)\s*:",
+    r"public contracts scotland|sell2wales|etendersni)"
+)
+# Normalised (via _norm) source names, for the registry demotion in the
+# watchlist scan and the peer-scan demotion in detector.extract_company.
+_SOURCE_NAME_SET = {
+    "companies house", "sec edgar", "find a tender", "contracts finder",
+    "charity commission", "google news", "gdelt", "wayback machine",
+    "public contracts scotland", "sell2wales", "etendersni",
+}
+_SOURCE_LABEL_RX = re.compile(
+    r"\b" + _SOURCE_NAMES_PART +
+    r"(?:\s*\([^)]{0,40}\))?"      # "(historical)" / "(officer termination)"
+    r"(?:\s+(?:stream|streaming|historical|filings?|records?|data|api|"
+    r"register|registry|alerts?|updates?))*"
+    r"\s*:",
+    re.I,
+)
+_SOURCE_PAREN_RX = re.compile(
+    r"\(\s*(?:via\s+|per\s+|source\s*:?\s*)?" + _SOURCE_NAMES_PART + r"[^)]*\)",
     re.I,
 )
 
@@ -150,6 +178,7 @@ def _has_bare_occurrence(pat: re.Pattern, text: str) -> bool:
 _WATCHLIST_NAMES: list[str] | None = None
 _DISTINCTIVE_PATTERNS: list[tuple[str, re.Pattern]] | None = None
 _ACRONYM_PATTERNS: list[tuple[str, re.Pattern]] | None = None
+_REGISTRY_PATTERNS: list[tuple[str, re.Pattern]] | None = None
 
 
 def _norm(s: str) -> str:
@@ -186,7 +215,10 @@ def _load_watchlist_names() -> list[str]:
 def _distinctive_patterns() -> list[tuple[str, re.Pattern]]:
     """(name, case-insensitive word-boundary regex) for DISTINCTIVE
     names: multiword, or single tokens >= 5 chars not English words.
-    Longest-first so 'HSBC Holdings' wins over 'HSBC'."""
+    Longest-first so 'HSBC Holdings' wins over 'HSBC'. Source registries
+    (Companies House, Charity Commission, …) are excluded — they scan
+    LAST via _registry_patterns so an attribution mention can never
+    out-rank the event's real subject."""
     global _DISTINCTIVE_PATTERNS
     if _DISTINCTIVE_PATTERNS is not None:
         return _DISTINCTIVE_PATTERNS
@@ -195,12 +227,32 @@ def _distinctive_patterns() -> list[tuple[str, re.Pattern]]:
         norm = _norm(name)
         if not norm or norm in _ENGLISH_WORD_NAMES or norm in _REGULATOR_EXCLUDE:
             continue
+        if norm in _SOURCE_NAME_SET:
+            continue  # registry → last-resort path (_registry_patterns)
         token = norm.replace("&", "").replace(" ", "")
         if " " not in norm and len(token) <= 4:
             continue  # short single token → acronym path
         pats.append((name, re.compile(r"(?<!\w)" + re.escape(norm) + r"(?!\w)")))
     _DISTINCTIVE_PATTERNS = pats
     return _DISTINCTIVE_PATTERNS
+
+
+def _registry_patterns() -> list[tuple[str, re.Pattern]]:
+    """Watchlist names that are ALSO reporting sources (Companies House,
+    Charity Commission). They are genuine Tier-A employers in their own
+    right, but in almost every evidence line they appear as the
+    ATTRIBUTING registry, not the subject — so they only resolve when
+    NOTHING else on the watchlist matched first."""
+    global _REGISTRY_PATTERNS
+    if _REGISTRY_PATTERNS is not None:
+        return _REGISTRY_PATTERNS
+    pats: list[tuple[str, re.Pattern]] = []
+    for name in _load_watchlist_names():
+        norm = _norm(name)
+        if norm in _SOURCE_NAME_SET:
+            pats.append((name, re.compile(r"(?<!\w)" + re.escape(norm) + r"(?!\w)")))
+    _REGISTRY_PATTERNS = pats
+    return _REGISTRY_PATTERNS
 
 
 def _acronym_patterns() -> list[tuple[str, re.Pattern]]:
@@ -247,9 +299,11 @@ def resolve_account(company: str | None, *texts: str) -> str | None:
     # Strip "<X>-backed" / "<X> portfolio company" BEFORE the watchlist
     # scan so a PE backer can't be mis-read as the deal's subject.
     original = _BACKER_COMPOUND_RX.sub(" ", original)
-    # Strip "Companies House:" / "SEC EDGAR:"-style source attributions so
-    # the reporting registry can't be mis-read as the filing's subject.
+    # Strip "Companies House:" / "Companies House (historical):"-style
+    # prefixes AND "(Companies House filing)"-style parentheticals so the
+    # reporting registry can't be mis-read as the filing's subject.
     original = _SOURCE_LABEL_RX.sub(" ", original)
+    original = _SOURCE_PAREN_RX.sub(" ", original)
     norm_text = _norm(original)
 
     if norm_text:
@@ -259,6 +313,13 @@ def resolve_account(company: str | None, *texts: str) -> str | None:
     if original:
         for name, pat in _acronym_patterns():
             if pat.search(original) and _has_bare_occurrence(pat, original):
+                return name
+    # Registry names LAST: Companies House / Charity Commission resolve as
+    # the subject only when no other watchlist name appeared anywhere —
+    # i.e. a genuine "Companies House appoints Head of Comms" story.
+    if norm_text:
+        for name, pat in _registry_patterns():
+            if pat.search(norm_text) and _has_bare_occurrence(pat, norm_text):
                 return name
     return None
 

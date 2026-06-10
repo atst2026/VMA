@@ -5,8 +5,6 @@ from datetime import datetime, timedelta, timezone
 import tool.propensity as PR
 from tool import gate
 
-NOW = datetime(2026, 6, 10, 8, 0, tzinfo=timezone.utc)
-
 
 def _trig(key, rec=0.9):
     return {"key": key, "label": key, "recency_mult": rec, "age_days": 20.0}
@@ -119,7 +117,12 @@ def test_research_can_clear_a_machine_observation(tmp_path, monkeypatch):
 def test_research_findings_expire(tmp_path, monkeypatch):
     _setup(tmp_path, monkeypatch)
     PR.record_finding("Acme", internal_ta=True, note="6-person TA team")
-    later = NOW + timedelta(days=PR.TA_EXPIRE_DAYS + 1)
+    # record_finding stamps 'seen' with wall-clock time, so the expiry
+    # horizon must be computed from wall clock too. A hardcoded NOW
+    # constant made this test start failing the morning real time
+    # crossed it (the gap dropped to TA_EXPIRE_DAYS days + a few hours,
+    # whose .days == TA_EXPIRE_DAYS still counts as fresh).
+    later = datetime.now(timezone.utc) + timedelta(days=PR.TA_EXPIRE_DAYS + 1)
     assert PR.flags_for("Acme", now=later) == {}
 
 

@@ -53,8 +53,11 @@ def _core_indexed(snapshot: dict) -> dict:
 
 
 # Pattern to pull an officer name from a CH departure event's evidence:
-#   "Companies House (historical): SMITH, John resigned as Chief Executive
-#    Officer at Severn Trent on 2025-09-12."
+#   "SMITH, John resigned as Chief Executive Officer at Severn Trent on
+#    2025-09-12 (Companies House filing, historical)."
+# The "Companies House …:" prefix is optional for events persisted before
+# the evidence builders were rewritten name-first (the prefix let the
+# registry steal the subject scan — the phantom-lead bug).
 # CH stores names as "LASTNAME, Firstname". We normalise to "Firstname Lastname".
 _CH_DEPARTURE_RX = re.compile(
     r"(?:Companies House[^:]*:\s*)?"
