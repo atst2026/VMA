@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMA · Communications Radar — Concept 04 · The Living Radar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   04 · THE LIVING RADAR — deep-space scope, money as blips
+   ============================================================ */
+:root{
+  --bg:#050a14;
+  --ink:#e8eef7;
+  --ink-dim:#9fb0c7;
+  --ink-faint:#5d708f;
+  --phosphor:#3ef0c4;
+  --phosphor-deep:#0fae8a;
+  --amber:#f0b43e;
+  --early:#8fa3bf;
+  --blocked:#f0533e;
+  --panel:rgba(13,22,38,.78);
+  --panel-edge:rgba(96,138,178,.18);
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --sans:'Inter',system-ui,sans-serif;
+  --sweep-period:9s;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:var(--sans);
+  background:var(--bg);
+  color:var(--ink);
+  overflow-x:hidden;
+  display:flex;flex-direction:column;min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:rgba(62,240,196,.25)}
+
+/* ---------- atmosphere ---------- */
+.atmo{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(1100px 760px at 34% 44%, rgba(15,98,92,.22), transparent 62%),
+    radial-gradient(900px 700px at 72% 18%, rgba(58,52,150,.20), transparent 60%),
+    radial-gradient(1400px 900px at 50% 110%, rgba(8,30,58,.55), transparent 70%);
+}
+.stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+.stars i{position:absolute;width:2px;height:2px;border-radius:50%;background:#cfe2ff;opacity:.5;animation:twinkle 5s ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:.18}50%{opacity:.6}}
+.noise{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.035;mix-blend-mode:overlay}
+
+/* ---------- header ---------- */
+header{
+  position:relative;z-index:5;display:flex;align-items:center;gap:22px;
+  padding:14px 28px;border-bottom:1px solid rgba(96,138,178,.14);
+  background:linear-gradient(180deg, rgba(8,14,26,.92), rgba(8,14,26,.65));
+  backdrop-filter:blur(10px);
+}
+.wordmark{display:flex;align-items:baseline;gap:2px;text-decoration:none;color:var(--ink)}
+.wordmark b{font-weight:800;font-size:19px;letter-spacing:.04em}
+.wordmark span{font-weight:500;font-size:11px;letter-spacing:.34em;color:var(--ink-dim);margin-left:7px;text-transform:uppercase}
+.hd-rule{width:1px;height:26px;background:rgba(96,138,178,.28)}
+h1{
+  font-family:var(--mono);font-size:14px;font-weight:600;letter-spacing:.42em;
+  text-transform:uppercase;color:var(--phosphor);text-shadow:0 0 18px rgba(62,240,196,.45);
+  white-space:nowrap;
+}
+.hd-live{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--ink-dim);text-transform:uppercase}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--phosphor);box-shadow:0 0 10px var(--phosphor);animation:livepulse 1.8s ease-in-out infinite}
+@keyframes livepulse{0%,100%{opacity:1}50%{opacity:.35}}
+.hd-date{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;color:var(--ink-dim);text-transform:uppercase;margin-left:auto;white-space:nowrap}
+.hd-board{display:flex;flex-direction:column;align-items:flex-end;line-height:1.05;padding-left:22px;border-left:1px solid rgba(96,138,178,.22)}
+.hd-board b{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--phosphor);text-shadow:0 0 22px rgba(62,240,196,.5)}
+.hd-board small{font-family:var(--mono);font-size:8.5px;letter-spacing:.22em;color:var(--ink-dim);text-transform:uppercase;margin-top:3px}
+.brief-btn{display:none;margin-left:10px;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--phosphor);background:rgba(62,240,196,.08);border:1px solid rgba(62,240,196,.35);border-radius:7px;padding:7px 11px;cursor:pointer}
+
+/* ---------- main layout ---------- */
+main{position:relative;z-index:2;flex:1;display:grid;grid-template-columns:minmax(0,1fr) 404px;gap:0;min-height:0}
+
+/* ---------- scope stage ---------- */
+.scope-stage{position:relative;display:flex;align-items:center;justify-content:center;padding:18px 26px;min-width:0}
+.scope-wrap{position:relative;width:min(760px,100%);}
+.scope-wrap svg{display:block;width:100%;height:auto}
+.readout{position:absolute;font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:rgba(143,163,191,.62);text-transform:uppercase;line-height:1.8;pointer-events:none}
+.readout.tl{top:6px;left:4px}
+.readout.bl{bottom:6px;left:4px}
+.readout.br{bottom:6px;right:4px;text-align:right}
+.readout em{font-style:normal;color:var(--phosphor)}
+
+/* scope SVG element styles */
+.ring{fill:none;stroke:rgba(96,150,182,.20);stroke-width:1}
+.ring.outer{stroke:rgba(96,150,182,.34);stroke-width:1.4}
+.ring.minor{stroke:rgba(96,150,182,.07);stroke-dasharray:2 7}
+.spoke{stroke:rgba(96,150,182,.13);stroke-width:1}
+.sector-label{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.34em;fill:rgba(159,176,199,.72);text-transform:uppercase}
+.ring-pill{fill:#081120;stroke:rgba(96,150,182,.28);stroke-width:1}
+.ring-pill-txt{font-family:var(--mono);font-size:8.6px;font-weight:600;letter-spacing:.24em;fill:rgba(159,176,199,.85)}
+.hub-val{font-family:var(--mono);font-size:17.5px;font-weight:700;fill:var(--phosphor)}
+.hub-sub{font-family:var(--mono);font-size:6.6px;letter-spacing:.3em;fill:rgba(159,176,199,.7)}
+
+#sweep{transform-box:view-box;transform-origin:380px 380px;animation:sweep var(--sweep-period) linear infinite}
+@keyframes sweep{to{transform:rotate(360deg)}}
+
+.blip{cursor:pointer}
+.blip .glow{animation:breathe 3.4s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:.35}50%{opacity:.62}}
+.blip .core{transition:filter .2s}
+.blip:hover .core{filter:brightness(1.5)}
+.blip .flare{transform-box:fill-box;transform-origin:center;opacity:0;animation:flare var(--sweep-period) linear infinite;pointer-events:none}
+@keyframes flare{0%{opacity:.95;transform:scale(.5)}9%{opacity:0;transform:scale(2.3)}100%{opacity:0;transform:scale(2.3)}}
+.blip .check{display:none}
+.blip.followed .core,.blip.followed .glow,.blip.followed .flare{display:none}
+.blip.followed .check{display:block}
+.blip.dismissed{opacity:.13;pointer-events:none}
+
+svg.dim-call .blip[data-tier="call"],
+svg.dim-dev .blip[data-tier="dev"],
+svg.dim-early .blip[data-tier="early"],
+svg.dim-blocked .blip[data-tier="blocked"]{opacity:.08;pointer-events:none}
+
+#selring{transition:transform .4s cubic-bezier(.22,1,.3,1);opacity:0}
+#selring.on{opacity:1}
+#selring .dash{transform-box:fill-box;transform-origin:center;animation:spin 14s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- call order ---------- */
+.call-order{
+  position:absolute;top:8px;right:-6px;z-index:4;width:196px;
+  background:var(--panel);border:1px solid var(--panel-edge);border-radius:13px;
+  backdrop-filter:blur(14px);padding:12px 12px 8px;
+  box-shadow:0 18px 50px rgba(0,0,0,.45);
+}
+.call-order h3{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.3em;color:var(--phosphor);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.call-order h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(62,240,196,.4),transparent)}
+.call-order ol{list-style:none}
+.call-order li{
+  display:flex;align-items:center;gap:8px;padding:5px 7px;border-radius:8px;cursor:pointer;
+  font-size:11.5px;font-weight:600;color:var(--ink-dim);transition:background .15s,color .15s;
+}
+.call-order li:hover{background:rgba(62,240,196,.07);color:var(--ink)}
+.call-order li.active{background:rgba(62,240,196,.13);color:#fff;box-shadow:inset 0 0 0 1px rgba(62,240,196,.35)}
+.call-order li.done .co-name{text-decoration:line-through;opacity:.55}
+.call-order li.done .co-num{color:var(--phosphor)}
+.co-num{font-family:var(--mono);font-size:9.5px;color:rgba(143,163,191,.7);width:13px;flex-shrink:0}
+.co-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.co-fee{font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--phosphor)}
+
+/* ---------- drawer ---------- */
+.drawer{
+  position:relative;z-index:6;border-left:1px solid rgba(96,138,178,.14);
+  background:linear-gradient(165deg, rgba(13,22,38,.86), rgba(7,12,23,.94));
+  backdrop-filter:blur(18px);overflow:hidden;display:flex;flex-direction:column;min-height:0;
+}
+.d-pane{position:absolute;inset:0;overflow-y:auto;padding:24px 24px 30px;transition:transform .45s cubic-bezier(.22,1,.3,1),opacity .35s}
+.d-pane::-webkit-scrollbar{width:8px}
+.d-pane::-webkit-scrollbar-thumb{background:rgba(96,138,178,.25);border-radius:4px}
+#paneHome{transform:translateX(0)}
+#paneDossier{transform:translateX(104%)}
+.drawer.dossier-open #paneHome{transform:translateX(-26%);opacity:0;pointer-events:none}
+.drawer.dossier-open #paneDossier{transform:translateX(0)}
+.d-close{display:none;position:absolute;top:14px;right:14px;z-index:9;width:30px;height:30px;border-radius:8px;border:1px solid var(--panel-edge);
+  background:rgba(8,14,26,.8);color:var(--ink-dim);font-size:15px;cursor:pointer;line-height:1}
+
+.eyebrow{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.3em;color:var(--phosphor);text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.eyebrow::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(62,240,196,.4),transparent)}
+.eyebrow.amberline{color:var(--amber)}
+.eyebrow.amberline::after{background:linear-gradient(90deg,rgba(240,180,62,.4),transparent)}
+
+.narrative{font-size:13.5px;line-height:1.72;color:#cdd9ea;min-height:128px}
+.narrative .caret{display:inline-block;width:7px;height:14px;background:var(--phosphor);vertical-align:-2px;margin-left:2px;animation:caret 0.9s steps(1) infinite}
+@keyframes caret{50%{opacity:0}}
+.narrative b{color:#fff}
+.narrative em{font-style:normal;color:var(--phosphor);font-weight:600}
+
+.agent-log{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:18px 0 26px}
+.al-tile{background:rgba(8,16,30,.7);border:1px solid var(--panel-edge);border-radius:10px;padding:10px 12px}
+.al-tile b{display:block;font-family:var(--mono);font-size:17px;font-weight:700;color:#fff}
+.al-tile.hot b{color:var(--phosphor)}
+.al-tile span{font-family:var(--mono);font-size:8.2px;letter-spacing:.16em;color:var(--ink-dim);text-transform:uppercase}
+
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:26px}
+.tier-chip{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:9.6px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-dim);background:rgba(8,16,30,.7);border:1px solid var(--panel-edge);border-radius:99px;padding:6px 12px;cursor:pointer;transition:all .15s;user-select:none}
+.tier-chip i{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.tier-chip[data-tier="call"] i{background:var(--phosphor);box-shadow:0 0 8px var(--phosphor)}
+.tier-chip[data-tier="dev"] i{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+.tier-chip[data-tier="early"] i{background:var(--early)}
+.tier-chip[data-tier="blocked"] i{background:transparent;box-shadow:inset 0 0 0 2px var(--blocked)}
+.tier-chip.off{opacity:.34;border-style:dashed}
+.tier-chip:hover{border-color:rgba(62,240,196,.45)}
+
+.ask-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.ask-chip{font-size:11px;font-weight:600;color:#bcd4ef;background:rgba(58,52,150,.18);border:1px solid rgba(110,120,220,.35);border-radius:99px;padding:7px 13px;cursor:pointer;transition:all .15s}
+.ask-chip:hover{background:rgba(58,52,150,.34);color:#fff}
+.console{
+  font-family:var(--mono);font-size:11px;line-height:1.7;color:#9be8cf;
+  background:#040a12;border:1px solid rgba(62,240,196,.18);border-radius:10px;
+  padding:12px 14px;min-height:54px;white-space:pre-wrap;word-break:break-word;
+  box-shadow:inset 0 0 30px rgba(62,240,196,.04);
+}
+.console .pfx{color:rgba(143,163,191,.6)}
+
+/* ---------- dossier ---------- */
+.d-back{font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim);background:none;border:none;cursor:pointer;padding:0;margin-bottom:16px;display:inline-flex;align-items:center;gap:6px}
+.d-back:hover{color:var(--phosphor)}
+.dos-head{margin-bottom:4px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.dos-head h2{font-size:23px;font-weight:800;letter-spacing:-.01em;color:#fff;line-height:1.1}
+.dos-seat{font-size:12.5px;font-weight:600;color:var(--phosphor);margin:6px 0 2px}
+.dos-trigger{font-family:var(--mono);font-size:9.4px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:14px}
+.tierpill{font-family:var(--mono);font-size:8.4px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;border-radius:6px;padding:5px 9px;white-space:nowrap;flex-shrink:0;margin-top:3px}
+.tierpill.call{color:#04261c;background:var(--phosphor);box-shadow:0 0 16px rgba(62,240,196,.5)}
+.tierpill.dev{color:#2b1d02;background:var(--amber)}
+.tierpill.early{color:#0a1322;background:var(--early)}
+.tierpill.blocked{color:#fff;background:rgba(240,83,62,.85)}
+
+.strength{margin:6px 0 16px}
+.strength .lab{display:flex;justify-content:space-between;font-family:var(--mono);font-size:8.6px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:6px}
+.strength .lab b{color:var(--phosphor);font-size:11px}
+.sbar{height:6px;border-radius:3px;background:rgba(96,138,178,.16);overflow:hidden}
+.sbar i{display:block;height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,var(--phosphor-deep),var(--phosphor));box-shadow:0 0 12px rgba(62,240,196,.6);transition:width .9s cubic-bezier(.22,1,.3,1)}
+
+.kv-row{display:flex;gap:8px;margin-bottom:14px}
+.kv{flex:1;background:rgba(8,16,30,.7);border:1px solid var(--panel-edge);border-radius:10px;padding:9px 11px}
+.kv span{display:block;font-family:var(--mono);font-size:7.6px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:4px}
+.kv b{font-family:var(--mono);font-size:13px;font-weight:700;color:#fff}
+.kv b.money{color:var(--phosphor)}
+.kv small{display:block;font-size:9px;color:var(--ink-dim);margin-top:3px}
+
+.badges{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px}
+.badge{font-family:var(--mono);font-size:8.6px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;border-radius:6px;padding:5px 9px;border:1px solid}
+.badge.redteam{color:var(--phosphor);border-color:rgba(62,240,196,.45);background:rgba(62,240,196,.07)}
+.badge.conf-high{color:#bff3e2;border-color:rgba(62,240,196,.3);background:rgba(62,240,196,.05)}
+.badge.conf-mod{color:var(--amber);border-color:rgba(240,180,62,.4);background:rgba(240,180,62,.06)}
+.badge.verify{color:#bcd4ef;border-color:rgba(110,150,220,.4);background:rgba(110,150,220,.07)}
+
+.gate{margin-bottom:18px}
+.gate .gl{font-family:var(--mono);font-size:8.6px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-dim);display:flex;justify-content:space-between;margin-bottom:7px}
+.gate .gl b{color:#fff;font-size:10.5px}
+.gate-chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.gchip{text-align:center;border-radius:9px;padding:7px 4px 6px;border:1px solid var(--panel-edge);background:rgba(8,16,30,.7)}
+.gchip span{display:block;font-family:var(--mono);font-size:7.4px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim)}
+.gchip b{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--ink-dim)}
+.gchip .pips{display:flex;justify-content:center;gap:3px;margin-top:4px}
+.gchip .pips i{width:10px;height:3px;border-radius:2px;background:rgba(96,138,178,.25)}
+.gchip.g2{border-color:rgba(62,240,196,.4)}
+.gchip.g2 b{color:var(--phosphor)}
+.gchip.g2 .pips i{background:var(--phosphor);box-shadow:0 0 6px rgba(62,240,196,.6)}
+.gchip.g1 b{color:var(--amber)}
+.gchip.g1 .pips i:first-child{background:var(--amber)}
+
+.dsec{margin-bottom:15px}
+.dsec h4{font-family:var(--mono);font-size:8.8px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;margin-bottom:6px}
+.dsec p{font-size:12.8px;line-height:1.66;color:#cdd9ea}
+.dsec.why h4{color:var(--phosphor)}
+.dsec.kills h4{color:var(--blocked)}
+.dsec.kills{border-left:2px solid rgba(240,83,62,.5);padding-left:12px}
+.dsec.first h4{color:var(--amber)}
+.dsec .buyer{font-size:11px;color:var(--ink-dim);margin-top:5px}
+.dsec .buyer b{color:#fff;font-weight:600}
+
+.dos-actions{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 12px}
+.abtn{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;border-radius:8px;padding:9px 13px;cursor:pointer;transition:all .15s;border:1px solid}
+.abtn.primary{color:#04261c;background:var(--phosphor);border-color:var(--phosphor);box-shadow:0 0 20px rgba(62,240,196,.35)}
+.abtn.primary:hover{filter:brightness(1.12)}
+.abtn.ghost{color:#bcd4ef;background:rgba(110,150,220,.06);border-color:rgba(110,150,220,.35)}
+.abtn.ghost:hover{background:rgba(110,150,220,.14);color:#fff}
+.abtn.ok{color:var(--phosphor);background:rgba(62,240,196,.06);border-color:rgba(62,240,196,.35)}
+.abtn.ok.done{background:rgba(62,240,196,.18);color:#dffaf0}
+.abtn.kill{color:#f3a99e;background:rgba(240,83,62,.06);border-color:rgba(240,83,62,.35)}
+.abtn.kill:hover{background:rgba(240,83,62,.16);color:#fff}
+.opener-wrap{display:none;margin-top:6px}
+.opener-wrap.show{display:block}
+
+/* ---------- ticker ---------- */
+.ticker{position:relative;z-index:5;height:38px;border-top:1px solid rgba(96,138,178,.16);background:#040810;overflow:hidden;display:flex;align-items:center;flex-shrink:0}
+.ticker::before{content:"SIGNALS";position:absolute;left:0;top:0;bottom:0;z-index:2;display:flex;align-items:center;
+  padding:0 16px 0 22px;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.3em;color:var(--phosphor);
+  background:linear-gradient(90deg,#040810 72%,transparent)}
+.tk-track{display:flex;white-space:nowrap;animation:marquee 72s linear infinite;will-change:transform}
+.ticker:hover .tk-track{animation-play-state:paused}
+.tk-track span{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:#7e95b4;padding-right:24px}
+.tk-track b{color:#cfe2ff;font-weight:600}
+.tk-track em{font-style:normal;color:var(--phosphor)}
+@keyframes marquee{to{transform:translateX(-50%)}}
+
+/* ---------- footer / nav / toast / tooltip ---------- */
+.disclaim{position:relative;z-index:4;text-align:center;font-size:9.6px;letter-spacing:.06em;color:rgba(143,163,191,.45);padding:5px 0 7px}
+.concept-nav{
+  position:fixed;right:18px;bottom:52px;z-index:50;display:flex;align-items:center;gap:10px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ink-dim);
+  background:rgba(10,18,32,.92);border:1px solid var(--panel-edge);border-radius:99px;padding:8px 14px;
+  backdrop-filter:blur(12px);box-shadow:0 10px 32px rgba(0,0,0,.5);
+}
+.concept-nav b{color:#fff;font-weight:600}
+.concept-nav a{color:var(--phosphor);text-decoration:none}
+.concept-nav a:hover{text-shadow:0 0 10px rgba(62,240,196,.7)}
+#toast{
+  position:fixed;left:50%;bottom:58px;transform:translate(-50%,16px);z-index:60;opacity:0;pointer-events:none;
+  font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:#dffaf0;
+  background:rgba(8,20,26,.95);border:1px solid rgba(62,240,196,.4);border-radius:9px;padding:10px 18px;
+  box-shadow:0 12px 40px rgba(0,0,0,.6),0 0 24px rgba(62,240,196,.15);
+  transition:opacity .25s,transform .25s;
+}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#tip{
+  position:fixed;z-index:55;pointer-events:none;opacity:0;transition:opacity .12s;
+  background:rgba(8,16,28,.96);border:1px solid rgba(62,240,196,.35);border-radius:10px;padding:9px 12px;
+  box-shadow:0 14px 36px rgba(0,0,0,.6);max-width:230px;
+}
+#tip b{display:block;font-size:12.5px;font-weight:700;color:#fff;margin-bottom:2px}
+#tip .t1{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--phosphor)}
+#tip .t2{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);margin-top:2px}
+
+/* ---------- responsive ---------- */
+@media (max-width:1400px){ main{grid-template-columns:minmax(0,1fr) 380px} }
+@media (max-width:1180px){
+  h1{letter-spacing:.26em}
+  .hd-live{display:none}
+}
+@media (max-width:980px){
+  main{grid-template-columns:1fr}
+  .brief-btn{display:inline-block}
+  .drawer{
+    position:fixed;top:0;right:0;bottom:0;width:100%;max-width:460px;z-index:40;
+    transform:translateX(102%);transition:transform .45s cubic-bezier(.22,1,.3,1);
+    border-left:1px solid rgba(62,240,196,.25);box-shadow:-30px 0 80px rgba(0,0,0,.6);
+  }
+  .drawer.mobile-open{transform:translateX(0)}
+  .d-close{display:block}
+  .call-order{position:static;width:auto;margin:14px auto 0;max-width:560px}
+  .call-order ol{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px}
+  .scope-stage{flex-direction:column;padding:14px}
+}
+@media (max-width:768px){
+  header{flex-wrap:wrap;gap:12px;padding:12px 16px}
+  .hd-date{margin-left:0;flex-basis:100%;order:5}
+  .hd-board{padding-left:14px}
+  h1{font-size:11px;letter-spacing:.2em}
+  .drawer{max-width:none}
+  .call-order ol{grid-template-columns:1fr}
+}
+
+/* ---------- reduced motion: scope frozen ---------- */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none !important;transition:none !important}
+  .blip .flare{opacity:0 !important}
+  .tk-track{transform:none !important}
+}
+</style>
+</head>
+<body>
+
+<div class="atmo"></div>
+<div class="stars" id="stars"></div>
+<svg class="noise" aria-hidden="true" width="100%" height="100%">
+  <filter id="nz"><feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="2" stitchTiles="stitch"/></filter>
+  <rect width="100%" height="100%" filter="url(#nz)"/>
+</svg>
+
+<!-- ================= HEADER ================= -->
+<header>
+  <a class="wordmark" href="index.html" aria-label="VMA Group"><b>VMA</b><span>Group</span></a>
+  <div class="hd-rule"></div>
+  <h1>Communications Radar</h1>
+  <div class="hd-live"><span class="live-dot"></span><span>Scanning — last sweep 06:12</span></div>
+  <div class="hd-date">Wednesday 10 June 2026 · 08:55</div>
+  <div class="hd-board">
+    <b id="boardVal">£0k</b>
+    <small id="boardSub">on the board · 7 call-ready</small>
+  </div>
+  <button class="brief-btn" id="briefBtn">Briefing</button>
+</header>
+
+<!-- ================= MAIN ================= -->
+<main>
+  <!-- ——— THE SCOPE ——— -->
+  <section class="scope-stage" aria-label="Radar scope">
+    <div class="scope-wrap">
+      <div class="readout tl">Polar scope · 04<br>Distance = time-to-window</div>
+      <div class="readout bl">Sweep 9.0s · last pass <em>06:12</em><br>1,284 sources swept overnight</div>
+      <div class="readout br">Blip Ø ∝ fee · colour = tier<br>Sectors = trigger family</div>
+      <svg id="scope" viewBox="0 0 760 760" role="img" aria-label="Radar of 14 companies positioned by trigger family and time to hiring window">
+        <defs>
+          <radialGradient id="scopebg" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#0a2030" stop-opacity=".9"/>
+            <stop offset="55%" stop-color="#071524" stop-opacity=".75"/>
+            <stop offset="100%" stop-color="#050a14" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="glow-call" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#3ef0c4" stop-opacity=".8"/><stop offset="100%" stop-color="#3ef0c4" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="glow-dev" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#f0b43e" stop-opacity=".7"/><stop offset="100%" stop-color="#f0b43e" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="glow-early" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#8fa3bf" stop-opacity=".55"/><stop offset="100%" stop-color="#8fa3bf" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="glow-blocked" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#f0533e" stop-opacity=".55"/><stop offset="100%" stop-color="#f0533e" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="soft" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="2.2"/>
+          </filter>
+        </defs>
+        <circle cx="380" cy="380" r="330" fill="url(#scopebg)"/>
+        <!-- rings / spokes / labels / sweep / blips injected by JS -->
+        <g id="gGrid"></g>
+        <g id="gSweep"></g>
+        <g id="gLabels"></g>
+        <g id="gBlips"></g>
+        <g id="selring">
+          <circle class="dash" r="20" fill="none" stroke="#fff" stroke-width="1" stroke-dasharray="4 5" opacity=".85"/>
+          <circle r="26" fill="none" stroke="rgba(62,240,196,.35)" stroke-width="1"/>
+        </g>
+        <!-- hub -->
+        <g id="hub">
+          <circle cx="380" cy="380" r="44" fill="#060d18" stroke="rgba(96,150,182,.4)" stroke-width="1.2"/>
+          <circle cx="380" cy="380" r="48" fill="none" stroke="rgba(62,240,196,.18)" stroke-width="1"/>
+          <text class="hub-val" x="380" y="378" text-anchor="middle">£196k</text>
+          <text class="hub-sub" x="380" y="393" text-anchor="middle">ON THE BOARD</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- ——— CALL ORDER ——— -->
+    <aside class="call-order" aria-label="Call order">
+      <h3>Call order</h3>
+      <ol id="callOrder"></ol>
+    </aside>
+  </section>
+
+  <!-- ——— DOSSIER DRAWER ——— -->
+  <aside class="drawer" id="drawer" aria-label="Dossier drawer">
+    <button class="d-close" id="dClose" aria-label="Close drawer">✕</button>
+
+    <div class="d-pane" id="paneHome">
+      <div class="eyebrow">Morning briefing · 08:55</div>
+      <p class="narrative" id="narrative"></p>
+
+      <div class="eyebrow amberline" style="margin-top:22px">Overnight agent log · 02:00–06:12</div>
+      <div class="agent-log">
+        <div class="al-tile"><b>1,284</b><span>sources swept</span></div>
+        <div class="al-tile hot"><b>9</b><span>signals corroborated</span></div>
+        <div class="al-tile"><b>2</b><span>leads killed</span></div>
+        <div class="al-tile hot"><b>1</b><span>promoted to call-ready</span></div>
+      </div>
+
+      <div class="eyebrow">Tiers on scope · tap to dim</div>
+      <div class="legend" id="legend">
+        <button class="tier-chip" data-tier="call"><i></i>Call-ready · 7</button>
+        <button class="tier-chip" data-tier="dev"><i></i>Developing · 3</button>
+        <button class="tier-chip" data-tier="early"><i></i>Early signals · 2</button>
+        <button class="tier-chip" data-tier="blocked"><i></i>Blocked · 2</button>
+      </div>
+
+      <div class="eyebrow">Ask the radar</div>
+      <div class="ask-chips">
+        <button class="ask-chip" data-ask="calls">Who do I call before 10:00?</button>
+        <button class="ask-chip" data-ask="overnight">What changed overnight?</button>
+        <button class="ask-chip" data-ask="blocked">Why is Thames Water blocked?</button>
+      </div>
+      <div class="console" id="askOut"><span class="pfx">radar &gt;</span> awaiting query…</div>
+    </div>
+
+    <div class="d-pane" id="paneDossier"><!-- dossier injected --></div>
+  </aside>
+</main>
+
+<div class="disclaim">Illustrative sample data for design review — not live intelligence.</div>
+
+<!-- ================= SIGNAL TICKER ================= -->
+<div class="ticker" aria-label="Overnight signal ticker">
+  <div class="tk-track" id="tkTrack"></div>
+</div>
+
+<!-- ================= CHROME ================= -->
+<nav class="concept-nav">
+  <a href="03_conviction_stack.html" aria-label="Previous concept">← prev</a>
+  <b>Concept 04 / 10</b>
+  <a href="index.html">Index</a>
+  <a href="05_revenue_boardroom.html" aria-label="Next concept">next →</a>
+</nav>
+<div id="toast" role="status"></div>
+<div id="tip"></div>
+
+<script>
+/* ============================================================
+   THE LIVING RADAR — engine
+   ============================================================ */
+'use strict';
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SVG = 'http://www.w3.org/2000/svg';
+const C = 380, T = 9; /* scope centre, sweep period seconds */
+const $  = s => document.querySelector(s);
+const el = (tag, attrs={}) => { const n = document.createElementNS(SVG, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]); return n; };
+/* angle: degrees clockwise from 12 o'clock */
+const pt = (a, r) => [ C + r*Math.sin(a*Math.PI/180), C - r*Math.cos(a*Math.PI/180) ];
+
+/* ---------------- dataset ---------------- */
+/* sectors (centre angle): LEADERSHIP 0 · FUNDING 60 · DISTRESS 120 · M&A 180 · HIRING 240 · FRAMEWORKS 300 */
+const LEADS = [
+{ id:'ng', name:'National Grid', tier:'call', angle:240, dist:70, fee:32, strength:94,
+  seat:'Head of Media Relations', trigger:'In-house search failing', windowTxt:'ACT THIS WEEK',
+  conf:'High', red:88, verify:'2+ sources', gate:{Seat:2,Budget:2,Urgency:2,Buyer:1},
+  feeMath:'27.5% of est. £116k package',
+  why:'Their own search for a Head of Media Relations is 54 days old, reposted twice, still no recruiter attached — the cost of the DIY route is already on their P&L.',
+  kills:'Role quietly filled internally — check the careers page before dialling.',
+  first:'Call the Group Corporate Affairs Director, not HR. Reference the 54-day vacancy and offer a vetted 3-candidate shortlist in 10 working days.',
+  buyer:'Group Corporate Affairs Director — Sasha Kemp',
+  opener:'Hi Sasha — I noticed the Head of Media Relations brief has been live for eight weeks now. We placed three of the last five seats like it in energy and utilities; I can have a vetted shortlist with you by the 24th. Worth fifteen minutes this week?' },
+
+{ id:'monzo', name:'Monzo Bank', tier:'call', angle:62, dist:200, fee:30, strength:89,
+  seat:'Head of Corporate Communications', trigger:'Funding — £380m growth round', windowTxt:'4–8 WEEKS',
+  conf:'High', red:81, verify:'Registry-attested', verifyNote:'SH01 filed at Companies House overnight', gate:{Seat:2,Budget:2,Urgency:1,Buyer:2},
+  feeMath:'27.5% of est. £109k package',
+  why:'Fresh capital plus a stated European expansion: comms build-out typically lands within two quarters of a round this size.',
+  kills:'Comms budget parked until the incoming CFO lands — watch the CFO seat.',
+  first:'Get to the Communications Director before the CFO lands — propose a build-out plan for the European push, not a single CV.',
+  opener:'Hi — congratulations on the round; the SH01 landed at Companies House overnight. Expansion at that pace usually outruns the comms bench within a quarter. I have two Heads of Corporate Comms who have done exactly this scale-up. Coffee next week?' },
+
+{ id:'ocado', name:'Ocado Group', tier:'call', angle:112, dist:148, fee:28, strength:86,
+  seat:'Director of Communications', trigger:'Profit warning + Comms Director exit — stacked triggers', windowTxt:'2–6 WEEKS',
+  conf:'High', red:79, verify:'Registry-attested', verifyNote:'RNS', gate:{Seat:2,Budget:1,Urgency:2,Buyer:2},
+  feeMath:'25% of est. £112k package',
+  why:'A profit warning with the comms chair empty is the worst week to have no spokesperson — they know it.',
+  kills:'Deputy steps up — internal promotion closes the seat.',
+  first:'Offer interim cover plus a permanent shortlist in one package — speed is the pitch.',
+  opener:'Hi — a profit warning with the comms chair empty is a hard week to be quiet in. I can put three interim-to-permanent Directors of Communications in front of you by Friday. Fifteen minutes today?' },
+
+{ id:'burberry', name:'Burberry', tier:'call', angle:140, dist:196, fee:34, strength:81,
+  seat:'Corporate Affairs Director', trigger:'Restructure — turnaround plan announced', windowTxt:'3–8 WEEKS',
+  conf:'Moderate', verify:'2+ sources', gate:{Seat:2,Budget:2,Urgency:1,Buyer:1},
+  feeMath:'27.5% of est. £124k package',
+  why:'Turnaround plan announced: Corporate Affairs will carry the narrative through results season — the seat rarely stays as-is.',
+  kills:'Turnaround pauses all senior hiring for two quarters.',
+  first:'Open with the turnaround narrative, not the vacancy — ask who owns the story through FY27.',
+  opener:'Hi — turnaround stories live or die on who tells them. Before the plan hits its first results day, worth comparing notes on Corporate Affairs leadership? I have already mapped the field.' },
+
+{ id:'octopus', name:'Octopus Energy', tier:'call', angle:226, dist:138, fee:24, strength:77,
+  seat:'Head of Internal Communications', trigger:'Hiring cluster — 4 comms roles in 11 days', windowTxt:'NOW–4 WEEKS',
+  conf:'High', verify:'2+ sources', gate:{Seat:2,Budget:1,Urgency:2,Buyer:1},
+  feeMath:'25% of est. £96k package',
+  why:'Four comms roles posted in 11 days — a cluster that size usually precedes a senior IC hire to run it.',
+  kills:'Cluster is volume hiring only — no senior seat budgeted.',
+  first:'Call the People Director; offer to consolidate the cluster under one retained search.',
+  opener:'Hi — four comms roles in eleven days says the team is scaling faster than one hiring manager can run it. We can take the Head of Internal Comms search off your desk and shortlist inside two weeks.' },
+
+{ id:'wise', name:'Wise plc', tier:'call', angle:172, dist:216, fee:26, strength:74,
+  seat:'Head of External Communications', trigger:'IR & comms change — US listing shift', windowTxt:'4–10 WEEKS',
+  conf:'Moderate', verify:'Registry-attested', gate:{Seat:2,Budget:1,Urgency:1,Buyer:2},
+  feeMath:'25% of est. £104k package',
+  why:'A US listing shift rewrites the IR and external comms brief — the seat usually follows within a quarter.',
+  kills:'Listing timetable slips to FY28 — the comms change pauses with it.',
+  first:'Lead with dual-market comms expertise; anchor the call to their listing timetable.',
+  opener:'Hi — a US listing shift rewrites the external comms brief overnight. I work the IR–comms seam; happy to share what good looks like for a Head of External Comms on a dual-market story.' },
+
+{ id:'bupa', name:'Bupa', tier:'call', angle:22, dist:262, fee:22, strength:71,
+  seat:'Head of Internal Comms', trigger:'CHRO change + IC platform RFP', windowTxt:'6–12 WEEKS',
+  conf:'Moderate', verify:'2+ sources', gate:{Seat:1,Budget:2,Urgency:1,Buyer:2},
+  feeMath:'25% of est. £88k package',
+  why:'A CHRO change plus an IC platform RFP: internal comms is being rebuilt around a new leader.',
+  kills:'The new CHRO brings their own IC lead across.',
+  first:'Soft intro via the RFP angle — position as the IC search partner before the CHRO’s first 90 days end.',
+  opener:'Hi — a new CHRO plus an IC platform RFP usually means internal comms is about to be rebuilt. If the Head of Internal Comms seat opens, I would like to be first in with a shortlist, not last.' },
+
+/* —— developing —— */
+{ id:'az', name:'AstraZeneca', tier:'dev', angle:258, dist:282, strength:64,
+  trigger:'Hiring restart after 7 months of silence', windowTxt:'WATCHING',
+  verify:'Single source', note:'Single source — recheck scheduled in 3 days. /investigate will pull job-board history and team-page diffs.' },
+{ id:'jd', name:'JD Sports', tier:'dev', angle:10, dist:288, strength:58,
+  trigger:'Mishire exit — Comms Director off the team page after 14 months', windowTxt:'WATCHING',
+  verify:'Single source', note:'/investigate queued — confirming the exit against LinkedIn and the corporate site before promotion.' },
+{ id:'severn', name:'Severn Trent', tier:'dev', angle:300, dist:272, strength:52,
+  trigger:'Contract end — retained agency framework expires Q3', windowTxt:'WATCHING',
+  verify:'Single source', note:'Framework expiry is public; watching for tender notices and comms team churn ahead of Q3.' },
+
+/* —— early signals —— */
+{ id:'deliveroo', name:'Deliveroo', tier:'early', angle:198, dist:300, strength:41,
+  trigger:'M&A chatter', windowTxt:'WATCHING',
+  verify:'Single source', note:'Single press source. No corroboration yet — the radar keeps it on the rim until a second source lands.' },
+{ id:'greggs', name:'Greggs', tier:'early', angle:342, dist:300, strength:38,
+  trigger:'CEO transition rumoured', windowTxt:'WATCHING',
+  verify:'Single source', note:'Rumour only. A CEO change typically moves the comms chair 1–2 quarters later — too early to call.' },
+
+/* —— blocked —— */
+{ id:'frasers', name:'Frasers Group', tier:'blocked', angle:318, dist:315,
+  trigger:'Competing recruiter holds an exclusive', windowTxt:'BLOCKED',
+  note:'A competing recruiter holds an exclusive on the brief. Radar rechecks the exclusivity monthly — pursuing now burns the relationship.' },
+{ id:'thames', name:'Thames Water', tier:'blocked', angle:128, dist:315,
+  trigger:'Special-administration risk — spend frozen', windowTxt:'BLOCKED',
+  note:'Special-administration risk: all comms spend frozen. The radar re-opens this the moment the regulator position changes.' }
+];
+const byId = Object.fromEntries(LEADS.map(l => [l.id, l]));
+const TIER_COLOR = { call:'#3ef0c4', dev:'#f0b43e', early:'#8fa3bf', blocked:'#f0533e' };
+const dismissed = new Set(), followed = new Set();
+let selected = null;
+
+/* ---------------- starfield ---------------- */
+(() => { const s = $('#stars'), n = 110; let html = '';
+  for (let i=0;i<n;i++){
+    const d=(Math.random()*5).toFixed(2), o=(Math.random()*.5+.1).toFixed(2);
+    html += `<i style="left:${(Math.random()*100).toFixed(2)}%;top:${(Math.random()*100).toFixed(2)}%;opacity:${o};animation-delay:-${d}s;transform:scale(${(Math.random()*.9+.4).toFixed(2)})"></i>`;
+  } s.innerHTML = html; })();
+
+/* ---------------- scope grid ---------------- */
+(() => {
+  const g = $('#gGrid'), gl = $('#gLabels');
+  /* rings: distance = time-to-window */
+  const RINGS = [[105,'THIS WEEK'],[175,'2–6 WKS'],[245,'6–12 WKS'],[315,'WATCHING']];
+  [140,210,280].forEach(r => g.appendChild(el('circle',{cx:C,cy:C,r,class:'ring minor'})));
+  RINGS.forEach(([r],i) => g.appendChild(el('circle',{cx:C,cy:C,r,class:'ring'+(i===3?' outer':'')})));
+  /* sector spokes at the boundaries (sectors centred on 0/60/…) */
+  for (let a=30; a<360; a+=60){
+    const [x1,y1]=pt(a,48),[x2,y2]=pt(a,318);
+    g.appendChild(el('line',{x1,y1,x2,y2,class:'spoke'}));
+  }
+  /* ring labels along the 12-o'clock axis */
+  RINGS.forEach(([r,label]) => {
+    const w = label.length*6.4+18, y = C-r;
+    gl.appendChild(el('rect',{x:C-w/2,y:y-8,width:w,height:16,rx:8,class:'ring-pill'}));
+    const t = el('text',{x:C,y:y+3.4,'text-anchor':'middle',class:'ring-pill-txt'});
+    t.textContent = label; gl.appendChild(t);
+  });
+  /* sector rim labels by trigger family */
+  [['LEADERSHIP',0],['FUNDING',60],['DISTRESS',120],['M&A',180],['HIRING',240],['FRAMEWORKS',300]]
+  .forEach(([name,a]) => {
+    const [x,y] = pt(a,341);
+    const rot = (a>90 && a<270) ? a+180 : a;
+    const t = el('text',{x,y,'text-anchor':'middle',class:'sector-label',transform:`rotate(${rot} ${x} ${y})`});
+    t.textContent = name; gl.appendChild(t);
+  });
+})();
+
+/* ---------------- sweep (conic trail from slices) ---------------- */
+(() => {
+  const gs = $('#gSweep'), sweep = el('g',{id:'sweep'});
+  const R=322, N=30, W=2.7;
+  for (let i=0;i<N;i++){
+    const a1=-(i+1)*W, a2=-i*W;
+    const [x1,y1]=pt(a1,R),[x2,y2]=pt(a2,R);
+    sweep.appendChild(el('path',{
+      d:`M${C} ${C} L${x1.toFixed(1)} ${y1.toFixed(1)} A${R} ${R} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z`,
+      fill:'#3ef0c4', opacity:(Math.pow(1-i/N,2.1)*0.32).toFixed(3)
+    }));
+  }
+  const [lx,ly]=pt(0,R);
+  sweep.appendChild(el('line',{x1:C,y1:C,x2:lx,y2:ly,stroke:'#3ef0c4','stroke-width':1.6,opacity:.9,filter:'url(#soft)'}));
+  sweep.appendChild(el('circle',{cx:lx,cy:ly,r:3,fill:'#bffcec',filter:'url(#soft)'}));
+  gs.appendChild(sweep);
+})();
+
+/* ---------------- blips ---------------- */
+(() => {
+  const gb = $('#gBlips');
+  LEADS.forEach(L => {
+    const [x,y] = pt(L.angle, L.dist);
+    L.x=x; L.y=y;
+    const r = L.fee ? 6.5 + (L.fee-22)/12*4 : (L.tier==='dev'?5 : L.tier==='early'?4 : 5.5);
+    L.r = r;
+    const col = TIER_COLOR[L.tier];
+    const grp = el('g',{class:'blip','data-tier':L.tier,'data-id':L.id,tabindex:0,role:'button'});
+    const tt = document.createElementNS(SVG,'title');
+    tt.textContent = `${L.name} — ${L.trigger}`; grp.appendChild(tt);
+    /* phase-locked flare delay: the sweep's leading edge crosses angle a at t = T·a/360 */
+    const delay = ((T*((L.angle%360+360)%360)/360) - T).toFixed(2)+'s';
+    grp.appendChild(el('circle',{class:'glow',cx:x,cy:y,r:r*3.4,fill:`url(#glow-${L.tier})`,style:`animation-delay:-${(Math.random()*3).toFixed(2)}s`}));
+    grp.appendChild(el('circle',{class:'flare',cx:x,cy:y,r:r+4,fill:'none',stroke:col,'stroke-width':1.4,style:`animation-delay:${delay}`}));
+    const core = el('circle',{class:'core',cx:x,cy:y,r,fill:col,stroke:'rgba(5,10,20,.85)','stroke-width':1.6});
+    grp.appendChild(core);
+    if (L.tier==='blocked'){
+      core.setAttribute('fill','#3a1612');
+      grp.appendChild(el('circle',{cx:x,cy:y,r:r+3.5,fill:'none',stroke:col,'stroke-width':1.6}));
+      grp.appendChild(el('line',{x1:x-r-5,y1:y+r+5,x2:x+r+5,y2:y-r-5,stroke:col,'stroke-width':1.8}));
+    }
+    /* followed-up state: ✓ ring */
+    const chk = el('g',{class:'check'});
+    chk.appendChild(el('circle',{cx:x,cy:y,r:r+3,fill:'rgba(5,16,13,.9)',stroke:'#3ef0c4','stroke-width':1.6}));
+    chk.appendChild(el('path',{d:`M${x-4.5} ${y+.5} L${x-1.2} ${y+3.8} L${x+5} ${y-3.5}`,fill:'none',stroke:'#3ef0c4','stroke-width':2,'stroke-linecap':'round','stroke-linejoin':'round'}));
+    grp.appendChild(chk);
+
+    grp.addEventListener('click', () => selectLead(L.id));
+    grp.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' '){ e.preventDefault(); selectLead(L.id);} });
+    grp.addEventListener('mouseenter', e => showTip(L, e));
+    grp.addEventListener('mousemove', e => moveTip(e));
+    grp.addEventListener('mouseleave', hideTip);
+    gb.appendChild(grp);
+  });
+})();
+
+/* ---------------- tooltip ---------------- */
+const tip = $('#tip');
+function showTip(L, e){
+  const fee = L.fee ? `£${L.fee}k · STR ${L.strength}` : (L.strength ? `STR ${L.strength}` : 'NO-GO');
+  tip.innerHTML = `<b>${L.name}</b><div class="t1">${fee}</div><div class="t2">${L.windowTxt} · ${L.trigger.split('—')[0].trim()}</div>`;
+  tip.style.opacity = 1; moveTip(e);
+}
+function moveTip(e){
+  const w = tip.offsetWidth, x = Math.min(e.clientX+16, innerWidth-w-12);
+  tip.style.left = x+'px'; tip.style.top = (e.clientY-14)+'px';
+}
+function hideTip(){ tip.style.opacity = 0; }
+
+/* ---------------- call order ---------------- */
+(() => {
+  const ol = $('#callOrder');
+  LEADS.filter(l=>l.tier==='call').sort((a,b)=>b.strength-a.strength).forEach((L,i)=>{
+    const li = document.createElement('li');
+    li.dataset.id = L.id;
+    li.innerHTML = `<span class="co-num">${String(i+1).padStart(2,'0')}</span><span class="co-name">${L.name}</span><span class="co-fee">£${L.fee}k</span>`;
+    li.addEventListener('click', () => selectLead(L.id));
+    ol.appendChild(li);
+  });
+})();
+
+/* ---------------- selection + dossier ---------------- */
+const drawer = $('#drawer'), pane = $('#paneDossier'), selring = $('#selring');
+function selectLead(id){
+  const L = byId[id];
+  selected = id;
+  selring.setAttribute('transform',`translate(${L.x-0} ${L.y-0})`);
+  selring.querySelector('.dash').setAttribute('r', L.r+9);
+  selring.querySelectorAll('circle')[1].setAttribute('r', L.r+15);
+  selring.classList.add('on');
+  document.querySelectorAll('.call-order li').forEach(li => li.classList.toggle('active', li.dataset.id===id));
+  renderDossier(L);
+  drawer.classList.add('dossier-open','mobile-open');
+}
+function closeDossier(){
+  drawer.classList.remove('dossier-open');
+  selring.classList.remove('on');
+  selected = null;
+  document.querySelectorAll('.call-order li').forEach(li => li.classList.remove('active'));
+}
+$('#dClose').addEventListener('click', () => drawer.classList.remove('mobile-open'));
+$('#briefBtn').addEventListener('click', () => drawer.classList.add('mobile-open'));
+
+const TIER_NAME = { call:'Call-ready', dev:'Developing', early:'Early signals', blocked:'Blocked' };
+function gateChip(name, v){
+  const pips = `<span class="pips"><i></i><i></i></span>`;
+  return `<div class="gchip g${v}"><span>${name}</span><b>${v}</b>${pips}</div>`;
+}
+function renderDossier(L){
+  const isCall = L.tier==='call';
+  let h = `<button class="d-back" id="dBack">◂ Radar overview</button>
+  <div class="dos-head"><h2>${L.name}</h2><span class="tierpill ${L.tier}">${TIER_NAME[L.tier]}</span></div>`;
+  if (L.seat) h += `<div class="dos-seat">${L.seat}</div>`;
+  h += `<div class="dos-trigger">${L.trigger}</div>`;
+
+  if (L.strength) h += `
+  <div class="strength">
+    <div class="lab"><span>Lead strength · fit × signal × corroboration × timing</span><b>${L.strength}/100</b></div>
+    <div class="sbar"><i id="sbarFill"></i></div>
+  </div>`;
+
+  if (isCall) h += `
+  <div class="kv-row">
+    <div class="kv"><span>Window</span><b>${L.windowTxt}</b></div>
+    <div class="kv"><span>Fee estimate</span><b class="money">£${L.fee}k</b><small>${L.feeMath}</small></div>
+  </div>`;
+
+  let badges = '';
+  if (L.conf) badges += `<span class="badge conf-${L.conf==='High'?'high':'mod'}">Confidence ${L.conf}</span>`;
+  if (L.red) badges += `<span class="badge redteam">Red-teamed ✓ ${L.red}</span>`;
+  if (L.verify) badges += `<span class="badge verify">${L.verify}${L.verifyNote?' · '+L.verifyNote:''}</span>`;
+  if (badges) h += `<div class="badges">${badges}</div>`;
+
+  if (L.gate){
+    const total = Object.values(L.gate).reduce((a,b)=>a+b,0);
+    h += `<div class="gate">
+      <div class="gl"><span>Qualification gate</span><b>${total}/8</b></div>
+      <div class="gate-chips">${Object.entries(L.gate).map(([k,v])=>gateChip(k,v)).join('')}</div>
+    </div>`;
+  }
+
+  if (L.why)   h += `<div class="dsec why"><h4>Why now</h4><p>${L.why}</p></div>`;
+  if (L.kills) h += `<div class="dsec kills"><h4>What kills this</h4><p>${L.kills}</p></div>`;
+  if (L.first) h += `<div class="dsec first"><h4>First move</h4><p>${L.first}</p>${L.buyer?`<p class="buyer">Buyer: <b>${L.buyer}</b></p>`:''}</div>`;
+  if (L.note)  h += `<div class="dsec"><h4 style="color:var(--amber)">Radar note</h4><p>${L.note}</p></div>`;
+
+  if (isCall){
+    h += `<div class="dos-actions">
+      <button class="abtn primary" id="btnOpener">Draft opener</button>
+      <button class="abtn ghost" data-toast="Generate pitch — wired in production">Generate pitch</button>
+      <button class="abtn ghost" data-toast="View sources — wired in production">View sources</button>
+    </div>
+    <div class="opener-wrap" id="openerWrap">
+      <div class="console" id="openerOut"><span class="pfx">opener &gt;</span> </div>
+    </div>
+    <div class="dos-actions" style="margin-top:14px">
+      <button class="abtn ok ${followed.has(L.id)?'done':''}" id="btnFollow">${followed.has(L.id)?'Followed up ✓':'Mark followed up'}</button>
+      <button class="abtn kill" id="btnDismiss">Dismiss ✕</button>
+    </div>`;
+  } else {
+    h += `<div class="dos-actions">
+      <button class="abtn ghost" data-toast="View sources — wired in production">View sources</button>
+      ${L.tier==='blocked'
+        ? `<button class="abtn ghost" data-toast="Recheck scheduled — radar will re-sweep this lead">Schedule recheck</button>`
+        : `<button class="abtn ghost" data-toast="/investigate queued — verdict lands on next sweep">/investigate</button>`}
+      <button class="abtn kill" id="btnDismiss">Dismiss ✕</button>
+    </div>`;
+  }
+  pane.innerHTML = h;
+
+  /* wire */
+  $('#dBack').addEventListener('click', closeDossier);
+  pane.querySelectorAll('[data-toast]').forEach(b => b.addEventListener('click', () => toast(b.dataset.toast)));
+  const sf = $('#sbarFill');
+  if (sf){ requestAnimationFrame(() => requestAnimationFrame(() => sf.style.width = L.strength+'%')); if (RM) sf.style.width = L.strength+'%'; }
+  const bo = $('#btnOpener');
+  if (bo) bo.addEventListener('click', () => {
+    $('#openerWrap').classList.add('show');
+    typeText($('#openerOut'), L.opener, 'opener > ', 14);
+  });
+  const bf = $('#btnFollow');
+  if (bf) bf.addEventListener('click', () => {
+    followed.add(L.id);
+    blipOf(L.id).classList.add('followed');
+    bf.classList.add('done'); bf.textContent = 'Followed up ✓';
+    const li = document.querySelector(`.call-order li[data-id="${L.id}"]`);
+    if (li) li.classList.add('done');
+    toast(`${L.name} marked followed up — blip ticked on scope`);
+  });
+  const bd = $('#btnDismiss');
+  if (bd) bd.addEventListener('click', () => {
+    dismissed.add(L.id);
+    blipOf(L.id).classList.add('dismissed');
+    const li = document.querySelector(`.call-order li[data-id="${L.id}"]`);
+    if (li){ li.classList.add('done'); li.style.opacity = .35; }
+    recalcBoard();
+    toast(`${L.name} dismissed — removed from today's board`);
+    closeDossier();
+  });
+  pane.scrollTop = 0;
+}
+const blipOf = id => document.querySelector(`.blip[data-id="${id}"]`);
+
+/* ---------------- tier toggles ---------------- */
+$('#legend').addEventListener('click', e => {
+  const chip = e.target.closest('.tier-chip'); if (!chip) return;
+  chip.classList.toggle('off');
+  $('#scope').classList.toggle('dim-'+chip.dataset.tier, chip.classList.contains('off'));
+});
+
+/* ---------------- board value count-up ---------------- */
+function boardTotal(){ return LEADS.filter(l=>l.tier==='call' && !dismissed.has(l.id)).reduce((a,l)=>a+l.fee,0); }
+function setBoard(v, n){
+  $('#boardVal').textContent = `£${v}k`;
+  $('#hub').querySelector('.hub-val').textContent = `£${v}k`;
+  $('#boardSub').textContent = `on the board · ${n} call-ready`;
+}
+function recalcBoard(){ setBoard(boardTotal(), LEADS.filter(l=>l.tier==='call'&&!dismissed.has(l.id)).length); }
+(() => {
+  const target = boardTotal();
+  if (RM){ setBoard(target,7); return; }
+  const t0 = performance.now(), D = 1500;
+  (function tick(t){
+    const p = Math.min((t-t0)/D, 1), e = 1-Math.pow(1-p,3);
+    setBoard(Math.round(target*e), 7);
+    if (p<1) requestAnimationFrame(tick);
+  })(t0);
+})();
+
+/* ---------------- typing engine ---------------- */
+let typeTimer = null;
+function typeText(node, text, prefix, speed){
+  clearInterval(typeTimer);
+  const pfx = `<span class="pfx">${prefix}</span>`;
+  if (RM){ node.innerHTML = pfx + text; return; }
+  let i = 0;
+  node.innerHTML = pfx + '<span class="caret"></span>';
+  typeTimer = setInterval(() => {
+    i += 1 + (Math.random()<.3 ? 1 : 0);
+    if (i >= text.length){ i = text.length; clearInterval(typeTimer);
+      node.innerHTML = pfx + text;
+    } else {
+      node.innerHTML = pfx + text.slice(0,i) + '<span class="caret"></span>';
+    }
+  }, speed);
+}
+
+/* ---------------- morning narrative ---------------- */
+(() => {
+  const txt = 'Three things changed overnight: National Grid’s search hit day 54 with still no agency attached, Monzo’s SH01 filed at Companies House confirming the £380m round, and Ocado’s comms exit was corroborated by a second source. Your board is worth £196k today; the two calls that matter before 10:00 are National Grid and Ocado — both windows close inside a fortnight.';
+  const node = $('#narrative');
+  if (RM){ node.textContent = txt; return; }
+  let i = 0;
+  const t = setInterval(() => {
+    i += 2;
+    if (i >= txt.length){ clearInterval(t); node.innerHTML = txt; }
+    else node.innerHTML = txt.slice(0,i) + '<span class="caret"></span>';
+  }, 11);
+})();
+
+/* ---------------- ask the radar ---------------- */
+const ASK = {
+  calls: 'National Grid first — ring Sasha Kemp (Group Corporate Affairs Director) and lead with the 54-day vacancy. Then Ocado: profit warning + empty comms chair, deputy could close it any day. £60k combined; both windows shut inside a fortnight.',
+  overnight: 'SH01 filed at Companies House confirmed Monzo’s £380m round (registry-attested). Ocado’s Comms Director exit picked up a second source via RNS. National Grid’s in-house search crossed day 54, reposted twice, no agency attached — promoted to Call-ready.',
+  blocked: 'Thames Water: special-administration risk — all comms spend frozen, so any seat that opens cannot be bought. The radar rechecks on every regulator update and will re-open the lead the moment the freeze lifts.'
+};
+document.querySelectorAll('.ask-chip').forEach(c =>
+  c.addEventListener('click', () => typeText($('#askOut'), ASK[c.dataset.ask], 'radar > ', 9)));
+
+/* ---------------- signal ticker ---------------- */
+(() => {
+  const items = [
+    ['06:12','SWEEP COMPLETE — 1,284 SOURCES · 9 CORROBORATED · 2 KILLED · 1 PROMOTED', true],
+    ['06:11','SH01 FILED — <b>MONZO</b> £380M GROWTH ROUND <em>(COMPANIES HOUSE)</em>'],
+    ['06:04','RNS — <b>OCADO</b> COMMS EXIT CORROBORATED BY 2ND SOURCE'],
+    ['05:58','<b>NATIONAL GRID</b> — HEAD OF MEDIA RELATIONS VACANCY HITS DAY 54 · REPOSTED ×2 · NO AGENCY ATTACHED'],
+    ['05:46','<b>OCTOPUS ENERGY</b> — 4TH COMMS ROLE POSTED IN 11 DAYS'],
+    ['05:31','<b>JD SPORTS</b> — COMMS DIRECTOR REMOVED FROM TEAM PAGE AFTER 14 MONTHS'],
+    ['05:17','<b>ASTRAZENECA</b> — COMMS HIRING RESTART AFTER 7 MONTHS OF SILENCE'],
+    ['04:58','<b>SEVERN TRENT</b> — RETAINED AGENCY FRAMEWORK EXPIRES Q3'],
+    ['04:41','<b>THAMES WATER</b> — SPEND FREEZE CONFIRMED · LEAD BLOCKED'],
+    ['04:22','<b>FRASERS GROUP</b> — COMPETING RECRUITER EXCLUSIVE VERIFIED · LEAD BLOCKED'],
+    ['03:54','<b>BUPA</b> — IC PLATFORM RFP MATCHED TO CHRO CHANGE'],
+    ['03:18','<b>WISE PLC</b> — US LISTING SHIFT FLAGGED IN IR PAGE DIFF']
+  ];
+  const seg = items.map(([t,m]) => `<span><em>${t}</em>&nbsp; ${m} &nbsp;▸</span>`).join('');
+  $('#tkTrack').innerHTML = seg + seg; /* duplicate for seamless loop */
+})();
+
+/* ---------------- toast ---------------- */
+let toastTimer = null;
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+/* esc closes dossier */
+addEventListener('keydown', e => { if (e.key==='Escape'){ closeDossier(); drawer.classList.remove('mobile-open'); }});
+</script>
+</body>
+</html>
