@@ -1,0 +1,167 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>B3 — Portfolio Bento · BD Leads</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1f1f1f;--deep:#0f1a2e;--dim:#6b7689;--line:rgba(15,26,46,.10);
+--paper:#f6f8fb;--blue:#2f5fd0;--bluewash:#e9effb;--green:#1e7a41;--greenwash:#e7f3ec;
+--amber:#9a3412;--amberwash:#fff7ed;--teal:#0e7c74;--tealwash:#ddf3f0;--clay:#d97a2b;--claywash:#fdecdb;--greywash:#eef1f5}
+*{box-sizing:border-box;margin:0}
+body{font:13.5px/1.5 Inter,system-ui,sans-serif;color:var(--ink);background:
+radial-gradient(1000px 460px at 12% -8%,#e8f0fc 0%,transparent 60%),var(--paper);
+min-height:100vh;padding:24px 28px}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+.head{display:flex;align-items:baseline;gap:14px;margin-bottom:18px}
+.head h1{font:500 26px Newsreader,serif}
+.head .sub{font:700 10px "JetBrains Mono";letter-spacing:.15em;color:var(--dim);text-transform:uppercase}
+.head .spacer{flex:1}
+.head .hint{font:600 11.5px Inter;color:var(--dim)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr) 300px;grid-auto-rows:128px;gap:14px}
+.tile{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px 18px;position:relative;overflow:hidden;transition:box-shadow .18s,transform .18s}
+.tile:hover{box-shadow:0 14px 36px rgba(15,26,46,.10);transform:translateY(-2px)}
+.lab{font:700 9px "JetBrains Mono";letter-spacing:.15em;color:var(--dim);text-transform:uppercase}
+.chip{display:inline-flex;font:700 9px Inter;letter-spacing:.05em;text-transform:uppercase;border-radius:99px;padding:3px 8px}
+.c-g{color:var(--green);background:var(--greenwash);border:1px solid rgba(30,122,65,.3)}
+.c-t{color:var(--teal);background:var(--tealwash);border:1px solid rgba(18,165,148,.4);font-family:"JetBrains Mono"}
+.c-a{color:var(--amber);background:var(--amberwash);border:1px solid #fdba74}
+.c-c{color:var(--clay);background:var(--claywash);border:1px solid rgba(217,122,43,.35)}
+.c-b{color:var(--blue);background:var(--bluewash);border:1px solid rgba(47,95,208,.3)}
+/* hero */
+.hero{grid-column:1/3;grid-row:1/3;display:flex;flex-direction:column;cursor:pointer;
+background:linear-gradient(165deg,#0f1a2e 0%,#1b2c4d 70%,#23375d 100%);color:#fff;border:none}
+.hero .lab{color:rgba(255,255,255,.55)}
+.hero .co{font:500 30px/1.1 Newsreader,serif;margin-top:6px}
+.hero .open{font:italic 400 15.5px/1.5 Newsreader,serif;color:#dbe6fb;margin-top:10px;flex:1}
+.hero .foot{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.hero .score{position:absolute;top:16px;right:18px;text-align:center}
+.hero .score .v{font:800 30px "JetBrains Mono";color:#7ef0b2}
+.hero .score .l{font:700 8px "JetBrains Mono";letter-spacing:.13em;color:rgba(255,255,255,.5);text-transform:uppercase}
+.hero .qmini{display:flex;gap:5px}
+.hero .qmini span{font:800 9.5px "JetBrains Mono";border-radius:6px;padding:3px 7px;background:rgba(255,255,255,.10);color:#cfe0ff}
+.hero .qmini span.g{color:#7ef0b2}
+/* flip tiles */
+.flip{cursor:pointer;perspective:900px;padding:0;border:none;background:transparent;overflow:visible}
+.fl-in{position:relative;width:100%;height:100%;transition:transform .5s cubic-bezier(.2,.7,.25,1);transform-style:preserve-3d}
+.flip:hover .fl-in{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px 16px;display:flex;flex-direction:column}
+.face.back{transform:rotateY(180deg);background:#0f1a2e;color:#fff;border:none}
+.face .co{font:700 14.5px Inter;letter-spacing:-.01em;margin-top:4px}
+.face .seat{font:500 11px Inter;color:var(--dim)}
+.face .row{display:flex;gap:6px;align-items:center;margin-top:auto}
+.face .sc{position:absolute;top:12px;right:14px;font:800 16px "JetBrains Mono"}
+.sc.hi{color:var(--green)}.sc.md{color:#d97a2b}
+.face.back .lab{color:rgba(255,255,255,.5)}
+.face.back p{font:italic 400 11.5px/1.45 Newsreader,serif;color:#dbe6fb;margin-top:6px;overflow:hidden}
+.face.back .who{font:600 10px "JetBrains Mono";color:#9fd9c6;margin-top:auto}
+/* right column */
+.colhead{grid-column:5;display:flex;flex-direction:column;gap:0;background:transparent;border:none;padding:0 2px}
+.colhead .tile{height:100%}
+.qrow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px dashed var(--line)}
+.qrow:first-of-type{border-top:none}
+.qrow .co{font:600 12px Inter}
+.qrow .why{font:600 9.5px Inter;color:var(--amber)}
+.inv{font:700 9.5px "JetBrains Mono";color:var(--blue)}
+/* fable strip */
+.fstrip{display:flex;align-items:center;gap:26px;background:linear-gradient(90deg,#fff, #fbfdff);border:1px solid var(--line);border-radius:18px;padding:14px 22px}
+.fstrip .spark{font:800 18px "JetBrains Mono";color:var(--clay)}
+.fst{display:flex;flex-direction:column;gap:2px}
+.fst .v{font:800 17px "JetBrains Mono";color:var(--deep)}
+.fst .l{font:700 8.5px "JetBrains Mono";letter-spacing:.12em;color:var(--dim);text-transform:uppercase}
+.fst .v .ok{color:var(--green)}.fst .v .no{color:var(--amber)}
+.fstrip .note{margin-left:auto;font:600 11px Inter;color:var(--dim);max-width:330px;text-align:right}
+/* propensity tile */
+.prop .bar{display:flex;height:10px;border-radius:6px;overflow:hidden;margin-top:10px}
+.prop .bar i{height:100%}
+.prop .leg{display:flex;gap:12px;margin-top:9px;flex-wrap:wrap}
+.prop .leg span{font:600 10px Inter;color:var(--dim);display:flex;align-items:center;gap:5px}
+.prop .leg i{width:8px;height:8px;border-radius:3px}
+</style></head><body>
+<div class="head">
+  <h1>BD Leads</h1><span class="sub">Portfolio · Tue 10 Jun</span>
+  <span class="spacer"></span>
+  <span class="hint">hover any tile to flip to its case · click for the full dossier</span>
+</div>
+<div class="grid">
+
+  <div class="tile hero">
+    <span class="lab">№1 today · Growth demand · window 8–26 wks</span>
+    <div class="co">Trustpilot</div>
+    <div class="open">“You filed fresh equity on 29 May and you're running 72 open roles without a single comms hire — fifteen minutes on what that first Head of Comms should own?”</div>
+    <div class="score"><div class="v">80</div><div class="l">strength</div></div>
+    <div class="foot">
+      <span class="chip c-t">RED-TEAMED ✓ 84</span>
+      <span class="chip c-g">✓ Registry-attested</span>
+      <span class="qmini"><span class="g">S✓✓</span><span class="g">B✓✓</span><span>U✓</span><span>Y✓</span></span>
+    </div>
+  </div>
+
+  <div class="flip"><div class="fl-in">
+    <div class="face"><span class="lab">Leadership reset</span><div class="co">Lloyds Banking Group</div><div class="seat">Corporate Affairs Director</div><span class="sc hi">73</span>
+      <div class="row"><span class="chip c-t">RT ✓ 71</span><span class="chip c-g">Registry</span></div></div>
+    <div class="face back"><span class="lab">Open with</span><p>“With the comms review announced alongside the reshuffle, you'll be weighing rebuild vs brief-out — we mapped the gaps your peer set closed.”</p><div class="who">→ Group CoSec · named · warm</div></div>
+  </div></div>
+
+  <div class="flip"><div class="fl-in">
+    <div class="face"><span class="lab">Growth demand</span><div class="co">Rathbones Group</div><div class="seat">Corporate Affairs Director</div><span class="sc md">66</span>
+      <div class="row"><span class="chip c-g">Registry</span><span class="chip c-c">Unknown propensity</span></div></div>
+    <div class="face back"><span class="lab">Open with</span><p>“Your SH01 last month plus the wealth-platform build suggests the corporate narrative is about to matter more — who owns it today?”</p><div class="who">→ CEO office · route</div></div>
+  </div></div>
+
+  <div class="flip"><div class="fl-in">
+    <div class="face"><span class="lab">Growth demand</span><div class="co">Intermediate Capital</div><div class="seat">Head of Communications</div><span class="sc md">66</span>
+      <div class="row"><span class="chip c-g">Registry</span></div></div>
+    <div class="face back"><span class="lab">Open with</span><p>“Fresh capital on the register and an IR-heavy bench — the corporate-comms seat looks one hire light against your AUM peers.”</p><div class="who">→ CFO / Head of IR · route</div></div>
+  </div></div>
+
+  <div class="flip"><div class="fl-in">
+    <div class="face"><span class="lab">Deadline-driven</span><div class="co">United Utilities</div><div class="seat">Head of Corporate Affairs</div><span class="sc md">64</span>
+      <div class="row"><span class="chip c-g">Registry</span><span class="chip c-g">Proven payer</span></div></div>
+    <div class="face back"><span class="lab">Open with</span><p>“Ahead of AMP8 determinations, the corporate-affairs seat carries the regulator relationship — we benchmarked what the sector pays now.”</p><div class="who">→ CoSec office · named</div></div>
+  </div></div>
+
+  <div class="flip" style="grid-column:1;grid-row:3"><div class="fl-in">
+    <div class="face"><span class="lab">Leadership reset</span><div class="co">St James's Place</div><div class="seat">IR / Corporate Affairs</div><span class="sc md">57</span>
+      <div class="row"><span class="chip c-g">Registry</span></div></div>
+    <div class="face back"><span class="lab">Open with</span><p>“New CFO past day-90 with the IR seat unconfirmed — comparable resets briefed out within the quarter.”</p><div class="who">→ CFO office · route</div></div>
+  </div></div>
+
+  <div class="colhead" style="grid-row:1/2">
+    <div class="tile"><span class="lab">Developing — worth building</span>
+      <div class="qrow"><span class="co">Aviva</span><span class="why">window opens 18d</span></div>
+      <div class="qrow"><span class="co">Oxford Biomedica</span><span class="inv">/investigate</span></div>
+      <div class="qrow"><span class="co">Whitbread</span><span class="why">weakest: buyer</span></div>
+    </div>
+  </div>
+
+  <div class="colhead" style="grid-row:2/3">
+    <div class="tile prop"><span class="lab">Fee propensity · 100 active</span>
+      <div class="bar"><i style="flex:14;background:#1e7a41"></i><i style="flex:22;background:#d97a2b"></i><i style="flex:55;background:#cbd5e3"></i><i style="flex:9;background:#b5530e"></i></div>
+      <div class="leg">
+        <span><i style="background:#1e7a41"></i>Proven payer 14</span>
+        <span><i style="background:#d97a2b"></i>Leans external 22</span>
+        <span><i style="background:#cbd5e3"></i>Unknown 55</span>
+        <span><i style="background:#b5530e"></i>In-house 9</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="fstrip" style="grid-column:2/5;grid-row:3">
+    <span class="spark">✦</span>
+    <div class="fst"><span class="v">6</span><span class="l">call-ready</span></div>
+    <div class="fst"><span class="v"><span class="ok">4✓</span> 1↻ <span class="no">1✕</span></span><span class="l">red-team verdicts</span></div>
+    <div class="fst"><span class="v">76</span><span class="l">avg conviction</span></div>
+    <div class="fst"><span class="v">11/14</span><span class="l">claims verified</span></div>
+    <div class="fst"><span class="v">3</span><span class="l">propensity facts researched</span></div>
+    <span class="note">Overnight: Fable killed BT Group (“procedural notice, no reputational exposure”) and confirmed United Utilities at conviction 79.</span>
+  </div>
+
+  <div class="colhead" style="grid-row:3/4">
+    <div class="tile"><span class="lab">Run the morning</span>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+        <button style="font:700 12px Inter;padding:10px;border-radius:10px;border:none;background:#0f1a2e;color:#fff;cursor:pointer">▶ Start daily run (6)</button>
+        <button style="font:700 12px Inter;padding:10px;border-radius:10px;border:1px solid var(--line);background:#fff;cursor:pointer">✦ /red-team the queue</button>
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>

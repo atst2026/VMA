@@ -1,0 +1,110 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>B2 — Daily Run · BD Leads</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1f1f1f;--deep:#0f1a2e;--dim:#6b7689;--line:rgba(15,26,46,.09);
+--paper:#f7f9fc;--blue:#2f5fd0;--green:#1e7a41;--greenwash:#e7f3ec;
+--amber:#9a3412;--amberwash:#fff7ed;--teal:#0e7c74;--tealwash:#ddf3f0;--claywash:#fdecdb;--clay:#d97a2b}
+*{box-sizing:border-box;margin:0}
+body{font:14px/1.55 Inter,system-ui,sans-serif;color:var(--ink);height:100vh;overflow:hidden;
+background:radial-gradient(1100px 480px at 50% -12%,#e8f0fc 0%,transparent 62%),var(--paper);
+display:flex;flex-direction:column}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+/* top: run progress */
+.top{display:flex;align-items:center;gap:16px;padding:18px 30px}
+.top .t{font:700 10.5px "JetBrains Mono";letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.seg{flex:1;display:flex;gap:6px}
+.seg i{flex:1;height:4px;border-radius:3px;background:#e3e9f2}
+.seg i.done{background:var(--green)}
+.seg i.now{background:var(--deep)}
+.top .kbd{font:700 10px "JetBrains Mono";color:var(--dim);border:1px solid var(--line);border-radius:6px;padding:3px 7px;background:#fff}
+/* stage */
+.stage{flex:1;display:grid;place-items:center;padding:0 28px;min-height:0}
+.card{width:min(880px,94vw);background:#fff;border:1px solid var(--line);border-radius:26px;
+box-shadow:0 30px 80px rgba(15,26,46,.10);padding:42px 52px 34px;position:relative}
+.callno{font:700 10px "JetBrains Mono";letter-spacing:.18em;color:var(--dim);text-transform:uppercase}
+.co{font:500 44px/1.05 Newsreader,serif;letter-spacing:-.015em;margin-top:8px}
+.seatline{display:flex;gap:9px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;font:700 10px Inter;letter-spacing:.05em;text-transform:uppercase;border-radius:99px;padding:4px 11px}
+.c-g{color:var(--green);background:var(--greenwash);border:1px solid rgba(30,122,65,.3)}
+.c-t{color:var(--teal);background:var(--tealwash);border:1px solid rgba(18,165,148,.4);font-family:"JetBrains Mono"}
+.c-c{color:var(--clay);background:var(--claywash);border:1px solid rgba(217,122,43,.35)}
+.seatline .seat{font:600 13px Inter;color:var(--dim)}
+.dials{position:absolute;top:40px;right:52px;display:flex;gap:18px;text-align:center}
+.dial{position:relative;width:74px;height:74px}
+.dial svg{transform:rotate(-90deg)}
+.dial .v{position:absolute;inset:0;display:grid;place-items:center;font:800 19px "JetBrains Mono";color:var(--deep)}
+.dial .l{position:absolute;left:-10px;right:-10px;top:100%;margin-top:5px;font:700 8px "JetBrains Mono";letter-spacing:.12em;color:var(--dim);text-transform:uppercase}
+.open{margin-top:30px}
+.open .lab{font:700 9.5px "JetBrains Mono";letter-spacing:.16em;color:var(--blue);text-transform:uppercase}
+.open p{font:italic 500 24px/1.5 Newsreader,serif;color:var(--deep);margin-top:10px}
+.qbar{display:flex;gap:8px;margin-top:28px}
+.q{flex:1;border-radius:12px;padding:10px 14px;border:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;cursor:help}
+.q .t{font:700 10px "JetBrains Mono";letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.q .m{font:800 13px "JetBrains Mono"}
+.q.q2{background:var(--greenwash);border-color:rgba(30,122,65,.25)}.q.q2 .m{color:var(--green)}.q.q2 .t{color:var(--green)}
+.q.q1{background:var(--amberwash);border-color:#fdba74}.q.q1 .m{color:var(--amber)}.q.q1 .t{color:var(--amber)}
+.factrow{display:flex;gap:26px;margin-top:24px;border-top:1px dashed var(--line);padding-top:18px}
+.fact{flex:1}
+.fact .lab{font:700 9px "JetBrains Mono";letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
+.fact p{font:500 12.5px/1.55 Inter;margin-top:6px}
+.fact p .src{color:var(--blue);font-weight:600}
+/* bottom dock */
+.dock{display:flex;align-items:center;gap:14px;padding:18px 30px 24px;justify-content:center}
+.nav{width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:#fff;font:700 16px Inter;color:var(--dim);cursor:pointer}
+.nav:hover{color:var(--blue);border-color:rgba(47,95,208,.4)}
+.act{font:800 13.5px Inter;border-radius:14px;padding:14px 26px;cursor:pointer;border:1px solid var(--line);background:#fff}
+.act.call{background:var(--deep);color:#fff;border-color:var(--deep)}
+.act.call:hover{background:#16294a}
+.act.ok{color:var(--green);border-color:rgba(30,122,65,.4)}
+.act.no{color:var(--amber);border-color:#fdba74}
+.act .k{font:700 9px "JetBrains Mono";opacity:.55;margin-left:8px}
+.dockmeta{position:fixed;left:30px;bottom:26px;font:600 11px "JetBrains Mono";color:var(--dim)}
+.fable{position:fixed;right:30px;bottom:26px;font:600 11px "JetBrains Mono";color:var(--dim)}
+.fable b{color:var(--clay);font-weight:700}
+</style></head><body>
+<div class="top">
+  <span class="t">Daily run · Tue 10 Jun</span>
+  <div class="seg"><i class="done"></i><i class="now"></i><i></i><i></i><i></i><i></i></div>
+  <span class="t" style="letter-spacing:.06em">Call 2 of 6</span>
+  <span class="kbd">←→ move</span><span class="kbd">F follow up</span><span class="kbd">X dismiss</span>
+</div>
+<div class="stage"><div class="card">
+  <div class="callno">Up next · Growth demand · window 8–26 wks</div>
+  <div class="co">Trustpilot</div>
+  <div class="seatline">
+    <span class="chip c-g">✓ Registry-attested</span>
+    <span class="chip c-t">RED-TEAMED ✓ 84</span>
+    <span class="chip c-c">Proven posture: leans external</span>
+    <span class="seat">Predicted seat — Head of Communications · £85–110k</span>
+  </div>
+  <div class="dials">
+    <div class="dial"><svg width="74" height="74"><circle cx="37" cy="37" r="31" fill="none" stroke="#e7ecf4" stroke-width="6"/><circle cx="37" cy="37" r="31" fill="none" stroke="#1e7a41" stroke-width="6" stroke-linecap="round" stroke-dasharray="194.8" stroke-dashoffset="38.9"/></svg><span class="v">80</span><span class="l">Strength</span></div>
+    <div class="dial"><svg width="74" height="74"><circle cx="37" cy="37" r="31" fill="none" stroke="#e7ecf4" stroke-width="6"/><circle cx="37" cy="37" r="31" fill="none" stroke="#0e7c74" stroke-width="6" stroke-linecap="round" stroke-dasharray="194.8" stroke-dashoffset="31.2"/></svg><span class="v">84</span><span class="l">Conviction</span></div>
+  </div>
+  <div class="open"><span class="lab">Open with</span>
+    <p>“You filed fresh equity on 29 May and you're running seventy-two open roles without a single comms hire — fifteen minutes on what that first Head of Comms seat should own, before the listing chatter starts?”</p>
+  </div>
+  <div class="qbar">
+    <div class="q q2" title="72-role build-out, zero comms function — a structural gap"><span class="t">Seat</span><span class="m">✓✓</span></div>
+    <div class="q q2" title="SH01 share allotment 29 May — fresh equity"><span class="t">Budget</span><span class="m">✓✓</span></div>
+    <div class="q q1" title="inside the 8–26 week window"><span class="t">Urgency</span><span class="m">✓</span></div>
+    <div class="q q1" title="buying seat mapped: CEO office — no named contact yet"><span class="t">Buyer</span><span class="m">✓</span></div>
+  </div>
+  <div class="factrow">
+    <div class="fact"><span class="lab">Strongest fact</span><p>SH01 allotment filed 29 May — fresh equity on the register. <span class="src">Companies House</span></p></div>
+    <div class="fact"><span class="lab">Who signs</span><p>CEO office (funding route). Champion: none known — cold open with the benchmark angle.</p></div>
+    <div class="fact"><span class="lab">What kills this</span><p>A Head of Brand hire closing quietly this fortnight; the raise earmarked R&D-only.</p></div>
+  </div>
+</div></div>
+<div class="dock">
+  <button class="nav">←</button>
+  <button class="act no">✕ Dismiss<span class="k">X</span></button>
+  <button class="act call">📞 Calling now — open dossier</button>
+  <button class="act ok">✓ Followed up<span class="k">F</span></button>
+  <button class="nav">→</button>
+</div>
+<div class="dockmeta">queue after run: Developing 43 · Early 49</div>
+<div class="fable"><b>✦</b> case built &amp; red-teamed by Fable 07:58</div>
+</body></html>
