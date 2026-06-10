@@ -125,7 +125,9 @@ CHRO_CHANGE = TriggerType(
 MNA = TriggerType(
     key="mna",
     label="M&A (integration)",
-    weight=0.9,
+    # Tier-1 (Krug): acquired firms lose 4-in-10 managers within 24
+    # months — 3x baseline; >50% in hostile takeovers.
+    weight=1.0,
     lead_time_weeks=(26, 52),
     who_to_call="CCO of acquirer; Corp Affairs Director at both sides",
     implication=(

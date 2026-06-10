@@ -55,7 +55,16 @@ more than ten "rechecks".
    weakest link? What innocent explanation fits all the same facts?* If
    the innocent explanation survives, the verdict is not "confirmed".
 
-5. **Record the verdict** (this is what the gate reads — one per company):
+5. **Record any propensity facts you found along the way** — TA team
+   spotted, agency-posted ads, a recruitment-supplier award — so the
+   whole engine learns, not just this lead:
+   ```bash
+   python3 -c "from tool import propensity; propensity.record_finding(
+       '<company>', internal_ta=<True|False|None>,
+       agency_user=<True|False|None>, note='<finding>', source_url='<url>')"
+   ```
+
+6. **Record the verdict** (this is what the gate reads — one per company):
    ```bash
    python3 -c "
    from tool import investigations, dossier
@@ -66,7 +75,7 @@ more than ten "rechecks".
    "
    ```
 
-6. **Report back in chat**: verdict, the three strongest facts with
+7. **Report back in chat**: verdict, the three strongest facts with
    sources, the weakest link, and — if confirmed — the named buyer and
    the first move the AD should make.
 

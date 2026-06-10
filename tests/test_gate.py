@@ -107,13 +107,27 @@ def test_old_verdicts_age_out():
 # ====================================================================
 # The gate decision, rule by rule
 # ====================================================================
-def test_presented_high_with_full_stack():
+def test_presented_with_full_stack():
+    # ceo(imminent seat 1) + funding(budget 2) + window(1) + route(1) = 5/8.
     g = gate.assess({"company": "Acme", "events": _full_events()},
                     _lead(), now=NOW)
-    assert g["presented"] and g["confidence"] == "High"
+    assert g["presented"] and g["confidence"] == "Moderate"
     assert g["reasons"] == []
+    assert g["qual"]["total"] == 5
     assert "interim" in g["kill"].lower()
     assert "Ring Incoming CEO" in g["move"]
+
+
+def test_high_confidence_needs_a_seven_dimension_case():
+    # mishire = live seat (2) + urgent (2); funding = budget (2); named
+    # contact = buyer (2) -> 8/8, registry-attested, no contradictions.
+    lead = _lead()
+    lead["triggers"].append({"key": "mishire_reversal", "label": "Mishire",
+                             "recency_mult": 0.9, "age_days": 10.0})
+    g = gate.assess({"company": "Acme", "events": _full_events(),
+                     "seeded_contact_name": "Jane Doe"}, lead, now=NOW)
+    assert g["presented"] and g["confidence"] == "High"
+    assert g["qual"]["total"] == 8
 
 
 def test_partial_evidence_presents_moderate():
@@ -165,10 +179,33 @@ def test_monitor_grade_hidden_and_investigate_flagged():
     assert not g2["presented"] and g2["investigate"]
 
 
-def test_thin_evidence_queues_for_investigation():
-    g = gate.assess({"company": "A", "events": [_ev()]}, _lead(), now=NOW)
+def test_single_nonregistry_source_is_unverified():
+    # One Google News item: the FACT itself is unverified — queue.
+    ev = [_ev("https://news.google.com/articles/abc", "Google News")]
+    g = gate.assess({"company": "A", "events": ev}, _lead(), now=NOW)
     assert not g["presented"] and g["investigate"]
-    assert "thin" in g["reasons"][0].lower()
+    assert "unverified" in g["reasons"][0].lower()
+
+
+def test_single_registry_source_is_verified_truth():
+    # The quiet-company case: ONE Companies House/RNS fact is true on its
+    # own. With the qualification dimensions met, it PRESENTS — press
+    # coverage volume is no longer the gatekeeper.
+    ev = [_ev("https://www.investegate.co.uk/announcement/1",
+              "LSE RNS (Investegate)")]
+    ceo_only = _lead(triggers=[{"key": "ceo_change", "label": "CEO change",
+                                "recency_mult": 0.9, "age_days": 35.0}])
+    under = gate.assess({"company": "A", "events": ev}, ceo_only, now=NOW)
+    # ceo alone: seat1+budget1+urgency1+buyer1 = 4 -> not yet qualified,
+    # but the reason is the SCORECARD, never source counting.
+    assert not under["presented"]
+    assert "not qualified" in under["reasons"][0].lower()
+    assert "source" not in under["reasons"][0].lower()
+    # The same single registry fact + a named buyer = 5/8: PRESENTS.
+    qualified = gate.assess({"company": "A", "events": ev,
+                             "seeded_contact_name": "Jane Doe"},
+                            ceo_only, now=NOW)
+    assert qualified["presented"]   # quiet company, one registry source
 
 
 def test_throttle_raises_bar_to_full():

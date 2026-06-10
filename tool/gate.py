@@ -17,12 +17,16 @@ Hard rules (each checked in order, first failure queues the row):
      date for the day the presentation window opens.
   6. Action grade — monitor-grade stays queued; investigate-grade is
      queued AND flagged for the /investigate playbook.
-  7. Evidence independence — >=3 independent source families with >=1
-     primary (registry / RNS / regulator / procurement / SEC) presents at
-     full strength; >=2 families with a primary-or-credible presents as
-     partial. Thinner is queued. The auto-throttle (acceptance rate <50%
-     over the trailing 7 days, min 10 verdicts) raises the bar to full
-     only and drops the daily cap.
+  7. The qualification scorecard — the four dimensions an elite AD
+     evidences before spending an hour: a live-or-imminent senior SEAT,
+     BUDGET/fundability, URGENCY, and a reachable BUYER (each 0-2, from
+     the collated company data). Present needs seat>=1 and total>=5 of 8.
+     Source-counting is demoted to per-fact VERIFICATION: a registry-
+     attested fact (Companies House / RNS / regulator) is true on its
+     own — quiet companies with thin press are not less qualified; only
+     a lone NON-registry source still queues for /investigate. The
+     auto-throttle (acceptance <50% over 7 days, min 10 verdicts) raises
+     the qualification bar to 6 and drops the daily cap.
 
 Everything is a pure function of (row, lead, verdicts, overlay, now) so
 the whole gate is unit-testable with injected inputs. It never raises —
@@ -53,6 +57,101 @@ AMPLIFIER_ONLY = {"press_velocity_spike", "personal_brand_velocity",
 # evidence of external hiring happening now, our strongest call route.
 BRONZE_KEYS = {"rebrand", "agency_account_move", "framework_award",
                "esg_bcorp", "martech_adoption"}
+
+# ---- Qualification dimensions (the AD scorecard) -------------------------
+# (a) SEAT: a live/structurally-open seat beats an imminent one beats none.
+SEAT_LIVE_KEYS = {"comms_leader_departure", "mishire_reversal",
+                  "inhouse_search_failing", "job_ad_cluster",
+                  "ic_platform_rfp", "hiring_gap", "seniority_gap"}
+SEAT_IMMINENT_KEYS = {"ceo_change", "chair_change", "chro_change",
+                      "cfo_change", "ir_director_change", "mna",
+                      "pe_acquisition", "ipo_listing", "ownership_change",
+                      "crisis_event", "regulator_action",
+                      "regulator_probe_early", "restructure", "redundancy",
+                      "profit_warning", "contract_loss", "hiring_restart",
+                      "funding", "secured_financing", "water_sar",
+                      "contract_end"}
+# (b) BUDGET: capital events that fund an external build.
+BUDGET_KEYS = {"funding", "secured_financing", "ipo_listing",
+               "pe_acquisition", "ownership_change"}
+# (c) URGENCY: forced, deadline- or failure-driven situations.
+URGENT_KEYS = {"crisis_event", "regulator_action", "water_sar",
+               "mishire_reversal", "inhouse_search_failing", "redundancy",
+               "contract_end"}
+
+
+def qualification(lead: dict, item: dict, ev: dict, wstate: str) -> dict:
+    """The four-dimension AD scorecard, each 0-2, computed from the
+    collated company data (events, posture/propensity, financial
+    direction, contacts, window). This — not source volume — is what
+    decides presentation."""
+    lead, item = lead or {}, item or {}
+    live = [t for t in (lead.get("triggers") or [])
+            if isinstance(t, dict) and (t.get("recency_mult") or 0) >= 0.3]
+    keys = {t.get("key") for t in live} - {None}
+
+    # (a) Seat.
+    if keys & SEAT_LIVE_KEYS:
+        seat, seat_why = 2, "a live seat / structural gap is evidenced"
+    elif keys & SEAT_IMMINENT_KEYS:
+        seat, seat_why = 1, ("a seat-creating trigger is live; the role is "
+                             "imminent, not yet advertised")
+    else:
+        seat, seat_why = 0, "no trigger that opens a senior seat"
+
+    # (b) Budget / fundability.
+    prop_pts, _ = propensity_points(lead, item)
+    fin = (lead.get("financial") or {}).get("direction")
+    contras = lead.get("contradictions") or []
+    if fin in ("anti", "conflicting") or prop_pts == PROP_INTERNAL or any(
+            "budget" in c or "cuts" in c for c in contras):
+        budget, budget_why = 0, "budget direction points the wrong way"
+    elif keys & BUDGET_KEYS or prop_pts >= PROP_PROVEN or fin == "pro":
+        budget, budget_why = 2, ("fresh capital / proven fee-payer / growth "
+                                 "funding the build")
+    else:
+        budget, budget_why = 1, "no budget evidence either way"
+
+    # (c) Urgency.
+    demand_now = any(t.get("key") in ("job_ad_cluster", "ic_platform_rfp")
+                     and (t.get("recency_mult") or 0) >= 0.6 for t in live)
+    if keys & URGENT_KEYS or demand_now:
+        urgency, urgency_why = 2, "forced / failure-driven / live-demand timing"
+    elif lead.get("premature") or wstate == "lapsed":
+        urgency, urgency_why = 0, "outside the actionable window"
+    else:
+        urgency, urgency_why = 1, "inside the predicted window"
+
+    # (d) Reachable buyer WITH a personal reason to engage (Savage: the
+    # research that moves a cold call to a warm one). Named contact or a
+    # warm relationship scores 2; a mapped buying seat plus a concrete
+    # access angle scores 1; nothing scores 0.
+    named = bool(item.get("seeded_contact_name")
+                 or item.get("linkedin_profile_name"))
+    warm = (lead.get("relationship") == "warm") or bool(item.get("contact_on_file"))
+    angle = bool((lead.get("access_text") or "").strip())
+    if named or warm:
+        buyer = 2
+        buyer_why = ("a named decision-maker is on file"
+                     if named else "an existing relationship to open with")
+        if angle:
+            buyer_why += " + a concrete access angle"
+    elif (lead.get("who_to_call") or "").strip():
+        buyer, buyer_why = 1, ("the buying seat is mapped"
+                               + (" with an access angle" if angle
+                                  else "; no named contact yet"))
+    else:
+        buyer, buyer_why = 0, "no route to a decision-maker"
+
+    dims = [("seat", seat, seat_why), ("budget", budget, budget_why),
+            ("urgency", urgency, urgency_why), ("buyer", buyer, buyer_why)]
+    weakest = min(dims, key=lambda d: d[1])
+    return {"seat": seat, "seat_why": seat_why,
+            "budget": budget, "budget_why": budget_why,
+            "urgency": urgency, "urgency_why": urgency_why,
+            "buyer": buyer, "buyer_why": buyer_why,
+            "total": seat + budget + urgency + buyer,
+            "weakest_why": weakest[2]}
 
 # Primary (registry-grade) and credible (major-outlet) source fingerprints.
 _PRIMARY_RX = re.compile(
@@ -205,9 +304,10 @@ def kill_text(lead: dict, evidence: dict) -> str:
     triggers = (lead or {}).get("triggers") or []
     key = triggers[0].get("key") if triggers and isinstance(triggers[0], dict) else None
     parts = [_KILL.get(key, _KILL_DEFAULT)]
-    if evidence.get("families", 0) < 3:
-        parts.append("Weakest link: corroboration is still narrow — "
-                     "one more independent source would confirm or kill it.")
+    if (evidence.get("primary") or 0) == 0 and (evidence.get("families") or 0) < 2:
+        parts.append("Weakest link: the fact rests on a single non-registry "
+                     "source — a filing or second outlet would confirm or "
+                     "kill it.")
     for c in (lead or {}).get("contradictions") or []:
         parts.append(f"Live contradiction: {c}.")
     return " ".join(parts)
@@ -231,14 +331,12 @@ def first_move(lead: dict, company: str) -> str:
 
 
 # ---- Lead Strength (the board's 0-100 ordering score) --------------------
-# Weighted the way a recruitment AD qualifies, on two axes: COMMERCIAL
-# value (fit 20 + trigger signal 30 + fee-propensity 25 + timing 10 = 85)
-# and TRUTH (evidence independence 15). Source-counting verifies a lead;
-# it does not dominate its value. Fee-propensity is the research's
-# "will they pay" axis: a company demonstrably buying recruitment scores
-# 25, unknown 10, one visibly building its own TA team 0 (its in-house
-# contradiction already blocks the Call-ready tier upstream). The card
-# shows the evidence behind every component; the number is for scanning.
+# Weighted the way a recruitment AD qualifies: fit 20 + trigger signal
+# 30 + fee-propensity 25 + reachable buyer 15 + timing 10 = 100, with
+# contradictions subtracting and hard blocks flooring. Source-counting
+# does not score at all — verification is a gate concern (a registry
+# fact is true on its own), shown on the card as a tag. The card shows
+# the evidence behind every component; the number is for scanning.
 SCORE_READY = 70      # >= this renders green
 SCORE_DEVELOPING = 45  # >= this renders amber; below renders grey
 
@@ -278,12 +376,16 @@ def strength_score(lead: dict, g: dict, item: dict | None = None) -> int:
         score += min(max(float(lead.get("signal") or 0), 0), 10) * 3.0
         # Fee-propensity (0-25): the will-they-pay axis.
         score += propensity_points(lead, item)[0]
-        # Evidence independence (0-15): the truth axis — verifies, never
-        # dominates. Families capped at 3, primary-source bonus.
-        fams = min(int(ev.get("families") or 0), 3)
-        score += fams / 3 * 11
-        if (ev.get("primary") or 0) >= 1:
-            score += 4
+        # Reachable buyer (0-15): a named, resolved decision-maker beats
+        # a mapped buying seat beats nothing. (Source-counting no longer
+        # scores — verification is a gate concern, shown on the card.)
+        if ((item or {}).get("seeded_contact_name")
+                or (item or {}).get("linkedin_profile_name")
+                or lead.get("relationship") == "warm"
+                or (item or {}).get("contact_on_file")):
+            score += 15
+        elif (lead.get("who_to_call") or "").strip():
+            score += 8
         # Timing (0-10): in-window beats premature beats lapsed.
         reasons = " ".join(g.get("reasons") or [])
         if lead.get("premature"):
@@ -422,28 +524,49 @@ def assess(item: dict, lead: dict, *, verdicts: list[dict] | None = None,
             out["recheck_days"] = 3
             return out
 
-        # 7. Evidence independence (throttle raises the bar to 'full').
-        required_full = thr["throttled"]
-        if ev["level"] == "thin" and not confirmed:
+        # 7. The QUALIFICATION scorecard — the four dimensions an elite
+        # recruitment AD evidences before spending an hour (Savage / the
+        # MEDDIC-for-recruitment bar): a live-or-imminent senior seat,
+        # fundability, urgency, a reachable buyer. Source-counting is
+        # demoted to a per-fact VERIFICATION check: a registry-attested
+        # fact (Companies House / RNS / regulator) is true on its own —
+        # quiet companies with no press coverage are not less qualified.
+        qual = qualification(lead, item or {}, ev, wstate)
+        out["qual"] = qual
+        attested = (ev.get("primary") or 0) >= 1
+        verified = confirmed or attested or (ev.get("families") or 0) >= 2
+        if not verified:
             out["reasons"].append(
-                f"Evidence too thin: {ev['families']} independent source"
-                f"{'s' if ev['families'] != 1 else ''}, {ev['primary']} primary "
-                f"— needs 2+ with a primary or credible source")
+                "Fact unverified: single non-registry source — a registry "
+                "filing, a second independent source or an /investigate "
+                "pass would clear it")
             out["investigate"] = True
             out["recheck_days"] = 5
             return out
-        if required_full and ev["level"] != "full" and not confirmed:
-            out["reasons"].append("Throttled (acceptance <50% over 7d): "
-                                  "only fully corroborated leads present")
+        need_total = 6 if thr["throttled"] else 5
+        if qual["seat"] < 1 and not confirmed:
+            out["reasons"].append("Not qualified: no live or imminent senior "
+                                  "seat evidenced — " + qual["seat_why"])
+            out["investigate"] = True
+            out["recheck_days"] = 7
+            return out
+        if qual["total"] < need_total and not confirmed:
+            missing = [n for n, k in (("seat", "seat"), ("budget", "budget"),
+                                      ("urgency", "urgency"), ("buyer", "buyer"))
+                       if qual[k] == 0]
+            out["reasons"].append(
+                f"Not qualified yet ({qual['total']}/8"
+                + (", throttled bar 6" if thr["throttled"] else "")
+                + ("; weakest: " + ", ".join(missing) if missing else "")
+                + ") — " + qual["weakest_why"])
             out["investigate"] = True
             out["recheck_days"] = 5
             return out
 
         # PRESENTED.
         out["presented"] = True
-        multi_trigger = len(live_keys - AMPLIFIER_ONLY) >= 2
         no_contradictions = not (lead.get("contradictions") or [])
-        if confirmed or (ev["level"] == "full" and multi_trigger and no_contradictions):
+        if confirmed or (qual["total"] >= 7 and attested and no_contradictions):
             out["confidence"] = "High"
         else:
             out["confidence"] = "Moderate"
