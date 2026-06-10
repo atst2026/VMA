@@ -169,7 +169,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 /* strips */
 .strip{border-bottom:1px solid var(--hair)}
 .strip:last-of-type{border-bottom:none}
-.strip-h{display:grid;grid-template-columns:34px 1fr 150px 104px 86px 30px;gap:14px;align-items:center;
+.strip-h{display:grid;grid-template-columns:34px 1fr 150px 104px 86px 30px var(--lend,0px);gap:14px;align-items:center;
   padding:15px 4px;cursor:pointer;transition:background .15s;border-radius:16px}
 .strip-h:hover{background:rgba(255,255,255,.5)}
 .strip-h:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
@@ -202,8 +202,8 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .strip.done-dis .idcell{opacity:.45;text-decoration:line-through}
 .dossier{max-height:0;overflow:hidden;transition:max-height .45s cubic-bezier(.2,.8,.25,1)}
 .strip.open .dossier{max-height:1200px}
-.jrow{display:grid;grid-template-columns:34px 1fr 150px 120px 70px 64px 40px;gap:14px;align-items:center;
-  padding:14px 4px;border-bottom:1px solid var(--hair);cursor:pointer;border-radius:16px;transition:.15s}
+.jrow{display:grid;grid-template-columns:34px 1fr 150px 120px 70px 64px 40px var(--jend,0px);gap:14px;align-items:center;
+  padding:14px 4px;border-bottom:1px solid var(--hair);cursor:pointer;border-radius:16px;transition:background .15s}
 .jacts{display:inline-flex;gap:6px;justify-self:end}
 .jact{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;
   color:var(--ink2);cursor:pointer;border:1px solid rgba(60,64,67,.16);background:#fff;transition:.15s}
@@ -931,26 +931,31 @@ $('vbShop').addEventListener('click',()=>setView('shop'));
 function positionPour(){
   const pour=$('pour');if(!pour)return;
   const last=document.querySelector('#v-engine .stg.s5');
-  const first=document.querySelector('#strips .strip-h .strengthcell, #strips .jrow');
-  if(!last||!first){pour.style.display='none';return;}
+  const strips=$('strips');
+  /* the landing target: the arc circle on lead #1, or the link icon on job #1 */
+  const tsel=mode==='leads'?'#strips .strip-h .strengthcell svg':'#strips .jrow .lnk svg';
+  let target=document.querySelector(tsel);
+  if(!last||!target){pour.style.display='none';return;}
   pour.style.display='';
   const wrap=$('v-engine').getBoundingClientRect();
   const lb=last.getBoundingClientRect();
-  /* centred under the final stage… */
+  /* the line: dead-centre under the final stage */
   const x=lb.left-wrap.left+lb.width/2;
-  const top=lb.bottom-wrap.top+4;
   pour.style.left=x+'px';
+  const top=lb.bottom-wrap.top+4;
   pour.style.top=top+'px';
-  /* …and the score column slides left so the line lands dead-centre on it */
-  const cells=document.querySelectorAll('#strips .strengthcell');
-  if(cells.length){
-    cells.forEach(c=>c.style.transform='');
-    const cb=cells[0].getBoundingClientRect();
-    const shift=(lb.left+lb.width/2)-(cb.left+cb.width/2);
-    cells.forEach(c=>c.style.transform='translateX('+shift.toFixed(1)+'px)');
-  }
-  const fb=first.getBoundingClientRect();
-  pour.style.height=Math.max(30,(fb.top+fb.height/2)-wrap.top-top)+'px';
+  /* slide the right-hand columns left (via the trailing end column) until
+     the target's centre sits exactly on the line */
+  const varName=mode==='leads'?'--lend':'--jend';
+  const cur=parseFloat(getComputedStyle(strips).getPropertyValue(varName))||0;
+  const tb=target.getBoundingClientRect();
+  const delta=(tb.left+tb.width/2)-(lb.left+lb.width/2);
+  strips.style.setProperty(varName,Math.max(0,cur+delta)+'px');
+  requestAnimationFrame(()=>{
+    const t2=document.querySelector(tsel);if(!t2)return;
+    const r2=t2.getBoundingClientRect();
+    pour.style.height=Math.max(30,(r2.top+r2.height/2)-wrap.top-top)+'px';
+  });
 }
 window.addEventListener('resize',positionPour);
 
