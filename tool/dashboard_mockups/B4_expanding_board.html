@@ -1,0 +1,262 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>B4 — Expanding Board · BD Leads</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;1,400;1,500&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1f1f1f;--deep:#0f1a2e;--dim:#5f6b7e;--line:rgba(15,26,46,.08);
+--blue:#2f5fd0;--bluewash:#e9effb;--green:#1e7a41;--greenwash:#e7f3ec;
+--amber:#9a3412;--amberwash:#fff7ed;--teal:#0e7c74;--tealwash:#ddf3f0;
+--clay:#d97a2b;--claywash:#fdecdb;--greywash:#eef1f5}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{font:13.5px/1.5 Inter,system-ui,sans-serif;color:var(--ink);letter-spacing:-.005em;
+-webkit-font-smoothing:antialiased;background-color:rgb(253,252,252);overflow-x:hidden}
+/* the live site's halo — verbatim values */
+body::before{content:"";position:fixed;z-index:-1;width:792px;height:300px;top:-40px;left:50%;
+transform:translateX(-50%);border-radius:9999px;
+background-image:radial-gradient(100% 100% at 50% 8%, rgb(253,252,252) 0px, rgb(157,210,255) 50%);
+filter:blur(125px);pointer-events:none}
+.serif{font-family:"Crimson Pro",Georgia,serif}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+.page{max-width:1180px;margin:0 auto;padding:26px 28px 60px}
+/* ---------- header ---------- */
+.head{display:flex;align-items:baseline;gap:16px;padding:2px 6px 16px}
+.head h1{font:500 30px/1 "Crimson Pro",serif;letter-spacing:-.01em}
+.head .sub{font:700 10px "JetBrains Mono";letter-spacing:.16em;color:var(--dim);text-transform:uppercase}
+.head .spacer{flex:1}
+.stat{display:flex;align-items:center;gap:7px;font:600 12px Inter;color:var(--dim)}
+.stat b{font:800 13px "JetBrains Mono";color:var(--deep)}
+.stat .d{width:7px;height:7px;border-radius:50%}
+.fableline{display:flex;align-items:center;gap:8px;font:600 11.5px Inter;color:var(--dim);
+background:rgba(255,255,255,.7);border:1px solid var(--line);border-radius:99px;padding:6px 14px;backdrop-filter:blur(6px)}
+.fableline .sp{color:var(--clay);font-weight:800}
+.fableline b{color:var(--deep)}
+/* ---------- tier headers ---------- */
+.tier{display:flex;align-items:center;gap:10px;margin:20px 6px 9px;position:sticky;top:0;z-index:5;
+padding:7px 4px;background:linear-gradient(180deg,rgba(253,252,252,.92),rgba(253,252,252,.75));backdrop-filter:blur(8px)}
+.tier .d{width:8px;height:8px;border-radius:50%}
+.tier .t{font:800 10.5px "JetBrains Mono";letter-spacing:.18em;text-transform:uppercase;color:var(--deep)}
+.tier .n{font:700 10.5px Inter;color:var(--dim)}
+.tier .ln{flex:1;height:1px;background:var(--line)}
+.tier .hint{font:600 10.5px Inter;color:var(--dim)}
+/* ---------- lead card ---------- */
+.card{background:rgba(255,255,255,.88);border:1px solid var(--line);border-radius:16px;margin:0 0 10px;
+backdrop-filter:blur(4px);transition:box-shadow .22s,border-color .22s,transform .22s;overflow:hidden}
+.card:hover{box-shadow:0 10px 30px rgba(15,26,46,.08);transform:translateY(-1px)}
+.card.open{box-shadow:0 22px 60px rgba(15,26,46,.12);border-color:rgba(47,95,208,.30)}
+.row{display:grid;grid-template-columns:30px 200px 1fr auto auto auto 44px 20px;gap:14px;align-items:center;
+padding:13px 18px;cursor:pointer;user-select:none}
+.row .rk{font:800 12px "JetBrains Mono";color:var(--dim)}
+.row .co{font:700 14.5px Inter;letter-spacing:-.01em;white-space:nowrap}
+.row .co .new{font:700 8.5px "JetBrains Mono";color:var(--blue);background:var(--bluewash);border-radius:5px;padding:2px 6px;margin-left:7px;vertical-align:middle}
+.row .seat{font:500 12.5px Inter;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip{display:inline-flex;align-items:center;font:700 9px Inter;letter-spacing:.05em;text-transform:uppercase;border-radius:99px;padding:3px 9px;white-space:nowrap}
+.c-drv{color:var(--clay);background:var(--claywash);border:1px solid rgba(217,122,43,.3)}
+.c-win{color:var(--deep);background:var(--bluewash);border:1px solid rgba(47,95,208,.22)}
+.c-why{color:var(--amber);background:var(--amberwash);border:1px solid #fdba74}
+.qt{display:flex;gap:3px}
+.qt i{width:13px;height:13px;border-radius:4px;display:grid;place-items:center;font:800 8px "JetBrains Mono";font-style:normal;color:#fff}
+.qt i.q2{background:var(--green)}.qt i.q1{background:#e8a23d}.qt i.q0{background:#c9d2de}
+.ringS{position:relative;width:42px;height:42px}
+.ringS svg{transform:rotate(-90deg)}
+.ringS .v{position:absolute;inset:0;display:grid;place-items:center;font:800 12.5px "JetBrains Mono";color:var(--deep)}
+.chev{justify-self:end;color:var(--dim);transition:transform .3s;font-size:15px}
+.card.open .chev{transform:rotate(180deg)}
+/* ---------- expansion ---------- */
+.exp{display:grid;grid-template-rows:0fr;transition:grid-template-rows .42s cubic-bezier(.25,.8,.3,1)}
+.card.open .exp{grid-template-rows:1fr}
+.expin{overflow:hidden}
+.body{border-top:1px dashed var(--line);padding:20px 22px 18px;display:grid;grid-template-columns:1.55fr 1fr;gap:16px 22px}
+.say{grid-column:1}
+.say .lab,.lab{font:800 9px "JetBrains Mono";letter-spacing:.16em;color:var(--blue);text-transform:uppercase}
+.say p{font:italic 500 18.5px/1.5 "Crimson Pro",serif;color:var(--deep);margin-top:7px}
+.say .cp{font:600 11px Inter;color:var(--dim);border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 10px;cursor:pointer;margin-top:9px}
+.say .cp:hover{color:var(--blue);border-color:rgba(47,95,208,.4)}
+.meta{grid-column:2;grid-row:1/3;display:flex;flex-direction:column;gap:11px}
+.badges{display:flex;gap:7px;flex-wrap:wrap}
+.c-ver{color:var(--green);background:var(--greenwash);border:1px solid rgba(30,122,65,.3)}
+.c-rt{color:var(--teal);background:var(--tealwash);border:1px solid rgba(18,165,148,.4);font-family:"JetBrains Mono"}
+.buyer{background:rgba(247,250,255,.8);border:1px solid var(--line);border-radius:13px;padding:13px 15px}
+.buyer .lab{color:var(--dim)}
+.buyer .nm{font:700 13.5px Inter;margin-top:6px}
+.buyer .rl{font:500 11.5px Inter;color:var(--dim)}
+.buyer .path{font:500 11px/1.5 Inter;color:var(--dim);margin-top:8px;border-top:1px dashed var(--line);padding-top:8px}
+.prop{display:flex;gap:8px;align-items:center}
+.prop .ev{font:500 10.5px/1.4 Inter;color:var(--dim)}
+.kill{background:var(--amberwash);border:1px solid #fdba74;border-radius:13px;padding:11px 14px}
+.kill .lab{color:var(--amber)}
+.kill p{font:500 11px/1.5 Inter;color:#7c2d12;margin-top:5px}
+.qual{grid-column:1;display:flex;gap:9px}
+.qd{flex:1;border:1px solid var(--line);background:#fff;border-radius:12px;padding:9px 12px;cursor:help}
+.qd .h{display:flex;justify-content:space-between;align-items:center}
+.qd .t{font:800 9px "JetBrains Mono";letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.qd .m{font:800 11px "JetBrains Mono"}
+.qd.q2{background:var(--greenwash);border-color:rgba(30,122,65,.22)}.qd.q2 .t,.qd.q2 .m{color:var(--green)}
+.qd.q1{background:var(--amberwash);border-color:#fdba74}.qd.q1 .t,.qd.q1 .m{color:var(--amber)}
+.qd .w{font:500 10.5px/1.4 Inter;color:var(--dim);margin-top:5px}
+.case{grid-column:1}
+.case .lab{color:var(--dim)}
+.case p{font:450 13px/1.62 Inter;margin-top:7px}
+.case p b{font-weight:700}
+.tl{display:flex;gap:18px;margin-top:12px;border-top:1px dashed var(--line);padding-top:11px;flex-wrap:wrap}
+.tl .ev{display:flex;gap:8px;align-items:baseline}
+.tl .nd{width:8px;height:8px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 3px var(--bluewash);flex-shrink:0;align-self:center}
+.tl .dt{font:700 10px "JetBrains Mono";color:var(--dim)}
+.tl .tx{font:600 11.5px Inter}
+.tl .src{font:600 10px Inter;color:var(--blue)}
+.foot{grid-column:1/3;display:flex;gap:9px;align-items:center;border-top:1px dashed var(--line);padding-top:13px}
+.btn{font:700 12px Inter;border-radius:10px;padding:8px 14px;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink)}
+.btn:hover{border-color:rgba(47,95,208,.45);color:var(--blue)}
+.btn.pri{background:var(--deep);border-color:var(--deep);color:#fff}.btn.pri:hover{background:#16294a;color:#fff}
+.btn.ok{color:var(--green);border-color:rgba(30,122,65,.35)}
+.btn.no{color:var(--amber);border-color:#fdba74}
+.foot .spacer{flex:1}
+.foot .prov{font:600 10.5px "JetBrains Mono";color:var(--dim)}
+.foot .prov .sp{color:var(--clay)}
+/* developing rows */
+.row.dev{grid-template-columns:30px 200px 1fr auto auto 44px 20px}
+.devexp{padding:16px 22px 16px;border-top:1px dashed var(--line);display:flex;gap:14px;align-items:center}
+.devexp .why2{font:500 12.5px/1.55 Inter;color:var(--ink);flex:1}
+.devexp .why2 b{color:var(--amber)}
+.early{display:flex;align-items:center;gap:10px;padding:13px 18px;border:1px dashed var(--line);border-radius:14px;color:var(--dim);font:600 12px Inter;background:rgba(255,255,255,.5);cursor:pointer}
+.early:hover{color:var(--deep)}
+</style></head><body>
+<div class="page">
+  <div class="head">
+    <h1>BD Leads</h1><span class="sub">Communications · Tue 10 Jun</span>
+    <span class="spacer"></span>
+    <span class="stat"><span class="d" style="background:#34A853"></span><b>6</b> call-ready</span>
+    <span class="stat"><span class="d" style="background:#D97A2B"></span><b>43</b> developing</span>
+    <span class="stat"><span class="d" style="background:#9aa4b5"></span><b>49</b> early</span>
+    <span class="fableline"><span class="sp">✦</span> Overnight: <b>4✓ 1↻ 1✕</b> red-team · avg conviction <b>76</b> · <b>11/14</b> claims verified</span>
+  </div>
+
+  <div class="tier"><span class="d" style="background:#34A853"></span><span class="t">Call-ready</span><span class="n">6 · capped 7</span><span class="ln"></span><span class="hint">click a row to open its full case · ↑↓ + ⏎</span></div>
+  <div id="ready"></div>
+
+  <div class="tier"><span class="d" style="background:#D97A2B"></span><span class="t">Developing</span><span class="n">43 — earning corroboration</span><span class="ln"></span></div>
+  <div id="dev"></div>
+
+  <div class="early" onclick="this.textContent='Early signals — 49 thin/watch-grade leads (collapsed in this mockup)'">▸ Early signals · 49 — single-source &amp; watch-grade, collapsed</div>
+</div>
+<script>
+const ring=(s,sz,sw)=>{const r=(sz-sw)/2,c=2*Math.PI*r,o=c*(1-s/100),col=s>=70?"#1e7a41":s>=45?"#d97a2b":"#9aa4b5";
+ return `<svg width="${sz}" height="${sz}"><circle cx="${sz/2}" cy="${sz/2}" r="${r}" fill="none" stroke="#e9edf4" stroke-width="${sw}"/><circle cx="${sz/2}" cy="${sz/2}" r="${r}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${o}"/></svg>`};
+const READY=[
+ {co:"Trustpilot",nw:1,seat:"Head of Communications · £85–110k",drv:"Growth demand",win:"8–26 wks",score:80,rt:84,
+  q:[["Seat",2,"72-role build-out, zero comms function — a structural gap"],["Budget",2,"SH01 share allotment 29 May — fresh equity"],["Urgency",1,"inside the 8–26 wk window"],["Buyer",1,"CEO office mapped — no named contact yet"]],
+  say:"You filed fresh equity on 29 May and you're running seventy-two open roles without a single comms hire — fifteen minutes on what that first Head of Comms should own, before the listing chatter starts?",
+  casep:"<b>Trustpilot is scaling without a voice.</b> An SH01 filed 29 May confirms fresh equity; their own board lists 72 open roles with zero comms positions. Comparable UK scale-ups benchmark a first Head of Communications at £85–110k and appoint within two quarters of a raise this size. No incumbent agency visible — first credible adviser in owns the brief.",
+  tl:[["29 May","Share allotment (SH01)","Companies House"],["08 Jun","72 roles · 0 comms","ATS boards"],["10 Jun","No TA leadership advertised","Careers page"]],
+  buyer:["CEO office","route: CEO / CFO — funding trigger","Champion: none known — cold open. Angle: a build-out usually follows a raise of this size, before the role is briefed out."],
+  prop:["Leans external","no internal recruiter visible across 72 postings"],
+  kill:"A Head of Brand closing quietly this fortnight; the raise earmarked R&D-only. Weakest link: buyer not yet named."},
+ {co:"Lloyds Banking Group",seat:"Corporate Affairs Director",drv:"Leadership reset",win:"6–12 wks",score:73,rt:71,
+  q:[["Seat",1,"reshuffle — seat creation imminent"],["Budget",2,"capital raise filed; listed balance sheet"],["Urgency",1,"inside the 6–12 wk window"],["Buyer",2,"named Group CoSec contact · warm"]],
+  say:"With the comms review announced alongside the half-year reshuffle, you'll be weighing rebuild versus brief-out — we mapped the three capability gaps your peer set closed this year.",
+  casep:"<b>A reset at the top reopens the supplier map.</b> RNS-confirmed allotment plus a board reshuffle inside one window; comms bench tenure 4.3y against a 4.1y sector mean — succession risk is live. Peer FTSE banks rebuilt Corporate Affairs within two quarters of equivalent resets.",
+  tl:[["20 May","Share allotment","Companies House"],["02 Jun","Board reshuffle","RNS · Investegate"],["10 Jun","Bench tenure 4.3y — peak churn","CH officers"]],
+  buyer:["Group Corporate Secretary","named contact on file · warm","Champion: prior IR placement (2023). Angle: tenure-clock read on their own bench."],
+  prop:["Proven agency user","recruitment-services award notice, 2024"],
+  kill:"The reshuffle resolving internally with no comms remit change; PSL lock to an incumbent."},
+ {co:"Rathbones Group",seat:"Corporate Affairs Director",drv:"Growth demand",win:"8–26 wks",score:66,rt:null,
+  q:[["Seat",1,"capital event — seat imminent"],["Budget",2,"SH01 May — fresh equity"],["Urgency",1,"in window"],["Buyer",1,"CEO office mapped"]],
+  say:"Your SH01 last month plus the wealth-platform build suggests the corporate narrative is about to matter more — who owns it today?",
+  casep:"<b>Fresh equity, quiet voice.</b> Registry-attested allotment; integration messaging load rising post-merger; no senior comms hire visible. Quiet-coverage company — exactly where competitors' tooling is blind.",
+  tl:[["19 May","Share allotment (SH01)","Companies House"],["10 Jun","No comms hire visible","Careers / team page"]],
+  buyer:["CEO office","route: CEO / CFO","Champion: none known — cold open."],
+  prop:["Unknown","no fee-propensity evidence yet — /red-team researches on first pass"],
+  kill:"Integration comms already retained externally; allotment tied to scheme consideration."},
+ {co:"Intermediate Capital",seat:"Head of Communications",drv:"Growth demand",win:"8–26 wks",score:66,rt:null,
+  q:[["Seat",1,"capital event"],["Budget",2,"secured financing"],["Urgency",1,"in window"],["Buyer",1,"CFO / IR mapped"]],
+  say:"Fresh capital on the register and an IR-heavy bench — the corporate-comms seat looks one hire light against your AUM peers.",
+  casep:"<b>IR-heavy, comms-light.</b> Secured financing filed; bench skews investor-relations with no external-comms lead. AUM peers run both seats.",
+  tl:[["27 May","Secured financing","Companies House"],["10 Jun","Bench: IR-heavy, no comms lead","Team page"]],
+  buyer:["CFO / Head of IR","route mapped","Champion: none known — cold open."],
+  prop:["Unknown","first /red-team pass will research"],
+  kill:"Comms folded under IR by design; financing is refi not growth."},
+ {co:"United Utilities",seat:"Head of Corporate Affairs",drv:"Deadline-driven",win:"4–10 wks",score:64,rt:79,
+  q:[["Seat",1,"regulatory cycle creates the brief"],["Budget",2,"regulated revenue; funded capex"],["Urgency",1,"determination window this quarter"],["Buyer",2,"named CoSec contact"]],
+  say:"Ahead of the AMP8 determinations, the corporate-affairs seat carries the regulator relationship — we benchmarked what the sector pays for that capability now.",
+  casep:"<b>The regulator sets their calendar.</b> Ofwat determination window plus resilience reporting lands this quarter; bench one senior seat light vs sector peers. Deadline-driven demand survives any market mood.",
+  tl:[["14 May","Resilience notice","Ofwat"],["01 Jun","Determination window confirmed","Regulator feed"],["10 Jun","Bench 1 seat light vs peers","Team-page diff"]],
+  buyer:["Company Secretary's office","named contact on file","Champion: VMA water-sector webinar attendee (2025)."],
+  prop:["Proven agency user","framework call-off, 2023 — public notice"],
+  kill:"Internal promotion already slated; determination slipping a quarter."},
+ {co:"St James's Place",seat:"IR / Corporate Affairs",drv:"Leadership reset",win:"6–12 wks",score:57,rt:null,
+  q:[["Seat",1,"CFO past day-90; IR seat unconfirmed"],["Budget",1,"no capital event either way"],["Urgency",1,"in window"],["Buyer",1,"CFO office mapped"]],
+  say:"New CFO past day ninety with the IR seat unconfirmed — comparable resets briefed out within the quarter.",
+  casep:"<b>The quiet reset.</b> CFO change cleared its hold; IR/corporate-affairs reporting line unconfirmed since. Comparable FTSE-100 resets briefed the seat out within the quarter.",
+  tl:[["12 Mar","CFO appointed","RNS"],["10 Jun","IR line unconfirmed","Team page"]],
+  buyer:["CFO office","route mapped","Champion: none known — cold open."],
+  prop:["Unknown","first /red-team pass will research"],
+  kill:"IR continuity announced internally; comms absorbed under brand."}];
+const DEV=[
+ {co:"Aviva",seat:"Group Comms (reshape)",why:"window opens in 18d",txt:"<b>Too fresh.</b> New CHRO is 10 days in — the research says leaders form hiring plans at week 4–12. The gate re-presents this automatically on <b>28 Jun</b>; /red-team can confirm earlier if you want it on the board now."},
+ {co:"Oxford Biomedica",seat:"Corporate Affairs",why:"1 source · /investigate",txt:"<b>Fact unverified.</b> The PE-takeover story rests on a single Google News item — no RNS, no second outlet. One /investigate pass either promotes it to Call-ready at High confidence or kills it with the reason on record."},
+ {co:"Whitbread",seat:"Head of Comms",why:"weakest: buyer",txt:"<b>Qualified 4/8 — buyer missing.</b> Restructure trigger is registry-attested, but no route to a named decision-maker yet. The contacts scan re-runs tonight; a named CoSec or CCO lifts this straight onto the board."}];
+function qticks(q){return `<span class="qt">${q.map(d=>`<i class="q${d[1]}" title="${d[0]}: ${d[2]}">${d[0][0]}</i>`).join("")}</span>`}
+function readyCard(l,i){return `
+<div class="card${i===0?" open":""}" id="r${i}">
+ <div class="row" onclick="tog('r${i}')">
+   <span class="rk">${i+1}</span>
+   <span class="co">${l.co}${l.nw?'<span class="new">NEW</span>':''}</span>
+   <span class="seat">${l.seat}</span>
+   <span class="chip c-drv">${l.drv}</span>
+   ${qticks(l.q)}
+   <span class="chip c-win">${l.win}</span>
+   <span class="ringS">${ring(l.score,42,4)}<span class="v">${l.score}</span></span>
+   <span class="chev">▾</span>
+ </div>
+ <div class="exp"><div class="expin"><div class="body">
+   <div class="say"><span class="lab">Say this — red-teamed opening</span><p>“${l.say}”</p><button class="cp">⧉ Copy opening</button></div>
+   <div class="meta">
+     <div class="badges">
+       <span class="chip c-ver">✓ Registry-attested</span>
+       ${l.rt?`<span class="chip c-rt">RED-TEAMED ✓ ${l.rt}</span>`:`<span class="chip" style="color:var(--dim);background:var(--greywash);border:1px solid #d8dee8">awaiting /red-team</span>`}
+     </div>
+     <div class="buyer"><span class="lab">Economic buyer</span><div class="nm">${l.buyer[0]}</div><div class="rl">${l.buyer[1]}</div><div class="path">${l.buyer[2]}</div>
+       <div class="prop" style="margin-top:9px"><span class="chip ${l.prop[0]==='Proven agency user'?'c-ver':l.prop[0]==='Leans external'?'c-drv':''}" ${l.prop[0]==='Unknown'?'style="color:var(--dim);background:var(--greywash);border:1px solid #d8dee8"':''}>${l.prop[0]}</span><span class="ev">${l.prop[1]}</span></div>
+     </div>
+     <div class="kill"><span class="lab">What kills this</span><p>${l.kill}</p></div>
+   </div>
+   <div class="qual">${l.q.map(d=>`<div class="qd q${d[1]}" title="${d[2]}"><div class="h"><span class="t">${d[0]}</span><span class="m">${d[1]===2?"✓✓":d[1]===1?"✓":"✗"}</span></div><div class="w">${d[2]}</div></div>`).join("")}</div>
+   <div class="case"><span class="lab">The business case</span><p>${l.casep}</p>
+     <div class="tl">${l.tl.map(e=>`<span class="ev"><span class="nd"></span><span class="dt">${e[0]}</span><span class="tx">${e[1]}</span><span class="src">${e[2]}</span></span>`).join("")}</div>
+   </div>
+   <div class="foot">
+     <button class="btn pri">Generate pitch pack</button><button class="btn">Draft opener</button><button class="btn">Sources</button>
+     <span class="spacer"></span>
+     <span class="prov"><span class="sp">✦</span> built &amp; red-teamed by Fable 07:58</span>
+     <button class="btn ok">✓ Followed up</button><button class="btn no">✕ Dismiss</button>
+   </div>
+ </div></div></div>
+</div>`}
+function devCard(l,i){return `
+<div class="card" id="d${i}">
+ <div class="row dev" onclick="tog('d${i}')">
+   <span class="rk">·</span>
+   <span class="co">${l.co}</span>
+   <span class="seat">${l.seat}</span>
+   <span class="chip c-why">${l.why}</span>
+   <span></span>
+   <span class="ringS">${ring(l.score||50,42,4)}<span class="v">${l.score||""}</span></span>
+   <span class="chev">▾</span>
+ </div>
+ <div class="exp"><div class="expin"><div class="devexp">
+   <div class="why2">${l.txt}</div>
+   <button class="btn">✦ /investigate now</button>
+ </div></div></div>
+</div>`}
+DEV[0].score=56;DEV[1].score=51;DEV[2].score=49;
+document.getElementById("ready").innerHTML=READY.map(readyCard).join("");
+document.getElementById("dev").innerHTML=DEV.map(devCard).join("");
+let cur=0;const ids=[...READY.map((_,i)=>"r"+i),...DEV.map((_,i)=>"d"+i)];
+function tog(id){const el=document.getElementById(id);const was=el.classList.contains("open");
+ document.querySelectorAll(".card.open").forEach(c=>c.classList.remove("open"));
+ if(!was){el.classList.add("open");el.scrollIntoView({behavior:"smooth",block:"nearest"})}
+ cur=ids.indexOf(id)}
+document.addEventListener("keydown",e=>{
+ if(e.key==="ArrowDown"){cur=Math.min(cur+1,ids.length-1);tog(ids[cur]);e.preventDefault()}
+ if(e.key==="ArrowUp"){cur=Math.max(cur-1,0);tog(ids[cur]);e.preventDefault()}});
+</script></body></html>
