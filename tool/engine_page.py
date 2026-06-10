@@ -60,28 +60,21 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
   border:5px solid transparent;border-bottom-color:rgba(16,22,38,.96);z-index:60}
 .page{max-width:1280px;margin:0 auto;padding:22px 26px 56px 110px}
 @keyframes breathe{0%,100%{transform:scale(1);opacity:.8}50%{transform:scale(1.18);opacity:1}}
-/* ============ the sidebar: logo · desk · views ============ */
-.siderail{position:fixed;left:18px;top:18px;z-index:50;width:60px;
-  display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px 0 14px;
-  background:linear-gradient(135deg,rgba(255,255,255,.6),rgba(255,255,255,.3));
-  backdrop-filter:blur(28px) saturate(1.8);-webkit-backdrop-filter:blur(28px) saturate(1.8);
-  border:1px solid rgba(255,255,255,.75);border-radius:999px;
-  box-shadow:0 12px 40px rgba(26,61,124,.12),inset 0 1px 1px rgba(255,255,255,.95)}
+/* ============ the sidebar — flat, full-height, Gemini-style ============ */
+.siderail{position:fixed;left:0;top:0;bottom:0;z-index:50;width:68px;
+  display:flex;flex-direction:column;align-items:center;gap:14px;padding:16px 0;
+  background:rgba(248,250,253,.7);backdrop-filter:blur(20px) saturate(1.4);
+  -webkit-backdrop-filter:blur(20px) saturate(1.4);
+  border-right:1px solid var(--hair)}
 .sr-logo{width:40px;height:40px;border-radius:11px;overflow:hidden;flex:none;
-  box-shadow:0 4px 12px rgba(62,92,132,.35)}
+  box-shadow:0 4px 12px rgba(62,92,132,.3);margin-bottom:6px}
 .sr-logo svg{display:block;width:100%;height:100%}
-.sr-desk{display:flex;flex-direction:column;gap:3px;padding:3px;border-radius:999px;
-  background:rgba(16,22,38,.05);border:1px solid rgba(255,255,255,.5)}
-.sr-desk a{display:grid;place-items:center;width:30px;height:26px;border-radius:999px;
-  font:700 11px var(--mono);color:var(--muted);text-decoration:none;transition:.2s}
-.sr-desk a:hover{color:var(--ink)}
-.sr-desk a.on{color:var(--deep);background:rgba(255,255,255,.95);box-shadow:0 2px 7px rgba(26,61,124,.12)}
-.sr-sep{width:26px;height:1px;background:var(--hair)}
-.sr-btn{display:grid;place-items:center;width:40px;height:40px;border-radius:13px;border:none;
+.sr-sep{width:30px;height:1px;background:var(--hair)}
+.sr-btn{display:grid;place-items:center;width:44px;height:44px;border-radius:14px;border:none;
   background:transparent;color:var(--muted);cursor:pointer;transition:.18s}
-.sr-btn svg{width:19px;height:19px}
-.sr-btn:hover{color:var(--ink);background:rgba(255,255,255,.7)}
-.sr-btn.on{color:#fff;background:var(--deep);box-shadow:0 4px 12px rgba(26,61,124,.3)}
+.sr-btn svg{width:21px;height:21px}
+.sr-btn:hover{color:var(--ink);background:rgba(16,22,38,.05)}
+.sr-btn.on{color:var(--ink);background:rgba(16,22,38,.08);box-shadow:none}
 .panel{padding:0}
 .mainhead{display:flex;align-items:center;gap:14px;padding-bottom:20px;margin-bottom:6px;
   border-bottom:1px solid var(--hair)}
@@ -156,6 +149,9 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .stages{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
 .stages.jobs4{grid-template-columns:repeat(4,1fr)}
 .stages.jobs4 .stg.s3{display:none}
+/* jobs mode: no scene boxes, no numbers — the board pills loop up top */
+.stages.nonum .mini,.stages.nonum .num{display:none}
+.stages.nonum .rail{top:50%}
 .rail{position:absolute;left:10%;right:10%;top:24px;height:2px;z-index:0;
   background:linear-gradient(90deg,rgba(154,160,166,.45),rgba(66,133,244,.5),rgba(26,61,124,.4),rgba(217,122,43,.5),rgba(30,158,87,.55))}
 .stages.jobs4 .rail{left:12.5%;right:12.5%}
@@ -524,13 +520,13 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
   <span class="sr-logo"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#3E5C84"/><text x="50" y="55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="30" letter-spacing="-1.5" fill="#fff">VMA</text><text x="51" y="76" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="300" font-size="13.5" letter-spacing="3" fill="#fff">GROUP</text></svg></span>
   <span class="sr-sep"></span>
   <button type="button" class="sr-btn on" id="vbEngine" title="Leads">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.6"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 19.5h17"/><path d="M4.5 15.5l4.5-4.5 3.5 3.5 7-7.5"/><path d="M15.5 7h4v4"/></svg>
   </button>
-  <button type="button" class="sr-btn" id="vbCal" title="BD Calendar">
+  <button type="button" class="sr-btn" id="vbCal" title="Calendar">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>
   </button>
-  <button type="button" class="sr-btn" id="vbShop" title="Build-A-Deck Workshop">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5z"/><path d="M13.5 3v5.5H19"/><path d="M9.2 13l.55 1.65 1.65.55-1.65.55L9.2 17.4l-.55-1.65L7 15.2l1.65-.55z" fill="currentColor" stroke="none"/></svg>
+  <button type="button" class="sr-btn" id="vbShop" title="Reports Workshop">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7.2 5.5c1.2-.85 8.4-.85 9.6 0"/><path d="M4.5 9.2c0-.95.8-1.7 1.75-1.7h11.5c.95 0 1.75.75 1.75 1.7v7.3a3.5 3.5 0 0 1-3.5 3.5H8a3.5 3.5 0 0 1-3.5-3.5z"/></svg>
   </button>
 </nav>
 
@@ -547,6 +543,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 
     <!-- ============ VIEW: engine + board ============ -->
     <div class="view on" id="v-engine">
+      <div class="tickwrap" id="jobsTick" style="display:none"><div class="ticktrack" id="jt"></div></div>
       <div class="stages" id="stagesEl">
         <div class="rail"><span class="fdot"></span><span class="fdot d2"></span><span class="fdot d3"></span></div>
         <div class="stg s1">
@@ -625,8 +622,8 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
     <div class="view" id="v-shop">
       <div class="shopwrap">
         <div class="ea-hero">
-          <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12.5" rx="2"/><path d="M8 13v-3.2M12 13V7.8M16 13v-2.2"/><path d="M12 16.5v2.2M8.8 21.3l3.2-2.6 3.2 2.6"/></svg></div>
-          <h1 class="gemini-title">Build-A-Deck Workshop</h1>
+          <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.2 5.5c1.2-.85 8.4-.85 9.6 0"/><path d="M4.5 9.2c0-.95.8-1.7 1.75-1.7h11.5c.95 0 1.75.75 1.75 1.7v7.3a3.5 3.5 0 0 1-3.5 3.5H8a3.5 3.5 0 0 1-3.5-3.5z"/></svg></div>
+          <h1 class="gemini-title">Reports Workshop</h1>
           <div class="cc-sub">A simple prompt to build key reports in real-time, with the latest data.</div>
         </div>
 
@@ -920,29 +917,57 @@ const STAGES={
          'Scored, ranked and synthesised — ready for AD contact']},
   jobs:{slots:[1,2,4,5],
     lbl:['SCRAPED','FILTERED','VERIFIED','LIVE JOBS'],
-    cap:['Autonomous crawl of every major job board',
-         'Senior mandates isolated for this desk',
-         'Machine-verified as live and current',
-         'Deduplicated, enriched, ready to work']}};
+    cap:['Autonomous search of the internet for job vacancies',
+         'Pull the listings relevant to VMA sectors',
+         'Fits the back-end criteria to fit VMA business requirements.',
+         'Organise and produce in sorted order - ready for outreach.']}};
+/* the job boards the scrape actually pulls — aggregators unpacked into
+   the boards behind them, so the loop shows Indeed etc., not 'Adzuna' */
+function boardPillNames(){
+  const out=[];
+  (window.MR_JOBS||[]).forEach(j=>{
+    const raw=j.sourceRaw||j.source||'';
+    const m=raw.match(/^([^(]+)\(([^)]+)\)/);
+    if(m){
+      m[2].split(/[+,/&]/).map(s=>s.trim())
+        .filter(s=>s&&!/aggregator|public|network|other/i.test(s))
+        .forEach(s=>{if(out.indexOf(s)<0)out.push(s);});
+      const base=m[1].trim();
+      if(base&&out.indexOf(base)<0)out.push(base);
+    }else if(raw.trim()&&out.indexOf(raw.trim())<0)out.push(raw.trim());
+  });
+  (window.JBOARDS||[]).forEach(b=>{if(b&&out.indexOf(b)<0&&!/adzuna/i.test(b))out.push(b);});
+  return out.length?out:(window.JBOARDS||[]);
+}
 function renderEngine(){
   const E=window.ENG||{};
-  const nums=mode==='leads'
-    ?[E.gen||0,E.filt||0,E.coll||0,E.test||0,E.ready||0]
-    :[E.j_scraped||0,E.j_filt||0,E.j_ver||0,E.j_live||0];
+  const isJobs=mode==='jobs';
+  const nums=isJobs
+    ?[E.j_scraped||0,E.j_filt||0,E.j_ver||0,E.j_live||0]
+    :[E.gen||0,E.filt||0,E.coll||0,E.test||0,E.ready||0];
   const cfg=STAGES[mode];
-  $('stagesEl').classList.toggle('jobs4',mode==='jobs');
+  $('stagesEl').classList.toggle('jobs4',isJobs);
+  $('stagesEl').classList.toggle('nonum',isJobs);
   cfg.slots.forEach((slot,i)=>{
-    countUp($('st'+slot),nums[i]||0);
+    if(!isJobs)countUp($('st'+slot),nums[i]||0);
     $('sl'+slot).textContent=cfg.lbl[i];
     $('cap'+slot).textContent=cfg.cap[i];
   });
-  /* the filtered box carries the trigger families: two pill rows on a loop */
-  const items=mode==='leads'?(window.TRIG||[]):(window.JBOARDS||[]);
-  const half=Math.ceil(items.length/2);
-  const mk=arr=>arr.map(t=>'<span class="tpill"><i></i>'+esc(t)+'</span>').join('');
-  const r1=mk(items.slice(0,half)),r2=mk(items.slice(half));
-  if($('m2r1'))$('m2r1').innerHTML=r1+r1+r1;
-  if($('m2r2'))$('m2r2').innerHTML=(r2||r1)+(r2||r1)+(r2||r1);
+  /* leads: trigger families loop inside the Filtered box;
+     jobs: the boxes and numbers stand down — the job boards loop in the
+     wide ticker above the sequence instead, drifting leftwards */
+  $('jobsTick').style.display=isJobs?'':'none';
+  if(isJobs){
+    const chips=boardPillNames().map(t=>'<span class="tchip"><i></i>'+esc(t)+'</span>').join('');
+    $('jt').innerHTML=chips+chips;
+  }else{
+    const items=window.TRIG||[];
+    const half=Math.ceil(items.length/2);
+    const mk=arr=>arr.map(t=>'<span class="tpill"><i></i>'+esc(t)+'</span>').join('');
+    const r1=mk(items.slice(0,half)),r2=mk(items.slice(half));
+    if($('m2r1'))$('m2r1').innerHTML=r1+r1+r1;
+    if($('m2r2'))$('m2r2').innerHTML=(r2||r1)+(r2||r1)+(r2||r1);
+  }
   requestAnimationFrame(sizeRail);
 }
 /* the rail runs number-centre to number-centre — never past the ready count */
@@ -957,9 +982,12 @@ function sizeRail(){
   const fb=first.getBoundingClientRect(),lb=last.getBoundingClientRect();
   rail.style.left=(fb.left-sb.left+fb.width/2)+'px';
   rail.style.right=(sb.right-(lb.left+lb.width/2))+'px';
-  const num=first.querySelector('.num');
-  if(num){const nb=num.getBoundingClientRect();
-    rail.style.top=(nb.top-sb.top+nb.height/2)+'px';}
+  /* anchor the rail to the numbers row — or the label row when the
+     numbers are stood down (jobs mode) */
+  const anchor=first.querySelector('.num:not([style*="display: none"])');
+  const a=(anchor&&anchor.offsetParent!==null)?anchor:first.querySelector('.lbl');
+  if(a){const ab=a.getBoundingClientRect();
+    rail.style.top=(ab.top-sb.top+ab.height/2)+'px';}
 }
 window.addEventListener('resize',sizeRail);
 
@@ -1060,7 +1088,7 @@ window.addEventListener('resize',sizeRail);
   }
 })();
 setInterval(()=>{
-  const all=document.querySelectorAll('.ptrows .tpill');
+  const all=document.querySelectorAll('.ptrows .tpill, #jt .tchip');
   if(!all.length)return;
   const i=(Math.random()*all.length)|0;
   all[i].classList.add('match');
