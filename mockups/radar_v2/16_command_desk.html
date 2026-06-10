@@ -150,8 +150,8 @@ header{display:flex;align-items:baseline;gap:14px;padding:20px 2px 14px}
 /* skyline + fade + medallion overlay */
 .li-fade{position:absolute;left:0;right:0;bottom:0;height:62%;pointer-events:none;
   background:linear-gradient(180deg,transparent,rgba(253,252,252,.88) 46%,rgb(253,252,252) 78%)}
-.sky{position:absolute;left:0;right:0;bottom:6px;height:118px;pointer-events:none;
-  font:700 9px/1.15 var(--mono);color:var(--vma);white-space:pre;text-align:center;overflow:hidden;opacity:.8}
+.sky{position:absolute;left:0;right:0;bottom:2px;height:152px;pointer-events:none;
+  font:700 9.5px/1.13 var(--mono);color:var(--vma);white-space:pre;text-align:center;overflow:hidden}
 /* the real VMA logo tile from the landing page / sidebar, sheen included */
 .logo-tile{position:absolute;left:50%;bottom:54px;transform:translateX(-50%);width:86px;height:86px;
   border-radius:19px;overflow:hidden;
@@ -640,49 +640,109 @@ const liRows=SOURCES.map(s=>'<div class="li-row"><span class="u">'+s[0]+'<b>'+s[
   +'<span class="ms'+(s[4]?' hot':'')+'">'+s[3]+'<span>ms</span></span></div>').join('');
 $('liTrack').innerHTML=liRows+liRows; /* duplicated for a seamless loop */
 
-/* flickering character skyline — ember-style: every cell is an independent
-   span that keeps its glyph until its own random moment to swap, blank or
-   re-light at one of three brightnesses, so the towers shimmer organically
-   instead of strobing in lockstep (own implementation, VMA slate blue) */
+/* flickering character skyline — three-layer ember engine (own
+   implementation, VMA slate blue):
+   1. a dense, near-continuous GROUND line with an irregular silhouette,
+      built from horizontal-run glyphs (- = + : .) and rare bright X;
+   2. thin vertical WISPS at irregular columns whose heights breathe
+      up and down over time;
+   3. rising EMBERS — single dots that detach from the silhouette,
+      drift upward and fade out.
+   Every cell flickers on its own clock (per-cell next-flip timestamps,
+   three brightness tiers), so nothing strobes in lockstep. */
 (function(){
-  const GLYPH=['.',':','-','=','+','·',':','.'];
-  const TONE=[.3,.55,.95];
-  const ROWS=9,COLS=96,TOWERS=[8,22,34,48,62,76,88];
+  const ROWS=14,COLS=78,TICK=70;
   const sky=$('sky');
-  const cells=[];
+  const rnd=Math.random;
+  function pick(weighted){let t=0;for(const w of weighted)t+=w[1];
+    let x=rnd()*t;for(const w of weighted){x-=w[1];if(x<=0)return w[0];}return weighted[0][0];}
+  /* glyph palettes by altitude: ground rows favour horizontal runs */
+  const G_GROUND=[['-',30],['=',24],['+',12],[':',15],['.',14],['X',3]];
+  const G_MID=[['=',18],[':',26],['.',24],['-',18],['+',8]];
+  const G_TOP=[['.',46],[':',32],['·',12],['=',10]];
+  const TONE=[[.34,26],[.58,40],[1,34]];
+  /* --- silhouette: irregular ground profile + 16 wisps with jittered x --- */
+  const wisps=[];
+  for(let i=0;i<14;i++){
+    const slot=COLS/14;
+    wisps.push({x:Math.round(i*slot+1+rnd()*(slot-3)),w:1+(rnd()<0.5?(rnd()<0.5?1:3):0),
+      h:3+Math.round(rnd()*6),target:0,nextOsc:0});
+  }
+  const ground=[];   /* per-column base height 1..3 with gaps in row 3 */
+  for(let c=0;c<COLS;c++){
+    ground.push(rnd()<0.06?1:(rnd()<0.55?2:3));
+  }
+  function heightAt(c){
+    let h=ground[c];
+    for(const w of wisps){if(c>=w.x&&c<w.x+w.w)h=Math.max(h,w.h);}
+    return h;
+  }
+  /* --- cell grid (row 0 = bottom) --- */
+  const cells=[];   /* {el,glyph,nextFlip,lit} */
   let html='';
-  for(let r=0;r<ROWS;r++){
-    for(let c=0;c<COLS;c++){
-      const masked=TOWERS.some(t=>Math.abs(c-t)<3+r*0.8);
-      if(masked){
-        const i=cells.length;
-        html+='<span data-i="'+i+'"> </span>';
-        cells.push({lit:Math.random()<0.7});
-      }else html+=' ';
-    }
+  for(let r=ROWS-1;r>=0;r--){
+    for(let c=0;c<COLS;c++){html+='<span></span>';}
     html+='\n';
   }
   sky.innerHTML=html;
   const spans=sky.querySelectorAll('span');
-  function paint(i){
-    const cell=cells[i],el=spans[i];
-    if(cell.lit){
-      el.textContent=GLYPH[(Math.random()*GLYPH.length)|0];
-      el.style.opacity=TONE[(Math.random()*TONE.length)|0];
-    }else{
-      el.textContent=' ';
-    }
+  const at=(r,c)=>spans[(ROWS-1-r)*COLS+c];
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)
+    cells.push({r,c,nextFlip:rnd()*1500});
+  function glyphFor(r,c){
+    const h=heightAt(c);
+    if(r>=h)return null;
+    const pal=r<2?G_GROUND:(r>=h-1?G_TOP:G_MID);
+    return pick(pal);
   }
-  cells.forEach((_,i)=>paint(i));
+  function paint(cell,now){
+    const el=at(cell.r,cell.c);
+    const g=glyphFor(cell.r,cell.c);
+    if(g===null){el.textContent=' ';return;}
+    /* brief blanks make runs sparkle like the reference */
+    if(rnd()<0.05){el.textContent=' ';}
+    else{el.textContent=g;el.style.opacity=g==='X'?.95:pick(TONE);}
+    cell.nextFlip=now+160+rnd()*1500;
+  }
+  /* --- rising embers --- */
+  const embers=[];
+  function spawnEmber(now){
+    const w=wisps[(rnd()*wisps.length)|0];
+    const c=Math.min(COLS-1,w.x+((rnd()*w.w)|0));
+    embers.push({c,r:heightAt(c),top:heightAt(c)+3+(rnd()*4|0),
+      next:now,glyph:rnd()<0.6?'.':':',fade:.85,prev:null});
+  }
+  function drawEmber(e,clear){
+    if(e.prev){const el=at(e.prev.r,e.prev.c);
+      if(e.prev.r>=heightAt(e.prev.c))el.textContent=' ';}
+    if(!clear&&e.r<ROWS){const el=at(e.r,e.c);
+      el.textContent=e.glyph;el.style.opacity=e.fade;}
+  }
+  /* --- main clock --- */
+  let now=0;
   setInterval(()=>{
-    for(let i=0;i<cells.length;i++){
-      /* each cell decides for itself, ~1 in 5 per tick: flip on/off or reglint */
-      if(Math.random()<0.2){
-        cells[i].lit=Math.random()<0.72;
-        paint(i);
+    now+=TICK;
+    /* wisp heights breathe */
+    for(const w of wisps){
+      if(now>=w.nextOsc){
+        w.h=Math.max(2,Math.min(10,w.h+(rnd()<0.5?-1:1)*(1+(rnd()<0.3?1:0))));
+        w.nextOsc=now+400+rnd()*900;
       }
     }
-  },70);
+    /* per-cell independent flicker */
+    for(const cell of cells){if(now>=cell.nextFlip)paint(cell,now);}
+    /* embers drift upward and fade */
+    if(embers.length<7&&rnd()<0.35)spawnEmber(now);
+    for(let i=embers.length-1;i>=0;i--){
+      const e=embers[i];
+      if(now>=e.next){
+        drawEmber(e,false);
+        e.prev={r:e.r,c:e.c};e.r++;e.fade=Math.max(.15,e.fade-.18);
+        e.next=now+110+rnd()*120;
+        if(e.r>e.top||e.r>=ROWS){drawEmber(e,true);embers.splice(i,1);}
+      }
+    }
+  },TICK);
 })();
 
 /* ---------- dossier (templated call file — 02 signal orbit look) ---------- */
