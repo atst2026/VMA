@@ -134,8 +134,9 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .stages{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
 .stages.jobs4{grid-template-columns:repeat(4,1fr)}
 .stages.jobs4 .stg.s3{display:none}
-.rail{position:absolute;left:9%;right:9%;top:24px;height:2px;z-index:0;
+.rail{position:absolute;left:10%;right:10%;top:24px;height:2px;z-index:0;
   background:linear-gradient(90deg,rgba(154,160,166,.45),rgba(66,133,244,.5),rgba(26,61,124,.4),rgba(217,122,43,.5),rgba(30,158,87,.55))}
+.stages.jobs4 .rail{left:12.5%;right:12.5%}
 .fdot{position:absolute;top:-2.5px;width:7px;height:7px;border-radius:50%;background:var(--blue);
   box-shadow:0 0 8px rgba(66,133,244,.65);opacity:0;animation:travel 5.4s linear infinite}
 .fdot.d2{animation-delay:1.8s}.fdot.d3{animation-delay:3.6s}
@@ -225,7 +226,8 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .jact svg{width:12px;height:12px}
 .jact.fu:hover,.jact.fu.on{background:#e7f3ec;color:#1e7a41;border-color:#bfe3cd}
 .jact.dis:hover,.jact.dis.on{background:#fdecea;color:var(--red);border-color:#f0c5bd}
-.srcpill{justify-self:start;font:600 10px 'Inter';color:var(--ink2);padding:3px 11px;border-radius:999px;
+.srcpills{justify-self:start;display:flex;flex-wrap:wrap;gap:4px;min-width:0}
+.srcpill{font:600 9.5px 'Inter';color:var(--ink2);padding:3px 10px;border-radius:999px;
   background:rgba(255,255,255,.75);border:1px solid rgba(16,22,38,.1);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .port{margin:6px 2px 20px;background:rgba(255,255,255,.94);border:1px solid rgba(255,255,255,.95);
   border-radius:22px;box-shadow:0 18px 50px rgba(26,61,124,.12),inset 0 1px 0 #fff}
@@ -322,7 +324,8 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .cpill.openg i{box-shadow:0 0 7px rgba(18,165,148,.8);animation:breathe 3s ease-in-out infinite}
 .legend{display:flex;gap:18px;margin-top:14px;font:600 9.5px 'Inter';color:var(--muted)}
 .legend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:0}
-.cal-pop{position:absolute;z-index:30;width:300px;padding:15px 17px;display:none;border-radius:20px}
+.cal-pop{position:absolute;z-index:30;width:300px;padding:15px 17px;display:none;border-radius:20px;
+  background:#fff;border:1px solid var(--hair);box-shadow:0 18px 50px rgba(26,61,124,.2)}
 .cal-pop.on{display:block}
 .cal-pop .pk{font:700 8.5px var(--mono);letter-spacing:.16em;margin-bottom:6px}
 .cal-pop .pn{font-weight:700;font-size:13.5px;color:#0c1326}
@@ -396,7 +399,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
   .strip-h .tp,.strip-h .wincell{display:none}
   .prow{grid-template-columns:110px 1fr}
   .jrow{grid-template-columns:30px 1fr 64px 40px}
-  .jrow .srcpill,.jrow .geo,.jrow .age2{display:none}
+  .jrow .srcpills,.jrow .geo,.jrow .age2{display:none}
   .mainhead,.deskrow{flex-wrap:wrap}
 }
 </style>
@@ -472,7 +475,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
           <div class="cg-head" id="cgHead"></div>
           <div id="cgRows"></div>
         </div>
-        <div class="cal-pop glass" id="calPop"></div>
+        <div class="cal-pop" id="calPop"></div>
       </div>
       <div class="legend">
         <span><i style="background:#3b82f6"></i>Events &amp; networking</span>
@@ -720,11 +723,11 @@ $('vbShop').addEventListener('click',()=>setView('shop'));
 const STAGES={
   leads:{slots:[1,2,3,4,5],
     lbl:['GENERATED','FILTERED','COLLATED','STRESS-TESTED','READY LEADS'],
-    cap:['autonomous sweep of the press, registries, filings and job boards — in real time',
-         'intent models isolate the signals that touch a senior seat on this desk',
-         'cross-source intelligence fuses every signal into a single account picture',
-         'an adversarial AI pass interrogates every lead and discards the weak',
-         'scored, ranked and dossiered — ready for the first call']},
+    cap:['Automated agent search of the internet for any hiring signal',
+         'curated models back-end isolate signals relating to a senior seat on this desk',
+         'cross-source intelligence to collate a larger framework, tailored to VMA criteria',
+         'Rigorous testing back-end, to weed out pure cold calls',
+         'scored, ranked and synthesised into a BD lead portfolio — ready for AD to make contact']},
   jobs:{slots:[1,2,4,5],
     lbl:['SCRAPED','FILTERED','VERIFIED','LIVE JOBS'],
     cap:['autonomous crawl of every major job board — in real time',
@@ -746,7 +749,22 @@ function renderEngine(){
   const items=mode==='leads'?(window.TRIG||[]):(window.JBOARDS||[]);
   const chips=items.map(t=>'<span class="tchip"><i></i>'+esc(t)+'<span class="plus">+1</span></span>').join('');
   $('ticker').innerHTML=chips+chips;
+  requestAnimationFrame(sizeRail);
 }
+/* the rail runs number-centre to number-centre — never past the ready count */
+function sizeRail(){
+  const rail=document.querySelector('.rail');if(!rail)return;
+  const stages=$('stagesEl');
+  const vis=stages.querySelectorAll('.stg');
+  let first=null,last=null;
+  vis.forEach(s=>{if(s.offsetParent===null)return;if(!first)first=s;last=s;});
+  if(!first||!last)return;
+  const sb=stages.getBoundingClientRect();
+  const fb=first.getBoundingClientRect(),lb=last.getBoundingClientRect();
+  rail.style.left=(fb.left-sb.left+fb.width/2)+'px';
+  rail.style.right=(sb.right-(lb.left+lb.width/2))+'px';
+}
+window.addEventListener('resize',sizeRail);
 setInterval(()=>{
   const all=document.querySelectorAll('#ticker .tchip');
   if(!all.length)return;
@@ -867,7 +885,7 @@ function jobRow(l,i){
   return '<div class="jrow'+cls+'" data-url="'+esc(l.url||'')+'" title="Open posting">'
     +'<span class="rank">'+String(i+1).padStart(2,'0')+'</span>'
     +'<div><div class="jt">'+esc(l.jt||'')+'</div><div class="jc">'+esc(l.co)+'</div></div>'
-    +'<span class="srcpill">'+esc(l.source||'')+'</span>'
+    +'<span class="srcpills">'+srcPills(l)+'</span>'
     +'<span class="geo">'+esc((l.geo||'').toUpperCase())+'</span>'
     +'<span class="age2">'+(l.isNew?'NEW':'')+'</span>'
     +'<span class="jacts">'
@@ -877,6 +895,21 @@ function jobRow(l,i){
     +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'
     +'</span>'
     +'<span class="lnk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg></span></div>';
+}
+/* aggregator sources unpack into the boards they pull from — one pill each */
+function srcPills(l){
+  const raw=l.sourceRaw||l.source||'';
+  let names=[];
+  const m=raw.match(/^([^(]+)\(([^)]+)\)/);
+  if(m){
+    const base=m[1].trim();
+    names=m[2].split(/[+,/&]/).map(s=>s.trim())
+      .filter(s=>s&&!/aggregator|public|network|other/i.test(s));
+    if(!/adzuna/i.test(base))names.unshift(base);
+    else names.push('Adzuna');
+  }else if(raw){names=[raw.trim()];}
+  if(!names.length)names=[l.source||''];
+  return names.slice(0,3).map(n=>'<span class="srcpill">'+esc(n)+'</span>').join('');
 }
 function winWeeks(s){s=(''+(s||'')).toLowerCase();const m=s.match(/(\d+)/);if(!m)return 9999;
   const n=+m[1];return /mo|month/.test(s)?n*4.33:n;}
@@ -984,13 +1017,20 @@ function calItems(){
     n:e.name||e.title||'',m:monthIdx(e.event_date||e.date),d:fmtD(e.event_date||e.date),
     loc:e.location||'',why:e.why_now||e.why||'',url:e.source||e.url||'',open:0}));
   const wi=(window.CAL_PULSES||[]).map((w,i)=>{
-    const a=w.window_start||w.start||(Array.isArray(w.action_window)?w.action_window[0]:null);
-    const b=w.window_end||w.end||w.deadline||(Array.isArray(w.action_window)?w.action_window[1]:null);
-    const open=(w.days_left!=null&&w.days_left>=0)||w.status==='open'||w.open;
+    const aw=Array.isArray(w.window)?w.window:(Array.isArray(w.action_window)?w.action_window:[]);
+    const a=w.window_start||w.start||aw[0]||null;
+    const b=w.window_end||w.end||w.deadline||w.legal_date||aw[1]||null;
+    const open=(w.days_left!=null&&w.days_left>=0)||w.status==='open'||w.open
+      ||(a&&b&&new Date(a)<=new Date()&&new Date()<=new Date(b));
     let m=monthIdx(a);if(m<0)m=open?0:monthIdx(b);if(m<0)m=0;
+    /* full pulse content for the popover: the angle is the why, the seat is
+       the play, the scope note bounds the cohort */
+    const why=[w.angle||w.why_now||w.why||w.evidence||'',
+               w.seat?('The seat: '+w.seat):'',
+               w.scope_note||''].filter(Boolean).join(' — ');
     return {kind:'wi',key:'wi'+i,n:w.name||w.title||'',m:m,
       d:b?('→ '+fmtD(b)):(w.days_left!=null?w.days_left+'D LEFT':'OPEN'),
-      loc:'',why:w.why_now||w.why||w.evidence||'',url:w.source||w.url||'',open:open?1:0};});
+      loc:'',why:why,url:w.source_url||w.url||'',open:open?1:0};});
   const fw=(window.CAL_FW||[]).map((f,i)=>{
     const open=(f.status==='live'||f.status==='refresh_window'||f.in_window);
     const a=f.window_start||f.refresh_date||f.start||null;
@@ -1073,6 +1113,10 @@ document.addEventListener('click',e=>{
   if(jr){if(jr.dataset.url)window.open(jr.dataset.url,'_blank','noopener');return;}
   const cal=e.target.closest('[data-cal]');
   if(cal){
+    /* clicking the same pill again closes the popup */
+    if(pop.classList.contains('on')&&pop.dataset.key===cal.dataset.cal){
+      pop.classList.remove('on');pop.dataset.key='';e.stopPropagation();return;}
+    pop.dataset.key=cal.dataset.cal;
     const it=(window._calLookup||{})[cal.dataset.cal];if(!it)return;
     const kindLbl={ev:'EVENT',wi:'PLACEMENT WINDOW',fw:'FRAMEWORK'}[it.kind];
     const kc={ev:'#1d4ed8',wi:'#0e7c74',fw:'#6b3fb5'}[it.kind];
