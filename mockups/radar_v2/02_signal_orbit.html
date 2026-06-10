@@ -214,6 +214,7 @@
     font-family:var(--mono); font-size:10px; font-weight:600; letter-spacing:.18em;
     color:var(--faint); margin:24px 0 10px;
   }
+  .sec .sec-title{margin-top:0}
   .row{
     display:flex; align-items:center; gap:13px; width:100%; text-align:left;
     background:rgba(255,255,255,.03); border:1px solid var(--hair2); border-radius:12px;
@@ -225,11 +226,11 @@
   .row.dimmed{opacity:.4}
   .row .rk{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--steel); width:24px; flex:none}
   .row .rb{flex:1; min-width:0}
-  .row .rco{font-size:13px; font-weight:700}
-  .row .rseat{font-size:11px; color:var(--dim); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .row .rco{display:block; font-size:13px; font-weight:700}
+  .row .rseat{display:block; font-size:11px; color:var(--dim); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
   .row .rnum{text-align:right; flex:none}
-  .row .rscore{font-family:var(--mono); font-size:16px; font-weight:700}
-  .row .rwin{font-family:var(--mono); font-size:9px; letter-spacing:.08em; color:var(--faint); margin-top:2px}
+  .row .rscore{display:block; font-family:var(--mono); font-size:16px; font-weight:700}
+  .row .rwin{display:block; font-family:var(--mono); font-size:9px; letter-spacing:.08em; color:var(--faint); margin-top:2px}
   .syn-hint{
     font-family:var(--mono); font-size:9px; letter-spacing:.16em; color:var(--faint);
     margin-top:22px; text-align:center;
@@ -280,7 +281,8 @@
     letter-spacing:0; text-transform:none; padding:9px 11px; border-radius:9px;
     opacity:0; pointer-events:none; transition:opacity .15s ease; z-index:40; white-space:normal;
   }
-  .tip:hover::after{opacity:1}
+  .tip:hover::after, .tip:focus-visible::after{opacity:1}
+  .chip.tip:focus-visible{outline:2px solid var(--steel); outline-offset:2px}
   .scorering{flex:none; position:relative; width:64px; height:64px}
   .scorering svg{display:block}
   .scorering .sv{
@@ -963,7 +965,7 @@ const RADAR = {
       + '<div class="scorering" role="img" aria-label="Lead score ' + lead.score + ' of 100">'
       + '<svg width="64" height="64" viewBox="0 0 64 64">'
       + '<circle cx="32" cy="32" r="27" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="3.5"/>'
-      + '<circle cx="32" cy="32" r="27" fill="none" stroke="' + col + '" stroke-width="3.5" '
+      + '<circle cx="32" cy="32" r="27" fill="none" style="stroke:' + col + '" stroke-width="3.5" '
       + 'stroke-linecap="round" stroke-dasharray="' + dash + ' ' + C.toFixed(1) + '" transform="rotate(-90 32 32)"/>'
       + '</svg><span class="sv" style="color:' + col + '">' + lead.score + '</span></div>'
       + '</div>';

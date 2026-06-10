@@ -151,8 +151,9 @@
     width:max-content;max-width:264px;background:var(--ink);color:#fff;font-family:var(--ui);font-size:11px;font-weight:400;line-height:1.5;
     letter-spacing:0;text-transform:none;padding:8px 11px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .16s ease,transform .16s ease;z-index:40;white-space:normal}
   [data-tip]::before{content:"";position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--ink);opacity:0;transition:opacity .16s ease;z-index:40}
-  [data-tip]:hover::after,[data-tip]:hover::before{opacity:1}
-  [data-tip]:hover::after{transform:translateX(-50%) translateY(0)}
+  [data-tip]:hover::after,[data-tip]:hover::before,
+  [data-tip]:focus-visible::after,[data-tip]:focus-visible::before{opacity:1}
+  [data-tip]:hover::after,[data-tip]:focus-visible::after{transform:translateX(-50%) translateY(0)}
 
   /* ---------- opener / typewriter ---------- */
   .opener-box{margin-top:14px;border:1px dashed var(--hair2);border-radius:10px;padding:13px 16px;min-height:64px;background:rgba(255,255,255,.7);transition:border-color .25s ease,background .25s ease}
@@ -197,6 +198,7 @@
   .toast-undo:hover{text-decoration:underline}
 
   /* ---------- sheet ---------- */
+  #scrim[hidden],#sheet[hidden]{display:none}
   #scrim{position:fixed;inset:0;background:rgba(16,22,38,.34);opacity:0;transition:opacity .26s ease;z-index:70}
   #scrim.open{opacity:1}
   #sheet{position:fixed;left:0;right:0;bottom:0;max-height:50vh;background:#fff;border-radius:16px 16px 0 0;z-index:75;
@@ -597,7 +599,7 @@ const OTHERS = RADAR.leads.filter(l => l.tier !== "ready");
 const TIER_LABEL = { dev: "Developing", early: "Watchlist", blocked: "Blocked" };
 const VER_LABEL  = { reg: "Registry-attested", multi: "2+ sources", single: "Single source" };
 
-const bandColor = s => s >= 70 ? "var(--green)" : s >= 45 ? "var(--amber)" : "var(--dim)";
+const bandColor = s => s >= 70 ? "#1E7A41" : s >= 45 ? "#B45309" : "#9AA0A6";
 const ageFmt    = a => a === 0 ? "today" : a + "d";
 const coMark    = co => { const w = co.trim().split(/\s+/); return (w.length > 1 ? w[0][0] + w[1][0] : co.slice(0,2)).toUpperCase(); };
 
