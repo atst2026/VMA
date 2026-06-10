@@ -142,6 +142,60 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .fdot.d2{animation-delay:1.8s}.fdot.d3{animation-delay:3.6s}
 @keyframes travel{0%{left:0;opacity:0}8%{opacity:1}86%{opacity:1}100%{left:calc(100% - 7px);opacity:0}}
 .stg{position:relative;z-index:1;text-align:center}
+/* ---- mini stage scenes: one uniform card above every pipeline number ---- */
+.mini{position:relative;height:104px;margin-bottom:14px;border-radius:14px;overflow:hidden;
+  background:rgba(255,255,255,.78);border:1px solid rgba(255,255,255,.9);
+  box-shadow:0 4px 14px rgba(26,61,124,.07);text-align:left}
+.mini .embers{position:absolute;left:0;right:0;bottom:0;height:34px;pointer-events:none;
+  font:700 6.5px/1.1 var(--mono);color:var(--vma);white-space:pre;text-align:center;overflow:hidden}
+/* m1 — live crawl table over the ember skyline */
+.mini .crawlrows{position:absolute;left:0;right:0;top:4px;bottom:30px;overflow:hidden;
+  -webkit-mask:linear-gradient(180deg,#000 55%,transparent);mask:linear-gradient(180deg,#000 55%,transparent)}
+.mini .crawltrack{animation:miniScroll 9s linear infinite}
+@keyframes miniScroll{from{transform:translateY(0)}to{transform:translateY(-50%)}}
+.mini .crow{display:flex;gap:8px;align-items:baseline;padding:4px 10px;font:500 8px var(--mono);color:var(--muted)}
+.mini .crow .u{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mini .crow .u b{color:var(--ink);font-weight:700}
+.mini .crow .ms2{color:var(--clay);font-weight:700;flex:none}
+/* m2 — browser frame, skeleton lines, sweeping scan band, parsing pill */
+.mini .bframe{position:absolute;inset:10px 12px;border:1.5px solid var(--clay);border-radius:9px;
+  background:#fff;overflow:hidden}
+.mini .skel{position:absolute;height:6px;border-radius:99px;background:rgba(16,22,38,.08)}
+.mini .scanband{position:absolute;left:0;right:0;height:16px;
+  background:linear-gradient(180deg,transparent,rgba(217,119,87,.22),transparent);
+  animation:scanY 2.4s ease-in-out infinite alternate}
+@keyframes scanY{from{top:8%}to{top:72%}}
+.mini .ppill{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid rgba(16,22,38,.1);
+  border-radius:999px;padding:4px 10px;font:600 8px var(--mono);color:var(--ink2);
+  box-shadow:0 3px 10px rgba(26,61,124,.12);white-space:nowrap}
+.mini .ppill i{width:6px;height:6px;border-radius:2px;background:var(--clay);animation:breathe 1.4s ease-in-out infinite}
+/* m3 — structured output, values scrambling live */
+.mini .codebox{position:absolute;inset:8px 10px;font:500 7.5px/1.55 var(--mono);color:var(--dim);overflow:hidden}
+.mini .codebox .k{color:var(--ink2);font-weight:700}
+.mini .codebox .v{color:var(--clay);font-weight:700}
+.mini .scrchip{position:absolute;right:8px;bottom:7px;background:#fff;border:1px solid rgba(16,22,38,.1);
+  border-radius:999px;padding:3px 8px;font:700 7.5px var(--mono);color:var(--ink2);
+  box-shadow:0 2px 8px rgba(26,61,124,.1)}
+.mini .scrchip b{color:var(--clay)}
+/* m4 — document parsed over the ember field */
+.mini .doc{position:absolute;left:50%;top:9px;transform:translateX(-50%);width:46px;height:58px;
+  background:#fff;border:1px solid rgba(16,22,38,.1);border-radius:5px;
+  box-shadow:0 4px 12px rgba(26,61,124,.12);padding:7px 6px;z-index:2}
+.mini .doc i{display:block;height:3px;border-radius:99px;background:rgba(16,22,38,.1);margin-bottom:3px}
+.mini .doc i.hl{background:var(--clay);opacity:.85}
+.mini .doc .ftag{position:absolute;right:-9px;bottom:9px;background:#6b7686;color:#fff;
+  font:700 5.5px var(--mono);letter-spacing:.08em;border-radius:3px;padding:2px 4px}
+.mini .ppill.low{top:auto;bottom:7px;transform:translateX(-50%)}
+/* m5 — the handover: engine to account director */
+.mini .pair{position:absolute;left:0;right:0;top:14px;display:flex;align-items:center;justify-content:center;gap:10px;z-index:2}
+.mini .orb2{width:34px;height:34px;border-radius:50%;background:#fff;display:grid;place-items:center;
+  box-shadow:0 4px 12px rgba(26,61,124,.16);border:1px solid rgba(16,22,38,.07)}
+.mini .orb2 svg{width:20px;height:20px;border-radius:5px}
+.mini .orb2 .adicon{width:17px;height:17px;color:var(--deep)}
+.mini .linkpill{width:22px;height:14px;border-radius:999px;border:1.5px solid var(--clay);
+  display:grid;place-items:center;background:#fff;animation:breathe 2.6s ease-in-out infinite}
+.mini .linkpill i{width:8px;height:1.5px;background:var(--clay);border-radius:99px}
 .stg .num{font-family:var(--disp);font-weight:700;font-size:36px;letter-spacing:-.02em;line-height:1;
   color:transparent;background:linear-gradient(125deg,var(--s1),var(--s2));
   -webkit-background-clip:text;background-clip:text}
@@ -311,9 +365,10 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .cg-cell{padding:10px 6px;border-left:1px solid rgba(16,22,38,.04);display:flex;flex-direction:column;gap:6px;min-height:60px}
 .cg-cell:nth-child(2){border-left:none}
 .cpill{display:flex;align-items:center;gap:7px;font:600 10px 'Inter';color:var(--ink2);
-  padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.9);
+  padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.5);
   border:1px solid rgba(16,22,38,.08);box-shadow:0 1px 4px rgba(26,61,124,.06);
   cursor:pointer;transition:.15s;min-width:0}
+.cpill.sel{background:#fff;border-color:rgba(66,133,244,.4)}
 .cpill:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(26,61,124,.13)}
 .cpill i{width:6px;height:6px;border-radius:50%;flex:none}
 .cpill.ev i{background:#3b82f6}
@@ -413,11 +468,10 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
     <div class="mainhead">
       <span class="logo-mini"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#3E5C84"/><text x="50" y="55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="30" letter-spacing="-1.5" fill="#fff">VMA</text><text x="51" y="76" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="300" font-size="13.5" letter-spacing="3" fill="#fff">GROUP</text></svg></span>
       <span class="mh-title">Business Development Engine</span>
-      <nav class="nav">
+      <nav class="nav" style="margin-left:auto">
         <a href="/comms" class="{{ 'on' if desk_key=='comms' else '' }}">Communications</a>
         <a href="/marketing" class="{{ 'on' if desk_key=='marketing' else '' }}">Marketing</a>
       </nav>
-      <span class="mh-live"><i></i>LIVE · {{ last_updated_label }}</span>
     </div>
 
     <div class="deskrow">
@@ -438,11 +492,37 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
       <div class="tickwrap"><div class="ticktrack" id="ticker"></div></div>
       <div class="stages" id="stagesEl">
         <div class="rail"><span class="fdot"></span><span class="fdot d2"></span><span class="fdot d3"></span></div>
-        <div class="stg s1"><div class="num" id="st1">0</div><div class="lbl" id="sl1"></div><div class="cap" id="cap1"></div></div>
-        <div class="stg s2"><div class="num" id="st2">0</div><div class="lbl" id="sl2"></div><div class="cap" id="cap2"></div></div>
-        <div class="stg s3"><div class="num" id="st3">0</div><div class="lbl" id="sl3"></div><div class="cap" id="cap3"></div></div>
-        <div class="stg s4"><div class="num" id="st4">0</div><div class="lbl" id="sl4"></div><div class="cap" id="cap4"></div></div>
-        <div class="stg s5"><div class="num" id="st5">0</div><div class="lbl" id="sl5"></div><div class="cap" id="cap5"></div></div>
+        <div class="stg s1">
+          <div class="mini"><div class="crawlrows"><div class="crawltrack" id="crawlTrack"></div></div>
+            <div class="embers" data-ember></div></div>
+          <div class="num" id="st1">0</div><div class="lbl" id="sl1"></div><div class="cap" id="cap1"></div></div>
+        <div class="stg s2">
+          <div class="mini"><div class="bframe">
+            <span class="skel" style="left:9%;top:14%;width:52%"></span>
+            <span class="skel" style="left:9%;top:32%;width:70%"></span>
+            <span class="skel" style="left:9%;top:50%;width:44%"></span>
+            <span class="skel" style="left:9%;top:68%;width:62%"></span>
+            <span class="skel" style="left:9%;top:84%;width:36%"></span>
+            <div class="scanband"></div>
+            <span class="ppill"><i></i>Parsing live signals…</span></div></div>
+          <div class="num" id="st2">0</div><div class="lbl" id="sl2"></div><div class="cap" id="cap2"></div></div>
+        <div class="stg s3">
+          <div class="mini"><div class="codebox" id="codeBox"></div>
+            <span class="scrchip"><b>::</b> <span id="scrTxt"></span></span></div>
+          <div class="num" id="st3">0</div><div class="lbl" id="sl3"></div><div class="cap" id="cap3"></div></div>
+        <div class="stg s4">
+          <div class="mini"><div class="doc"><i style="width:70%"></i><i style="width:50%"></i><i class="hl" style="width:84%"></i><i style="width:62%"></i><i style="width:40%"></i><span class="ftag">RNS</span></div>
+            <span class="ppill low"><i></i>Stress-testing…</span>
+            <div class="embers" data-ember></div></div>
+          <div class="num" id="st4">0</div><div class="lbl" id="sl4"></div><div class="cap" id="cap4"></div></div>
+        <div class="stg s5">
+          <div class="mini"><div class="pair">
+            <span class="orb2"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="14" fill="#3E5C84"/><text x="50" y="62" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="34" letter-spacing="-1.5" fill="#fff">VMA</text></svg></span>
+            <span class="linkpill"><i></i></span>
+            <span class="orb2"><svg class="adicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c1.2-3.6 3.8-5.4 7-5.4s5.8 1.8 7 5.4"/></svg></span></div>
+            <span class="ppill low"><i></i>Handing to the AD…</span>
+            <div class="embers" data-ember></div></div>
+          <div class="num" id="st5">0</div><div class="lbl" id="sl5"></div><div class="cap" id="cap5"></div></div>
       </div>
       <div class="boardbar">
         <div class="seg" id="modeSeg">
@@ -763,8 +843,55 @@ function sizeRail(){
   const fb=first.getBoundingClientRect(),lb=last.getBoundingClientRect();
   rail.style.left=(fb.left-sb.left+fb.width/2)+'px';
   rail.style.right=(sb.right-(lb.left+lb.width/2))+'px';
+  const num=first.querySelector('.num');
+  if(num){const nb=num.getBoundingClientRect();
+    rail.style.top=(nb.top-sb.top+nb.height/2)+'px';}
 }
 window.addEventListener('resize',sizeRail);
+
+/* ---------- the mini stage scenes ---------- */
+(function(){
+  /* m1: the crawl table — rows of the desk's real scan surface */
+  const SRCS=[['londonstockexchange.com','/rns',788],['ft.com','/companies',771],
+    ['prweek.com','/uk',794],['linkedin.com','/jobs',741],['companieshouse.gov.uk','/filings',752],
+    ['reuters.com','/business',781],['ofwat.gov.uk','/enforcement',773],['marketingweek.com','/moves',766]];
+  const rows=SRCS.map(s=>'<div class="crow"><span class="u">'+s[0]+'<b>'+s[1]+'</b></span>'
+    +'<span class="ms2">'+s[2]+'ms</span></div>').join('');
+  const ct=$('crawlTrack');if(ct)ct.innerHTML=rows+rows;
+  /* shared ember strips — the per-cell churn engine, miniature */
+  document.querySelectorAll('[data-ember]').forEach(box=>{
+    const GLYPH=['.',':','-','=','+','·'],ROWS=4,COLS=46;
+    const wisps=[];for(let i=0;i<9;i++)wisps.push({x:2+((i*COLS/9)|0)+((Math.random()*3)|0),w:1+(Math.random()<.5?1:0),h:1+((Math.random()*3)|0)});
+    function hAt(c){let h=1;for(const w of wisps){if(c>=w.x&&c<w.x+w.w)h=Math.max(h,w.h);}return h;}
+    let html='';for(let r=ROWS-1;r>=0;r--){for(let c=0;c<COLS;c++)html+='<span></span>';html+='\n';}
+    box.innerHTML=html;
+    const spans=box.querySelectorAll('span');
+    const at=(r,c)=>spans[(ROWS-1-r)*COLS+c];
+    setInterval(()=>{
+      for(let k=0;k<26;k++){
+        const r=(Math.random()*ROWS)|0,c=(Math.random()*COLS)|0,el=at(r,c);
+        if(r>=hAt(c)){el.textContent=' ';continue;}
+        if(Math.random()<.12){el.textContent=' ';}
+        else{el.textContent=GLYPH[(Math.random()*GLYPH.length)|0];
+          el.style.opacity=[.3,.55,.95][(Math.random()*3)|0];}
+      }
+    },110);
+  });
+  /* m3: structured output with live-scrambling values */
+  const cb=$('codeBox');
+  if(cb){
+    const CH='abAZ09?*=!-/';
+    const scr=n=>{let s='';for(let i=0;i<n;i++)s+=CH[(Math.random()*CH.length)|0];return s;};
+    function paint(){
+      cb.innerHTML='[ {<br>&nbsp;&nbsp;<span class="k">"account"</span>: <span class="v">"'+scr(9)+'"</span>,<br>'
+        +'&nbsp;&nbsp;<span class="k">"signal"</span>: <span class="v">"'+scr(12)+'"</span>,<br>'
+        +'&nbsp;&nbsp;<span class="k">"seat"</span>: <span class="v">"'+scr(7)+'"</span>,<br>'
+        +'&nbsp;&nbsp;<span class="k">"score"</span>: <span class="v">'+((Math.random()*40+55)|0)+'</span> } ]';
+      const st=$('scrTxt');if(st)st.textContent=scr(8)+'…';
+    }
+    paint();setInterval(paint,160);
+  }
+})();
 setInterval(()=>{
   const all=document.querySelectorAll('#ticker .tchip');
   if(!all.length)return;
@@ -935,8 +1062,10 @@ function renderBoard(){
     $('blLabel').textContent='';$('blList').innerHTML='';
     return;
   }
-  const readyAll=BD.filter(l=>(l.tier||'ready')==='ready');
-  const rest=BD.filter(l=>(l.tier||'ready')!=='ready');
+  /* blocked leads (competing recruiter, freeze, administration) never
+     surface — the engine simply doesn't show them */
+  const readyAll=BD.filter(l=>(l.tier||'ready')==='ready'&&!l.conflict);
+  const rest=BD.filter(l=>l.tier==='dev'||l.tier==='early');
   let ready=readyAll.filter(statusFilter);
   if(sort==='window')ready.sort((a,b)=>winWeeks(a.win)-winWeeks(b.win)||(b.score||0)-(a.score||0));
   else if(sort==='new')ready.sort((a,b)=>((a.age===''?99:a.age)??99)-((b.age===''?99:b.age)??99)||(b.score||0)-(a.score||0));
@@ -944,9 +1073,8 @@ function renderBoard(){
   $('strips').innerHTML=ready.length?ready.map((l,i)=>stripHTML(l,i)).join('')
     :'<div style="padding:26px 4px;font-size:12.5px;color:var(--dim)">Nothing under this filter.</div>';
   const nDev=rest.filter(l=>l.tier==='dev').length,
-        nEarly=rest.filter(l=>l.tier==='early').length,
-        nBlocked=rest.filter(l=>l.tier==='blocked').length;
-  $('blLabel').textContent='Below the line — '+nDev+' developing · '+nEarly+' watch · '+nBlocked+' blocked';
+        nEarly=rest.filter(l=>l.tier==='early').length;
+  $('blLabel').textContent='Below the line — '+nDev+' developing · '+nEarly+' watch';
   $('blList').innerHTML=rest.map(l=>'<div class="bl-row'+(l.tier==='blocked'?' blocked':'')+'">'
     +'<span class="rank">·</span>'
     +'<div class="co2"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(l.co)+'</span>'
@@ -1113,10 +1241,15 @@ document.addEventListener('click',e=>{
   if(jr){if(jr.dataset.url)window.open(jr.dataset.url,'_blank','noopener');return;}
   const cal=e.target.closest('[data-cal]');
   if(cal){
-    /* clicking the same pill again closes the popup */
+    /* clicking the same pill again closes the popup; the open pill is the
+       only one with a solid-white background */
     if(pop.classList.contains('on')&&pop.dataset.key===cal.dataset.cal){
-      pop.classList.remove('on');pop.dataset.key='';e.stopPropagation();return;}
+      pop.classList.remove('on');pop.dataset.key='';
+      document.querySelectorAll('.cpill.sel').forEach(x=>x.classList.remove('sel'));
+      e.stopPropagation();return;}
     pop.dataset.key=cal.dataset.cal;
+    document.querySelectorAll('.cpill.sel').forEach(x=>x.classList.remove('sel'));
+    cal.classList.add('sel');
     const it=(window._calLookup||{})[cal.dataset.cal];if(!it)return;
     const kindLbl={ev:'EVENT',wi:'PLACEMENT WINDOW',fw:'FRAMEWORK'}[it.kind];
     const kc={ev:'#1d4ed8',wi:'#0e7c74',fw:'#6b3fb5'}[it.kind];
@@ -1130,7 +1263,8 @@ document.addEventListener('click',e=>{
     pop.style.left=x+'px';pop.style.top=(bb.bottom-wrap.top+10)+'px';
     pop.classList.add('on');e.stopPropagation();return;
   }
-  if(!e.target.closest('.cal-pop'))pop.classList.remove('on');
+  if(!e.target.closest('.cal-pop')){pop.classList.remove('on');pop.dataset.key='';
+    document.querySelectorAll('.cpill.sel').forEach(x=>x.classList.remove('sel'));}
   const act=e.target.closest('[data-act]');
   if(act&&act.dataset.id){
     const id=act.dataset.id,a=act.dataset.act;
