@@ -50,10 +50,12 @@ def test_bronze_plus_amplifier_still_queues():
 
 
 def test_bronze_with_tier1_corroboration_presents():
-    lead = _lead(keys=("rebrand", "ceo_change"))
-    g = gate.assess({"company": "Acme", "events": _full_events("rebrand")},
-                    lead, now=NOW)
+    lead = _lead(keys=("rebrand", "ceo_change", "funding"))
+    g = gate.assess({"company": "Acme", "events": _full_events("rebrand"),
+                     "seeded_contact_name": "Jane Doe"}, lead, now=NOW)
     assert g["presented"]
+    # And the bronze rule was what it cleared — not the scorecard.
+    assert all("Bronze" not in r for r in g["reasons"])
 
 
 def test_confirmed_overlay_clears_bronze():

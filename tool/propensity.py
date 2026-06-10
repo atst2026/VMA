@@ -10,8 +10,8 @@ mandate. The two strongest pre-contact propensity facts, both free:
          what that team exists to avoid.
   PRO  — the company demonstrably buys recruitment. Public-sector award
          notices naming a recruitment/search supplier prove the buyer
-         pays fees; AD-entered seeds record known agency users (the
-         JobAdder-lite stopgap until the CRM is connected).
+         pays fees; /red-team and /investigate research the rest online
+         and write what they find back here (record_finding).
 
 The store persists per-company flags with evidence + dates, and
 annotate() projects them onto a pipeline entry as the `internal_ta` /
@@ -20,11 +20,15 @@ inputs that were previously never populated). Flags expire so a TA team
 hired two years ago can't suppress a 2027 lead forever.
 
 Sources of truth, in precedence order:
-  1. propensity_seeds.json  — hand-curated {company: {"agency_user": true,
-     "internal_ta": false, "note": "..."}}. AD knowledge always wins.
-  2. propensity.json        — machine-observed: ATS TA-counts (daily) and
-     procurement awards to recruitment suppliers (scanned from the
-     signals the brief already collects).
+  1. Research findings — written programmatically by the /red-team and
+     /investigate commands after checking the company online (TA team on
+     LinkedIn/public record, agency-posted ads, careers-page evidence).
+     record_finding() is their write API. No manual admin work.
+  2. Machine observations — ATS TA-counts (daily) and procurement awards
+     to recruitment suppliers, from the signals the brief already
+     collects.
+  (propensity_seeds.json remains supported as an optional override for
+  anything the desk wants to pin, but nothing depends on it.)
 """
 from __future__ import annotations
 
@@ -169,6 +173,38 @@ def scan_signals_for_agency_awards(signals: list[dict]) -> int:
         return 0
 
 
+def record_finding(company: str | None, *,
+                   internal_ta: bool | None = None,
+                   agency_user: bool | None = None,
+                   note: str = "", source_url: str = "") -> bool:
+    """Write API for /red-team and /investigate: persist a researched
+    propensity fact for a company. Findings outrank machine observations
+    and expire like them (TA 120d, agency-user 730d), so a researched
+    fact is re-checked rather than trusted forever. Returns False when
+    there is nothing to record. Never raises."""
+    try:
+        key = _norm(company)
+        if not key or (internal_ta is None and agency_user is None):
+            return False
+        store = _load(_store_path())
+        now = datetime.now(timezone.utc).isoformat()
+        rec = store.setdefault(key, {"company": (company or "").strip()})
+        finding = rec.setdefault("research", {})
+        if internal_ta is not None:
+            finding["internal_ta"] = {"value": bool(internal_ta), "seen": now,
+                                      "evidence": (note or "research finding")[:300],
+                                      "url": source_url[:300]}
+        if agency_user is not None:
+            finding["agency_user"] = {"value": bool(agency_user), "seen": now,
+                                      "evidence": (note or "research finding")[:300],
+                                      "url": source_url[:300]}
+        _save(store)
+        return True
+    except Exception as e:
+        log.info("propensity record_finding skipped (%s)", e)
+        return False
+
+
 def flags_for(company: str | None,
               now: datetime | None = None) -> dict:
     """Current propensity flags for a company: seeds win, then fresh
@@ -187,6 +223,26 @@ def flags_for(company: str | None,
     if ag and _fresh(ag.get("seen"), AGENCY_EXPIRE_DAYS, now):
         out["agency_user"] = True
         out["agency_evidence"] = ag.get("evidence") or ""
+    # Researched findings (written by /red-team and /investigate after
+    # checking the company online) outrank passive observations — they
+    # can both SET and CLEAR a flag.
+    research = rec.get("research") or {}
+    rta = research.get("internal_ta") or {}
+    if rta and _fresh(rta.get("seen"), TA_EXPIRE_DAYS, now):
+        if rta.get("value"):
+            out["internal_ta"] = True
+            out["internal_ta_evidence"] = rta.get("evidence") or ""
+        else:
+            out.pop("internal_ta", None)
+            out.pop("internal_ta_evidence", None)
+    rag = research.get("agency_user") or {}
+    if rag and _fresh(rag.get("seen"), AGENCY_EXPIRE_DAYS, now):
+        if rag.get("value"):
+            out["agency_user"] = True
+            out["agency_evidence"] = rag.get("evidence") or ""
+        else:
+            out.pop("agency_user", None)
+            out.pop("agency_evidence", None)
     seed = _load(_seeds_path()).get(key) or {}
     if isinstance(seed, dict):
         if seed.get("internal_ta") is not None:

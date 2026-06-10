@@ -1369,6 +1369,14 @@ MR_CSS = r"""
 .mr-confb.md{color:#9a3412;background:#fff7ed;border:1px solid #fdba74}
 .mr-evs{font:500 11px/1.5 "Inter",sans-serif;color:var(--dim)}
 .mr-rtb{display:inline-flex;align-items:center;margin-right:8px;padding:2px 9px;font:800 9.5px/1.6 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.06em;border-radius:999px;color:#0e7c74;background:#ddf3f0;border:1px solid rgba(18,165,148,.4);cursor:help}
+.mr-ver{display:inline-flex;align-items:center;margin-left:2px;padding:2px 8px;font:600 10px/1.6 "Inter",sans-serif;border-radius:7px;cursor:help}
+.mr-ver.reg{color:#1e7a41;background:#e7f3ec;border:1px solid rgba(30,122,65,.3)}
+.mr-ver.multi{color:#1d4ed8;background:#e9effb;border:1px solid rgba(59,130,246,.35)}
+.mr-ver.single{color:#9a3412;background:#fff7ed;border:1px solid #fdba74}
+.mr-qdim{display:inline-flex;align-items:center;margin-right:6px;padding:2px 8px;font:700 10px/1.6 "Inter",sans-serif;letter-spacing:.03em;border-radius:7px;cursor:help}
+.mr-qdim.q2{color:#1e7a41;background:#e7f3ec;border:1px solid rgba(30,122,65,.3)}
+.mr-qdim.q1{color:#9a3412;background:#fff7ed;border:1px solid #fdba74}
+.mr-qdim.q0{color:#6b7689;background:#eef1f5;border:1px solid #d8dee8}
 .mr-propb{display:inline-flex;align-items:center;margin-right:8px;padding:2px 9px;font:700 10px/1.6 "Inter",sans-serif;letter-spacing:.04em;border-radius:999px}
 .mr-propb.pro{color:#1e7a41;background:#e7f3ec;border:1px solid rgba(30,122,65,.3)}
 .mr-propb.ext{color:#9a3412;background:#fff7ed;border:1px solid #fdba74}
@@ -1515,7 +1523,11 @@ MR_JS = r"""
       +(l.conflict?'<span class="mr-anti">⚠ competing recruiter</span>':'')
       +(anti2.length?'<span class="mr-anti">⚠ '+esc(anti2.join(' · '))+'</span>':'')+'</div>':'';
     var gtop='';
-    if(pres(l)&&l.conf){gtop=dk('Confidence','<span class="mr-confb '+(l.conf==='High'?'hi':'md')+'">'+esc(l.conf)+'</span>'+(l.rt?'<span class="mr-rtb" title="Survived the red-team pass: a sceptical AD persona tried to kill this lead and failed'+(l.conviction?'. Conviction '+l.conviction+'/100':'')+'">RED-TEAMED ✓'+(l.conviction?' '+l.conviction:'')+'</span>':'')+'<span class="mr-evs">'+(l.evFams||0)+' independent source'+((l.evFams||0)===1?'':'s')+((l.evPrim||0)?' · '+l.evPrim+' primary':'')+'</span>');}
+    function vertag(l){var v=l.ver||'single';var lab=v==='reg'?'Registry-attested':v==='multi'?'2+ sources':'Single source';var tip=v==='reg'?'At least one fact comes from an official registry (Companies House / RNS / regulator) — true on its own, no press coverage needed':v==='multi'?'Corroborated by two or more independent outlets':'Rests on one non-registry source — /investigate can clear it';return '<span class="mr-ver '+v+'" title="'+tip+'">'+lab+'</span>';}
+    function qchip(lab,v,why){var c=v>=2?'q2':v===1?'q1':'q0';return '<span class="mr-qdim '+c+'" title="'+esc(why||'')+'">'+lab+(v>=2?' ✓✓':v===1?' ✓':' ✗')+'</span>';}
+    var qual='';
+    if(l.qual&&l.qual.total!==undefined){qual=dk('Qualification',qchip('Seat',l.qual.seat,l.qual.seat_why)+qchip('Budget',l.qual.budget,l.qual.budget_why)+qchip('Urgency',l.qual.urgency,l.qual.urgency_why)+qchip('Buyer',l.qual.buyer,l.qual.buyer_why)+'<span class="mr-evs">'+l.qual.total+'/8</span>');}
+    if(pres(l)&&l.conf){gtop=dk('Confidence','<span class="mr-confb '+(l.conf==='High'?'hi':'md')+'">'+esc(l.conf)+'</span>'+(l.rt?'<span class="mr-rtb" title="Survived the red-team pass: a sceptical AD persona tried to kill this lead and failed'+(l.conviction?'. Conviction '+l.conviction+'/100':'')+'">RED-TEAMED ✓'+(l.conviction?' '+l.conviction:'')+'</span>':'')+vertag(l));}
     else if(!pres(l)&&l.gateWhy!==undefined){var qt=l.gateWhy||'Needs more corroboration';if(l.recheck)qt+=' · recheck in '+l.recheck+'d';if(l.needsInv)qt+=' · run /investigate';gtop=dk('Why not call-ready',esc(qt));}
     var prop=l.prop?dk('Fee propensity','<span class="mr-propb '+(l.propCls||'unk')+'">'+esc(l.prop)+'</span><span class="mr-evs">'+esc(l.propWhy||'')+'</span>'):'';
     var bizc=l.bizCase?dk('Business case',esc(l.bizCase)):'';
@@ -1525,10 +1537,11 @@ MR_JS = r"""
     return '<div class="mr-doss">'
       +warn
       +gtop
+      +qual
       +prop
       +bizc
       +buyer
-      +dk('Why now<span class="v2b" data-tip="v2: this narrative is now composed from the FULL signal stack in date order — every corroborating trigger with its date — plus the fee case: the structural reason this company pays a search fee instead of running the hire itself.">v2</span>',fb(l)+esc(l.whyNow||l.why))
+      +dk('Why now',fb(l)+esc(l.whyNow||l.why))
       +kill
       +move
       +acts
@@ -1643,8 +1656,8 @@ MR_JS = r"""
   root.innerHTML='<div class="mr-bar">'
    +'<div class="mr-filt mr-pgsel"><button class="mr-filtbtn" data-act="pgbtn"><span class="mr-pgi" id="mr-pgico">'+IC.lead+'</span><span class="mr-lbl" id="mr-pglbl">BD Leads</span><span class="mr-cv">'+IC.chevd+'</span></button>'
    +'<div class="mr-filtmenu" id="mr-pgmenu">'
-   +'<button data-act="pg" data-pg="bd" class="on">'+IC.lead+'BD Leads<span class="v2b" data-tip="v2 demand-first rebuild: three counter-cyclical detectors now feed this board — In-house search failing (senior roles aged 45+ days or pulled-and-reposted with no agency), Hiring restart (first senior posting after a 6+ month freeze) and Mishire reversal (a leader out within ~18 months of arriving). Each targets buyers who MUST pay a fee in a quiet market, not just companies that happen to be hiring.">v2</span></button>'
-   +'<button data-act="pg" data-pg="jobs">'+IC.jobs+'Live Jobs<span class="v2b" data-tip="v2: every posting on this board now also feeds the in-house failure ledger. A senior role still open after 45 days, or withdrawn and reposted, automatically becomes a BD Lead — the company is visibly failing to fill it without an agency, the highest-converting call in a quiet market.">v2</span></button></div></div>'
+   +'<button data-act="pg" data-pg="bd" class="on">'+IC.lead+'BD Leads</button>'
+   +'<button data-act="pg" data-pg="jobs">'+IC.jobs+'Live Jobs</button></div></div>'
    +'<div class="mr-filt"><button class="mr-filtbtn" data-act="filtbtn">'+IC.funnel+'<span class="mr-lbl" id="mr-filtlbl">Active</span><span class="mr-cv">'+IC.chevd+'</span></button>'
    +'<div class="mr-filtmenu" id="mr-filtmenu">'
    +'<button data-act="filt" data-f="active" class="on">Active <span class="mr-mc" id="mr-m-active"></span></button>'
@@ -1885,6 +1898,10 @@ def _mr_gate_fields(row):
         "propCls": ("pro" if prop_pts >= _g.PROP_PROVEN
                     else "int" if prop_pts == _g.PROP_INTERNAL
                     else "ext" if prop_pts == _g.PROP_EXTERNAL else "unk"),
+        # Qualification scorecard + per-fact verification tag.
+        "qual": g.get("qual") or {},
+        "ver": ("reg" if (ev.get("primary") or 0) >= 1
+                else "multi" if (ev.get("families") or 0) >= 2 else "single"),
         # /red-team conviction verdict (when an overlay exists).
         "rt": 1 if g.get("red_team") else 0,
         "conviction": g.get("conviction"),
@@ -4102,72 +4119,6 @@ TEMPLATE = r"""
       padding-bottom: 4px;
     }
 
-    /* ===== v2 badge — the demand-first BD rebuild marker. A tiny pill
-       next to each upgraded section title; hovering it explains what v2
-       changes for THAT section. Pure CSS tooltip (no JS) so it works in
-       the server-rendered panels AND inside the JS-built modern bar. */
-    .v2b {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      margin-left: 7px;
-      padding: 1px 6px 2px;
-      font: 700 9px/1.2 "Inter", sans-serif;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #b5530e;
-      background: #fdecdb;
-      border: 1px solid rgba(217, 122, 43, 0.35);
-      border-radius: 999px;
-      cursor: help;
-      vertical-align: middle;
-    }
-    .v2b::after {
-      content: attr(data-tip);
-      position: absolute;
-      top: calc(100% + 8px);
-      left: 0;
-      z-index: 99;
-      width: 280px;
-      padding: 10px 12px;
-      font: 400 11.5px/1.5 "Inter", sans-serif;
-      letter-spacing: 0;
-      text-transform: none;
-      white-space: normal;
-      text-align: left;
-      color: #fff;
-      background: var(--navy-deep, #0F1A2E);
-      border-radius: 9px;
-      box-shadow: 0 10px 28px rgba(15, 26, 46, 0.28);
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(-3px);
-      transition: opacity 0.14s ease, transform 0.14s ease;
-      pointer-events: none;
-    }
-    .v2b::before {
-      content: "";
-      position: absolute;
-      top: calc(100% + 3px);
-      left: 12px;
-      z-index: 99;
-      border: 5px solid transparent;
-      border-bottom-color: var(--navy-deep, #0F1A2E);
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.14s ease;
-      pointer-events: none;
-    }
-    .v2b:hover::after, .v2b:hover::before {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-    }
-    /* Inside the compact dropdown menus the tooltip anchors right so it
-       never clips off the left viewport edge. */
-    .mr-filtmenu .v2b { margin-left: auto; }
-    .mr-filtmenu .v2b::after { left: auto; right: 0; }
-    .mr-filtmenu .v2b::before { left: auto; right: 12px; }
 
     /* PREDICTORS */
     .window-badge {

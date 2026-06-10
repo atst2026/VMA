@@ -93,7 +93,6 @@ Manual dispatch bypasses the 08:30–10:30 window check.
 v1 answered "who is hiring?". In a quiet market that is the wrong question —
 fewer companies hire, and the ones that do in-house it. v2 targets
 **willingness to pay a fee** and **creates demand where none is advertised**.
-Hover any `v2` badge on the dashboard for the per-section explanation.
 
 New counter-cyclical detectors (zero new fetches, stack into the existing
 ranker):
@@ -126,11 +125,17 @@ An AD must never be shown a watching brief dressed up as a lead:
   (cleared the gate, capped ~7), **Developing**, **Early signals**
   (collapsed by default) and **Blocked**. Nothing is hidden; the gate
   grades instead of gatekeeping.
-- **Presentation gate** (`tool/gate.py`) — hard rules decide Call-ready:
-  3+ independent source families with a primary presents at full
-  strength; hard blockers and amplifier-only signals never present;
-  lapsed windows and too-fresh triggers wait with a recheck date and the
-  reason shown on the card ("Why not call-ready").
+- **Qualification gate** (`tool/gate.py`) — Call-ready is decided the
+  way an AD qualifies, on four evidenced dimensions (each 0-2): a
+  live-or-imminent senior **Seat**, **Budget**/fundability,
+  **Urgency**, and a reachable **Buyer** with a personal reason to
+  engage. Present needs seat>=1 and >=5/8. Source-counting is demoted
+  to per-fact verification: one registry-attested fact (Companies
+  House / RNS / regulator) is true on its own — quiet companies with no
+  press are not less qualified; only a lone non-registry source queues
+  for /investigate. Hard blockers, amplifier-only and bronze-alone
+  signals never present; the card shows the scorecard chips, the
+  verification tag and "Why not call-ready".
 - **Lead cards** carry calibrated confidence (High/Moderate), the
   evidence-independence count, **"What kills this"** (the playbook's kill
   conditions plus the live weakest link) and a **suggested first move**.

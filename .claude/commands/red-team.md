@@ -52,15 +52,40 @@ six AD questions, verifying live on the web, citing every fact kept:
    RNS, team page vs its Wayback archive, the company's own careers board.)
 2. Does budget plausibly exist? (Listed/funded/profitable vs cutting;
    a fine's size relative to revenue; the fee-propensity line.)
+   **If propensity reads Unknown, research it now**: do they advertise
+   TA/recruiter roles (careers page, LinkedIn public jobs)? Do agencies
+   post roles on their behalf? Any award notice or press naming a
+   recruitment supplier? Write what you find back so every future score
+   benefits:
+   ```bash
+   python3 -c "from tool import propensity; propensity.record_finding(
+       '<company>', internal_ta=<True|False|None>,
+       agency_user=<True|False|None>,
+       note='<what you found>', source_url='<url>')"
+   ```
 3. Who is the economic buyer — named person, current title, verified in
    seat? (`tool/state/hiring_contacts.json` first, then public record.)
-4. Is there a champion path? (Check `tool/state/propensity_seeds.json`
-   notes and dossier history. If none: write "none known — cold open".
-   Never invent relationships.)
+4. Is there a champion path? (Check the dossier history and the
+   propensity store for prior placements or relationships. If none:
+   write "none known — cold open". Never invent relationships.)
 5. What is the trigger-to-hire causal chain FOR THIS COMPANY — not the
    abstract rule, the specific dated story?
 6. Draft: a business case (≤120 words, every clause evidenced) and a
-   warm opening (1–2 sentences the AD could say verbatim).
+   warm opening (1–2 sentences the AD could say verbatim). **Arm it like
+   a trusted advisor, not a signal-spotter**: include the salary
+   benchmark for the predicted seat and 2–3 peer comparables from the
+   house tools —
+   ```bash
+   python3 -c "
+   from tool.pitch_pack import _salary_band
+   from tool.peers import peers_for, detect_sector
+   lo, hi, matched = _salary_band('<predicted role>')
+   print('benchmark:', lo, '-', hi, '(', matched, ')')
+   print('peers:', peers_for('<company>')[:3])"
+   ```
+   — so the opening reads like *"comparable [sector] employers benchmark
+   this seat at £X–Y; here's our read on the three capabilities you'll
+   need"*, not *"I saw your news"*.
 
 **2. The Red-Team AD tries to kill it.** Adopt the persona fully: an
 elite, sceptical AD who has rejected thousands of leads and is judged
