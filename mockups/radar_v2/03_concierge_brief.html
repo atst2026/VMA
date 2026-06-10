@@ -688,5 +688,561 @@ const RADAR = {
   ]
 };
 </script>
+<script>
+/* ===== The Briefing — concierge app ===== */
+(function(){
+'use strict';
+
+/* ---------- utilities ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const M = RADAR.meta;
+const leadsById = {};
+RADAR.leads.forEach(l => { leadsById[l.id] = l; });
+
+const band = s => s >= 70 ? 'g' : s >= 45 ? 'a' : 'd';
+const BAND_HEX = { g:'#1E7A41', a:'#B45309', d:'#9AA0A6' };
+const bandHex = s => BAND_HEX[band(s)];
+const TYPE_TINT = {
+  lead:['#1d4ed8','#e9effb'], fund:['#1e7a41','#e7f3ec'], restr:['#46556e','#edf0f4'],
+  warn:['#b5530e','#fdecdb'], mna:['#6b3fb5','#efe9fb'], people:['#0e7c74','#ddf3f0']
+};
+const VER_LABEL = { reg:'Registry-attested', multi:'2+ sources', single:'Single source' };
+const TIER_LABEL = { ready:'Call-ready', dev:'Developing', early:'Watchlist', blocked:'Blocked' };
+const winLabel = l => l.win === 'horizon' ? 'HORIZON' : l.win.toUpperCase();
+const ageStr = a => a === 0 ? 'today' : a + 'd';
+const NUM_WORD = ['No','One','Two','Three','Four','Five','Six'];
+
+const CHEV = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+const XS   = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+
+const triage = {};  /* id -> 'followed' | 'dismissed' */
+
+/* ---------- typewriter ---------- */
+function typeInto(el, text, ms, done){
+  let finished = false, raf = 0;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    cancelAnimationFrame(raf);
+    el.textContent = text;
+    if (done) done();
+  };
+  if (REDUCED){ requestAnimationFrame(finish); return { finish }; }
+  const t0 = performance.now();
+  let shown = 0;
+  const step = now => {
+    if (finished) return;
+    const n = Math.min(text.length, Math.floor((now - t0) / ms));
+    if (n !== shown){ shown = n; el.textContent = text.slice(0, n); }
+    if (shown >= text.length) finish();
+    else raf = requestAnimationFrame(step);
+  };
+  raf = requestAnimationFrame(step);
+  return { finish };
+}
+
+/* ---------- inline company chips ---------- */
+const CANDS = (() => {
+  const arr = [];
+  RADAR.leads.forEach(l => {
+    arr.push({ name:l.co, lead:l });
+    const first = l.co.split(' ')[0];
+    if (first !== l.co && first.length >= 4) arr.push({ name:first, lead:l });
+  });
+  arr.sort((a,b) => b.name.length - a.name.length);
+  return arr;
+})();
+
+function chipify(text, interactive){
+  let out = '', i = 0;
+  while (i < text.length){
+    let best = null;
+    for (const c of CANDS){
+      const at = text.indexOf(c.name, i);
+      if (at === -1) continue;
+      const pre  = at > 0 ? text[at - 1] : ' ';
+      const post = at + c.name.length < text.length ? text[at + c.name.length] : ' ';
+      if (/[A-Za-z0-9]/.test(pre) || /[A-Za-z0-9]/.test(post)) continue;
+      if (!best || at < best.at || (at === best.at && c.name.length > best.name.length))
+        best = { at, name:c.name, lead:c.lead };
+    }
+    if (!best){ out += esc(text.slice(i)); break; }
+    out += esc(text.slice(i, best.at));
+    const dot = '<span class="sdot" style="background:' + bandHex(best.lead.score) + '"></span>';
+    out += interactive
+      ? '<button type="button" class="schip" data-qa="lead-trigger" data-lead="' + best.lead.id +
+        '" title="Open the ' + esc(best.lead.co) + ' call file">' + dot + esc(best.name) + '</button>'
+      : '<span class="schip">' + dot + esc(best.name) + '</span>';
+    i = best.at + best.name.length;
+  }
+  return out;
+}
+
+/* ---------- queue ---------- */
+function badgeHTML(st){
+  return '<span class="tbadge ' + st + '">' + (st === 'followed' ? 'FOLLOWED UP' : 'DISMISSED') + '</span>';
+}
+
+function rowHTML(l, idx){
+  const st = triage[l.id];
+  return '<button type="button" class="qrow' + (st === 'dismissed' ? ' off' : '') +
+    '" data-qa="lead-trigger" data-lead="' + l.id + '">' +
+    '<span class="qrank">' + String(idx + 1).padStart(2,'0') + '</span>' +
+    '<span class="qmain">' +
+      '<span class="qtop">' +
+        '<span class="qco">' + esc(l.co) + '</span>' +
+        (l.isNew ? '<span class="newtag">NEW</span>' : '') +
+        (st ? badgeHTML(st) : '') +
+        '<span class="qseat">' + esc(l.seat) + '</span>' +
+      '</span>' +
+      '<span class="qhook">' + esc(l.hook) + '</span>' +
+    '</span>' +
+    '<span class="qside">' +
+      '<span class="qscore ' + band(l.score) + '">' + l.score + '</span>' +
+      '<span class="wchip">' + esc(winLabel(l)) + '</span>' +
+    '</span>' +
+  '</button>';
+}
+
+function renderQueue(){
+  const ready = RADAR.leads.filter(l => l.tier === 'ready').sort((a,b) => b.score - a.score);
+  $('#queue').innerHTML = ready.map(rowHTML).join('');
+}
+
+/* ---------- folds (developing / watchlist / blocked) ---------- */
+const FOLDS = [
+  { tier:'dev',     label:'Developing', note:'NOT YET CALL-READY' },
+  { tier:'early',   label:'Watchlist',  note:'WATCH ONLY' },
+  { tier:'blocked', label:'Blocked',    note:'DO NOT CALL' }
+];
+
+function mrowHTML(l){
+  const tint = TYPE_TINT[l.key] || ['#46556e','#edf0f4'];
+  const st = triage[l.id];
+  const blocked = !!l.conflict;
+  return '<button type="button" class="mrow' + (st === 'dismissed' ? ' off' : '') +
+    '" data-qa="lead-trigger" data-lead="' + l.id + '">' +
+    '<span class="mtop">' +
+      '<span class="tpill" style="color:' + tint[0] + ';background:' + tint[1] + '">' + esc(l.type.toUpperCase()) + '</span>' +
+      '<span class="mco">' + esc(l.co) + '</span>' +
+      (st ? badgeHTML(st) : '') +
+      '<span class="mhook">' + esc(l.hook) + '</span>' +
+    '</span>' +
+    '<span class="mgate ' + (blocked ? 'red' : 'amber') + '">' +
+      (blocked ? '<span class="dnc">DO NOT CALL</span>' : '') + esc(l.gateWhy) +
+    '</span>' +
+  '</button>';
+}
+
+function renderFolds(){
+  const host = $('#folds');
+  const open = new Set(Array.from(host.querySelectorAll('.fold.open')).map(x => x.dataset.tier));
+  host.innerHTML = FOLDS.map(f => {
+    const items = RADAR.leads.filter(l => l.tier === f.tier);
+    const isOpen = open.has(f.tier);
+    return '<div class="fold' + (isOpen ? ' open' : '') + '" data-tier="' + f.tier + '">' +
+      '<button type="button" class="foldhead" aria-expanded="' + isOpen + '">' +
+        CHEV + ' ' + f.label.toUpperCase() + ' (' + items.length + ')' +
+        '<span class="foldnote">' + f.note + '</span>' +
+      '</button>' +
+      '<div class="foldbody"><div class="foldinner">' + items.map(mrowHTML).join('') + '</div></div>' +
+    '</div>';
+  }).join('');
+  host.querySelectorAll('.foldhead').forEach(h => h.addEventListener('click', () => {
+    const f = h.closest('.fold');
+    f.classList.toggle('open');
+    h.setAttribute('aria-expanded', f.classList.contains('open'));
+  }));
+}
+
+/* ---------- call-file modal ---------- */
+function ringSVG(score){
+  const r = 25, c = 2 * Math.PI * r;
+  const off = (c * (1 - score / 100)).toFixed(1);
+  const col = bandHex(score);
+  return '<svg width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="Lead strength ' + score + ' of 100">' +
+    '<circle cx="32" cy="32" r="' + r + '" fill="none" stroke="rgba(16,22,38,.08)" stroke-width="4"/>' +
+    '<circle cx="32" cy="32" r="' + r + '" fill="none" stroke="' + col + '" stroke-width="4" stroke-linecap="round"' +
+    ' stroke-dasharray="' + c.toFixed(1) + '" stroke-dashoffset="' + off + '" transform="rotate(-90 32 32)"/>' +
+    '<text x="32" y="37" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="16" font-weight="600" fill="' + col + '">' + score + '</text>' +
+  '</svg>';
+}
+
+function heroHTML(l){
+  const tint = TYPE_TINT[l.key] || ['#46556e','#edf0f4'];
+  const st = triage[l.id];
+  return '<div class="mhero"><div>' +
+    '<div class="mtags">' +
+      '<span class="tpill" style="color:' + tint[0] + ';background:' + tint[1] + '">' + esc(l.type.toUpperCase()) + '</span>' +
+      (l.isNew ? '<span class="newtag">NEW</span>' : '') +
+      '<span class="tierchip">' + TIER_LABEL[l.tier].toUpperCase() + '</span>' +
+      '<span class="vertag">' + VER_LABEL[l.ver] + '</span>' +
+    '</div>' +
+    '<h2 id="mTitle">' + esc(l.co) + '</h2>' +
+    '<div class="msub">' + esc(l.seat) + ' · ' + esc(l.sector) + '</div>' +
+    '<div class="mmeta">' +
+      '<span class="wchip">WINDOW ' + esc(winLabel(l)) + '</span>' +
+      (l.conf ? '<span class="wchip">CONF ' + esc(l.conf.toUpperCase()) + '</span>' : '') +
+      (st ? badgeHTML(st) : '') +
+    '</div>' +
+  '</div><div class="mring">' + ringSVG(l.score) + '</div></div>';
+}
+
+function srcChip(s){
+  return '<span class="srcchip">' +
+    '<span class="srclabel">' + esc(s.label) + '</span>' +
+    '<span class="srcmeta">' + esc(s.src) + ' · ' + ageStr(s.age) + ' · ' + esc(s.kind.toUpperCase()) + '</span>' +
+  '</span>';
+}
+
+function qualCell(l, d){
+  const v = l.qual[d];
+  const mark = v === 2 ? '✓✓' : v === 1 ? '✓' : '✗';
+  const cls  = v === 2 ? 'g'  : v === 1 ? 'a' : 'x';
+  return '<div class="qcell"><div class="qhead">' +
+    '<span class="nk">' + d.toUpperCase() + '</span>' +
+    '<span class="qmark ' + cls + '">' + mark + '</span>' +
+  '</div><div class="qwhy">' + esc(l.qual[d + '_why']) + '</div></div>';
+}
+
+function proofSec(l){
+  return '<section class="msec"><div class="mlabel">PROOF</div>' +
+    '<div class="proofrow">' +
+      '<span class="pchip">' + VER_LABEL[l.ver] + '</span>' +
+      (l.rt ? '<span class="pchip rt">RED-TEAMED ✓ ' + l.conviction + '</span>' : '') +
+      (l.conf ? '<span class="pchip">CONFIDENCE ' + esc(l.conf.toUpperCase()) + '</span>' : '') +
+    '</div>' +
+    '<div class="srcs">' + l.stack.map(srcChip).join('') + '</div>' +
+  '</section>';
+}
+
+function numbersSec(l, withProp){
+  return '<section class="msec"><div class="mlabel">THE NUMBERS</div>' +
+    '<div class="numsrow">' +
+      '<div class="numcell"><span class="nk">SCORE</span><span class="nv ' + band(l.score) + '">' + l.score + '</span></div>' +
+      '<div class="numcell"><span class="nk">QUALIFICATION</span><span class="nv">' + l.qual.total + '/8</span></div>' +
+      '<div class="numcell"><span class="nk">WINDOW</span><span class="nv">' + esc(winLabel(l)) + '</span></div>' +
+    '</div>' +
+    '<div class="qualgrid">' + ['seat','budget','urgency','buyer'].map(d => qualCell(l, d)).join('') + '</div>' +
+    (withProp ? '<p class="propline"><span class="champk">FEE PROPENSITY</span> <b>' + esc(l.prop) + '</b>' +
+      (l.propWhy ? ' — ' + esc(l.propWhy) : '') + '</p>' : '') +
+  '</section>';
+}
+
+function whyNowSec(l){
+  return '<section class="msec"><div class="mlabel">WHY NOW' +
+    (l.fee ? ' <span class="feebadge" tabindex="0" data-tip="' + esc(l.feeTip) + '">' + esc(l.fee) + '</span>' : '') +
+    (l.q4 ? ' <span class="q4badge">' + esc(l.q4.toUpperCase()) + '</span>' : '') +
+    '</div><p class="mtext">' + esc(l.whyNow) + '</p></section>';
+}
+
+function readyFile(l){
+  return heroHTML(l) +
+    whyNowSec(l) +
+    '<section class="msec"><div class="mlabel">WHO TO CALL</div>' +
+      '<p class="mbuyer">' + esc(l.buyer) + '</p>' +
+      '<p class="mchamp"><span class="champk">WARM PATH</span>' + esc(l.champion) + '</p>' +
+    '</section>' +
+    '<section class="msec"><div class="mlabel">THE OPENING</div>' +
+      '<p class="mtext">' + esc(l.opening) + '</p>' +
+      '<div id="openerSlot"></div>' +
+    '</section>' +
+    '<section class="msec"><div class="mlabel">WHAT KILLS IT</div>' +
+      '<p class="mtext mkill">' + esc(l.kill) + '</p>' +
+    '</section>' +
+    proofSec(l) +
+    numbersSec(l, true) +
+    (l.bizCase ? '<section class="msec"><div class="mlabel">BUSINESS CASE</div><p class="mtext mbiz">' + esc(l.bizCase) + '</p></section>' : '') +
+    '<div class="mactions">' +
+      '<button type="button" class="abtn primary" data-act="pitch">Generate pitch</button>' +
+      '<button type="button" class="abtn" data-act="opener">✦ Draft opener</button>' +
+      '<button type="button" class="abtn" data-act="sources">View sources</button>' +
+      '<span class="aspace"></span>' +
+      '<button type="button" class="abtn good" data-act="follow">✓ Followed up</button>' +
+      '<button type="button" class="abtn bad" data-act="dismiss">✕ Dismiss</button>' +
+    '</div>';
+}
+
+function gateFile(l){
+  const blocked = !!l.conflict;
+  return heroHTML(l) +
+    whyNowSec(l) +
+    '<section class="msec"><div class="mlabel">' + (blocked ? 'WHY THIS IS BLOCKED' : 'WHY NOT CALL-READY') + '</div>' +
+      '<div class="gatepanel ' + (blocked ? 'red' : 'amber') + '">' +
+        (blocked ? '<span class="dnc">DO NOT CALL</span>' : '') + esc(l.gateWhy) +
+      '</div>' +
+    '</section>' +
+    proofSec(l) +
+    numbersSec(l, !!l.propWhy) +
+    '<div class="mactions">' +
+      '<button type="button" class="abtn" data-act="sources">View sources</button>' +
+      '<span class="aspace"></span>' +
+      '<button type="button" class="abtn bad" data-act="dismiss">✕ Dismiss</button>' +
+    '</div>';
+}
+
+let currentLead = null, lastFocus = null, openerTyper = null;
+
+function lockBody(){
+  const sw = window.innerWidth - document.documentElement.clientWidth;
+  if (sw > 0) document.body.style.paddingRight = sw + 'px';
+  document.body.classList.add('locked');
+}
+function unlockBody(){
+  document.body.classList.remove('locked');
+  document.body.style.paddingRight = '';
+}
+
+function openModal(id){
+  const l = leadsById[id];
+  if (!l) return;
+  currentLead = l;
+  lastFocus = document.activeElement;
+  openerTyper = null;
+  $('#mbody').innerHTML = l.tier === 'ready' ? readyFile(l) : gateFile(l);
+  $('#mbody').scrollTop = 0;
+  const scrim = $('#scrim');
+  scrim.hidden = false;
+  lockBody();
+  requestAnimationFrame(() => scrim.classList.add('on'));
+  $('#mclose').focus();
+}
+
+function closeModal(){
+  const scrim = $('#scrim');
+  if (scrim.hidden) return;
+  scrim.classList.remove('on');
+  unlockBody();
+  currentLead = null;
+  openerTyper = null;
+  window.setTimeout(() => { scrim.hidden = true; }, 200);
+  if (lastFocus && document.contains(lastFocus)) lastFocus.focus();
+}
+
+function startOpener(l){
+  const slot = $('#openerSlot');
+  if (!slot) return;
+  let panel = slot.querySelector('.openerpanel');
+  if (panel){
+    if (openerTyper) openerTyper.finish();
+    panel.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block:'nearest' });
+    return;
+  }
+  slot.innerHTML = '<div class="openerpanel"><div class="oplabel">✦ DRAFT OPENER</div><p class="optext typing"></p></div>';
+  panel = slot.querySelector('.openerpanel');
+  const tEl = panel.querySelector('.optext');
+  panel.addEventListener('click', () => { if (openerTyper) openerTyper.finish(); });
+  openerTyper = typeInto(tEl, l.opener, 12, () => {
+    tEl.classList.remove('typing');
+    openerTyper = null;
+  });
+  panel.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block:'nearest' });
+}
+
+function setTriage(id, val){
+  triage[id] = val;
+  const co = leadsById[id].co;
+  closeModal();
+  renderQueue();
+  renderFolds();
+  toast(val === 'followed' ? co + ' marked as followed up' : co + ' dismissed from this morning’s queue', {
+    label:'Undo',
+    fn(){ delete triage[id]; renderQueue(); renderFolds(); toast('Restored to the queue'); }
+  });
+}
+
+$('#mbody').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]');
+  if (!b || !currentLead) return;
+  const l = currentLead;
+  switch (b.dataset.act){
+    case 'pitch':   toast('Pitch pack queued for ' + l.co + ' — a few minutes'); break;
+    case 'opener':  startOpener(l); break;
+    case 'sources': toast(l.stack.length + ' source' + (l.stack.length > 1 ? 's' : '') + ' pinned to the ' + l.co + ' file'); break;
+    case 'follow':  setTriage(l.id, 'followed'); break;
+    case 'dismiss': setTriage(l.id, 'dismissed'); break;
+  }
+});
+$('#mclose').addEventListener('click', closeModal);
+$('#scrim').addEventListener('click', e => { if (e.target === $('#scrim')) closeModal(); });
+
+/* ---------- toast ---------- */
+let toastTimer = 0, toastHideTimer = 0;
+function toast(msg, action){
+  const t = $('#toast');
+  window.clearTimeout(toastTimer);
+  window.clearTimeout(toastHideTimer);
+  t.innerHTML = '<span>' + esc(msg) + '</span>' +
+    (action ? '<button type="button" id="toastAct">' + esc(action.label) + '</button>' : '');
+  if (action) $('#toastAct').addEventListener('click', () => { action.fn(); });
+  t.hidden = false;
+  requestAnimationFrame(() => t.classList.add('on'));
+  toastTimer = window.setTimeout(hideToast, action ? 4200 : 2600);
+}
+function hideToast(){
+  const t = $('#toast');
+  t.classList.remove('on');
+  toastHideTimer = window.setTimeout(() => { t.hidden = true; }, 240);
+}
+
+/* ---------- concierge composer ---------- */
+function reckittAnswer(){
+  const r = leadsById.reckitt;
+  return {
+    text: r.co + ' leads the queue at ' + r.score + ' — the strongest score on the desk. The trigger is ' +
+      VER_LABEL[r.ver].toLowerCase() + ': this morning’s RNS confirms the September CEO start, and the reset window is ' +
+      r.win + ' before the seat is ever advertised. The path in is warm — ' + r.champion +
+      '. Red-teamed at conviction ' + r.conviction + ', confidence ' + r.conf.toLowerCase() + '.',
+    links: [{ id:r.id, label:'open the call file →' }]
+  };
+}
+
+function octopusAnswer(){
+  const o = leadsById.octopus;
+  return {
+    text: 'The economic buyer is ' + o.buyer + ' — ' + o.qual.buyer_why.toLowerCase() +
+      '. The route in is ' + o.champion + '. ' + o.opening,
+    links: [{ id:o.id, label:'open the call file →' }]
+  };
+}
+
+function overnightAnswer(){
+  const fresh = RADAR.leads.filter(l => l.isNew);
+  const order = M.planOrder.map(id => leadsById[id].co);
+  return {
+    text: (NUM_WORD[fresh.length] || fresh.length) + ' new signals overnight, from ' + M.signals +
+      ' scanned across ' + M.sources + ' sources at ' + M.scanTime + '. ' +
+      fresh.map(l => l.co + ' — ' + l.hook).join(' ') +
+      ' Suggested call order this morning: ' + order.join(', then ') + '.',
+    links: fresh.map(l => ({ id:l.id, label:l.co + ' call file →' }))
+  };
+}
+
+function snapshotAnswer(l){
+  let text;
+  if (l.tier === 'ready'){
+    text = l.co + ' is call-ready at ' + l.score + ', window ' + l.win + '. ' + l.hook +
+      ' The buyer is ' + l.buyer + '. Path in: ' + l.champion + '.';
+  } else if (l.tier === 'blocked'){
+    text = l.co + ' is blocked at ' + l.score + '. ' + l.hook + ' Blocked: ' + l.gateWhy + '.';
+  } else {
+    text = l.co + ' sits on the ' + TIER_LABEL[l.tier].toLowerCase() + ' at ' + l.score + '. ' + l.hook +
+      ' Held back because: ' + l.gateWhy + '.';
+  }
+  return { text, links: [{ id:l.id, label: l.tier === 'ready' ? 'open the call file →' : 'open the file →' }] };
+}
+
+function fallbackAnswer(){
+  return {
+    text: 'I can brief you on any of the ' + RADAR.leads.length + ' accounts on this morning’s radar — why a lead ranks where it does, ' +
+      'who to call and how warm the path is, what would kill it, and what changed overnight. ' +
+      'Try one of the suggestions below, or just name a company.',
+    links: []
+  };
+}
+
+function route(q){
+  const s = q.toLowerCase();
+  if (/reckitt/.test(s) && /(why|first|top|rank|number one|#1)/.test(s)) return reckittAnswer();
+  if (/octopus/.test(s) && /(who|call|contact|speak|ring)/.test(s)) return octopusAnswer();
+  if (/(overnight|changed|since yesterday|what.?s new|new today|new this morning)/.test(s)) return overnightAnswer();
+  const hit = RADAR.leads.find(l =>
+    s.includes(l.co.toLowerCase()) || s.includes(l.co.split(' ')[0].toLowerCase()));
+  if (hit) return snapshotAnswer(hit);
+  return fallbackAnswer();
+}
+
+let bubbleTyper = null;
+function showAnswer(q, a){
+  if (bubbleTyper) bubbleTyper.finish();
+  const b = $('#abubble');
+  b.hidden = false;
+  b.innerHTML =
+    '<div class="bhead">' +
+      '<span class="bbrand">✦ VMA INTELLIGENCE</span>' +
+      '<span class="bre">RE: ' + esc(q) + '</span>' +
+      '<button type="button" class="bclose" aria-label="Dismiss answer">' + XS + '</button>' +
+    '</div>' +
+    '<p class="btext typing" aria-live="polite"></p>' +
+    '<div class="blinks" hidden></div>';
+  b.classList.remove('on');
+  void b.offsetWidth;
+  b.classList.add('on');
+  const tEl = b.querySelector('.btext');
+  const linksEl = b.querySelector('.blinks');
+  b.querySelector('.bclose').addEventListener('click', () => {
+    if (bubbleTyper) bubbleTyper.finish();
+    b.hidden = true;
+  });
+  tEl.addEventListener('click', () => { if (bubbleTyper) bubbleTyper.finish(); });
+  bubbleTyper = typeInto(tEl, a.text, 9, () => {
+    tEl.classList.remove('typing');
+    bubbleTyper = null;
+    if (a.links && a.links.length){
+      linksEl.hidden = false;
+      linksEl.innerHTML = a.links.map(k =>
+        '<button type="button" class="alink" data-lead="' + k.id + '">' + esc(k.label) + '</button>').join('');
+    }
+  });
+}
+
+const askInput = $('#ask');
+const sendBtn = $('#send');
+function updateSend(){ sendBtn.disabled = askInput.value.trim() === ''; }
+function send(){
+  const q = askInput.value.trim();
+  if (!q) return;
+  askInput.value = '';
+  updateSend();
+  showAnswer(q, route(q));
+}
+askInput.addEventListener('input', updateSend);
+askInput.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+sendBtn.addEventListener('click', send);
+$('#sugg').querySelectorAll('button').forEach(c =>
+  c.addEventListener('click', () => {
+    const q = c.textContent.trim();
+    showAnswer(q, route(q));
+  }));
+
+/* ---------- global interactions ---------- */
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-lead]');
+  if (t) openModal(t.dataset.lead);
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (!$('#scrim').hidden){ closeModal(); return; }
+  const b = $('#abubble');
+  if (!b.hidden){
+    if (bubbleTyper) bubbleTyper.finish();
+    b.hidden = true;
+  }
+});
+
+/* ---------- boot ---------- */
+$('#scan').textContent = M.dateLabel + ' · ' + M.signals + ' signals · ' + M.sources + ' sources · scanned ' + M.scanTime;
+$('#eyebrow').innerHTML = '<span class="sp">✦</span> VMA INTELLIGENCE · ' + esc(M.dateLabel.toUpperCase()) +
+  ' · SCANNED ' + esc(M.scanTime) + ' · ' + M.signals + ' SIGNALS';
+$('#queueNote').textContent = M.callReady + ' CALL-READY · SCORE ORDER';
+$('#synthSizer').innerHTML = chipify(M.synthesis, false);
+renderQueue();
+renderFolds();
+
+const synthEl = $('#synth');
+const synthTyper = typeInto(synthEl, M.synthesis, 8, () => {
+  synthEl.classList.remove('typing');
+  synthEl.innerHTML = chipify(M.synthesis, true);
+  synthEl.classList.add('done');
+});
+synthEl.addEventListener('click', () => {
+  if (!synthEl.classList.contains('done')) synthTyper.finish();
+});
+
+})();
+</script>
 </body>
 </html>
