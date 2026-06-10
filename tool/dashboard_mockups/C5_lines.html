@@ -1,0 +1,87 @@
+<!doctype html><html><head><meta charset="utf-8"><title>C5 · Six Lines</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;1,400;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:rgb(253,252,252);color:#1f1f1f;-webkit-font-smoothing:antialiased;
+font:14px/1.6 Inter,system-ui,sans-serif;overflow:hidden}
+body::before{content:"";position:fixed;z-index:0;width:792px;height:300px;top:-50px;left:50%;
+transform:translateX(-50%);border-radius:9999px;
+background-image:radial-gradient(100% 100% at 50% 8%,rgb(253,252,252) 0,rgb(157,210,255) 50%);
+filter:blur(125px);pointer-events:none}
+.wrap{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;
+max-width:860px;margin:0 auto;padding:42px 28px 26px}
+.k{font:600 10px Inter;letter-spacing:.32em;color:#5f6b7e;text-transform:uppercase;text-align:center}
+.lines{flex:1;display:flex;flex-direction:column;justify-content:center;gap:4px}
+.line{display:flex;align-items:baseline;gap:22px;padding:10px 6px;cursor:pointer;border-radius:12px;
+transition:opacity .35s,background .2s}
+.line:hover{background:rgba(255,255,255,.75)}
+.line .no{font:500 13px "Crimson Pro";color:#9aa4b5;width:18px;text-align:right;flex-shrink:0}
+.line p{font:500 19.5px/1.45 "Crimson Pro",serif;letter-spacing:-.005em}
+.line p b{font-weight:600}
+.line p .m{font:italic 400 18px "Crimson Pro";color:#5f6b7e}
+.dimmed .line{opacity:.45}
+.dimmed .line.sel{opacity:1;background:rgba(255,255,255,.85)}
+/* the unfolded brief */
+.brief{max-height:0;overflow:hidden;transition:max-height .5s cubic-bezier(.25,.8,.3,1)}
+.brief.on{max-height:320px}
+.brief .in{padding:8px 46px 20px}
+.brief .case{font:400 16.5px/1.75 "Crimson Pro";color:#26303f;max-width:680px}
+.brief .case b{font-weight:600}
+.brief .q{margin-top:14px;padding-left:20px;border-left:2px solid #2f5fd0;
+font:italic 500 17px/1.6 "Crimson Pro";color:#0f1a2e;max-width:640px}
+.brief .facts{margin-top:14px;font:500 11.5px/2 Inter;color:#5f6b7e}
+.brief .facts b{color:#1f1f1f}
+.brief .facts .sep{margin:0 9px;color:#c9d2de}
+.brief .acts{margin-top:6px;font:600 12.5px Inter}
+.brief .acts a{color:#2f5fd0;margin-right:20px;text-decoration:none}
+.foot{text-align:center;font:italic 400 14px "Crimson Pro";color:#8a94a6;padding-top:14px}
+.foot b{font-style:normal;font-weight:600;color:#5f6b7e}
+</style></head><body><div class="wrap">
+<div class="k">Tuesday 10 June · Six worth your hour — Fable read everything else so you don't have to</div>
+<div class="lines dimmed" id="lines"></div>
+<div class="foot">✦ <b>43 developing · 49 early</b> — being watched, argued with, and re-tested every night. They'll appear here only when they've earned a line.</div>
+</div>
+<script>
+const L=[
+ {t:`<b>Trustpilot</b> is hiring seventy-two people and not one of them can speak. <span class="m">— first Head of Comms, £85–110k</span>`,
+  c:`Fresh equity filed 29 May; seventy-two live openings with zero comms seats among them. Companies at this stage appoint within two quarters — and no agency is anywhere near it yet. Routes to the CEO's office.`,
+  q:`“Seventy-two openings and not a single comms hire — fifteen minutes on what that first seat should own, before the listing chatter starts?”`,
+  f:`<b>Call</b> CEO office<span class="sep">·</span><b>window</b> to late July<span class="sep">·</span><b>fragile if</b> a brand hire closes quietly`},
+ {t:`<b>Lloyds</b> reshuffled the board and raised in the same month — and you know the CoSec. <span class="m">— Corporate Affairs Director</span>`,
+  c:`Bench tenure is past the point where these seats turn; the reshuffle reopens the supplier map. Your 2023 IR placement makes the Group Corporate Secretary a warm first call — the easiest conversation on this page.`,
+  q:`“You'll be weighing rebuild against brief-out — we mapped the three gaps your peer banks closed this year.”`,
+  f:`<b>Call</b> Group CoSec — warm<span class="sep">·</span><b>window</b> 6–12 weeks<span class="sep">·</span><b>fragile if</b> the reshuffle resolves internally`},
+ {t:`<b>United Utilities</b> faces the regulator one senior voice short — and they've paid for search before. <span class="m">— Head of Corporate Affairs</span>`,
+  c:`AMP8 determinations land this quarter; the corporate-affairs bench is one seat lighter than every peer, and a 2023 recruitment framework call-off sits on the public record. Your contact in the Secretary's office attended last year's water briefing.`,
+  q:`“Ahead of the determinations, that seat carries the regulator relationship — we've benchmarked what the sector pays for it now.”`,
+  f:`<b>Call</b> Company Secretary's office — named<span class="sep">·</span><b>window</b> 4–10 weeks · closes 24 Jun<span class="sep">·</span><b>fragile if</b> an internal promotion is slated`},
+ {t:`<b>Rathbones</b> raised quietly last month; nobody senior owns the story. <span class="m">— Corporate Affairs Director</span>`,
+  c:`A registry-attested allotment with integration messaging load rising and no comms leadership visible. A quiet company — exactly where competitors' tooling is blind.`,
+  q:`“Your filing last month suggests the corporate story is about to matter more — who owns it today?”`,
+  f:`<b>Call</b> CEO office<span class="sep">·</span><b>window</b> 8–26 weeks<span class="sep">·</span><b>fragile if</b> comms is already retained externally`},
+ {t:`<b>Intermediate Capital</b> runs investor relations without a public voice beside it. <span class="m">— Head of Communications</span>`,
+  c:`Secured financing on the register; an IR-heavy bench with no external-comms lead. Their AUM peers run both seats.`,
+  q:`“Fresh capital and an IR-heavy bench — the comms seat looks one hire light against your peers.”`,
+  f:`<b>Call</b> CFO / Head of IR<span class="sep">·</span><b>window</b> 8–26 weeks<span class="sep">·</span><b>fragile if</b> comms is folded under IR by design`},
+ {t:`<b>St James's Place</b> has a ninety-day-old CFO and an unconfirmed IR line. <span class="m">— IR / Corporate Affairs</span>`,
+  c:`The reset cleared its hold; the reporting line hasn't been confirmed since. Comparable FTSE-100 resets briefed the seat out within the quarter.`,
+  q:`“New CFO past day ninety with IR unconfirmed — comparable resets briefed out within the quarter.”`,
+  f:`<b>Call</b> CFO office<span class="sep">·</span><b>window</b> 6–12 weeks<span class="sep">·</span><b>fragile if</b> IR continuity is announced internally`}];
+let sel=0;
+function draw(){
+ document.getElementById("lines").innerHTML=L.map((l,i)=>`
+  <div class="line ${i===sel?'sel':''}" onclick="pick(${i})">
+    <span class="no">${"ivxiii".charAt?["i","ii","iii","iv","v","vi"][i]:i+1}</span><p>${l.t}</p>
+  </div>
+  <div class="brief ${i===sel?'on':''}"><div class="in">
+    <p class="case">${l.c}</p><div class="q">${l.q}</div>
+    <div class="facts">${l.f}</div>
+    <div class="acts"><a href="#">Draft the email</a><a href="#">Pitch pack</a><a href="#">Show the working</a></div>
+  </div></div>`).join("")}
+function pick(i){sel=i;draw()}
+draw();
+document.addEventListener("keydown",e=>{
+ if(e.key==="ArrowDown"){sel=Math.min(sel+1,L.length-1);draw()}
+ if(e.key==="ArrowUp"){sel=Math.max(sel-1,0);draw()}});
+</script></body></html>

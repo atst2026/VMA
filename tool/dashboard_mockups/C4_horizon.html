@@ -1,0 +1,113 @@
+<!doctype html><html><head><meta charset="utf-8"><title>C4 · The Horizon</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;1,400;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:rgb(253,252,252);color:#1f1f1f;-webkit-font-smoothing:antialiased;
+font:13.5px/1.55 Inter,system-ui,sans-serif;overflow:hidden}
+body::before{content:"";position:fixed;z-index:0;width:792px;height:300px;top:-50px;left:50%;
+transform:translateX(-50%);border-radius:9999px;
+background-image:radial-gradient(100% 100% at 50% 8%,rgb(253,252,252) 0,rgb(157,210,255) 50%);
+filter:blur(125px);pointer-events:none}
+.wrap{position:relative;z-index:1;height:100%;padding:40px 64px}
+.head{display:flex;align-items:baseline;gap:14px}
+.head h1{font:500 28px "Crimson Pro",serif}
+.head .k{font:600 9.5px Inter;letter-spacing:.3em;color:#5f6b7e;text-transform:uppercase}
+.head .now{margin-left:auto;font:italic 400 15px "Crimson Pro";color:#5f6b7e}
+.head .now b{font-style:normal;font-weight:600;color:#1f1f1f}
+/* the line */
+.hz{position:absolute;left:64px;right:64px;top:55%;height:1px;background:rgba(15,26,46,.22)}
+.tick{position:absolute;top:-5px;width:1px;height:10px;background:rgba(15,26,46,.25)}
+.tick span{position:absolute;top:14px;left:50%;transform:translateX(-50%);font:600 9.5px Inter;letter-spacing:.14em;color:#8a94a6;text-transform:uppercase;white-space:nowrap}
+.today{position:absolute;top:-26px;width:2px;height:52px;background:#2f5fd0}
+.today span{position:absolute;top:-22px;left:50%;transform:translateX(-50%);font:700 9.5px Inter;letter-spacing:.2em;color:#2f5fd0}
+/* entries */
+.ev{position:absolute;cursor:pointer;width:230px}
+.ev .stem{position:absolute;left:9px;width:1px;background:rgba(15,26,46,.20)}
+.ev.up .stem{bottom:-26px;height:26px}
+.ev.dn .stem{top:-26px;height:26px}
+.ev i{position:absolute;left:4px;width:11px;height:11px;border-radius:50%;background:#0f1a2e}
+.ev.up i{bottom:-32px}.ev.dn i{top:-32px}
+.ev .co{font:700 14px Inter;letter-spacing:-.01em}
+.ev .ln{font:400 12px/1.5 Inter;color:#5f6b7e;margin-top:3px}
+.ev .due{font:700 9.5px Inter;letter-spacing:.16em;text-transform:uppercase;margin-bottom:5px}
+.ev.urgent .due{color:#9a3412}.ev .due{color:#1e7a41}
+.ev:hover .co{color:#2f5fd0}
+.ev.dim i{background:transparent;border:2px solid #9aa4b5}
+.ev.dim .co{color:#8a94a6;font-weight:600}
+/* focus note */
+.note{position:absolute;left:64px;bottom:42px;right:64px;display:flex;gap:40px;align-items:flex-end}
+.note .q{flex:1;max-width:640px}
+.note .q .who{font:600 13px Inter;color:#5f6b7e}
+.note .q p{font:italic 500 19px/1.55 "Crimson Pro";color:#0f1a2e;margin-top:6px}
+.note .meta{font:500 11.5px/2 Inter;color:#5f6b7e;text-align:right}
+.note .meta b{color:#1f1f1f}
+.note .meta a{color:#2f5fd0;text-decoration:none;font-weight:600}
+.fable{position:absolute;top:42px;right:64px;font:italic 400 13.5px "Crimson Pro";color:#8a94a6;max-width:330px;text-align:right}
+</style></head><body><div class="wrap">
+<div class="head"><h1>The Horizon</h1><span class="k">Every lead, placed on the day its window closes</span></div>
+<div class="fable">✦ Two windows close this fortnight. United Utilities is the one I'd not let slip — they've paid for search before.</div>
+
+<div class="hz">
+  <div class="today" style="left:6%"><span>TODAY</span></div>
+  <div class="tick" style="left:22%"><span>24 Jun</span></div>
+  <div class="tick" style="left:40%"><span>8 Jul</span></div>
+  <div class="tick" style="left:58%"><span>22 Jul</span></div>
+  <div class="tick" style="left:76%"><span>5 Aug</span></div>
+  <div class="tick" style="left:94%"><span>19 Aug</span></div>
+
+  <div class="ev up urgent" style="left:13%;bottom:46px">
+    <div class="due">closes 24 Jun · 14 days</div>
+    <div class="co">United Utilities</div>
+    <div class="ln">Corporate affairs seat carries the AMP8 determinations — proven buyer of search.</div>
+    <span class="stem"></span><i></i>
+  </div>
+  <div class="ev dn" style="left:24%;top:46px">
+    <div class="due">closes 8 Jul</div>
+    <div class="co">Lloyds Banking Group</div>
+    <div class="ln">Reshuffle + raise; warm route via the Group CoSec.</div>
+    <span class="stem"></span><i></i>
+  </div>
+  <div class="ev up" style="left:38%;bottom:46px">
+    <div class="due">closes 22 Jul</div>
+    <div class="co">St James's Place</div>
+    <div class="ln">New CFO past day 90; IR line unconfirmed.</div>
+    <span class="stem"></span><i></i>
+  </div>
+  <div class="ev dn" style="left:50%;top:46px">
+    <div class="due">closes late Jul</div>
+    <div class="co">Trustpilot</div>
+    <div class="ln">72 roles, no comms seat; fresh equity 29 May.</div>
+    <span class="stem"></span><i></i>
+  </div>
+  <div class="ev up" style="left:64%;bottom:46px">
+    <div class="due">closes 5 Aug</div>
+    <div class="co">Rathbones</div>
+    <div class="ln">Quiet raise; nobody owns the narrative.</div>
+    <span class="stem"></span><i></i>
+  </div>
+  <div class="ev dn dim" style="left:74%;top:46px">
+    <div class="due" style="color:#8a94a6">opens 28 Jun</div>
+    <div class="co">Aviva</div>
+    <div class="ln">New CHRO at day 10 — wakes when the plan forms.</div>
+    <span class="stem"></span><i></i>
+  </div>
+  <div class="ev up dim" style="left:86%;bottom:46px">
+    <div class="due" style="color:#8a94a6">unverified</div>
+    <div class="co">Oxford Biomedica</div>
+    <div class="ln">One story, no second source — Fable is hunting.</div>
+    <span class="stem"></span><i></i>
+  </div>
+</div>
+
+<div class="note">
+  <div class="q">
+    <div class="who">United Utilities — Company Secretary's office, named contact</div>
+    <p>“Ahead of the determinations, that seat carries the regulator relationship — we've benchmarked what the sector pays for it now.”</p>
+  </div>
+  <div class="meta">
+    <b>fragile if</b> an internal promotion is already slated<br>
+    <a href="#">Draft the email</a> &nbsp;·&nbsp; <a href="#">Pitch pack</a> &nbsp;·&nbsp; <a href="#">The full case →</a>
+  </div>
+</div>
+</div></body></html>

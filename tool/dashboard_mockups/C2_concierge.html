@@ -1,0 +1,76 @@
+<!doctype html><html><head><meta charset="utf-8"><title>C2 · Concierge</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;1,400;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:rgb(253,252,252);color:#1f1f1f;-webkit-font-smoothing:antialiased;
+font:14px/1.6 Inter,system-ui,sans-serif;display:flex;flex-direction:column}
+body::before{content:"";position:fixed;z-index:-1;width:792px;height:300px;top:18%;left:50%;
+transform:translateX(-50%);border-radius:9999px;
+background-image:radial-gradient(100% 100% at 50% 8%,rgb(253,252,252) 0,rgb(157,210,255) 50%);
+filter:blur(125px);pointer-events:none}
+.scroll{flex:1;overflow-y:auto}
+.col{max-width:700px;margin:0 auto;padding:64px 24px 40px}
+.orb{width:44px;height:44px;border-radius:50%;margin-bottom:26px;
+background:radial-gradient(120% 120% at 30% 20%,#bcd9ff 0%,#2f5fd0 55%,#0f1a2e 100%);
+box-shadow:0 8px 28px rgba(47,95,208,.35)}
+h1{font:500 30px/1.25 "Crimson Pro",serif;letter-spacing:-.01em}
+.intro{font:400 16px/1.7 Inter;color:#3c4759;margin-top:12px;max-width:580px}
+.intro b{font-weight:600;color:#1f1f1f}
+.brief{margin-top:34px;padding-top:28px;border-top:1px solid rgba(15,26,46,.09)}
+.brief .who{font:600 15.5px Inter}
+.brief .who span{font:italic 400 15px "Crimson Pro";color:#5f6b7e;font-weight:400}
+.brief p{font:400 14.5px/1.75 Inter;color:#26303f;margin-top:8px}
+.brief p b{font-weight:600}
+.brief .open{font:italic 500 16.5px/1.6 "Crimson Pro";color:#0f1a2e;margin-top:12px;padding-left:18px;border-left:2px solid #2f5fd0}
+.acts{margin-top:13px;font:600 12.5px Inter}
+.acts a{color:#2f5fd0;text-decoration:none;margin-right:22px}
+.acts a:hover{text-decoration:underline}
+.acts .quiet{color:#8a94a6}
+.aside{margin-top:34px;font:italic 400 14.5px/1.7 "Crimson Pro";color:#5f6b7e}
+.aside a{color:#2f5fd0;font:600 12.5px Inter;text-decoration:none;font-style:normal}
+/* prompt bar */
+.dock{padding:18px 24px 26px}
+.bar{max-width:700px;margin:0 auto;display:flex;align-items:center;gap:12px;
+background:#fff;border:1px solid rgba(15,26,46,.12);border-radius:999px;padding:8px 10px 8px 22px;
+box-shadow:0 14px 40px rgba(15,26,46,.10)}
+.bar input{flex:1;border:none;outline:none;font:400 14.5px Inter;color:#1f1f1f;background:transparent}
+.bar .go{width:38px;height:38px;border-radius:50%;border:none;background:#0f1a2e;color:#fff;font-size:15px;cursor:pointer}
+.sugs{max-width:700px;margin:12px auto 0;display:flex;gap:20px;justify-content:center;font:600 12px Inter}
+.sugs a{color:#5f6b7e;text-decoration:none}
+.sugs a:hover{color:#2f5fd0}
+</style></head><body>
+<div class="scroll"><div class="col">
+  <div class="orb"></div>
+  <h1>Morning, Sara. Three calls are worth<br>your hour today.</h1>
+  <p class="intro">I read everything overnight — filings, boards, the regulators — and tried to argue myself out of each of these. I couldn't. Everything else in the book is developing and <b>I'll bring it to you when it's ready.</b></p>
+
+  <div class="brief">
+    <div class="who">1 · Trustpilot <span>— their first Head of Communications, £85–110k</span></div>
+    <p>Fresh equity filed 29 May, and they're hiring <b>seventy-two roles without one comms seat</b>. Companies at this stage appoint inside two quarters and nobody's close to it yet. Routes to the CEO's office — no name resolved, so open cold but specific.</p>
+    <div class="open">“Seventy-two openings and not a single comms hire — fifteen minutes on what that first seat should own, before the listing chatter starts?”</div>
+    <div class="acts"><a href="#">Draft the email</a><a href="#">Build the pitch pack</a><a href="#" class="quiet">Show your working</a></div>
+  </div>
+
+  <div class="brief">
+    <div class="who">2 · Lloyds Banking Group <span>— Corporate Affairs Director</span></div>
+    <p>Reshuffle and a raise in the same month, bench tenure past the turn point — and <b>you already know the Group CoSec</b> from the 2023 IR placement. Easiest conversation on this page; I'd make it first.</p>
+    <div class="open">“You'll be weighing rebuild against brief-out — we mapped the three gaps your peer banks closed this year.”</div>
+    <div class="acts"><a href="#">Draft the email</a><a href="#">Build the pitch pack</a><a href="#" class="quiet">Show your working</a></div>
+  </div>
+
+  <div class="brief">
+    <div class="who">3 · United Utilities <span>— Head of Corporate Affairs</span></div>
+    <p>AMP8 determinations land this quarter; their corporate-affairs bench is a seat light against every peer, and they've <b>paid for search before</b> — it's on the public record. Your contact in the Secretary's office came to last year's water briefing.</p>
+    <div class="open">“Ahead of the determinations, that seat carries the regulator relationship — we've benchmarked what the sector pays for it now.”</div>
+    <div class="acts"><a href="#">Draft the email</a><a href="#">Build the pitch pack</a><a href="#" class="quiet">Show your working</a></div>
+  </div>
+
+  <p class="aside">Aviva isn't ready — its window opens on the 28th and I'll wake it then. Oxford Biomedica still rests on one uncorroborated story; I'm hunting a second source. <a href="#">See the other 43 →</a></p>
+</div></div>
+
+<div class="dock">
+  <div class="bar"><input placeholder="Ask the desk anything — “why is Aviva waiting?” · “who else looks like Trustpilot?”"><button class="go">→</button></div>
+  <div class="sugs"><a href="#">Why is Aviva waiting?</a><a href="#">Draft the Lloyds email</a><a href="#">Re-run the queue overnight</a><a href="#">What did you kill, and why?</a></div>
+</div>
+</body></html>

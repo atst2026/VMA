@@ -1,0 +1,106 @@
+<!doctype html><html><head><meta charset="utf-8"><title>C3 · The Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;1,400;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:rgb(253,252,252);color:#1f1f1f;-webkit-font-smoothing:antialiased;
+font:13.5px/1.55 Inter,system-ui,sans-serif;overflow:hidden}
+body::before{content:"";position:fixed;z-index:0;width:792px;height:300px;top:-60px;left:38%;
+transform:translateX(-50%);border-radius:9999px;
+background-image:radial-gradient(100% 100% at 50% 8%,rgb(253,252,252) 0,rgb(157,210,255) 50%);
+filter:blur(125px);pointer-events:none}
+.wrap{position:relative;z-index:1;height:100%;display:grid;grid-template-columns:1fr 400px}
+.field{position:relative;margin:30px 10px 56px 70px}
+.head{position:absolute;top:-6px;left:0;display:flex;align-items:baseline;gap:14px}
+.head h1{font:500 26px "Crimson Pro",serif}
+.head .k{font:600 9.5px Inter;letter-spacing:.3em;color:#5f6b7e;text-transform:uppercase}
+.axis-x{position:absolute;left:0;right:24px;bottom:0;border-bottom:1px solid rgba(15,26,46,.18)}
+.axis-y{position:absolute;top:48px;bottom:0;left:0;border-left:1px solid rgba(15,26,46,.18)}
+.lab-x{position:absolute;right:24px;bottom:-34px;font:600 10px Inter;letter-spacing:.22em;color:#5f6b7e;text-transform:uppercase}
+.lab-y{position:absolute;left:-58px;top:44px;font:600 10px Inter;letter-spacing:.22em;color:#5f6b7e;text-transform:uppercase;writing-mode:vertical-rl;transform:rotate(180deg)}
+.zone{position:absolute;right:24px;top:48px;width:46%;height:46%;border-radius:22px;
+background:radial-gradient(120% 120% at 80% 20%,rgba(30,122,65,.10),rgba(30,122,65,.02));
+border:1px dashed rgba(30,122,65,.35)}
+.zone .zl{position:absolute;top:12px;right:16px;font:700 9.5px Inter;letter-spacing:.2em;color:#1e7a41;text-transform:uppercase}
+.dot{position:absolute;transform:translate(-50%,-50%);cursor:pointer;text-align:center;transition:transform .2s}
+.dot:hover{transform:translate(-50%,-50%) scale(1.06)}
+.dot i{display:block;border-radius:50%;margin:0 auto;background:#0f1a2e;box-shadow:0 6px 18px rgba(15,26,46,.25)}
+.dot.sel i{background:#2f5fd0;box-shadow:0 0 0 7px rgba(47,95,208,.15),0 10px 26px rgba(47,95,208,.4)}
+.dot.dev i{background:transparent;border:2px solid #9aa4b5;box-shadow:none}
+.dot .nm{font:600 11.5px Inter;margin-top:6px;color:#1f1f1f;white-space:nowrap}
+.dot.dev .nm{color:#8a94a6;font-weight:500}
+.legend{position:absolute;left:0;bottom:-36px;display:flex;gap:22px;font:500 11px Inter;color:#5f6b7e}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;background:#0f1a2e;margin-right:6px;vertical-align:-1px}
+.legend .o{background:transparent;border:2px solid #9aa4b5;width:7px;height:7px}
+/* focus panel */
+.focus{position:relative;padding:44px 38px 30px 6px;display:flex;flex-direction:column}
+.focus .seat{font:italic 400 15px "Crimson Pro";color:#5f6b7e}
+.focus h2{font:500 30px/1.1 "Crimson Pro",serif;margin-top:4px}
+.focus .case{font:400 16px/1.75 "Crimson Pro";color:#26303f;margin-top:14px}
+.focus .case b{font-weight:600}
+.quote{margin-top:16px;padding-left:20px;border-left:2px solid #2f5fd0;font:italic 500 16.5px/1.6 "Crimson Pro";color:#0f1a2e}
+.facts{margin-top:16px;font:500 11.5px/2 Inter;color:#5f6b7e}
+.facts b{color:#1f1f1f}
+.facts .sep{margin:0 9px;color:#c9d2de}
+.go{margin-top:auto;display:flex;gap:18px;font:600 12.5px Inter;padding-top:18px}
+.go a{color:#2f5fd0;text-decoration:none}
+.go a:hover{text-decoration:underline}
+.fable{font:italic 400 13px "Crimson Pro";color:#8a94a6;margin-top:16px}
+</style></head><body><div class="wrap">
+<div class="field">
+  <div class="head"><h1>The Field</h1><span class="k">Every live account, placed by when &amp; whether they'll pay</span></div>
+  <div class="axis-y"></div><div class="axis-x"></div>
+  <span class="lab-y">↑ readiness to pay a fee</span>
+  <span class="lab-x">window closing →</span>
+  <div class="zone"><span class="zl">Call zone</span></div>
+  <div class="legend"><span><i></i>call-ready</span><span><i class="o" style="background:transparent"></i>developing — Fable still working them</span><span>dot size = lead strength</span></div>
+</div>
+<div class="focus" id="focus"></div>
+</div>
+<script>
+const L=[
+ {co:"Trustpilot",x:62,y:24,s:26,seat:"first Head of Communications · £85–110k",
+  case:"Fresh equity on 29 May and <b>seventy-two open roles without one comms seat</b> — a company building everything except its voice. Appointments at this stage land inside two quarters; no agency is near it.",
+  q:"“Seventy-two openings and not a single comms hire — fifteen minutes on what that first seat should own?”",
+  call:"CEO office",win:"to late July",kill:"a brand hire closing quietly"},
+ {co:"Lloyds Banking Group",x:74,y:18,s:24,seat:"Corporate Affairs Director",
+  case:"Reshuffle and a raise in the same month; bench tenure past the turn point. <b>You know the Group CoSec</b> from the 2023 IR placement — the easiest conversation on the field.",
+  q:"“You'll be weighing rebuild against brief-out — we mapped the gaps your peer banks closed this year.”",
+  call:"Group CoSec — warm",win:"6–12 weeks",kill:"the reshuffle resolving internally"},
+ {co:"United Utilities",x:86,y:30,s:22,seat:"Head of Corporate Affairs",
+  case:"AMP8 determinations land this quarter and their bench is a senior seat light. <b>A proven buyer of search</b> — the 2023 framework call-off is public record.",
+  q:"“Ahead of the determinations, that seat carries the regulator relationship — we've benchmarked what it pays now.”",
+  call:"Company Secretary's office — named",win:"4–10 weeks",kill:"an internal promotion already slated"},
+ {co:"Rathbones",x:55,y:38,s:20,seat:"Corporate Affairs Director",
+  case:"Registry-attested raise last month, integration messaging load rising, nobody senior owning the narrative. Quiet company — <b>competitors' tooling is blind here.</b>",
+  q:"“Your filing last month suggests the corporate story is about to matter more — who owns it today?”",
+  call:"CEO office",win:"8–26 weeks",kill:"comms already retained externally"},
+ {co:"Intermediate Capital",x:48,y:44,s:20,seat:"Head of Communications",
+  case:"Secured financing filed; an IR-heavy bench with no external-comms lead. AUM peers run both seats.",
+  q:"“Fresh capital and an IR-heavy bench — the comms seat looks one hire light against your peers.”",
+  call:"CFO / Head of IR",win:"8–26 weeks",kill:"comms folded under IR by design"},
+ {co:"St James's Place",x:40,y:52,s:18,seat:"IR / Corporate Affairs",
+  case:"New CFO past day ninety, the IR line unconfirmed since. Comparable resets briefed the seat out within the quarter.",
+  q:"“New CFO past day ninety with IR unconfirmed — comparable resets briefed out within the quarter.”",
+  call:"CFO office",win:"6–12 weeks",kill:"IR continuity announced internally"},
+ {co:"Aviva",x:30,y:62,s:0,dev:1},{co:"Oxford Biomedica",x:22,y:74,s:0,dev:1},
+ {co:"Whitbread",x:36,y:80,s:0,dev:1},{co:"M&G",x:18,y:58,s:0,dev:1}];
+const f=document.querySelector(".field");
+let sel=0;
+function draw(){f.querySelectorAll(".dot").forEach(d=>d.remove());
+ L.forEach((l,i)=>{const d=document.createElement("div");
+  d.className="dot"+(l.dev?" dev":"")+(i===sel?" sel":"");
+  d.style.left=l.x+"%";d.style.top=l.y+"%";
+  d.innerHTML=`<i style="width:${l.dev?12:l.s}px;height:${l.dev?12:l.s}px"></i><span class="nm">${l.co}</span>`;
+  if(!l.dev)d.onclick=()=>{sel=i;draw();focus()};
+  f.appendChild(d)})}
+function focus(){const l=L[sel];
+ document.getElementById("focus").innerHTML=`
+  <span class="seat">${l.seat}</span><h2>${l.co}</h2>
+  <p class="case">${l.case}</p>
+  <div class="quote">${l.q}</div>
+  <div class="facts"><b>Call</b> ${l.call}<span class="sep">·</span><b>window</b> ${l.win}<span class="sep">·</span><b>fragile if</b> ${l.kill}</div>
+  <div class="go"><a href="#">Draft the email</a><a href="#">Pitch pack</a><a href="#">Show the working</a></div>
+  <p class="fable">✦ Placed and argued by Fable this morning. Hollow dots are still earning their spot — I'll move them right as the evidence lands.</p>`}
+draw();focus();
+</script></body></html>
