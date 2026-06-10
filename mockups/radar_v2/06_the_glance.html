@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VMA · Communications Radar — Take 2 · Concept 06 · The Glance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@100;200;300&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#f4f2ee;
+    --ink-dim:rgba(244,242,238,.62);
+    --ink-faint:rgba(244,242,238,.38);
+    --glass:rgba(16,14,38,.34);
+    --hairline:rgba(255,255,255,.14);
+    --spring:cubic-bezier(.18,.89,.28,1.14);
+    --ease:cubic-bezier(.22,.9,.24,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    color:var(--ink);
+    background:#0c0a26;
+    display:grid;place-items:center;
+    min-height:100vh;overflow:hidden;
+  }
+
+  /* ---------- Dawn wallpaper ---------- */
+  #wall{position:fixed;inset:-12%;z-index:0;transition:transform 1.6s var(--ease);will-change:transform}
+  #wall .layer{position:absolute;inset:0;border-radius:50%}
+  .l1{background:radial-gradient(ellipse 120% 90% at 50% 118%, #ff9e6d 0%, #e96d8d 26%, #8a4f9e 48%, rgba(40,28,90,0) 72%);
+      animation:driftA 46s ease-in-out infinite alternate}
+  .l2{background:radial-gradient(ellipse 90% 70% at 22% 96%, rgba(255,183,128,.55) 0%, rgba(214,106,140,.32) 38%, rgba(0,0,0,0) 68%);
+      animation:driftB 58s ease-in-out infinite alternate;mix-blend-mode:screen}
+  .l3{background:radial-gradient(ellipse 130% 100% at 50% -24%, #060418 0%, #14114a 48%, rgba(20,17,74,0) 78%);
+      animation:driftC 70s ease-in-out infinite alternate}
+  @keyframes driftA{from{transform:translate3d(-2.4%,1.2%,0) scale(1)}to{transform:translate3d(2.6%,-1.6%,0) scale(1.07)}}
+  @keyframes driftB{from{transform:translate3d(3%,0,0) scale(1.05)}to{transform:translate3d(-3%,1.5%,0) scale(1)}}
+  @keyframes driftC{from{transform:translate3d(0,-1.2%,0)}to{transform:translate3d(0,1.8%,0)}}
+  body::after{ /* film grain */
+    content:"";position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+  }
+
+  /* ---------- The phone slab ---------- */
+  .phone{
+    position:relative;z-index:2;
+    width:min(420px,100vw);height:min(880px,94vh);
+    border-radius:46px;border:1px solid rgba(255,255,255,.10);
+    background:rgba(8,7,28,.16);
+    box-shadow:0 50px 140px rgba(2,1,14,.6), inset 0 1px 0 rgba(255,255,255,.08);
+    overflow:hidden;
+    display:flex;flex-direction:column;
+    padding:0 22px;
+    backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
+    animation:slabIn 1.4s var(--ease) backwards;
+  }
+  @keyframes slabIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+  @media (max-width:767px){
+    body{place-items:stretch}
+    .phone{width:100%;height:100dvh;border:0;border-radius:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+  }
+
+  /* ---------- Whisper chrome ---------- */
+  .chrome{
+    padding:26px 4px 0;text-align:center;cursor:pointer;
+    font-size:9.5px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--ink-faint);
+    animation:fadeIn 1.4s ease .2s backwards;
+  }
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+  /* ---------- Clock ---------- */
+  .clockblock{
+    text-align:center;padding-top:7.5vh;
+    transition:opacity .6s var(--ease), transform .6s var(--ease), filter .6s var(--ease);
+  }
+  .clock{
+    font-family:'Inter Tight',sans-serif;font-weight:100;
+    font-size:clamp(84px,28vw,124px);line-height:.96;letter-spacing:-.015em;
+    text-shadow:0 2px 60px rgba(255,158,109,.18);
+    animation:settle 1.6s var(--ease) .35s backwards;
+  }
+  .dateline{
+    margin-top:10px;font-size:16px;font-weight:400;letter-spacing:.04em;color:var(--ink-dim);
+    animation:settle 1.4s var(--ease) .65s backwards;
+  }
+  .complication{
+    display:inline-flex;align-items:center;gap:7px;margin-top:18px;cursor:pointer;
+    padding:6px 13px;border-radius:999px;border:1px solid var(--hairline);
+    background:rgba(255,255,255,.05);
+    font-size:11px;font-weight:500;letter-spacing:.08em;color:var(--ink-dim);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    animation:settle 1.4s var(--ease) .9s backwards;
+    transition:background .3s ease;
+  }
+  .complication:hover{background:rgba(255,255,255,.09)}
+  .complication .dot{width:5px;height:5px;border-radius:50%;background:#ffb37e;box-shadow:0 0 8px #ffb37e}
+  @keyframes settle{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  .glance.has-open .clockblock{opacity:.18;transform:scale(.96);filter:blur(5px);pointer-events:none}
+  .glance.has-open .chrome{opacity:.25}
+
+  /* ---------- Glance column ---------- */
+  .glance{display:flex;flex-direction:column;flex:1;min-height:0}
+  .stack{margin-top:auto;padding-bottom:14px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
+  .stack::-webkit-scrollbar{display:none}
+
+  /* ---------- Notification pills ---------- */
+  .pill{
+    position:relative;z-index:1;
+    border-radius:18px;border:1px solid var(--hairline);
+    background:var(--glass);
+    backdrop-filter:blur(26px) saturate(1.5);-webkit-backdrop-filter:blur(26px) saturate(1.5);
+    box-shadow:0 10px 36px rgba(4,2,20,.32), inset 0 1px 0 rgba(255,255,255,.09);
+    padding:13px 16px 14px;margin-bottom:10px;
+    max-height:220px;cursor:pointer;
+    transition:max-height .55s var(--ease), opacity .4s ease, transform .55s var(--spring),
+               margin .55s var(--ease), padding .55s var(--ease), box-shadow .5s ease;
+    animation:drop .85s var(--spring) backwards;
+    outline:none;
+  }
+  .pill:focus-visible{border-color:rgba(255,255,255,.4)}
+  @keyframes drop{0%{opacity:0;transform:translateY(-34px) scale(.96)}60%{opacity:1}100%{opacity:1;transform:none}}
+  .pill[data-id="1"]{animation-delay:1.25s}
+  .pill[data-id="2"]{animation-delay:1.6s}
+  .pill[data-id="3"]{animation-delay:1.95s}
+  .pill.warming{animation-delay:2.35s}
+
+  .pill-head{display:flex;align-items:center;gap:7px;font-size:10px;font-weight:600;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)}
+  .pill-head svg{width:13px;height:13px;flex:none;opacity:.75}
+  .pill-head .when{margin-left:auto;font-weight:400;letter-spacing:.06em}
+  .pill-body{
+    margin-top:7px;font-size:14.5px;line-height:1.42;font-weight:400;color:var(--ink);
+    max-height:80px;overflow:hidden;
+    transition:opacity .3s ease, max-height .45s var(--ease), margin .45s var(--ease);
+  }
+  .pill-body strong{font-weight:600}
+  .pill:not(.warming):hover{transform:translateY(-1px)}
+
+  .pill.warming{
+    cursor:pointer;opacity:.55;padding:11px 16px;background:rgba(16,14,38,.24);
+  }
+  .pill.warming .pill-body{margin-top:0;font-size:13px;color:var(--ink-dim)}
+
+  /* others slide away */
+  .glance.has-open .pill:not(.open){
+    max-height:0;opacity:0;margin-bottom:0;padding-top:0;padding-bottom:0;
+    transform:translateY(18px) scale(.97);pointer-events:none;border-color:transparent;
+  }
+  .glance.has-open .pill.open{
+    z-index:30;cursor:default;max-height:640px;
+    background:rgba(18,15,44,.55);
+    box-shadow:0 30px 90px rgba(2,1,14,.55), inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  .glance.has-open .pill.open .pill-body{opacity:0;max-height:0;margin-top:0}
+
+  /* done state */
+  .pill.is-done{opacity:.42}
+  .pill.is-done .pill-head .when{display:none}
+  .pill.is-done .pill-head::after{content:"✓ done";margin-left:auto;letter-spacing:.14em;color:#9fe3b4;font-weight:600}
+
+  /* ---------- Sheet ---------- */
+  .sheet{max-height:0;opacity:0;overflow:hidden;
+    transition:max-height .6s var(--ease), opacity .45s ease .08s}
+  .pill.open .sheet{max-height:560px;opacity:1}
+  .grab{width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.22);margin:12px auto 4px}
+  .sheet-co{font-size:10px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-faint);margin-top:10px}
+  .sheet-seat{font-family:'Inter Tight',sans-serif;font-weight:200;font-size:27px;line-height:1.12;
+    letter-spacing:-.01em;margin-top:5px}
+  .sheet-seat .fee{font-size:13px;font-weight:500;font-family:'Inter',sans-serif;color:#ffb37e;
+    letter-spacing:.06em;margin-left:8px;vertical-align:3px;white-space:nowrap}
+  .opener{margin-top:16px;font-size:14.5px;line-height:1.62;color:rgba(244,242,238,.88);
+    border-left:2px solid rgba(255,179,126,.45);padding-left:14px;min-height:118px}
+  .caret{display:inline-block;width:1px;height:1.05em;background:#ffb37e;vertical-align:-2px;
+    margin-left:1px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .actions{display:flex;gap:10px;margin:18px 0 6px}
+  .actions button{
+    flex:1;appearance:none;border:1px solid var(--hairline);border-radius:13px;
+    padding:12px 0;font:inherit;font-size:13.5px;font-weight:500;letter-spacing:.04em;
+    color:var(--ink);background:rgba(255,255,255,.07);cursor:pointer;
+    backdrop-filter:blur(8px);transition:background .25s ease, transform .15s ease;
+  }
+  .actions button:hover{background:rgba(255,255,255,.13)}
+  .actions button:active{transform:scale(.97)}
+  .actions .btn-done{background:rgba(255,179,126,.14);border-color:rgba(255,179,126,.35)}
+  .actions .btn-done:hover{background:rgba(255,179,126,.22)}
+
+  /* ---------- Scrim ---------- */
+  .scrim{position:fixed;inset:0;z-index:1;background:transparent;display:none}
+  .scrim.on{display:block}
+
+  /* ---------- Home indicator ---------- */
+  .homebar{width:118px;height:4px;border-radius:2px;background:rgba(255,255,255,.3);
+    margin:2px auto 12px;flex:none;cursor:pointer;animation:fadeIn 1.4s ease 2.6s backwards}
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed;left:50%;bottom:46px;transform:translate(-50%,16px);z-index:80;
+    padding:10px 20px;border-radius:999px;border:1px solid var(--hairline);
+    background:rgba(14,12,34,.78);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    font-size:12.5px;font-weight:500;letter-spacing:.05em;color:var(--ink);
+    opacity:0;pointer-events:none;transition:opacity .35s ease, transform .45s var(--spring);
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  /* ---------- Fixed furniture ---------- */
+  .navchip{
+    position:fixed;right:18px;bottom:16px;z-index:70;
+    display:flex;align-items:center;gap:8px;
+    padding:7px 14px;border-radius:999px;border:1px solid var(--hairline);
+    background:rgba(14,12,34,.5);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    font-size:11px;letter-spacing:.08em;color:var(--ink-faint);
+  }
+  .navchip a{color:var(--ink-dim);text-decoration:none;transition:color .2s ease}
+  .navchip a:hover{color:var(--ink)}
+  .navchip .sep{opacity:.45}
+  .legal{
+    position:fixed;left:18px;bottom:19px;z-index:70;
+    font-size:9.5px;letter-spacing:.06em;color:rgba(244,242,238,.28);
+  }
+  @media (max-width:767px){.legal{display:none}}
+
+  /* ---------- Reduced motion ---------- */
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important}
+  }
+</style>
+</head>
+<body>
+
+<div id="wall" aria-hidden="true">
+  <div class="layer l3"></div>
+  <div class="layer l1"></div>
+  <div class="layer l2"></div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+
+<main class="phone">
+  <header class="chrome" id="chrome">VMA Group · Communications Radar · Wednesday 10 June 2026</header>
+
+  <section class="glance" id="glance">
+    <div class="clockblock">
+      <div class="clock">08:55</div>
+      <div class="dateline">Wednesday 10 June</div>
+      <div><span class="complication" id="complication"><span class="dot"></span>£196k on the board</span></div>
+    </div>
+
+    <div class="stack" id="stack">
+
+      <article class="pill" data-id="1" tabindex="0" role="button" aria-expanded="false"
+               aria-label="Radar notification: National Grid">
+        <div class="pill-head">
+          <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.6" stroke="currentColor" stroke-width="1.1"/><circle cx="8" cy="8" r="3.4" stroke="currentColor" stroke-width="1" opacity=".5"/><line x1="8" y1="8" x2="12.6" y2="3.8" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="10.6" cy="10.2" r="1.2" fill="currentColor"/></svg>
+          Radar <span class="when">06:12</span>
+        </div>
+        <div class="pill-body"><strong>National Grid</strong> — their search failed in public. £32k. Call before ten.</div>
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="sheet-co">National Grid</div>
+          <h2 class="sheet-seat">Head of Media Relations<span class="fee">£32k</span></h2>
+          <p class="opener" id="opener-1"></p>
+          <div class="actions">
+            <button class="btn-copy" data-for="1">Copy</button>
+            <button class="btn-done" data-for="1">Done ✓</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="pill" data-id="2" tabindex="0" role="button" aria-expanded="false"
+               aria-label="Radar notification: Ocado">
+        <div class="pill-head">
+          <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.6" stroke="currentColor" stroke-width="1.1"/><circle cx="8" cy="8" r="3.4" stroke="currentColor" stroke-width="1" opacity=".5"/><line x1="8" y1="8" x2="12.6" y2="3.8" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="10.6" cy="10.2" r="1.2" fill="currentColor"/></svg>
+          Radar <span class="when">06:12</span>
+        </div>
+        <div class="pill-body"><strong>Ocado</strong> — profit warning, empty comms chair. £28k. This week.</div>
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="sheet-co">Ocado</div>
+          <h2 class="sheet-seat">Director of Communications<span class="fee">£28k</span></h2>
+          <p class="opener" id="opener-2"></p>
+          <div class="actions">
+            <button class="btn-copy" data-for="2">Copy</button>
+            <button class="btn-done" data-for="2">Done ✓</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="pill" data-id="3" tabindex="0" role="button" aria-expanded="false"
+               aria-label="Radar notification: Monzo">
+        <div class="pill-head">
+          <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.6" stroke="currentColor" stroke-width="1.1"/><circle cx="8" cy="8" r="3.4" stroke="currentColor" stroke-width="1" opacity=".5"/><line x1="8" y1="8" x2="12.6" y2="3.8" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="10.6" cy="10.2" r="1.2" fill="currentColor"/></svg>
+          Radar <span class="when">06:12</span>
+        </div>
+        <div class="pill-body"><strong>Monzo</strong> — £380m confirmed overnight. £30k. Warm path in.</div>
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="sheet-co">Monzo</div>
+          <h2 class="sheet-seat">Head of Corporate Communications<span class="fee">£30k</span></h2>
+          <p class="opener" id="opener-3"></p>
+          <div class="actions">
+            <button class="btn-copy" data-for="3">Copy</button>
+            <button class="btn-done" data-for="3">Done ✓</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="pill warming" id="warming" tabindex="0" role="button" aria-label="Four more warming">
+        <div class="pill-body">Four more are warming. I’ll tell you when they’re ready.</div>
+      </article>
+
+    </div>
+  </section>
+
+  <div class="homebar" id="homebar" aria-hidden="true"></div>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<nav class="navchip">
+  06 / 10 <span class="sep">·</span>
+  <a href="05_focus_flow.html" aria-label="Previous concept">←</a> <span class="sep">·</span>
+  <a href="index.html">Index</a> <span class="sep">·</span>
+  <a href="07_the_answer.html" aria-label="Next concept">→</a>
+</nav>
+<div class="legal">Illustrative sample data — design review only.</div>
+
+<script>
+(function(){
+  "use strict";
+  var REDUCE = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var OPENERS = {
+    "1": "Hi Sasha — the Head of Media Relations brief has been live for eight weeks now. We placed three of the last five seats like it; I can have a vetted shortlist with you by the 24th. Worth fifteen minutes this week?",
+    "2": "Hi Daniel — rough fortnight in the headlines, and the comms chair is empty just when you need it most. I can have a confidential shortlist with you by Friday. Fifteen minutes today?",
+    "3": "Hi Tomas — congratulations on the round. Teams at your stage add a Head of Corporate Comms within two quarters; I mapped who's available before the announcement even landed. Shall I send the three names worth meeting?"
+  };
+
+  var glance = document.getElementById("glance");
+  var scrim  = document.getElementById("scrim");
+  var toast  = document.getElementById("toast");
+  var pills  = Array.prototype.slice.call(document.querySelectorAll(".pill[data-id]"));
+  var current = null, typeTimer = null, toastTimer = null;
+
+  /* ---------- toast ---------- */
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toast.classList.remove("show"); }, 2100);
+  }
+
+  /* ---------- typing ---------- */
+  function typeInto(el, text){
+    clearInterval(typeTimer);
+    el.textContent = "";
+    if (REDUCE){ el.textContent = text; return; }
+    var caret = document.createElement("span");
+    caret.className = "caret";
+    el.appendChild(caret);
+    var i = 0;
+    typeTimer = setInterval(function(){
+      i += 1;
+      el.firstChild ? el.insertBefore(document.createTextNode(text.charAt(i-1)), caret)
+                    : el.appendChild(document.createTextNode(text.charAt(i-1)));
+      if (i >= text.length){
+        clearInterval(typeTimer);
+        setTimeout(function(){ if (caret.parentNode) caret.remove(); }, 1200);
+      }
+    }, 13);
+  }
+
+  /* ---------- open / close ---------- */
+  function openPill(pill){
+    if (current) return;
+    current = pill;
+    glance.classList.add("has-open");
+    pill.classList.add("open");
+    pill.setAttribute("aria-expanded","true");
+    scrim.classList.add("on");
+    var id = pill.getAttribute("data-id");
+    var openerEl = document.getElementById("opener-" + id);
+    setTimeout(function(){ typeInto(openerEl, OPENERS[id]); }, REDUCE ? 0 : 380);
+  }
+
+  function closePill(){
+    if (!current) return;
+    clearInterval(typeTimer);
+    var pill = current;
+    current = null;
+    pill.classList.remove("open");
+    pill.setAttribute("aria-expanded","false");
+    pill.style.transform = "";
+    glance.classList.remove("has-open");
+    scrim.classList.remove("on");
+    var id = pill.getAttribute("data-id");
+    setTimeout(function(){
+      var el = document.getElementById("opener-" + id);
+      if (el) el.textContent = "";
+    }, 600);
+  }
+
+  pills.forEach(function(pill){
+    pill.addEventListener("click", function(){
+      if (pill !== current) openPill(pill);
+    });
+    pill.addEventListener("keydown", function(e){
+      if ((e.key === "Enter" || e.key === " ") && pill !== current){
+        e.preventDefault(); openPill(pill);
+      }
+    });
+  });
+
+  scrim.addEventListener("click", closePill);
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape") closePill();
+  });
+
+  /* ---------- actions ---------- */
+  function copyText(text){
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(
+        function(){ showToast("Opener copied."); },
+        function(){ legacyCopy(text); }
+      );
+    } else { legacyCopy(text); }
+  }
+  function legacyCopy(text){
+    var ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); showToast("Opener copied."); }
+    catch(err){ showToast("Copy blocked by browser."); }
+    ta.remove();
+  }
+
+  document.querySelectorAll(".btn-copy").forEach(function(btn){
+    btn.addEventListener("click", function(e){
+      e.stopPropagation();
+      copyText(OPENERS[btn.getAttribute("data-for")]);
+    });
+  });
+  document.querySelectorAll(".btn-done").forEach(function(btn){
+    btn.addEventListener("click", function(e){
+      e.stopPropagation();
+      var pill = document.querySelector('.pill[data-id="' + btn.getAttribute("data-for") + '"]');
+      pill.classList.add("is-done");
+      closePill();
+      showToast("Done. I’ll keep score.");
+    });
+  });
+
+  /* ---------- swipe-down to close ---------- */
+  var touchY = null;
+  document.addEventListener("touchstart", function(e){
+    if (current && current.contains(e.target)) touchY = e.touches[0].clientY;
+  }, {passive:true});
+  document.addEventListener("touchmove", function(e){
+    if (touchY === null || !current) return;
+    var dy = Math.max(0, e.touches[0].clientY - touchY);
+    current.style.transition = "none";
+    current.style.transform = "translateY(" + dy * 0.55 + "px)";
+  }, {passive:true});
+  document.addEventListener("touchend", function(e){
+    if (touchY === null || !current) return;
+    var dy = e.changedTouches[0].clientY - touchY;
+    touchY = null;
+    current.style.transition = "";
+    if (dy > 80){ closePill(); }
+    else { current.style.transform = ""; }
+  });
+
+  /* ---------- decorative → toast ---------- */
+  [["chrome"],["complication"],["warming"],["homebar"]].forEach(function(pair){
+    var el = document.getElementById(pair[0]);
+    el.addEventListener("click", function(e){
+      e.stopPropagation();
+      showToast("Wired in production.");
+    });
+  });
+
+  /* ---------- wallpaper parallax ---------- */
+  if (!REDUCE){
+    var wall = document.getElementById("wall");
+    document.addEventListener("mousemove", function(e){
+      var x = (e.clientX / window.innerWidth  - 0.5) * 16;
+      var y = (e.clientY / window.innerHeight - 0.5) * 12;
+      wall.style.transform = "translate3d(" + (-x) + "px," + (-y) + "px,0)";
+    });
+  }
+})();
+</script>
+</body>
+</html>
