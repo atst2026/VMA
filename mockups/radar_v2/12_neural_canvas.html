@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VMA — Communications Radar · Neural Canvas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================ tokens */
+:root{
+  --ink:#E8EDF6; --sec:#94A3B8; --dim:#64748B;
+  --cyan:#67E8F9; --blue:#60A5FA; --blue2:#4285F4;
+  --green:#34D399; --amber:#FBBF24; --clay:#FF8A65; --clay2:#D97757;
+  --danger:#F87171; --violet:#8B5CF6;
+  --hair:rgba(255,255,255,.10);
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --disp:'Space Grotesk',Inter,system-ui,sans-serif;
+  --body:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;
+  --spring:cubic-bezier(.2,.8,.25,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--body); color:var(--ink); font-size:14px;
+  background:linear-gradient(180deg,#05080F 0%,#0B1222 100%);
+  background-attachment:fixed; min-height:100vh;
+  overflow-x:hidden; -webkit-font-smoothing:antialiased;
+}
+::selection{background:rgba(103,232,249,.25)}
+button{font-family:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus{outline:none}
+:focus-visible{outline:2px solid rgba(103,232,249,.65);outline-offset:2px;border-radius:8px}
+
+/* ============================================================ scene */
+.blob{position:fixed;border-radius:50%;filter:blur(60px);pointer-events:none;z-index:0}
+.blob.b1{width:1050px;height:1050px;left:-280px;top:-320px;
+  background:radial-gradient(closest-side,rgba(66,133,244,.16),transparent);
+  animation:drift1 38s ease-in-out infinite alternate}
+.blob.b2{width:920px;height:920px;right:-200px;top:8%;
+  background:radial-gradient(closest-side,rgba(139,92,246,.10),transparent);
+  animation:drift2 44s ease-in-out infinite alternate}
+.blob.b3{width:980px;height:980px;right:-160px;bottom:-380px;
+  background:radial-gradient(closest-side,rgba(217,119,87,.13),transparent);
+  animation:drift3 33s ease-in-out infinite alternate}
+@keyframes drift1{to{transform:translate(120px,70px) scale(1.07)}}
+@keyframes drift2{to{transform:translate(-90px,110px) scale(.94)}}
+@keyframes drift3{to{transform:translate(-70px,-90px) scale(1.06)}}
+.grain{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.04;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E")}
+.vignette{position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 40%,transparent 55%,rgba(0,0,0,.5))}
+
+/* ============================================================ boot */
+#boot{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;transition:opacity .4s ease}
+#boot.gone{opacity:0;visibility:hidden}
+.boot-card{width:680px;max-width:88vw;transform-origin:0 100%;
+  transition:transform .55s var(--spring),opacity .45s ease}
+#boot.dock .boot-card{
+  transform:translate(calc(-50vw + 370px),calc(50vh - 110px)) scale(.22);opacity:0}
+.boot-head{font-family:var(--disp);font-weight:600;font-size:21px;letter-spacing:-.01em;
+  color:var(--ink);display:flex;align-items:baseline;gap:4px;min-height:30px}
+.boot-head .spark{color:var(--clay);margin-right:8px;text-shadow:0 0 14px rgba(255,138,101,.6)}
+.boot-dots{display:inline-flex;gap:5px;margin-left:8px;transform:translateY(-2px)}
+.boot-dots i{width:5px;height:5px;border-radius:50%;background:var(--cyan);
+  box-shadow:0 0 8px rgba(103,232,249,.8);animation:breathe 1.2s ease-in-out infinite}
+.boot-dots i:nth-child(2){animation-delay:.2s}
+.boot-dots i:nth-child(3){animation-delay:.4s}
+@keyframes breathe{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}
+.boot-stream{margin-top:22px;font-family:var(--mono);font-size:12.5px;line-height:2.05;
+  color:#94A3B8;min-height:160px}
+.boot-stream .ln{opacity:0;transform:translateY(3px);transition:opacity .25s ease,transform .25s ease;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.boot-stream .ln.on{opacity:1;transform:none}
+.boot-stream .gl{display:inline-block;width:20px;color:var(--cyan);opacity:.85}
+.boot-stream .ln.bad .gl{color:var(--danger)}
+.boot-stream .ln.fin .gl{color:var(--clay)}
+.boot-skip{margin-top:18px;font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);opacity:0;animation:skipIn .6s ease 1.4s forwards}
+@keyframes skipIn{to{opacity:.8}}
+
+/* ============================================================ app + panes */
+#app{position:relative;z-index:1;max-width:1280px;margin:0 auto;
+  padding:26px 32px 110px}
+.pane{position:relative;opacity:0;transform:translateY(16px) scale(.99)}
+.pane.show{opacity:1;transform:none;transition:opacity .55s var(--spring),transform .55s var(--spring)}
+.pane-inner{opacity:0;transition:opacity .5s ease .08s}
+.pane.real .pane-inner{opacity:1}
+.pane-veil{position:absolute;inset:0;border-radius:inherit;overflow:hidden;z-index:3;
+  background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.025));
+  transition:opacity .45s ease;pointer-events:none}
+.pane.real .pane-veil{opacity:0}
+.pane-veil::before{content:"";position:absolute;left:22px;top:24px;right:55%;height:12px;
+  border-radius:6px;background:rgba(255,255,255,.07);
+  box-shadow:0 26px 0 -2px rgba(255,255,255,.05),0 48px 0 -4px rgba(255,255,255,.035)}
+.pane-veil::after{content:"";position:absolute;inset:0;transform:translateX(-100%);
+  background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.08) 45%,transparent 60%);
+  animation:shimmer 1.4s ease infinite}
+@keyframes shimmer{to{transform:translateX(100%)}}
+body.skip .pane,body.skip .pane-inner,body.skip .pane-veil{transition:none!important}
+body.skip .pane-veil{display:none}
+
+.glass{
+  background:linear-gradient(180deg,rgba(255,255,255,.085),rgba(255,255,255,.035));
+  border:1px solid rgba(255,255,255,.10);
+  border-top-color:rgba(255,255,255,.22);
+  -webkit-backdrop-filter:blur(22px) saturate(1.3);
+  backdrop-filter:blur(22px) saturate(1.3);
+  border-radius:18px;
+  box-shadow:0 24px 70px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.07);
+}
+
+/* ============================================================ header */
+header.pane{margin-bottom:18px}
+.hd{display:flex;align-items:center;gap:16px;padding:4px 2px}
+.wordmark{font-family:var(--body);font-size:17px;letter-spacing:.02em;color:var(--ink);white-space:nowrap}
+.wordmark b{font-weight:800}
+.wordmark span{font-weight:300;letter-spacing:.34em;margin-left:6px;color:var(--sec)}
+.hd-sep{width:1px;height:22px;background:var(--hair)}
+.hd-title{font-family:var(--disp);font-weight:600;font-size:18px;letter-spacing:-.01em;
+  background:linear-gradient(90deg,#E8EDF6,#9fc4f8);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.hd-right{margin-left:auto;display:flex;align-items:center;gap:18px;
+  font-family:var(--mono);font-size:11.5px;color:var(--sec);white-space:nowrap}
+.hd-right .date{color:var(--dim)}
+.live{display:inline-flex;align-items:center;gap:7px;color:var(--cyan)}
+.live i{width:7px;height:7px;border-radius:50%;background:var(--cyan);
+  box-shadow:0 0 10px rgba(103,232,249,.9);animation:breathe 3s ease-in-out infinite}
+
+/* ============================================================ hero */
+#hero{margin-bottom:18px}
+#hero .pane-inner{display:flex;align-items:stretch;gap:8px;padding:26px 8px 26px 30px}
+.syn{flex:1;font-size:21px;line-height:1.6;font-weight:400;color:var(--ink);
+  letter-spacing:-.005em;max-width:780px;padding-right:22px}
+.syn-lede{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--cyan);margin-bottom:12px;opacity:.9}
+.syn-lede .spark{color:var(--clay)}
+.syn-chip{display:inline-flex;align-items:center;font-family:var(--disp);font-weight:600;
+  font-size:18px;line-height:1;padding:4px 13px 5px;border-radius:999px;vertical-align:baseline;
+  color:#CDEAFF;background:rgba(96,165,250,.12);border:1px solid rgba(103,232,249,.38);
+  box-shadow:0 0 18px rgba(96,165,250,.28),inset 0 0 12px rgba(103,232,249,.08);
+  transition:all .2s ease;cursor:pointer;animation:chipGlow 4s ease-in-out infinite}
+.syn-chip:hover{background:rgba(96,165,250,.22);border-color:rgba(103,232,249,.7);
+  transform:translateY(-1px);box-shadow:0 0 26px rgba(96,165,250,.45)}
+@keyframes chipGlow{0%,100%{box-shadow:0 0 14px rgba(96,165,250,.22),inset 0 0 12px rgba(103,232,249,.06)}
+  50%{box-shadow:0 0 24px rgba(96,165,250,.4),inset 0 0 14px rgba(103,232,249,.1)}}
+.hero-stats{display:flex;align-items:stretch}
+.stat{display:flex;flex-direction:column;justify-content:center;gap:6px;
+  padding:0 30px;border-left:1px solid var(--hair);min-width:128px}
+.stat b{font-family:var(--mono);font-weight:700;font-size:36px;letter-spacing:-.02em;
+  background:linear-gradient(135deg,var(--cyan),var(--blue2));
+  -webkit-background-clip:text;background-clip:text;color:transparent;line-height:1}
+.stat.warm b{background:linear-gradient(135deg,var(--amber),var(--clay));
+  -webkit-background-clip:text;background-clip:text}
+.stat small{font-family:var(--mono);font-size:10px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--dim)}
+/* ============================================================ priority row */
+#prio{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:18px}
+.card{padding:22px 22px 18px;cursor:pointer;
+  transition:transform .25s var(--spring),border-color .25s ease,box-shadow .25s ease}
+.card:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.22);
+  box-shadow:0 0 0 1px rgba(103,232,249,.25),0 12px 50px rgba(66,133,244,.25),
+    0 24px 70px rgba(0,0,0,.5)}
+.card.dimmed{opacity:.45;filter:saturate(.6)}
+@property --ang{syntax:'<angle>';initial-value:0deg;inherits:false}
+.card.first{border:1px solid transparent;border-radius:18px;
+  background:
+    linear-gradient(180deg,rgba(20,28,48,.92),rgba(13,20,38,.92)) padding-box,
+    conic-gradient(from var(--ang),
+      rgba(103,232,249,.0) 0%,rgba(103,232,249,.85) 12%,rgba(96,165,250,.5) 22%,
+      rgba(255,255,255,.08) 38%,rgba(255,138,101,.55) 62%,rgba(255,255,255,.06) 78%,
+      rgba(103,232,249,.0) 100%) border-box;
+  animation:ringSpin 8s linear infinite;
+  box-shadow:0 0 34px rgba(66,133,244,.22),0 24px 70px rgba(0,0,0,.5),
+    inset 0 1px 0 rgba(255,255,255,.07)}
+@keyframes ringSpin{to{--ang:360deg}}
+.card-top{display:flex;gap:18px;align-items:center;margin-bottom:12px}
+.card-id{min-width:0}
+.rank{font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--cyan);
+  text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.co{font-family:var(--disp);font-weight:600;font-size:24px;letter-spacing:-.015em;
+  line-height:1.1;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seat{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--sec);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hook{font-size:13.5px;line-height:1.6;color:var(--sec);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  min-height:43px;margin-bottom:10px}
+.whyline{font-family:var(--mono);font-size:11.5px;line-height:1.5;color:#8FD8EC;
+  min-height:36px;margin-bottom:10px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.whyline .caret{display:inline-block;width:7px;height:13px;margin-left:2px;
+  background:rgba(103,232,249,.8);vertical-align:-2px;animation:caretBlink .8s steps(1) infinite}
+@keyframes caretBlink{50%{opacity:0}}
+
+/* gauges */
+.gauge{position:relative;flex:none}
+.gauge svg{display:block;transform:rotate(-90deg)}
+.gauge .trk{fill:none;stroke:rgba(255,255,255,.07);stroke-width:5}
+.gauge .val{fill:none;stroke-width:5;stroke-linecap:round;
+  filter:drop-shadow(0 0 6px rgba(103,232,249,.7));
+  transition:stroke-dashoffset 1.1s var(--spring)}
+.gauge.amberize .val{filter:drop-shadow(0 0 6px rgba(251,191,36,.6))}
+.gauge.greenize .val{filter:drop-shadow(0 0 6px rgba(52,211,153,.6))}
+body.skip .gauge .val{transition:none}
+.gauge .num{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:1px}
+.gauge .num b{font-family:var(--mono);font-weight:700;font-size:19px;letter-spacing:-.02em;
+  background:linear-gradient(135deg,var(--cyan),var(--blue2));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.gauge .num small{font-family:var(--mono);font-size:7.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim)}
+.gauge.sm .num b{font-size:14px}
+
+/* chips */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.chip{font-family:var(--mono);font-size:9.5px;font-weight:500;letter-spacing:.1em;
+  text-transform:uppercase;padding:4px 9px;border-radius:999px;line-height:1;
+  border:1px solid;white-space:nowrap}
+.chip.t-lead{color:#9DC1FF;background:rgba(96,165,250,.12);border-color:rgba(96,165,250,.35)}
+.chip.t-fund{color:#7EE8BC;background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.35)}
+.chip.t-warn{color:#FFC08A;background:rgba(255,138,101,.12);border-color:rgba(255,138,101,.35)}
+.chip.t-restr{color:#B8C4DA;background:rgba(148,163,184,.12);border-color:rgba(148,163,184,.35)}
+.chip.t-mna{color:#C9B2F8;background:rgba(139,92,246,.14);border-color:rgba(139,92,246,.38)}
+.chip.t-people{color:#7EE0D8;background:rgba(45,212,191,.12);border-color:rgba(45,212,191,.35)}
+.chip.c-new{color:#7EE8BC;background:rgba(52,211,153,.14);border-color:rgba(52,211,153,.4);
+  animation:newPulse 3s ease-in-out infinite}
+@keyframes newPulse{0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}
+  50%{box-shadow:0 0 12px 0 rgba(52,211,153,.35)}}
+.chip.c-fee{color:#FFD18A;background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.38)}
+.chip.c-reg{color:#A5E8FB;background:rgba(103,232,249,.1);border-color:rgba(103,232,249,.35)}
+.chip.c-rt{color:#C9B2F8;background:rgba(139,92,246,.14);border-color:rgba(139,92,246,.38)}
+.chip.c-q4{color:#FFC08A;background:rgba(255,138,101,.12);border-color:rgba(255,138,101,.38)}
+.chip.c-conf{color:var(--sec);background:rgba(148,163,184,.1);border-color:rgba(148,163,184,.3)}
+.chip.c-ver-g{color:#7EE8BC;background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.35)}
+.chip.c-ver-a{color:#FFD18A;background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.38)}
+.chip.c-block{color:#FCA5A5;background:rgba(248,113,113,.13);border-color:rgba(248,113,113,.4)}
+
+/* window micro-bar */
+.winbar{display:flex;align-items:center;gap:10px}
+.winbar .trk{flex:1;height:4px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden}
+.winbar .fill{height:100%;border-radius:999px;width:0;
+  background:linear-gradient(90deg,var(--cyan),var(--blue2));
+  box-shadow:0 0 8px rgba(103,232,249,.5);transition:width 1s var(--spring) .2s}
+.winbar.hot .fill{background:linear-gradient(90deg,var(--amber),var(--clay));
+  box-shadow:0 0 8px rgba(255,138,101,.5)}
+body.skip .winbar .fill{transition:none}
+.winbar small{font-family:var(--mono);font-size:10.5px;color:var(--dim);white-space:nowrap}
+
+/* ============================================================ compact grid */
+#compact{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:18px}
+.mini{display:flex;align-items:center;gap:16px;padding:16px 18px;cursor:pointer;
+  transition:transform .25s var(--spring),border-color .25s ease,box-shadow .25s ease}
+.mini:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.22);
+  box-shadow:0 0 0 1px rgba(103,232,249,.25),0 12px 50px rgba(66,133,244,.25),
+    0 24px 70px rgba(0,0,0,.5)}
+.mini.dimmed{opacity:.45;filter:saturate(.6)}
+.mini-id{flex:1;min-width:0}
+.mini-co{font-family:var(--disp);font-weight:600;font-size:16.5px;letter-spacing:-.01em;
+  color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  display:flex;align-items:center;gap:8px}
+.mini-seat{font-family:var(--mono);font-size:10px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--dim);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini .winbar{margin-top:9px;max-width:170px}
+.badge-mini{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;padding:3px 7px;
+  border-radius:999px;border:1px solid rgba(251,191,36,.38);color:#FFD18A;
+  background:rgba(251,191,36,.1);flex:none}
+
+/* triage badges */
+.triage{position:absolute;top:12px;right:12px;z-index:4;font-family:var(--mono);
+  font-size:9px;letter-spacing:.12em;text-transform:uppercase;padding:4px 9px;
+  border-radius:999px;border:1px solid;animation:popIn .35s var(--spring)}
+.triage.ok{color:#7EE8BC;background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.45)}
+.triage.no{color:#B8C4DA;background:rgba(148,163,184,.13);border-color:rgba(148,163,184,.35)}
+@keyframes popIn{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* ============================================================ below the line */
+#btl .pane-inner{padding:0}
+#btl{margin-bottom:18px}
+.btl-bar{display:flex;align-items:center;gap:18px;width:100%;padding:13px 20px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--sec);
+  cursor:pointer;border-radius:inherit;text-align:left;
+  transition:background .2s ease}
+.btl-bar:hover{background:rgba(255,255,255,.04)}
+.btl-bar .lbl{letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.btl-bar .cnt{display:inline-flex;align-items:center;gap:7px}
+.btl-bar .cnt i{width:6px;height:6px;border-radius:50%}
+.btl-bar .cnt.dev i{background:var(--amber);box-shadow:0 0 7px rgba(251,191,36,.6)}
+.btl-bar .cnt.watch i{background:var(--dim)}
+.btl-bar .cnt.block i{background:var(--danger);box-shadow:0 0 7px rgba(248,113,113,.6)}
+.btl-bar .chev{margin-left:auto;transition:transform .3s var(--spring);display:flex;color:var(--dim)}
+#btl.open .chev{transform:rotate(180deg)}
+.btl-rows{max-height:0;overflow:hidden;transition:max-height .45s var(--spring)}
+#btl.open .btl-rows{max-height:420px}
+.btl-row{display:grid;grid-template-columns:170px 250px 110px 44px 1fr;gap:14px;
+  align-items:center;padding:13px 20px;border-top:1px solid rgba(255,255,255,.06);
+  opacity:.78}
+.btl-row.blocked{border-left:2px solid var(--danger);padding-left:18px;
+  background:rgba(248,113,113,.04)}
+.btl-co{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btl-co small{display:block;font-family:var(--mono);font-weight:400;font-size:9.5px;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-top:2px}
+.btl-seat{font-size:12px;color:var(--sec);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btl-score{font-family:var(--mono);font-size:12px;color:var(--dim);text-align:right}
+.btl-gate{font-size:12px;line-height:1.5;color:#E8C083}
+.btl-gate.danger{color:var(--danger)}
+.btl-gate b{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;
+  text-transform:uppercase;margin-right:8px;padding:2px 7px;border-radius:5px;
+  background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);color:#FFD18A;font-weight:500}
+.btl-gate.danger b{background:rgba(248,113,113,.14);border-color:rgba(248,113,113,.4);color:#FCA5A5}
+/* ============================================================ dossier */
+#ovl{position:fixed;inset:0;z-index:40;display:none}
+#ovl.on{display:block}
+#scrim{position:absolute;inset:0;background:rgba(4,7,14,.55);
+  -webkit-backdrop-filter:blur(9px) saturate(.9);backdrop-filter:blur(9px) saturate(.9);
+  opacity:0;transition:opacity .35s ease;cursor:pointer}
+#ovl.in #scrim{opacity:1}
+#dossier{position:absolute;width:780px;max-width:92vw;max-height:86vh;overflow:auto;
+  overscroll-behavior:contain;border-radius:20px;
+  background:linear-gradient(180deg,rgba(22,30,52,.92),rgba(12,18,34,.94));
+  border:1px solid rgba(255,255,255,.13);border-top-color:rgba(255,255,255,.26);
+  -webkit-backdrop-filter:blur(28px) saturate(1.3);backdrop-filter:blur(28px) saturate(1.3);
+  box-shadow:0 40px 110px rgba(0,0,0,.65),0 0 0 1px rgba(103,232,249,.08),
+    inset 0 1px 0 rgba(255,255,255,.08);
+  transform-origin:top left;opacity:0;
+  transition:transform .45s var(--spring),opacity .3s ease;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent}
+#dossier::-webkit-scrollbar{width:8px}
+#dossier::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:4px}
+#ovl.in #dossier{opacity:1}
+.dos-pad{padding:26px 30px 22px}
+.dos-head{display:flex;align-items:center;gap:20px;margin-bottom:4px}
+.dos-co{font-family:var(--disp);font-weight:600;font-size:26px;letter-spacing:-.015em;color:var(--ink)}
+.dos-sub{font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--sec);margin-top:5px}
+.dos-sub .sep{color:var(--dim);margin:0 7px}
+.dos-close{margin-left:auto;flex:none;width:34px;height:34px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;color:var(--sec);
+  border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);
+  transition:all .2s ease}
+.dos-close:hover{color:var(--ink);border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.09)}
+.dos-chips{margin:14px 0 6px}
+.sec{opacity:0;transform:translateY(10px)}
+#ovl.in .sec{opacity:1;transform:none;
+  transition:opacity .4s var(--spring),transform .4s var(--spring)}
+.sec{margin-top:18px;padding-top:18px;border-top:1px solid rgba(255,255,255,.07)}
+.sec-lab{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--cyan);display:flex;align-items:center;gap:9px;
+  margin-bottom:10px}
+.sec-lab::before{content:"";width:14px;height:1px;
+  background:linear-gradient(90deg,var(--cyan),transparent)}
+.sec-lab .badges{display:inline-flex;gap:6px;margin-left:4px}
+.sec-body{font-size:13.5px;line-height:1.65;color:#CBD5E4}
+.sec-body strong{color:var(--ink);font-weight:600}
+.who{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.who-cell{padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.035);
+  border:1px solid rgba(255,255,255,.07)}
+.who-cell small{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+.who-cell p{font-size:13px;line-height:1.55;color:#CBD5E4}
+.who-cell p strong{color:var(--ink)}
+.opener-wrap{margin-top:12px}
+.opener-box{display:none;margin-top:10px;padding:14px 16px;border-radius:12px;
+  background:rgba(0,0,0,.35);border:1px solid rgba(103,232,249,.18);
+  font-family:var(--mono);font-size:12.5px;line-height:1.8;color:#A8E6F5;
+  box-shadow:inset 0 0 24px rgba(103,232,249,.04)}
+.opener-box.on{display:block}
+.opener-box .caret{display:inline-block;width:7px;height:13px;margin-left:2px;
+  background:rgba(103,232,249,.8);vertical-align:-2px;animation:caretBlink .8s steps(1) infinite}
+.kill-body{border-left:2px solid rgba(248,113,113,.5);padding-left:14px}
+.src-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.src{display:inline-flex;align-items:center;gap:8px;padding:7px 11px;border-radius:10px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);
+  font-size:11.5px;color:#CBD5E4;line-height:1.3;transition:border-color .2s ease;cursor:default}
+.src:hover{border-color:rgba(103,232,249,.35)}
+.src i{width:6px;height:6px;border-radius:50%;background:var(--blue);flex:none;
+  box-shadow:0 0 6px rgba(96,165,250,.6)}
+.src.k-Registry i{background:var(--green);box-shadow:0 0 6px rgba(52,211,153,.6)}
+.src.k-Trade i{background:var(--amber);box-shadow:0 0 6px rgba(251,191,36,.6)}
+.src.k-Social i{background:var(--violet);box-shadow:0 0 6px rgba(139,92,246,.6)}
+.src.k-Jobs i{background:var(--clay);box-shadow:0 0 6px rgba(255,138,101,.6)}
+.src em{font-style:normal;font-family:var(--mono);font-size:10px;color:var(--dim)}
+/* numbers */
+.numgrid{display:grid;grid-template-columns:repeat(4,1fr) 110px;gap:10px;align-items:stretch}
+.qual{padding:11px 12px;border-radius:12px;background:rgba(255,255,255,.035);
+  border:1px solid rgba(255,255,255,.07);cursor:help}
+.qual small{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--dim);margin-bottom:7px}
+.qual b{font-family:var(--mono);font-size:15px;font-weight:700;letter-spacing:.04em}
+.qual .m0{color:var(--dim)}
+.qual .m1,.qual .m2{color:var(--green);text-shadow:0 0 10px rgba(52,211,153,.45)}
+.qual-total{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  padding:11px 12px;border-radius:12px;border:1px solid rgba(103,232,249,.22);
+  background:rgba(103,232,249,.05)}
+.qual-total b{font-family:var(--mono);font-size:21px;font-weight:700;
+  background:linear-gradient(135deg,var(--cyan),var(--blue2));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.qual-total small{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim)}
+.numfoot{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;margin-top:13px;
+  font-size:12.5px;color:var(--sec)}
+.numfoot .kv{display:inline-flex;align-items:baseline;gap:8px}
+.numfoot .kv small{font-family:var(--mono);font-size:9px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--dim)}
+.numfoot .kv b{font-family:var(--mono);font-size:13px;font-weight:700}
+.score-hi{color:var(--green)}.score-mid{color:var(--amber)}.score-lo{color:var(--dim)}
+.propwhy{font-size:12px;color:var(--dim);line-height:1.55;margin-top:9px}
+.bizcase{margin-top:13px;padding:12px 16px;border-radius:12px;
+  border-left:2px solid var(--clay);background:rgba(255,138,101,.06);
+  font-size:13px;line-height:1.6;color:#E5D5CC}
+/* actions */
+.dos-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px;padding-top:18px;
+  border-top:1px solid rgba(255,255,255,.07)}
+.btn{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.08em;
+  text-transform:uppercase;padding:10px 16px;border-radius:11px;line-height:1;
+  border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.05);
+  color:#CBD5E4;transition:all .2s ease;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{border-color:rgba(103,232,249,.4);color:var(--ink);transform:translateY(-1px);
+  box-shadow:0 6px 22px rgba(66,133,244,.18)}
+.btn.primary{background:linear-gradient(135deg,rgba(66,133,244,.85),rgba(103,232,249,.6));
+  border-color:rgba(103,232,249,.5);color:#06121F;font-weight:700;
+  box-shadow:0 6px 26px rgba(66,133,244,.35)}
+.btn.primary:hover{box-shadow:0 8px 34px rgba(66,133,244,.5);color:#02080F}
+.btn.good:hover{border-color:rgba(52,211,153,.5);color:#7EE8BC}
+.btn.bad:hover{border-color:rgba(248,113,113,.5);color:#FCA5A5}
+.btn[disabled]{opacity:.5;pointer-events:none}
+
+/* ============================================================ agent chip + popover */
+#agent{position:fixed;left:24px;bottom:20px;z-index:25;display:flex;align-items:center;gap:10px;
+  padding:9px 16px 9px 13px;border-radius:999px;cursor:pointer;opacity:0;
+  transform:translateY(10px);transition:opacity .45s ease,transform .45s var(--spring),
+    border-color .2s ease;max-width:520px;
+  background:linear-gradient(180deg,rgba(255,255,255,.085),rgba(255,255,255,.035));
+  border:1px solid rgba(255,255,255,.12);border-top-color:rgba(255,255,255,.24);
+  -webkit-backdrop-filter:blur(22px) saturate(1.3);backdrop-filter:blur(22px) saturate(1.3);
+  box-shadow:0 14px 44px rgba(0,0,0,.5)}
+#agent.on{opacity:1;transform:none}
+#agent:hover{border-color:rgba(103,232,249,.4)}
+#agent .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);flex:none;
+  box-shadow:0 0 10px rgba(103,232,249,.9);animation:breathe 3s ease-in-out infinite}
+#agent .alab{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--cyan);flex:none}
+#agent .aline{font-family:var(--mono);font-size:11px;color:var(--sec);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .3s ease}
+#agent .aline.fade{opacity:0}
+#tracePop{position:fixed;left:24px;bottom:66px;z-index:26;width:520px;max-width:90vw;
+  padding:18px 20px;opacity:0;visibility:hidden;transform:translateY(8px) scale(.98);
+  transition:all .3s var(--spring);transform-origin:bottom left;
+  background:linear-gradient(180deg,rgba(22,30,52,.95),rgba(12,18,34,.96));
+  border:1px solid rgba(255,255,255,.13);border-top-color:rgba(255,255,255,.26);
+  -webkit-backdrop-filter:blur(24px) saturate(1.3);backdrop-filter:blur(24px) saturate(1.3);
+  border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.6)}
+#tracePop.on{opacity:1;visibility:visible;transform:none}
+#tracePop h4{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--cyan);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+#tracePop h4 .spark{color:var(--clay)}
+#tracePop .ln{font-family:var(--mono);font-size:11.5px;line-height:2;color:#94A3B8;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tracePop .gl{display:inline-block;width:20px;color:var(--cyan);opacity:.85}
+#tracePop .ln.bad .gl{color:var(--danger)}
+#tracePop .ln.fin .gl{color:var(--clay)}
+
+/* ============================================================ toast + misc */
+#toasts{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:60;
+  display:flex;flex-direction:column;align-items:center;gap:9px;pointer-events:none}
+.toast{display:flex;align-items:center;gap:14px;padding:11px 18px;border-radius:999px;
+  background:rgba(8,13,26,.92);border:1px solid rgba(255,255,255,.14);
+  border-top-color:rgba(255,255,255,.26);
+  -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
+  box-shadow:0 14px 44px rgba(0,0,0,.55),0 0 24px rgba(66,133,244,.12);
+  font-size:12.5px;color:var(--ink);pointer-events:auto;
+  animation:toastIn .35s var(--spring)}
+.toast.out{opacity:0;transform:translateY(8px);transition:all .3s ease}
+.toast .spark{color:var(--clay)}
+.toast button{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--cyan);padding:4px 10px;border-radius:999px;border:1px solid rgba(103,232,249,.35)}
+.toast button:hover{background:rgba(103,232,249,.12)}
+@keyframes toastIn{from{opacity:0;transform:translateY(12px) scale(.96)}}
+
+[data-tip]{position:relative}
+[data-tip]::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 9px);
+  transform:translateX(-50%) translateY(3px);width:max-content;max-width:265px;
+  padding:9px 12px;border-radius:10px;font-family:var(--body);font-size:11.5px;
+  font-weight:400;line-height:1.5;letter-spacing:0;text-transform:none;text-align:left;
+  color:#CBD5E4;background:rgba(8,13,26,.96);border:1px solid rgba(255,255,255,.15);
+  box-shadow:0 12px 36px rgba(0,0,0,.55);opacity:0;visibility:hidden;
+  transition:all .2s ease;pointer-events:none;z-index:50;white-space:normal}
+[data-tip]:hover::after,[data-tip]:focus-visible::after{opacity:1;visibility:visible;
+  transform:translateX(-50%) translateY(0)}
+
+#corner{position:fixed;right:22px;bottom:18px;z-index:25;font-family:var(--mono);
+  font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);opacity:.75}
+
+@media (max-width:1180px){
+  #app{padding:22px 24px 110px}
+  #hero .pane-inner{flex-direction:column;gap:18px;padding:24px 26px}
+  .syn{padding-right:0;max-width:none}
+  .hero-stats{align-self:stretch}
+  .stat{flex:1;padding:14px 22px;border-left:1px solid var(--hair)}
+  .stat:first-child{border-left:0;padding-left:0}
+  .btl-row{grid-template-columns:150px 190px 90px 40px 1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+  <div class="grain"></div>
+  <div class="vignette"></div>
+
+  <div id="boot" role="status" aria-live="polite">
+    <div class="boot-card">
+      <div class="boot-head">
+        <span class="spark">✦</span><span id="bootType"></span>
+        <span class="boot-dots"><i></i><i></i><i></i></span>
+      </div>
+      <div class="boot-stream" id="bootStream"></div>
+      <div class="boot-skip">click anywhere to skip</div>
+    </div>
+  </div>
+
+  <div id="app">
+    <header class="pane" id="p-head" style="border-radius:14px">
+      <div class="pane-veil"></div>
+      <div class="pane-inner hd" id="hdInner"></div>
+    </header>
+    <section class="pane glass" id="hero" aria-label="Morning synthesis">
+      <div class="pane-veil"></div>
+      <div class="pane-inner" id="heroInner"></div>
+    </section>
+    <section id="prio" aria-label="Priority leads"></section>
+    <section id="compact" aria-label="Call-ready leads"></section>
+    <section class="pane glass" id="btl" aria-label="Below the line">
+      <div class="pane-veil"></div>
+      <div class="pane-inner" id="btlInner"></div>
+    </section>
+  </div>
+
+  <div id="ovl" aria-hidden="true">
+    <div id="scrim" title="Close"></div>
+    <article id="dossier" data-qa="portfolio" role="dialog" aria-modal="true" aria-label="Call file"></article>
+  </div>
+
+  <div id="agent" role="button" tabindex="0" aria-label="VMA Intelligence agent log">
+    <span class="dot"></span>
+    <span class="alab">✦ agent</span>
+    <span class="aline" id="agentLine"></span>
+  </div>
+  <div id="tracePop" role="dialog" aria-label="Reasoning trace"></div>
+
+  <div id="toasts"></div>
+  <div id="corner">concept 12 · neural canvas</div>
+
+<script>
+/* ============================================================================
+   Communications Radar v2 mockups — canonical sample dataset.
+   Every mockup inlines this object verbatim (standalone HTML, file:// safe).
+   Field contract mirrors the live console payload built in
+   tool/dashboard.py::_build_mr_rows / _mr_gate_fields.
+   ========================================================================== */
+const RADAR = {
+  meta: {
+    user: "Sara",
+    dateLabel: "Tuesday 10 June 2026",
+    scanTime: "06:40",
+    signals: 247,
+    sources: 38,
+    newToday: 2,
+    callReady: 6,
+    synthesis: "Three calls worth making before lunch. Reckitt is the one that won't wait — the CEO RNS landed this morning and the corporate-affairs reset clock is already running. Octopus and Monzo close out the morning; both windows are short and both paths in are warm.",
+    planOrder: ["reckitt", "monzo", "octopus"]
+  },
+  leads: [
+    {
+      id: "reckitt", co: "Reckitt", sector: "Consumer Health",
+      type: "Leadership", key: "lead",
+      seat: "Corporate Affairs Director",
+      win: "~6 weeks", winDays: 42,
+      score: 87, tier: "ready", conf: "High",
+      ver: "reg", rt: 1, conviction: 84,
+      isNew: 1, age: 0,
+      fee: "FEE EVENT",
+      feeTip: "CEO transitions convert to retained senior searches at the highest rate of any trigger on the desk",
+      prop: "Proven agency user", propCls: "pro",
+      propWhy: "retained external search for its last two senior comms hires (2023, 2024)",
+      qual: { seat: 2, budget: 2, urgency: 1, buyer: 2, total: 7,
+        seat_why: "Corporate Affairs Director seat named in two independent reports",
+        budget_why: "FTSE-25 with an active leadership-transition budget line",
+        urgency_why: "September CEO start gives a six-week decision window, not days",
+        buyer_why: "Incoming CEO signs the hire; warm path to the CHRO on file" },
+      hook: "New CEO confirmed for September — the corporate-affairs reset usually happens before the role is ever advertised.",
+      whyNow: "An incoming CEO typically resets the corporate-affairs function inside the first hundred days, and the senior comms seat is usually the first appointment made — before any role is advertised. This morning's RNS confirms a September start, which puts the real decision window inside the next six weeks.",
+      bizCase: "FTSE-25 consumer health group, incoming CEO, no permanent deputy bench. A retained Corporate Affairs Director search at this level carries a £75–90k fee.",
+      buyer: "Kris Licht, incoming CEO",
+      champion: "via Sarah Cunningham, CHRO — VMA placed her Head of Internal Comms in 2023",
+      kill: "Internal promotion of the current deputy, Anna Marsh — she has covered the seat through two previous transitions.",
+      opening: "Congratulate on the CEO announcement, then offer the FTSE consumer-health comms-leadership benchmark VMA mapped in April — value first, no ask.",
+      opener: "Saw this morning's RNS confirming the September CEO transition — congratulations. When leadership changes at this level, the corporate-affairs brief is usually reset within the first hundred days, well before anything is advertised. We mapped the FTSE consumer-health comms bench in April; happy to share what the strongest available leaders look like before you go to market.",
+      anti: [], conflict: 0, q4: null, gateWhy: "",
+      stack: [
+        { label: "RNS: CEO succession announcement", src: "londonstockexchange.com", age: 0, kind: "Registry" },
+        { label: "FT: Reckitt names next chief executive", src: "ft.com", age: 0, kind: "Press" },
+        { label: "PRWeek: comms team braced for reset", src: "prweek.com", age: 2, kind: "Trade" }
+      ]
+    },
+    {
+      id: "octopus", co: "Octopus Energy", sector: "Energy",
+      type: "Funding", key: "fund",
+      seat: "Head of External Communications",
+      win: "~2 months", winDays: 60,
+      score: 81, tier: "ready", conf: "High",
+      ver: "multi", rt: 1, conviction: 78,
+      isNew: 1, age: 0,
+      fee: "FEE EVENT",
+      feeTip: "Raises at this scale fund a senior comms build-out and historically convert to external searches",
+      prop: "Leans external", propCls: "ext",
+      propWhy: "no in-house TA for senior comms; the last three senior hires came through agencies",
+      qual: { seat: 2, budget: 2, urgency: 1, buyer: 1, total: 6,
+        seat_why: "US expansion announced with no named external-comms owner",
+        budget_why: "£600m Series F closed Monday — build-out budget is live",
+        urgency_why: "Hire usually lands before the first US market launch",
+        buyer_why: "CMO owns the hire; path is warm but one step removed" },
+      hook: "£600m Series F closed Monday and a US expansion announced — with no senior external-comms owner named.",
+      whyNow: "A raise of this size funds a senior comms build-out, usually within two months — and the US expansion announced alongside it has no named external-communications lead. The hire that lands the expansion story tends to be made before the first US market launch.",
+      bizCase: "Britain's largest energy supplier going into a US launch with an empty external-comms seat. A search at this level carries a £55–70k fee.",
+      buyer: "Rebecca Dibb-Simkin, CMO",
+      champion: "warm — VMA was shortlisted for their 2024 brand-comms brief and the door was left open",
+      kill: "They promote from the energy-services comms team rather than hire externally — possible, but it has not been their pattern at this level.",
+      opening: "Reference the raise and the US launch in one breath, then ask who owns the expansion story externally — the silence in their own announcement is the opening.",
+      opener: "Congratulations on Monday's raise — £600m and a US launch in the same announcement is quite a story to land. We noticed no external-comms owner was named for the expansion. We run the senior comms desk for UK energy and have three leaders who have taken a British brand into the US market; worth a short call before you scope the role?",
+      anti: [], conflict: 0, q4: null, gateWhy: "",
+      stack: [
+        { label: "TechCrunch: Octopus closes £600m Series F", src: "techcrunch.com", age: 0, kind: "Press" },
+        { label: "Sky News: US expansion to follow raise", src: "news.sky.com", age: 0, kind: "Press" }
+      ]
+    },
+    {
+      id: "monzo", co: "Monzo", sector: "Fintech",
+      type: "Comms exit", key: "lead",
+      seat: "Director of Communications",
+      win: "~4 weeks", winDays: 28,
+      score: 76, tier: "ready", conf: "High",
+      ver: "multi", rt: 1, conviction: 71,
+      isNew: 0, age: 2,
+      fee: "FEE EVENT",
+      feeTip: "A vacated senior seat is the most direct fee event on the desk — the replacement search opens fast",
+      prop: "Leans external", propCls: "ext",
+      propWhy: "external-hiring signals on the last two senior people moves; no executive-search function in-house",
+      qual: { seat: 2, budget: 1, urgency: 2, buyer: 1, total: 6,
+        seat_why: "The exact seat has just been vacated — no inference needed",
+        budget_why: "Backfill budget assumed but not yet evidenced",
+        urgency_why: "Results season lands in July with the seat empty in four weeks",
+        buyer_why: "CEO signs senior comms hires personally; path runs through VP People" },
+      hook: "Comms director announced her exit to Revolut on Friday — the seat is empty in four weeks, with results season ahead.",
+      whyNow: "The senior comms seat has just been vacated, so the replacement search tends to open within four weeks — and Monzo walks into results season in July without a comms director unless it moves first. Exits to a direct rival also add pressure to re-stake the narrative quickly.",
+      bizCase: "UK's biggest digital bank entering results season with the comms chair empty. A Director-level search carries a £50–65k fee, and speed is the differentiator here.",
+      buyer: "TS Anil, CEO — signs senior comms hires personally",
+      champion: "via Hannah Bertolini, VP People — responded warmly to VMA's candidate note in March",
+      kill: "An internal step-up by the policy-comms lead. She lacks consumer-press experience, so it would be a stretch — but boards under time pressure do stretch.",
+      opening: "Don't mention Revolut. Lead with the July results date and offer two names who could hold the chair from week one — speed is the whole pitch.",
+      opener: "With results season landing in July, four weeks is a tight window to have the comms chair empty. We hold a live shortlist of consumer-fintech comms directors — two could be in the seat within notice. Worth fifteen minutes this week before the gap starts costing coverage?",
+      anti: [], conflict: 0, q4: null, gateWhy: "",
+      stack: [
+        { label: "Financial News: Monzo comms chief departs for Revolut", src: "fnlondon.com", age: 2, kind: "Press" },
+        { label: "LinkedIn: departure post by the outgoing director", src: "linkedin.com", age: 2, kind: "Social" }
+      ]
+    },
+    {
+      id: "severn", co: "Severn Trent", sector: "Water Utilities",
+      type: "Regulator action", key: "warn",
+      seat: "Head of Corporate Communications",
+      win: "~6 weeks", winDays: 42,
+      score: 72, tier: "ready", conf: "High",
+      ver: "reg", rt: 1, conviction: 69,
+      isNew: 0, age: 4,
+      fee: "FEE EVENT",
+      feeTip: "Enforcement action raises the reputation-comms bar; a senior hire usually follows within the response window",
+      prop: "Proven agency user", propCls: "pro",
+      propWhy: "history of agency use on senior comms and regulatory-affairs hires on file",
+      qual: { seat: 2, budget: 1, urgency: 2, buyer: 2, total: 7,
+        seat_why: "Head of Corporate Communications named as vacant in trade coverage",
+        budget_why: "Regulatory-response budget likely but not yet evidenced",
+        urgency_why: "Ofwat response deadline fixed at eight weeks from notice",
+        buyer_why: "Corporate Affairs Director is the named owner of the response" },
+      hook: "Ofwat enforcement notice published Thursday — the response needs a senior comms owner and the current seat is vacant.",
+      whyNow: "Regulatory enforcement raises the reputation-comms bar overnight, and the formal response window is fixed: eight weeks from notice. The Head of Corporate Communications seat is vacant at exactly the moment the company needs a senior owner for the Ofwat narrative.",
+      bizCase: "FTSE-100 utility under live enforcement with a vacant comms seat and a fixed deadline. Crisis-adjacent searches close fast and at full fee — £45–60k here.",
+      buyer: "James Bowling, Corporate Affairs Director",
+      champion: "cold but receptive — opened both VMA sector notes sent this year",
+      kill: "They hand the response to their retained agency instead of hiring — mitigated by the seat itself being structurally vacant.",
+      opening: "Lead with the eight-week response window and the vacant seat in the same sentence; offer interim-to-permanent options to de-risk the deadline.",
+      opener: "With the Ofwat notice setting an eight-week response clock and the corporate-comms seat currently open, you're running the response a person short. We can put senior water-sector comms leaders in front of you this week — including interim-to-permanent options if the deadline is the priority. Worth a short call?",
+      anti: [], conflict: 0, q4: null, gateWhy: "",
+      stack: [
+        { label: "Ofwat: enforcement notice and penalty", src: "ofwat.gov.uk", age: 5, kind: "Registry" },
+        { label: "BBC: Severn Trent faces enforcement action", src: "bbc.co.uk", age: 5, kind: "Press" },
+        { label: "Utility Week: comms seat vacant amid probe", src: "utilityweek.co.uk", age: 4, kind: "Trade" }
+      ]
+    },
+    {
+      id: "haleon", co: "Haleon", sector: "Consumer Health",
+      type: "M&A", key: "mna",
+      seat: "Head of Internal Communications",
+      win: "~3 months", winDays: 90,
+      score: 70, tier: "ready", conf: "Medium",
+      ver: "multi", rt: 0, conviction: null,
+      isNew: 0, age: 6,
+      fee: "FEE EVENT",
+      feeTip: "Post-deal integration needs senior internal-comms leadership to land the change",
+      prop: "Unknown", propCls: "unk",
+      propWhy: "no fee-propensity evidence yet — score carries the neutral default",
+      qual: { seat: 2, budget: 1, urgency: 1, buyer: 2, total: 6,
+        seat_why: "Integration comms lead named as a gap in deal coverage",
+        budget_why: "Deal integration budget exists; comms line not yet evidenced",
+        urgency_why: "Completion expected Q3 — window is real but not immediate",
+        buyer_why: "Chief People Officer named as integration sponsor" },
+      hook: "£1.2bn brand-portfolio divestiture confirmed — 2,000 staff transfer and nobody named to land the change internally.",
+      whyNow: "Post-deal integration needs senior internal-comms leadership in place before completion, and this divestiture moves roughly two thousand people between owners. Deal coverage names an integration sponsor but no comms owner — the hire usually follows within a quarter.",
+      bizCase: "FTSE-30 consumer health group mid-divestiture with a named people-integration sponsor and no comms lead. Internal-comms leadership searches here run £40–55k.",
+      buyer: "Tamara Rogers, Chief People Officer (integration sponsor)",
+      champion: "no warm path yet — strongest route is the sector note then a direct approach",
+      kill: "The acquirer takes integration comms in-house on completion, which would close the seat on Haleon's side.",
+      opening: "Frame it around the people transfer, not the deal: two thousand colleagues hearing about their future second-hand is the risk a senior IC hire removes.",
+      opener: "With the divestiture confirmed and around two thousand colleagues transferring, the internal story is now the deal's biggest people risk — and coverage so far names an integration sponsor but no comms owner. We specialise in exactly this seat; can I share three integration-comms leaders who have landed a carve-out before?",
+      anti: [], conflict: 0, q4: null, gateWhy: "",
+      stack: [
+        { label: "Reuters: Haleon confirms portfolio divestiture", src: "reuters.com", age: 6, kind: "Press" },
+        { label: "PRWeek: integration comms gap flagged", src: "prweek.com", age: 4, kind: "Trade" }
+      ]
+    },
+    {
+      id: "diageo", co: "Diageo", sector: "Beverages",
+      type: "Restructure", key: "restr",
+      seat: "Internal Communications Lead",
+      win: "~2 months", winDays: 60,
+      score: 68, tier: "ready", conf: "Medium",
+      ver: "multi", rt: 0, conviction: null,
+      isNew: 0, age: 8,
+      fee: null, feeTip: "",
+      prop: "Proven agency user", propCls: "pro",
+      propWhy: "used external search for both senior comms hires made under the current CMO",
+      qual: { seat: 1, budget: 2, urgency: 1, buyer: 1, total: 5,
+        seat_why: "Seat inferred from the restructure scope, not yet named",
+        budget_why: "FYE 30 June — unspent budget converts to mandates in the next 20 days",
+        urgency_why: "Restructure announced; comms implications still forming",
+        buyer_why: "Likely the Comms VP, unconfirmed" },
+      hook: "Americas restructure announced and the financial year closes 30 June — unspent budget meets a live reorganisation.",
+      whyNow: "A restructure reshapes the comms function, and Diageo's year-end on 30 June gives hiring managers twenty days to commit budget they otherwise lose. That combination — live reorganisation plus budget-flush window — is when retained briefs get signed.",
+      bizCase: "FTSE-15 drinks group reorganising its biggest region with year-end twenty days out. The budget-flush window is the lever; the restructure is the reason.",
+      buyer: "Likely the VP Communications — to be confirmed on the first call",
+      champion: "VMA placed two comms managers here in 2022; both still in seat and contactable",
+      kill: "The restructure lands as cost-cutting rather than reshaping — in that world comms headcount shrinks instead of churns.",
+      opening: "Year-end first, restructure second: budget committed before 30 June survives; budget that isn't, doesn't. Offer to scope the brief this week.",
+      opener: "With the Americas restructure in motion and your year-end on 30 June, there's a short window where this year's budget can still carry a senior comms brief. We placed two of your comms managers in 2022 and know the function well — worth scoping the internal-comms lead now so the budget decision is yours rather than the calendar's?",
+      anti: [], conflict: 0,
+      q4: "Q4 · FYE 30 Jun (20d)", gateWhy: "",
+      stack: [
+        { label: "WSJ: Diageo restructures Americas business", src: "wsj.com", age: 8, kind: "Press" },
+        { label: "The Grocer: comms implications of the reorg", src: "thegrocer.co.uk", age: 7, kind: "Trade" }
+      ]
+    },
+    {
+      id: "deliveroo", co: "Deliveroo", sector: "Consumer Tech",
+      type: "Job-ad cluster", key: "people",
+      seat: "Head of Communications",
+      win: "~2 months", winDays: 60,
+      score: 58, tier: "dev", conf: "",
+      ver: "single", rt: 0, conviction: null,
+      isNew: 0, age: 3,
+      fee: null, feeTip: "",
+      prop: "Unknown", propCls: "unk",
+      propWhy: "no fee-propensity evidence yet",
+      qual: { seat: 1, budget: 1, urgency: 1, buyer: 0, total: 3,
+        seat_why: "Senior seat inferred from the mid-level cluster, not named",
+        budget_why: "Three live mid-level salaries imply budget, not proof of it",
+        urgency_why: "Cluster is growing but no forcing date",
+        buyer_why: "No buyer visible yet" },
+      hook: "Three mid-level comms roles posted in a fortnight with no senior owner above them — the senior mandate usually follows.",
+      whyNow: "Mid-level comms hiring is already underway with no senior owner visible above it. When a function staffs from the middle out, the senior mandate tends to follow within a quarter — the cluster is the smoke, not yet the fire.",
+      bizCase: "", buyer: "", champion: "",
+      kill: "", opening: "", opener: "",
+      anti: [], conflict: 0, q4: null,
+      gateWhy: "Mid-level cluster verified, but the senior-seat inference rests on one evidence family · recheck in 4d · run /investigate",
+      stack: [
+        { label: "LinkedIn Jobs: 3 comms roles, posted 9–14 days", src: "linkedin.com", age: 3, kind: "Jobs" }
+      ]
+    },
+    {
+      id: "astrazeneca", co: "AstraZeneca", sector: "Pharma",
+      type: "Chair change", key: "lead",
+      seat: "Corporate Affairs Director",
+      win: "~3 months", winDays: 90,
+      score: 54, tier: "dev", conf: "",
+      ver: "reg", rt: 0, conviction: null,
+      isNew: 0, age: 5,
+      fee: null, feeTip: "",
+      prop: "Unknown", propCls: "unk",
+      propWhy: "no fee-propensity evidence yet",
+      qual: { seat: 0, budget: 1, urgency: 1, buyer: 1, total: 3,
+        seat_why: "No comms-function signal yet — the trigger is board-level only",
+        budget_why: "Budget capacity assumed at this scale",
+        urgency_why: "Chair transitions reset slowly; months not weeks",
+        buyer_why: "Would be the incoming chair's office; not yet formed" },
+      hook: "New chair announced via RNS — board-level resets reach the comms function more slowly, but they do reach it.",
+      whyNow: "A new chair usually reviews board and governance communications within two quarters. The trigger is registry-attested but board-level only — there is no comms-function movement yet, which is what the recheck is waiting for.",
+      bizCase: "", buyer: "", champion: "",
+      kill: "", opening: "", opener: "",
+      anti: [], conflict: 0, q4: null,
+      gateWhy: "Board change is registry-attested, but no comms-function signal yet · recheck in 7d",
+      stack: [
+        { label: "RNS: chair succession announcement", src: "londonstockexchange.com", age: 5, kind: "Registry" }
+      ]
+    },
+    {
+      id: "asos", co: "ASOS", sector: "Retail",
+      type: "Leadership tenure", key: "people",
+      seat: "Director of Communications",
+      win: "horizon", winDays: 180,
+      score: 38, tier: "early", conf: "",
+      ver: "single", rt: 0, conviction: null,
+      isNew: 0, age: 11,
+      fee: null, feeTip: "",
+      prop: "Unknown", propCls: "unk", propWhy: "no fee-propensity evidence yet",
+      qual: { seat: 0, budget: 0, urgency: 0, buyer: 0, total: 0,
+        seat_why: "No vacancy — watch-grade only",
+        budget_why: "No budget signal",
+        urgency_why: "No forcing event",
+        buyer_why: "No buyer in play" },
+      hook: "Comms director enters year seven in the seat — statistically a flight risk, nothing more yet.",
+      whyNow: "A long-tenured comms leader is a flight risk worth tracking, not calling. The play is relationship groundwork: be the first call when movement comes, and have a backfill brief ready before anyone else knows there is one.",
+      bizCase: "", buyer: "", champion: "",
+      kill: "", opening: "", opener: "",
+      anti: [], conflict: 0, q4: null,
+      gateWhy: "Watch-grade: tenure flag only, no movement signal · keep on the radar",
+      stack: [
+        { label: "LinkedIn: tenure profile analysis", src: "linkedin.com", age: 11, kind: "Social" }
+      ]
+    },
+    {
+      id: "boohoo", co: "Boohoo Group", sector: "Retail",
+      type: "Profit warning", key: "warn",
+      seat: "Head of Corporate Communications",
+      win: "~6 weeks", winDays: 42,
+      score: 61, tier: "blocked", conf: "",
+      ver: "reg", rt: 0, conviction: null,
+      isNew: 0, age: 7,
+      fee: null, feeTip: "",
+      prop: "Unknown", propCls: "unk", propWhy: "",
+      qual: { seat: 2, budget: 1, urgency: 2, buyer: 1, total: 6,
+        seat_why: "IR/comms reset named in coverage",
+        budget_why: "Budget under pressure post-warning",
+        urgency_why: "Warning forces a narrative reset now",
+        buyer_why: "CFO office owns the response" },
+      hook: "Profit warning would normally open the IR-comms seat — but a competing recruiter already holds the leadership review.",
+      whyNow: "A profit warning drives an investor-relations and corporate-comms reset, and this one is registry-attested. It is blocked for one reason only: Russell Reynolds is retained on the wider leadership review, so a call now walks into a competitor's mandate.",
+      bizCase: "", buyer: "", champion: "",
+      kill: "", opening: "", opener: "",
+      anti: ["competing recruiter retained"], conflict: 1, q4: null,
+      gateWhy: "Russell Reynolds retained for the wider leadership review — do not call",
+      stack: [
+        { label: "RNS: trading statement and profit warning", src: "londonstockexchange.com", age: 7, kind: "Registry" },
+        { label: "Retail Week: leadership review under way", src: "retail-week.com", age: 6, kind: "Trade" }
+      ]
+    }
+  ]
+};
+
+/*@@JS1@@*/
+</script>
+</body>
+</html>
