@@ -2138,6 +2138,9 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
             "isNew": 1 if s.get("is_new") else 0,
             "jt": s.get("title") or "",
             "source": _mr_clean_source(s.get("source")),
+            # The engine's source pills unpack aggregators into the boards
+            # they pull from — that needs the verbose original string.
+            "sourceRaw": s.get("source") or "",
             "geo": s.get("geo") or "",
             "url": s.get("url") or "",
             # The real, desk-correct outreach draft (draft_outreach_for_lead) —
