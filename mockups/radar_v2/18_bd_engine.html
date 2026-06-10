@@ -131,15 +131,16 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .stg.s1{--s1:#9AA0A6;--s2:#4285F4}.stg.s2{--s1:#4285F4;--s2:#1A3D7C}
 .stg.s3{--s1:#3E5C84;--s2:#1A3D7C}.stg.s4{--s1:#D97A2B;--s2:#B45309}
 .stg.s5{--s1:#1E9E57;--s2:#1A3D7C}
-/* the pour: the pipeline runs from READY LEADS straight into lead #1's score */
+/* the pour: centred under the final stage, fading into lead #1's score */
 .pour{position:absolute;width:2px;z-index:0;pointer-events:none;
-  background:linear-gradient(180deg,rgba(30,158,87,.55),rgba(30,158,87,.18))}
-.pour::after{content:"";position:absolute;bottom:-4px;left:-3px;width:8px;height:8px;border-radius:50%;
-  background:#1E9E57;box-shadow:0 0 9px rgba(30,158,87,.7)}
+  background:linear-gradient(180deg,rgba(30,158,87,.55),rgba(30,158,87,0))}
 .pour .vdot{position:absolute;left:-2.5px;width:7px;height:7px;border-radius:50%;
   background:#1E9E57;box-shadow:0 0 8px rgba(30,158,87,.6);animation:fall 2.2s linear infinite}
 .pour .vdot.v2{animation-delay:1.1s}
-@keyframes fall{0%{top:0;opacity:0}18%{opacity:1}82%{opacity:1}100%{top:calc(100% - 7px);opacity:0}}
+@keyframes fall{0%{top:0;opacity:1}70%{opacity:.7}100%{top:calc(100% - 7px);opacity:0}}
+/* jobs mode: four stages, no middle dedupe step */
+.stages.jobs4{grid-template-columns:repeat(4,1fr)}
+.stages.jobs4 .stg.s3{display:none}
 /* board bar */
 .boardbar{display:flex;align-items:center;gap:12px;padding:34px 0 12px}
 .seg{display:flex;gap:3px;padding:3px;border-radius:999px;background:rgba(16,22,38,.05);
@@ -911,45 +912,52 @@ $('vbShop').addEventListener('click',()=>setView('shop'));
 /* the pour: size the pipeline so it lands on lead #1's strength score */
 function positionPour(){
   const pour=$('pour');if(!pour)return;
-  const stages=document.querySelector('#v-engine .stages');
+  const last=document.querySelector('#v-engine .stg.s5');
   const first=document.querySelector('#strips .strip-h .strengthcell, #strips .jrow');
-  if(!stages||!first){pour.style.display='none';return;}
+  if(!last||!first){pour.style.display='none';return;}
   pour.style.display='';
   const wrap=$('v-engine').getBoundingClientRect();
-  const sb=stages.getBoundingClientRect(),fb=first.getBoundingClientRect();
-  const x=fb.left-wrap.left+fb.width/2;
-  const top=sb.bottom-wrap.top+2;
+  const lb=last.getBoundingClientRect(),fb=first.getBoundingClientRect();
+  /* centred under the final stage; fades out at the first row's score line */
+  const x=lb.left-wrap.left+lb.width/2;
+  const top=lb.bottom-wrap.top+4;
   pour.style.left=x+'px';
   pour.style.top=top+'px';
-  pour.style.height=Math.max(30,fb.top-wrap.top-top-4)+'px';
+  pour.style.height=Math.max(30,(fb.top+fb.height/2)-wrap.top-top)+'px';
 }
 window.addEventListener('resize',positionPour);
 
 /* ---------- engine ---------- */
-const LBL={leads:['GENERATED','FILTERED','COLLATED','STRESS-TESTED','READY LEADS'],
-           jobs:['SCRAPED','FILTERED','DEDUPED','VERIFIED','LIVE JOBS']};
-const CAPS={leads:[
-    'raw signals swept from press, registries, filings and job boards',
-    'only signals that touch a senior seat on this desk',
-    'corroborated across independent sources, duplicates merged',
-    'a sceptical second pass tries to kill every lead',
-    'call-ready, ranked and dossiered below'],
-  jobs:[
-    'postings scraped from the job boards',
-    'only senior roles on this desk kept',
-    'duplicates across boards merged',
-    'each posting checked it is still live',
-    'open roles listed below']};
+/* leads run five stages; jobs run four (no dedupe step in the middle) */
+const STAGES={
+  leads:{slots:[1,2,3,4,5],
+    lbl:['GENERATED','FILTERED','COLLATED','STRESS-TESTED','READY LEADS'],
+    cap:['raw signals swept from press, registries, filings and job boards',
+         'only signals that touch a senior seat on this desk',
+         'corroborated across independent sources, duplicates merged',
+         'a sceptical second pass tries to kill every lead',
+         'call-ready, ranked and dossiered below']},
+  jobs:{slots:[1,2,4,5],
+    lbl:['SCRAPED','FILTERED','VERIFIED','LIVE JOBS'],
+    cap:['postings scraped from the job boards',
+         'only senior roles on this desk kept',
+         'each posting checked it is still live',
+         'open roles listed below']}};
 function renderEngine(){
   const nums=mode==='leads'
     ?[D().meta.signals,D().meta.filtered,D().meta.collated,D().meta.tested,D().meta.callReady]
-    :[D().jobsMeta.scanned,D().jobsMeta.relevant,D().jobsMeta.deduped,D().jobsMeta.verified,D().jobsMeta.live];
-  nums.forEach((n,i)=>countUp($('st'+(i+1)),n));
-  LBL[mode].forEach((l,i)=>$('sl'+(i+1)).textContent=l);
-  CAPS[mode].forEach((c,i)=>$('cap'+(i+1)).textContent=c);
+    :[D().jobsMeta.scanned,D().jobsMeta.relevant,D().jobsMeta.verified,D().jobsMeta.live];
+  const cfg=STAGES[mode];
+  document.querySelector('.stages').classList.toggle('jobs4',mode==='jobs');
+  cfg.slots.forEach((slot,i)=>{
+    countUp($('st'+slot),nums[i]);
+    $('sl'+slot).textContent=cfg.lbl[i];
+    $('cap'+slot).textContent=cfg.cap[i];
+  });
   const items=mode==='leads'?D().triggers:JOBBOARDS;
   const chips=items.map(t=>'<span class="tchip"><i></i>'+esc(t)+'<span class="plus">+1</span></span>').join('');
   $('ticker').innerHTML=chips+chips;
+  requestAnimationFrame(positionPour);
 }
 setInterval(()=>{
   const all=document.querySelectorAll('#ticker .tchip');
