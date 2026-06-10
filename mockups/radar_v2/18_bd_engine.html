@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VMA — Business Development Engine</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@500;600;700&family=Newsreader:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --ink:#101626;--ink2:#3C4043;--muted:#5A6577;--dim:#9AA0A6;
   --vma:#3E5C84;--deep:#1A3D7C;--blue:#4285F4;--wash:#E8F0FE;--clay:#D97757;
   --grn:#1E7A41;--amb:#B45309;--red:#C0392B;--teal:#0e7c74;--viol:#6b3fb5;
-  --hair:rgba(16,22,38,.09);
+  --hair:rgba(16,22,38,.09);--border:rgba(60,64,67,.18);
   --mono:'JetBrains Mono',ui-monospace,monospace;--disp:'Space Grotesk','Inter',sans-serif;
 }
 body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
@@ -31,11 +31,6 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
   backdrop-filter:blur(28px) saturate(1.8);-webkit-backdrop-filter:blur(28px) saturate(1.8);
   border:1px solid rgba(255,255,255,.75);border-radius:28px;
   box-shadow:0 12px 40px rgba(26,61,124,.1),inset 0 1px 1px rgba(255,255,255,.95),inset 0 -1px 1px rgba(255,255,255,.25)}
-.glass-lite{background:linear-gradient(135deg,rgba(255,255,255,.5),rgba(255,255,255,.22));
-  backdrop-filter:blur(18px) saturate(1.6);-webkit-backdrop-filter:blur(18px) saturate(1.6);
-  border:1px solid rgba(255,255,255,.65);border-radius:999px;
-  box-shadow:0 4px 16px rgba(26,61,124,.08),inset 0 1px 0 rgba(255,255,255,.9)}
-/* custom tooltip — meaning on hover */
 [data-tip]{position:relative;cursor:help}
 [data-tip]:hover::after{content:attr(data-tip);position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);
   width:250px;background:rgba(16,22,38,.96);color:#fff;font:500 10.5px/1.55 'Inter';letter-spacing:0;
@@ -43,28 +38,40 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
   box-shadow:0 12px 32px rgba(0,0,0,.32)}
 [data-tip]:hover::before{content:"";position:absolute;top:calc(100% + 3px);left:50%;transform:translateX(-50%);
   border:5px solid transparent;border-bottom-color:rgba(16,22,38,.96);z-index:60}
-/* top bar */
-.topbar{position:sticky;top:14px;z-index:40;max-width:1200px;margin:14px auto 0;
-  display:flex;align-items:center;gap:16px;padding:10px 12px 10px 24px;border-radius:999px}
-.tb-title{font-family:var(--disp);font-weight:700;font-size:15.5px;letter-spacing:-.01em;white-space:nowrap}
-.tb-live{display:inline-flex;align-items:center;gap:7px;font:700 8.5px var(--mono);letter-spacing:.16em;color:var(--muted);white-space:nowrap}
-.tb-live i{width:7px;height:7px;border-radius:50%;background:#34A853;box-shadow:0 0 8px rgba(52,168,83,.6);animation:breathe 3s ease-in-out infinite}
+.page{max-width:1200px;margin:0 auto;padding:22px 26px 56px}
 @keyframes breathe{0%,100%{transform:scale(1);opacity:.8}50%{transform:scale(1.18);opacity:1}}
-.nav{margin-left:auto;display:flex;gap:4px;padding:4px;border-radius:999px;
+/* ============ merged header (inside the panel — one piece) ============ */
+.panel{padding:24px 30px 26px}
+.mainhead{display:flex;align-items:center;gap:14px;padding-bottom:20px;margin-bottom:20px;
+  border-bottom:1px solid var(--hair)}
+.logo-mini{width:34px;height:34px;border-radius:9px;overflow:hidden;flex:none;
+  box-shadow:0 4px 12px rgba(62,92,132,.35)}
+.logo-mini svg{display:block;width:100%;height:100%}
+.mh-title{font-family:var(--disp);font-weight:700;font-size:16px;letter-spacing:-.01em;white-space:nowrap}
+.nav{display:flex;gap:4px;padding:4px;border-radius:999px;
   background:rgba(16,22,38,.05);border:1px solid rgba(255,255,255,.5)}
-.nav button{font:600 12px 'Inter';color:var(--muted);background:transparent;border:none;
-  border-radius:999px;padding:8px 20px;cursor:pointer;transition:.2s;white-space:nowrap}
+.nav button{font:600 11.5px 'Inter';color:var(--muted);background:transparent;border:none;
+  border-radius:999px;padding:7px 16px;cursor:pointer;transition:.2s;white-space:nowrap}
 .nav button:hover{color:var(--ink)}
 .nav button.on{color:var(--ink);background:rgba(255,255,255,.92);
   box-shadow:0 3px 10px rgba(26,61,124,.12),inset 0 1px 0 #fff}
-.page{max-width:1200px;margin:0 auto;padding:24px 26px 56px;display:flex;flex-direction:column;gap:26px}
-.panel{padding:26px 30px 26px}
-.sect-h{display:flex;align-items:center;gap:10px;font:700 10px var(--mono);letter-spacing:.22em;color:var(--ink2);margin-bottom:20px}
-.sect-h .sp{color:var(--clay);font-size:13px}
-.sect-h::after{content:"";flex:1;height:1px;background:var(--hair)}
-.sect-h .note{font:500 9px var(--mono);letter-spacing:.1em;color:var(--dim)}
+.mh-live{margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+  font:700 8.5px var(--mono);letter-spacing:.16em;color:var(--muted);white-space:nowrap}
+.mh-live i{width:7px;height:7px;border-radius:50%;background:#34A853;box-shadow:0 0 8px rgba(52,168,83,.6);animation:breathe 3s ease-in-out infinite}
+.viewbtn{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border-radius:12px;color:var(--ink2);background:rgba(255,255,255,.7);
+  border:1px solid rgba(255,255,255,.85);box-shadow:0 1px 5px rgba(26,61,124,.07);
+  cursor:pointer;transition:.15s;flex:none}
+.viewbtn:hover{background:#fff;transform:translateY(-1px)}
+.viewbtn.on{color:#fff;background:var(--deep);border-color:var(--deep)}
+.viewbtn svg{width:17px;height:17px}
+.view{display:none}
+.view.on{display:block;animation:vin .3s ease}
+@keyframes vin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 /* ============ engine ============ */
 .tickwrap{padding:10px 0;border-radius:999px;overflow:hidden;margin-bottom:24px;
+  background:linear-gradient(135deg,rgba(255,255,255,.5),rgba(255,255,255,.22));
+  border:1px solid rgba(255,255,255,.65);
   -webkit-mask:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);
   mask:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
 .ticktrack{display:inline-flex;gap:8px;white-space:nowrap;animation:tick 60s linear infinite}
@@ -94,19 +101,13 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .stg.s1{--s1:#9AA0A6;--s2:#4285F4}.stg.s2{--s1:#4285F4;--s2:#1A3D7C}
 .stg.s3{--s1:#3E5C84;--s2:#1A3D7C}.stg.s4{--s1:#D97A2B;--s2:#B45309}
 .stg.s5{--s1:#1E9E57;--s2:#1A3D7C}
-/* seamless connector: funnel output pours into the list */
-.conn{position:relative;height:46px;margin-top:6px}
-.conn .cline{position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;
-  background:linear-gradient(180deg,rgba(30,158,87,.55),rgba(30,158,87,.1))}
-.conn .vdot{position:absolute;left:50%;margin-left:-3.5px;width:7px;height:7px;border-radius:50%;
-  background:#1E9E57;box-shadow:0 0 8px rgba(30,158,87,.6);animation:fall 2s linear infinite}
-.conn .vdot.v2{animation-delay:1s}
-@keyframes fall{0%{top:0;opacity:0}18%{opacity:1}82%{opacity:1}100%{top:calc(100% - 7px);opacity:0}}
-/* board bar: title + mode switch + controls */
-.boardbar{display:flex;align-items:center;gap:12px;padding:4px 0 12px;border-bottom:1px solid var(--hair)}
-.boardbar .bt{font:700 10px var(--mono);letter-spacing:.22em;color:var(--grn)}
-.boardbar .cnt{font:700 10px var(--mono);color:var(--grn);background:rgba(30,158,87,.1);
-  border:1px solid rgba(30,158,87,.3);border-radius:999px;padding:3px 9px}
+/* the rain: every stage feeds the list below — a soft particle curtain */
+.feed{position:relative;height:44px;margin-top:8px;
+  background:linear-gradient(180deg,rgba(66,133,244,.05),transparent 80%)}
+.feed .fd{position:absolute;width:5px;height:5px;border-radius:50%;opacity:0;animation:rain 2.6s linear infinite}
+@keyframes rain{0%{top:-4px;opacity:0}20%{opacity:.85}80%{opacity:.5}100%{top:calc(100% - 2px);opacity:0}}
+/* board bar */
+.boardbar{display:flex;align-items:center;gap:12px;padding:0 0 12px}
 .seg{display:flex;gap:3px;padding:3px;border-radius:999px;background:rgba(16,22,38,.05);
   border:1px solid rgba(255,255,255,.5)}
 .seg button{font:600 10.5px 'Inter';color:var(--muted);background:transparent;border:none;
@@ -127,7 +128,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
   font:600 11.5px 'Inter';color:var(--ink2);padding:8px 11px;border-radius:10px;cursor:pointer;text-align:left}
 .ctrlmenu button:hover{background:rgba(232,240,254,.7)}
 .ctrlmenu button.on{background:var(--wash);color:var(--deep)}
-/* lead strips */
+/* strips */
 .strip{border-bottom:1px solid var(--hair)}
 .strip:last-of-type{border-bottom:none}
 .strip-h{display:grid;grid-template-columns:34px 1fr 150px 104px 86px 30px;gap:14px;align-items:center;
@@ -163,7 +164,6 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .strip.done-dis .idcell{opacity:.45;text-decoration:line-through}
 .dossier{max-height:0;overflow:hidden;transition:max-height .45s cubic-bezier(.2,.8,.25,1)}
 .strip.open .dossier{max-height:1200px}
-/* jobs rows */
 .jrow{display:grid;grid-template-columns:34px 1fr 150px 120px 70px 40px;gap:14px;align-items:center;
   padding:14px 4px;border-bottom:1px solid var(--hair);cursor:pointer;border-radius:16px;transition:.15s}
 .jrow:last-of-type{border-bottom:none}
@@ -177,7 +177,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .jrow .lnk svg{width:14px;height:14px}
 .srcpill{justify-self:start;font:600 10px 'Inter';color:var(--ink2);padding:3px 11px;border-radius:999px;
   background:rgba(255,255,255,.75);border:1px solid rgba(16,22,38,.1)}
-/* business portfolio */
+/* portfolio */
 .port{margin:6px 2px 20px;background:rgba(255,255,255,.94);border:1px solid rgba(255,255,255,.95);
   border-radius:22px;box-shadow:0 18px 50px rgba(26,61,124,.12),inset 0 1px 0 #fff}
 .port-top{display:flex;align-items:flex-start;gap:20px;padding:22px 28px 18px;border-bottom:2px solid var(--ink)}
@@ -214,7 +214,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .port-foot{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:16px 28px 18px;background:rgba(62,92,132,.04);
   border-radius:0 0 22px 22px}
 .btn{display:inline-flex;align-items:center;gap:7px;font:600 11px 'Inter';padding:8px 16px;border-radius:999px;cursor:pointer;transition:.15s;
-  color:var(--ink);background:#fff;border:1px solid rgba(60,64,67,.18);box-shadow:0 1px 5px rgba(26,61,124,.07)}
+  color:var(--ink);background:#fff;border:1px solid var(--border);box-shadow:0 1px 5px rgba(26,61,124,.07)}
 .btn svg{width:13px;height:13px;flex:none}
 .btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(26,61,124,.12)}
 .btn.primary{color:var(--deep);background:transparent;border:1px solid rgba(26,61,124,.4);font-weight:700;box-shadow:none}
@@ -237,27 +237,26 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .bl-row .co2{font-weight:600;font-size:12.5px;display:flex;gap:8px;align-items:center}
 .bl-row .gw{font-size:10.5px;color:var(--amb);text-align:right}
 .bl-row.blocked .gw{color:var(--red)}
-/* ============ duo: calendar + workshop ============ */
-.duo{display:grid;grid-template-columns:1.45fr 1fr;gap:26px;align-items:start}
-@media(max-width:1020px){.duo{grid-template-columns:1fr}}
+/* ============ calendar (full size) ============ */
+.calwrap{position:relative}
 .calgrid{border:1px solid rgba(255,255,255,.75);border-radius:20px;overflow:hidden;background:rgba(255,255,255,.4)}
-.cg-head{display:grid;grid-template-columns:96px repeat(7,1fr)}
-.cg-head span{font:700 8px var(--mono);letter-spacing:.14em;color:var(--muted);padding:12px 0 10px;text-align:center;
+.cg-head{display:grid;grid-template-columns:120px repeat(7,1fr)}
+.cg-head span{font:700 8.5px var(--mono);letter-spacing:.16em;color:var(--muted);padding:12px 0 10px;text-align:center;
   border-left:1px solid rgba(16,22,38,.05);border-bottom:1px solid var(--hair);position:relative}
 .cg-head span:first-child{border-left:none}
 .cg-head span.today{color:var(--clay)}
-.cg-head span.today::after{content:"TODAY";position:absolute;left:50%;transform:translateX(-50%);
-  bottom:-8px;font:700 7px var(--mono);letter-spacing:.1em;color:#fff;background:var(--clay);
-  border-radius:999px;padding:2px 7px;white-space:nowrap;z-index:3}
-.cg-row{display:grid;grid-template-columns:96px repeat(7,1fr);border-bottom:1px solid rgba(16,22,38,.05)}
+.cg-head span.today::after{content:"TODAY · 10 JUN";position:absolute;left:50%;transform:translateX(-50%);
+  bottom:-9px;font:700 7px var(--mono);letter-spacing:.1em;color:#fff;background:var(--clay);
+  border-radius:999px;padding:2px 8px;white-space:nowrap;z-index:3}
+.cg-row{display:grid;grid-template-columns:120px repeat(7,1fr);border-bottom:1px solid rgba(16,22,38,.05)}
 .cg-row:last-child{border-bottom:none}
-.cg-lab{display:flex;flex-direction:column;justify-content:center;gap:3px;padding:12px;border-right:1px solid rgba(16,22,38,.05)}
-.cg-lab .t{font:700 8px var(--mono);letter-spacing:.12em}
-.cg-lab .c{font:500 8.5px 'Inter';color:var(--dim)}
-.cg-cell{padding:9px 5px;border-left:1px solid rgba(16,22,38,.04);display:flex;flex-direction:column;gap:6px;min-height:54px}
+.cg-lab{display:flex;flex-direction:column;justify-content:center;gap:3px;padding:14px;border-right:1px solid rgba(16,22,38,.05)}
+.cg-lab .t{font:700 8.5px var(--mono);letter-spacing:.14em}
+.cg-lab .c{font:500 9px 'Inter';color:var(--dim)}
+.cg-cell{padding:10px 6px;border-left:1px solid rgba(16,22,38,.04);display:flex;flex-direction:column;gap:6px;min-height:60px}
 .cg-cell:nth-child(2){border-left:none}
-.cpill{display:flex;align-items:center;gap:6px;font:600 9.5px 'Inter';color:var(--ink2);
-  padding:5px 9px;border-radius:999px;background:rgba(255,255,255,.9);
+.cpill{display:flex;align-items:center;gap:7px;font:600 10px 'Inter';color:var(--ink2);
+  padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.9);
   border:1px solid rgba(16,22,38,.08);box-shadow:0 1px 4px rgba(26,61,124,.06);
   cursor:pointer;transition:.15s;min-width:0}
 .cpill:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(26,61,124,.13)}
@@ -266,134 +265,159 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .cpill.wi i{background:#12A594}
 .cpill.fw i{background:#8B5CF6}
 .cpill .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cpill .d{margin-left:auto;font:700 7.5px var(--mono);color:var(--dim);flex:none}
+.cpill .d{margin-left:auto;font:700 8px var(--mono);color:var(--dim);flex:none}
 .cpill.openg i{box-shadow:0 0 7px rgba(18,165,148,.8);animation:breathe 3s ease-in-out infinite}
 .legend{display:flex;gap:18px;margin-top:14px;font:600 9.5px 'Inter';color:var(--muted)}
 .legend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:0}
-.calwrap{position:relative}
-.cal-pop{position:absolute;z-index:30;width:280px;padding:14px 16px;display:none;border-radius:20px}
+.cal-pop{position:absolute;z-index:30;width:300px;padding:15px 17px;display:none;border-radius:20px}
 .cal-pop.on{display:block}
 .cal-pop .pk{font:700 8.5px var(--mono);letter-spacing:.16em;margin-bottom:6px}
 .cal-pop .pn{font-weight:700;font-size:13.5px;color:#0c1326}
 .cal-pop .pd{font:600 10px var(--mono);color:var(--dim);margin-top:4px}
-.cal-pop .pw{font-size:12px;line-height:1.55;color:var(--ink2);margin-top:8px}
-.cal-pop .pa{margin-top:11px}
-/* workshop */
-.composer{display:flex;align-items:center;gap:12px;padding:13px 15px;border-radius:999px;
-  background:rgba(255,255,255,.88);border:1px solid rgba(255,255,255,.95);
-  box-shadow:0 10px 32px rgba(26,61,124,.12),inset 0 1px 0 #fff}
-.composer .sp{color:var(--clay);font-size:15px;flex:none}
-.composer input{flex:1;border:none;outline:none;font:400 13.5px 'Inter';color:var(--ink);background:transparent;min-width:0}
-.composer input::placeholder{color:var(--dim)}
-.send{flex:none;width:32px;height:32px;border-radius:50%;border:none;background:var(--deep);color:#fff;
-  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
-.send:hover{background:#16335F}
-.send svg{width:14px;height:14px}
-.send.busy{background:var(--dim);pointer-events:none}
-@keyframes spin{to{transform:rotate(360deg)}}
-.spin{animation:spin .7s linear infinite}
-.templates{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
-.tmpl{font:600 11px 'Inter';color:var(--ink2);padding:9px 14px;cursor:pointer;transition:.15s;
-  border-radius:999px;text-align:center}
-.tmpl:hover{color:var(--deep);transform:translateY(-1px)}
-.tmpl.on{color:var(--deep);background:rgba(232,240,254,.95)!important;border-color:rgba(66,133,244,.5)!important;
-  box-shadow:0 3px 10px rgba(26,61,124,.12)}
-.tmpl .sp{color:var(--clay);margin-right:5px}
-.recent{margin-top:20px}
-.recent .rh{font:700 8.5px var(--mono);letter-spacing:.2em;color:var(--deep);
-  border-bottom:1px solid rgba(26,61,124,.13);padding-bottom:5px;margin-bottom:4px}
-.recent .rrow{display:flex;align-items:center;gap:9px;padding:8px 2px;
-  border-bottom:1px solid rgba(16,22,38,.05);font-size:11.5px;color:var(--ink2)}
-.recent .rrow:last-child{border-bottom:none}
-.recent .rk{font:700 7.5px var(--mono);letter-spacing:.1em;color:var(--deep);background:rgba(232,240,254,.9);
-  border-radius:999px;padding:3px 7px;flex:none}
-.recent .rn2{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.recent .rt3{font:500 9px var(--mono);color:var(--dim);flex:none}
-.ric{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:8px;
-  color:var(--muted);background:rgba(255,255,255,.8);border:1px solid rgba(16,22,38,.1);cursor:pointer;transition:.15s;flex:none}
-.ric:hover{color:var(--deep);background:#fff}
-.ric svg{width:12px;height:12px}
+.cal-pop .pwl{font:700 8px var(--mono);letter-spacing:.18em;color:var(--clay);margin-top:12px}
+.cal-pop .pw{font-size:12px;line-height:1.55;color:var(--ink2);margin-top:5px}
+.cal-pop .psrc{display:inline-flex;align-items:center;gap:6px;margin-top:12px;font:600 11px 'Inter';
+  color:var(--deep);text-decoration:none}
+.cal-pop .psrc:hover{text-decoration:underline}
+.cal-pop .psrc svg{width:11px;height:11px}
+/* ============ build-a-deck workshop — live PA section verbatim ============ */
+.shopwrap{max-width:900px;margin:0 auto;padding:10px 0 8px}
+.ea-hero{text-align:center;margin-bottom:26px}
+.cc-bigicon{width:78px;height:78px;border-radius:18px;margin:0 auto 22px;display:grid;
+  place-items:center;color:#1F1F1F;background:transparent}
+.cc-bigicon svg{width:52px;height:52px}
+.gemini-title{font-family:"Newsreader",Georgia,serif;font-weight:400;font-size:34px;
+  letter-spacing:-.01em;color:var(--ink);text-align:center}
+.cc-sub{font-size:15px;color:var(--muted);margin-top:11px}
+.composer{box-sizing:content-box;width:672px;max-width:100%;background:#fff;
+  border:1px solid transparent;border-radius:20px;
+  box-shadow:0 4px 20px rgba(0,0,0,.07),0 0 0 .5px rgba(31,31,30,.286);
+  padding:0;margin:0 auto;text-align:left;transition:border-color .2s,box-shadow .2s}
+.composer:focus-within{border-color:rgba(31,31,30,.20)}
+.composer .inner{display:flex;flex-direction:column;margin:14px;gap:12px}
+.composer .cform{min-height:48px;max-height:384px;overflow-y:auto;padding:6px 0 0 6px;transition:all .2s}
+.composer .cfoot{display:flex;justify-content:flex-end;align-items:center}
+.composer:not([data-mode="free"]) .cfoot .send{display:none}
+.cinput{border:none;outline:none;background:transparent;width:100%;
+  font-family:"Inter",system-ui,sans-serif;font-size:16px;line-height:22.4px;font-weight:430;color:rgb(11,11,11)}
+.cinput::placeholder{color:var(--dim)}
+.cfh{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.cfh .cf-dot{width:7px;height:7px;border-radius:50%;background:var(--blue)}
+.cf-desc{font-size:12.5px;color:var(--muted);margin-top:7px;line-height:1.5}
+.composer .cform form{display:flex;flex-direction:column}
+.composer .cform label{display:block;font:600 9.5px/1 "JetBrains Mono",monospace;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--ink2);margin:15px 0 7px}
+.composer .cform input:not(.cinput){width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:10px;
+  font:400 13.5px/1.3 "Inter",sans-serif;color:var(--ink);background:#fff}
+.composer .cform input::placeholder{color:var(--dim)}
+.composer .cform input:not(.cinput):focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(66,133,244,.12)}
+.send{width:30px;height:30px;border-radius:50%;background:#a8c8e6;color:#1A3D7C;
+  display:grid;place-items:center;font-size:16px;border:none;flex-shrink:0;transition:all .14s;cursor:pointer}
+.send:hover{background:#93b9de;color:#10294f}
+.send svg{width:16px;height:16px}
+.composer .cform .send{align-self:flex-end;order:99;margin-top:10px}
+.cap-form{display:none}
+.cap-form.active{display:block}
+.composer .cform .status{margin-top:10px;padding:8px 11px;border-radius:8px;
+  font-size:11.5px;display:none;line-height:1.4}
+.composer .cform .status.ok{background:var(--wash);color:var(--deep);
+  border-left:2px solid var(--blue);display:block}
+.shopchips{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin:22px auto 0;max-width:600px}
+.shopchip{display:inline-flex;align-items:center;gap:8px;background:transparent;
+  border:1px solid var(--border);border-radius:12px;padding:10px 16px;
+  font:600 13px 'Inter';color:var(--ink);cursor:pointer;transition:.14s}
+.shopchip:hover{background:rgba(244,247,252,.9);border-color:rgba(60,64,67,.3)}
+.shopchip .i{color:var(--ink2);font-size:13px}
+.shopchip.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.shopchip.active .i{color:#fff}
+/* toast + foot */
 .toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,16px);z-index:70;
   background:rgba(16,22,38,.92);backdrop-filter:blur(10px);color:#fff;font:600 12px 'Inter';
   padding:11px 18px;border-radius:999px;box-shadow:0 8px 26px rgba(0,0,0,.25);opacity:0;transition:.25s;pointer-events:none}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .toast .sp{color:#FF8A65}
-.foot{text-align:center;font:500 8.5px var(--mono);letter-spacing:.14em;color:rgba(154,160,166,.7);padding-bottom:10px}
+.foot{text-align:center;font:500 8.5px var(--mono);letter-spacing:.14em;color:rgba(154,160,166,.7);padding:18px 0 10px}
 @media(max-width:1020px){
   .strip-h{grid-template-columns:30px 1fr 96px 30px}
   .strip-h .tp,.strip-h .wincell{display:none}
   .prow{grid-template-columns:110px 1fr}
   .jrow{grid-template-columns:30px 1fr 70px 40px}
   .jrow .srcpill,.jrow .geo{display:none}
+  .mainhead{flex-wrap:wrap}
 }
 </style>
 </head>
 <body>
 <div class="amb a1"></div><div class="amb a2"></div><div class="amb a3"></div>
 
-<div class="topbar glass">
-  <span class="tb-title">Business Development Engine</span>
-  <span class="tb-live"><i></i>LIVE · SWEEP 06:40</span>
-  <nav class="nav" id="nav">
-    <button data-d="comms" class="on">Communications</button>
-    <button data-d="marketing">Marketing</button>
-  </nav>
-</div>
-
 <div class="page">
-
-  <!-- ============ the engine → the leads ============ -->
   <section class="glass panel">
-    <div class="sect-h"><span class="sp">✦</span>THE ENGINE<span class="note" id="engNote"></span></div>
-    <div class="tickwrap glass-lite"><div class="ticktrack" id="ticker"></div></div>
-    <div class="stages">
-      <div class="rail"><span class="fdot"></span><span class="fdot d2"></span><span class="fdot d3"></span></div>
-      <div class="stg s1"><div class="num" id="st1">0</div><div class="lbl" id="sl1">GENERATED</div></div>
-      <div class="stg s2"><div class="num" id="st2">0</div><div class="lbl" id="sl2">FILTERED</div></div>
-      <div class="stg s3"><div class="num" id="st3">0</div><div class="lbl" id="sl3">COLLATED</div></div>
-      <div class="stg s4"><div class="num" id="st4">0</div><div class="lbl" id="sl4">STRESS-TESTED</div></div>
-      <div class="stg s5"><div class="num" id="st5">0</div><div class="lbl" id="sl5">READY LEADS</div></div>
-    </div>
-    <div class="conn"><span class="cline"></span><span class="vdot"></span><span class="vdot v2"></span></div>
-    <div class="boardbar">
-      <span class="bt" id="boardTitle">READY LEADS</span><span class="cnt" id="boardCount">6</span>
-      <div class="seg" id="modeSeg">
-        <button data-m="leads" class="on">BD Leads</button>
-        <button data-m="jobs">Live Jobs</button>
-      </div>
-      <div class="ctrls" id="leadCtrls">
-        <div class="ctrl"><button type="button" class="ctrlbtn" data-menu="filtmenu">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.2V19l-4 2v-7.8z"/></svg>
-          <span id="filtLbl">Active</span></button>
-          <div class="ctrlmenu" id="filtmenu">
-            <button data-f="active" class="on">Active</button>
-            <button data-f="new">New today</button>
-            <button data-f="followed">Followed up</button>
-            <button data-f="dismissed">Dismissed</button>
-            <button data-f="all">All</button>
-          </div></div>
-        <div class="ctrl"><button type="button" class="ctrlbtn" data-menu="sortmenu">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 6h16M4 12h11M4 18h6"/></svg>
-          <span id="sortLbl">Strongest</span></button>
-          <div class="ctrlmenu" id="sortmenu">
-            <button data-s="strength" class="on">Strongest signal</button>
-            <button data-s="window">Soonest window</button>
-            <button data-s="new">Newest first</button>
-          </div></div>
-      </div>
-    </div>
-    <div id="strips"></div>
-    <button type="button" class="bl-toggle" id="blToggle">
-      <span class="chev2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
-      <span id="blLabel"></span>
-    </button>
-    <div class="bl-list" id="blList"></div>
-  </section>
 
-  <!-- ============ calendar + workshop side by side ============ -->
-  <div class="duo">
-    <section class="glass panel">
-      <div class="sect-h"><span class="sp">✦</span>THE CALENDAR</div>
+    <!-- merged header: one piece with the section -->
+    <div class="mainhead">
+      <span class="logo-mini"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#3E5C84"/><text x="50" y="55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="30" letter-spacing="-1.5" fill="#fff">VMA</text><text x="51" y="76" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="300" font-size="13.5" letter-spacing="3" fill="#fff">GROUP</text></svg></span>
+      <span class="mh-title">Business Development Engine</span>
+      <nav class="nav" id="nav">
+        <button data-d="comms" class="on">Communications</button>
+        <button data-d="marketing">Marketing</button>
+      </nav>
+      <span class="mh-live"><i></i>LIVE · SWEEP 06:40</span>
+      <button type="button" class="viewbtn" id="vbShop" title="Build-A-Deck Workshop">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2.5 8 12 13l9.5-5z"/><path d="M5 10.5v5.2L12 19l7-3.3v-5.2"/></svg>
+      </button>
+      <button type="button" class="viewbtn" id="vbCal" title="BD Calendar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>
+      </button>
+    </div>
+
+    <!-- ============ VIEW: engine ============ -->
+    <div class="view on" id="v-engine">
+      <div class="tickwrap"><div class="ticktrack" id="ticker"></div></div>
+      <div class="stages">
+        <div class="rail"><span class="fdot"></span><span class="fdot d2"></span><span class="fdot d3"></span></div>
+        <div class="stg s1"><div class="num" id="st1">0</div><div class="lbl" id="sl1">GENERATED</div></div>
+        <div class="stg s2"><div class="num" id="st2">0</div><div class="lbl" id="sl2">FILTERED</div></div>
+        <div class="stg s3"><div class="num" id="st3">0</div><div class="lbl" id="sl3">COLLATED</div></div>
+        <div class="stg s4"><div class="num" id="st4">0</div><div class="lbl" id="sl4">STRESS-TESTED</div></div>
+        <div class="stg s5"><div class="num" id="st5">0</div><div class="lbl" id="sl5">READY LEADS</div></div>
+      </div>
+      <div class="feed" id="feed"></div>
+      <div class="boardbar">
+        <div class="seg" id="modeSeg">
+          <button data-m="leads" class="on">BD Leads</button>
+          <button data-m="jobs">Live Jobs</button>
+        </div>
+        <div class="ctrls" id="leadCtrls">
+          <div class="ctrl"><button type="button" class="ctrlbtn" data-menu="filtmenu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.2V19l-4 2v-7.8z"/></svg>
+            <span id="filtLbl">Ready Leads</span></button>
+            <div class="ctrlmenu" id="filtmenu">
+              <button data-f="ready" class="on">Ready Leads</button>
+              <button data-f="unc">Uncategorised</button>
+              <button data-f="new">New today</button>
+              <button data-f="followed">Followed up</button>
+              <button data-f="dismissed">Dismissed</button>
+            </div></div>
+          <div class="ctrl"><button type="button" class="ctrlbtn" data-menu="sortmenu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 6h16M4 12h11M4 18h6"/></svg>
+            <span id="sortLbl">Strongest</span></button>
+            <div class="ctrlmenu" id="sortmenu">
+              <button data-s="strength" class="on">Strongest signal</button>
+              <button data-s="window">Soonest window</button>
+              <button data-s="new">Newest first</button>
+            </div></div>
+        </div>
+      </div>
+      <div id="strips"></div>
+      <button type="button" class="bl-toggle" id="blToggle">
+        <span class="chev2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
+        <span id="blLabel"></span>
+      </button>
+      <div class="bl-list" id="blList"></div>
+    </div>
+
+    <!-- ============ VIEW: calendar ============ -->
+    <div class="view" id="v-cal">
       <div class="calwrap">
         <div class="calgrid">
           <div class="cg-head" id="cgHead"></div>
@@ -406,20 +430,91 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
         <span><i style="background:#12A594"></i>Placement windows</span>
         <span><i style="background:#8B5CF6"></i>Approved frameworks</span>
       </div>
-    </section>
+    </div>
 
-    <section class="glass panel">
-      <div class="sect-h"><span class="sp">✦</span>BUILD-A-DECK WORKSHOP</div>
-      <div class="composer">
-        <span class="sp">✦</span>
-        <input id="composerIn" placeholder="Pick a deck below, then tell the workshop the brief…">
-        <button class="send" id="sendBtn" title="Build"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+    <!-- ============ VIEW: build-a-deck workshop (live PA section, renamed) ============ -->
+    <div class="view" id="v-shop">
+      <div class="shopwrap">
+        <div class="ea-hero">
+          <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2.5 8 12 13l9.5-5z"/><path d="M5 10.5v5.2L12 19l7-3.3v-5.2"/><path d="M12 13v6"/></svg></div>
+          <h1 class="gemini-title">Build-A-Deck Workshop</h1>
+          <div class="cc-sub">A simple prompt to build key reports in real-time, with the latest data.</div>
+        </div>
+
+        <div class="composer" data-mode="free" id="composer">
+          <div class="inner">
+            <div class="cform" data-cform>
+              <input class="cinput" id="cprompt" placeholder="Tell me what to make…">
+
+              <div class="cap-form" data-cap="pitch">
+                <div class="cfh"><span class="cf-dot"></span>Pitch Pack</div>
+                <div class="cf-desc">Generate a tailored proposal to upgrade a client's job vacancy into an exclusive, retained search.</div>
+                <form data-deck="Pitch Pack">
+                  <label for="pp-account">Account name</label>
+                  <input id="pp-account" placeholder="e.g. Unilever" required>
+                  <label for="pp-role">Role</label>
+                  <input id="pp-role" placeholder="e.g. Head of Communications" required>
+                  <button type="submit" class="send" title="Run"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+                  <div class="status"></div>
+                </form>
+              </div>
+
+              <div class="cap-form" data-cap="reverse">
+                <div class="cfh"><span class="cf-dot"></span>Reverse Match</div>
+                <div class="cf-desc">Take a candidate, search the market fresh, and give a ranked list of accounts to match them to.</div>
+                <form data-deck="Reverse Match">
+                  <label for="rm-name">Candidate name</label>
+                  <input id="rm-name" placeholder="e.g. Rebecca Torres" required>
+                  <label for="rm-company">Current company</label>
+                  <input id="rm-company" placeholder="e.g. Vodafone" required>
+                  <label for="rm-title">Current title</label>
+                  <input id="rm-title" placeholder="e.g. Head of Communications" required>
+                  <button type="submit" class="send" title="Run"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+                  <div class="status"></div>
+                </form>
+              </div>
+
+              <div class="cap-form" data-cap="premeeting">
+                <div class="cfh"><span class="cf-dot"></span>Pre-meeting Brief</div>
+                <div class="cf-desc">Walk into any client meeting with up-to-date prep.</div>
+                <form data-deck="Pre-meeting Brief">
+                  <label for="pm-account">Account name</label>
+                  <input id="pm-account" placeholder="e.g. Severn Trent" required>
+                  <label for="pm-contact">Contact (optional)</label>
+                  <input id="pm-contact" placeholder="e.g. Carla Sherry">
+                  <label for="pm-context">Meeting context (optional)</label>
+                  <input id="pm-context" placeholder="e.g. 10am Mon, Zoom">
+                  <button type="submit" class="send" title="Run"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+                  <div class="status"></div>
+                </form>
+              </div>
+
+              <div class="cap-form" data-cap="sweep">
+                <div class="cfh"><span class="cf-dot"></span>Manual Sweep</div>
+                <div class="cf-desc">Sweep for potential missed leads or pre-market signals.</div>
+                <form data-deck="Manual Sweep">
+                  <label for="sw-days">Window (days)</label>
+                  <input id="sw-days" type="number" min="1" max="60" placeholder="e.g. 14" required>
+                  <button type="submit" class="send" title="Run"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+                  <div class="status"></div>
+                </form>
+              </div>
+
+            </div>
+            <div class="cfoot"><button class="send" id="composerSend" type="button" title="Run"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>
+          </div>
+        </div>
+
+        <div class="shopchips" id="shopChips">
+          <button class="shopchip" data-cap="pitch"><span class="i">✦</span>Pitch Pack</button>
+          <button class="shopchip" data-cap="reverse"><span class="i">↗</span>Reverse Match</button>
+          <button class="shopchip" data-cap="premeeting"><span class="i">◷</span>Pre-meeting</button>
+          <button class="shopchip" data-cap="sweep"><span class="i">⟲</span>Sweep</button>
+        </div>
       </div>
-      <div class="templates" id="templates"></div>
-      <div class="recent" id="recent"></div>
-    </section>
-  </div>
+    </div>
 
+  </section>
   <div class="foot">BUSINESS DEVELOPMENT ENGINE · PREPARED FOR VMA GROUP · CONCEPT 18</div>
 </div>
 <div class="toast" id="toast"></div>
@@ -576,13 +671,13 @@ comms: {
     {co:"Heathrow", jt:"Corporate Affairs Manager", src:"LinkedIn Jobs", geo:"Hounslow", age:6, url:"https://www.linkedin.com/jobs"},
     {co:"Aviva", jt:"Communications Business Partner", src:"Reed", geo:"York", age:2, url:"https://www.reed.co.uk"}],
   events:[
-    { n:"CIPR Excellence Awards", m:1, d:"01 JUL", loc:"Royal Lancaster, London",
+    { n:"CIPR Excellence Awards", m:1, d:"01 JUL", loc:"Royal Lancaster, London", url:"https://awards.cipr.co.uk",
       why:"Senior in-house comms judges and finalists in one room — a direct relationship route." },
-    { n:"IC & Engagement Live", m:1, d:"08 JUL", loc:"The Brewery, London",
+    { n:"IC & Engagement Live", m:1, d:"08 JUL", loc:"The Brewery, London", url:"https://www.communicatemagazine.com",
       why:"Delegates and speakers skew Head/Director of IC at large UK employers." },
-    { n:"IoIC Awards", m:3, d:"17 SEP", loc:"London",
+    { n:"IoIC Awards", m:3, d:"17 SEP", loc:"London", url:"https://www.ioic.org.uk",
       why:"Premier UK internal-comms awards; finalists are visible Heads of IC." },
-    { n:"ICCO Global Summit", m:5, d:"11 NOV", loc:"Milan",
+    { n:"ICCO Global Summit", m:5, d:"11 NOV", loc:"Milan", url:"https://iccopr.com",
       why:"Agency-side leadership gathering; partner-referral pipeline for client-side moves." }]
 },
 marketing: {
@@ -683,13 +778,13 @@ marketing: {
     {co:"WWF UK", jt:"Marketing & Membership Lead", src:"CharityJob", geo:"Woking", age:4, url:"https://www.charityjob.co.uk"},
     {co:"Greggs", jt:"Brand Campaign Manager", src:"Adzuna", geo:"Newcastle", age:5, url:"https://www.adzuna.co.uk"}],
   events:[
-    { n:"Cannes Lions", m:0, d:"22 JUN", loc:"Cannes",
+    { n:"Cannes Lions", m:0, d:"22 JUN", loc:"Cannes", url:"https://www.canneslions.com",
       why:"Client-side CMOs concentrated in one week — relationship groundwork, not pitching." },
-    { n:"Festival of Marketing", m:4, d:"08 OCT", loc:"London",
+    { n:"Festival of Marketing", m:4, d:"08 OCT", loc:"London", url:"https://www.festivalofmarketing.com",
       why:"Senior brand-side speakers and delegates; strongest UK marketing-leadership room of the year." },
-    { n:"Marketing Society Awards", m:5, d:"18 NOV", loc:"London",
+    { n:"Marketing Society Awards", m:5, d:"18 NOV", loc:"London", url:"https://www.marketingsociety.com",
       why:"Winning teams signal budget and momentum — follow-up briefs land in the new year." },
-    { n:"DMA Awards", m:6, d:"03 DEC", loc:"London",
+    { n:"DMA Awards", m:6, d:"03 DEC", loc:"London", url:"https://dma.org.uk",
       why:"Performance and CRM leadership visibility; shortlists map the strongest in-house teams." }]
 }
 };
@@ -699,23 +794,22 @@ const JOBBOARDS=["LinkedIn Jobs","Indeed","Adzuna","Civil Service Jobs","Charity
 const CAL_SHARED = {
   months:["JUN","JUL","AUG","SEP","OCT","NOV","DEC"],
   windows:[
-    { n:"FCA Consumer Duty ramp", m:0, span:"→ 31 JUL", open:1,
+    { n:"FCA Consumer Duty ramp", m:0, span:"→ 31 JUL", open:1, url:"https://www.fca.org.uk",
       why:"Annual board reports due 31 July; conduct-comms and brand-trust support peaks in the final eight weeks." },
-    { n:"Water SAR cycle", m:0, span:"→ 30 SEP", open:1,
+    { n:"Water SAR cycle", m:0, span:"→ 30 SEP", open:1, url:"https://www.ofwat.gov.uk",
       why:"Ofwat special-administration activity keeps utility comms and brand seats churning through Q3." },
-    { n:"HE clearing comms", m:0, span:"15 JUN → SEP", open:0,
+    { n:"HE clearing comms", m:0, span:"15 JUN → SEP", open:0, url:"https://www.ucas.com",
       why:"Universities staff up for clearing; interim and fixed-term senior briefs cluster here." },
-    { n:"Golden Quarter ramp", m:0, span:"→ 15 OCT", open:1,
+    { n:"Golden Quarter ramp", m:0, span:"→ 15 OCT", open:1, url:"https://brc.org.uk",
       why:"Retail brand and campaign hiring locks in before peak trading; latest briefs land mid-October." },
-    { n:"Machinery-of-government", m:0, span:"ALL YEAR", open:1,
+    { n:"Machinery-of-government", m:0, span:"ALL YEAR", open:1, url:"https://www.gov.uk",
       why:"Post-Spending-Review departmental changes keep public-sector leadership moving all year." }],
   frameworks:[
-    { n:"CCS — Executive Search 3", m:0, span:"OPEN NOW", open:1,
+    { n:"CCS — Executive Search 3", m:0, span:"OPEN NOW", open:1, url:"https://www.crowncommercial.gov.uk",
       why:"Live route to public-sector senior searches; refresh estimated Q1 2027 — keep references current." },
-    { n:"NHS Workforce Alliance", m:4, span:"FROM 01 OCT", open:0,
+    { n:"NHS Workforce Alliance", m:4, span:"FROM 01 OCT", open:0, url:"https://workforcealliance.nhs.uk",
       why:"Renewal window expected from October; evidence pack and case studies ready by September." }]
 };
-/* what each badge/dimension actually means (hover) */
 const MEANING={
   seat:"SEAT — is there a real, vacant or forming senior seat to fill?",
   budget:"BUDGET — is there money behind the hire?",
@@ -736,7 +830,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>(s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const VER_LABEL={reg:'Registry-attested',multi:'2+ sources',single:'Single source'};
 const TIER_WORD={dev:'Developing',early:'Watch',blocked:'Blocked'};
-let desk='comms',mode='leads',filt='active',sort='strength';
+let desk='comms',mode='leads',filt='ready',sort='strength',view='engine';
 const state={followed:new Set(),dismissed:new Set()};
 let toastT=null,openerT=null;
 function D(){return DESKS[desk];}
@@ -749,6 +843,18 @@ function countUp(el,target){const t0=performance.now();
   (function f(t){const p=Math.min(1,(t-t0)/950),e=1-Math.pow(1-p,3);
     el.textContent=Math.round(target*e);if(p<1)requestAnimationFrame(f);})(t0);}
 
+/* ---------- view switching (engine / calendar / workshop) ---------- */
+function setView(v){
+  view=(view===v)?'engine':v;
+  $('v-engine').classList.toggle('on',view==='engine');
+  $('v-cal').classList.toggle('on',view==='cal');
+  $('v-shop').classList.toggle('on',view==='shop');
+  $('vbCal').classList.toggle('on',view==='cal');
+  $('vbShop').classList.toggle('on',view==='shop');
+}
+$('vbCal').addEventListener('click',()=>setView('cal'));
+$('vbShop').addEventListener('click',()=>setView('shop'));
+
 /* ---------- engine ---------- */
 const LBL={leads:['GENERATED','FILTERED','COLLATED','STRESS-TESTED','READY LEADS'],
            jobs:['SCRAPED','FILTERED','DEDUPED','VERIFIED','LIVE JOBS']};
@@ -758,7 +864,6 @@ function renderEngine(){
     :[D().jobsMeta.scanned,D().jobsMeta.relevant,D().jobsMeta.deduped,D().jobsMeta.verified,D().jobsMeta.live];
   nums.forEach((n,i)=>countUp($('st'+(i+1)),n));
   LBL[mode].forEach((l,i)=>$('sl'+(i+1)).textContent=l);
-  $('engNote').textContent=(desk==='comms'?'COMMUNICATIONS DESK':'MARKETING DESK')+' · SWEPT EVERY 6 HOURS';
   const items=mode==='leads'?D().triggers:JOBBOARDS;
   const chips=items.map(t=>'<span class="tchip"><i></i>'+esc(t)+'<span class="plus">+1</span></span>').join('');
   $('ticker').innerHTML=chips+chips;
@@ -770,6 +875,17 @@ setInterval(()=>{
   all[i].classList.add('match');
   setTimeout(()=>all[i].classList.remove('match'),1500);
 },1000);
+/* the rain — particles fall from every stage into the list */
+(function(){
+  const cols=['#4285F4','#3E5C84','#1A3D7C','#D97A2B','#1E9E57'];
+  let h='';
+  for(let i=0;i<14;i++){
+    const x=4+i*7+(Math.random()*3|0);
+    const c=cols[Math.min(4,(x/20)|0)];
+    h+='<span class="fd" style="left:'+x+'%;background:'+c+';box-shadow:0 0 6px '+c+'66;animation-delay:'+(-(Math.random()*2.6)).toFixed(2)+'s;animation-duration:'+(2.1+Math.random()*1.4).toFixed(2)+'s"></span>';
+  }
+  $('feed').innerHTML=h;
+})();
 
 /* ---------- board ---------- */
 function chip(cls,txt,tip){return '<span class="chip '+cls+'"'+(tip?' data-tip="'+esc(tip)+'"':'')+'>'+txt+'</span>';}
@@ -858,7 +974,8 @@ function winWeeks(s){s=(''+(s||'')).toLowerCase();const m=s.match(/(\d+)/);if(!m
   const n=+m[1];return /mo|month/.test(s)?n*4.33:n;}
 function applyFiltSort(arr){
   let out=arr.filter(l=>{
-    if(filt==='active')return !state.followed.has(l.id)&&!state.dismissed.has(l.id);
+    if(filt==='ready')return true;
+    if(filt==='unc')return !state.followed.has(l.id)&&!state.dismissed.has(l.id);
     if(filt==='new')return l.isNew&&!state.dismissed.has(l.id);
     if(filt==='followed')return state.followed.has(l.id);
     if(filt==='dismissed')return state.dismissed.has(l.id);
@@ -874,18 +991,13 @@ function renderBoard(){
   $('blToggle').style.display=isLeads?'':'none';
   $('blList').classList.remove('on');$('blToggle').classList.remove('on');
   if(!isLeads){
-    const jobs=D().jobs;
-    $('boardTitle').textContent='LIVE JOBS';
-    $('boardCount').textContent=jobs.length;
-    $('strips').innerHTML=jobs.map((j,i)=>jobRow(j,i)).join('');
+    $('strips').innerHTML=D().jobs.map((j,i)=>jobRow(j,i)).join('');
     $('blLabel').textContent='';$('blList').innerHTML='';
     return;
   }
   const leads=D().leads.slice();
   const ready=applyFiltSort(leads.filter(l=>l.tier==='ready'));
   const rest=leads.filter(l=>l.tier!=='ready');
-  $('boardTitle').textContent='READY LEADS';
-  $('boardCount').textContent=ready.length;
   $('strips').innerHTML=ready.length?ready.map((l,i)=>stripHTML(l,i)).join('')
     :'<div style="padding:26px 4px;font-size:12.5px;color:var(--dim)">Nothing under this filter.</div>';
   $('blLabel').textContent='Below the line — '
@@ -948,58 +1060,50 @@ function renderCal(){
 const pop=document.getElementById('calPop');
 function calItem(key){
   const k=key.slice(0,2),i=+key.slice(2);
-  if(k==='wi'){const w=CAL_SHARED.windows[i];return{kind:'PLACEMENT WINDOW',kc:'#0e7c74',n:w.n,d:w.span,why:w.why};}
-  if(k==='fw'){const f=CAL_SHARED.frameworks[i];return{kind:'FRAMEWORK',kc:'#6b3fb5',n:f.n,d:f.span,why:f.why};}
-  const e=D().events[i];return{kind:'EVENT',kc:'#1d4ed8',n:e.n,d:e.d+' · '+e.loc,why:e.why};
+  if(k==='wi'){const w=CAL_SHARED.windows[i];return{kind:'PLACEMENT WINDOW',kc:'#0e7c74',n:w.n,d:w.span,why:w.why,url:w.url};}
+  if(k==='fw'){const f=CAL_SHARED.frameworks[i];return{kind:'FRAMEWORK',kc:'#6b3fb5',n:f.n,d:f.span,why:f.why,url:f.url};}
+  const e=D().events[i];return{kind:'EVENT',kc:'#1d4ed8',n:e.n,d:e.d+' · '+e.loc,why:e.why,url:e.url};
 }
 
-/* ---------- build-a-deck workshop ---------- */
-const TMPL=[
-  {n:'Pitch Pack',ph:'Pitch pack — which account, and what role is in play?'},
-  {n:'Reverse Match',ph:'Reverse match — name the candidate to spec-market…'},
-  {n:'Pre-Meeting Brief',ph:'Pre-meeting brief — which company and contact?'},
-  {n:'Market Sweep',ph:'Market sweep — which sector or patch?'}
-];
-let tmplSel=null;
-$('templates').innerHTML=TMPL.map((t,i)=>'<span class="tmpl glass-lite" data-t="'+i+'"><span class="sp">✦</span>'+t.n+'</span>').join('');
-const recent=[
-  {k:'PRE-MEETING',t:'Reckitt — Kris Licht intro call',w:'07:12'},
-  {k:'SWEEP',t:'UK fintech comms — senior movers',w:'YESTERDAY'}
-];
-const icEye='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
-const icDl='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7.5 10.5 12 15l4.5-4.5"/><path d="M5 20h14"/></svg>';
-function renderRecent(){
-  $('recent').innerHTML='<div class="rh">RECENT REPORTS</div>'
-    +recent.map((r,i)=>'<div class="rrow"><span class="rk">'+r.k+'</span>'
-    +'<span class="rn2">'+esc(r.t)+'</span><span class="rt3">'+r.w+'</span>'
-    +'<span class="ric" data-ric="view" data-i="'+i+'" title="View">'+icEye+'</span>'
-    +'<span class="ric" data-ric="dl" data-i="'+i+'" title="Download">'+icDl+'</span></div>').join('');
+/* ---------- build-a-deck workshop (live PA behaviour) ---------- */
+const composer=$('composer');
+function setCap(cap){
+  const cur=composer.getAttribute('data-mode');
+  const next=(cur===cap)?'free':cap;
+  composer.setAttribute('data-mode',next);
+  document.querySelectorAll('.cap-form').forEach(f=>f.classList.toggle('active',f.dataset.cap===next));
+  document.querySelectorAll('.shopchip').forEach(c=>c.classList.toggle('active',c.dataset.cap===next));
+  $('cprompt').style.display=(next==='free')?'':'none';
+  if(next==='free')$('cprompt').focus();
 }
-renderRecent();
-function dispatch(){
-  const inp=$('composerIn'),v=inp.value.trim();
-  if(!tmplSel){toast('Pick a deck type below first');return;}
-  if(!v){toast('Tell the workshop the brief');inp.focus();return;}
-  const btn=$('sendBtn');btn.classList.add('busy');
-  btn.innerHTML='<svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9"/></svg>';
-  setTimeout(()=>{
-    btn.classList.remove('busy');
-    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
-    recent.unshift({k:tmplSel.n.toUpperCase().replace(' BRIEF',''),t:v,w:'BUILDING…'});renderRecent();
-    toast(tmplSel.n+' queued — lands in a few minutes');inp.value='';
-  },1400);
-}
-$('sendBtn').addEventListener('click',dispatch);
-$('composerIn').addEventListener('keydown',e=>{if(e.key==='Enter')dispatch();});
+document.getElementById('shopChips').addEventListener('click',e=>{
+  const c=e.target.closest('.shopchip');if(c)setCap(c.dataset.cap);
+});
+document.querySelectorAll('.cap-form form').forEach(f=>{
+  f.addEventListener('submit',e=>{
+    e.preventDefault();
+    const st=f.querySelector('.status');
+    st.className='status ok';
+    st.textContent=f.dataset.deck+' queued — it opens in a new tab when ready (a few minutes).';
+    toast(f.dataset.deck+' queued');
+  });
+});
+$('composerSend').addEventListener('click',()=>{
+  const v=$('cprompt').value.trim();
+  if(!v){toast('Tell the workshop what to make');$('cprompt').focus();return;}
+  toast('Working out which deck fits — "'+v.slice(0,40)+(v.length>40?'…':'')+'"');
+  $('cprompt').value='';
+});
+$('cprompt').addEventListener('keydown',e=>{if(e.key==='Enter')$('composerSend').click();});
 
-/* ---------- desk switch + render all ---------- */
+/* ---------- desk switch ---------- */
 function renderAll(){renderEngine();renderBoard();renderCal();}
 document.getElementById('nav').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||b.dataset.d===desk)return;
   desk=b.dataset.d;
   document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('on',x===b));
-  state.followed.clear();state.dismissed.clear();filt='active';sort='strength';
-  $('filtLbl').textContent='Active';$('sortLbl').textContent='Strongest';
+  state.followed.clear();state.dismissed.clear();filt='ready';sort='strength';
+  $('filtLbl').textContent='Ready Leads';$('sortLbl').textContent='Strongest';
   renderAll();
   toast((desk==='comms'?'Communications':'Marketing')+' desk loaded');
 });
@@ -1007,12 +1111,10 @@ renderAll();
 
 /* ---------- global events ---------- */
 document.addEventListener('click',e=>{
-  /* board mode switch */
   const ms=e.target.closest('#modeSeg button');
   if(ms&&ms.dataset.m!==mode){mode=ms.dataset.m;
     document.querySelectorAll('#modeSeg button').forEach(x=>x.classList.toggle('on',x===ms));
     renderEngine();renderBoard();return;}
-  /* control menus */
   const mb=e.target.closest('[data-menu]');
   if(mb){const m=$(mb.dataset.menu);
     document.querySelectorAll('.ctrlmenu.open').forEach(x=>{if(x!==m)x.classList.remove('open');});
@@ -1026,33 +1128,22 @@ document.addEventListener('click',e=>{
     document.querySelectorAll('#sortmenu button').forEach(x=>x.classList.toggle('on',x===sb));
     $('sortmenu').classList.remove('open');renderBoard();return;}
   document.querySelectorAll('.ctrlmenu.open').forEach(x=>x.classList.remove('open'));
-  /* job rows */
   const jr=e.target.closest('.jrow');
   if(jr){window.open(jr.dataset.url,'_blank','noopener');return;}
-  /* calendar */
   const cal=e.target.closest('[data-cal]');
   if(cal){
     const it=calItem(cal.dataset.cal);
     pop.innerHTML='<div class="pk" style="color:'+it.kc+'">'+it.kind+'</div>'
       +'<div class="pn">'+esc(it.n)+'</div><div class="pd">'+esc(it.d)+'</div>'
-      +'<div class="pw">'+esc(it.why)+'</div>'
-      +'<div class="pa"><button type="button" class="btn primary" data-act="plan">Add to BD plan</button></div>';
+      +'<div class="pwl">WHY IT MATTERS</div><div class="pw">'+esc(it.why)+'</div>'
+      +'<a class="psrc" href="'+esc(it.url)+'" target="_blank" rel="noopener">View source '
+      +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg></a>';
     const wrap=document.querySelector('.calwrap').getBoundingClientRect(),bb=cal.getBoundingClientRect();
-    let x=bb.left-wrap.left;x=Math.max(8,Math.min(x,wrap.width-292));
+    let x=bb.left-wrap.left;x=Math.max(8,Math.min(x,wrap.width-312));
     pop.style.left=x+'px';pop.style.top=(bb.bottom-wrap.top+10)+'px';
     pop.classList.add('on');e.stopPropagation();return;
   }
-  if(e.target.closest('[data-act="plan"]')){toast('Added to the BD plan');pop.classList.remove('on');return;}
   if(!e.target.closest('.cal-pop'))pop.classList.remove('on');
-  /* workshop */
-  const t=e.target.closest('.tmpl');
-  if(t){tmplSel=TMPL[+t.dataset.t];
-    document.querySelectorAll('.tmpl').forEach(x=>x.classList.toggle('on',x===t));
-    const inp=$('composerIn');inp.placeholder=tmplSel.ph;inp.value='';inp.focus();return;}
-  const ric=e.target.closest('.ric');
-  if(ric){const r=recent[+ric.dataset.i];
-    toast((ric.dataset.ric==='view'?'Opening ':'Downloading ')+r.t);return;}
-  /* portfolio actions */
   const act=e.target.closest('[data-act]');
   if(act&&act.dataset.id){
     const id=act.dataset.id,l=leadById(id),a=act.dataset.act;
@@ -1062,7 +1153,6 @@ document.addEventListener('click',e=>{
     else if(a==='dis')triage(id,'dis');
     return;
   }
-  /* strips */
   const h=e.target.closest('.strip-h');
   if(h){
     const strip=h.closest('.strip'),was=strip.classList.contains('open');
