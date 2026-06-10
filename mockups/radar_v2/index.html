@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMA — Communications Radar v2 · Ten Concepts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;background:#F7F9FC;color:#101626;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1240px;margin:0 auto;padding:48px 32px 90px}
+  .mast{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .wm{font-weight:800;font-size:18px;letter-spacing:.02em}
+  .wm span{font-weight:300;letter-spacing:.34em;color:#5A6577;font-size:13px;margin-left:2px}
+  h1{font-size:30px;font-weight:700;letter-spacing:-.02em;margin-top:18px}
+  .sub{margin-top:10px;color:#5A6577;font-size:14.5px;line-height:1.65;max-width:62em}
+  .meta{margin-top:14px;font:500 10.5px/1 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:#9AA0A6}
+  .meta b{color:#D97757;font-weight:700}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;margin-top:38px}
+  @media(max-width:980px){.grid{grid-template-columns:1fr}}
+  a.card{display:block;background:#fff;border:1px solid rgba(16,22,38,.08);border-radius:16px;overflow:hidden;text-decoration:none;color:inherit;transition:.18s;box-shadow:0 1px 3px rgba(16,22,38,.04)}
+  a.card:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(26,61,124,.12);border-color:rgba(66,133,244,.4)}
+  .shot{aspect-ratio:1440/900;background:#EEF2F8;display:block;width:100%;object-fit:cover;border-bottom:1px solid rgba(16,22,38,.07)}
+  .body{padding:18px 20px 20px}
+  .num{font:700 10px/1 'JetBrains Mono',monospace;color:#9AA0A6;letter-spacing:.14em}
+  .name{font-size:17px;font-weight:700;margin-top:6px;letter-spacing:-.01em}
+  .desc{margin-top:7px;font-size:13px;line-height:1.6;color:#5A6577}
+  .tags{margin-top:12px;display:flex;gap:6px;flex-wrap:wrap}
+  .tag{font:600 9.5px/1.6 'Inter',sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:#E8F0FE;color:#1A3D7C}
+  .tag.dark{background:#101626;color:#cfe0ff}
+  .foot{margin-top:54px;text-align:center;font:500 10px/1.8 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:#9AA0A6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="mast"><div class="wm">VMA<span>GROUP</span></div></div>
+  <h1>Communications Radar — ten concepts</h1>
+  <p class="sub">Ten reimaginings of the radar page, built to one brief: minimalist at rest, complete on demand. Every lead opens into the full call file — why now, who to call, the opening, what kills it, the proof and the numbers — and nothing else fights for attention until it's asked for. Same live data contract, ten very different mornings.</p>
+  <div class="meta">SHARED DATASET · 10 LEADS · 6 CALL-READY · INTERACTIVE — CLICK ANY CONCEPT, THEN CLICK A LEAD <b>✦</b></div>
+
+  <div class="grid">
+    <a class="card" href="01_morning_queue.html">
+      <img class="shot" src="previews/01_morning_queue.png" alt="The Morning Queue" loading="lazy">
+      <div class="body"><div class="num">01</div><div class="name">The Morning Queue</div>
+      <div class="desc">One lead at a time, full screen. A progress rail of today's six call-ready accounts; arrow through them, triage with a keystroke, and the queue advances itself. The intro card is the AI's morning synthesis.</div>
+      <div class="tags"><span class="tag">Focus deck</span><span class="tag">Keyboard-first</span></div></div>
+    </a>
+    <a class="card" href="02_signal_orbit.html">
+      <img class="shot" src="previews/02_signal_orbit.png" alt="Signal Orbit" loading="lazy">
+      <div class="body"><div class="num">02</div><div class="name">Signal Orbit</div>
+      <div class="desc">A literal radar: leads orbit by time-to-window, glow by strength, pulse when new. The sweep runs; click a blip and the glass dossier slides in beside it.</div>
+      <div class="tags"><span class="tag dark">Dark</span><span class="tag">Spatial</span><span class="tag">Radar sweep</span></div></div>
+    </a>
+    <a class="card" href="03_concierge_brief.html">
+      <img class="shot" src="previews/03_concierge_brief.png" alt="The Briefing" loading="lazy">
+      <div class="body"><div class="num">03</div><div class="name">The Briefing</div>
+      <div class="desc">The AI writes Sara a morning briefing — typed in live, with account names as tappable chips — above an ultra-quiet queue. A Claude-style composer at the bottom answers questions about any account.</div>
+      <div class="tags"><span class="tag">Narrative</span><span class="tag">Composer</span></div></div>
+    </a>
+    <a class="card" href="04_bento_focus.html">
+      <img class="shot" src="previews/04_bento_focus.png" alt="Bento Focus" loading="lazy">
+      <div class="body"><div class="num">04</div><div class="name">Bento Focus</div>
+      <div class="desc">A bento grid where tile size is today's priority: one hero call, two mediums, the rest compact. Tiles grow into the full call file in place; "Plan my morning" numbers the best three.</div>
+      <div class="tags"><span class="tag">Bento</span><span class="tag">Grow-from-tile</span></div></div>
+    </a>
+    <a class="card" href="05_command_rail.html">
+      <img class="shot" src="previews/05_command_rail.png" alt="Command Rail" loading="lazy">
+      <div class="body"><div class="num">05</div><div class="name">Command Rail</div>
+      <div class="desc">The most minimal of the ten: a ⌘K bar and seven quiet lines. Hover peeks, Enter opens the takeover dossier, and typed commands ("plan", "dev") do the rest.</div>
+      <div class="tags"><span class="tag">⌘K</span><span class="tag">Ultra-minimal</span></div></div>
+    </a>
+    <a class="card" href="06_runway.html">
+      <img class="shot" src="previews/06_runway.png" alt="The Runway" loading="lazy">
+      <div class="body"><div class="num">06</div><div class="name">The Runway</div>
+      <div class="desc">Time is the layout: leads sit on a runway from today to six months out, with the call window washed in blue. The call file opens as a three-column bottom sheet; arrows walk it in window order.</div>
+      <div class="tags"><span class="tag">Timeline</span><span class="tag">Bottom sheet</span></div></div>
+    </a>
+    <a class="card" href="07_reading_pane.html">
+      <img class="shot" src="previews/07_reading_pane.png" alt="Reading Pane" loading="lazy">
+      <div class="body"><div class="num">07</div><div class="name">Reading Pane</div>
+      <div class="desc">A premium mail-client split: score rings down a slim rail, and on the right the dossier streams in section by section, as if the AI is writing it for you at the moment you select.</div>
+      <div class="tags"><span class="tag">Split pane</span><span class="tag">Streaming</span></div></div>
+    </a>
+    <a class="card" href="08_triage_deck.html">
+      <img class="shot" src="previews/08_triage_deck.png" alt="Triage Deck" loading="lazy">
+      <div class="body"><div class="num">08</div><div class="name">Triage Deck</div>
+      <div class="desc">A card-stack ritual: minimal front, flip for the full call file, swipe to a decision. Ends with a copyable call list — company, buyer, opening — ready for the phone.</div>
+      <div class="tags"><span class="tag">Card stack</span><span class="tag">Call list</span></div></div>
+    </a>
+    <a class="card" href="09_morning_paper.html">
+      <img class="shot" src="previews/09_morning_paper.png" alt="The Morning Paper" loading="lazy">
+      <div class="body"><div class="num">09</div><div class="name">The Morning Paper</div>
+      <div class="desc">The radar as a private broadsheet the AI typesets at 06:40: a lead story with a drop cap, secondary columns, agate "in brief" items — and a bordered CALL FILE box under every headline.</div>
+      <div class="tags"><span class="tag">Editorial</span><span class="tag">Serif</span></div></div>
+    </a>
+    <a class="card" href="10_constellation.html">
+      <img class="shot" src="previews/10_constellation.png" alt="Conviction Constellation" loading="lazy">
+      <div class="body"><div class="num">10</div><div class="name">Conviction Constellation</div>
+      <div class="desc">Leads as a constellation on the only two axes that matter — how soon and how strong. "Plan my morning" draws the flight path through the best three; dossiers open in glass.</div>
+      <div class="tags"><span class="tag dark">Dark</span><span class="tag">Scatter</span><span class="tag">Flight path</span></div></div>
+    </a>
+  </div>
+
+  <div class="foot">COMMUNICATIONS RADAR V2 · TEN CONCEPTS, ONE DATA CONTRACT · PREPARED FOR VMA GROUP</div>
+</div>
+</body>
+</html>
