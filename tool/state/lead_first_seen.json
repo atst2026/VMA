@@ -703,5 +703,75 @@
     "anchor": "2026-05-20",
     "first_seen": "2026-06-10",
     "expired": true
+  },
+  "815f77df7418cec8": {
+    "anchor": "2026-06-10",
+    "first_seen": "2026-06-10",
+    "expired": false
+  },
+  "9fa8882e5e074432": {
+    "anchor": "2026-06-10",
+    "first_seen": "2026-06-10",
+    "expired": false
+  },
+  "755fb66842d979ea": {
+    "anchor": "2026-06-10",
+    "first_seen": "2026-06-10",
+    "expired": false
+  },
+  "12a507cbdddd2559": {
+    "anchor": "2026-06-09",
+    "first_seen": "2026-06-10",
+    "expired": false
+  },
+  "62d7207f0dbbae03": {
+    "anchor": "2026-06-10",
+    "first_seen": "2026-06-10",
+    "expired": false
+  },
+  "f1d7a698fdc0a5d1": {
+    "anchor": "2026-06-10",
+    "first_seen": "2026-06-10",
+    "expired": false
+  },
+  "c0602c34225c7617": {
+    "anchor": "2026-06-10",
+    "first_seen": "2026-06-10",
+    "expired": false
+  },
+  "1aa2395879d53b99": {
+    "anchor": "2026-06-10",
+    "first_seen": "2026-06-10",
+    "expired": false
+  },
+  "4bbef8841f952395": {
+    "anchor": "2026-06-10",
+    "first_seen": "2026-06-10",
+    "expired": false
+  },
+  "94d0c25f43b60273": {
+    "anchor": "2026-06-10",
+    "first_seen": "2026-06-10",
+    "expired": false
+  },
+  "c52ec6648e2c4dd3": {
+    "anchor": "2026-06-10",
+    "first_seen": "2026-06-10",
+    "expired": false
+  },
+  "69462a3833c32a99": {
+    "anchor": "2026-06-09",
+    "first_seen": "2026-06-10",
+    "expired": false
+  },
+  "5cf951642eb52909": {
+    "anchor": "2026-06-09",
+    "first_seen": "2026-06-10",
+    "expired": false
+  },
+  "30c122c49457e373": {
+    "anchor": "2026-06-09",
+    "first_seen": "2026-06-10",
+    "expired": false
   }
 }
