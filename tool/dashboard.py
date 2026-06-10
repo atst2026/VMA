@@ -1297,28 +1297,10 @@ def marketing_desk():
 @app.route("/")
 @_auth_required
 def landing():
-    """Gemini-clone landing — verbatim ground-truth CSS captured from
-    gemini.google.com/app, ::before recentred for our viewport. VMA logo
-    over a market-scanner radar whose signal chips are pulled live from the
-    latest leads / pre-market triggers, and rotate through the full pool.
-    The single launch pill is split into two: Comms and Marketing."""
-    import random
-    pool = _landing_signal_pool()
-    # Initial 4: guarantee BD leads (funding=green / predictor=gold) get a slot
-    # when they exist — job leads vastly outnumber them, so a flat random sample
-    # would almost never surface a BD lead. Show up to 2 BD leads, fill with jobs.
-    bd = [c for c in pool if c["kind"] in ("green", "gold")]
-    jobs = [c for c in pool if c["kind"] == "blue"]
-    random.shuffle(bd); random.shuffle(jobs)
-    shown = (bd[:2] + jobs)[:4] if bd else jobs[:4]
-    random.shuffle(shown)
-    if len(shown) < 4:
-        shown = pool[:4]
-    # Both desks live on THIS instance: the pills just switch desk.
-    return render_template_string(
-        LANDING_TEMPLATE, signals=shown, signal_pool=pool,
-        comms_href="/comms", marketing_href="/marketing",
-    )
+    """The Business Development Engine IS the site now — `/` serves it
+    directly for the desk pinned by the vma_profile cookie (default comms).
+    The old Gemini-halo landing page is retired."""
+    return _render_dashboard()
 
 
 @app.route("/dashboard")
@@ -1327,6 +1309,14 @@ def index():
     """Dashboard for the desk chosen by the vma_profile cookie (default
     comms) — so Sara's existing /dashboard bookmark is unchanged."""
     return _render_dashboard()
+
+
+@app.route("/legacy")
+@_auth_required
+def legacy_dashboard():
+    """The pre-engine three-page dashboard, kept reachable as a fallback
+    while the Business Development Engine beds in."""
+    return _render_dashboard(legacy=True)
 
 
 # ---------------------------------------------------------------------------
@@ -2159,7 +2149,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
     return bd, jobs
 
 
-def _render_dashboard():
+def _render_dashboard(legacy: bool = False):
     # Keep a long-running process in sync with the morning brief: pull the
     # latest dashboard-state when our data isn't from today (bounded), so we
     # never serve boot-time-stale data until a manual refresh.
@@ -2415,8 +2405,8 @@ def _render_dashboard():
     _mr_bd, _mr_jobs = _build_mr_rows(premarket_rows, leads,
                                       _default_role_label(),
                                       cap=_mr_meta["cap"])
-    return render_template_string(
-        TEMPLATE,
+    ctx = dict(
+        TEMPLATE_IGNORED=None,
         example_role=_default_role_label(),
         profile_label=active_profile().label,
         radar_title=("Marketing Radar" if active_profile().key == "marketing"
@@ -2457,6 +2447,66 @@ def _render_dashboard():
         build_stamp=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         deploy_rev=_DEPLOY_REV,
     )
+    ctx.pop("TEMPLATE_IGNORED")
+    if legacy:
+        return render_template_string(TEMPLATE, **ctx)
+    # ---- Business Development Engine extras (the live one-page UI) ----
+    # Funnel numbers: honest counts from the live lists, clamped monotonic.
+    _eng_coll = len(_mr_bd)
+    _eng_test = min(_eng_coll, sum(1 for r in _mr_bd
+                                   if r.get("tier") in ("ready", "dev", "blocked")))
+    _eng_ready = min(_eng_test, sum(1 for r in _mr_bd
+                                    if r.get("tier") == "ready"
+                                    and r.get("status", "active") != "dismissed"))
+    eng_counts = {
+        "gen": len(leads) + len(premarket_rows),
+        "filt": len(premarket_rows),
+        "coll": _eng_coll, "test": _eng_test, "ready": _eng_ready,
+        "j_scraped": max(len(leads), len(_mr_jobs)),
+        "j_filt": len(_mr_jobs),
+        "j_ver": sum(1 for j in _mr_jobs if j.get("status", "active") != "dismissed"),
+        "j_live": sum(1 for j in _mr_jobs if j.get("status", "active") == "active"),
+    }
+    eng_triggers = sorted({lbl for (lbl, _k) in _MR_TRIGGER.values()})
+    eng_jobboards = sorted({j.get("source") for j in _mr_jobs if j.get("source")}) or [
+        "LinkedIn Jobs", "Indeed", "Adzuna", "Civil Service Jobs", "CharityJob"]
+    # Calendar payloads — same data the legacy calendar cards consume.
+    eng_events, eng_pulses = [], []
+    try:
+        from tool.calendar_pulses import load_events as _le, load_pulses as _lp
+        from tool import pulse_dismiss as _pd
+        _dis = _pd.get_dismissed()
+        eng_events = [r for r in _le(limit=40)
+                      if r.get("key") not in _dis and r.get("status") != "dismissed"][:24]
+        eng_pulses = [r for r in _lp(limit=20)
+                      if r.get("key") not in _dis and r.get("status") != "dismissed"][:10]
+    except Exception as _e:
+        log.info("engine calendar load: %s", _e)
+    _now = datetime.now(timezone.utc)
+    _mlbls = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+              "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+    eng_months = []
+    _y, _m = _now.year, _now.month - 1
+    for _i in range(7):
+        eng_months.append({"y": _y, "m": _m, "lbl": _mlbls[_m],
+                           "td": f"{_now.day:02d} {_mlbls[_now.month - 1]}"})
+        _m += 1
+        if _m > 11:
+            _m = 0
+            _y += 1
+    ctx.update(
+        eng_counts=eng_counts,
+        eng_triggers=eng_triggers,
+        eng_jobboards=eng_jobboards,
+        eng_events=eng_events,
+        eng_pulses=eng_pulses,
+        eng_frameworks=framework_events,
+        eng_months=eng_months,
+        desk_key=active_profile().key,
+        last_updated_label=str(last_updated() or ""),
+    )
+    from tool.engine_page import ENGINE_TEMPLATE
+    return render_template_string(ENGINE_TEMPLATE, **ctx)
 
 
 @app.route("/api/lead/verdict", methods=["POST"])

@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VMA — Communications Radar · The Morning Paper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBFAF7;
+    --ink:#14161D;
+    --hair:rgba(20,22,29,.14);
+    --hair2:rgba(20,22,29,.08);
+    --body-ink:#1B1E26;
+    --muted:#4A4F5B;
+    --dim:#8A8D96;
+    --clay:#D97757;
+    --clay-deep:#B5552E;
+    --green:#1E7A41;
+    --amber:#B45309;
+    --grey:#6A6E78;
+    --red:#A61B1B;
+    --serif:'Fraunces',Georgia,'Times New Roman',serif;
+    --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{overflow-x:hidden}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font:400 15px/1.6 var(--sans);
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    font-optical-sizing:auto;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:radial-gradient(1100px 420px at 50% -120px, rgba(217,119,87,.045), transparent 70%);
+  }
+  [hidden]{display:none !important}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+  :focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+  ::selection{background:rgba(217,119,87,.22)}
+  .star{color:var(--clay);font-style:normal}
+  .tip{border-bottom:1px dotted var(--dim);cursor:help}
+
+  .sheet{position:relative;z-index:1;width:min(1080px,calc(100% - 48px));margin:36px auto 56px}
+
+  /* ---------- masthead ---------- */
+  .rule-tt{height:7px;border-top:3px solid var(--ink);border-bottom:1px solid var(--ink)}
+  .mast-top{display:flex;justify-content:space-between;align-items:baseline;padding:13px 2px 0}
+  .wordmark{font-family:var(--sans);font-size:13px;font-weight:800;letter-spacing:.02em}
+  .wordmark span{font-weight:300;letter-spacing:.34em;margin-left:7px}
+  .mast-right{font:500 9px var(--mono);letter-spacing:.24em;color:var(--muted)}
+  .mast-title{
+    font-family:var(--serif);font-size:44px;font-weight:620;line-height:1.05;
+    letter-spacing:-.015em;text-align:center;padding:8px 0 18px;
+  }
+  .dateline{
+    border-top:1px solid var(--hair);
+    padding:9px 0 11px;text-align:center;
+    font:500 10px var(--mono);letter-spacing:.17em;color:var(--ink);
+  }
+
+  /* ---------- synthesis ---------- */
+  #synthesis{text-align:center;padding:22px 0 4px}
+  .syn{
+    font-family:var(--serif);font-style:italic;font-size:16.5px;line-height:1.62;
+    color:#2A2D35;max-width:780px;margin:0 auto;
+  }
+  .call-order{margin-top:12px;font:500 9.5px var(--mono);letter-spacing:.2em;color:var(--dim)}
+
+  /* ---------- stories (shared) ---------- */
+  .story{position:relative}
+  .story-inner{transition:opacity .3s ease}
+  .is-stamped .story-inner{opacity:.3;pointer-events:none}
+  .is-spiked .lead-head,.is-spiked .sec-head{
+    text-decoration:line-through;text-decoration-thickness:2px;
+    text-decoration-color:rgba(20,22,29,.65);
+  }
+  .kicker{font:700 10px var(--mono);letter-spacing:.24em;color:var(--clay-deep)}
+
+  .stamp{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:4}
+  .stamp span{
+    font:700 42px var(--mono);letter-spacing:.4em;color:var(--ink);
+    padding:12px 16px 12px calc(16px + .4em);
+    border:3px double var(--ink);transform:rotate(-7deg);
+    background:rgba(251,250,247,.55);
+    animation:stampIn .28s cubic-bezier(.2,1.4,.4,1) both;
+  }
+  .sec .stamp span{font-size:23px;letter-spacing:.34em;border-width:2px;padding:9px 12px 9px calc(12px + .34em)}
+  @keyframes stampIn{from{opacity:0;transform:rotate(-7deg) scale(1.65)}to{opacity:1;transform:rotate(-7deg) scale(1)}}
+
+  /* ---------- lead story ---------- */
+  .lead-story{border-top:1px solid var(--ink);margin-top:20px;padding-top:18px}
+  .lead-head{
+    font-family:var(--serif);font-size:34px;font-weight:600;line-height:1.15;
+    letter-spacing:-.012em;margin-top:9px;max-width:26ch;
+  }
+  .standfirst{font:400 17px/1.55 var(--sans);color:var(--muted);max-width:72ch;margin:12px 0 16px}
+  .byline{
+    border-top:1px solid var(--ink);border-bottom:1px solid var(--hair);
+    padding:8px 0;font:600 9.5px var(--mono);letter-spacing:.18em;color:var(--ink);
+  }
+  .lead-grid{display:grid;grid-template-columns:1fr 188px;gap:0 38px;padding-top:18px}
+  .lead-body{
+    columns:2;column-gap:36px;column-rule:1px solid var(--hair);
+    font-family:var(--serif);font-size:15.5px;line-height:1.7;color:var(--body-ink);
+    text-align:justify;hyphens:auto;-webkit-hyphens:auto;orphans:2;widows:2;
+  }
+  .lead-body p+p{margin-top:13px}
+  .lead-body p:first-child::first-letter{
+    font-family:var(--serif);font-weight:600;font-size:55px;line-height:.84;
+    float:left;padding:5px 9px 0 0;color:var(--ink);
+  }
+  .lead-margin{border-left:1px solid var(--hair);padding-left:24px}
+  .fig-label{display:block;font:600 9px var(--mono);letter-spacing:.26em;color:var(--dim)}
+  .fig-num{display:flex;align-items:baseline;gap:7px;font:700 31px/1.15 var(--mono);letter-spacing:-.02em;margin-top:3px}
+  .fig-dir{font-size:14px;font-weight:600}
+  .fig-spark{display:block;margin-top:5px}
+  .spark{display:block}
+  .m-facts{margin-top:16px;border-top:1px solid var(--hair)}
+  .m-facts>div{padding:9px 0 8px;border-bottom:1px solid var(--hair2)}
+  .m-facts dt{font:600 8.5px var(--mono);letter-spacing:.22em;color:var(--dim)}
+  .m-facts dd{font:500 12.5px/1.45 var(--sans);color:var(--ink);margin-top:3px}
+  .m-tags{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px}
+
+  .chip{
+    display:inline-block;font:600 8.5px var(--mono);letter-spacing:.16em;
+    color:var(--ink);border:1px solid var(--ink);padding:3px 7px 2px;white-space:nowrap;
+  }
+  .chip-soft{border-color:var(--hair);color:var(--muted)}
+
+  /* ---------- call file ---------- */
+  .callfile{position:relative;border:1px solid var(--ink);padding:20px 22px 16px;margin-top:24px;background:var(--paper)}
+  .cf-tab{
+    position:absolute;top:-8px;left:14px;background:var(--paper);padding:0 8px;
+    font:700 9.5px/16px var(--mono);letter-spacing:.22em;color:var(--ink);
+  }
+  .cf-row{display:grid;grid-template-columns:128px 1fr;gap:16px;padding:10px 0}
+  .cf-row+.cf-row{border-top:1px solid var(--hair2)}
+  .cf-label{font:600 9px/1.9 var(--mono);letter-spacing:.2em;color:var(--dim)}
+  .cf-val{font:400 13px/1.62 var(--sans);color:var(--body-ink)}
+  .cf-val strong{font-weight:600;color:var(--ink)}
+  .cf-sub{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+  .cf-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .cf-sources{list-style:none;margin-top:9px}
+  .cf-sources li{
+    display:flex;justify-content:space-between;align-items:baseline;gap:18px;
+    padding:5px 0;border-top:1px solid var(--hair2);font-size:12px;
+  }
+  .s-label{color:var(--body-ink)}
+  .s-meta{font:500 8.5px var(--mono);letter-spacing:.1em;color:var(--dim);white-space:nowrap}
+  .cf-qual{display:flex;flex-wrap:wrap;align-items:baseline;gap:14px;font:500 9.5px var(--mono);letter-spacing:.14em;color:var(--muted)}
+  .cf-qual b{font-weight:700;color:var(--ink);letter-spacing:0}
+  .cf-qual b.q0{color:var(--dim)}
+  .cf-total{margin-left:auto;font-weight:700;color:var(--ink)}
+  .cf-nums2{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px;margin-top:10px;font:500 9px var(--mono);letter-spacing:.14em;color:var(--muted)}
+  .cf-fee{border:1px solid var(--ink);padding:2px 6px 1px;color:var(--ink);font-weight:600}
+  .cf-actions{display:flex;flex-wrap:wrap;gap:8px 22px;padding-top:13px;margin-top:10px;border-top:1px solid var(--hair)}
+
+  .xref{
+    font:700 10px var(--mono);letter-spacing:.18em;color:var(--ink);
+    padding:2px 0;cursor:pointer;
+  }
+  .xref:hover{text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1.5px}
+
+  .opener-box{margin-top:14px;border:1px solid var(--hair);background:#F4F1E9;padding:14px 17px 15px}
+  .opener-label{font:600 8.5px var(--mono);letter-spacing:.22em;color:var(--muted)}
+  .opener-text{font-family:var(--serif);font-style:italic;font-size:14.5px;line-height:1.68;color:var(--body-ink);margin-top:8px}
+  .caret{display:none;width:7px;height:14px;background:var(--ink);margin-left:3px;vertical-align:-2px;animation:blink .8s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  /* ---------- secondary stories ---------- */
+  #secondaries{margin-top:38px}
+  .section-head{
+    display:flex;justify-content:space-between;align-items:baseline;
+    border-top:2px solid var(--ink);padding:9px 1px 0;
+    font:700 10px var(--mono);letter-spacing:.26em;color:var(--ink);
+  }
+  .section-head .right{font:500 9px var(--mono);letter-spacing:.2em;color:var(--dim)}
+  .sec-grid{position:relative;display:grid;grid-template-columns:1fr 1fr;column-gap:72px;margin-top:2px}
+  .sec-grid::before{content:"";position:absolute;left:50%;top:16px;bottom:10px;width:1px;background:var(--hair)}
+  .sec{padding:22px 0 20px;border-top:1px solid var(--hair)}
+  .sec:nth-child(-n+2){border-top:0}
+  .sec-head{font-family:var(--serif);font-size:21px;font-weight:600;line-height:1.18;letter-spacing:-.006em;margin:8px 0 9px}
+  .sec-excerpt{
+    font-family:var(--serif);font-size:13.5px;line-height:1.6;color:#33363F;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .sec-meta{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin-top:11px;font:600 9.5px var(--mono);letter-spacing:.14em;color:var(--dim)}
+  .sec .xref{margin-top:13px}
+  .acc{max-height:0;overflow:hidden;transition:max-height .38s cubic-bezier(.45,0,.2,1)}
+  .acc-pad{padding:2px 1px 8px}
+  .acc-pad .callfile{margin-top:14px}
+
+  /* ---------- in brief ---------- */
+  #inbrief{margin-top:40px}
+  .brief-grid{position:relative;display:grid;grid-template-columns:1fr 1fr;column-gap:72px;margin-top:2px}
+  .brief-grid::before{content:"";position:absolute;left:50%;top:14px;bottom:10px;width:1px;background:var(--hair)}
+  .brief-item{padding:14px 0 13px;border-top:1px solid var(--hair2);font:400 11.5px/1.62 var(--sans);color:#2F323B}
+  .brief-item:nth-child(-n+2){border-top:0}
+  .b-line1{margin-bottom:4px}
+  .b-co{font:700 10.5px var(--mono);letter-spacing:.16em;color:var(--ink)}
+  .b-tier{font:500 8.5px var(--mono);letter-spacing:.18em;color:var(--dim)}
+  .b-dnc{font:700 10.5px var(--mono);letter-spacing:.16em;color:var(--red)}
+  .b-gate{margin-top:3px;color:var(--muted)}
+  .footnote{
+    margin-top:18px;border-top:1px solid var(--hair);padding-top:11px;
+    font:500 9.5px var(--mono);letter-spacing:.1em;color:var(--dim);
+  }
+
+  /* ---------- folio ---------- */
+  footer{margin-top:46px}
+  .folio{
+    border-top:1px solid var(--hair);padding-top:15px;text-align:center;
+    font:600 9.5px var(--mono);letter-spacing:.28em;color:var(--muted);
+  }
+  .concept{margin-top:12px;text-align:right;font:500 10px var(--mono);letter-spacing:.1em;color:var(--dim)}
+
+  /* ---------- toast ---------- */
+  #toast{
+    position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);
+    display:flex;align-items:center;gap:16px;max-width:84vw;
+    background:#14161D;color:#FBFAF7;padding:11px 19px;border-radius:999px;
+    font:500 11px/1.4 var(--mono);letter-spacing:.04em;
+    box-shadow:0 12px 32px rgba(20,22,29,.28);
+    opacity:0;pointer-events:none;z-index:50;
+    transition:opacity .25s ease,transform .25s ease;
+  }
+  #toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+  #toast-undo{
+    color:#FBFAF7;font:700 10px var(--mono);letter-spacing:.18em;
+    text-decoration:underline;text-underline-offset:3px;white-space:nowrap;
+  }
+  #toast-undo:hover{color:#fff;text-decoration-thickness:2px}
+  #toast-undo:focus-visible{outline:2px solid #FBFAF7;outline-offset:2px}
+
+  @media (max-width:1180px){
+    .mast-title{font-size:40px}
+    .lead-head{font-size:31px}
+    .lead-grid{grid-template-columns:1fr 168px;gap:0 30px}
+    .sec-grid,.brief-grid{column-gap:48px}
+    .cf-row{grid-template-columns:112px 1fr}
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <header id="masthead"></header>
+  <section id="synthesis" aria-label="Morning synthesis"></section>
+  <main>
+    <section id="lead-story-sec" aria-label="Lead story"></section>
+    <section id="secondaries" aria-label="Also call-ready">
+      <h2 class="section-head" id="sec-head"></h2>
+      <div class="sec-grid" id="sec-grid"></div>
+    </section>
+    <section id="inbrief" aria-label="In brief">
+      <h2 class="section-head" id="brief-head"></h2>
+      <div class="brief-grid" id="brief-grid"></div>
+      <p class="footnote" id="footnote"></p>
+    </section>
+  </main>
+  <footer>
+    <p class="folio">THE COMMUNICATIONS RADAR · PRIVATE &amp; CONFIDENTIAL · PREPARED FOR VMA GROUP</p>
+    <p class="concept">CONCEPT 09 · THE MORNING PAPER</p>
+  </footer>
+</div>
+<div id="toast" role="status" aria-live="polite"><span id="toast-msg"></span><button id="toast-undo" hidden>UNDO</button></div>
+<script>
+/* ============================================================================
+   Communications Radar v2 mockups — canonical sample dataset.
+   Every mockup inlines this object verbatim (standalone HTML, file:// safe).
+   Field contract mirrors the live console payload built in
+   tool/dashboard.py::_build_mr_rows / _mr_gate_fields.
+   ========================================================================== */
+const RADAR = {
+  meta: {
+    user: "Sara",
+    dateLabel: "Tuesday 10 June 2026",
+    scanTime: "06:40",
+    signals: 247,
+    sources: 38,
+    newToday: 2,
+    callReady: 6,
+    synthesis: "Three calls worth making before lunch. Reckitt is the one that won't wait — the CEO RNS landed this morning and the corporate-affairs reset clock is already running. Octopus and Monzo close out the morning; both windows are short and both paths in are warm.",
+    planOrder: ["reckitt", "monzo", "octopus"]
+  },
+  leads: [
+    {
+      id: "reckitt", co: "Reckitt", sector: "Consumer Health",
+      type: "Leadership", key: "lead",
+      seat: "Corporate Affairs Director",
+      win: "~6 weeks", winDays: 42,
+      score: 87, tier: "ready", conf: "High",
+      ver: "reg", rt: 1, conviction: 84,
+      isNew: 1, age: 0,
+      fee: "FEE EVENT",
+      feeTip: "CEO transitions convert to retained senior searches at the highest rate of any trigger on the desk",
+      prop: "Proven agency user", propCls: "pro",
+      propWhy: "retained external search for its last two senior comms hires (2023, 2024)",
+      qual: { seat: 2, budget: 2, urgency: 1, buyer: 2, total: 7,
+        seat_why: "Corporate Affairs Director seat named in two independent reports",
+        budget_why: "FTSE-25 with an active leadership-transition budget line",
+        urgency_why: "September CEO start gives a six-week decision window, not days",
+        buyer_why: "Incoming CEO signs the hire; warm path to the CHRO on file" },
+      hook: "New CEO confirmed for September — the corporate-affairs reset usually happens before the role is ever advertised.",
+      whyNow: "An incoming CEO typically resets the corporate-affairs function inside the first hundred days, and the senior comms seat is usually the first appointment made — before any role is advertised. This morning's RNS confirms a September start, which puts the real decision window inside the next six weeks.",
+      bizCase: "FTSE-25 consumer health group, incoming CEO, no permanent deputy bench. A retained Corporate Affairs Director search at this level carries a £75–90k fee.",
+      buyer: "Kris Licht, incoming CEO",
+      champion: "via Sarah Cunningham, CHRO — VMA placed her Head of Internal Comms in 2023",
+      kill: "Internal promotion of the current deputy, Anna Marsh — she has covered the seat through two previous transitions.",
+      opening: "Congratulate on the CEO announcement, then offer the FTSE consumer-health comms-leadership benchmark VMA mapped in April — value first, no ask.",
+      opener: "Saw this morning's RNS confirming the September CEO transition — congratulations. When leadership changes at this level, the corporate-affairs brief is usually reset within the first hundred days, well before anything is advertised. We mapped the FTSE consumer-health comms bench in April; happy to share what the strongest available leaders look like before you go to market.",
+      anti: [], conflict: 0, q4: null, gateWhy: "",
+      stack: [
+        { label: "RNS: CEO succession announcement", src: "londonstockexchange.com", age: 0, kind: "Registry" },
+        { label: "FT: Reckitt names next chief executive", src: "ft.com", age: 0, kind: "Press" },
+        { label: "PRWeek: comms team braced for reset", src: "prweek.com", age: 2, kind: "Trade" }
+      ]
+    },
+    {
+      id: "octopus", co: "Octopus Energy", sector: "Energy",
+      type: "Funding", key: "fund",
+      seat: "Head of External Communications",
+      win: "~2 months", winDays: 60,
+      score: 81, tier: "ready", conf: "High",
+      ver: "multi", rt: 1, conviction: 78,
+      isNew: 1, age: 0,
+      fee: "FEE EVENT",
+      feeTip: "Raises at this scale fund a senior comms build-out and historically convert to external searches",
+      prop: "Leans external", propCls: "ext",
+      propWhy: "no in-house TA for senior comms; the last three senior hires came through agencies",
+      qual: { seat: 2, budget: 2, urgency: 1, buyer: 1, total: 6,
+        seat_why: "US expansion announced with no named external-comms owner",
+        budget_why: "£600m Series F closed Monday — build-out budget is live",
+        urgency_why: "Hire usually lands before the first US market launch",
+        buyer_why: "CMO owns the hire; path is warm but one step removed" },
+      hook: "£600m Series F closed Monday and a US expansion announced — with no senior external-comms owner named.",
+      whyNow: "A raise of this size funds a senior comms build-out, usually within two months — and the US expansion announced alongside it has no named external-communications lead. The hire that lands the expansion story tends to be made before the first US market launch.",
+      bizCase: "Britain's largest energy supplier going into a US launch with an empty external-comms seat. A search at this level carries a £55–70k fee.",
+      buyer: "Rebecca Dibb-Simkin, CMO",
+      champion: "warm — VMA was shortlisted for their 2024 brand-comms brief and the door was left open",
+      kill: "They promote from the energy-services comms team rather than hire externally — possible, but it has not been their pattern at this level.",
+      opening: "Reference the raise and the US launch in one breath, then ask who owns the expansion story externally — the silence in their own announcement is the opening.",
+      opener: "Congratulations on Monday's raise — £600m and a US launch in the same announcement is quite a story to land. We noticed no external-comms owner was named for the expansion. We run the senior comms desk for UK energy and have three leaders who have taken a British brand into the US market; worth a short call before you scope the role?",
+      anti: [], conflict: 0, q4: null, gateWhy: "",
+      stack: [
+        { label: "TechCrunch: Octopus closes £600m Series F", src: "techcrunch.com", age: 0, kind: "Press" },
+        { label: "Sky News: US expansion to follow raise", src: "news.sky.com", age: 0, kind: "Press" }
+      ]
+    },
+    {
+      id: "monzo", co: "Monzo", sector: "Fintech",
+      type: "Comms exit", key: "lead",
+      seat: "Director of Communications",
+      win: "~4 weeks", winDays: 28,
+      score: 76, tier: "ready", conf: "High",
+      ver: "multi", rt: 1, conviction: 71,
+      isNew: 0, age: 2,
+      fee: "FEE EVENT",
+      feeTip: "A vacated senior seat is the most direct fee event on the desk — the replacement search opens fast",
+      prop: "Leans external", propCls: "ext",
+      propWhy: "external-hiring signals on the last two senior people moves; no executive-search function in-house",
+      qual: { seat: 2, budget: 1, urgency: 2, buyer: 1, total: 6,
+        seat_why: "The exact seat has just been vacated — no inference needed",
+        budget_why: "Backfill budget assumed but not yet evidenced",
+        urgency_why: "Results season lands in July with the seat empty in four weeks",
+        buyer_why: "CEO signs senior comms hires personally; path runs through VP People" },
+      hook: "Comms director announced her exit to Revolut on Friday — the seat is empty in four weeks, with results season ahead.",
+      whyNow: "The senior comms seat has just been vacated, so the replacement search tends to open within four weeks — and Monzo walks into results season in July without a comms director unless it moves first. Exits to a direct rival also add pressure to re-stake the narrative quickly.",
+      bizCase: "UK's biggest digital bank entering results season with the comms chair empty. A Director-level search carries a £50–65k fee, and speed is the differentiator here.",
+      buyer: "TS Anil, CEO — signs senior comms hires personally",
+      champion: "via Hannah Bertolini, VP People — responded warmly to VMA's candidate note in March",
+      kill: "An internal step-up by the policy-comms lead. She lacks consumer-press experience, so it would be a stretch — but boards under time pressure do stretch.",
+      opening: "Don't mention Revolut. Lead with the July results date and offer two names who could hold the chair from week one — speed is the whole pitch.",
+      opener: "With results season landing in July, four weeks is a tight window to have the comms chair empty. We hold a live shortlist of consumer-fintech comms directors — two could be in the seat within notice. Worth fifteen minutes this week before the gap starts costing coverage?",
+      anti: [], conflict: 0, q4: null, gateWhy: "",
+      stack: [
+        { label: "Financial News: Monzo comms chief departs for Revolut", src: "fnlondon.com", age: 2, kind: "Press" },
+        { label: "LinkedIn: departure post by the outgoing director", src: "linkedin.com", age: 2, kind: "Social" }
+      ]
+    },
+    {
+      id: "severn", co: "Severn Trent", sector: "Water Utilities",
+      type: "Regulator action", key: "warn",
+      seat: "Head of Corporate Communications",
+      win: "~6 weeks", winDays: 42,
+      score: 72, tier: "ready", conf: "High",
+      ver: "reg", rt: 1, conviction: 69,
+      isNew: 0, age: 4,
+      fee: "FEE EVENT",
+      feeTip: "Enforcement action raises the reputation-comms bar; a senior hire usually follows within the response window",
+      prop: "Proven agency user", propCls: "pro",
+      propWhy: "history of agency use on senior comms and regulatory-affairs hires on file",
+      qual: { seat: 2, budget: 1, urgency: 2, buyer: 2, total: 7,
+        seat_why: "Head of Corporate Communications named as vacant in trade coverage",
+        budget_why: "Regulatory-response budget likely but not yet evidenced",
+        urgency_why: "Ofwat response deadline fixed at eight weeks from notice",
+        buyer_why: "Corporate Affairs Director is the named owner of the response" },
+      hook: "Ofwat enforcement notice published Thursday — the response needs a senior comms owner and the current seat is vacant.",
+      whyNow: "Regulatory enforcement raises the reputation-comms bar overnight, and the formal response window is fixed: eight weeks from notice. The Head of Corporate Communications seat is vacant at exactly the moment the company needs a senior owner for the Ofwat narrative.",
+      bizCase: "FTSE-100 utility under live enforcement with a vacant comms seat and a fixed deadline. Crisis-adjacent searches close fast and at full fee — £45–60k here.",
+      buyer: "James Bowling, Corporate Affairs Director",
+      champion: "cold but receptive — opened both VMA sector notes sent this year",
+      kill: "They hand the response to their retained agency instead of hiring — mitigated by the seat itself being structurally vacant.",
+      opening: "Lead with the eight-week response window and the vacant seat in the same sentence; offer interim-to-permanent options to de-risk the deadline.",
+      opener: "With the Ofwat notice setting an eight-week response clock and the corporate-comms seat currently open, you're running the response a person short. We can put senior water-sector comms leaders in front of you this week — including interim-to-permanent options if the deadline is the priority. Worth a short call?",
+      anti: [], conflict: 0, q4: null, gateWhy: "",
+      stack: [
+        { label: "Ofwat: enforcement notice and penalty", src: "ofwat.gov.uk", age: 5, kind: "Registry" },
+        { label: "BBC: Severn Trent faces enforcement action", src: "bbc.co.uk", age: 5, kind: "Press" },
+        { label: "Utility Week: comms seat vacant amid probe", src: "utilityweek.co.uk", age: 4, kind: "Trade" }
+      ]
+    },
+    {
+      id: "haleon", co: "Haleon", sector: "Consumer Health",
+      type: "M&A", key: "mna",
+      seat: "Head of Internal Communications",
+      win: "~3 months", winDays: 90,
+      score: 70, tier: "ready", conf: "Medium",
+      ver: "multi", rt: 0, conviction: null,
+      isNew: 0, age: 6,
+      fee: "FEE EVENT",
+      feeTip: "Post-deal integration needs senior internal-comms leadership to land the change",
+      prop: "Unknown", propCls: "unk",
+      propWhy: "no fee-propensity evidence yet — score carries the neutral default",
+      qual: { seat: 2, budget: 1, urgency: 1, buyer: 2, total: 6,
+        seat_why: "Integration comms lead named as a gap in deal coverage",
+        budget_why: "Deal integration budget exists; comms line not yet evidenced",
+        urgency_why: "Completion expected Q3 — window is real but not immediate",
+        buyer_why: "Chief People Officer named as integration sponsor" },
+      hook: "£1.2bn brand-portfolio divestiture confirmed — 2,000 staff transfer and nobody named to land the change internally.",
+      whyNow: "Post-deal integration needs senior internal-comms leadership in place before completion, and this divestiture moves roughly two thousand people between owners. Deal coverage names an integration sponsor but no comms owner — the hire usually follows within a quarter.",
+      bizCase: "FTSE-30 consumer health group mid-divestiture with a named people-integration sponsor and no comms lead. Internal-comms leadership searches here run £40–55k.",
+      buyer: "Tamara Rogers, Chief People Officer (integration sponsor)",
+      champion: "no warm path yet — strongest route is the sector note then a direct approach",
+      kill: "The acquirer takes integration comms in-house on completion, which would close the seat on Haleon's side.",
+      opening: "Frame it around the people transfer, not the deal: two thousand colleagues hearing about their future second-hand is the risk a senior IC hire removes.",
+      opener: "With the divestiture confirmed and around two thousand colleagues transferring, the internal story is now the deal's biggest people risk — and coverage so far names an integration sponsor but no comms owner. We specialise in exactly this seat; can I share three integration-comms leaders who have landed a carve-out before?",
+      anti: [], conflict: 0, q4: null, gateWhy: "",
+      stack: [
+        { label: "Reuters: Haleon confirms portfolio divestiture", src: "reuters.com", age: 6, kind: "Press" },
+        { label: "PRWeek: integration comms gap flagged", src: "prweek.com", age: 4, kind: "Trade" }
+      ]
+    },
+    {
+      id: "diageo", co: "Diageo", sector: "Beverages",
+      type: "Restructure", key: "restr",
+      seat: "Internal Communications Lead",
+      win: "~2 months", winDays: 60,
+      score: 68, tier: "ready", conf: "Medium",
+      ver: "multi", rt: 0, conviction: null,
+      isNew: 0, age: 8,
+      fee: null, feeTip: "",
+      prop: "Proven agency user", propCls: "pro",
+      propWhy: "used external search for both senior comms hires made under the current CMO",
+      qual: { seat: 1, budget: 2, urgency: 1, buyer: 1, total: 5,
+        seat_why: "Seat inferred from the restructure scope, not yet named",
+        budget_why: "FYE 30 June — unspent budget converts to mandates in the next 20 days",
+        urgency_why: "Restructure announced; comms implications still forming",
+        buyer_why: "Likely the Comms VP, unconfirmed" },
+      hook: "Americas restructure announced and the financial year closes 30 June — unspent budget meets a live reorganisation.",
+      whyNow: "A restructure reshapes the comms function, and Diageo's year-end on 30 June gives hiring managers twenty days to commit budget they otherwise lose. That combination — live reorganisation plus budget-flush window — is when retained briefs get signed.",
+      bizCase: "FTSE-15 drinks group reorganising its biggest region with year-end twenty days out. The budget-flush window is the lever; the restructure is the reason.",
+      buyer: "Likely the VP Communications — to be confirmed on the first call",
+      champion: "VMA placed two comms managers here in 2022; both still in seat and contactable",
+      kill: "The restructure lands as cost-cutting rather than reshaping — in that world comms headcount shrinks instead of churns.",
+      opening: "Year-end first, restructure second: budget committed before 30 June survives; budget that isn't, doesn't. Offer to scope the brief this week.",
+      opener: "With the Americas restructure in motion and your year-end on 30 June, there's a short window where this year's budget can still carry a senior comms brief. We placed two of your comms managers in 2022 and know the function well — worth scoping the internal-comms lead now so the budget decision is yours rather than the calendar's?",
+      anti: [], conflict: 0,
+      q4: "Q4 · FYE 30 Jun (20d)", gateWhy: "",
+      stack: [
+        { label: "WSJ: Diageo restructures Americas business", src: "wsj.com", age: 8, kind: "Press" },
+        { label: "The Grocer: comms implications of the reorg", src: "thegrocer.co.uk", age: 7, kind: "Trade" }
+      ]
+    },
+    {
+      id: "deliveroo", co: "Deliveroo", sector: "Consumer Tech",
+      type: "Job-ad cluster", key: "people",
+      seat: "Head of Communications",
+      win: "~2 months", winDays: 60,
+      score: 58, tier: "dev", conf: "",
+      ver: "single", rt: 0, conviction: null,
+      isNew: 0, age: 3,
+      fee: null, feeTip: "",
+      prop: "Unknown", propCls: "unk",
+      propWhy: "no fee-propensity evidence yet",
+      qual: { seat: 1, budget: 1, urgency: 1, buyer: 0, total: 3,
+        seat_why: "Senior seat inferred from the mid-level cluster, not named",
+        budget_why: "Three live mid-level salaries imply budget, not proof of it",
+        urgency_why: "Cluster is growing but no forcing date",
+        buyer_why: "No buyer visible yet" },
+      hook: "Three mid-level comms roles posted in a fortnight with no senior owner above them — the senior mandate usually follows.",
+      whyNow: "Mid-level comms hiring is already underway with no senior owner visible above it. When a function staffs from the middle out, the senior mandate tends to follow within a quarter — the cluster is the smoke, not yet the fire.",
+      bizCase: "", buyer: "", champion: "",
+      kill: "", opening: "", opener: "",
+      anti: [], conflict: 0, q4: null,
+      gateWhy: "Mid-level cluster verified, but the senior-seat inference rests on one evidence family · recheck in 4d · run /investigate",
+      stack: [
+        { label: "LinkedIn Jobs: 3 comms roles, posted 9–14 days", src: "linkedin.com", age: 3, kind: "Jobs" }
+      ]
+    },
+    {
+      id: "astrazeneca", co: "AstraZeneca", sector: "Pharma",
+      type: "Chair change", key: "lead",
+      seat: "Corporate Affairs Director",
+      win: "~3 months", winDays: 90,
+      score: 54, tier: "dev", conf: "",
+      ver: "reg", rt: 0, conviction: null,
+      isNew: 0, age: 5,
+      fee: null, feeTip: "",
+      prop: "Unknown", propCls: "unk",
+      propWhy: "no fee-propensity evidence yet",
+      qual: { seat: 0, budget: 1, urgency: 1, buyer: 1, total: 3,
+        seat_why: "No comms-function signal yet — the trigger is board-level only",
+        budget_why: "Budget capacity assumed at this scale",
+        urgency_why: "Chair transitions reset slowly; months not weeks",
+        buyer_why: "Would be the incoming chair's office; not yet formed" },
+      hook: "New chair announced via RNS — board-level resets reach the comms function more slowly, but they do reach it.",
+      whyNow: "A new chair usually reviews board and governance communications within two quarters. The trigger is registry-attested but board-level only — there is no comms-function movement yet, which is what the recheck is waiting for.",
+      bizCase: "", buyer: "", champion: "",
+      kill: "", opening: "", opener: "",
+      anti: [], conflict: 0, q4: null,
+      gateWhy: "Board change is registry-attested, but no comms-function signal yet · recheck in 7d",
+      stack: [
+        { label: "RNS: chair succession announcement", src: "londonstockexchange.com", age: 5, kind: "Registry" }
+      ]
+    },
+    {
+      id: "asos", co: "ASOS", sector: "Retail",
+      type: "Leadership tenure", key: "people",
+      seat: "Director of Communications",
+      win: "horizon", winDays: 180,
+      score: 38, tier: "early", conf: "",
+      ver: "single", rt: 0, conviction: null,
+      isNew: 0, age: 11,
+      fee: null, feeTip: "",
+      prop: "Unknown", propCls: "unk", propWhy: "no fee-propensity evidence yet",
+      qual: { seat: 0, budget: 0, urgency: 0, buyer: 0, total: 0,
+        seat_why: "No vacancy — watch-grade only",
+        budget_why: "No budget signal",
+        urgency_why: "No forcing event",
+        buyer_why: "No buyer in play" },
+      hook: "Comms director enters year seven in the seat — statistically a flight risk, nothing more yet.",
+      whyNow: "A long-tenured comms leader is a flight risk worth tracking, not calling. The play is relationship groundwork: be the first call when movement comes, and have a backfill brief ready before anyone else knows there is one.",
+      bizCase: "", buyer: "", champion: "",
+      kill: "", opening: "", opener: "",
+      anti: [], conflict: 0, q4: null,
+      gateWhy: "Watch-grade: tenure flag only, no movement signal · keep on the radar",
+      stack: [
+        { label: "LinkedIn: tenure profile analysis", src: "linkedin.com", age: 11, kind: "Social" }
+      ]
+    },
+    {
+      id: "boohoo", co: "Boohoo Group", sector: "Retail",
+      type: "Profit warning", key: "warn",
+      seat: "Head of Corporate Communications",
+      win: "~6 weeks", winDays: 42,
+      score: 61, tier: "blocked", conf: "",
+      ver: "reg", rt: 0, conviction: null,
+      isNew: 0, age: 7,
+      fee: null, feeTip: "",
+      prop: "Unknown", propCls: "unk", propWhy: "",
+      qual: { seat: 2, budget: 1, urgency: 2, buyer: 1, total: 6,
+        seat_why: "IR/comms reset named in coverage",
+        budget_why: "Budget under pressure post-warning",
+        urgency_why: "Warning forces a narrative reset now",
+        buyer_why: "CFO office owns the response" },
+      hook: "Profit warning would normally open the IR-comms seat — but a competing recruiter already holds the leadership review.",
+      whyNow: "A profit warning drives an investor-relations and corporate-comms reset, and this one is registry-attested. It is blocked for one reason only: Russell Reynolds is retained on the wider leadership review, so a call now walks into a competitor's mandate.",
+      bizCase: "", buyer: "", champion: "",
+      kill: "", opening: "", opener: "",
+      anti: ["competing recruiter retained"], conflict: 1, q4: null,
+      gateWhy: "Russell Reynolds retained for the wider leadership review — do not call",
+      stack: [
+        { label: "RNS: trading statement and profit warning", src: "londonstockexchange.com", age: 7, kind: "Registry" },
+        { label: "Retail Week: leadership review under way", src: "retail-week.com", age: 6, kind: "Trade" }
+      ]
+    }
+  ]
+};
+
+/* ============================ The Morning Paper ============================ */
+(function () {
+  'use strict';
+
+  var m = RADAR.meta;
+  var byId = {};
+  RADAR.leads.forEach(function (l) { byId[l.id] = l; });
+
+  var READY = RADAR.leads
+    .filter(function (l) { return l.tier === 'ready'; })
+    .sort(function (a, b) { return b.score - a.score; });
+  var LEAD = READY[0];
+  var SECONDARY = READY.slice(1);
+  var GATED = RADAR.leads
+    .filter(function (l) { return l.tier !== 'ready'; })
+    .sort(function (a, b) { return b.score - a.score; });
+
+  /* ------------------------------- helpers ------------------------------- */
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function band(s) { return s >= 70 ? '#1E7A41' : s >= 45 ? '#B45309' : '#6A6E78'; }
+  function ageStr(a) { return a === 0 ? 'TODAY' : a + 'D'; }
+  function verLabel(v) {
+    return v === 'reg' ? 'REGISTRY-ATTESTED' : v === 'multi' ? '2+ SOURCES' : 'SINGLE SOURCE';
+  }
+  function marks(v) { return v === 2 ? '✓✓' : v === 1 ? '✓' : '✗'; }
+  function tierWord(t) { return t === 'dev' ? 'DEVELOPING' : t === 'early' ? 'WATCHLIST' : 'BLOCKED'; }
+
+  var HEADS = {
+    'Leadership':       function (l) { return l.co + '’s incoming chief resets the communications brief'; },
+    'Funding':          function (l) { return l.co + ' banks the raise; the story has no owner yet'; },
+    'Comms exit':       function (l) { return 'The chair empties at ' + l.co + ', and the clock is already running'; },
+    'Regulator action': function (l) { return 'The regulator sets the clock; ' + l.co + '’s comms seat sits empty'; },
+    'M&A':              function (l) { return l.co + '’s deal is signed, but the internal story is not'; },
+    'Restructure':      function (l) { return 'At ' + l.co + ', a reorganisation meets a closing budget window'; },
+    'Chair change':     function (l) { return 'A new chair at ' + l.co + ' begins the slow reset'; },
+    'Profit warning':   function (l) { return l.co + ' needs a new narrative, and the door is closed'; },
+    'Job-ad cluster':   function (l) { return l.co + ' is hiring from the middle out'; }
+  };
+  function headline(l) { return (HEADS[l.type] || function (x) { return x.hook; })(l); }
+
+  /* tiny deterministic market-tick sparkline, trending up to the score */
+  function spark(l, w, h) {
+    w = w || 86; h = h || 24;
+    var n = 9, pts = [], i, t, target, jitter, y;
+    var s = 2166136261;
+    for (i = 0; i < l.id.length; i++) { s ^= l.id.charCodeAt(i); s = (s * 16777619) >>> 0; }
+    function rnd() { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return (s >>> 8) / 16777216; }
+    for (i = 0; i < n; i++) {
+      t = i / (n - 1);
+      target = h - 2 - t * (l.score / 100) * (h - 5);
+      jitter = (rnd() - 0.5) * 6 * (1 - t * 0.6);
+      y = Math.min(h - 1.5, Math.max(1.5, target + jitter));
+      pts.push((t * w).toFixed(1) + ',' + y.toFixed(1));
+    }
+    return '<svg class="spark" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" aria-hidden="true">' +
+      '<polyline points="' + pts.join(' ') + '" fill="none" stroke="currentColor" stroke-width="1.6" ' +
+      'stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  }
+
+  /* ------------------------------ call file ------------------------------ */
+  function callFile(l) {
+    var q = l.qual;
+    var dims = [
+      ['SEAT', q.seat, q.seat_why], ['BUDGET', q.budget, q.budget_why],
+      ['URGENCY', q.urgency, q.urgency_why], ['BUYER', q.buyer, q.buyer_why]
+    ];
+    return '<div class="callfile" data-qa="portfolio">' +
+      '<span class="cf-tab">THE CALL FILE · ' + esc(l.co.toUpperCase()) + '</span>' +
+
+      '<div class="cf-row"><div class="cf-label">WHO TO CALL</div><div class="cf-val">' +
+        '<strong>' + esc(l.buyer) + '</strong>' +
+        '<span class="cf-sub">' + esc(l.champion) + '</span></div></div>' +
+
+      '<div class="cf-row"><div class="cf-label">THE OPENING</div><div class="cf-val">' + esc(l.opening) + '</div></div>' +
+
+      '<div class="cf-row"><div class="cf-label">WHAT KILLS IT</div><div class="cf-val">' + esc(l.kill) + '</div></div>' +
+
+      '<div class="cf-row"><div class="cf-label">PROOF</div><div class="cf-val">' +
+        '<div class="cf-chips">' +
+          '<span class="chip chip-soft">' + verLabel(l.ver) + '</span>' +
+          (l.rt ? '<span class="chip">RED-TEAMED ✓ ' + l.conviction + '</span>' : '') +
+          (l.conf ? '<span class="chip chip-soft">CONFIDENCE ' + esc(l.conf.toUpperCase()) + '</span>' : '') +
+        '</div>' +
+        '<ul class="cf-sources">' + l.stack.map(function (s) {
+          return '<li><span class="s-label">' + esc(s.label) + '</span>' +
+            '<span class="s-meta">' + esc(s.kind.toUpperCase()) + ' · ' + esc(s.src) + ' · ' + ageStr(s.age) + '</span></li>';
+        }).join('') + '</ul>' +
+      '</div></div>' +
+
+      '<div class="cf-row"><div class="cf-label">THE NUMBERS</div><div class="cf-val">' +
+        '<div class="cf-qual">' + dims.map(function (d) {
+          return '<span class="q tip" title="' + esc(d[2]) + '">' + d[0] +
+            ' <b class="' + (d[1] === 0 ? 'q0' : '') + '">' + marks(d[1]) + '</b></span>';
+        }).join('') +
+        '<span class="cf-total">' + q.total + '/8</span></div>' +
+        '<div class="cf-nums2">' +
+          '<span class="tip" title="' + esc(l.propWhy) + '">PROPENSITY · ' + esc(l.prop.toUpperCase()) + '</span>' +
+          '<span>WINDOW · ' + esc(l.win.toUpperCase()) + '</span>' +
+          (l.fee ? '<span class="cf-fee tip" title="' + esc(l.feeTip) + '">FEE EVENT</span>' : '') +
+          (l.q4 ? '<span>' + esc(l.q4.toUpperCase()) + '</span>' : '') +
+        '</div>' +
+      '</div></div>' +
+
+      '<div class="cf-actions">' +
+        '<button class="xref" data-action="draft"   data-lead="' + l.id + '">→ DRAFT THE OPENER</button>' +
+        '<button class="xref" data-action="pitch"   data-lead="' + l.id + '">→ GENERATE PITCH PACK</button>' +
+        '<button class="xref" data-action="follow"  data-lead="' + l.id + '">→ MARK FOLLOWED UP</button>' +
+        '<button class="xref" data-action="dismiss" data-lead="' + l.id + '">→ DISMISS</button>' +
+      '</div>' +
+
+      '<div class="opener-box" id="op-' + l.id + '" hidden>' +
+        '<p class="opener-label"><span class="star">✦</span> DRAFTED OPENER · AS YOU MIGHT SAY IT</p>' +
+        '<p class="opener-text"><span class="typed"></span><span class="caret" aria-hidden="true"></span></p>' +
+      '</div>' +
+    '</div>';
+  }
+
+  /* ------------------------------- render -------------------------------- */
+  document.getElementById('masthead').innerHTML =
+    '<div class="rule-tt" aria-hidden="true"></div>' +
+    '<div class="mast-top">' +
+      '<p class="wordmark">VMA<span>GROUP</span></p>' +
+      '<p class="mast-right"><span class="star">✦</span> VMA INTELLIGENCE</p>' +
+    '</div>' +
+    '<h1 class="mast-title">The Communications Radar</h1>' +
+    '<p class="dateline">' + esc(m.dateLabel.toUpperCase()) + ' · No. ' + m.signals +
+      ' SIGNALS SCANNED · ' + m.sources + ' SOURCES · COMPILED ' + esc(m.scanTime) +
+      ' BY <span class="star">✦</span> VMA INTELLIGENCE — FOR ' + esc(m.user.toUpperCase()) + ' TEHRANI</p>' +
+    '<div class="rule-tt" aria-hidden="true"></div>';
+
+  document.getElementById('synthesis').innerHTML =
+    '<p class="syn"><span class="star">✦</span> ' + esc(m.synthesis) + '</p>' +
+    '<p class="call-order">SUGGESTED CALL ORDER&nbsp;&nbsp;' +
+      m.planOrder.map(function (id) { return esc(byId[id].co.toUpperCase()); }).join(' → ') +
+      ' &nbsp;·&nbsp; ' + m.callReady + ' OF ' + RADAR.leads.length + ' TRACKED LEADS ARE CALL-READY</p>';
+
+  document.getElementById('lead-story-sec').innerHTML =
+    '<article class="story lead-story" id="story-' + LEAD.id + '">' +
+      '<div class="story-inner">' +
+        '<p class="kicker">' + esc(LEAD.type.toUpperCase()) + ' · ' + esc(LEAD.sector.toUpperCase()) + '</p>' +
+        '<h2 class="lead-head">' + esc(headline(LEAD)) + '</h2>' +
+        '<p class="standfirst">' + esc(LEAD.hook) + '</p>' +
+        '<p class="byline">ANALYSIS — <span class="star">✦</span> VMA INTELLIGENCE · VERIFIED AGAINST ' +
+          LEAD.stack.length + ' SOURCE' + (LEAD.stack.length === 1 ? '' : 'S') + '</p>' +
+        '<div class="lead-grid">' +
+          '<div class="lead-body">' +
+            '<p>' + esc(LEAD.whyNow) + '</p>' +
+            '<p>' + esc(LEAD.bizCase) + '</p>' +
+            '<p>The desk rates ' + esc(LEAD.co) + ' “' + esc(LEAD.prop.toLowerCase()) + '”: ' + esc(LEAD.propWhy) + '.</p>' +
+          '</div>' +
+          '<aside class="lead-margin">' +
+            '<div class="figure">' +
+              '<span class="fig-label">STRENGTH</span>' +
+              '<span class="fig-num" style="color:' + band(LEAD.score) + '">' + LEAD.score +
+                ' <span class="fig-dir">▲</span></span>' +
+              '<span class="fig-spark" style="color:' + band(LEAD.score) + '">' + spark(LEAD) + '</span>' +
+            '</div>' +
+            '<dl class="m-facts">' +
+              '<div><dt>THE SEAT</dt><dd>' + esc(LEAD.seat) + '</dd></div>' +
+              '<div><dt>WINDOW</dt><dd>' + esc(LEAD.win) + '</dd></div>' +
+              (LEAD.conf ? '<div><dt>CONFIDENCE</dt><dd>' + esc(LEAD.conf) + '</dd></div>' : '') +
+            '</dl>' +
+            '<div class="m-tags">' +
+              (LEAD.isNew ? '<span class="chip">NEW THIS MORNING</span>' : '') +
+              (LEAD.fee ? '<span class="chip tip" title="' + esc(LEAD.feeTip) + '">FEE EVENT</span>' : '') +
+            '</div>' +
+          '</aside>' +
+        '</div>' +
+        callFile(LEAD) +
+      '</div>' +
+    '</article>';
+
+  function secStory(l) {
+    return '<article class="story sec" id="story-' + l.id + '">' +
+      '<div class="story-inner">' +
+        '<p class="kicker">' + esc(l.type.toUpperCase()) + ' · ' + esc(l.sector.toUpperCase()) + '</p>' +
+        '<h3 class="sec-head">' + esc(headline(l)) + '</h3>' +
+        '<p class="sec-excerpt">' + esc(l.whyNow) + '</p>' +
+        '<p class="sec-meta">' +
+          '<span style="color:' + band(l.score) + '">STRENGTH ' + l.score + ' ▲</span>' +
+          '<span>' + esc(l.seat.toUpperCase()) + '</span>' +
+          '<span>WINDOW ' + esc(l.win.toUpperCase()) + '</span>' +
+          (l.isNew ? '<span class="chip">NEW</span>' : '') +
+        '</p>' +
+        '<button class="xref" data-qa="lead-trigger" data-action="toggle" data-lead="' + l.id + '" ' +
+          'aria-expanded="false" aria-controls="acc-' + l.id + '">→ READ THE CALL FILE</button>' +
+        '<div class="acc" id="acc-' + l.id + '"><div class="acc-pad">' + callFile(l) + '</div></div>' +
+      '</div>' +
+    '</article>';
+  }
+  document.getElementById('sec-head').innerHTML =
+    'ALSO CALL-READY THIS MORNING<span class="right">' + SECONDARY.length + ' STORIES</span>';
+  document.getElementById('sec-grid').innerHTML = SECONDARY.map(secStory).join('');
+
+  function briefItem(l) {
+    return '<div class="brief-item">' +
+      '<p class="b-line1">' +
+        (l.conflict ? '<span class="b-dnc">DO NOT CALL — </span>' : '') +
+        '<span class="b-co">' + esc(l.co.toUpperCase()) + '</span>' +
+        '<span class="b-tier"> · ' + esc(l.sector.toUpperCase()) + ' · ' + tierWord(l.tier) + '</span>' +
+      '</p>' +
+      '<p class="b-hook">' + esc(l.hook) + '</p>' +
+      '<p class="b-gate"><i>' + esc(l.gateWhy) + '</i></p>' +
+    '</div>';
+  }
+  document.getElementById('brief-head').innerHTML =
+    'IN BRIEF<span class="right">NOT YET CALL-READY · ' + GATED.length + ' ITEMS</span>';
+  document.getElementById('brief-grid').innerHTML = GATED.map(briefItem).join('');
+  document.getElementById('footnote').innerHTML =
+    'These items have not cleared the evidence gate and are not call-ready. ' +
+    '<span class="star">✦</span> VMA Intelligence rechecks daily at ' + esc(m.scanTime) + '.';
+
+  /* ----------------------------- interactions ---------------------------- */
+  var toastEl = document.getElementById('toast');
+  var toastMsg = document.getElementById('toast-msg');
+  var toastUndo = document.getElementById('toast-undo');
+  var toastTimer = null, undoFn = null;
+
+  function toast(msg, undo) {
+    toastMsg.textContent = msg;
+    undoFn = undo || null;
+    toastUndo.hidden = !undo;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 4200);
+  }
+  toastUndo.addEventListener('click', function () {
+    if (undoFn) undoFn();
+    undoFn = null;
+    toastEl.classList.remove('show');
+    clearTimeout(toastTimer);
+  });
+
+  function toggleAcc(btn) {
+    var acc = document.getElementById(btn.getAttribute('aria-controls'));
+    if (!acc) return;
+    var open = btn.getAttribute('aria-expanded') === 'true';
+    if (open) {
+      btn.setAttribute('aria-expanded', 'false');
+      btn.textContent = '→ READ THE CALL FILE';
+      acc.style.maxHeight = acc.scrollHeight + 'px';
+      void acc.offsetHeight; /* commit the fixed height before collapsing */
+      acc.style.maxHeight = '0px';
+    } else {
+      btn.setAttribute('aria-expanded', 'true');
+      btn.textContent = '→ CLOSE THE CALL FILE';
+      acc.style.maxHeight = acc.scrollHeight + 'px';
+      var onEnd = function (e) {
+        if (e.target === acc && btn.getAttribute('aria-expanded') === 'true') {
+          acc.style.maxHeight = 'none'; /* let the typewriter grow the box */
+        }
+        acc.removeEventListener('transitionend', onEnd);
+      };
+      acc.addEventListener('transitionend', onEnd);
+    }
+  }
+
+  function draftOpener(l) {
+    var box = document.getElementById('op-' + l.id);
+    if (!box) return;
+    box.hidden = false;
+    if (box.dataset.state === 'typing' || box.dataset.state === 'done') return;
+    box.dataset.state = 'typing';
+    var typed = box.querySelector('.typed');
+    var caret = box.querySelector('.caret');
+    caret.style.display = 'inline-block';
+    var text = '“' + l.opener + '”';
+    var i = 0;
+    var tick = setInterval(function () {
+      i += 2;
+      typed.textContent = text.slice(0, i);
+      if (i >= text.length) {
+        clearInterval(tick);
+        typed.textContent = text;
+        caret.style.display = 'none';
+        box.dataset.state = 'done';
+      }
+    }, 16);
+  }
+
+  function stampStory(l, kind) {
+    var story = document.getElementById('story-' + l.id);
+    if (!story || story.classList.contains('is-stamped')) return;
+    story.classList.add('is-stamped', kind === 'FILED' ? 'is-filed' : 'is-spiked');
+    var overlay = document.createElement('div');
+    overlay.className = 'stamp';
+    var word = document.createElement('span');
+    word.textContent = kind;
+    overlay.appendChild(word);
+    story.appendChild(overlay);
+    var msg = kind === 'FILED'
+      ? l.co + ' marked followed up — filed to today’s record'
+      : l.co + ' spiked — dismissed from this edition';
+    toast(msg, function () {
+      story.classList.remove('is-stamped', 'is-filed', 'is-spiked');
+      overlay.remove();
+    });
+  }
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    var act = btn.dataset.action;
+    var lead = byId[btn.dataset.lead];
+    if (act === 'toggle') toggleAcc(btn);
+    else if (!lead) return;
+    else if (act === 'draft') draftOpener(lead);
+    else if (act === 'pitch') toast('Pitch pack queued for ' + lead.co + ' — a few minutes');
+    else if (act === 'follow') stampStory(lead, 'FILED');
+    else if (act === 'dismiss') stampStory(lead, 'SPIKED');
+  });
+})();
+</script>
+</body>
+</html>
