@@ -58,7 +58,9 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .mh-live{margin-left:auto;display:inline-flex;align-items:center;gap:7px;
   font:700 8.5px var(--mono);letter-spacing:.16em;color:var(--muted);white-space:nowrap}
 .mh-live i{width:7px;height:7px;border-radius:50%;background:#34A853;box-shadow:0 0 8px rgba(52,168,83,.6);animation:breathe 3s ease-in-out infinite}
-/* pinned-to-the-board widgets: a real mini calendar + a sticky note */
+/* desk row: ENGINE on the left, the workshop next to it, the calendar right */
+.deskrow{display:flex;align-items:flex-start;gap:18px;padding:14px 4px 22px}
+.deskrow .spacer{flex:1}
 .pinbtn{position:relative;border:none;background:transparent;cursor:pointer;padding:0;
   transition:transform .2s;flex:none}
 .pinbtn::before{content:"";position:absolute;top:-5px;left:50%;transform:translateX(-50%);
@@ -68,20 +70,31 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .pinbtn:hover{transform:rotate(0deg) translateY(-2px)}
 .pinbtn.on{transform:rotate(0deg)}
 .pinbtn.on .sheet{outline:2px solid var(--blue);outline-offset:2px}
-.pin-cal{transform:rotate(3deg)}
-.pin-cal .sheet{width:54px;border-radius:9px;overflow:hidden;border:1px solid rgba(16,22,38,.14);
-  background:#fff;box-shadow:0 6px 14px rgba(26,61,124,.2)}
-.pin-cal .mo{background:var(--clay);color:#fff;font:700 7.5px var(--mono);letter-spacing:.22em;
-  padding:4px 0 3px;text-align:center}
-.pin-cal .day{font-family:var(--disp);font-weight:700;font-size:20px;text-align:center;
-  padding:3px 0 5px;color:var(--ink);line-height:1}
-.pin-note{transform:rotate(-3deg)}
-.pin-note .sheet{width:66px;height:48px;background:#FFF6E2;border:1px solid rgba(180,140,60,.3);
+.pin-eng{transform:rotate(-1.5deg)}
+.pin-eng .sheet{width:72px;height:56px;background:#fff;border:1px solid rgba(16,22,38,.14);
+  border-radius:9px;box-shadow:0 6px 14px rgba(26,61,124,.18);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+.pin-eng .fun{display:flex;flex-direction:column;align-items:center;gap:2px}
+.pin-eng .fun i{display:block;height:3px;border-radius:2px;background:linear-gradient(90deg,#4285F4,#1E9E57)}
+.pin-eng .fun i:nth-child(1){width:26px}.pin-eng .fun i:nth-child(2){width:17px}.pin-eng .fun i:nth-child(3){width:9px}
+.pin-eng .n2{font:700 6.5px var(--mono);letter-spacing:.16em;color:var(--ink2)}
+.pin-note{transform:rotate(2deg)}
+.pin-note .sheet{width:72px;height:56px;background:#FFF6E2;border:1px solid rgba(180,140,60,.3);
   border-radius:7px;box-shadow:0 6px 14px rgba(26,61,124,.16);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
-.pin-note .n1{color:var(--clay);font-size:11px;line-height:1}
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.pin-note .n1{color:var(--clay);font-size:12px;line-height:1}
 .pin-note .n2{font:700 6.5px var(--mono);letter-spacing:.12em;color:#8a6a2f}
-.view{display:none}
+/* a real wall calendar, front page: month header + the mini month grid */
+.pin-cal{transform:rotate(2.5deg)}
+.pin-cal .sheet{width:64px;border-radius:8px;overflow:hidden;border:1px solid rgba(16,22,38,.14);
+  background:#fff;box-shadow:0 6px 14px rgba(26,61,124,.2);display:block}
+.pin-cal .mo{background:var(--clay);color:#fff;font:700 6.5px var(--mono);letter-spacing:.14em;
+  padding:4px 0 3px;text-align:center}
+.pin-cal .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:5px 6px 6px}
+.pin-cal .grid i{display:block;width:100%;padding-top:100%;border-radius:1.5px;background:rgba(16,22,38,.12)}
+.pin-cal .grid i.wk{background:rgba(62,92,132,.3)}
+.pin-cal .grid i.hot{background:var(--clay);box-shadow:0 0 4px rgba(217,119,87,.7)}
+.view{display:none;position:relative}
 .view.on{display:block;animation:vin .3s ease}
 @keyframes vin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 /* ============ engine ============ */
@@ -114,28 +127,27 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
   color:transparent;background:linear-gradient(125deg,var(--s1),var(--s2));
   -webkit-background-clip:text;background-clip:text}
 .stg .lbl{font:700 9px var(--mono);letter-spacing:.2em;color:var(--ink2);margin-top:8px}
+.stg .cap{font-size:10.5px;color:var(--dim);margin:6px auto 0;line-height:1.5;max-width:180px}
 .stg.s1{--s1:#9AA0A6;--s2:#4285F4}.stg.s2{--s1:#4285F4;--s2:#1A3D7C}
 .stg.s3{--s1:#3E5C84;--s2:#1A3D7C}.stg.s4{--s1:#D97A2B;--s2:#B45309}
 .stg.s5{--s1:#1E9E57;--s2:#1A3D7C}
-/* downward pipeline: the engine's output pours into the list */
-.flowdown{position:relative;height:62px;margin-top:12px;display:flex;align-items:flex-end;justify-content:center}
-.flowdown .line{position:absolute;top:0;bottom:0;left:50%;width:2px;margin-left:-1px;
-  background:linear-gradient(180deg,rgba(30,158,87,.55),rgba(30,158,87,.1))}
-.flowdown .vdot{position:absolute;left:50%;margin-left:-3.5px;width:7px;height:7px;border-radius:50%;
+/* the pour: the pipeline runs from READY LEADS straight into lead #1's score */
+.pour{position:absolute;width:2px;z-index:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(30,158,87,.55),rgba(30,158,87,.18))}
+.pour::after{content:"";position:absolute;bottom:-4px;left:-3px;width:8px;height:8px;border-radius:50%;
+  background:#1E9E57;box-shadow:0 0 9px rgba(30,158,87,.7)}
+.pour .vdot{position:absolute;left:-2.5px;width:7px;height:7px;border-radius:50%;
   background:#1E9E57;box-shadow:0 0 8px rgba(30,158,87,.6);animation:fall 2.2s linear infinite}
-.flowdown .vdot.v2{animation-delay:1.1s}
+.pour .vdot.v2{animation-delay:1.1s}
 @keyframes fall{0%{top:0;opacity:0}18%{opacity:1}82%{opacity:1}100%{top:calc(100% - 7px);opacity:0}}
-.flowdown .cap2{position:relative;z-index:1;font:700 8.5px var(--mono);letter-spacing:.12em;
-  color:var(--grn);background:rgba(255,255,255,.9);border-radius:999px;padding:5px 12px;
-  border:1px solid rgba(30,158,87,.3)}
 /* board bar */
-.boardbar{display:flex;align-items:center;gap:12px;padding:0 0 12px}
+.boardbar{display:flex;align-items:center;gap:12px;padding:34px 0 12px}
 .seg{display:flex;gap:3px;padding:3px;border-radius:999px;background:rgba(16,22,38,.05);
   border:1px solid rgba(255,255,255,.5)}
 .seg button{font:600 10.5px 'Inter';color:var(--muted);background:transparent;border:none;
   border-radius:999px;padding:5px 13px;cursor:pointer;transition:.2s;white-space:nowrap}
 .seg button.on{color:var(--ink);background:rgba(255,255,255,.92);box-shadow:0 2px 7px rgba(26,61,124,.1)}
-.ctrls{margin-left:auto;display:flex;gap:8px}
+.ctrls{display:flex;gap:8px}
 .ctrl{position:relative}
 .ctrlbtn{display:inline-flex;align-items:center;gap:7px;font:600 10.5px 'Inter';color:var(--ink2);
   padding:6px 13px;border-radius:999px;background:rgba(255,255,255,.7);
@@ -384,11 +396,19 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
         <button data-d="marketing">Marketing</button>
       </nav>
       <span class="mh-live"><i></i>LIVE · SWEEP 06:40</span>
+    </div>
+
+    <!-- the board row: engine left, workshop next, calendar pinned right -->
+    <div class="deskrow">
+      <button type="button" class="pinbtn pin-eng on" id="vbEngine" title="The Engine">
+        <span class="sheet"><span class="fun"><i></i><i></i><i></i></span><span class="n2">ENGINE</span></span>
+      </button>
       <button type="button" class="pinbtn pin-note" id="vbShop" title="Build-A-Deck Workshop">
         <span class="sheet"><span class="n1">✦</span><span class="n2">BUILD-A-DECK</span></span>
       </button>
+      <span class="spacer"></span>
       <button type="button" class="pinbtn pin-cal" id="vbCal" title="BD Calendar">
-        <span class="sheet"><span class="mo">JUN</span><span class="day">10</span></span>
+        <span class="sheet"><span class="mo">JUNE 2026</span><span class="grid" id="miniCal"></span></span>
       </button>
     </div>
 
@@ -397,14 +417,13 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
       <div class="tickwrap"><div class="ticktrack" id="ticker"></div></div>
       <div class="stages">
         <div class="rail"><span class="fdot"></span><span class="fdot d2"></span><span class="fdot d3"></span></div>
-        <div class="stg s1"><div class="num" id="st1">0</div><div class="lbl" id="sl1">GENERATED</div></div>
-        <div class="stg s2"><div class="num" id="st2">0</div><div class="lbl" id="sl2">FILTERED</div></div>
-        <div class="stg s3"><div class="num" id="st3">0</div><div class="lbl" id="sl3">COLLATED</div></div>
-        <div class="stg s4"><div class="num" id="st4">0</div><div class="lbl" id="sl4">STRESS-TESTED</div></div>
-        <div class="stg s5"><div class="num" id="st5">0</div><div class="lbl" id="sl5">READY LEADS</div>
-          <div class="flowdown"><span class="line"></span><span class="vdot"></span><span class="vdot v2"></span>
-            <span class="cap2">PRODUCING FOR YOU ↓</span></div></div>
+        <div class="stg s1"><div class="num" id="st1">0</div><div class="lbl" id="sl1">GENERATED</div><div class="cap" id="cap1"></div></div>
+        <div class="stg s2"><div class="num" id="st2">0</div><div class="lbl" id="sl2">FILTERED</div><div class="cap" id="cap2"></div></div>
+        <div class="stg s3"><div class="num" id="st3">0</div><div class="lbl" id="sl3">COLLATED</div><div class="cap" id="cap3"></div></div>
+        <div class="stg s4"><div class="num" id="st4">0</div><div class="lbl" id="sl4">STRESS-TESTED</div><div class="cap" id="cap4"></div></div>
+        <div class="stg s5"><div class="num" id="st5">0</div><div class="lbl" id="sl5">READY LEADS</div><div class="cap" id="cap5"></div></div>
       </div>
+      <div class="pour" id="pour"><span class="vdot"></span><span class="vdot v2"></span></div>
       <div class="boardbar">
         <div class="seg" id="modeSeg">
           <button data-m="leads" class="on">BD Leads</button>
@@ -868,25 +887,66 @@ function countUp(el,target){const t0=performance.now();
 
 /* ---------- view switching (engine / calendar / workshop) ---------- */
 function setView(v){
-  view=(view===v)?'engine':v;
+  view=v;
   $('v-engine').classList.toggle('on',view==='engine');
   $('v-cal').classList.toggle('on',view==='cal');
   $('v-shop').classList.toggle('on',view==='shop');
+  $('vbEngine').classList.toggle('on',view==='engine');
   $('vbCal').classList.toggle('on',view==='cal');
   $('vbShop').classList.toggle('on',view==='shop');
+  if(view==='engine')requestAnimationFrame(positionPour);
 }
+$('vbEngine').addEventListener('click',()=>setView('engine'));
 $('vbCal').addEventListener('click',()=>setView('cal'));
 $('vbShop').addEventListener('click',()=>setView('shop'));
+/* the mini wall-calendar grid: 30 day cells, weekends tinted, the 10th hot */
+(function(){
+  let h='';
+  for(let d=1;d<=30;d++){
+    const wd=(d+0)%7; /* 1 June 2026 is a Monday */
+    h+='<i class="'+(d===10?'hot':(wd===6||wd===0)?'wk':'')+'"></i>';
+  }
+  $('miniCal').innerHTML=h;
+})();
+/* the pour: size the pipeline so it lands on lead #1's strength score */
+function positionPour(){
+  const pour=$('pour');if(!pour)return;
+  const stages=document.querySelector('#v-engine .stages');
+  const first=document.querySelector('#strips .strip-h .strengthcell, #strips .jrow');
+  if(!stages||!first){pour.style.display='none';return;}
+  pour.style.display='';
+  const wrap=$('v-engine').getBoundingClientRect();
+  const sb=stages.getBoundingClientRect(),fb=first.getBoundingClientRect();
+  const x=fb.left-wrap.left+fb.width/2;
+  const top=sb.bottom-wrap.top+2;
+  pour.style.left=x+'px';
+  pour.style.top=top+'px';
+  pour.style.height=Math.max(30,fb.top-wrap.top-top-4)+'px';
+}
+window.addEventListener('resize',positionPour);
 
 /* ---------- engine ---------- */
 const LBL={leads:['GENERATED','FILTERED','COLLATED','STRESS-TESTED','READY LEADS'],
            jobs:['SCRAPED','FILTERED','DEDUPED','VERIFIED','LIVE JOBS']};
+const CAPS={leads:[
+    'raw signals swept from press, registries, filings and job boards',
+    'only signals that touch a senior seat on this desk',
+    'corroborated across independent sources, duplicates merged',
+    'a sceptical second pass tries to kill every lead',
+    'call-ready, ranked and dossiered below'],
+  jobs:[
+    'postings scraped from the job boards',
+    'only senior roles on this desk kept',
+    'duplicates across boards merged',
+    'each posting checked it is still live',
+    'open roles listed below']};
 function renderEngine(){
   const nums=mode==='leads'
     ?[D().meta.signals,D().meta.filtered,D().meta.collated,D().meta.tested,D().meta.callReady]
     :[D().jobsMeta.scanned,D().jobsMeta.relevant,D().jobsMeta.deduped,D().jobsMeta.verified,D().jobsMeta.live];
   nums.forEach((n,i)=>countUp($('st'+(i+1)),n));
   LBL[mode].forEach((l,i)=>$('sl'+(i+1)).textContent=l);
+  CAPS[mode].forEach((c,i)=>$('cap'+(i+1)).textContent=c);
   const items=mode==='leads'?D().triggers:JOBBOARDS;
   const chips=items.map(t=>'<span class="tchip"><i></i>'+esc(t)+'<span class="plus">+1</span></span>').join('');
   $('ticker').innerHTML=chips+chips;
@@ -1024,6 +1084,8 @@ function renderBoard(){
     +'<span class="tp '+l.key+'">'+esc(l.type)+'</span>'
     +'<span class="gw">'+esc(l.gateWhy)+'</span></div>').join('');
 }
+const _renderBoard=renderBoard;
+renderBoard=function(){_renderBoard();requestAnimationFrame(positionPour);};
 function leadById(id){return D().leads.find(l=>l.id===id);}
 function draftOpener(id){
   const l=leadById(id),box=$('ob-'+id);if(!l||!box)return;
