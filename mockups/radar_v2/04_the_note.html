@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMA · Communications Radar — Take 2 · Concept 04 · The Note</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f8f4ec;
+    --ink:#2b2620;
+    --ink-soft:#6f6657;
+    --ink-faint:#a99e8c;
+    --pen:#8a6f4d;
+    --hair:#ddd2bf;
+    --accent:#1f3a2d;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Fraunces", Georgia, serif;
+    font-optical-sizing:auto;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  /* ---- the faintest paper grain ---- */
+  body::after{
+    content:"";
+    position:fixed; inset:0;
+    pointer-events:none;
+    z-index:50;
+    opacity:.035;
+    mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+
+  /* ---- whisper chrome ---- */
+  .chrome{
+    position:fixed; top:26px; left:0; right:0;
+    text-align:center;
+    font-family:"Inter", sans-serif;
+    font-size:10px; font-weight:500;
+    letter-spacing:.32em; text-transform:uppercase;
+    color:var(--ink-faint);
+    z-index:10;
+    user-select:none;
+  }
+
+  /* ---- the note ---- */
+  .desk{
+    min-height:100%;
+    display:flex; align-items:center; justify-content:center;
+    padding:120px 28px 140px;
+  }
+  .note{
+    width:min(560px,100%);
+    transform-origin:50% 0%;
+    transition:transform .95s cubic-bezier(.55,0,.2,1), opacity .85s ease;
+  }
+  .note.folded{
+    transform:perspective(1100px) rotateX(32deg) translateY(-90px) scale(.94);
+    opacity:0;
+    pointer-events:none;
+  }
+  .line{
+    font-size:24px;
+    font-weight:340;
+    line-height:1.7;
+    opacity:0;
+    transform:translateY(10px);
+    animation:settle 1.4s cubic-bezier(.2,.6,.2,1) forwards;
+  }
+  @keyframes settle{ to{ opacity:1; transform:none; } }
+  .l1{ animation-delay:.4s; }
+  .l2{ animation-delay:1.5s; margin-top:1.5em; }
+  .l3{ animation-delay:2.9s; margin-top:1.5em; }
+  .l4{ animation-delay:4.6s; margin-top:1.5em; }
+  .l5{ animation-delay:5.7s; margin-top:2.2em; }
+  .l6{ animation-delay:6.6s; margin-top:2.6em; }
+
+  .salutation{ font-size:30px; font-weight:380; }
+  .salutation .dash{ color:var(--pen); }
+
+  em{ font-style:italic; font-weight:400; }
+
+  /* signature — hanging em-dash, small letterspaced time */
+  .signature{
+    font-style:italic;
+    color:var(--ink-soft);
+    text-indent:-1.1em;
+    padding-left:1.1em;
+    font-size:21px;
+  }
+  .signature .time{
+    font-style:normal;
+    font-family:"Inter", sans-serif;
+    font-size:11px; font-weight:500;
+    letter-spacing:.28em;
+    color:var(--ink-faint);
+    margin-left:.7em;
+    vertical-align:.12em;
+  }
+
+  /* struck through, softly */
+  .strikeable{ position:relative; transition:color 1s ease; }
+  .strikeable::after{
+    content:"";
+    position:absolute; left:0; top:.62em;
+    width:0; height:1.5px;
+    background:var(--pen);
+    opacity:.55; border-radius:2px;
+    transition:width 1.3s cubic-bezier(.3,.7,.2,1) .3s;
+  }
+  .strikeable.struck{ color:var(--ink-faint); }
+  .strikeable.struck::after{ width:100%; }
+  #thenOcado{ transition:font-weight .6s ease, color .6s ease; }
+  #thenOcado.emph{ font-weight:560; color:var(--accent); }
+
+  /* ---- pen-stroke links: the only interactive ink ---- */
+  .notelink{
+    font:inherit; color:inherit;
+    background:transparent; border:0; cursor:pointer;
+    padding:0 0 .12em;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='5' viewBox='0 0 80 5'><path d='M0 3 Q 20 1 40 2.7 T 80 2.3' fill='none' stroke='%238a6f4d' stroke-width='1.2' stroke-linecap='round' opacity='0.8'/></svg>");
+    background-repeat:repeat-x;
+    background-position:0 100%;
+    background-size:80px 5px;
+    transition:color .35s ease;
+  }
+  .notelink:hover, .notelink[aria-expanded="true"]{ color:var(--pen); }
+  .notelink:focus-visible{ outline:1.5px solid var(--pen); outline-offset:3px; border-radius:2px; }
+
+  /* ---- inline asides ---- */
+  .aside{
+    display:grid;
+    grid-template-rows:0fr;
+    transition:grid-template-rows .6s cubic-bezier(.3,.7,.2,1), margin .6s cubic-bezier(.3,.7,.2,1);
+    margin:0 0 0 2.2em;
+  }
+  .aside.open{ grid-template-rows:1fr; margin:1.1em 0 1.3em 2.2em; }
+  .aside-inner{
+    overflow:hidden; min-height:0;
+    border-left:1px solid var(--hair);
+    padding-left:1.4em;
+    opacity:0; transition:opacity .5s ease .15s;
+  }
+  .aside.open .aside-inner{ opacity:1; }
+  .aside-meta{
+    font-family:"Inter", sans-serif;
+    font-size:12.5px; line-height:1.75;
+    color:var(--ink-soft);
+    letter-spacing:.01em;
+  }
+  .aside-meta .fee{ color:var(--accent); font-weight:500; letter-spacing:.04em; }
+  .aside-meta .sep{ color:var(--ink-faint); margin:0 .55em; }
+  .opener-link{
+    display:inline-block; margin-top:.7em;
+    font-family:"Fraunces", serif; font-style:italic;
+    font-size:16px; color:var(--pen);
+    background:none; border:0; cursor:pointer; padding:0;
+  }
+  .opener-link:hover{ color:var(--ink); }
+  .opener-link:focus-visible{ outline:1.5px solid var(--pen); outline-offset:3px; }
+  .opener-block{ margin-top:.7em; }
+  .opener-text{
+    font-size:16.5px; font-style:italic;
+    line-height:1.65; color:var(--ink);
+    min-height:1.6em;
+  }
+  .opener-text .caret{
+    display:inline-block; width:1px; height:1em;
+    background:var(--pen); vertical-align:-.12em;
+    animation:blink 1s steps(1) infinite;
+  }
+  @keyframes blink{ 50%{ opacity:0; } }
+  .copy-btn{
+    margin-top:.8em;
+    font-family:"Inter", sans-serif;
+    font-size:10.5px; font-weight:500;
+    letter-spacing:.22em; text-transform:uppercase;
+    color:var(--ink-soft);
+    background:none; cursor:pointer;
+    border:1px solid var(--hair); border-radius:99px;
+    padding:7px 16px;
+    opacity:0; transition:opacity .45s ease, color .3s ease, border-color .3s ease;
+  }
+  .copy-btn.show{ opacity:1; }
+  .copy-btn:hover{ color:var(--accent); border-color:var(--pen); }
+  .watchlist{ font-size:18px; font-style:italic; color:var(--ink-soft); line-height:1.8; }
+  .watchlist .fee{ font-style:normal; font-family:"Inter",sans-serif; font-size:11.5px; color:var(--ink-faint); letter-spacing:.06em; margin-left:.35em; }
+
+  /* ---- the one quiet action ---- */
+  .foot-action{
+    font:inherit; font-size:20px; font-style:italic;
+    color:var(--accent);
+    background:none; border:0; cursor:pointer; padding:0;
+  }
+  .foot-action .arrow{ display:inline-block; transition:transform .4s cubic-bezier(.2,.7,.2,1); }
+  .foot-action:hover .arrow{ transform:translateX(6px); }
+  .foot-action:focus-visible{ outline:1.5px solid var(--accent); outline-offset:4px; }
+
+  /* ---- the call line ---- */
+  .call{
+    position:fixed; inset:0;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    text-align:center; padding:0 28px;
+    opacity:0; visibility:hidden;
+    transform:translateY(26px);
+    transition:opacity .9s ease, transform .9s cubic-bezier(.2,.7,.2,1), visibility 0s linear .9s;
+    z-index:20;
+  }
+  .call.on{
+    opacity:1; visibility:visible; transform:none;
+    transition:opacity .9s ease .55s, transform .9s cubic-bezier(.2,.7,.2,1) .55s;
+  }
+  .call-pulse{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--accent); margin-bottom:2.2em;
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse{ 0%,100%{ transform:scale(1); opacity:.9;} 50%{ transform:scale(1.7); opacity:.35;} }
+  .call-line{ font-size:27px; font-weight:380; letter-spacing:.005em; }
+  .call-line .sep{ color:var(--ink-faint); margin:0 .4em; font-weight:300; }
+  .call-opener{
+    margin-top:1.6em; max-width:560px;
+    font-size:18px; font-style:italic;
+    line-height:1.7; color:var(--ink-soft);
+  }
+  .done-btn{
+    margin-top:3em;
+    font-family:"Inter", sans-serif;
+    font-size:11px; font-weight:500;
+    letter-spacing:.26em; text-transform:uppercase;
+    color:var(--accent);
+    background:none; cursor:pointer;
+    border:1px solid var(--hair); border-radius:99px;
+    padding:11px 26px;
+    transition:border-color .3s ease, background .3s ease;
+  }
+  .done-btn:hover{ border-color:var(--accent); background:rgba(31,58,45,.05); }
+
+  /* ---- toast ---- */
+  .toast{
+    position:fixed; left:50%; bottom:46px;
+    transform:translate(-50%,12px);
+    font-family:"Inter", sans-serif;
+    font-size:12px; font-weight:500; letter-spacing:.04em;
+    color:var(--paper); background:var(--ink);
+    padding:10px 20px; border-radius:99px;
+    opacity:0; pointer-events:none;
+    transition:opacity .4s ease, transform .4s cubic-bezier(.2,.7,.2,1);
+    z-index:60; white-space:nowrap;
+  }
+  .toast.show{ opacity:1; transform:translate(-50%,0); }
+
+  /* ---- corners ---- */
+  .nav-chip{
+    position:fixed; right:22px; bottom:18px;
+    font-family:"Inter", sans-serif;
+    font-size:10.5px; font-weight:500; letter-spacing:.14em;
+    color:var(--ink-faint); z-index:30;
+  }
+  .nav-chip a{ color:var(--ink-faint); text-decoration:none; transition:color .3s ease; padding:4px 2px; }
+  .nav-chip a:hover{ color:var(--ink); }
+  .nav-chip .sep{ margin:0 .5em; opacity:.6; }
+  .legal{
+    position:fixed; left:22px; bottom:18px;
+    font-family:"Inter", sans-serif;
+    font-size:9.5px; letter-spacing:.08em;
+    color:var(--ink-faint); opacity:.8; z-index:30;
+  }
+
+  @media (max-width:768px){
+    .desk{ padding:96px 22px 120px; }
+    .line{ font-size:21px; }
+    .salutation{ font-size:26px; }
+    .call-line{ font-size:22px; }
+    .legal{ display:none; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    *, *::before, *::after{ animation:none !important; transition:none !important; }
+    .line{ opacity:1; transform:none; }
+  }
+</style>
+</head>
+<body>
+
+  <header class="chrome">VMA Group&ensp;·&ensp;Communications Radar&ensp;·&ensp;Wednesday 10 June 2026</header>
+
+  <main class="desk">
+    <article class="note" id="note" aria-label="A note from your radar">
+
+      <p class="line l1 salutation">Sara&thinsp;<span class="dash">&mdash;</span></p>
+
+      <p class="line l2">While you slept I read <button class="notelink decorative" type="button">1,284 pages</button> so you don&rsquo;t have to.</p>
+
+      <p class="line l3"><span class="strikeable" id="gridLine">Only one thing matters this morning: <button class="notelink trigger" type="button" data-aside="aside-grid" aria-expanded="false">National Grid</button>&rsquo;s search for a Head of Media Relations just <em>failed in public</em> &mdash; 54 days, two reposts, no agency. That seat is worth &pound;32k, and Sasha Kemp is expecting nobody. Be the first call she gets.</span></p>
+
+      <div class="aside" id="aside-grid">
+        <div class="aside-inner">
+          <p class="aside-meta"><span class="fee">£32k fee</span><span class="sep">·</span>their search is 54 days old and failing in public</p>
+          <button class="opener-link" type="button" data-text="Hi Sasha — the Head of Media Relations brief has been live for eight weeks now. We placed three of the last five seats like it; I can have a vetted shortlist with you by the 24th. Worth fifteen minutes this week?">the opener &rarr;</button>
+          <div class="opener-block" hidden>
+            <p class="opener-text"></p>
+            <button class="copy-btn" type="button">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <p class="line l4"><span id="thenOcado">Then <button class="notelink trigger" type="button" data-aside="aside-ocado" aria-expanded="false">Ocado</button></span>, then <button class="notelink trigger" type="button" data-aside="aside-monzo" aria-expanded="false">Monzo</button>. <button class="notelink trigger" type="button" data-aside="aside-rest" aria-expanded="false">The rest</button> can wait &mdash; I&rsquo;m watching them.</p>
+
+      <div class="aside" id="aside-ocado">
+        <div class="aside-inner">
+          <p class="aside-meta"><span class="fee">£28k fee</span><span class="sep">·</span>profit warning, empty comms chair</p>
+          <button class="opener-link" type="button" data-text="Hi Daniel — rough fortnight in the headlines, and the comms chair is empty just when you need it most. I can have a confidential shortlist with you by Friday. Fifteen minutes today?">the opener &rarr;</button>
+          <div class="opener-block" hidden>
+            <p class="opener-text"></p>
+            <button class="copy-btn" type="button">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="aside" id="aside-monzo">
+        <div class="aside-inner">
+          <p class="aside-meta"><span class="fee">£30k fee</span><span class="sep">·</span>£380m round confirmed overnight</p>
+          <button class="opener-link" type="button" data-text="Hi Tomas — congratulations on the round. Teams at your stage add a Head of Corporate Comms within two quarters; I mapped who's available before the announcement even landed. Shall I send the three names worth meeting?">the opener &rarr;</button>
+          <div class="opener-block" hidden>
+            <p class="opener-text"></p>
+            <button class="copy-btn" type="button">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="aside" id="aside-rest">
+        <div class="aside-inner">
+          <p class="watchlist">Burberry<span class="fee">£34k</span> &nbsp;·&nbsp; Octopus Energy<span class="fee">£24k</span> &nbsp;·&nbsp; Wise<span class="fee">£26k</span> &nbsp;·&nbsp; Bupa<span class="fee">£22k</span></p>
+          <p class="aside-meta" style="margin-top:.5em">I&rsquo;ll speak up the moment one of them warms.</p>
+        </div>
+      </div>
+
+      <p class="line l5 signature">&mdash; your radar,<span class="time">06:12</span></p>
+
+      <p class="line l6"><button class="foot-action" type="button" id="startBtn">Start with the Grid <span class="arrow">&rarr;</span></button></p>
+
+    </article>
+  </main>
+
+  <!-- the call line -->
+  <section class="call" id="call" aria-hidden="true">
+    <div class="call-pulse" aria-hidden="true"></div>
+    <p class="call-line">Calling Sasha Kemp<span class="sep">·</span>National Grid<span class="sep">·</span>&pound;32k</p>
+    <p class="call-opener">&ldquo;Hi Sasha &mdash; the Head of Media Relations brief has been live for eight weeks now. We placed three of the last five seats like it; I can have a vetted shortlist with you by the 24th. Worth fifteen minutes this week?&rdquo;</p>
+    <button class="done-btn" type="button" id="doneBtn">&#10003;&ensp;Done</button>
+  </section>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <nav class="nav-chip" aria-label="Concept navigation">
+    04 / 10<span class="sep">·</span><a href="03_three_cards.html" aria-label="Previous concept">&larr;</a><span class="sep">·</span><a href="index.html">Index</a><span class="sep">·</span><a href="05_focus_flow.html" aria-label="Next concept">&rarr;</a>
+  </nav>
+
+  <aside class="legal">Illustrative sample data &mdash; design review only.</aside>
+
+<script>
+(function(){
+  "use strict";
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var note = document.getElementById("note");
+  var call = document.getElementById("call");
+  var toastEl = document.getElementById("toast");
+  var startBtn = document.getElementById("startBtn");
+  var doneBtn = document.getElementById("doneBtn");
+  var gridLine = document.getElementById("gridLine");
+  var thenOcado = document.getElementById("thenOcado");
+  var toastTimer = null;
+  var typeTimer = null;
+  var gridDone = false;
+
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 2200);
+  }
+
+  /* ---- asides: only one open at a time ---- */
+  function closeAsides(except){
+    document.querySelectorAll(".aside.open").forEach(function(a){
+      if (a !== except){
+        a.classList.remove("open");
+        var t = document.querySelector('.trigger[data-aside="' + a.id + '"]');
+        if (t) t.setAttribute("aria-expanded","false");
+      }
+    });
+  }
+
+  document.querySelectorAll(".trigger").forEach(function(btn){
+    btn.addEventListener("click", function(e){
+      e.stopPropagation();
+      var aside = document.getElementById(btn.dataset.aside);
+      var willOpen = !aside.classList.contains("open");
+      closeAsides(willOpen ? aside : null);
+      aside.classList.toggle("open", willOpen);
+      btn.setAttribute("aria-expanded", String(willOpen));
+    });
+  });
+
+  /* tapping elsewhere closes the open aside */
+  document.addEventListener("click", function(e){
+    if (!e.target.closest(".aside") && !e.target.closest(".trigger")) closeAsides(null);
+  });
+
+  /* ---- "the opener →" types itself in ---- */
+  document.querySelectorAll(".opener-link").forEach(function(link){
+    link.addEventListener("click", function(e){
+      e.stopPropagation();
+      var block = link.nextElementSibling;
+      var out = block.querySelector(".opener-text");
+      var copy = block.querySelector(".copy-btn");
+      var text = "“" + link.dataset.text + "”";
+      link.style.display = "none";
+      block.hidden = false;
+      copy.dataset.text = link.dataset.text;
+      clearInterval(typeTimer);
+      if (reduced){
+        out.textContent = text;
+        copy.classList.add("show");
+        return;
+      }
+      var i = 0;
+      var caret = '<span class="caret"></span>';
+      out.innerHTML = caret;
+      typeTimer = setInterval(function(){
+        i += 2;
+        if (i >= text.length){
+          clearInterval(typeTimer);
+          out.textContent = text;
+          copy.classList.add("show");
+        } else {
+          out.innerHTML = text.slice(0, i).replace(/</g,"&lt;") + caret;
+        }
+      }, 24);
+    });
+  });
+
+  /* ---- copy to clipboard ---- */
+  document.querySelectorAll(".copy-btn").forEach(function(btn){
+    btn.addEventListener("click", function(e){
+      e.stopPropagation();
+      var text = btn.dataset.text || "";
+      function ok(){ toast("Opener copied to clipboard."); }
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(ok, function(){ toast("Couldn’t reach the clipboard."); });
+      } else {
+        var ta = document.createElement("textarea");
+        ta.value = text; document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand("copy"); ok(); } catch(_) { toast("Couldn’t reach the clipboard."); }
+        document.body.removeChild(ta);
+      }
+    });
+  });
+
+  /* ---- decorative ink ---- */
+  document.querySelectorAll(".decorative").forEach(function(el){
+    el.addEventListener("click", function(e){
+      e.stopPropagation();
+      toast("Wired in production.");
+    });
+  });
+
+  /* ---- the note folds; the call line remains ---- */
+  startBtn.addEventListener("click", function(e){
+    e.stopPropagation();
+    if (gridDone){ toast("Wired in production."); return; }
+    closeAsides(null);
+    note.classList.add("folded");
+    setTimeout(function(){
+      call.classList.add("on");
+      call.setAttribute("aria-hidden","false");
+      doneBtn.focus();
+    }, reduced ? 40 : 600);
+  });
+
+  doneBtn.addEventListener("click", function(e){
+    e.stopPropagation();
+    call.classList.remove("on");
+    call.setAttribute("aria-hidden","true");
+    setTimeout(function(){
+      note.classList.remove("folded");
+      gridDone = true;
+      setTimeout(function(){
+        gridLine.classList.add("struck");
+        thenOcado.classList.add("emph");
+        startBtn.innerHTML = 'Next: Ocado <span class="arrow">&rarr;</span>';
+      }, reduced ? 40 : 700);
+    }, reduced ? 40 : 500);
+  });
+})();
+</script>
+</body>
+</html>

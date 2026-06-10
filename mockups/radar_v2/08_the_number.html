@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMA · Communications Radar — Take 2 · Concept 08 · The Number</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600;9..144,700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0b0b0e; --gold:#e9b44c; --paper:#eceae4; --dim:#5d5b62; --dimmer:#3a393f;
+    --ease:cubic-bezier(.16,1,.3,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-snap-type:y mandatory;scroll-behavior:smooth}
+  body{
+    background:var(--ink); color:var(--paper);
+    font-family:'Inter',-apple-system,sans-serif; font-weight:300;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    overflow-x:hidden;
+  }
+  ::selection{background:var(--gold);color:var(--ink)}
+
+  /* ——— whisper chrome ——— */
+  .chrome{
+    position:fixed; top:28px; left:0; right:0; text-align:center; z-index:40;
+    font-size:10.5px; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--dim); pointer-events:none;
+  }
+  .legal{
+    position:fixed; bottom:18px; left:22px; z-index:40;
+    font-size:9px; letter-spacing:.08em; color:var(--dimmer); pointer-events:none;
+  }
+  .navchip{
+    position:fixed; bottom:16px; right:20px; z-index:40;
+    display:flex; align-items:center; gap:10px;
+    font-size:10.5px; letter-spacing:.12em; color:var(--dim);
+    border:1px solid rgba(236,234,228,.08); border-radius:999px;
+    padding:7px 14px; background:rgba(11,11,14,.6); backdrop-filter:blur(8px);
+  }
+  .navchip a{color:var(--dim);text-decoration:none;transition:color .3s}
+  .navchip a:hover{color:var(--paper)}
+
+  /* ——— progress rail ——— */
+  .rail{
+    position:fixed; right:26px; top:50%; transform:translateY(-50%); z-index:40;
+    display:flex; flex-direction:column; gap:18px;
+  }
+  .rail::before{
+    content:""; position:absolute; left:50%; top:-12px; bottom:-12px;
+    width:1px; background:rgba(236,234,228,.06); transform:translateX(-50%);
+  }
+  .rail a{
+    position:relative; width:5px; height:5px; border-radius:50%;
+    background:var(--dimmer); transition:background .5s var(--ease), transform .5s var(--ease);
+  }
+  .rail a.on{background:var(--gold); transform:scale(1.5)}
+
+  /* ——— scenes ——— */
+  .scene{
+    min-height:100vh; scroll-snap-align:start; scroll-snap-stop:always;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    position:relative; padding:0 6vw;
+  }
+
+  /* SCENE 1 */
+  .colossal{
+    font-family:'Fraunces',serif; font-weight:700; font-optical-sizing:auto;
+    font-size:clamp(120px,22vw,420px); line-height:.92;
+    letter-spacing:-.045em; color:var(--gold);
+    font-variant-numeric:tabular-nums lining-nums;
+    text-shadow:0 0 120px rgba(233,180,76,.14);
+    will-change:transform,opacity;
+  }
+  .colossal sub{
+    font-size:.42em; font-weight:600; vertical-align:baseline; letter-spacing:-.02em;
+  }
+  .s1-line{
+    margin-top:3.5vh; font-size:clamp(15px,1.35vw,20px); letter-spacing:.015em;
+    color:var(--paper); opacity:0; transform:translateY(14px);
+    transition:opacity 1.1s var(--ease) .25s, transform 1.1s var(--ease) .25s;
+  }
+  .scene.in .s1-line{opacity:.92; transform:none}
+  .scroll-hint{
+    position:absolute; bottom:5.5vh; left:50%; transform:translateX(-50%);
+    font-size:10px; letter-spacing:.4em; text-transform:uppercase; color:var(--dim);
+    opacity:0; transition:opacity 1.4s ease 1.6s;
+  }
+  .scene.in .scroll-hint{opacity:.7; animation:bob 2.6s ease-in-out 2.2s infinite}
+  @keyframes bob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
+
+  /* scene-entry choreography */
+  .fx{opacity:0; transform:translateY(26px) scale(.985); will-change:transform,opacity;
+      transition:opacity 1.2s var(--ease), transform 1.2s var(--ease)}
+  .scene.in .fx{opacity:1; transform:none}
+  .scene.in .d1{transition-delay:.15s}
+  .scene.in .d2{transition-delay:.4s}
+  .scene.in .d3{transition-delay:.65s}
+  .scene.in .d4{transition-delay:.9s}
+
+  /* SCENE 2 — the split */
+  #s2 .parent{
+    font-family:'Fraunces',serif; font-weight:600; color:var(--dim);
+    font-size:clamp(28px,4vw,52px); letter-spacing:-.03em; line-height:1;
+    opacity:0; transform:translateY(60px) scale(1.5);
+    transition:opacity 1.3s var(--ease), transform 1.3s var(--ease), color 1.3s var(--ease);
+    font-variant-numeric:tabular-nums;
+  }
+  #s2.in .parent{opacity:.55; transform:none}
+  .split{
+    display:flex; align-items:baseline; gap:clamp(36px,7vw,120px);
+    margin-top:7vh; flex-wrap:wrap; justify-content:center;
+  }
+  .child{text-align:center}
+  .child .num{
+    font-family:'Fraunces',serif; font-weight:700; letter-spacing:-.04em; line-height:1;
+    font-variant-numeric:tabular-nums; display:block;
+  }
+  .child.hot .num{font-size:clamp(88px,13vw,220px); color:var(--gold);
+    text-shadow:0 0 90px rgba(233,180,76,.12)}
+  .child.cool .num{font-size:clamp(44px,6.5vw,108px); color:var(--dim); font-weight:600}
+  .child .why{margin-top:2.4vh; font-size:clamp(13px,1.1vw,16px); letter-spacing:.02em}
+  .child.hot .why{color:var(--paper)}
+  .child.cool .why{color:var(--dim)}
+  /* split physics: children fly outward from centre */
+  #s2 .child.hot{opacity:0; transform:translate(60px,-50px) scale(.6);
+    transition:opacity 1.35s var(--ease) .45s, transform 1.35s var(--ease) .45s}
+  #s2 .child.cool{opacity:0; transform:translate(-60px,-70px) scale(.5);
+    transition:opacity 1.35s var(--ease) .6s, transform 1.35s var(--ease) .6s}
+  #s2.in .child{opacity:1; transform:none}
+
+  /* SCENE 3 */
+  #s3 .one-line{
+    font-family:'Fraunces',serif; font-weight:300; font-style:normal;
+    font-size:clamp(30px,3.6vw,56px); letter-spacing:-.015em; color:var(--paper);
+    text-align:center; line-height:1.2;
+  }
+  #s3 .one-line em{font-style:normal; color:var(--gold)}
+  .pill{
+    margin-top:5.5vh; appearance:none; border:none; cursor:pointer;
+    font-family:'Inter',sans-serif; font-weight:500; font-size:15px; letter-spacing:.04em;
+    color:var(--ink); background:var(--gold); border-radius:999px;
+    padding:17px 38px;
+    box-shadow:0 0 0 0 rgba(233,180,76,.35), 0 14px 50px -12px rgba(233,180,76,.45);
+    transition:transform .45s var(--ease), box-shadow .45s var(--ease), opacity .6s var(--ease);
+  }
+  .pill:hover{transform:translateY(-2px); box-shadow:0 0 0 1px rgba(233,180,76,.5), 0 20px 60px -10px rgba(233,180,76,.55)}
+  .pill:active{transform:translateY(0) scale(.98)}
+  .whisper-link{
+    margin-top:4vh; background:none; border:none; cursor:pointer;
+    font-family:'Inter',sans-serif; font-size:11px; letter-spacing:.3em; text-transform:uppercase;
+    color:var(--dim); border-bottom:1px solid transparent; padding-bottom:3px;
+    transition:color .4s, border-color .4s, opacity .8s var(--ease);
+    opacity:0; pointer-events:none;
+  }
+  .whisper-link.show{opacity:1; pointer-events:auto}
+  .whisper-link:hover{color:var(--paper); border-color:rgba(236,234,228,.3)}
+  .ghosts{
+    margin-top:3.5vh; display:flex; flex-direction:column; gap:13px; text-align:center;
+  }
+  .ghosts span{
+    font-size:13px; letter-spacing:.03em; color:var(--dim);
+    opacity:0; transform:translateY(10px);
+    transition:opacity .9s var(--ease), transform .9s var(--ease);
+  }
+  .ghosts.show span{opacity:.8; transform:none}
+  .ghosts.show span:nth-child(1){transition-delay:.05s}
+  .ghosts.show span:nth-child(2){transition-delay:.2s}
+  .ghosts.show span:nth-child(3){transition-delay:.35s}
+  .ghosts.show span:nth-child(4){transition-delay:.5s}
+  .ghosts b{font-weight:500; color:var(--paper); opacity:.7}
+
+  /* ——— sheet ——— */
+  .scrim{
+    position:fixed; inset:0; z-index:60; background:rgba(11,11,14,.72);
+    backdrop-filter:blur(6px); opacity:0; pointer-events:none; transition:opacity .55s var(--ease);
+  }
+  .scrim.open{opacity:1; pointer-events:auto}
+  .sheet{
+    position:fixed; left:50%; bottom:0; z-index:61; width:min(620px,94vw);
+    transform:translate(-50%,103%);
+    background:#121117; border:1px solid rgba(236,234,228,.07); border-bottom:none;
+    border-radius:22px 22px 0 0; padding:42px 46px 46px;
+    transition:transform .75s var(--ease);
+    box-shadow:0 -30px 90px rgba(0,0,0,.6);
+  }
+  .sheet.open{transform:translate(-50%,0)}
+  .sheet .eyebrow{font-size:10px; letter-spacing:.32em; text-transform:uppercase; color:var(--gold); margin-bottom:14px}
+  .sheet h2{font-family:'Fraunces',serif; font-weight:600; font-size:26px; letter-spacing:-.01em; line-height:1.3; margin-bottom:26px}
+  .sheet .opener{
+    font-size:14.5px; line-height:1.75; color:rgba(236,234,228,.85);
+    min-height:7.8em; border-left:2px solid rgba(233,180,76,.4); padding-left:18px;
+  }
+  .caret{display:inline-block; width:1px; height:1.05em; background:var(--gold);
+    vertical-align:-.18em; animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .sheet .row{display:flex; gap:12px; margin-top:30px}
+  .btn{
+    appearance:none; cursor:pointer; font-family:'Inter',sans-serif; font-weight:500;
+    font-size:13px; letter-spacing:.05em; border-radius:999px; padding:13px 26px;
+    transition:transform .35s var(--ease), background .35s, color .35s, border-color .35s;
+  }
+  .btn:active{transform:scale(.97)}
+  .btn.ghost{background:transparent; color:var(--paper); border:1px solid rgba(236,234,228,.2)}
+  .btn.ghost:hover{border-color:rgba(236,234,228,.5)}
+  .btn.solid{background:var(--gold); color:var(--ink); border:1px solid var(--gold)}
+  .btn.solid:hover{transform:translateY(-1px)}
+
+  /* ——— toast ——— */
+  .toast{
+    position:fixed; bottom:64px; left:50%; transform:translate(-50%,16px); z-index:80;
+    background:#1a1920; color:var(--paper); border:1px solid rgba(236,234,228,.1);
+    font-size:12.5px; letter-spacing:.04em; padding:11px 22px; border-radius:999px;
+    opacity:0; pointer-events:none; transition:opacity .4s var(--ease), transform .4s var(--ease);
+  }
+  .toast.show{opacity:1; transform:translate(-50%,0)}
+
+  /* swaps within scene 3 */
+  .swap{transition:opacity .5s var(--ease), transform .5s var(--ease)}
+  .swap.out{opacity:0; transform:translateY(10px)}
+
+  @media (max-width:768px){
+    .rail{right:12px}
+    .sheet{padding:32px 26px 38px}
+    .navchip{right:12px; bottom:12px}
+    .legal{left:12px; bottom:48px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation:none!important; transition:none!important}
+    .fx,.s1-line,.scroll-hint,#s2 .parent,#s2 .child,.ghosts span{opacity:1!important; transform:none!important}
+    #s2 .parent{opacity:.55!important}
+    .scene.in .scroll-hint{opacity:.7!important}
+  }
+</style>
+</head>
+<body>
+
+<div class="chrome">VMA Group&ensp;·&ensp;Communications Radar&ensp;·&ensp;Wednesday 10 June 2026</div>
+<div class="legal">Illustrative sample data — design review only.</div>
+
+<nav class="rail" aria-label="Scene progress">
+  <a href="#s1" data-dot="s1" aria-label="Scene 1"></a>
+  <a href="#s2" data-dot="s2" aria-label="Scene 2"></a>
+  <a href="#s3" data-dot="s3" aria-label="Scene 3"></a>
+</nav>
+
+<!-- SCENE 1 — the colossal number -->
+<section class="scene" id="s1">
+  <div class="colossal" id="bigNum" aria-label="£196k">£0<sub>k</sub></div>
+  <p class="s1-line">is sitting on your board this morning.</p>
+  <div class="scroll-hint">scroll</div>
+</section>
+
+<!-- SCENE 2 — the split -->
+<section class="scene" id="s2">
+  <div class="parent">£196k</div>
+  <div class="split">
+    <div class="child hot">
+      <span class="num">£60<span style="font-size:.5em;font-weight:600">k</span></span>
+      <p class="why">closes by Friday — National&nbsp;Grid and Ocado.</p>
+    </div>
+    <div class="child cool">
+      <span class="num">£136<span style="font-size:.5em;font-weight:600">k</span></span>
+      <p class="why">can wait — five leads, none urgent.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SCENE 3 — one call -->
+<section class="scene" id="s3">
+  <h1 class="one-line fx d1 swap" id="s3line">One call <em>starts it.</em></h1>
+  <button class="pill fx d2 swap" id="pillBtn">National Grid — £32k</button>
+  <button class="whisper-link" id="otherLink">the other £136k</button>
+  <div class="ghosts" id="ghosts" aria-hidden="true">
+    <span><b>Burberry</b> · £34k — brewing, not boiling.</span>
+    <span><b>Monzo</b> · £30k — £380m confirmed overnight.</span>
+    <span><b>Wise</b> · £26k — watching the brief mature.</span>
+    <span><b>Octopus</b> · £24k &nbsp;·&nbsp; <b>Bupa</b> · £22k — long game.</span>
+  </div>
+</section>
+
+<!-- SHEET -->
+<div class="scrim" id="scrim"></div>
+<aside class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetWhy">
+  <div class="eyebrow" id="sheetCo">National Grid · £32k</div>
+  <h2 id="sheetWhy">Their own search is 54 days old and failing in public.</h2>
+  <p class="opener"><span id="typed"></span><span class="caret" id="caret"></span></p>
+  <div class="row">
+    <button class="btn ghost" id="copyBtn">Copy</button>
+    <button class="btn solid" id="doneBtn">Done ✓</button>
+  </div>
+</aside>
+
+<div class="toast" id="toast">Wired in production.</div>
+
+<nav class="navchip">
+  <span>08 / 10</span><span style="opacity:.3">·</span>
+  <a href="07_the_answer.html">←</a><span style="opacity:.3">·</span>
+  <a href="index.html">Index</a><span style="opacity:.3">·</span>
+  <a href="09_one_page.html">→</a>
+</nav>
+
+<script>
+(function(){
+  "use strict";
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var $ = function(id){ return document.getElementById(id); };
+
+  /* ——— toast ——— */
+  var toastEl = $("toast"), toastT;
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastT);
+    toastT = setTimeout(function(){ toastEl.classList.remove("show"); }, 2200);
+  }
+
+  /* ——— scene 1 count-up ——— */
+  var bigNum = $("bigNum"), counted = false;
+  function countUp(){
+    if (counted) return; counted = true;
+    if (reduced){ bigNum.innerHTML = "£196<sub>k</sub>"; return; }
+    var t0 = null, DUR = 1600;
+    function frame(t){
+      if (!t0) t0 = t;
+      var p = Math.min((t - t0) / DUR, 1);
+      var e = 1 - Math.pow(1 - p, 4);           /* easeOutQuart — heavy landing */
+      bigNum.innerHTML = "£" + Math.round(196 * e) + "<sub>k</sub>";
+      if (p < 1) requestAnimationFrame(frame);
+      else bigNum.innerHTML = "£196<sub>k</sub>";
+    }
+    requestAnimationFrame(frame);
+  }
+  if (reduced) bigNum.innerHTML = "£196<sub>k</sub>";
+
+  /* ——— scene entry + progress rail ——— */
+  var scenes = Array.prototype.slice.call(document.querySelectorAll(".scene"));
+  var dots = document.querySelectorAll(".rail a");
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (en.isIntersecting && en.intersectionRatio > 0.55){
+        en.target.classList.add("in");
+        if (en.target.id === "s1") countUp();
+        dots.forEach(function(d){
+          d.classList.toggle("on", d.getAttribute("data-dot") === en.target.id);
+        });
+      }
+    });
+  }, { threshold: [0.55] });
+  scenes.forEach(function(s){ io.observe(s); });
+  if (reduced) scenes.forEach(function(s){ s.classList.add("in"); });
+
+  /* ——— arrow-key scene advance ——— */
+  function current(){
+    var mid = window.scrollY + window.innerHeight / 2, best = 0;
+    scenes.forEach(function(s, i){ if (s.offsetTop <= mid) best = i; });
+    return best;
+  }
+  document.addEventListener("keydown", function(e){
+    if (sheetOpen) return;
+    if (e.key === "ArrowDown" || e.key === "PageDown" || e.key === " "){
+      e.preventDefault();
+      var n = Math.min(current() + 1, scenes.length - 1);
+      scenes[n].scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
+    } else if (e.key === "ArrowUp" || e.key === "PageUp"){
+      e.preventDefault();
+      var p = Math.max(current() - 1, 0);
+      scenes[p].scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
+    }
+  });
+
+  /* ——— scene 3 state machine ——— */
+  var LEADS = [
+    { co:"National Grid", fee:"£32k",
+      why:"Their own search is 54 days old and failing in public.",
+      opener:"Hi Sasha — the Head of Media Relations brief has been live for eight weeks now. We placed three of the last five seats like it; I can have a vetted shortlist with you by the 24th. Worth fifteen minutes this week?" },
+    { co:"Ocado", fee:"£28k",
+      why:"A profit warning landed and the comms chair is empty.",
+      opener:"Hi — Ocado's Director of Communications seat is empty the same week a profit warning landed. That chair can't stay cold through results season. I have two names who've run listed-company comms through worse. Fifteen minutes today?" }
+  ];
+  var stage = 0, sheetOpen = false, typeTimer = null;
+  var pill = $("pillBtn"), s3line = $("s3line"),
+      sheet = $("sheet"), scrim = $("scrim"),
+      typed = $("typed"), caret = $("caret"),
+      sheetCo = $("sheetCo"), sheetWhy = $("sheetWhy"),
+      otherLink = $("otherLink"), ghosts = $("ghosts");
+
+  function typeOut(text){
+    clearInterval(typeTimer);
+    typed.textContent = "";
+    caret.style.display = "inline-block";
+    if (reduced){ typed.textContent = text; caret.style.display = "none"; return; }
+    var i = 0;
+    typeTimer = setInterval(function(){
+      i += 2;
+      typed.textContent = text.slice(0, i);
+      if (i >= text.length){
+        typed.textContent = text;
+        clearInterval(typeTimer);
+        caret.style.display = "none";
+      }
+    }, 22);
+  }
+
+  function openSheet(){
+    if (stage > 1) return;
+    var L = LEADS[stage];
+    sheetCo.textContent = L.co + " · " + L.fee;
+    sheetWhy.textContent = L.why;
+    sheetOpen = true;
+    scrim.classList.add("open");
+    sheet.classList.add("open");
+    setTimeout(function(){ typeOut(L.opener); }, reduced ? 0 : 500);
+  }
+  function closeSheet(){
+    sheetOpen = false;
+    clearInterval(typeTimer);
+    scrim.classList.remove("open");
+    sheet.classList.remove("open");
+  }
+
+  function swap(el, fn){
+    if (reduced){ fn(); return; }
+    el.classList.add("out");
+    setTimeout(function(){ fn(); el.classList.remove("out"); }, 480);
+  }
+
+  pill.addEventListener("click", openSheet);
+  scrim.addEventListener("click", closeSheet);
+
+  $("copyBtn").addEventListener("click", function(){
+    var text = LEADS[Math.min(stage,1)].opener;
+    function ok(){ toast("Opener copied."); }
+    function fallback(){
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); ok(); } catch(e){ toast("Copy unavailable here."); }
+      document.body.removeChild(ta);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText)
+      navigator.clipboard.writeText(text).then(ok, fallback);
+    else fallback();
+  });
+
+  $("doneBtn").addEventListener("click", function(){
+    closeSheet();
+    setTimeout(function(){
+      if (stage === 0){
+        stage = 1;
+        swap(s3line, function(){
+          s3line.innerHTML = '<em>£32k</em> in motion. Ocado next?';
+        });
+        swap(pill, function(){ pill.textContent = "Ocado — £28k"; });
+      } else if (stage === 1){
+        stage = 2;
+        swap(s3line, function(){
+          s3line.innerHTML = '<em>£60k</em> in motion. That’s Friday handled.';
+        });
+        swap(pill, function(){
+          pill.style.opacity = "0";
+          pill.style.pointerEvents = "none";
+        });
+        setTimeout(function(){ otherLink.classList.add("show"); }, reduced ? 0 : 700);
+      }
+    }, reduced ? 0 : 350);
+  });
+
+  otherLink.addEventListener("click", function(){
+    ghosts.classList.add("show");
+    ghosts.setAttribute("aria-hidden", "false");
+    otherLink.style.opacity = "0";
+    otherLink.style.pointerEvents = "none";
+  });
+
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape" && sheetOpen) closeSheet();
+  });
+
+  /* decorative chrome → toast */
+  document.querySelector(".chrome").addEventListener("click", function(){ toast("Wired in production."); });
+})();
+</script>
+</body>
+</html>

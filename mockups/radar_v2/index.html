@@ -3,182 +3,78 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VMA · Communications Radar — Ten Concepts</title>
+<title>VMA · Communications Radar — Take 2 · Ten Concepts</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* ───────────────────────── tokens ───────────────────────── */
 :root{
-  --paper:#0c1018; --panel:#11161f; --panel2:#151b26;
-  --ink:#eef1f6; --ink2:#aab3c2; --dim:#6b7585;
-  --hair:rgba(255,255,255,.07); --hair2:rgba(255,255,255,.12);
-  --blue:#4d9fff; --mint:#3ddc97; --amber:#fbbf24; --coral:#ff5d49;
-  --serif:"Fraunces",Georgia,serif; --sans:"Inter",system-ui,sans-serif;
-  --mono:"JetBrains Mono",ui-monospace,monospace;
+  --paper:#fbfaf8; --ink:#161512; --quiet:#8a8579; --whisper:#b9b4a8;
+  --hair:rgba(22,21,18,.1); --accent:#e8553a;
+  --serif:"Fraunces",Georgia,serif; --sans:"Inter",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{background:var(--paper);color:var(--ink);font-family:var(--sans);
-  background-image:
-    radial-gradient(1100px 480px at 18% -8%, rgba(77,159,255,.10), transparent 60%),
-    radial-gradient(900px 420px at 86% 4%, rgba(61,220,151,.06), transparent 55%);
-  min-height:100vh}
-a{color:inherit;text-decoration:none}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);min-height:100vh}
 
-/* ───────────────────────── hero ───────────────────────── */
-.hero{max-width:1180px;margin:0 auto;padding:64px 32px 36px}
-.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--blue);display:flex;align-items:center;gap:10px}
-.eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 10px var(--mint);animation:pulse 2.2s ease-in-out infinite}
-@keyframes pulse{50%{opacity:.45}}
-h1{font:600 clamp(38px,5vw,62px)/1.05 var(--serif);letter-spacing:-.01em;margin:18px 0 14px;max-width:18ch}
-h1 em{font-style:italic;color:var(--blue)}
-.lede{font:400 16px/1.65 var(--sans);color:var(--ink2);max-width:62ch}
-.lede strong{color:var(--ink);font-weight:600}
-.hero-meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
-.chip{font:500 11.5px/1 var(--mono);color:var(--ink2);border:1px solid var(--hair2);border-radius:999px;padding:8px 14px;background:rgba(255,255,255,.02)}
-.chip b{color:var(--ink);font-weight:700}
+.wrap{max-width:680px;margin:0 auto;padding:14vh 28px 12vh}
 
-/* ───────────────────────── grid ───────────────────────── */
-.grid{max-width:1180px;margin:0 auto;padding:18px 32px 80px;display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
-.card{position:relative;display:block;border:1px solid var(--hair);border-radius:18px;background:linear-gradient(180deg,var(--panel2),var(--panel));
-  padding:26px 26px 22px;overflow:hidden;transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease}
-.card::before{content:"";position:absolute;inset:0;background:
-  radial-gradient(420px 140px at 20% 0%, var(--tint,rgba(77,159,255,.10)), transparent 70%);opacity:0;transition:opacity .25s}
-.card:hover{transform:translateY(-3px);border-color:var(--hair2);box-shadow:0 18px 44px rgba(0,0,0,.4)}
-.card:hover::before{opacity:1}
-.num{font:700 12px/1 var(--mono);color:var(--dim);letter-spacing:.14em}
-.card h2{font:600 25px/1.15 var(--serif);margin:10px 0 4px;letter-spacing:-.005em}
-.card .tag{font:600 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--accent,var(--blue));margin-bottom:12px;display:inline-block}
-.card p{font:400 13.5px/1.62 var(--sans);color:var(--ink2);max-width:58ch}
-.feats{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px}
-.feat{font:500 10.5px/1 var(--mono);color:var(--dim);border:1px solid var(--hair);border-radius:7px;padding:6px 9px;background:rgba(255,255,255,.02)}
-.go{position:absolute;top:24px;right:24px;width:34px;height:34px;border:1px solid var(--hair2);border-radius:50%;display:grid;place-items:center;color:var(--ink2);transition:.2s}
-.go svg{width:15px;height:15px}
-.card:hover .go{background:var(--accent,var(--blue));border-color:transparent;color:#0b0f16;transform:rotate(45deg)}
+.eyebrow{font:500 10.5px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--whisper)}
+h1{font:500 clamp(34px,5.4vw,52px)/1.12 var(--serif);letter-spacing:-.01em;margin:22px 0 16px}
+h1 em{font-style:italic;color:var(--accent)}
+.lede{font:400 15px/1.7 var(--sans);color:var(--quiet);max-width:48ch}
 
-/* per-card accents */
-.c01{--accent:#4d9fff;--tint:rgba(77,159,255,.12)}
-.c02{--accent:#d6b36a;--tint:rgba(214,179,106,.10)}
-.c03{--accent:#ff7a52;--tint:rgba(255,122,82,.10)}
-.c04{--accent:#3ef0c4;--tint:rgba(62,240,196,.10)}
-.c05{--accent:#3ddc97;--tint:rgba(61,220,151,.10)}
-.c06{--accent:#8f7df0;--tint:rgba(143,125,240,.12)}
-.c07{--accent:#b48dee;--tint:rgba(180,141,238,.11)}
-.c08{--accent:#ff5d49;--tint:rgba(255,93,73,.10)}
-.c09{--accent:#2fbfa4;--tint:rgba(47,191,164,.10)}
-.c10{--accent:#ffd166;--tint:rgba(255,209,102,.10)}
+.list{margin-top:9vh;border-top:1px solid var(--hair)}
+.row{display:flex;align-items:baseline;gap:22px;padding:21px 2px;border-bottom:1px solid var(--hair);text-decoration:none;color:inherit;transition:padding-left .35s cubic-bezier(.2,.8,.2,1)}
+.row:hover{padding-left:14px}
+.row .n{font:500 11px/1 var(--mono);color:var(--whisper);width:24px;flex-shrink:0}
+.row .name{font:500 21px/1.2 var(--serif);letter-spacing:-.005em;white-space:nowrap}
+.row .what{font:400 13px/1.5 var(--sans);color:var(--quiet);margin-left:auto;text-align:right;max-width:30ch}
+.row:hover .name{color:var(--accent)}
 
-/* ───────────────────────── footer ───────────────────────── */
-.foot{max-width:1180px;margin:0 auto;padding:0 32px 56px;color:var(--dim);font:400 12px/1.7 var(--sans)}
-.foot .rule{height:1px;background:var(--hair);margin-bottom:22px}
-.foot p+p{margin-top:6px}
-.foot .mono{font-family:var(--mono);font-size:11px}
+.foot{margin-top:9vh;font:400 11.5px/1.8 var(--sans);color:var(--whisper)}
+.foot p+p{margin-top:2px}
 
-/* entrance */
-.card{opacity:0;transform:translateY(14px);animation:up .55s ease forwards}
-@keyframes up{to{opacity:1;transform:none}}
-.hero>*{opacity:0;transform:translateY(10px);animation:up .55s ease forwards}
-.hero>*:nth-child(2){animation-delay:.06s}.hero>*:nth-child(3){animation-delay:.12s}.hero>*:nth-child(4){animation-delay:.18s}
+.wrap>*{opacity:0;transform:translateY(10px);animation:in .7s cubic-bezier(.2,.8,.2,1) forwards}
+.wrap>*:nth-child(2){animation-delay:.08s}.wrap>*:nth-child(3){animation-delay:.16s}
+.wrap>*:nth-child(4){animation-delay:.26s}.wrap>*:nth-child(5){animation-delay:.4s}
+@keyframes in{to{opacity:1;transform:none}}
 
-@media (max-width:900px){.grid{grid-template-columns:1fr}.hero{padding:44px 20px 24px}.grid{padding:12px 20px 60px}.foot{padding:0 20px 44px}}
-@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}.card,.hero>*{opacity:1;transform:none}}
+@media (max-width:680px){
+  .wrap{padding:10vh 22px}
+  .row{flex-wrap:wrap;gap:8px 16px}
+  .row .what{margin-left:40px;text-align:left;max-width:none;width:100%}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .wrap>*{opacity:1;transform:none}
+}
 </style>
 </head>
 <body>
 
-<header class="hero">
-  <div class="eyebrow"><span class="dot"></span>VMA GROUP · COMMUNICATIONS RADAR · DESIGN EXPLORATION 2026</div>
-  <h1>Ten ways the radar could <em>make the call irresistible</em></h1>
-  <p class="lede">Same morning, same intelligence — <strong>Wednesday 10 June 2026, £196k across seven call-ready leads</strong> — rendered ten radically different ways. Every concept is AI-native (overnight agent log, red-team verdicts, drafted openers, conversational briefing) and built around what makes an Account Director pick up the phone: money on the board, windows that close, evidence-backed conviction, and a first line to say.</p>
-  <div class="hero-meta">
-    <span class="chip">DATASET <b>14 accounts · 4 tiers</b></span>
-    <span class="chip">BOARD <b>£196k call-ready</b></span>
-    <span class="chip">STACK <b>single-file HTML · zero dependencies</b></span>
-    <span class="chip">EVERY CONCEPT <b>fully interactive</b></span>
+<main class="wrap">
+  <div class="eyebrow">VMA GROUP · COMMUNICATIONS RADAR · TAKE 2 · WEDNESDAY 10 JUNE 2026</div>
+  <h1>The AI did the thinking.<br>The screen shows <em>only the call</em>.</h1>
+  <p class="lede">Ten near-empty interfaces for the same morning — £196k on the board, seven call-ready leads. Every concept opens with one focal element and at most a few dozen words; everything else waits behind a tap.</p>
+
+  <nav class="list">
+    <a class="row" href="01_one_call.html"><span class="n">01</span><span class="name">One Call</span><span class="what">The verdict screen — one company, one sentence, one button</span></a>
+    <a class="row" href="02_the_pulse.html"><span class="n">02</span><span class="name">The Pulse</span><span class="what">A breathing orb speaks the brief, one line at a time</span></a>
+    <a class="row" href="03_three_cards.html"><span class="n">03</span><span class="name">Three Cards</span><span class="what">The whole radar reduced to three objects on a plinth</span></a>
+    <a class="row" href="04_the_note.html"><span class="n">04</span><span class="name">The Note</span><span class="what">A sixty-word letter the AI left on her desk</span></a>
+    <a class="row" href="05_focus_flow.html"><span class="n">05</span><span class="name">Focus Flow</span><span class="what">Seven full-screen colour fields, one decision each</span></a>
+    <a class="row" href="06_the_glance.html"><span class="n">06</span><span class="name">The Glance</span><span class="what">The morning as a lock screen — three notifications, done</span></a>
+    <a class="row" href="07_the_answer.html"><span class="n">07</span><span class="name">The Answer</span><span class="what">One question on screen, one six-word answer</span></a>
+    <a class="row" href="08_the_number.html"><span class="n">08</span><span class="name">The Number</span><span class="what">£196k becomes one action, in three scenes</span></a>
+    <a class="row" href="09_one_page.html"><span class="n">09</span><span class="name">One Page</span><span class="what">A tasting menu of seven calls, one course at a time</span></a>
+    <a class="row" href="10_the_horizon.html"><span class="n">10</span><span class="name">The Horizon</span><span class="what">One line, three lights — when the money happens</span></a>
+  </nav>
+
+  <div class="foot">
+    <p>Every interaction works — openers type, sheets rise, cards flip. Step through the set with the corner chip on any page.</p>
+    <p>Illustrative sample data — design review only.</p>
   </div>
-</header>
-
-<main class="grid">
-
-  <a class="card c01" href="01_mission_control.html" style="animation-delay:.05s">
-    <span class="num">CONCEPT 01</span><span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 17 17 7M9 7h8v8"/></svg></span>
-    <h2>Mission Control</h2><span class="tag">The trading floor for fees</span>
-    <p>A Bloomberg-grade dark cockpit: ranked call queue with a live "call before 10:00" countdown, centre dossier with an animated strength arc, and a copilot rail streaming the overnight agent log.</p>
-    <div class="feats"><span class="feat">live countdown</span><span class="feat">agent log feed</span><span class="feat">typewriter opener</span><span class="feat">gate chips</span></div>
-  </a>
-
-  <a class="card c02" href="02_morning_wire.html" style="animation-delay:.1s">
-    <span class="num">CONCEPT 02</span><span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 17 17 7M9 7h8v8"/></svg></span>
-    <h2>The Morning Wire</h2><span class="tag">A private broadsheet, edited by the AI</span>
-    <p>The radar as a newspaper with one subscriber. Lead story: "Fifty-four days, two reposts, no shortlist." Stop-press ribbon for overnight registry filings, footnoted sources, and Today's Calls down the right rail.</p>
-    <div class="feats"><span class="feat">editorial AI desk</span><span class="feat">stop press</span><span class="feat">footnote citations</span><span class="feat">drop caps</span></div>
-  </a>
-
-  <a class="card c03" href="03_conviction_stack.html" style="animation-delay:.15s">
-    <span class="num">CONCEPT 03</span><span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 17 17 7M9 7h8v8"/></svg></span>
-    <h2>The Conviction Stack</h2><span class="tag">One lead at a time — decide and move</span>
-    <p>Morning triage as a focused ritual: seven cards, each argued by the AI and stress-tested by the red team, ruled on in seconds with keyboard or buttons. Finish the deck, get your call list.</p>
-    <div class="feats"><span class="feat">card physics</span><span class="feat">red-team stamp</span><span class="feat">keyboard triage</span><span class="feat">call-list tally</span></div>
-  </a>
-
-  <a class="card c04" href="04_living_radar.html" style="animation-delay:.2s">
-    <span class="num">CONCEPT 04</span><span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 17 17 7M9 7h8v8"/></svg></span>
-    <h2>The Living Radar</h2><span class="tag">The metaphor, finally done properly</span>
-    <p>A cinematic scope where every blip is money: rings are time-to-window, sectors are trigger families, blip size is fee. The sweep brushes blips as it passes; clicking one slides in the full dossier.</p>
-    <div class="feats"><span class="feat">polar SVG scope</span><span class="feat">rotating sweep</span><span class="feat">dossier drawer</span><span class="feat">signal ticker</span></div>
-  </a>
-
-  <a class="card c05" href="05_revenue_boardroom.html" style="animation-delay:.25s">
-    <span class="num">CONCEPT 05</span><span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 17 17 7M9 7h8v8"/></svg></span>
-    <h2>The Revenue Boardroom</h2><span class="tag">The pipeline as money in motion</span>
-    <p>Four glass columns of money moving toward the bank — Call today, This fortnight, Building, Blocked — with animated £ subtotals, an AI floor-manager note on each column, and real drag-and-drop.</p>
-    <div class="feats"><span class="feat">drag &amp; drop</span><span class="feat">£ subtotals</span><span class="feat">AI column notes</span><span class="feat">strength rings</span></div>
-  </a>
-
-  <a class="card c06" href="06_the_briefing.html" style="animation-delay:.3s">
-    <span class="num">CONCEPT 06</span><span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 17 17 7M9 7h8v8"/></svg></span>
-    <h2>The Briefing</h2><span class="tag">The radar speaks first</span>
-    <p>A conversation with the analyst who stayed up all night. The AI opens with the morning narrative and your call order, embeds live dossier cards in chat, and answers: "Why is Burberry only 6/8?"</p>
-    <div class="feats"><span class="feat">scripted copilot</span><span class="feat">embedded lead cards</span><span class="feat">working prompt chips</span><span class="feat">typing indicator</span></div>
-  </a>
-
-  <a class="card c07" href="07_intelligence_bento.html" style="animation-delay:.35s">
-    <span class="num">CONCEPT 07</span><span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 17 17 7M9 7h8v8"/></svg></span>
-    <h2>Intelligence Bento</h2><span class="tag">The whole morning on one glass tray</span>
-    <p>One screen, zero scrolling: a composed bento of instruments — call-first spotlight, sector heat map, tier donut, gate meters, agent log and momentum — each tile with its own AI annotation.</p>
-    <div class="feats"><span class="feat">bento grid</span><span class="feat">sector heat map</span><span class="feat">swappable spotlight</span><span class="feat">ask-the-radar tile</span></div>
-  </a>
-
-  <a class="card c08" href="08_money_timeline.html" style="animation-delay:.4s">
-    <span class="num">CONCEPT 08</span><span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 17 17 7M9 7h8v8"/></svg></span>
-    <h2>The Money Timeline</h2><span class="tag">When every window closes</span>
-    <p>One elegant question — how long before someone else gets there? Fee-sized bubbles on a time axis, a pulsing TODAY line, a red first-mover zone, and live countdowns on the next 72 hours.</p>
-    <div class="feats"><span class="feat">Tufte-grade SVG</span><span class="feat">act-before dates</span><span class="feat">live countdowns</span><span class="feat">fee-decay note</span></div>
-  </a>
-
-  <a class="card c09" href="09_dossier_splitview.html" style="animation-delay:.45s">
-    <span class="num">CONCEPT 09</span><span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 17 17 7M9 7h8v8"/></svg></span>
-    <h2>The Dossier</h2><span class="tag">A keyboard-first operator's instrument</span>
-    <p>Linear-DNA split view: tier-grouped list on the left, and on the right the most complete BD dossier ever rendered — evidence timeline, gate meters, red-team verdict, fee math and the full AI call script.</p>
-    <div class="feats"><span class="feat">j/k navigation</span><span class="feat">⌘K palette</span><span class="feat">evidence timeline</span><span class="feat">AI call script</span></div>
-  </a>
-
-  <a class="card c10" href="10_win_the_week.html" style="animation-delay:.5s">
-    <span class="num">CONCEPT 10</span><span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 17 17 7M9 7h8v8"/></svg></span>
-    <h2>Win the Week</h2><span class="tag">The motivation engine</span>
-    <p>BD as a contact sport: week progress arc, today's three battles with win-probability gauges and AI scouting reports, card-flip call plans, and a tasteful confetti burst when you take the shot.</p>
-    <div class="feats"><span class="feat">win probability</span><span class="feat">3D card flip</span><span class="feat">streak &amp; momentum</span><span class="feat">classy confetti</span></div>
-  </a>
-
 </main>
-
-<footer class="foot">
-  <div class="rule"></div>
-  <p><strong style="color:var(--ink2)">How to review:</strong> open any concept, click everything — queues, blips, cards, prompt chips, ⌘K — every interaction is wired. Each page carries a corner chip to step through the set in order.</p>
-  <p class="mono">Shared dataset: National Grid · Monzo · Ocado · Burberry · Octopus Energy · Wise · Bupa (call-ready) — AstraZeneca · JD Sports · Severn Trent (developing) — Deliveroo · Greggs (early) — Frasers · Thames Water (blocked).</p>
-  <p>Illustrative sample data for design review — not live intelligence.</p>
-</footer>
 
 </body>
 </html>

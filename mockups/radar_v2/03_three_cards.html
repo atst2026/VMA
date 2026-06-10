@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMA · Communications Radar — Take 2 · Concept 03 · Three Cards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f7f7f5; --ink:#1c1c1a; --ink-soft:#6f6f6a; --ink-faint:#a4a49d;
+    --card:#fdfdfb; --hair:rgba(28,28,26,.09);
+    --ease-out:cubic-bezier(.16,1,.3,1); --ease-flip:cubic-bezier(.32,.72,.18,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    font-family:'Inter',sans-serif; color:var(--ink); background:var(--paper);
+    background-image:radial-gradient(1100px 420px at 50% 104%, rgba(28,28,26,.075), transparent 70%);
+    -webkit-font-smoothing:antialiased; overflow-x:hidden;
+  }
+
+  /* ---------- whisper chrome ---------- */
+  header{
+    position:fixed; inset:0 0 auto 0; z-index:20;
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:30px 40px; pointer-events:none;
+  }
+  header > *{pointer-events:auto}
+  .brand{font-size:11px; font-weight:600; letter-spacing:.22em; text-transform:uppercase; cursor:pointer}
+  .app{font-size:11px; letter-spacing:.30em; text-transform:uppercase; color:var(--ink-faint)}
+  .date{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-faint); cursor:pointer}
+
+  /* ---------- stage ---------- */
+  main{min-height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:120px 32px 150px}
+  .whisper{
+    font-family:'Fraunces',serif; font-weight:300; font-size:21px; letter-spacing:.005em;
+    color:var(--ink); text-align:center; max-width:560px; margin-bottom:64px;
+    opacity:0; animation:fadein 1s var(--ease-out) .15s both; transition:opacity .45s ease;
+  }
+  .whisper.swap{opacity:0}
+  .plinth{display:flex; gap:48px; perspective:1600px}
+
+  /* ---------- the three objects ---------- */
+  .scene{width:300px; height:400px; perspective:1300px; animation:rise 1s var(--ease-out) both; transition:opacity .8s ease}
+  .scene:nth-child(1){animation-delay:.35s}
+  .scene:nth-child(2){animation-delay:.55s}
+  .scene:nth-child(3){animation-delay:.75s}
+  .scene.called{opacity:.4}
+  .tilt{width:100%; height:100%; transform-style:preserve-3d; transition:transform .25s var(--ease-out)}
+  .card{
+    position:relative; width:100%; height:100%; cursor:pointer;
+    transform-style:preserve-3d; transition:transform .6s var(--ease-flip);
+  }
+  .card.flipped{transform:rotateY(180deg)}
+  .face{
+    position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+    border-radius:14px; border:1px solid var(--hair); overflow:hidden;
+    background:linear-gradient(168deg,#fffffe 0%,var(--card) 55%,#f7f7f3 100%);
+    box-shadow:
+      0 1px 1px rgba(28,28,26,.04),
+      0 4px 9px rgba(28,28,26,.05),
+      0 16px 34px rgba(28,28,26,.07),
+      0 38px 70px rgba(28,28,26,.07);
+    display:flex; flex-direction:column; padding:30px 30px 26px;
+  }
+  .face.back{transform:rotateY(180deg)}
+  .sheen{
+    position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity .4s ease;
+    background:radial-gradient(240px circle at var(--mx,50%) var(--my,40%), rgba(255,255,255,.6), rgba(255,255,255,0) 65%);
+  }
+  .scene:hover .sheen{opacity:1}
+
+  /* front face — four elements, nothing more */
+  .num{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-faint); letter-spacing:.12em}
+  .co{
+    font-family:'Fraunces',serif; font-weight:400; font-size:42px; line-height:1.04; letter-spacing:-.01em;
+    margin:auto 0 14px;
+  }
+  .seat{font-size:12.5px; color:var(--ink-soft); letter-spacing:.02em; margin-bottom:auto}
+  .fee{font-family:'IBM Plex Mono',monospace; font-size:15px; letter-spacing:.06em; color:var(--ink); padding-top:22px; border-top:1px solid var(--hair)}
+  .tick{
+    position:absolute; top:18px; right:18px; width:24px; height:24px; border-radius:50%;
+    background:var(--ink); color:var(--paper); font-size:12px; line-height:24px; text-align:center;
+    opacity:0; transform:scale(.5); transition:opacity .4s ease,transform .4s var(--ease-out);
+  }
+  .scene.called .tick{opacity:1; transform:scale(1)}
+
+  /* back face */
+  .back-label{font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.24em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:12px}
+  .why{font-family:'Fraunces',serif; font-weight:400; font-style:italic; font-size:17.5px; line-height:1.4; margin-bottom:8px}
+  .risk{font-size:11px; color:var(--ink-faint); margin-bottom:4px}
+  .opener{
+    font-family:'Fraunces',serif; font-weight:400; font-size:12.5px; line-height:1.62; color:#3b3b37;
+    text-shadow:0 1px 0 rgba(255,255,255,.8);
+    margin:auto 0; padding:14px 0 14px 16px; border-left:1px solid var(--hair);
+  }
+  .actions{display:flex; gap:10px; padding-top:16px; border-top:1px solid var(--hair)}
+  .actions button{
+    flex:1; font-family:'Inter',sans-serif; font-size:11.5px; font-weight:500; letter-spacing:.04em;
+    padding:10px 0; border-radius:8px; border:1px solid var(--hair); background:transparent; color:var(--ink);
+    cursor:pointer; transition:background .25s ease,color .25s ease;
+  }
+  .actions button:hover{background:var(--ink); color:var(--paper)}
+  .actions button.done{background:var(--ink); color:var(--paper)}
+
+  /* ---------- the other four ---------- */
+  .others-link{
+    position:fixed; bottom:34px; left:50%; transform:translateX(-50%); z-index:15;
+    font-family:'Fraunces',serif; font-style:italic; font-size:14px; color:var(--ink-soft);
+    background:none; border:none; cursor:pointer; padding:6px 10px;
+    opacity:0; pointer-events:none; transition:opacity .9s ease,color .3s ease;
+  }
+  .others-link.show{opacity:1; pointer-events:auto}
+  .others-link:hover{color:var(--ink)}
+  .ghosts{
+    position:fixed; bottom:72px; left:50%; transform:translate(-50%,14px); z-index:14;
+    display:flex; gap:34px; opacity:0; pointer-events:none;
+    transition:opacity .6s var(--ease-out),transform .6s var(--ease-out);
+    flex-wrap:wrap; justify-content:center; max-width:90vw;
+  }
+  .ghosts.open{opacity:1; transform:translate(-50%,0)}
+  .ghost{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-faint); white-space:nowrap}
+  .ghost em{font-style:normal; color:var(--ink-soft)}
+
+  /* ---------- furniture ---------- */
+  .corner{position:fixed; bottom:30px; left:40px; font-size:10px; color:var(--ink-faint); letter-spacing:.04em; z-index:15}
+  .navchip{
+    position:fixed; bottom:26px; right:32px; z-index:20;
+    font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink-faint);
+    background:rgba(255,255,255,.65); border:1px solid var(--hair); border-radius:99px;
+    padding:7px 14px; backdrop-filter:blur(8px);
+  }
+  .navchip a{color:var(--ink-soft); text-decoration:none; padding:0 2px}
+  .navchip a:hover{color:var(--ink)}
+  #toast{
+    position:fixed; bottom:118px; left:50%; transform:translate(-50%,8px); z-index:50;
+    font-size:12px; letter-spacing:.03em; color:var(--paper); background:var(--ink);
+    padding:9px 18px; border-radius:99px; opacity:0; pointer-events:none;
+    transition:opacity .35s ease,transform .35s var(--ease-out);
+    box-shadow:0 8px 24px rgba(28,28,26,.18);
+  }
+  #toast.on{opacity:1; transform:translate(-50%,0)}
+
+  @keyframes rise{from{opacity:0; transform:translateY(30px)} to{opacity:1; transform:translateY(0)}}
+  @keyframes fadein{from{opacity:0} to{opacity:1}}
+
+  /* ---------- 768px: cards stack ---------- */
+  @media (max-width:1060px){
+    .plinth{flex-direction:column; align-items:center; gap:32px}
+    main{padding:130px 24px 220px}
+    .whisper{font-size:18px; margin-bottom:44px}
+    header{padding:24px 22px}
+    .app{display:none}
+    .ghosts{flex-direction:column; gap:8px; align-items:center; bottom:80px}
+    .corner{left:22px}
+    .navchip{right:18px}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none!important; transition:none!important}
+    .scene,.whisper{opacity:1}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand" data-decor>VMA Group</div>
+  <div class="app">Communications Radar</div>
+  <div class="date" data-decor>Wednesday 10 June 2026</div>
+</header>
+
+<main>
+  <p class="whisper" id="whisper">I checked 1,284 sources overnight. These three are worth your morning.</p>
+  <section class="plinth" id="plinth" aria-label="Three call-ready opportunities"></section>
+</main>
+
+<button class="others-link" id="othersLink" aria-expanded="false">And the other four?</button>
+<div class="ghosts" id="ghosts" aria-hidden="true">
+  <span class="ghost"><em>Burberry</em> · £34k · restructure</span>
+  <span class="ghost"><em>Octopus Energy</em> · £24k · hiring cluster</span>
+  <span class="ghost"><em>Wise</em> · £26k · US listing</span>
+  <span class="ghost"><em>Bupa</em> · £22k · CHRO change</span>
+</div>
+
+<div class="corner">Illustrative sample data — design review only.</div>
+<nav class="navchip">03 / 10 · <a href="02_the_pulse.html" aria-label="Previous concept">←</a> · <a href="index.html">Index</a> · <a href="04_the_note.html" aria-label="Next concept">→</a></nav>
+<div id="toast" role="status"></div>
+
+<script>
+(function(){
+  'use strict';
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const DATA = [
+    { num:'№ 1', co:'National Grid', seat:'Head of Media Relations', fee:'£32,000',
+      why:'Their own search is 54 days old and failing in public.',
+      risk:'Risk — they may have quietly filled it.',
+      opener:'Hi Sasha — the Head of Media Relations brief has been live for eight weeks now. We placed three of the last five seats like it; I can have a vetted shortlist with you by the 24th. Worth fifteen minutes this week?' },
+    { num:'№ 2', co:'Ocado', seat:'Director of Communications', fee:'£28,000',
+      why:'A profit warning landed and the comms chair is empty.',
+      risk:'',
+      opener:'Hi Daniel — rough fortnight in the headlines, and the comms chair is empty just when you need it most. I can have a confidential shortlist with you by Friday. Fifteen minutes today?' },
+    { num:'№ 3', co:'Monzo', seat:'Head of Corporate Communications', fee:'£30,000',
+      why:'£380m confirmed at Companies House overnight. Comms build-out follows capital.',
+      risk:'',
+      opener:'Hi Tomas — congratulations on the round. Teams at your stage add a Head of Corporate Comms within two quarters; I mapped who’s available before the announcement even landed. Shall I send the three names worth meeting?' }
+  ];
+
+  const plinth  = document.getElementById('plinth');
+  const whisper = document.getElementById('whisper');
+  const toastEl = document.getElementById('toast');
+  const othersLink = document.getElementById('othersLink');
+  const ghosts  = document.getElementById('ghosts');
+  const called  = [false,false,false];
+  const cards   = [];
+  let toastTimer = null;
+
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>toastEl.classList.remove('on'), 1900);
+  }
+
+  function setWhisper(text){
+    if (reduced){ whisper.textContent = text; return; }
+    whisper.classList.add('swap');
+    setTimeout(()=>{ whisper.textContent = text; whisper.classList.remove('swap'); }, 460);
+  }
+
+  function copyText(text){
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(()=>toast('Opener copied.'), ()=>toast('Opener copied.'));
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); }catch(e){}
+      document.body.removeChild(ta);
+      toast('Opener copied.');
+    }
+  }
+
+  function markCalled(i){
+    const c = cards[i];
+    if (called[i]) return;
+    called[i] = true;
+    c.card.classList.remove('flipped');
+    setTimeout(()=>c.scene.classList.add('called'), reduced ? 0 : 340);
+    c.markBtn.textContent = 'Called ✓';
+    c.markBtn.classList.add('done');
+    const left = called.filter(v=>!v).length;
+    if (left === 2) setWhisper('Two left.');
+    else if (left === 1) setWhisper('One left.');
+    else {
+      setWhisper('Done. £90k in motion — I’ll keep watching the rest.');
+      setTimeout(()=>othersLink.classList.add('show'), reduced ? 0 : 1100);
+    }
+  }
+
+  DATA.forEach((d,i)=>{
+    const scene = document.createElement('div'); scene.className = 'scene';
+    const tilt  = document.createElement('div'); tilt.className  = 'tilt';
+    const card  = document.createElement('div'); card.className  = 'card';
+    card.setAttribute('role','button');
+    card.setAttribute('tabindex','0');
+    card.setAttribute('aria-label', d.co + ' — press to turn the card');
+
+    const front = document.createElement('div'); front.className = 'face front';
+    front.innerHTML =
+      '<span class="num">' + d.num + '</span>' +
+      '<h2 class="co">' + d.co + '</h2>' +
+      '<p class="seat">' + d.seat + '</p>' +
+      '<p class="fee">' + d.fee + '</p>' +
+      '<span class="tick">✓</span>' +
+      '<div class="sheen"></div>';
+
+    const back = document.createElement('div'); back.className = 'face back';
+    back.innerHTML =
+      '<span class="back-label">Why now</span>' +
+      '<p class="why">' + d.why + '</p>' +
+      (d.risk ? '<p class="risk">' + d.risk + '</p>' : '') +
+      '<p class="opener">“' + d.opener + '”</p>' +
+      '<div class="actions">' +
+        '<button type="button" class="copy">Copy opener</button>' +
+        '<button type="button" class="mark">Mark called ✓</button>' +
+      '</div>';
+
+    card.appendChild(front); card.appendChild(back);
+    tilt.appendChild(card); scene.appendChild(tilt); plinth.appendChild(scene);
+
+    const copyBtn = back.querySelector('.copy');
+    const markBtn = back.querySelector('.mark');
+    copyBtn.addEventListener('click', e=>{ e.stopPropagation(); copyText(d.opener); });
+    markBtn.addEventListener('click', e=>{ e.stopPropagation(); markCalled(i); });
+
+    card.addEventListener('click', ()=>card.classList.toggle('flipped'));
+    card.addEventListener('keydown', e=>{
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); card.classList.toggle('flipped'); }
+    });
+
+    if (!reduced){
+      scene.addEventListener('pointermove', e=>{
+        if (card.classList.contains('flipped')){ tilt.style.transform = ''; return; }
+        const r = scene.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width;
+        const py = (e.clientY - r.top)  / r.height;
+        tilt.style.transform = 'rotateX(' + ((0.5 - py) * 6).toFixed(2) + 'deg) rotateY(' + ((px - 0.5) * 8).toFixed(2) + 'deg)';
+        front.querySelector('.sheen').style.setProperty('--mx', (px * 100).toFixed(1) + '%');
+        front.querySelector('.sheen').style.setProperty('--my', (py * 100).toFixed(1) + '%');
+      });
+      scene.addEventListener('pointerleave', ()=>{ tilt.style.transform = ''; });
+    }
+
+    cards.push({ scene, card, markBtn });
+  });
+
+  /* keyboard: 1/2/3 flip · Esc flips back */
+  document.addEventListener('keydown', e=>{
+    if (e.target.tagName === 'BUTTON' && (e.key === 'Enter' || e.key === ' ')) return;
+    if (e.key === '1' || e.key === '2' || e.key === '3'){
+      cards[+e.key - 1].card.classList.toggle('flipped');
+    } else if (e.key === 'Escape'){
+      cards.forEach(c=>c.card.classList.remove('flipped'));
+    }
+  });
+
+  /* and the other four? */
+  othersLink.addEventListener('click', ()=>{
+    const open = ghosts.classList.toggle('open');
+    ghosts.setAttribute('aria-hidden', String(!open));
+    othersLink.setAttribute('aria-expanded', String(open));
+    othersLink.textContent = open ? 'Enough.' : 'And the other four?';
+  });
+
+  /* decorative chrome → toast */
+  document.querySelectorAll('[data-decor]').forEach(el=>{
+    el.addEventListener('click', ()=>toast('Wired in production.'));
+  });
+})();
+</script>
+</body>
+</html>

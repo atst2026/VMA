@@ -1,36 +1,33 @@
-# Communications Radar — ten concepts, generation 2
+# Communications Radar — take 2: ten near-empty concepts
 
-Ten standalone redesigns of the live dashboard's **Communications Radar**
-page (the BD Leads + Live Jobs console in `tool/dashboard.py`), built to a
-deliberately higher bar than the first `mockups/01–10` set: AI-native,
-fee-forward, and designed around what actually makes an Account Director
-chase a lead — money on the board, windows that close, evidence-backed
-conviction, and a first line to say.
+Take one of this set was rejected for one reason: **too much on screen**.
+An Account Director opening an insanely slick AI tool should see the
+conclusion, not the working.
 
-Open [`index.html`](index.html) for the gallery, or step through any
-concept with the corner navigation chip on every page.
+So take 2 obeys one rule everywhere: **the default screen shows one focal
+element and at most a few dozen words.** The AI speaks first person, short
+and certain ("I checked 1,284 sources overnight. Three calls are worth
+your morning."). Depth — fees, risks, openers, the other leads — exists,
+but only behind an explicit tap, revealed three lines at a time.
 
-| # | Concept | One-line thesis |
-|---|---------|-----------------|
-| 01 | Mission Control | Bloomberg-grade dark cockpit: call queue with live countdown, dossier centre, AI copilot rail |
-| 02 | The Morning Wire | The radar as a private broadsheet — lead story, stop-press ribbon, footnoted sources |
-| 03 | The Conviction Stack | One lead at a time: AI argues the call, the red team tries to kill it, you rule |
-| 04 | The Living Radar | The metaphor done properly — a cinematic scope where every blip is money |
-| 05 | The Revenue Boardroom | Pipeline kanban with animated £ subtotals and real drag-and-drop |
-| 06 | The Briefing | Chat-first: the AI briefs you, embeds dossier cards, answers questions |
-| 07 | Intelligence Bento | The whole morning on one screen — composed tiles, each with an AI annotation |
-| 08 | The Money Timeline | Fee-sized bubbles on a closing-window time axis with a first-mover zone |
-| 09 | The Dossier | Keyboard-first split view with evidence timeline and a full AI call script |
-| 10 | Win the Week | The motivation engine — win-probability battles, streaks, card-flip call plans |
+Open [`index.html`](index.html) for the gallery; every page carries a
+corner chip to step through the set.
 
-Shared dataset across all ten (so they read as the same morning,
-Wednesday 10 June 2026): a £196k call-ready board of seven leads
-(National Grid, Monzo, Ocado, Burberry, Octopus Energy, Wise, Bupa),
-three developing, two early signals, two blocked. Every concept carries
-the live console's real domain machinery: tiers, Lead Strength, the
-Seat/Budget/Urgency/Buyer gate, red-team conviction, verification tags,
-fee propensity, "what kills this" and AI-drafted openers.
+| # | Concept | The reduction |
+|---|---------|---------------|
+| 01 | One Call | The verdict screen — "Call National Grid." and almost nothing else |
+| 02 | The Pulse | A breathing orb speaks the brief one line at a time |
+| 03 | Three Cards | Three objects on a plinth; flip one for its opener |
+| 04 | The Note | The whole interface is a sixty-word letter |
+| 05 | Focus Flow | Seven full-screen colour fields, one decision each |
+| 06 | The Glance | A lock screen: clock + three notifications |
+| 07 | The Answer | One question visible, one six-word answer |
+| 08 | The Number | £196k becomes one action across three scenes |
+| 09 | One Page | A tasting menu — one lead per page, five lines each |
+| 10 | The Horizon | One line, three lights — when the money happens |
 
-All files are single-file HTML — vanilla JS, inline SVG, Google Fonts as
-the only external request. Illustrative sample data for design review,
-not live intelligence.
+Same underlying morning as take 1 (Wednesday 10 June 2026, £196k board,
+National Grid → Ocado → Monzo as the top calls) so the two generations
+can be compared directly. All files single-file HTML, vanilla JS, inline
+SVG; Google Fonts is the only external request. Illustrative sample data
+for design review, not live intelligence.

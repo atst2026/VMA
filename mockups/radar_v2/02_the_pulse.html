@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMA · Communications Radar — Take 2 · Concept 02 · The Pulse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070709;
+    --ink:rgba(244,243,248,.92);
+    --whisper:rgba(244,243,248,.34);
+    --ghost:rgba(244,243,248,.16);
+    --teal:rgba(94,234,212,.85);
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    font-weight:300;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* faint vignette */
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:1;
+    background:radial-gradient(ellipse 90% 75% at 50% 46%, transparent 52%, rgba(0,0,0,.55) 100%);
+  }
+
+  /* ---------- whisper chrome ---------- */
+  .chrome{
+    position:fixed;top:28px;left:32px;z-index:30;
+    font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--whisper);line-height:1.9;
+  }
+  .chrome button{
+    all:unset;cursor:pointer;letter-spacing:.18em;text-transform:uppercase;
+    color:rgba(244,243,248,.55);transition:color .4s var(--ease);
+  }
+  .chrome button:hover{color:rgba(244,243,248,.8)}
+  .chrome .sub{display:block}
+
+  .skip{
+    position:fixed;top:30px;right:34px;z-index:30;
+    all-unset:unset;background:none;border:none;cursor:pointer;
+    font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--whisper);padding:6px 2px;
+    border-bottom:1px solid transparent;
+    transition:color .5s var(--ease),opacity .8s var(--ease),border-color .5s var(--ease);
+  }
+  .skip:hover{color:rgba(244,243,248,.7);border-bottom-color:var(--ghost)}
+  .skip.gone{opacity:0;pointer-events:none}
+
+  .legal{
+    position:fixed;bottom:26px;left:32px;z-index:30;
+    font-size:10px;letter-spacing:.08em;color:rgba(244,243,248,.22);
+  }
+  .navchip{
+    position:fixed;bottom:22px;right:28px;z-index:30;
+    font-size:11px;letter-spacing:.1em;color:rgba(244,243,248,.3);
+    background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
+    border-radius:999px;padding:7px 14px;display:flex;gap:9px;align-items:center;
+  }
+  .navchip a{color:rgba(244,243,248,.4);text-decoration:none;transition:color .35s var(--ease)}
+  .navchip a:hover{color:rgba(244,243,248,.85)}
+  .navchip span{color:rgba(244,243,248,.22)}
+
+  /* ---------- the scene ---------- */
+  .scene{position:fixed;inset:0;z-index:5}
+
+  .orb-wrap{
+    position:absolute;left:50%;top:44%;
+    transform:translate(-50%,-50%) scale(1);
+    transition:top 1.4s var(--ease),transform 1.4s var(--ease);
+    will-change:top,transform;cursor:default;
+  }
+  .scene.cards .orb-wrap{top:17%;transform:translate(-50%,-50%) scale(.44)}
+  .scene.closing .orb-wrap{top:32%;transform:translate(-50%,-50%) scale(.74)}
+
+  .orb-breathe{animation:breathe 6s ease-in-out infinite;will-change:transform}
+  @keyframes breathe{
+    0%,100%{transform:scale(1)}
+    50%{transform:scale(1.055)}
+  }
+  .orb{
+    width:180px;height:180px;border-radius:50%;
+    background:
+      radial-gradient(circle at 38% 33%, rgba(255,246,232,.95) 0%, rgba(255,238,216,.5) 11%, transparent 30%),
+      radial-gradient(circle at 47% 44%, rgba(94,234,212,.45) 0%, transparent 52%),
+      radial-gradient(circle at 56% 62%, rgba(109,108,250,.9) 0%, rgba(72,61,210,.65) 44%, rgba(28,25,72,.95) 78%);
+    box-shadow:
+      0 0 70px rgba(105,102,247,.38),
+      0 0 170px rgba(94,234,212,.13),
+      inset 0 0 38px rgba(8,6,24,.55);
+    transition:transform .5s var(--ease);
+    position:relative;
+  }
+  .orb::before{
+    content:"";position:absolute;inset:-44px;border-radius:50%;
+    background:radial-gradient(circle, rgba(110,106,248,.22) 0%, transparent 68%);
+    animation:halo 6s ease-in-out infinite;
+  }
+  @keyframes halo{0%,100%{opacity:.65}50%{opacity:1}}
+  .orb.swell{transform:scale(1.11)}
+
+  /* ---------- spoken lines ---------- */
+  .lines{
+    position:absolute;left:50%;transform:translateX(-50%);
+    top:calc(44% + 142px);width:min(740px,86vw);
+    text-align:center;z-index:6;
+    transition:opacity .8s var(--ease),top 1.4s var(--ease);
+  }
+  .scene.closing .lines{top:calc(32% + 122px)}
+  .scene.cards .lines{opacity:0;pointer-events:none}
+  .line{
+    position:absolute;inset-inline:0;top:0;
+    font-family:'Instrument Serif',serif;font-weight:400;
+    font-size:clamp(26px,3.3vw,40px);line-height:1.3;
+    color:var(--ink);letter-spacing:.005em;
+  }
+  .line .w{
+    display:inline-block;opacity:0;filter:blur(5px);transform:translateY(7px);
+    transition:opacity .55s var(--ease),filter .55s var(--ease),transform .55s var(--ease);
+  }
+  .line.on .w{opacity:1;filter:blur(0);transform:translateY(0)}
+  .line.out{animation:lineOut .9s var(--ease) forwards}
+  @keyframes lineOut{
+    0%{opacity:1;transform:translateY(0)}
+    55%{opacity:.25;transform:translateY(-24px)}
+    100%{opacity:0;transform:translateY(-36px)}
+  }
+
+  /* ---------- ghost button ---------- */
+  .ghost-btn{
+    position:absolute;left:50%;top:calc(44% + 290px);transform:translate(-50%,12px);
+    background:transparent;border:1px solid var(--ghost);color:rgba(244,243,248,.62);
+    font-family:'Inter',sans-serif;font-size:12px;letter-spacing:.26em;text-transform:uppercase;
+    padding:14px 38px;border-radius:999px;cursor:pointer;
+    opacity:0;pointer-events:none;
+    transition:opacity 1.4s var(--ease),transform 1.4s var(--ease),border-color .5s var(--ease),color .5s var(--ease);
+  }
+  .ghost-btn.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+  .ghost-btn:hover{border-color:rgba(244,243,248,.4);color:rgba(244,243,248,.92)}
+
+  /* ---------- the single card ---------- */
+  .card{
+    position:absolute;left:50%;top:31%;transform:translateX(-50%);
+    width:min(580px,88vw);text-align:center;z-index:6;
+    opacity:0;pointer-events:none;
+    transition:opacity .9s var(--ease),transform .9s var(--ease);
+  }
+  .scene.cards .card{opacity:1;pointer-events:auto}
+  .card.out{opacity:0;transform:translateX(-50%) translateY(10px);pointer-events:none}
+  .card-k{
+    font-size:11px;letter-spacing:.3em;text-transform:uppercase;
+    color:var(--teal);opacity:.75;margin-bottom:22px;font-weight:400;
+  }
+  .card h2{
+    font-family:'Instrument Serif',serif;font-weight:400;
+    font-size:clamp(44px,6vw,64px);line-height:1.05;letter-spacing:.003em;
+  }
+  .card-role{margin-top:14px;font-size:15px;color:rgba(244,243,248,.5);letter-spacing:.03em}
+  .card-actions{margin-top:38px;display:flex;gap:42px;justify-content:center}
+  .quiet{
+    all:unset;cursor:pointer;font-family:'Inter',sans-serif;
+    font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+    color:rgba(244,243,248,.45);padding:6px 2px;
+    border-bottom:1px solid var(--ghost);
+    transition:color .4s var(--ease),border-color .4s var(--ease);
+  }
+  .quiet:hover{color:rgba(244,243,248,.9);border-bottom-color:rgba(244,243,248,.4)}
+
+  .reveal{
+    display:grid;grid-template-rows:0fr;opacity:0;
+    transition:grid-template-rows .9s var(--ease),opacity .9s var(--ease);
+    margin-top:0;
+  }
+  .reveal.open{grid-template-rows:1fr;opacity:1;margin-top:34px}
+  .reveal-inner{overflow:hidden}
+  .reveal-body{
+    font-size:16px;line-height:1.75;color:rgba(244,243,248,.72);
+    text-align:left;max-width:520px;margin:0 auto;
+    font-weight:300;letter-spacing:.01em;min-height:1.7em;
+  }
+  .reveal-body .caret{
+    display:inline-block;width:1px;height:1.05em;vertical-align:-2px;
+    background:rgba(244,243,248,.7);margin-left:2px;
+    animation:blink 1s steps(1) infinite;
+  }
+  @keyframes blink{50%{opacity:0}}
+  .reveal-foot{
+    margin-top:16px;font-size:12px;letter-spacing:.04em;
+    color:rgba(244,243,248,.36);text-align:left;max-width:520px;margin-inline:auto;
+    opacity:0;transition:opacity .9s var(--ease);
+  }
+  .reveal-foot.on{opacity:1}
+  .copy-btn{
+    all:unset;cursor:pointer;display:inline-block;margin-top:20px;
+    font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    color:rgba(94,234,212,.6);border-bottom:1px solid rgba(94,234,212,.2);
+    padding-bottom:4px;opacity:0;transition:opacity .9s var(--ease),color .4s var(--ease);
+  }
+  .copy-btn.on{opacity:1}
+  .copy-btn:hover{color:rgba(94,234,212,.95)}
+
+  /* ---------- the other four ---------- */
+  .others{
+    position:absolute;left:50%;transform:translateX(-50%);
+    top:calc(32% + 222px);width:min(540px,86vw);text-align:center;z-index:6;
+    opacity:0;pointer-events:none;transition:opacity 1.2s var(--ease);
+  }
+  .others.show{opacity:1;pointer-events:auto}
+  .others-list{list-style:none;margin-top:26px;display:none}
+  .others.open .others-list{display:block}
+  .others-list li{
+    font-size:14px;color:rgba(244,243,248,.42);line-height:2.3;letter-spacing:.02em;
+    opacity:0;transform:translateY(8px);
+    transition:opacity .7s var(--ease),transform .7s var(--ease);
+  }
+  .others.open .others-list li{opacity:1;transform:translateY(0)}
+  .others-list li em{font-style:normal;color:rgba(244,243,248,.62)}
+
+  /* ---------- toast ---------- */
+  .toast{
+    position:fixed;left:50%;bottom:72px;transform:translate(-50%,14px);
+    z-index:40;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:rgba(244,243,248,.75);
+    background:rgba(20,20,28,.85);border:1px solid rgba(255,255,255,.08);
+    border-radius:999px;padding:11px 24px;
+    opacity:0;pointer-events:none;
+    transition:opacity .5s var(--ease),transform .5s var(--ease);
+    backdrop-filter:blur(8px);
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  @media (max-width:820px){
+    .card-actions{gap:26px}
+    .chrome{left:22px;top:22px}
+    .skip{right:24px;top:24px}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation:none !important;transition:none !important}
+    .line .w{opacity:1;filter:none;transform:none}
+    .ghost-btn{transform:translate(-50%,0)}
+  }
+</style>
+</head>
+<body>
+
+  <!-- whisper chrome -->
+  <header class="chrome">
+    <button id="wordmark" type="button">VMA Group</button>
+    <span class="sub">Communications Radar</span>
+    <span class="sub" style="color:rgba(244,243,248,.2)">Wednesday 10 June 2026</span>
+  </header>
+
+  <button class="skip" id="skipBtn" type="button">skip intro</button>
+  <p class="legal">Illustrative sample data — design review only.</p>
+
+  <nav class="navchip">
+    <span>02 / 10</span>
+    <a href="01_one_call.html" aria-label="Previous concept">←</a>
+    <a href="index.html">Index</a>
+    <a href="03_three_cards.html" aria-label="Next concept">→</a>
+  </nav>
+
+  <!-- the scene -->
+  <main class="scene" id="scene">
+    <div class="orb-wrap" id="orbWrap" aria-hidden="true">
+      <div class="orb-breathe"><div class="orb" id="orb"></div></div>
+    </div>
+
+    <div class="lines" id="lines" aria-live="polite"></div>
+
+    <button class="ghost-btn" id="showBtn" type="button">Show me</button>
+
+    <article class="card" id="card" hidden>
+      <p class="card-k" id="cardK"></p>
+      <h2 id="cardName"></h2>
+      <p class="card-role" id="cardRole"></p>
+      <div class="card-actions">
+        <button class="quiet" id="revealBtn" type="button"></button>
+        <button class="quiet" id="nextBtn" type="button">Next →</button>
+      </div>
+      <div class="reveal" id="reveal">
+        <div class="reveal-inner">
+          <p class="reveal-body" id="revealBody"></p>
+          <button class="copy-btn" id="copyBtn" type="button">Copy opener</button>
+          <p class="reveal-foot" id="revealFoot"></p>
+        </div>
+      </div>
+    </article>
+
+    <div class="others" id="others">
+      <button class="quiet" id="othersBtn" type="button">The other four</button>
+      <ul class="others-list" id="othersList">
+        <li style="transition-delay:.05s"><em>Burberry</em> — £34k · a restructure is underway.</li>
+        <li style="transition-delay:.18s"><em>Octopus Energy</em> — £24k · a hiring cluster is forming.</li>
+        <li style="transition-delay:.31s"><em>Wise</em> — £26k · their US listing is in motion.</li>
+        <li style="transition-delay:.44s"><em>Bupa</em> — £22k · a new CHRO is settling in.</li>
+      </ul>
+    </div>
+  </main>
+
+  <div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+  "use strict";
+  var RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var $ = function(id){ return document.getElementById(id); };
+  var scene = $("scene"), orb = $("orb"), lines = $("lines"),
+      showBtn = $("showBtn"), skipBtn = $("skipBtn"),
+      card = $("card"), cardK = $("cardK"), cardName = $("cardName"),
+      cardRole = $("cardRole"), revealBtn = $("revealBtn"), nextBtn = $("nextBtn"),
+      reveal = $("reveal"), revealBody = $("revealBody"),
+      revealFoot = $("revealFoot"), copyBtn = $("copyBtn"),
+      others = $("others"), othersBtn = $("othersBtn"),
+      toast = $("toast"), wordmark = $("wordmark");
+
+  var INTRO = [
+    "Morning, Sara.",
+    "I swept 1,284 sources while you slept.",
+    "Seven leads are worth your attention. Three are worth your morning.",
+    "Two of their windows close on Friday.",
+    "Start with National Grid — £32k, and their own search just failed in public."
+  ];
+  var CLOSING = "That’s the morning. I’ll keep watching the rest.";
+
+  var OPENER = "Hi Sasha — the Head of Media Relations brief has been live for eight weeks now. We placed three of the last five seats like it; I can have a vetted shortlist with you by the 24th. Worth fifteen minutes this week?";
+
+  var LEADS = [
+    { k:"№ 1 · call-ready · window closes Friday",
+      name:"National Grid", role:"Head of Media Relations · £32k",
+      act:"The opener", typed:true, body:OPENER,
+      foot:"Before you dial: check their careers page — they may have quietly filled it." },
+    { k:"№ 2 · call-ready · window closes Friday",
+      name:"Ocado", role:"Director of Communications · £28k",
+      act:"Why now", typed:false,
+      body:"A profit warning landed and the comms chair is empty. They need a spokesperson this week.",
+      foot:"Watch for: the deputy steps up." },
+    { k:"№ 3 · call-ready",
+      name:"Monzo", role:"Head of Corporate Communications · £30k",
+      act:"Why now", typed:false,
+      body:"Their £380m round was confirmed at Companies House overnight. Comms build-out follows capital.",
+      foot:"Warm path: Amara Osei — placed by you in 2024 — now leads their brand team." }
+  ];
+
+  var phase = "intro", li = -1, holdTimer = null, typeTimer = null,
+      cardIndex = 0, ghostVisible = false, toastTimer = null;
+
+  /* ---------- toast ---------- */
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toast.classList.remove("show"); }, 2200);
+  }
+
+  /* ---------- orb ---------- */
+  function swell(){
+    if(RM) return;
+    orb.classList.add("swell");
+    setTimeout(function(){ orb.classList.remove("swell"); }, 480);
+  }
+
+  /* ---------- spoken lines ---------- */
+  function clearOldLines(){
+    var olds = lines.querySelectorAll(".line");
+    for(var i=0;i<olds.length;i++){
+      (function(el){
+        if(RM){ el.remove(); return; }
+        el.classList.add("out");
+        el.addEventListener("animationend", function(){ el.remove(); }, {once:true});
+        setTimeout(function(){ if(el.parentNode) el.remove(); }, 1200);
+      })(olds[i]);
+    }
+  }
+
+  function speak(text){
+    clearOldLines();
+    var el = document.createElement("p");
+    el.className = "line";
+    var words = text.split(" ");
+    for(var i=0;i<words.length;i++){
+      var w = document.createElement("span");
+      w.className = "w";
+      w.textContent = words[i];
+      if(!RM) w.style.transitionDelay = (i*85) + "ms";
+      el.appendChild(w);
+      el.appendChild(document.createTextNode(" "));
+    }
+    lines.appendChild(el);
+    if(RM){ el.classList.add("on"); }
+    else { requestAnimationFrame(function(){ requestAnimationFrame(function(){ el.classList.add("on"); }); }); }
+    swell();
+    return words.length;
+  }
+
+  function nextIntroLine(){
+    clearTimeout(holdTimer);
+    li++;
+    if(li < INTRO.length){
+      var n = speak(INTRO[li]);
+      var hold = RM ? 2200 : 1500 + n*85 + n*230;
+      holdTimer = setTimeout(function(){
+        if(li === INTRO.length - 1){ materialiseGhost(); }
+        else { nextIntroLine(); }
+      }, hold);
+    }
+  }
+
+  function materialiseGhost(){
+    if(ghostVisible) return;
+    ghostVisible = true;
+    showBtn.classList.add("show");
+  }
+
+  /* ---------- cards ---------- */
+  function renderCard(i){
+    var d = LEADS[i];
+    cardIndex = i;
+    cardK.textContent = d.k;
+    cardName.textContent = d.name;
+    cardRole.textContent = d.role;
+    revealBtn.textContent = d.act;
+    nextBtn.textContent = (i === LEADS.length - 1) ? "That’s the morning →" : "Next →";
+    closeReveal();
+  }
+
+  function closeReveal(){
+    clearInterval(typeTimer);
+    reveal.classList.remove("open");
+    revealBody.textContent = "";
+    revealFoot.textContent = "";
+    revealFoot.classList.remove("on");
+    copyBtn.classList.remove("on");
+    copyBtn.style.display = "none";
+  }
+
+  function openReveal(){
+    var d = LEADS[cardIndex];
+    reveal.classList.add("open");
+    revealFoot.textContent = d.foot;
+    if(d.typed && !RM){
+      var i = 0, caret = document.createElement("span");
+      caret.className = "caret";
+      revealBody.textContent = "";
+      revealBody.appendChild(caret);
+      clearInterval(typeTimer);
+      typeTimer = setInterval(function(){
+        i += 2;
+        revealBody.textContent = d.body.slice(0, i);
+        revealBody.appendChild(caret);
+        if(i >= d.body.length){
+          clearInterval(typeTimer);
+          caret.remove();
+          revealBody.textContent = d.body;
+          finishReveal(d);
+        }
+      }, 22);
+    } else {
+      revealBody.textContent = d.body;
+      finishReveal(d);
+    }
+  }
+
+  function finishReveal(d){
+    if(d.typed){ copyBtn.style.display = "inline-block"; copyBtn.classList.add("on"); }
+    revealFoot.classList.add("on");
+  }
+
+  function startCards(){
+    if(phase !== "intro") return;
+    phase = "cards";
+    clearTimeout(holdTimer);
+    clearOldLines();
+    showBtn.classList.remove("show");
+    showBtn.style.pointerEvents = "none";
+    skipBtn.classList.add("gone");
+    scene.classList.add("cards");
+    card.hidden = false;
+    renderCard(0);
+    swell();
+  }
+
+  function nextCard(){
+    if(cardIndex < LEADS.length - 1){
+      card.classList.add("out");
+      swell();
+      setTimeout(function(){
+        renderCard(cardIndex + 1);
+        card.classList.remove("out");
+      }, RM ? 0 : 520);
+    } else {
+      closeScene();
+    }
+  }
+
+  function closeScene(){
+    phase = "closing";
+    card.classList.add("out");
+    setTimeout(function(){
+      card.hidden = true;
+      scene.classList.remove("cards");
+      scene.classList.add("closing");
+      setTimeout(function(){
+        speak(CLOSING);
+        setTimeout(function(){ others.classList.add("show"); }, RM ? 0 : 1600);
+      }, RM ? 0 : 900);
+    }, RM ? 0 : 520);
+  }
+
+  /* ---------- clipboard ---------- */
+  function copyOpener(){
+    function done(){ showToast("Opener copied."); }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(OPENER).then(done, fallback);
+    } else { fallback(); }
+    function fallback(){
+      var ta = document.createElement("textarea");
+      ta.value = OPENER;
+      ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try{ document.execCommand("copy"); done(); }
+      catch(e){ showToast("Copy unavailable here."); }
+      ta.remove();
+    }
+  }
+
+  /* ---------- wiring ---------- */
+  showBtn.addEventListener("click", startCards);
+  skipBtn.addEventListener("click", startCards);
+  wordmark.addEventListener("click", function(){ showToast("Wired in production."); });
+  copyBtn.addEventListener("click", copyOpener);
+  copyBtn.style.display = "none";
+
+  revealBtn.addEventListener("click", function(){
+    if(reveal.classList.contains("open")){ closeReveal(); }
+    else { openReveal(); }
+  });
+  nextBtn.addEventListener("click", nextCard);
+
+  othersBtn.addEventListener("click", function(){
+    others.classList.toggle("open");
+    othersBtn.textContent = others.classList.contains("open")
+      ? "Enough for today" : "The other four";
+    swell();
+  });
+
+  /* any click / keypress advances the spoken intro */
+  document.addEventListener("click", function(e){
+    if(phase !== "intro") return;
+    if(e.target.closest("button, a")) return;
+    if(ghostVisible){ startCards(); } else { nextIntroLine(); }
+  });
+
+  document.addEventListener("keydown", function(e){
+    if(e.metaKey || e.ctrlKey || e.altKey || e.key === "Tab") return;
+    if(phase === "intro"){
+      if(e.target.closest && e.target.closest("button, a")) return;
+      e.preventDefault();
+      if(ghostVisible){ startCards(); } else { nextIntroLine(); }
+    } else if(phase === "cards" && e.key === "ArrowRight"){
+      nextCard();
+    } else if(e.key === "Escape"){
+      if(phase === "cards"){ closeReveal(); }
+      if(phase === "closing" && others.classList.contains("open")){
+        others.classList.remove("open");
+        othersBtn.textContent = "The other four";
+      }
+    }
+  });
+
+  /* begin — a beat of pure orb, then speech */
+  setTimeout(nextIntroLine, RM ? 200 : 1700);
+})();
+</script>
+</body>
+</html>
