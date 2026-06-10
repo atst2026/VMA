@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VMA — Communications Radar · Command Desk</title>
+<title>VMA — Business Development Engine</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -24,11 +24,11 @@ html,body{height:100%}
 body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
   background-color:rgb(253,252,252);overflow:hidden;-webkit-font-smoothing:antialiased;
   letter-spacing:-.005em}
-/* the live site's Gemini halo — verbatim values */
-body::before{content:"";position:fixed;z-index:-1;width:792px;height:300px;top:50%;left:50%;
+/* the landing page's blue glow — the big soft halo that fills the viewport */
+body::before{content:"";position:fixed;z-index:-1;width:1500px;height:1100px;top:52%;left:50%;
   transform:translate(-50%,-50%);border-radius:9999px;
-  background-image:radial-gradient(100% 100% at 50% 8%,rgb(253,252,252) 0px,rgb(157,210,255) 50%);
-  filter:blur(125px)}
+  background:radial-gradient(closest-side,rgba(125,190,255,.7),rgba(157,210,255,.42) 48%,rgba(200,228,255,.2) 68%,transparent 78%);
+  filter:blur(70px)}
 .app{height:100vh;display:flex;flex-direction:column;max-width:1340px;margin:0 auto;padding:0 28px 18px}
 /* ---------- header ---------- */
 header{display:flex;align-items:baseline;gap:14px;padding:20px 2px 14px}
@@ -241,8 +241,8 @@ header{display:flex;align-items:baseline;gap:14px;padding:20px 2px 14px}
 .btn{font:600 11px 'Inter';padding:8px 13px;border-radius:9px;cursor:pointer;transition:.15s;
   color:var(--ink);background:#fff;border:1px solid rgba(60,64,67,.16)}
 .btn:hover{background:#F4F7FC}
-.btn.primary{color:#fff;background:var(--deep);border:none;font-weight:700}
-.btn.primary:hover{background:#16335F}
+.btn.primary{color:var(--deep);background:transparent;border:1px solid rgba(26,61,124,.4);font-weight:700}
+.btn.primary:hover{background:rgba(26,61,124,.06)}
 .btn.good.on{color:#1e7a41;border-color:#bfe3cd;background:#f3faf5}
 .btn.bad.on{color:#c0392b;border-color:#f0c5bd;background:#fdf4f2}
 .gap{flex:1}
@@ -260,8 +260,7 @@ header{display:flex;align-items:baseline;gap:14px;padding:20px 2px 14px}
 <div class="app">
   <header>
     <span class="wm">VMA<span>GROUP</span></span>
-    <span class="pg">Communications Radar</span>
-    <span class="scan"><b>TUESDAY 10 JUNE 2026</b> · 247 SIGNALS · 38 SOURCES · SWEEP 06:40</span>
+    <span class="pg">Business Development Engine</span>
   </header>
 
   <div class="pills">
@@ -301,7 +300,7 @@ header{display:flex;align-items:baseline;gap:14px;padding:20px 2px 14px}
   </div>
 </div>
 <div class="toast" id="toast"></div>
-<div class="cornlab">concept 16 · command desk</div>
+<div class="cornlab">concept 16 · business development engine</div>
 
 <script>
 /* ============================================================================
@@ -641,33 +640,49 @@ const liRows=SOURCES.map(s=>'<div class="li-row"><span class="u">'+s[0]+'<b>'+s[
   +'<span class="ms'+(s[4]?' hot':'')+'">'+s[3]+'<span>ms</span></span></div>').join('');
 $('liTrack').innerHTML=liRows+liRows; /* duplicated for a seamless loop */
 
-/* flickering character skyline — live: glyphs re-roll every frame tick so the
-   towers shimmer continuously (own generated pattern, VMA slate blue) */
+/* flickering character skyline — ember-style: every cell is an independent
+   span that keeps its glyph until its own random moment to swap, blank or
+   re-light at one of three brightnesses, so the towers shimmer organically
+   instead of strobing in lockstep (own implementation, VMA slate blue) */
 (function(){
   const GLYPH=['.',':','-','=','+','·',':','.'];
+  const TONE=[.3,.55,.95];
   const ROWS=9,COLS=96,TOWERS=[8,22,34,48,62,76,88];
-  /* static mask: which cells belong to a tower (taller clusters lower down) */
-  const mask=[];
-  for(let r=0;r<ROWS;r++){const line=[];
-    for(let c=0;c<COLS;c++){
-      line.push(TOWERS.some(t=>Math.abs(c-t)<3+r*0.8));
-    }
-    mask.push(line);
-  }
   const sky=$('sky');
-  function tick(){
-    let out='';
-    for(let r=0;r<ROWS;r++){
-      for(let c=0;c<COLS;c++){
-        /* ~70% of masked cells lit per tick — the churn IS the flicker */
-        out+=(mask[r][c]&&Math.random()>0.3)?GLYPH[(Math.random()*GLYPH.length)|0]:' ';
-      }
-      out+='\n';
+  const cells=[];
+  let html='';
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      const masked=TOWERS.some(t=>Math.abs(c-t)<3+r*0.8);
+      if(masked){
+        const i=cells.length;
+        html+='<span data-i="'+i+'"> </span>';
+        cells.push({lit:Math.random()<0.7});
+      }else html+=' ';
     }
-    sky.textContent=out;
+    html+='\n';
   }
-  tick();
-  setInterval(tick,110);
+  sky.innerHTML=html;
+  const spans=sky.querySelectorAll('span');
+  function paint(i){
+    const cell=cells[i],el=spans[i];
+    if(cell.lit){
+      el.textContent=GLYPH[(Math.random()*GLYPH.length)|0];
+      el.style.opacity=TONE[(Math.random()*TONE.length)|0];
+    }else{
+      el.textContent=' ';
+    }
+  }
+  cells.forEach((_,i)=>paint(i));
+  setInterval(()=>{
+    for(let i=0;i<cells.length;i++){
+      /* each cell decides for itself, ~1 in 5 per tick: flip on/off or reglint */
+      if(Math.random()<0.2){
+        cells[i].lit=Math.random()<0.72;
+        paint(i);
+      }
+    }
+  },70);
 })();
 
 /* ---------- dossier (templated call file — 02 signal orbit look) ---------- */
@@ -714,7 +729,7 @@ function callFileHTML(lead){
       +'<div><div class="k">ECONOMIC BUYER</div><div class="v">'+esc(lead.buyer)+'</div></div>'
       +'<div><div class="k">WARM PATH</div><div class="v">'+esc(lead.champion)+'</div></div></div></div>';
     h+='<div class="sec"><div class="sec-title"><span>THE OPENING</span><span>FIRST 20 SECONDS</span></div>'
-      +'<p>'+esc(lead.opening)+'</p><div class="opener-box" id="openerBox" hidden></div></div>';
+      +'<p>'+esc(lead.opening)+'</p></div>';
     h+='<div class="sec"><div class="sec-title"><span>WHAT KILLS IT</span></div><p>'+esc(lead.kill)+'</p></div>';
     if(lead.bizCase){h+='<div class="sec"><div class="sec-title"><span>BUSINESS CASE</span></div><p>'+esc(lead.bizCase)+'</p></div>';}
   }else if(lead.tier!=='blocked'){
@@ -741,6 +756,8 @@ function callFileHTML(lead){
     +chip('prop-'+lead.propCls,esc(lead.prop.toUpperCase()))
     +(lead.propWhy?'<span class="pw">'+esc(lead.propWhy)+'</span>':'')
     +'</div></div>';
+  /* the typed opener lands here — just above the action pills */
+  h+=(ready?'<div class="opener-box" id="openerBox" hidden style="margin-top:18px"></div>':'');
   h+='<div class="actions">'
     +(ready?'<button type="button" class="btn primary" data-act="pitch">Generate pitch</button>':'')
     +(ready?'<button type="button" class="btn" data-act="opener">✦ Draft opener</button>':'')
@@ -770,6 +787,7 @@ function closeDossier(){
 function draftOpener(){
   const l=openLead;if(!l||!l.opener)return;
   const box=$('openerBox');if(!box)return;box.hidden=false;
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
   if(box.dataset.done){box.textContent=l.opener;return;}
   box.dataset.done='1';let i=0;box.textContent='';
   (function tick(){i+=2;box.textContent=l.opener.slice(0,i);
