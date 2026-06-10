@@ -58,9 +58,31 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
   box-shadow:0 12px 32px rgba(0,0,0,.32)}
 [data-tip]:hover::before{content:"";position:absolute;top:calc(100% + 3px);left:50%;transform:translateX(-50%);
   border:5px solid transparent;border-bottom-color:rgba(16,22,38,.96);z-index:60}
-.page{max-width:1200px;margin:0 auto;padding:22px 26px 56px}
+.page{max-width:1280px;margin:0 auto;padding:22px 26px 56px 110px}
 @keyframes breathe{0%,100%{transform:scale(1);opacity:.8}50%{transform:scale(1.18);opacity:1}}
-.panel{padding:24px 30px 26px}
+/* ============ the sidebar: logo · desk · views ============ */
+.siderail{position:fixed;left:18px;top:18px;z-index:50;width:60px;
+  display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px 0 14px;
+  background:linear-gradient(135deg,rgba(255,255,255,.6),rgba(255,255,255,.3));
+  backdrop-filter:blur(28px) saturate(1.8);-webkit-backdrop-filter:blur(28px) saturate(1.8);
+  border:1px solid rgba(255,255,255,.75);border-radius:999px;
+  box-shadow:0 12px 40px rgba(26,61,124,.12),inset 0 1px 1px rgba(255,255,255,.95)}
+.sr-logo{width:40px;height:40px;border-radius:11px;overflow:hidden;flex:none;
+  box-shadow:0 4px 12px rgba(62,92,132,.35)}
+.sr-logo svg{display:block;width:100%;height:100%}
+.sr-desk{display:flex;flex-direction:column;gap:3px;padding:3px;border-radius:999px;
+  background:rgba(16,22,38,.05);border:1px solid rgba(255,255,255,.5)}
+.sr-desk a{display:grid;place-items:center;width:30px;height:26px;border-radius:999px;
+  font:700 11px var(--mono);color:var(--muted);text-decoration:none;transition:.2s}
+.sr-desk a:hover{color:var(--ink)}
+.sr-desk a.on{color:var(--deep);background:rgba(255,255,255,.95);box-shadow:0 2px 7px rgba(26,61,124,.12)}
+.sr-sep{width:26px;height:1px;background:var(--hair)}
+.sr-btn{display:grid;place-items:center;width:40px;height:40px;border-radius:13px;border:none;
+  background:transparent;color:var(--muted);cursor:pointer;transition:.18s}
+.sr-btn svg{width:19px;height:19px}
+.sr-btn:hover{color:var(--ink);background:rgba(255,255,255,.7)}
+.sr-btn.on{color:#fff;background:var(--deep);box-shadow:0 4px 12px rgba(26,61,124,.3)}
+.panel{padding:0}
 .mainhead{display:flex;align-items:center;gap:14px;padding-bottom:20px;margin-bottom:6px;
   border-bottom:1px solid var(--hair)}
 .logo-mini{width:48px;height:48px;border-radius:11px;overflow:hidden;flex:none;
@@ -157,7 +179,19 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .mini .crow .u{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mini .crow .u b{color:var(--ink);font-weight:700}
 .mini .crow .ms2{color:var(--clay);font-weight:700;flex:none}
-/* m2 — browser frame, skeleton lines, sweeping scan band, parsing pill */
+/* m2 — the trigger families, two pill rows looping leftwards in the box */
+.mini .ptrows{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:9px;overflow:hidden;
+  -webkit-mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
+  mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.mini .ptr{display:inline-flex;gap:6px;white-space:nowrap;animation:tick 42s linear infinite;width:max-content}
+.mini .ptr.r2{animation-duration:54s}
+.tpill{position:relative;display:inline-flex;align-items:center;gap:5px;font:600 8.5px 'Inter';color:var(--ink2);
+  padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.75);
+  border:1px solid rgba(16,22,38,.08);transition:.3s}
+.tpill i{width:4px;height:4px;border-radius:50%;background:var(--dim);transition:.3s}
+.tpill.match{border-color:rgba(217,119,87,.6);background:#fff;color:var(--deep)}
+.tpill.match i{background:var(--clay);box-shadow:0 0 6px rgba(217,119,87,.7)}
+/* m4 — browser frame, skeleton lines, sweeping scan band, testing pill */
 .mini .bframe{position:absolute;inset:10px 12px;border:1.5px solid var(--clay);border-radius:9px;
   background:#fff;overflow:hidden}
 .mini .skel{position:absolute;height:6px;border-radius:99px;background:rgba(16,22,38,.08)}
@@ -187,20 +221,31 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .mini .doc .ftag{position:absolute;right:-9px;bottom:9px;background:#6b7686;color:#fff;
   font:700 5.5px var(--mono);letter-spacing:.08em;border-radius:3px;padding:2px 4px}
 .mini .ppill.low{top:auto;bottom:7px;transform:translateX(-50%)}
-/* m5 — the handover: engine to account director */
-.mini .pair{position:absolute;left:0;right:0;top:14px;display:flex;align-items:center;justify-content:center;gap:10px;z-index:2}
-.mini .orb2{width:34px;height:34px;border-radius:50%;background:#fff;display:grid;place-items:center;
-  box-shadow:0 4px 12px rgba(26,61,124,.16);border:1px solid rgba(16,22,38,.07)}
-.mini .orb2 svg{width:20px;height:20px;border-radius:5px}
-.mini .orb2 .adicon{width:17px;height:17px;color:var(--deep)}
-.mini .linkpill{width:22px;height:14px;border-radius:999px;border:1.5px solid var(--clay);
-  display:grid;place-items:center;background:#fff;animation:breathe 2.6s ease-in-out infinite}
-.mini .linkpill i{width:8px;height:1.5px;background:var(--clay);border-radius:99px}
+/* m5 — paperwork collating itself into the dossier */
+.mini .collate{position:absolute;inset:0;z-index:2}
+.mini .sheetfly{position:absolute;top:24px;left:12%;width:22px;height:28px;background:#fff;
+  border:1px solid rgba(16,22,38,.12);border-radius:3px;padding:4px 3px;opacity:0;
+  box-shadow:0 3px 8px rgba(26,61,124,.14);animation:flyin 3.2s ease-in-out infinite}
+.mini .sheetfly i{display:block;height:2px;border-radius:99px;background:rgba(16,22,38,.12);margin-bottom:2.5px}
+.mini .sheetfly i.hl{background:var(--clay);opacity:.8}
+.mini .sheetfly.f2{top:38px;animation-delay:1.05s}
+.mini .sheetfly.f3{top:16px;animation-delay:2.1s}
+@keyframes flyin{0%{left:8%;opacity:0;transform:rotate(-6deg) scale(1)}
+  18%{opacity:1}62%{opacity:1;transform:rotate(3deg) scale(.92)}
+  82%{left:58%;opacity:0;transform:rotate(6deg) scale(.55)}100%{left:58%;opacity:0}}
+.mini .folderbox{position:absolute;right:14%;top:18px;width:46px;height:40px;z-index:3}
+.mini .folderbox svg{width:100%;height:100%;color:var(--deep);
+  filter:drop-shadow(0 4px 8px rgba(26,61,124,.2))}
+.mini .folderbox::after{content:"";position:absolute;inset:-5px;border-radius:12px;
+  border:1.5px solid rgba(217,119,87,.45);animation:breathe 3.2s ease-in-out infinite}
+.mini .folderbox .ftag2{position:absolute;left:50%;transform:translateX(-50%);bottom:-13px;
+  font:700 5.5px var(--mono);letter-spacing:.1em;color:var(--deep);white-space:nowrap}
 .stg .num{font-family:var(--disp);font-weight:700;font-size:36px;letter-spacing:-.02em;line-height:1;
   color:transparent;background:linear-gradient(125deg,var(--s1),var(--s2));
   -webkit-background-clip:text;background-clip:text}
 .stg .lbl{font:700 9px var(--mono);letter-spacing:.2em;color:var(--ink2);margin-top:8px}
-.stg .cap{font-size:10.5px;color:var(--dim);margin:6px auto 0;line-height:1.5;max-width:180px}
+.stg .cap{font:600 8.5px 'Inter';letter-spacing:.05em;text-transform:uppercase;
+  color:var(--dim);margin:6px auto 0;line-height:1.6;max-width:190px}
 .stg.s1{--s1:#9AA0A6;--s2:#4285F4}.stg.s2{--s1:#4285F4;--s2:#1A3D7C}
 .stg.s3{--s1:#3E5C84;--s2:#1A3D7C}.stg.s4{--s1:#D97A2B;--s2:#B45309}
 .stg.s5{--s1:#1E9E57;--s2:#1A3D7C}
@@ -448,7 +493,16 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
   padding:11px 18px;border-radius:999px;box-shadow:0 8px 26px rgba(0,0,0,.25);opacity:0;transition:.25s;pointer-events:none}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .toast .sp{color:#FF8A65}
-.foot{text-align:center;font:500 8.5px var(--mono);letter-spacing:.14em;color:rgba(154,160,166,.7);padding:18px 0 10px}
+.foot{text-align:center;padding:18px 0 10px}
+.dev-zone{display:inline-block;margin-top:10px;padding-top:8px;border-top:1px dashed var(--hair);
+  opacity:.45;font-size:10px;color:var(--muted)}
+.dev-zone:hover{opacity:.8}
+.dev-zone-label{color:var(--dim);font-style:italic;margin-right:6px}
+.dev-btn{font:inherit;font-size:10px;color:var(--muted);background:transparent;
+  border:1px solid rgba(60,64,67,.25);border-radius:4px;padding:2px 8px;cursor:pointer}
+.dev-btn:hover{color:var(--ink);border-color:var(--dim)}
+.dev-btn:disabled{opacity:.5;cursor:default}
+.dev-status{margin-left:8px;color:var(--dim)}
 @media(max-width:1020px){
   .strip-h{grid-template-columns:30px 1fr 96px 30px}
   .strip-h .tp,.strip-h .wincell{display:none}
@@ -462,11 +516,28 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 <body>
 <div class="amb a1"></div><div class="amb a2"></div><div class="amb a3"></div>
 
+<nav class="siderail">
+  <span class="sr-logo"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#3E5C84"/><text x="50" y="55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="30" letter-spacing="-1.5" fill="#fff">VMA</text><text x="51" y="76" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="300" font-size="13.5" letter-spacing="3" fill="#fff">GROUP</text></svg></span>
+  <span class="sr-desk">
+    <a href="/comms" class="{{ 'on' if desk_key=='comms' else '' }}" title="Communications desk">C</a>
+    <a href="/marketing" class="{{ 'on' if desk_key=='marketing' else '' }}" title="Marketing desk">M</a>
+  </span>
+  <span class="sr-sep"></span>
+  <button type="button" class="sr-btn on" id="vbEngine" title="Leads">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.6"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/></svg>
+  </button>
+  <button type="button" class="sr-btn" id="vbCal" title="BD Calendar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>
+  </button>
+  <button type="button" class="sr-btn" id="vbShop" title="Build-A-Deck Workshop">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.7-4.7"/></svg>
+  </button>
+</nav>
+
 <div class="page">
-  <section class="glass panel">
+  <section class="panel">
 
     <div class="mainhead">
-      <span class="logo-mini"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#3E5C84"/><text x="50" y="55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="30" letter-spacing="-1.5" fill="#fff">VMA</text><text x="51" y="76" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="300" font-size="13.5" letter-spacing="3" fill="#fff">GROUP</text></svg></span>
       <span class="mh-title">Business Development Engine</span>
       <nav class="nav" style="margin-left:auto">
         <a href="/comms" class="{{ 'on' if desk_key=='comms' else '' }}">Communications</a>
@@ -474,22 +545,8 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
       </nav>
     </div>
 
-    <div class="deskrow">
-      <button type="button" class="pinbtn pin-eng on" id="vbEngine" title="Leads">
-        <span class="sheet"><span class="fun"><i></i><i></i><i></i></span><span class="n2">LEADS</span></span>
-      </button>
-      <button type="button" class="pinbtn pin-note" id="vbShop" title="Build-A-Deck Workshop">
-        <span class="sheet"><span class="n1">✦</span><span class="n2">BUILD-A-DECK</span></span>
-      </button>
-      <span class="spacer"></span>
-      <button type="button" class="pinbtn pin-cal" id="vbCal" title="BD Calendar">
-        <span class="sheet"><span class="mo" id="miniCalMo"></span><span class="grid" id="miniCal"></span></span>
-      </button>
-    </div>
-
     <!-- ============ VIEW: engine + board ============ -->
     <div class="view on" id="v-engine">
-      <div class="tickwrap"><div class="ticktrack" id="ticker"></div></div>
       <div class="stages" id="stagesEl">
         <div class="rail"><span class="fdot"></span><span class="fdot d2"></span><span class="fdot d3"></span></div>
         <div class="stg s1">
@@ -497,6 +554,15 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
             <div class="embers" data-ember></div></div>
           <div class="num" id="st1">0</div><div class="lbl" id="sl1"></div><div class="cap" id="cap1"></div></div>
         <div class="stg s2">
+          <div class="mini"><div class="ptrows">
+            <span class="ptr" id="m2r1"></span>
+            <span class="ptr r2" id="m2r2"></span></div></div>
+          <div class="num" id="st2">0</div><div class="lbl" id="sl2"></div><div class="cap" id="cap2"></div></div>
+        <div class="stg s3">
+          <div class="mini"><div class="codebox" id="codeBox"></div>
+            <span class="scrchip"><b>::</b> <span id="scrTxt"></span></span></div>
+          <div class="num" id="st3">0</div><div class="lbl" id="sl3"></div><div class="cap" id="cap3"></div></div>
+        <div class="stg s4">
           <div class="mini"><div class="bframe">
             <span class="skel" style="left:9%;top:14%;width:52%"></span>
             <span class="skel" style="left:9%;top:32%;width:70%"></span>
@@ -504,23 +570,14 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
             <span class="skel" style="left:9%;top:68%;width:62%"></span>
             <span class="skel" style="left:9%;top:84%;width:36%"></span>
             <div class="scanband"></div>
-            <span class="ppill"><i></i>Parsing live signals…</span></div></div>
-          <div class="num" id="st2">0</div><div class="lbl" id="sl2"></div><div class="cap" id="cap2"></div></div>
-        <div class="stg s3">
-          <div class="mini"><div class="codebox" id="codeBox"></div>
-            <span class="scrchip"><b>::</b> <span id="scrTxt"></span></span></div>
-          <div class="num" id="st3">0</div><div class="lbl" id="sl3"></div><div class="cap" id="cap3"></div></div>
-        <div class="stg s4">
-          <div class="mini"><div class="doc"><i style="width:70%"></i><i style="width:50%"></i><i class="hl" style="width:84%"></i><i style="width:62%"></i><i style="width:40%"></i><span class="ftag">RNS</span></div>
-            <span class="ppill low"><i></i>Stress-testing…</span>
-            <div class="embers" data-ember></div></div>
+            <span class="ppill"><i></i>VMA Testing</span></div></div>
           <div class="num" id="st4">0</div><div class="lbl" id="sl4"></div><div class="cap" id="cap4"></div></div>
         <div class="stg s5">
-          <div class="mini"><div class="pair">
-            <span class="orb2"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="14" fill="#3E5C84"/><text x="50" y="62" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="34" letter-spacing="-1.5" fill="#fff">VMA</text></svg></span>
-            <span class="linkpill"><i></i></span>
-            <span class="orb2"><svg class="adicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c1.2-3.6 3.8-5.4 7-5.4s5.8 1.8 7 5.4"/></svg></span></div>
-            <span class="ppill low"><i></i>Handing to the AD…</span>
+          <div class="mini"><div class="collate">
+            <span class="sheetfly"><i style="width:80%"></i><i style="width:55%"></i><i class="hl" style="width:90%"></i><i style="width:65%"></i></span>
+            <span class="sheetfly f2"><i style="width:70%"></i><i class="hl" style="width:85%"></i><i style="width:50%"></i><i style="width:75%"></i></span>
+            <span class="sheetfly f3"><i class="hl" style="width:88%"></i><i style="width:60%"></i><i style="width:78%"></i><i style="width:45%"></i></span>
+            <span class="folderbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5V18a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9.5a2 2 0 0 0-2-2h-8l-2-2.5H5a2 2 0 0 0-2 2.5z"/><path d="M8 14.5h8M8 17h5" stroke-width="1.3"/></svg><span class="ftag2">BD PORTFOLIO</span></span></div>
             <div class="embers" data-ember></div></div>
           <div class="num" id="st5">0</div><div class="lbl" id="sl5"></div><div class="cap" id="cap5"></div></div>
       </div>
@@ -647,7 +704,20 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
     </div>
 
   </section>
-  <div class="foot">BUSINESS DEVELOPMENT ENGINE · VMA GROUP · {{ build_stamp }}</div>
+  <div class="foot">
+    <span class="dev-zone">
+      <span class="dev-zone-label">For dev only - not a user feature:</span>
+      <button type="button" onclick="refreshBrief()" id="refresh-btn" class="dev-btn"
+              title="Load today's latest brief (the data normally auto-loads; this forces a reload now). Last refreshed: {{ last_updated }}">
+        <span class="rbtn-label">Daily Refresh</span>
+      </button>
+      <button type="button" id="dev-run-brief" class="dev-btn" onclick="devTriggerBrief()"
+              title="Maintenance: triggers a fresh morning-brief workflow run. Not for day-to-day use — Daily Refresh just loads the last completed run.">
+        trigger fresh data
+      </button>
+      <span class="dev-status" id="dev-run-status"></span>
+    </span>
+  </div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -665,6 +735,60 @@ window.CAL_MONTHS={{ eng_months|tojson }};
 window.DESK={{ desk_key|tojson }};
 </script>
 <script>
+/* ---- dev-only footer controls: same contract as the legacy dashboard ---- */
+async function refreshBrief() {
+  const btn = document.getElementById('refresh-btn');
+  if (!btn) return;
+  const lbl = btn.querySelector('.rbtn-label');
+  const originalLabel = lbl.textContent;
+  btn.disabled = true;
+  lbl.textContent = 'Refreshing…';
+  try {
+    const r = await fetch('/api/refresh', { method: 'POST' });
+    const j = await r.json();
+    if (j.ok && (j.leads > 0 || j.predictors > 0)) {
+      lbl.textContent = 'Scanning hires…';
+      try { await fetch('/api/cascade/scour', { method: 'POST' }); } catch (e) {}
+      setTimeout(() => window.location.reload(), 400);
+    } else {
+      lbl.textContent = originalLabel;
+      btn.disabled = false;
+      const st = document.getElementById('dev-run-status');
+      if (st) st.textContent = (j && j.detail) || 'refresh found nothing new';
+    }
+  } catch (e) {
+    lbl.textContent = originalLabel;
+    btn.disabled = false;
+    const st = document.getElementById('dev-run-status');
+    if (st) st.textContent = 'refresh failed: ' + e.message;
+  }
+}
+async function devTriggerBrief() {
+  const btn = document.getElementById('dev-run-brief');
+  const status = document.getElementById('dev-run-status');
+  if (!confirm(
+    'DEVELOPER / TECH ACTION — not a day-to-day feature.\n\n' +
+    'This starts a fresh morning-brief scour on GitHub Actions ' +
+    '(~5–8 min, no email sent). The user-facing control is ' +
+    '"Daily Refresh", which just loads the last completed run.\n\n' +
+    'Proceed with the maintenance run?'
+  )) return;
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = 'dispatching…';
+  status.textContent = '';
+  try {
+    const r = await fetch('/api/dispatch/brief', { method: 'POST' });
+    const j = await r.json();
+    status.textContent = j.ok
+      ? 'dispatched — ~5–8 min, then click Daily Refresh'
+      : ('failed: ' + (j.detail || ('HTTP ' + r.status)));
+  } catch (e) {
+    status.textContent = 'network error: ' + e.message;
+  }
+  btn.disabled = false;
+  btn.textContent = orig;
+}
 /* ---- the live dispatch (verbatim contract: popup now, poll until ready) -- */
 async function dispatchDeck(event, formId, url) {
   event.preventDefault();
@@ -785,35 +909,21 @@ $('vbEngine').addEventListener('click',()=>setView('engine'));
 $('vbCal').addEventListener('click',()=>setView('cal'));
 $('vbShop').addEventListener('click',()=>setView('shop'));
 
-/* ---------- pinned mini calendar (real month, today hot) ---------- */
-(function(){
-  const now=new Date();
-  const MN=['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
-  $('miniCalMo').textContent=MN[now.getMonth()]+' '+now.getFullYear();
-  const days=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
-  let h='';
-  for(let d=1;d<=days;d++){
-    const wd=new Date(now.getFullYear(),now.getMonth(),d).getDay();
-    h+='<i class="'+(d===now.getDate()?'hot':(wd===0||wd===6)?'wk':'')+'"></i>';
-  }
-  $('miniCal').innerHTML=h;
-})();
-
-/* ---------- engine stages + ticker ---------- */
+/* ---------- engine stages + trigger pills ---------- */
 const STAGES={
   leads:{slots:[1,2,3,4,5],
     lbl:['GENERATED','FILTERED','COLLATED','STRESS-TESTED','READY LEADS'],
-    cap:['Automated agent search of the internet for any hiring signal',
-         'curated models back-end isolate signals relating to a senior seat on this desk',
-         'cross-source intelligence to collate a larger framework, tailored to VMA criteria',
-         'Rigorous testing back-end, to weed out pure cold calls',
-         'scored, ranked and synthesised into a BD lead portfolio — ready for AD to make contact']},
+    cap:['Automated agent search for any hiring signal',
+         'Curated models isolate senior-seat signals for this desk',
+         'Cross-source intelligence collated to VMA criteria',
+         'Rigorous testing to weed out pure cold calls',
+         'Scored, ranked and synthesised — ready for AD contact']},
   jobs:{slots:[1,2,4,5],
     lbl:['SCRAPED','FILTERED','VERIFIED','LIVE JOBS'],
-    cap:['autonomous crawl of every major job board — in real time',
-         'role models isolate the senior mandates on this desk',
-         'every posting machine-verified as live and current',
-         'deduplicated, enriched and ready to work']}};
+    cap:['Autonomous crawl of every major job board',
+         'Senior mandates isolated for this desk',
+         'Machine-verified as live and current',
+         'Deduplicated, enriched, ready to work']}};
 function renderEngine(){
   const E=window.ENG||{};
   const nums=mode==='leads'
@@ -826,9 +936,13 @@ function renderEngine(){
     $('sl'+slot).textContent=cfg.lbl[i];
     $('cap'+slot).textContent=cfg.cap[i];
   });
+  /* the filtered box carries the trigger families: two pill rows on a loop */
   const items=mode==='leads'?(window.TRIG||[]):(window.JBOARDS||[]);
-  const chips=items.map(t=>'<span class="tchip"><i></i>'+esc(t)+'<span class="plus">+1</span></span>').join('');
-  $('ticker').innerHTML=chips+chips;
+  const half=Math.ceil(items.length/2);
+  const mk=arr=>arr.map(t=>'<span class="tpill"><i></i>'+esc(t)+'</span>').join('');
+  const r1=mk(items.slice(0,half)),r2=mk(items.slice(half));
+  if($('m2r1'))$('m2r1').innerHTML=r1+r1+r1;
+  if($('m2r2'))$('m2r2').innerHTML=(r2||r1)+(r2||r1)+(r2||r1);
   requestAnimationFrame(sizeRail);
 }
 /* the rail runs number-centre to number-centre — never past the ready count */
@@ -893,7 +1007,7 @@ window.addEventListener('resize',sizeRail);
   }
 })();
 setInterval(()=>{
-  const all=document.querySelectorAll('#ticker .tchip');
+  const all=document.querySelectorAll('.ptrows .tpill');
   if(!all.length)return;
   const i=(Math.random()*all.length)|0;
   all[i].classList.add('match');
