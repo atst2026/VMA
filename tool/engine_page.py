@@ -190,6 +190,8 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .pipedate{font:700 12px var(--mono);letter-spacing:.18em;color:var(--muted);
   padding:14px 2px 18px}
 .pipedate .sp{color:var(--clay)}
+.scorenote{margin:6px 0 10px;padding:8px 14px;border-radius:12px;font:500 11.5px 'Inter';color:var(--ink2);
+  background:rgba(252,243,224,.8);border:1px solid rgba(217,122,43,.25)}
 .pipedate #pipeDate{color:var(--ink2)}
 .stages{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 .stages.jobs4 .stg.s3{display:none}
@@ -426,6 +428,8 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .outbtn.on{color:#fff;background:var(--deep);border-color:var(--deep)}
 .chip.warm{color:#b00b55;border-color:rgba(214,31,105,.35);background:rgba(252,231,240,.7)}
 .btn.warmbtn.on{color:#b00b55;border-color:rgba(214,31,105,.5);background:rgba(252,231,240,.8)}
+.chip.mktc{color:#b5530e;border-color:rgba(217,122,43,.4);background:rgba(253,236,219,.7)}
+.chip.mktp{color:#1d4ed8;border-color:rgba(66,133,244,.35);background:rgba(233,239,251,.7)}
 .chip.prod{color:#0e7c74;border-color:rgba(18,165,148,.4);background:rgba(221,243,240,.7)}
 .openerbox{margin:14px 28px 0;padding:11px 14px;border-left:2px solid var(--vma);border-radius:0 12px 12px 0;
   background:rgba(62,92,132,.06);font-size:12.5px;line-height:1.62;color:var(--ink2)}
@@ -668,6 +672,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
     <!-- ============ VIEW: engine + board ============ -->
     <div class="view on" id="v-engine">
       <div class="pipedate"><span class="sp">✦</span> AGENT PIPELINE · <span id="pipeDate"></span></div>
+      {% if eng_scoring_note %}<div class="scorenote">{{ eng_scoring_note }}</div>{% endif %}
       <div class="tickwrap" id="jobsTick" style="display:none">
         <div class="ticktrack sline" id="jt"></div>
         <div class="ticktrack sline s2" id="jt2"></div>
@@ -1309,6 +1314,7 @@ function portfolioHTML(l){
     +(l.intent?chip('intent','STATED INTENT',MEANING.intent+' Here: “'+l.intent+'”.'):'')
     +(l.conflict?chip('anti','RIVAL MANDATE','A rival firm holds the perm mandate — proof they pay fees. Watch on a timer for the search to stall; pitch interim cover while it runs.'):'')+(l.product==='interim'?chip('prod','INTERIM PLAY','Perm budget is blocked (freeze, rival mandate or cuts) but the work still exists — pitch day-rate interim; it comes from a different budget line.'):'')
     +(l.warm?chip('warm','WARM ROUTE','A tagged warm relationship — direct or one credible hop. The strongest opener in recruitment.'):'')
+    +(l.market==='contested'?chip('mktc','CONTESTED','A public ad/RFP is live — every agency sees this; speed matters.'):l.market==='premarket'?chip('mktp','PRE-MARKET','Predicted before any ad exists — an exclusive window; an experienced AD values this above a public lead.'):'')
     +'</div>'
     +'<div class="scorering"><svg width="62" height="62" viewBox="0 0 62 62">'
     +'<circle cx="31" cy="31" r="26" fill="none" stroke="rgba(16,22,38,.08)" stroke-width="3.5"/>'
@@ -1397,7 +1403,7 @@ function logOutcome(id,val){
   toast(l.outcome?('Outcome logged: '+l.outcome.replace('_',' ')):'Outcome cleared');
   fetch('/api/lead/outcome',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({id:l.rid,outcome:l.outcome,
-      snapshot:{score:l.score,tier:l.tier,prop:l.prop,qual:(l.qual||{}).total,fee:l.fee,type:l.type,key:l.key,trigger:l.why,evidence:(l.brief||'').slice(0,160),warm:l.warm?1:0,product:l.product||''}})})
+      snapshot:{score:l.score,tier:l.tier,prop:l.prop,qual:(l.qual||{}).total,fee:l.fee,type:l.type,key:l.key,trigger:l.why,evidence:(l.brief||'').slice(0,160),warm:l.warm?1:0,product:l.product||'',market:l.market||'',predicted_buyer:{role:l.predBuyer||l.buyer||'',rule:l.predBuyerRule||''}}})})
     .catch(()=>{});
 }
 /* clicking ANY lead — whichever section — opens the same full-page

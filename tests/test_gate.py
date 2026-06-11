@@ -108,12 +108,14 @@ def test_old_verdicts_age_out():
 # The gate decision, rule by rule
 # ====================================================================
 def test_presented_with_full_stack():
-    # ceo(imminent seat 1) + funding(budget 2) + window(1) + route(1) = 5/8.
+    # ceo(imminent seat 1) + funding(budget 2) + support window(2)
+    # + route(1) = 6/8 — the 35-day-old CEO change sits inside the
+    # immediate support window.
     g = gate.assess({"company": "Acme", "events": _full_events()},
                     _lead(), now=NOW)
     assert g["presented"] and g["confidence"] == "Moderate"
     assert g["reasons"] == []
-    assert g["qual"]["total"] == 5
+    assert g["qual"]["total"] == 6
     assert "interim" in g["kill"].lower()
     assert "Ring Incoming CEO" in g["move"]
 
@@ -201,9 +203,10 @@ def test_single_registry_source_is_verified_truth():
     ev = [_ev("https://www.investegate.co.uk/announcement/1",
               "LSE RNS (Investegate)")]
     ceo_only = _lead(triggers=[{"key": "ceo_change", "label": "CEO change",
-                                "recency_mult": 0.9, "age_days": 35.0}])
+                                "recency_mult": 0.9, "age_days": 150.0}])
     under = gate.assess({"company": "A", "events": ev}, ceo_only, now=NOW)
-    # ceo alone: seat1+budget1+urgency1+buyer1 = 4 -> not yet qualified,
+    # ceo alone (restructure window): seat1+budget1+urgency1+buyer1 = 4
+    # -> not yet qualified,
     # but the reason is the SCORECARD, never source counting.
     assert not under["presented"]
     assert "not qualified" in under["reasons"][0].lower()
@@ -218,9 +221,13 @@ def test_single_registry_source_is_verified_truth():
 def test_throttle_raises_bar_to_full():
     events = [_ev("https://www.investegate.co.uk/1", "RNS"),
               _ev("https://techcrunch.com/2", key="funding", days_ago=20)]
-    ok = gate.assess({"company": "A", "events": events}, _lead(), now=NOW)
+    # Age the leadership trigger into the restructure window (urgency 1)
+    # so the stack sits at 5/8: healthy presents, throttle (bar 6) queues.
+    lead = _lead()
+    lead["triggers"][0]["age_days"] = 150.0
+    ok = gate.assess({"company": "A", "events": events}, lead, now=NOW)
     assert ok["presented"]  # partial passes when healthy
-    g = gate.assess({"company": "A", "events": events}, _lead(),
+    g = gate.assess({"company": "A", "events": events}, lead,
                     verdicts=_verdicts(4, 8), now=NOW)
     assert not g["presented"] and g["throttled"]
     assert g["cap"] == gate.THROTTLED_CAP

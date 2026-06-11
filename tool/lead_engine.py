@@ -349,7 +349,11 @@ def _posture(item: dict, live_triggers: list[dict], anti_flags: list[str]) -> di
     keys = {t.get("key") for t in live_triggers}
     reasons_int, reasons_ext = [], []
     # seeded, authoritative flags win
-    if item.get("internal_ta") is True or item.get("psl_status") in ("closed", "off", "no", False):
+    from tool.seniority import role_is_senior
+    ta_volume_only = (item.get("internal_ta") is True
+                      and role_is_senior(item.get("predicted_role")))
+    if ((item.get("internal_ta") is True and not ta_volume_only)
+            or item.get("psl_status") in ("closed", "off", "no", False)):
         reasons_int.append("internal TA / not on PSL on file")
     if "in_house_team" in anti_flags or _POSTURE_INT_RX.search(blob):
         reasons_int.append("in-house team / TA language detected")
@@ -639,6 +643,52 @@ def fit_score(company: str, account_tier: str) -> tuple[int, str, str]:
     return pts, band, why
 
 
+_REGISTRY_URL_RX = re.compile(
+    r"companieshouse|investegate|londonstockexchange|gov\.uk|find-tender|"
+    r"fca\.org|sec\.gov", re.I)
+
+# Crisis urgency decays in DAYS, not weeks — override the pattern window
+# for recency purposes only (flat 0 weeks, gone by ~4).
+_FAST_DECAY_LTW = {"crisis_event": (1, 2)}
+
+
+def _dedupe_events(events: list[dict]) -> tuple[list[dict], bool]:
+    """Item 9 (AD room): five outlets covering one departure are ONE event
+    with high confidence, not five signals — otherwise PR echo inflates
+    exactly the companies best at PR. Press events collapse on
+    (trigger_key, ~7-day bucket); registry-grade URLs (Companies House,
+    RNS, regulators) NEVER collapse — three distinct filings are three
+    facts. Returns (deduped_events, extra_corroboration) where the flag
+    records that a collapsed cluster spanned 2+ independent sources, so
+    corroboration is preserved even though the count shrank."""
+    out, seen = [], {}
+    extra = False
+    for e in sorted((e for e in (events or []) if isinstance(e, dict)),
+                    key=lambda x: x.get("published") or ""):
+        url = e.get("url") or ""
+        if _REGISTRY_URL_RX.search(url):
+            out.append(e)
+            continue
+        try:
+            from datetime import date as _date
+            bucket = _date.fromisoformat(
+                (e.get("published") or "")[:10]).toordinal() // 7
+        except Exception:
+            bucket = (e.get("published") or "")[:7]
+        key = (e.get("trigger_key"), bucket)
+        prev = seen.get(key)
+        if prev is None:
+            seen[key] = e
+            out.append(e)
+        else:
+            a = (prev.get("url") or prev.get("source") or "").lower()
+            b = (e.get("url") or e.get("source") or "").lower()
+            if a and b and a != b:
+                prev["corroborants"] = prev.get("corroborants", 0) + 1
+                extra = True
+    return out, extra
+
+
 def _signal(events: list[dict], fallback_date: str | None, taxonomy: dict):
     """Layer 1-3 — SIGNAL = sum of raw_pts x recency x confidence, soft
     modifiers capped and gated on at least one real signal."""
@@ -655,7 +705,8 @@ def _signal(events: list[dict], fallback_date: str | None, taxonomy: dict):
         age = _age_days(e.get("published"), fallback_date)
         from tool.predictive.patterns import BY_KEY as _BY_KEY
         _ttype = _BY_KEY.get(e.get("trigger_key"))
-        _ltw = _ttype.lead_time_weeks if _ttype else None
+        _ltw = (_FAST_DECAY_LTW.get(e.get("trigger_key"))
+                or (_ttype.lead_time_weeks if _ttype else None))
         rmult = _recency_mult(age, decay, lead_time_weeks=_ltw)
         ctier, cmult = _confidence(e, independent)
         eff = round(pts * rmult * cmult, 2)
@@ -827,6 +878,7 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
             # Out of ICP by conflict, regardless of sector/size/UK.
             fit_pts, fit_band = 2, "out"
             fit_why = "Out: competing recruiter / staffing firm (likely conflict)"
+        events, _extra_corr = _dedupe_events(events)
         signal, triggers = _signal(events, fallback, taxonomy)
         anti_flags, anti_mult, cap = _anti_triggers(events)
         if conflict:
@@ -835,19 +887,31 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
         # The freeze dampener (0.7) blocks the PERM line only: with live
         # demand in the stack (open ads / an RFP / interim cover) the work
         # demonstrably exists and the day-rate interim play runs at full
-        # strength — dampening it would unblock freezes into invisibility.
-        if "hiring_freeze" in anti_flags and any(
-                (e.get("trigger_key") or "") in
-                ("job_ad_cluster", "ic_platform_rfp", "interim_watch")
-                for e in events):
-            anti_mult = min(round(anti_mult / 0.7, 4), 1.0)
+        # strength. RECENCY GUARD: the demand must POSTDATE the freeze
+        # signal — a zombie ad posted before the freeze and never taken
+        # down proves nothing, so it does not lift the dampener.
+        if "hiring_freeze" in anti_flags:
+            _frz_rx = next(rx for n, rx, _eff in _ANTI
+                           if n == "hiring_freeze")
+            _frz_at = max((e.get("published") or "" for e in events
+                           if _frz_rx.search(
+                               str(e.get("evidence") or "") + " "
+                               + str(e.get("trigger_label") or ""))),
+                          default="")
+            if any((e.get("trigger_key") or "") in
+                   ("job_ad_cluster", "ic_platform_rfp", "interim_watch")
+                   and (e.get("published") or "") >= _frz_at
+                   for e in events):
+                anti_mult = min(round(anti_mult / 0.7, 4), 1.0)
         signal = round(signal * anti_mult, 2)
         # Corroboration gate: 2+ independent sources OR one Tier-1 verified
         # signal. A lone single-source scrape can't reach Call today.
         independent = len({(t.get("source") or t.get("url") or "").lower()
                            for t in triggers if (t.get("source") or t.get("url"))})
         has_verified = any(t.get("confidence") == "verified" for t in triggers)
-        corroborated = independent >= 2 or has_verified
+        # A collapsed press cluster spanning 2+ outlets still corroborates —
+        # dedupe shrinks the COUNT, never the evidence.
+        corroborated = independent >= 2 or has_verified or _extra_corr
 
         # ---- the CONJUNCTION model (the report's core) ----------------------
         # Only signals that are still live (not decayed) count toward the stack.

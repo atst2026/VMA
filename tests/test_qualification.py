@@ -48,9 +48,19 @@ def test_budget_dimension():
 def test_urgency_dimension():
     assert _q(_lead(["crisis_event"]))["urgency"] == 2
     assert _q(_lead(["job_ad_cluster"]))["urgency"] == 2   # live demand
-    assert _q(_lead(["ceo_change"]))["urgency"] == 1
-    assert _q(_lead(["ceo_change"], premature=True))["urgency"] == 0
-    assert _q(_lead(["ceo_change"]), wstate="lapsed")["urgency"] == 0
+    # Leadership runs on two clocks: the immediate support window (0-8
+    # weeks — scores 2, even inside the perm too-fresh hold, because the
+    # announcement/interim play is NOW) and the restructure window (3-9
+    # months — scores 1). Between the two clocks it idles at 1.
+    fresh = _q(_lead(["ceo_change"]))            # fixture age 20d
+    assert fresh["urgency"] == 2 and "support window" in fresh["urgency_why"]
+    assert _q(_lead(["ceo_change"], premature=True))["urgency"] == 2
+    mid = _lead(["ceo_change"]); mid["triggers"][0]["age_days"] = 150.0
+    q_mid = _q(mid)
+    assert q_mid["urgency"] == 1 and "restructure window" in q_mid["urgency_why"]
+    # Non-leadership triggers keep the plain window logic.
+    assert _q(_lead(["mna"], premature=True))["urgency"] == 0
+    assert _q(_lead(["mna"]), wstate="lapsed")["urgency"] == 0
 
 
 def test_buyer_dimension_warm_beats_named_cold():
@@ -74,8 +84,8 @@ def test_total_and_weakest():
     # A named-but-cold contact caps the same stack at 7.
     assert _q(_lead(["mishire_reversal", "funding"]),
               {"seeded_contact_name": "Jane"})["total"] == 7
-    q2 = _q(_lead(["ceo_change"]))
-    assert q2["total"] == 4 and q2["weakest_why"]
+    q2 = _q(_lead(["ceo_change"]))     # fresh leadership: support window
+    assert q2["total"] == 5 and q2["weakest_why"]
 
 
 # ====================================================================
