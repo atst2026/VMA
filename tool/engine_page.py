@@ -728,11 +728,6 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
       <div class="pipedate"><span class="sp">✦</span> TODAY’S AGENT PIPELINE · <span id="pipeDate"></span></div>
       {% if eng_universe %}<div class="scorenote">Universe proposals (weekly model pass — approve by adding to the watchlist):
         {% for p in eng_universe %} <b>{{ p.company }}</b> — {{ p.case }}{{ ";" if not loop.last }}{% endfor %}</div>{% endif %}
-      <div class="tickwrap" id="jobsTick" style="display:none">
-        <div class="ticktrack sline" id="jt"></div>
-        <div class="ticktrack sline s2" id="jt2"></div>
-        <span class="synthpill"><span class="dotgrid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>Synthesising..</span>
-      </div>
       <div class="stages" id="stagesEl">
         <div class="rail"><span class="fdot"></span><span class="fdot d2"></span><span class="fdot d3"></span></div>
         <div class="stg s1">
@@ -762,6 +757,13 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
             <div class="scanband"></div>
             <span class="ppill"><i></i>Organising output</span></div></div>
           <div class="num" id="st5">0</div><div class="lbl" id="sl5"></div><div class="cap" id="cap5"></div></div>
+      </div>
+      <!-- Jobs mode: the synthesising boards ticker sits BELOW the
+           pipeline sequence (swapped by AD preference). -->
+      <div class="tickwrap" id="jobsTick" style="display:none">
+        <div class="ticktrack sline" id="jt"></div>
+        <div class="ticktrack sline s2" id="jt2"></div>
+        <span class="synthpill"><span class="dotgrid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>Synthesising..</span>
       </div>
       <div class="boardbar" id="boardbar">
         <div class="ctrls" id="leadCtrls">
