@@ -472,9 +472,8 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .cal-pop .psrc:hover{text-decoration:underline}
 .cal-pop .psrc svg{width:11px;height:11px}
 /* workshop (the live Personal Assistant section, renamed) */
-/* centred to the viewport's true middle: pull back half the rail width */
-.shopwrap{max-width:900px;margin:0 auto;padding:10px 0 8px;transform:translateX(-34px)}
-@media(max-width:980px){.shopwrap{transform:none}}
+/* centred within the page column, exactly like the old PA page */
+.shopwrap{max-width:900px;margin:0 auto;padding:10px 0 8px}
 .ea-hero{text-align:center;margin-bottom:26px}
 .cc-bigicon{width:78px;height:78px;border-radius:18px;margin:0 auto 22px;display:grid;
   place-items:center;color:#1F1F1F;background:transparent}
@@ -562,7 +561,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
   <button type="button" class="sr-btn" id="vbCal" title="Calendar">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>
   </button>
-  <button type="button" class="sr-btn" id="vbShop" title="Reports Workshop">
+  <button type="button" class="sr-btn" id="vbShop" title="Build-A-Deck">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7.2 5.5c1.2-.85 8.4-.85 9.6 0"/><path d="M4.5 9.2c0-.95.8-1.7 1.75-1.7h11.5c.95 0 1.75.75 1.75 1.7v7.3a3.5 3.5 0 0 1-3.5 3.5H8a3.5 3.5 0 0 1-3.5-3.5z"/></svg>
   </button>
 </nav>
@@ -665,7 +664,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
       <div class="shopwrap">
         <div class="ea-hero">
           <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.2 5.5c1.2-.85 8.4-.85 9.6 0"/><path d="M4.5 9.2c0-.95.8-1.7 1.75-1.7h11.5c.95 0 1.75.75 1.75 1.7v7.3a3.5 3.5 0 0 1-3.5 3.5H8a3.5 3.5 0 0 1-3.5-3.5z"/></svg></div>
-          <h1 class="gemini-title">Reports Workshop</h1>
+          <h1 class="gemini-title">Build-A-Deck</h1>
           <div class="cc-sub">A simple prompt to build key reports in real-time, with the latest data.</div>
         </div>
 
