@@ -2120,12 +2120,18 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
             brief = (ev0.get("evidence") or "")[:220] or row.get("advisory") or why
             url = ev0.get("url") or ""
             seat = row.get("predicted_role") or role_label
-            # An incumbency hit rewrites the seat itself — the opportunity
-            # is the build UNDER the sitting leader, so the card must
-            # never advertise their chair as the vacancy.
-            if row.get("incumbent_status") == "found":
+            # The incumbency verdict rewrites the seat itself — the card
+            # must never advertise a sitting leader's chair as a vacancy,
+            # and must never present an UNCHECKED seat as a fact either.
+            _inc_st = row.get("incumbent_status")
+            if _inc_st == "found":
                 from tool import incumbency as _inc
                 seat = _inc.build_seat(seat, row.get("incumbent_name"))
+                seat_disp = seat
+            elif _inc_st == "none_found":
+                seat_disp = f"{seat} — seat appears open"
+            else:
+                seat_disp = f"{seat} — unverified"
             _fee, _fee_tip = _wn.fee_driver(
                 [e.get("trigger_key") for e in evs if isinstance(e, dict)])
             _why_now_txt = _wn.compose_why_now(
@@ -2142,7 +2148,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                 "isNew": 1 if row.get("is_new") else 0,
                 "age": _mr_row_age(row.get("first_seen")),
                 "type": typ, "key": key,
-                "seat": seat, "why": why,
+                "seat": seat_disp, "why": why,
                 "incumbent": row.get("incumbent_name") or "",
                 "incumbentTitle": row.get("incumbent_title") or "",
                 "incumbentUrl": row.get("incumbent_url") or "",
