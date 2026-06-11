@@ -578,14 +578,13 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
 .cpill .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cpill .d{margin-left:auto;font:700 8px var(--mono);color:var(--dim);flex:none}
 .cpill.openg i{box-shadow:0 0 7px rgba(18,165,148,.8);animation:breathe 3s ease-in-out infinite}
-/* NEW-item highlight: a shooting blue star orbits the pill's border until
-   the user clicks it (seen-state kept in localStorage) */
+/* NEW-item highlight: a small "New" pill on the item's corner until the
+   user clicks it (seen-state kept in localStorage) */
 .cpill.fresh,.wspan.fresh{overflow:visible;box-shadow:0 0 0 1.5px rgba(37,99,235,.35),0 1px 4px rgba(26,61,124,.06)}
-.cpill .nstar,.wspan .nstar{position:absolute;top:0;left:0;width:7px;height:7px;border-radius:50%;
-  background:#2563eb;box-shadow:0 0 7px 2px rgba(37,99,235,.85),-9px 0 11px 1px rgba(37,99,235,.35);
-  offset-path:border-box;offset-distance:0%;animation:nsorbit 2.4s linear infinite;
-  pointer-events:none;z-index:3}
-@keyframes nsorbit{from{offset-distance:0%}to{offset-distance:100%}}
+.cpill .nstar,.wspan .nstar{position:absolute;top:-8px;right:-7px;
+  font:700 8px/1 "Inter",sans-serif;letter-spacing:.07em;text-transform:uppercase;
+  color:#fff;background:#2563eb;border-radius:9999px;padding:3px 6px;
+  box-shadow:0 1px 4px rgba(37,99,235,.45);pointer-events:none;z-index:3}
 .cpill.fresh{position:relative}
 /* window bars: they start and end exactly where the window does */
 .wtrack{position:relative;grid-column:2/-1;border-left:1px solid rgba(16,22,38,.04)}
@@ -728,11 +727,6 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
       <div class="pipedate"><span class="sp">✦</span> TODAY’S AGENT PIPELINE · <span id="pipeDate"></span></div>
       {% if eng_universe %}<div class="scorenote">Universe proposals (weekly model pass — approve by adding to the watchlist):
         {% for p in eng_universe %} <b>{{ p.company }}</b> — {{ p.case }}{{ ";" if not loop.last }}{% endfor %}</div>{% endif %}
-      <div class="tickwrap" id="jobsTick" style="display:none">
-        <div class="ticktrack sline" id="jt"></div>
-        <div class="ticktrack sline s2" id="jt2"></div>
-        <span class="synthpill"><span class="dotgrid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>Synthesising..</span>
-      </div>
       <div class="stages" id="stagesEl">
         <div class="rail"><span class="fdot"></span><span class="fdot d2"></span><span class="fdot d3"></span></div>
         <div class="stg s1">
@@ -762,6 +756,13 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
             <div class="scanband"></div>
             <span class="ppill"><i></i>Organising output</span></div></div>
           <div class="num" id="st5">0</div><div class="lbl" id="sl5"></div><div class="cap" id="cap5"></div></div>
+      </div>
+      <!-- Jobs mode: the synthesising boards ticker sits BELOW the
+           pipeline sequence (swapped by AD preference). -->
+      <div class="tickwrap" id="jobsTick" style="display:none">
+        <div class="ticktrack sline" id="jt"></div>
+        <div class="ticktrack sline s2" id="jt2"></div>
+        <span class="synthpill"><span class="dotgrid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>Synthesising..</span>
       </div>
       <div class="boardbar" id="boardbar">
         <div class="ctrls" id="leadCtrls">
@@ -1763,7 +1764,7 @@ function renderCal(){
     for(let m=0;m<7;m++){
       cells+='<div class="cg-cell">'
         +items.filter(x=>x.m===m).map(x=>'<span class="cpill '+x.kind+(x.open?' openg':'')+(x.fresh?' fresh':'')+'" data-cal="'+x.key+'">'
-          +'<i></i><span class="n">'+esc(x.n)+'</span><span class="d">'+esc(x.d)+'</span>'+(x.fresh?'<span class="nstar"></span>':'')+'</span>').join('')
+          +'<i></i><span class="n">'+esc(x.n)+'</span><span class="d">'+esc(x.d)+'</span>'+(x.fresh?'<span class="nstar">New</span>':'')+'</span>').join('')
         +'</div>';
     }
     return '<div class="cg-row"><div class="cg-lab"><span class="t" style="color:'+colour+'">'+label+'</span>'
@@ -1785,7 +1786,7 @@ function renderCal(){
       lanes[lane]=r;
       return '<span class="wspan'+(x.open?' openg':'')+(x.fresh?' fresh':'')+'" data-cal="'+x.key+'" '
         +'style="left:'+l.toFixed(2)+'%;width:'+(r-l).toFixed(2)+'%;top:'+(9+lane*30)+'px">'
-        +'<i></i><span class="n">'+esc(x.n)+'</span><span class="d">'+esc(x.d)+'</span>'+(x.fresh?'<span class="nstar"></span>':'')+'</span>';
+        +'<i></i><span class="n">'+esc(x.n)+'</span><span class="d">'+esc(x.d)+'</span>'+(x.fresh?'<span class="nstar">New</span>':'')+'</span>';
     }).join('');
     const h=Math.max(1,lanes.length)*30+16;
     let lines='';for(let i=1;i<7;i++)lines+='<span class="mline" style="left:'+(i*100/7).toFixed(3)+'%"></span>';
