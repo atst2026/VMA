@@ -128,3 +128,100 @@ def capture_from_signals(signals: list[dict], fetch=None,
     except Exception as e:
         log.info("rns_contacts capture skipped (%s)", e)
         return 0
+
+
+# ---- Published-email parsing (the second half of the build) -----------
+# The blocks archived above name the issuer's IR/comms contacts and very
+# often print their work email verbatim — a registry-grade, citable
+# source for the SEND OUTREACH email layer. Parsing is conservative:
+# every address comes back with the URL it was published at and a
+# name hint from the surrounding text, and the caller decides what is
+# strong enough to store.
+
+_EMAIL_RX = re.compile(
+    r"[A-Za-z0-9][A-Za-z0-9._%+\-']*@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
+# Capitalised two/three-word runs in the text before the address — the
+# pattern enquiries blocks almost always follow ("Jane Smith, Head of
+# Communications  jane.smith@issuer.com"). The LAST person-like run
+# before the address wins (the company name and the role title sit
+# earlier in the same clause and must lose).
+_NAME_RUN_RX = re.compile(
+    r"[A-Z][a-z'\-]+(?:\s+[A-Z][a-z'\-]+){1,2}")
+# Tokens that mark a capitalised run as a role / org / boilerplate, not
+# a person ("Severn Trent Plc", "Media Relations", "Investor Contact").
+_NOT_A_NAME_TOKENS = frozenset(
+    t.lower() for t in (
+        "Head", "Director", "Chief", "Group", "Media", "Investor",
+        "Relations", "Communications", "Corporate", "Affairs", "Press",
+        "Office", "Enquiries", "Contact", "Contacts", "Manager",
+        "Officer", "Plc", "Limited", "Ltd", "Holdings", "Financial",
+        "Public", "Further", "Information", "Tel", "Telephone", "Email",
+    ))
+# Obvious non-person mailboxes; still returned (a press office inbox is
+# a legitimate fallback recipient) but never attributed to a name.
+_GENERIC_LOCAL = (
+    "press", "media", "enquiries", "info", "ir", "investor",
+    "communications", "comms", "pressoffice", "media.relations", "pr",
+)
+
+
+def _name_hint(text_before: str) -> str:
+    tail = (text_before or "").strip()[-100:]
+    best = ""
+    for m in _NAME_RUN_RX.finditer(tail):
+        words = m.group(0).split()
+        if any(w.lower() in _NOT_A_NAME_TOKENS for w in words):
+            continue
+        best = m.group(0).strip()
+    return best
+
+
+def _company_tokens(company: str) -> set:
+    return {t for t in _norm(company).split() if len(t) >= 3}
+
+
+def published_emails(company: str) -> list[dict]:
+    """All addresses ever printed in `company`'s archived enquiries
+    blocks, newest block first, deduped on the address:
+
+      [{email, name_hint, generic, in_house, url, at}]
+
+    `in_house` is a heuristic: the address's domain shares a token with
+    the company name (jane@firstgroup.com for FirstGroup). Agencies'
+    addresses (their financial PR firm) come back in_house=False so the
+    caller can prefer the issuer's own people. Never raises."""
+    try:
+        rec = _load().get(_norm(company))
+        if not rec:
+            return []
+        toks = _company_tokens(company)
+        out, seen = [], set()
+        for blk in rec.get("blocks") or []:
+            text = blk.get("block") or ""
+            for m in _EMAIL_RX.finditer(text):
+                email = m.group(0).strip(".,;:'")
+                low = email.lower()
+                if low in seen:
+                    continue
+                seen.add(low)
+                local, _, domain = low.partition("@")
+                domain_core = _norm(domain.rsplit(".", 1)[0]
+                                    if "." in domain else domain)
+                generic = any(local == g or local.startswith(g + ".")
+                              or local.startswith(g + "-")
+                              for g in _GENERIC_LOCAL)
+                in_house = any(t in domain_core.replace(" ", "")
+                               for t in toks)
+                out.append({
+                    "email": email,
+                    "name_hint": "" if generic
+                                 else _name_hint(text[:m.start()]),
+                    "generic": generic,
+                    "in_house": in_house,
+                    "url": blk.get("url") or "",
+                    "at": blk.get("at") or "",
+                })
+        return out
+    except Exception as e:
+        log.info("rns_contacts published_emails skipped (%s)", e)
+        return []

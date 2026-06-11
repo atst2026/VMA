@@ -34,8 +34,14 @@ Set in GitHub repo → Settings → Secrets and variables → Actions:
 | `COMPANIES_HOUSE_KEY` | Companies House developer key (free) |
 | `BRIGHT_DATA_KEY` | Bright Data key for licensed LinkedIn public surface (free 5k/month) |
 | `GMAIL_FROM_NAME` | *Optional*. Default: `Sara's Morning Brief` |
+| `ANTHROPIC_API_KEY` | Model passes: semantic scan, auto-investigate, universe expansion, outreach contact research + drafts. Every module no-ops without it |
+| `HUNTER_API_KEY` | *Optional*. SEND OUTREACH email find+verify (free tier: 25/50 a month). Without it: published addresses only |
 | `ADZUNA_APP_ID` + `ADZUNA_APP_KEY` | *Optional*. Adds Indeed + 10 more job boards via Adzuna API (free) |
 | `CRUNCHBASE_API_KEY` | *Optional*. Proactive UK funding-round detection via Crunchbase API (free tier) |
+
+For the SEND OUTREACH button itself, the **Render** service additionally
+needs `GMAIL_USER`, `GMAIL_APP_PASSWORD` and (to go live) `OUTREACH_TEST_MODE=0`
+in its Environment — see `render.yaml`.
 
 Resend (previously used) is no longer wired in — Gmail SMTP handles delivery
 to any inbox with no domain verification.
@@ -178,12 +184,56 @@ Four gaps between the pitch and the build, closed:
   name has been listed, and every observed joiner/leaver. Both ledgers
   render into the company dossiers.
 
+## BD Build v5 — SEND OUTREACH (the button on Live Jobs)
+
+Every live job now carries the full chain from vacancy to a sent,
+personalised first-touch email — with the AD previewing and owning every
+send:
+
+- **Per-job contact research** (`tool/contacts/job_researcher.py`) — the
+  model + live web search answer "who, today, owns THIS hire at THIS
+  employer": right legal entity (KPMG UK, not KPMG International), the
+  seat's title family (not one exact title), dated evidence, an active
+  departed-check, and a calibrated confidence. Answers land in the same
+  contacts store as every other source (Sara's flags, freshness windows
+  and the re-verify queue all apply), accepted only at >=0.7 confidence
+  with evidence under a year old, capped below registry grade, 10 jobs/run.
+- **Work-email layer** (`tool/contacts/email_resolver.py`) — published
+  sources first (the RNS enquiries blocks the tool already archives are
+  parsed for citable addresses, in-house domains outranking the issuer's
+  PR agency), then Hunter find+verify (`HUNTER_API_KEY`, free tier
+  pilot-sized). Statuses: `verified` / `published` may be one-click sent;
+  `pattern` guesses are stored for the human but NEVER sendable —
+  unverified guesses bounce 10–30% and poison the sending mailbox.
+- **Personalised drafts** — the brief writes a per-lead draft from the
+  job ad + contact facts only (no invented claims), falling back to the
+  AD-approved fixed template wherever the budgeted pass didn't reach.
+- **Preview-before-send modal** — contact, email + status chip,
+  confidence, source link, editable subject/body, "Flag wrong contact"
+  and a permanent "Don't contact" opt-out. SEND is enabled only when
+  every gate passes; otherwise the modal says exactly why not.
+- **The guarded send** (`/api/outreach/send`) — recipient re-derived
+  server-side from the lead id; gates re-checked (sendable email status,
+  0.70 confidence floor, suppression list, per-lead and per-address
+  30-day duplicate guards); every message identifies VMA Group and
+  carries a reply-to-opt-out footer (PECR corporate-subscriber basis);
+  append-only log in `outreach_log.jsonl`; the lead flips to followed-up.
+- **Test-first**: `OUTREACH_TEST_MODE` defaults ON — every send reroutes
+  to the practice inbox with the would-be recipient stamped on it. Going
+  live is `OUTREACH_TEST_MODE=0` + `GMAIL_USER`/`GMAIL_APP_PASSWORD` on
+  Render (see render.yaml).
+
 ## What the tool deliberately does not do
 
 - Touch Sara's LinkedIn / Sales Nav / Recruiter seat
 - Read or write to JobAdder
-- Send outreach on her behalf
-- Store personal profiles beyond a 14-day dedup cache
+- Send outreach without the AD: every send is previewed and clicked by a
+  human, gated on verified contacts, and test-rerouted until the live
+  switch is flipped (v5 changed this line — it previously read "send
+  outreach on her behalf", and the no-silent-sending principle survives)
+- Store personal profiles beyond a 14-day dedup cache (the curated
+  hiring-contacts roster, now including published/verified work emails,
+  is the deliberate exception it always was)
 - Automate CRM
 
 ## Files

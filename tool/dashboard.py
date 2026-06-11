@@ -634,8 +634,21 @@ def load_latest_signals() -> list[dict]:
         # lead_id already set during retention filter above
         s["status"] = _lstat.get(s["lead_id"], "active")
         s["contact"] = resolve_lead_contact(s, contacts=_cc)
-        s["outreach"] = draft_outreach_for_lead(s)
+        # The brief's model pass writes a personalised draft onto the
+        # signal (outreach_ai); the fixed template remains the fallback
+        # for any lead the budgeted pass didn't reach.
+        s["outreach"] = ((s.get("outreach_ai") or "").strip()
+                         or draft_outreach_for_lead(s))
         s["linkedin"] = linkedin_click(s)
+        # One gate definition (tool/outreach) drives both the SEND
+        # button state and the server-side send check.
+        try:
+            from tool.outreach import sendable_state
+            _ok, _why = sendable_state(s["contact"])
+        except Exception:
+            _ok, _why = False, "outreach unavailable"
+        s["send_ok"] = _ok
+        s["send_block_reason"] = _why
     return data
 
 
@@ -737,67 +750,27 @@ def _assign_opportunity_tiers(items: list[dict], floor: float = 0.20) -> None:
 
 
 # ---- Outreach message drafting -----------------------------------------
-# Default outreach copy. Same message for every lead and every predictor —
-# just edit the (Name) placeholder per recipient. Profile-aware specialism
-# line; comms keeps the message Sara approved.
-def _default_outreach() -> str:
-    """Default predictor-outreach copy for the active desk (per request)."""
-    if active_profile().key == "marketing":
-        return (
-            "Hi (Name), I'm (Your name) from VMA Group.\n\n"
-            "We specialise in executive search and recruitment across marketing, "
-            "brand and growth leadership. I'd love to grab a coffee in the next "
-            "couple of weeks to introduce VMA Group and share what we're seeing "
-            "in the market. I've attached our brochure in case it's useful.\n\n"
-            "Would be great to connect.\n\n"
-            "Best,\n"
-            "(Your name)"
-        )
-    return (
-        "Hi (Name), I'm Sara from VMA Group.\n\n"
-        "We specialise in executive search and recruitment across corporate "
-        "communications, internal comms and marketing. I'd love to grab a "
-        "coffee in the next couple of weeks to introduce VMA Group and share "
-        "what we're seeing in the market. I've attached our brochure in case "
-        "it's useful.\n\n"
-        "Would be great to connect.\n\n"
-        "Best,\n"
-        "Sara"
-    )
+# The AD-approved copy now lives in tool/outreach.py (the canonical home,
+# importable by the GitHub Action without Flask). The dashboard keeps the
+# same names so every call site below is unchanged.
+from tool.outreach import (_default_outreach, _display_role,           # noqa: E402
+                           draft_outreach_for_lead)
 
 
-def _display_role(title: str) -> str:
-    """Strip an embedded company / region suffix off a scraped job title
-    so it reads naturally inside a sentence, keeping original casing."""
-    import re as _re
-    t = (title or "").strip()
-    t = _re.split(r"\s+[–—-]\s+", t)[0]
-    t = _re.split(r"\s+at\s+[A-Z]", t)[0]
-    return t.split(",")[0].strip()
+def _outreach_test_mode() -> bool:
+    try:
+        from tool.outreach import test_mode
+        return test_mode()
+    except Exception:
+        return True
 
 
-def draft_outreach_for_lead(signal: dict) -> str:
-    """Outreach draft for a lead — fixed template with the contact's
-    first name, the advertised role, and the company filled in."""
-    c = signal.get("contact") or {}
-    company = (signal.get("company") or "").strip() or "[Company]"
-    name = (c.get("name") or "").strip()
-    first = name.split()[0] if name else ""
-    role = _display_role(signal.get("title") or "")
-    role_phrase = f"the {role}" if role else "the role you've advertised"
-    return (
-        f"Hi {first or '[Name]'},\n\n"
-        f"I noticed your recent ad for {role_phrase} and thought it might "
-        f"be worth reaching out. We work with companies like {company} to "
-        "support with talent solutions across communications, marketing, "
-        "digital, sales and change.\n\n"
-        "I'll attach our corporate brochure which includes some more "
-        "information. If you're open for a quick conversation, I'd love to "
-        "hear some more about the role and what you're looking for to see "
-        "if there's any way we could add value.\n\n"
-        "Best,\n"
-        "[Your name]"
-    )
+def _outreach_test_recipient() -> str:
+    try:
+        from tool.outreach import test_recipient
+        return test_recipient()
+    except Exception:
+        return ""
 
 
 def draft_outreach_for_predictor(predictor: dict) -> str:
@@ -2304,6 +2277,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
     # the gate's actual verdict.
     jobs = []
     for s in leads:
+        _c = s.get("contact") or {}
         jobs.append({
             "co": s.get("company") or "—",
             "isNew": 1 if s.get("is_new") else 0,
@@ -2314,11 +2288,24 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
             "sourceRaw": s.get("source") or "",
             "geo": s.get("geo") or "",
             "url": s.get("url") or "",
-            # The real, desk-correct outreach draft (draft_outreach_for_lead) —
-            # copied by the outreach icon on the row.
+            # The real, desk-correct outreach draft (personalised model
+            # draft when the nightly pass reached this lead, else the
+            # fixed template) — previewed/sent by the row's ✉ button.
             "outreach": s.get("outreach") or "",
             "rid": s.get("lead_id") or "",
             "status": s.get("status", "active"),
+            # SEND OUTREACH: the resolved hiring contact + the send gate
+            # verdict (single source of truth: tool/outreach.sendable_state,
+            # re-checked server-side on every send).
+            "contactName": _c.get("name") or "",
+            "contactTitle": _c.get("title") or "",
+            "contactSlot": _c.get("slot") or "",
+            "contactEmail": _c.get("email") or "",
+            "emailStatus": _c.get("email_status") or "",
+            "emailSource": _c.get("email_source_url") or "",
+            "confidence": int(round(100 * float(_c.get("confidence") or 0))),
+            "sendOk": 1 if s.get("send_ok") else 0,
+            "blockReason": s.get("send_block_reason") or "",
         })
     return bd, jobs
 
@@ -2632,6 +2619,8 @@ def _render_dashboard(legacy: bool = False):
         mr_jobs=_mr_jobs,
         mr_meta=_mr_meta,
         leads=leads,
+        outreach_test_mode=_outreach_test_mode(),
+        outreach_test_recipient=_outreach_test_recipient(),
         predictors=predictors,
         funding_events=funding_events,
         premarket_rows=premarket_rows,
@@ -2828,6 +2817,51 @@ def api_lead_outcome():
         return jsonify({"ok": False, "detail": "invalid outcome"}), 400
     return jsonify({"ok": True, "id": lid, "outcome": outcome,
                     **lead_outcomes.calibration()})
+
+
+@app.route("/api/outreach/send", methods=["POST"])
+@_auth_required
+def api_outreach_send():
+    """The SEND OUTREACH button. The recipient is re-derived SERVER-side
+    from the lead id (never trusted from the client); only the message
+    text is editable. Every gate in tool/outreach.sendable_state is
+    re-checked here, and test mode reroutes to the test inbox."""
+    from tool import lead_status, outreach
+    data = _safe_json_body()
+    lead_id = (data.get("lead_id") or "").strip()
+    if not lead_id:
+        return jsonify({"ok": False, "detail": "lead_id required"}), 400
+    lead = next((s for s in load_latest_signals()
+                 if s.get("lead_id") == lead_id), None)
+    if lead is None:
+        return jsonify({"ok": False,
+                        "detail": "lead not found (board refreshed?)"}), 404
+    if lead.get("status") == "dismissed":
+        return jsonify({"ok": False, "detail": "lead is dismissed"}), 400
+    result = outreach.send_outreach(lead,
+                                    body=(data.get("body") or ""),
+                                    subject=(data.get("subject") or ""))
+    if result.get("ok"):
+        lead_status.set_status(lead_id, "followed_up")
+        result["status"] = "followed_up"
+        return jsonify(result)
+    return jsonify(result), 400
+
+
+@app.route("/api/outreach/suppress", methods=["POST"])
+@_auth_required
+def api_outreach_suppress():
+    """Add an address (or whole domain) to the do-not-contact list —
+    the opt-out the compliance footer promises. Permanent."""
+    from tool import outreach
+    data = _safe_json_body()
+    value = (data.get("value") or "").strip()
+    if not value:
+        return jsonify({"ok": False, "detail": "value required"}), 400
+    ok = outreach.suppress(value, reason=(data.get("reason") or "manual"))
+    return (jsonify({"ok": True, "value": value.lower()}) if ok
+            else (jsonify({"ok": False,
+                           "detail": "not a valid email/domain"}), 400))
 
 
 @app.route("/api/refresh", methods=["POST"])
@@ -4387,6 +4421,32 @@ TEMPLATE = r"""
       border-color: var(--teal-dark);
     }
     .outreach-text { display: none; }
+
+    /* ----- SEND OUTREACH: contact line, email chips, preview modal ----- */
+    .email-chip.es-verified, .om-chip.es-verified { background: #E6F4EA; color: #137333; }
+    .email-chip.es-published, .om-chip.es-published { background: #E8F0FE; color: #1A56DB; }
+    .email-chip.es-pattern, .om-chip.es-pattern,
+    .email-chip.es-none, .om-chip.es-none { background: #FCE8E6; color: #A50E0E; }
+    .om-wrap { padding: 10px 18px 18px; }
+    .om-banner { background: #FEF7E0; border: 1px solid #F9E29C; color: #7A5D00;
+      border-radius: 8px; padding: 8px 12px; font-size: 12.5px; margin-bottom: 12px; }
+    .om-to { font-size: 13px; line-height: 1.9; margin-bottom: 10px; }
+    .om-lab { display: inline-block; min-width: 86px; color: #5F6368; font-size: 12px; }
+    label.om-lab { display: block; margin: 10px 0 4px; min-width: 0; }
+    .om-dim { color: #5F6368; font-size: 12px; }
+    .om-chip { display: inline-block; border-radius: 10px; padding: 1px 8px;
+      font-size: 11.5px; margin-left: 6px; }
+    .om-blocked { background: #FCE8E6; color: #A50E0E; border-radius: 8px;
+      padding: 8px 12px; font-size: 12.5px; margin-top: 8px; }
+    #om-subject, #om-body { width: 100%; box-sizing: border-box;
+      border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
+      font: inherit; font-size: 13px; }
+    #om-body { resize: vertical; }
+    .om-actions { display: flex; gap: 8px; align-items: center; margin-top: 12px;
+      flex-wrap: wrap; }
+    #om-send:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+    #om-modal.bd-modal { width: min(680px, 94vw); max-height: 88vh;
+      display: flex; flex-direction: column; }
 
     /* Advisory Services lens — the second billable path on the same
        signal (capability review / talent map / benchmarking). Subtle
@@ -5952,7 +6012,15 @@ TEMPLATE = r"""
         {% if leads %}
           <div id="leads-list">
           {% for s in leads %}
-            <div class="item lead" data-lead-id="{{ s.lead_id }}" data-status="{{ s.status }}" data-new="{{ '1' if s.is_new else '0' }}">
+            {% set c = s.contact or {} %}
+            <div class="item lead" data-lead-id="{{ s.lead_id }}" data-status="{{ s.status }}" data-new="{{ '1' if s.is_new else '0' }}"
+                 data-company="{{ s.company or '' }}" data-role="{{ s.title or '' }}"
+                 data-contact-name="{{ c.name or '' }}" data-contact-title="{{ c.title or '' }}"
+                 data-contact-slot="{{ c.slot or '' }}"
+                 data-contact-email="{{ c.email or '' }}" data-email-status="{{ c.email_status or '' }}"
+                 data-email-source="{{ c.email_source_url or '' }}"
+                 data-confidence="{{ '%.0f' % (100 * (c.confidence or 0)) }}"
+                 data-send-ok="{{ '1' if s.send_ok else '0' }}" data-block-reason="{{ s.send_block_reason or '' }}">
               <span class="rank">{{ loop.index }}</span>
               <span class="title">
                 {% if s.url %}<a href="{{ s.url | safe_url }}" target="_blank">{{ s.title }}</a>
@@ -5965,8 +6033,18 @@ TEMPLATE = r"""
                 <span class="badge">{{ s.source }}</span>
                 <span class="badge">{{ s.geo }}</span>
               </div>
+              <div class="meta outreach-contact">
+                {% if c.name %}
+                  <span class="badge">→ {{ c.name }}{% if c.title %} · {{ c.title }}{% endif %}</span>
+                {% else %}
+                  <span class="badge">→ {{ c.title or 'hiring contact' }} — not yet named</span>
+                {% endif %}
+                {% if c.email %}<span class="badge email-chip es-{{ c.email_status or 'none' }}">{{ c.email }} · {{ c.email_status }}</span>{% endif %}
+                <span class="badge">conf {{ '%.0f' % (100 * (c.confidence or 0)) }}%</span>
+              </div>
               <pre class="outreach-text">{{ s.outreach }}</pre>
               <div class="item-actions">
+                <button class="btn-mini outreach-open" type="button">✉ Send outreach…</button>
                 <button class="btn-mini copy-outreach" type="button">✉ Copy outreach</button>
                 {% if s.status == 'active' %}
                   <button class="btn-mini lead-status-action" data-status="followed_up" type="button">✓ Mark followed up</button>
@@ -8260,6 +8338,177 @@ async function loadRecentReports() {
   // Loaders are async fetches fired on DOMContentLoaded; recompute a few
   // times so the badges settle once the panels have rendered.
   [800, 2000, 4000].forEach(function (ms) { setTimeout(refreshCardBadges, ms); });
+})();
+</script>
+
+<!-- SEND OUTREACH — preview-before-send modal. The recipient shown here
+     is display-only: the send endpoint re-derives it server-side from
+     the lead id, so a tampered DOM can't redirect a send. -->
+<div class="bd-modal-backdrop" id="om-backdrop">
+  <div class="bd-modal" id="om-modal" role="dialog" aria-modal="true" aria-label="Send outreach">
+    <div class="mh">
+      <div class="mh-t">Send outreach</div>
+      <button class="mh-x" id="om-close" type="button" aria-label="Close">✕</button>
+    </div>
+    <div class="mb">
+      <div class="om-wrap">
+        {% if outreach_test_mode %}
+        <div class="om-banner">TEST MODE — every send reroutes to <strong>{{ outreach_test_recipient }}</strong> with the would-be recipient stamped on it. Set <code>OUTREACH_TEST_MODE=0</code> on Render to go live.</div>
+        {% endif %}
+        <div class="om-to">
+          <div><span class="om-lab">To</span> <strong id="om-name"></strong> <span id="om-title" class="om-dim"></span></div>
+          <div><span class="om-lab">Email</span> <span id="om-email"></span><span id="om-chip" class="om-chip"></span> <a id="om-src" class="om-dim" target="_blank" rel="noopener" style="display:none">source ↗</a></div>
+          <div><span class="om-lab">Confidence</span> <span id="om-conf"></span>% <span class="om-dim">· <span id="om-role"></span> at <span id="om-co"></span></span></div>
+          <div id="om-blocked" class="om-blocked" style="display:none"></div>
+        </div>
+        <label class="om-lab" for="om-subject">Subject</label>
+        <input id="om-subject" type="text">
+        <label class="om-lab" for="om-body">Message — the identification + opt-out footer is appended automatically</label>
+        <textarea id="om-body" rows="12"></textarea>
+        <div class="om-actions">
+          <button class="btn-mini" id="om-send" type="button">⮞ Send</button>
+          <button class="btn-mini" id="om-copy" type="button">Copy text</button>
+          <button class="btn-mini ghost" id="om-flag" type="button">Flag wrong contact</button>
+          <button class="btn-mini ghost" id="om-suppress" type="button">✕ Don't contact</button>
+          <span id="om-status" class="om-dim"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var back = document.getElementById('om-backdrop');
+  if (!back) return;
+  var cur = null;
+  function q(id) { return document.getElementById(id); }
+  function close() { back.classList.remove('open'); cur = null; }
+  function openModal(item) {
+    cur = item;
+    var d = item.dataset;
+    q('om-name').textContent = d.contactName || '(no named contact yet)';
+    q('om-title').textContent = d.contactTitle ? (' · ' + d.contactTitle) : '';
+    q('om-email').textContent = d.contactEmail || '—';
+    var chip = q('om-chip');
+    chip.textContent = d.emailStatus || 'none';
+    chip.className = 'om-chip es-' + (d.emailStatus || 'none');
+    var src = q('om-src');
+    if (d.emailSource) { src.href = d.emailSource; src.style.display = ''; }
+    else { src.style.display = 'none'; }
+    q('om-conf').textContent = d.confidence || '0';
+    q('om-role').textContent = d.role || 'this role';
+    q('om-co').textContent = d.company || '';
+    var pre = item.querySelector('.outreach-text');
+    q('om-body').value = pre ? pre.textContent.trim() : '';
+    q('om-subject').value = d.role
+      ? ('Your ' + d.role.split(/\s+[–—-]\s+/)[0] + ' search — VMA Group')
+      : 'Your search — VMA Group';
+    var blocked = q('om-blocked'), send = q('om-send');
+    if (d.sendOk === '1' && d.status !== 'dismissed') {
+      blocked.style.display = 'none';
+      send.disabled = false;
+    } else {
+      blocked.style.display = '';
+      blocked.textContent = 'Not sendable yet — '
+        + (d.blockReason || 'review the contact')
+        + '. Use Copy text + LinkedIn instead.';
+      send.disabled = true;
+    }
+    send.textContent = '⮞ Send';
+    q('om-status').textContent = '';
+    back.classList.add('open');
+  }
+  document.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('.outreach-open');
+    if (!btn) return;
+    var item = btn.closest('.item.lead');
+    if (item) openModal(item);
+  });
+  q('om-close').addEventListener('click', close);
+  back.addEventListener('click', function (ev) { if (ev.target === back) close(); });
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && back.classList.contains('open')) close();
+  });
+  q('om-copy').addEventListener('click', async function () {
+    try {
+      await navigator.clipboard.writeText(q('om-body').value);
+      q('om-status').textContent = 'Copied.';
+    } catch (e) { q('om-status').textContent = 'Copy failed — select & copy manually.'; }
+  });
+  q('om-flag').addEventListener('click', async function () {
+    if (!cur) return;
+    var d = cur.dataset;
+    if (!d.contactName || !d.contactSlot) {
+      q('om-status').textContent = 'No named contact to flag.'; return;
+    }
+    try {
+      var r = await fetch('/api/contacts/flag', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company: d.company, slot: d.contactSlot, name: d.contactName }),
+      });
+      var j = await r.json();
+      q('om-status').textContent = j.ok
+        ? 'Flagged — the resolver will skip this person from now on.'
+        : (j.detail || 'Flag failed.');
+      if (j.ok) q('om-send').disabled = true;
+    } catch (e) { q('om-status').textContent = 'Flag failed: ' + e.message; }
+  });
+  q('om-suppress').addEventListener('click', async function () {
+    if (!cur) return;
+    var v = cur.dataset.contactEmail;
+    if (!v) { q('om-status').textContent = 'No email to suppress.'; return; }
+    if (!confirm('Never contact ' + v + ' again? This is the permanent opt-out list.')) return;
+    try {
+      var r = await fetch('/api/outreach/suppress', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: v, reason: 'AD opt-out from dashboard' }),
+      });
+      var j = await r.json();
+      q('om-status').textContent = j.ok
+        ? 'Suppressed — future sends to this address are blocked.'
+        : (j.detail || 'Suppress failed.');
+      if (j.ok) q('om-send').disabled = true;
+    } catch (e) { q('om-status').textContent = 'Suppress failed: ' + e.message; }
+  });
+  q('om-send').addEventListener('click', async function () {
+    if (!cur) return;
+    var btn = this, d = cur.dataset, orig = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      var r = await fetch('/api/outreach/send', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lead_id: d.leadId,
+          subject: q('om-subject').value,
+          body: q('om-body').value,
+        }),
+      });
+      var j = await r.json();
+      if (!j.ok) {
+        q('om-status').textContent = 'Blocked: ' + (j.detail || 'send failed');
+        btn.disabled = false; btn.textContent = orig; return;
+      }
+      q('om-status').textContent = (j.mode === 'test')
+        ? ('Sent (TEST) → ' + j.to) : ('Sent → ' + j.to);
+      btn.textContent = '✓ Sent';
+      // Flip the row to followed-up, mirroring the status buttons.
+      cur.dataset.status = 'followed_up';
+      var actions = cur.querySelector('.item-actions');
+      if (actions) {
+        actions.querySelectorAll('.lead-status-action').forEach(function (b) { b.remove(); });
+        actions.insertAdjacentHTML('beforeend',
+          '<button class="btn-mini lead-status-action" data-status="active" type="button">↺ Restore</button>');
+      }
+      cur.querySelectorAll('.status-badge').forEach(function (b) { b.remove(); });
+      cur.querySelector('.title').insertAdjacentHTML('afterend',
+        '<span class="status-badge followed-up">✓ followed up</span>');
+      if (typeof recountLeads === 'function') recountLeads();
+      setTimeout(close, 1400);
+    } catch (e) {
+      q('om-status').textContent = 'Send failed: ' + e.message;
+      btn.disabled = false; btn.textContent = orig;
+    }
+  });
 })();
 </script>
 

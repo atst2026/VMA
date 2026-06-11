@@ -368,6 +368,49 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .jact svg{width:12px;height:12px}
 .jact.fu:hover,.jact.fu.on{background:#e7f3ec;color:#1e7a41;border-color:#bfe3cd}
 .jact.dis:hover,.jact.dis.on{background:#fdecea;color:var(--red);border-color:#f0c5bd}
+/* SEND OUTREACH row action + contact line + preview modal */
+.jact.send:hover{background:#E8F0FE;color:#1A3D7C;border-color:#bcd0f0}
+.jact.send.off{opacity:.4}
+.jcontact{font:500 10.5px/1.5 "Inter",sans-serif;color:#5a6577;margin-top:1px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jc-em.es-verified{color:#1e7a41}.jc-em.es-published{color:#1d4ed8}
+.jc-em.es-pattern,.jc-em.es-none{color:#b5530e}
+.om-backdrop{display:none;position:fixed;inset:0;background:rgba(20,28,46,.32);
+  backdrop-filter:blur(4px);z-index:90;align-items:center;justify-content:center}
+.om-backdrop.open{display:flex}
+.om-modal{background:#fff;border:1px solid rgba(60,64,67,.14);border-radius:16px;
+  box-shadow:0 18px 50px rgba(16,22,38,.22);width:min(680px,94vw);max-height:88vh;
+  display:flex;flex-direction:column;overflow:hidden}
+.om-h{display:flex;align-items:center;gap:10px;padding:14px 18px;
+  border-bottom:1px solid rgba(60,64,67,.10);font:600 14px/1 "Inter",sans-serif}
+.om-h .t{flex:1}
+.om-x{width:28px;height:28px;border-radius:8px;border:1px solid rgba(60,64,67,.14);
+  background:#fff;cursor:pointer;color:#5a6577;font-size:13px}
+.om-x:hover{background:#F4F7FC;color:#101626}
+.om-wrap{padding:12px 18px 18px;overflow-y:auto;font-family:"Inter",sans-serif}
+.om-banner{background:#FEF7E0;border:1px solid #F9E29C;color:#7A5D00;border-radius:8px;
+  padding:8px 12px;font-size:12.5px;margin-bottom:12px}
+.om-to{font-size:13px;line-height:1.9;margin-bottom:8px}
+.om-lab{display:inline-block;min-width:86px;color:#5a6577;font-size:12px}
+label.om-lab{display:block;margin:10px 0 4px;min-width:0}
+.om-dim{color:#5a6577;font-size:12px}
+.om-chip{display:inline-block;border-radius:10px;padding:1px 8px;font-size:11.5px;margin-left:6px}
+.om-chip.es-verified{background:#E6F4EA;color:#137333}
+.om-chip.es-published{background:#E8F0FE;color:#1A56DB}
+.om-chip.es-pattern,.om-chip.es-none{background:#FCE8E6;color:#A50E0E}
+.om-blocked{background:#FCE8E6;color:#A50E0E;border-radius:8px;padding:8px 12px;
+  font-size:12.5px;margin-top:8px}
+#om-subject,#om-body{width:100%;box-sizing:border-box;border:1px solid rgba(60,64,67,.18);
+  border-radius:8px;padding:8px 10px;font:inherit;font-size:13px}
+#om-body{resize:vertical;min-height:200px}
+.om-actions{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.om-btn{display:inline-flex;align-items:center;gap:6px;font:600 12px/1 "Inter",sans-serif;
+  border-radius:9px;height:32px;padding:0 13px;cursor:pointer;border:1px solid rgba(60,64,67,.16);
+  background:#fff;color:#101626}
+.om-btn:hover{background:#F4F7FC}
+.om-btn.primary{background:#1A3D7C;border-color:#1A3D7C;color:#fff}
+.om-btn.primary:hover{background:#16336a}
+.om-btn.primary:disabled{opacity:.45;cursor:not-allowed}
 .srcpills{justify-self:start;display:flex;flex-wrap:wrap;gap:4px;min-width:0}
 .srcpill{font:600 9.5px 'Inter';color:var(--ink2);padding:3px 10px;border-radius:999px;
   background:rgba(255,255,255,.75);border:1px solid rgba(16,22,38,.1);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1425,13 +1468,21 @@ function closeDossier(){
 }
 function jobRow(l,i){
   const cls=(l.status==='followed_up'?' done-fu':'')+(l.status==='dismissed'?' done-dis':'');
+  const em=l.contactEmail
+    ?' · <span class="jc-em es-'+(l.emailStatus||'none')+'">'+esc(l.contactEmail)+'</span>'
+    :'';
+  const who=l.contactName
+    ?'<div class="jcontact">→ '+esc(l.contactName)+(l.contactTitle?' · '+esc(l.contactTitle):'')+em+'</div>'
+    :'';
   return '<div class="jrow'+cls+'" data-url="'+esc(l.url||'')+'" title="Open posting">'
     +'<span class="rank">'+String(i+1).padStart(2,'0')+'</span>'
-    +'<div><div class="jt">'+esc(l.jt||'')+'</div><div class="jc">'+esc(l.co)+'</div></div>'
+    +'<div><div class="jt">'+esc(l.jt||'')+'</div><div class="jc">'+esc(l.co)+'</div>'+who+'</div>'
     +'<span class="srcpills">'+srcPills(l)+'</span>'
     +'<span class="geo">'+esc((l.geo||'').toUpperCase())+'</span>'
     +'<span class="age2">'+(l.isNew?'NEW':'')+'</span>'
     +'<span class="jacts">'
+    +'<button type="button" class="jact send'+(l.sendOk?'':' off')+'" data-josend="1" data-id="'+l._id+'" title="'+(l.sendOk?'Send outreach':'Send outreach — review needed')+'">'
+    +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg></button>'
     +'<button type="button" class="jact fu'+(l.status==='followed_up'?' on':'')+'" data-jtri="followed_up" data-id="'+l._id+'" title="Followed up">'
     +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></button>'
     +'<button type="button" class="jact dis'+(l.status==='dismissed'?' on':'')+'" data-jtri="dismissed" data-id="'+l._id+'" title="Dismiss">'
@@ -1505,6 +1556,94 @@ function renderBoard(){
     $('list-'+k).innerHTML=arr.length?arr.map((l,i)=>stripHTML(l,i)).join('')
       :'<div class="pempty">Nothing in this stage'+(SECF[k]==='ready'?'':' under this filter')+'.</div>';
   });
+}
+/* ---------- SEND OUTREACH: preview-before-send modal ----------
+   The recipient shown is display-only; /api/outreach/send re-derives
+   the contact server-side from the lead id and re-checks every gate
+   (verified/published email, confidence floor, suppression list,
+   duplicate guard) before anything leaves. Test mode reroutes. */
+let omCur=null;
+function omWire(){
+  const back=$('om-backdrop');
+  if(!back||back.dataset.wired)return;back.dataset.wired='1';
+  const close=()=>{back.classList.remove('open');omCur=null;};
+  window._omClose=close;
+  $('om-close').addEventListener('click',close);
+  back.addEventListener('click',e=>{if(e.target===back)close();});
+  $('om-copy').addEventListener('click',async()=>{
+    try{await navigator.clipboard.writeText($('om-body').value);
+      $('om-status').textContent='Copied.';}
+    catch(e){$('om-status').textContent='Copy failed — select & copy manually.';}});
+  $('om-flag').addEventListener('click',async()=>{
+    if(!omCur||!omCur.contactName||!omCur.contactSlot){
+      $('om-status').textContent='No named contact to flag.';return;}
+    try{const r=await fetch('/api/contacts/flag',{method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({company:omCur.co,slot:omCur.contactSlot,name:omCur.contactName})});
+      const j=await r.json();
+      $('om-status').textContent=j.ok
+        ?'Flagged — the resolver will skip this person from now on.'
+        :((j&&j.detail)||'Flag failed.');
+      if(j.ok)$('om-send').disabled=true;
+    }catch(e){$('om-status').textContent='Flag failed: '+e.message;}});
+  $('om-suppress').addEventListener('click',async()=>{
+    if(!omCur||!omCur.contactEmail){$('om-status').textContent='No email to suppress.';return;}
+    if(!confirm('Never contact '+omCur.contactEmail+' again? This is the permanent opt-out list.'))return;
+    try{const r=await fetch('/api/outreach/suppress',{method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({value:omCur.contactEmail,reason:'AD opt-out from engine'})});
+      const j=await r.json();
+      $('om-status').textContent=j.ok
+        ?'Suppressed — future sends to this address are blocked.'
+        :((j&&j.detail)||'Suppress failed.');
+      if(j.ok){omCur.sendOk=0;omCur.blockReason='contact opted out (suppression list)';
+        $('om-send').disabled=true;}
+    }catch(e){$('om-status').textContent='Suppress failed: '+e.message;}});
+  $('om-send').addEventListener('click',async function(){
+    if(!omCur)return;const btn=this,l=omCur;
+    btn.disabled=true;btn.textContent='Sending…';
+    try{const r=await fetch('/api/outreach/send',{method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({lead_id:l.rid,subject:$('om-subject').value,body:$('om-body').value})});
+      const j=await r.json();
+      if(!j||!j.ok){$('om-status').textContent='Blocked: '+((j&&j.detail)||'send failed');
+        btn.disabled=false;btn.textContent='⮞ Send';return;}
+      $('om-status').textContent=(j.mode==='test'?'Sent (TEST) → ':'Sent → ')+j.to;
+      btn.textContent='✓ Sent';
+      l.status='followed_up';
+      toast('Outreach sent'+(j.mode==='test'?' (test mode)':'')+' — '+l.co+' marked followed up');
+      renderBoard();
+      setTimeout(close,1400);
+    }catch(e){$('om-status').textContent='Send failed: '+e.message;
+      btn.disabled=false;btn.textContent='⮞ Send';}});
+}
+function openOutreach(id){
+  const l=BYID[id];if(!l)return;
+  omWire();const back=$('om-backdrop');if(!back)return;
+  omCur=l;
+  $('om-name').textContent=l.contactName||'(no named contact yet)';
+  $('om-title').textContent=l.contactTitle?(' · '+l.contactTitle):'';
+  $('om-email').textContent=l.contactEmail||'—';
+  const chip=$('om-chip');chip.textContent=l.emailStatus||'none';
+  chip.className='om-chip es-'+(l.emailStatus||'none');
+  const src=$('om-src');
+  if(l.emailSource){src.href=l.emailSource;src.style.display='';}
+  else{src.style.display='none';}
+  $('om-conf').textContent=l.confidence||0;
+  $('om-role').textContent=l.jt||'this role';
+  $('om-co').textContent=l.co||'';
+  $('om-body').value=l.outreach||'';
+  $('om-subject').value=l.jt
+    ?('Your '+l.jt.split(/\s+[–—-]\s+/)[0]+' search — VMA Group')
+    :'Your search — VMA Group';
+  const blocked=$('om-blocked'),send=$('om-send');
+  if(l.sendOk&&l.status!=='dismissed'){blocked.style.display='none';send.disabled=false;}
+  else{blocked.style.display='';
+    blocked.textContent='Not sendable yet — '+(l.blockReason||'review the contact')
+      +'. Use Copy text + the posting link instead.';
+    send.disabled=true;}
+  send.textContent='⮞ Send';$('om-status').textContent='';
+  back.classList.add('open');
 }
 function draftOpener(id){
   const l=BYID[id],box=$('ob-'+id);if(!l||!l.opener||!box)return;
@@ -1710,6 +1849,8 @@ document.addEventListener('click',e=>{
   }
   if(e.target.closest('#backBtn')){closeDossier();return;}
   document.querySelectorAll('.ctrlmenu.open').forEach(x=>x.classList.remove('open'));
+  const jsnd=e.target.closest('[data-josend]');
+  if(jsnd){e.stopPropagation();openOutreach(jsnd.dataset.id);return;}
   const jt=e.target.closest('[data-jtri]');
   if(jt){e.stopPropagation();triage(jt.dataset.id,jt.dataset.jtri);return;}
   const jr=e.target.closest('.jrow');
@@ -1760,6 +1901,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&document.activeElement&&document.activeElement.classList.contains('strip-h'))
     document.activeElement.click();
   if(e.key==='Escape'){closeDossier();
+    if(window._omClose)window._omClose();
     pop.classList.remove('on');
     document.querySelectorAll('.ctrlmenu.open').forEach(x=>x.classList.remove('open'));}
 });
@@ -1767,5 +1909,36 @@ document.addEventListener('keydown',e=>{
 renderEngine();renderBoard();renderCal();
 })();
 </script>
+
+<!-- SEND OUTREACH — preview-before-send. Display-only recipient: the
+     send endpoint re-derives the contact server-side from the lead id. -->
+<div class="om-backdrop" id="om-backdrop">
+  <div class="om-modal" role="dialog" aria-modal="true" aria-label="Send outreach">
+    <div class="om-h"><span class="t">Send outreach</span>
+      <button class="om-x" id="om-close" type="button" aria-label="Close">✕</button></div>
+    <div class="om-wrap">
+      {% if outreach_test_mode %}
+      <div class="om-banner">TEST MODE — every send reroutes to <strong>{{ outreach_test_recipient }}</strong> with the would-be recipient stamped on it. Set <code>OUTREACH_TEST_MODE=0</code> on Render to go live.</div>
+      {% endif %}
+      <div class="om-to">
+        <div><span class="om-lab">To</span> <strong id="om-name"></strong> <span id="om-title" class="om-dim"></span></div>
+        <div><span class="om-lab">Email</span> <span id="om-email"></span><span id="om-chip" class="om-chip"></span> <a id="om-src" class="om-dim" target="_blank" rel="noopener" style="display:none">source ↗</a></div>
+        <div><span class="om-lab">Confidence</span> <span id="om-conf"></span>% <span class="om-dim">· <span id="om-role"></span> at <span id="om-co"></span></span></div>
+        <div id="om-blocked" class="om-blocked" style="display:none"></div>
+      </div>
+      <label class="om-lab" for="om-subject">Subject</label>
+      <input id="om-subject" type="text">
+      <label class="om-lab" for="om-body">Message — the identification + opt-out footer is appended automatically</label>
+      <textarea id="om-body" rows="11"></textarea>
+      <div class="om-actions">
+        <button class="om-btn primary" id="om-send" type="button">⮞ Send</button>
+        <button class="om-btn" id="om-copy" type="button">Copy text</button>
+        <button class="om-btn" id="om-flag" type="button">Flag wrong contact</button>
+        <button class="om-btn" id="om-suppress" type="button">✕ Don't contact</button>
+        <span id="om-status" class="om-dim"></span>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>"""

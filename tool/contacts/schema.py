@@ -53,6 +53,21 @@ MIN_NAMED_CONFIDENCE = 0.70
 COOL_OFF_DAYS = 30
 MAX_ATTEMPTS_BEFORE_COOL_OFF = 3
 
+# Email statuses that the SEND OUTREACH path may actually send to. Same
+# verified-or-fallback philosophy as the named-contact tiers: a pattern
+# guess ("first.last@") that no verifier vouched for is a bounce risk
+# that poisons the sending mailbox's reputation, so it is stored (for
+# the human to eyeball) but never one-click sendable.
+#   verified  — a verification API confirmed the mailbox accepts mail
+#   published — the address appears verbatim in a public source we
+#               archived (RNS enquiries block, press page) with a URL
+#   pattern   — inferred from the company's address format; NOT sendable
+EMAIL_SENDABLE_STATUSES = ("verified", "published")
+
+# Re-check an address after this long; beyond it the SEND gate treats
+# the email like a miss (people move; mailboxes die quietly).
+EMAIL_FRESHNESS_DAYS = 120
+
 
 class ResolutionStatus:
     """Outcome enum used by the resolver. Only certain values increment
@@ -85,6 +100,33 @@ class ContactEntry:
     tenure_start: str | None = None   # ISO date if known
     verified_at: str = ""        # ISO timestamp when last verified
     confidence: float = 0.0      # 0-1, set by resolver
+    # --- Work email (the SEND OUTREACH layer) ---
+    email: str = ""
+    email_status: str = ""       # verified | published | pattern | ""
+    email_source: str = ""       # rns_enquiries | hunter | ai_web_research | manual
+    email_source_url: str = ""   # where the address was published, if anywhere
+    email_checked_at: str = ""   # ISO timestamp of last find/verify pass
+
+    def email_is_sendable(self, as_of: datetime | None = None) -> bool:
+        """True if this entry carries an address the one-click send may
+        use: present, in a sendable status, and checked recently enough."""
+        if not self.email or self.email_status not in EMAIL_SENDABLE_STATUSES:
+            return False
+        if not self.email_checked_at:
+            return False
+        try:
+            v = datetime.fromisoformat(self.email_checked_at)
+        except Exception:
+            return False
+        if v.tzinfo is None:
+            v = v.replace(tzinfo=timezone.utc)
+        now = as_of or datetime.now(timezone.utc)
+        if now.tzinfo is None:
+            now = now.replace(tzinfo=timezone.utc)
+        try:
+            return (now - v) < timedelta(days=EMAIL_FRESHNESS_DAYS)
+        except Exception:
+            return False
 
     def is_fresh(self, as_of: datetime | None = None) -> bool:
         if not self.verified_at:

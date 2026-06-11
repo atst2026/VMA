@@ -345,6 +345,9 @@ def resolve_lead_contact(signal: dict, contacts: dict | None = None) -> dict:
     division = ""
     divisional_uncertain = False
     slot = ""
+    email = ""
+    email_status = ""
+    email_source_url = ""
     # For job-like leads, try the divisional roster first when the
     # lead's title/JD names a division of this parent company. This
     # catches "Head of Comms, Global Commercial Organization" at a
@@ -377,6 +380,9 @@ def resolve_lead_contact(signal: dict, contacts: dict | None = None) -> dict:
             stale = bool(nc.get("stale"))
             verified_at = nc.get("verified_at", "") or ""
             slot = nc.get("slot", "")
+            email = nc.get("email", "") or ""
+            email_status = nc.get("email_status", "") or ""
+            email_source_url = nc.get("email_source_url", "") or ""
             # Verified named person: blend role-inference certainty with
             # the roster entry's own confidence, so a named hit always
             # outranks a role-only one. Stale entries are already
@@ -400,6 +406,9 @@ def resolve_lead_contact(signal: dict, contacts: dict | None = None) -> dict:
         "division": division,
         "divisional_uncertain": divisional_uncertain,
         "slot": slot,
+        "email": email,
+        "email_status": email_status,
+        "email_source_url": email_source_url,
     }
 
 
@@ -447,6 +456,17 @@ def best_named_contact(company: str, slots: tuple,
         # stale fallback), so the lead falls through to a role-search.
         if not entry.meets_named_confidence():
             continue
+        # Email fields ride along only while they're themselves current
+        # (sendable) — a dead address presented as sendable is exactly
+        # the bounce-risk the schema's statuses exist to prevent.
+        _email_ok = entry.email_is_sendable() if hasattr(
+            entry, "email_is_sendable") else False
+        _email = {
+            "email": (entry.email if _email_ok else "") or "",
+            "email_status": (entry.email_status if _email_ok else "") or "",
+            "email_source_url": (getattr(entry, "email_source_url", "")
+                                 if _email_ok else "") or "",
+        }
         if entry.is_fresh():
             return {
                 "name": entry.name,
@@ -456,6 +476,7 @@ def best_named_contact(company: str, slots: tuple,
                 "stale": False,
                 "verified_at": getattr(entry, "verified_at", "") or "",
                 "slot": slot,
+                **_email,
             }
         if stale_fallback is None:
             stale_fallback = {
@@ -466,5 +487,6 @@ def best_named_contact(company: str, slots: tuple,
                 "stale": True,
                 "verified_at": getattr(entry, "verified_at", "") or "",
                 "slot": slot,
+                **_email,
             }
     return stale_fallback

@@ -38,7 +38,8 @@ log = logging.getLogger("brief.email")
 
 def send(to: str, subject: str, html: str, text: str | None = None,
          bcc: list[str] | None = None,
-         attachments: list[tuple[str, bytes, str]] | None = None) -> dict:
+         attachments: list[tuple[str, bytes, str]] | None = None,
+         from_name: str | None = None) -> dict:
     """Return {ok: bool, detail: ..., provider: 'resend'|'gmail'|'none'}.
 
     `bcc` is an optional list of additional addresses to silently copy.
@@ -48,11 +49,16 @@ def send(to: str, subject: str, html: str, text: str | None = None,
 
     `attachments` is an optional list of (filename, raw_bytes, mimetype)
     tuples — used to attach the comms pitch-pack PDF. Both providers
-    support it; omit it (the default) for a plain HTML/text email."""
+    support it; omit it (the default) for a plain HTML/text email.
+
+    `from_name` overrides the display name for THIS message only (the
+    outreach sender must not arrive as "Sara's Morning Brief"); omitted,
+    both providers keep their existing identity behaviour."""
     if RESEND_API_KEY:
         return _send_resend(to, subject, html, text, bcc=bcc, attachments=attachments)
     if os.environ.get("GMAIL_APP_PASSWORD") and os.environ.get("GMAIL_USER"):
-        return _send_gmail(to, subject, html, text, bcc=bcc, attachments=attachments)
+        return _send_gmail(to, subject, html, text, bcc=bcc,
+                           attachments=attachments, from_name=from_name)
     return {
         "ok": False,
         "provider": "none",
@@ -104,13 +110,14 @@ def _send_resend(to: str, subject: str, html: str, text: str | None,
 
 def _send_gmail(to: str, subject: str, html: str, text: str | None,
                 bcc: list[str] | None = None,
-                attachments: list[tuple[str, bytes, str]] | None = None) -> dict:
+                attachments: list[tuple[str, bytes, str]] | None = None,
+                from_name: str | None = None) -> dict:
     gmail_user = os.environ["GMAIL_USER"].strip()
     gmail_pw = os.environ["GMAIL_APP_PASSWORD"].replace(" ", "").strip()
     from tool.profiles import active_profile
     _default_name = ("Marketing Brief" if active_profile().key == "marketing"
                      else "Sara's Morning Brief")
-    display_name = os.environ.get("GMAIL_FROM_NAME", _default_name)
+    display_name = from_name or os.environ.get("GMAIL_FROM_NAME", _default_name)
     from_header = f"{display_name} <{gmail_user}>"
 
     # With attachments the message must be multipart/mixed, with the text/html
