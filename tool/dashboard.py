@@ -1916,8 +1916,15 @@ def _mr_lead_fields(row):
     # three same-day Companies House share-allotment filings are one line
     # of evidence three deep, not three rows of visual noise.
     stack, seen = [], {}
+    seen_urls: dict = {}
     for t in (L.get("triggers") or []):
         src = _mr_src(t.get("url"), t.get("source"))
+        url = (t.get("url") or "").strip().rstrip("/").lower()
+        # Same URL = same source row, whatever the label says; same
+        # (label, source) pair = same evidence one deeper.
+        if url and url in seen_urls:
+            seen_urls[url]["n"] += 1
+            continue
         key = ((t.get("label") or "").strip().lower(), src)
         if key in seen:
             seen[key]["n"] += 1
@@ -1926,6 +1933,8 @@ def _mr_lead_fields(row):
              "age": t.get("age_days"), "url": t.get("url") or "",
              "src": src, "n": 1}
         seen[key] = e
+        if url:
+            seen_urls[url] = e
         stack.append(e)
     return {
         "action": L.get("action"), "actionLabel": L.get("action_label"),
@@ -2716,6 +2725,10 @@ def _render_dashboard(legacy: bool = False):
             _y += 1
     ctx.update(
         eng_counts=eng_counts,
+        # Weekly universe-expansion proposals (approve by hand).
+        eng_universe=__import__("tool.universe_expand",
+                                fromlist=["fresh_proposals"]
+                                ).fresh_proposals(),
         # One-line scoring note (date-gated): turns the buyer-repricing
         # deflation into the adoption prompt for the warmth tag.
         eng_scoring_note=(

@@ -674,8 +674,10 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 
     <!-- ============ VIEW: engine + board ============ -->
     <div class="view on" id="v-engine">
-      <div class="pipedate"><span class="sp">✦</span> AGENT PIPELINE · <span id="pipeDate"></span></div>
+      <div class="pipedate"><span class="sp">✦</span> TODAY’S AGENT PIPELINE · <span id="pipeDate"></span></div>
       {% if eng_scoring_note %}<div class="scorenote">{{ eng_scoring_note }}</div>{% endif %}
+      {% if eng_universe %}<div class="scorenote">Universe proposals (weekly model pass — approve by adding to the watchlist):
+        {% for p in eng_universe %} <b>{{ p.company }}</b> — {{ p.case }}{{ ";" if not loop.last }}{% endfor %}</div>{% endif %}
       <div class="tickwrap" id="jobsTick" style="display:none">
         <div class="ticktrack sline" id="jt"></div>
         <div class="ticktrack sline s2" id="jt2"></div>

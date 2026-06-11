@@ -491,6 +491,25 @@ def main() -> int:
         log.info("Budget flush cache warm: %s", _e)
 
     pipeline_result = predictor_pipeline.upsert(ranked_stacks)
+
+    # Scheduled auto-investigation: the top scored predictors without a
+    # fresh overlay get the /investigate playbook unattended (server-side
+    # web research, typed verdict through investigations.write_overlay —
+    # the same door a human run uses). No-op without ANTHROPIC_API_KEY.
+    try:
+        from tool import auto_investigate as _autoinv
+        _autoinv.run()
+    except Exception as e:
+        log.info("auto-investigate: %s", e)
+
+    # Universe expansion (weekly): propose watchlist additions from the
+    # signal stream's off-universe companies. Proposals only — the AD
+    # approves by hand; the model never widens the universe itself.
+    try:
+        from tool import universe_expand as _uexp
+        _uexp.run(signals)
+    except Exception as e:
+        log.info("universe expansion: %s", e)
     new_pids = pipeline_result["new_pids"]
     delta_stacks = [
         (stk, sc) for stk, sc in ranked_stacks
