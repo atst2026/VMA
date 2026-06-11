@@ -36,7 +36,10 @@ ENGINE_TEMPLATE = r"""<!DOCTYPE html>
   --mono:'JetBrains Mono',ui-monospace,monospace;--disp:'Space Grotesk','Inter',sans-serif;
 }
 body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
-  background-color:rgb(250,251,254);-webkit-font-smoothing:antialiased;letter-spacing:-.005em;overflow-x:hidden}
+  background-color:rgb(250,251,254);-webkit-font-smoothing:antialiased;letter-spacing:-.005em;overflow-x:hidden;
+  /* the rail owns the left edge; everything else centres in what remains,
+     so every view (the workshop especially) sits symmetrically */
+  padding-left:68px}
 .amb{position:fixed;z-index:-1;border-radius:50%;filter:blur(80px);pointer-events:none}
 .amb.a1{width:1300px;height:950px;top:38%;left:50%;transform:translate(-50%,-50%);
   background:radial-gradient(closest-side,rgba(125,190,255,.62),rgba(157,210,255,.36) 50%,transparent 78%);
@@ -58,7 +61,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
   box-shadow:0 12px 32px rgba(0,0,0,.32)}
 [data-tip]:hover::before{content:"";position:absolute;top:calc(100% + 3px);left:50%;transform:translateX(-50%);
   border:5px solid transparent;border-bottom-color:rgba(16,22,38,.96);z-index:60}
-.page{max-width:1280px;margin:0 auto;padding:22px 26px 56px 110px}
+.page{max-width:1232px;margin:0 auto;padding:22px 26px 56px}
 @keyframes breathe{0%,100%{transform:scale(1);opacity:.8}50%{transform:scale(1.18);opacity:1}}
 /* ============ the sidebar — flat, full-height, Gemini-style ============ */
 .siderail{position:fixed;left:0;top:0;bottom:0;z-index:50;width:68px;
@@ -146,8 +149,23 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .tchip .plus{position:absolute;top:-8px;right:-3px;font:700 8.5px var(--mono);color:#fff;
   background:var(--clay);border-radius:999px;padding:2px 6px;opacity:0;transform:translateY(3px);transition:.3s}
 .tchip.match .plus{opacity:1;transform:none}
+/* jobs mode: the tab streams the boards being synthesised, source-style */
+#jobsTick{position:relative;padding:12px 0;border-radius:24px}
+#jobsTick .sline{display:block;font:500 10.5px/1.7 var(--mono);color:rgba(16,22,38,.32);
+  white-space:nowrap;animation-duration:70s}
+#jobsTick .sline.s2{animation-duration:95s;animation-direction:reverse}
+.synthpill{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  display:inline-flex;align-items:center;background:#fff;border:1px solid rgba(16,22,38,.08);
+  border-radius:999px;padding:8px 16px;font:600 13px var(--mono);color:var(--ink);
+  box-shadow:0 6px 18px rgba(26,61,124,.16)}
+.dotgrid{display:grid;grid-template-columns:repeat(4,4px);gap:2px;margin-right:9px}
+.dotgrid i{width:4px;height:4px;border-radius:1px;background:rgba(217,119,87,.25);
+  animation:dgfill .85s linear infinite}
+.dotgrid i:nth-child(n+5){animation-delay:.14s}
+.dotgrid i:nth-child(n+9){animation-delay:.28s}
+@keyframes dgfill{0%,18%{background:rgba(217,119,87,.22)}38%,66%{background:var(--clay)}86%,100%{background:rgba(217,119,87,.22)}}
 /* the daily stamp: this end-to-end flow runs fresh every day */
-.pipedate{font:700 9.5px var(--mono);letter-spacing:.18em;color:var(--muted);
+.pipedate{font:700 12px var(--mono);letter-spacing:.18em;color:var(--muted);
   padding:14px 2px 18px}
 .pipedate .sp{color:var(--clay)}
 .pipedate #pipeDate{color:var(--ink2)}
@@ -427,6 +445,19 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .cpill .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cpill .d{margin-left:auto;font:700 8px var(--mono);color:var(--dim);flex:none}
 .cpill.openg i{box-shadow:0 0 7px rgba(18,165,148,.8);animation:breathe 3s ease-in-out infinite}
+/* window bars: they start and end exactly where the window does */
+.wtrack{position:relative;grid-column:2/-1;border-left:1px solid rgba(16,22,38,.04)}
+.wtrack .mline{position:absolute;top:0;bottom:0;width:1px;background:rgba(16,22,38,.04);pointer-events:none}
+.wspan{position:absolute;height:24px;display:flex;align-items:center;gap:7px;
+  padding:0 10px;border-radius:999px;font:600 10px 'Inter';color:var(--ink2);
+  background:rgba(255,255,255,.5);border:1px solid rgba(16,22,38,.08);
+  box-shadow:0 1px 4px rgba(26,61,124,.06);cursor:pointer;transition:background .15s,box-shadow .15s;min-width:0;overflow:hidden}
+.wspan:hover{box-shadow:0 6px 14px rgba(26,61,124,.13)}
+.wspan.sel{background:#fff;border-color:rgba(66,133,244,.4)}
+.wspan i{width:6px;height:6px;border-radius:50%;background:#12A594;flex:none}
+.wspan.openg i{box-shadow:0 0 7px rgba(18,165,148,.8);animation:breathe 3s ease-in-out infinite}
+.wspan .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wspan .d{margin-left:auto;font:700 8px var(--mono);color:var(--dim);flex:none}
 .legend{display:flex;gap:18px;margin-top:14px;font:600 9.5px 'Inter';color:var(--muted)}
 .legend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:0}
 .cal-pop{position:absolute;z-index:30;width:300px;padding:15px 17px;display:none;border-radius:20px;
@@ -549,7 +580,11 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
     <!-- ============ VIEW: engine + board ============ -->
     <div class="view on" id="v-engine">
       <div class="pipedate"><span class="sp">✦</span> AGENT PIPELINE · <span id="pipeDate"></span></div>
-      <div class="tickwrap" id="jobsTick" style="display:none"><div class="ticktrack" id="jt"></div></div>
+      <div class="tickwrap" id="jobsTick" style="display:none">
+        <div class="ticktrack sline" id="jt"></div>
+        <div class="ticktrack sline s2" id="jt2"></div>
+        <span class="synthpill"><span class="dotgrid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>Synthesising..</span>
+      </div>
       <div class="stages" id="stagesEl">
         <div class="rail"><span class="fdot"></span><span class="fdot d2"></span><span class="fdot d3"></span></div>
         <div class="stg s1">
@@ -707,7 +742,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
     </div>
 
   </section>
-  <div class="foot">
+  <div class="foot" id="devFoot">
     <span class="dev-zone">
       <span class="dev-zone-label">For dev only - not a user feature:</span>
       <button type="button" onclick="refreshBrief()" id="refresh-btn" class="dev-btn"
@@ -907,6 +942,8 @@ function setView(v){
   $('vbEngine').classList.toggle('on',view==='engine');
   $('vbCal').classList.toggle('on',view==='cal');
   $('vbShop').classList.toggle('on',view==='shop');
+  /* the dev-only footer belongs to the leads pages only */
+  $('devFoot').style.display=(view==='engine')?'':'none';
 }
 $('vbEngine').addEventListener('click',()=>setView('engine'));
 $('vbCal').addEventListener('click',()=>setView('cal'));
@@ -931,21 +968,6 @@ const STAGES={
          'Pull the listings relevant to VMA sectors',
          'Fits the back-end criteria to fit VMA business requirements.',
          'Organise and produce in sorted order - ready for outreach.']}};
-/* the job boards the scrape actually pulls — aggregators unpacked into the
-   boards behind them; the aggregator's own name never shows as a pill */
-function boardPillNames(){
-  const out=[];
-  const add=s=>{s=(s||'').trim();
-    if(s&&!/aggregator|public|network|other|adzuna/i.test(s)&&out.indexOf(s)<0)out.push(s);};
-  (window.MR_JOBS||[]).forEach(j=>{
-    const raw=j.sourceRaw||j.source||'';
-    const m=raw.match(/^([^(]+)\(([^)]+)\)/);
-    if(m){m[2].split(/[+,/&]/).forEach(add);add(m[1]);}
-    else add(raw);
-  });
-  (window.JBOARDS||[]).forEach(add);
-  return out.length?out:(window.JBOARDS||[]).filter(b=>!/adzuna/i.test(b));
-}
 function renderEngine(){
   const E=window.ENG||{};
   const isJobs=mode==='jobs';
@@ -965,8 +987,18 @@ function renderEngine(){
      wide ticker above the sequence instead, drifting leftwards */
   $('jobsTick').style.display=isJobs?'':'none';
   if(isJobs){
-    const chips=boardPillNames().map(t=>'<span class="tchip"><i></i>'+esc(t)+'</span>').join('');
-    $('jt').innerHTML=chips+chips;
+    /* the tab streams source-style text built from the boards we search */
+    const URLS=['linkedin.com/jobs','uk.indeed.com','reed.co.uk','totaljobs.com',
+      'cwjobs.co.uk','jobs.theguardian.com','charityjob.co.uk',
+      'civilservicejobs.service.gov.uk','s1jobs.com','glassdoor.co.uk',
+      'monster.co.uk','jobsite.co.uk','escapethecity.org','otta.com',
+      'welcometothejungle.com','workinstartups.com','jobs.prweek.com',
+      'jobs.campaignlive.co.uk','jobs.marketingweek.com','exec-appointments.ft.com'];
+    const frag=u=>'<td class="board"><a href="https://'+u+'/search?q=senior+communications">'+u+'</a></td> | ';
+    const mid=Math.ceil(URLS.length/2);
+    const l1=URLS.slice(0,mid).map(frag).join(''),l2=URLS.slice(mid).map(frag).join('');
+    $('jt').innerHTML=esc(l1+l1+l1);
+    $('jt2').innerHTML=esc(l2+l2+l2);
   }else{
     const items=window.TRIG||[];
     const half=Math.ceil(items.length/2);
@@ -1354,12 +1386,12 @@ function calItems(){
     const open=(w.days_left!=null&&w.days_left>=0)||w.status==='open'||w.open
       ||(a&&b&&new Date(a)<=new Date()&&new Date()<=new Date(b));
     let m=monthIdx(a);if(m<0)m=open?0:monthIdx(b);if(m<0)m=0;
-    /* full pulse content for the popover: the angle is the why, the seat is
-       the play, the scope note bounds the cohort */
     const why=[w.angle||w.why_now||w.why||w.evidence||'',
                w.seat?('The seat: '+w.seat):'',
                w.scope_note||''].filter(Boolean).join(' — ');
-    return {kind:'wi',key:'wi'+i,n:w.name||w.title||'',m:m,
+    /* the popover carries the window's actual opening and closing dates */
+    const dates=(a?('Opens '+fmtD(a)):'Already open')+(b?(' · Closes '+fmtD(b)):'');
+    return {kind:'wi',key:'wi'+i,n:w.name||w.title||'',m:m,a:a,b:b,dates:dates,
       d:b?('→ '+fmtD(b)):(w.days_left!=null?w.days_left+'D LEFT':'OPEN'),
       loc:'',why:why,url:w.source_url||w.url||'',open:open?1:0};});
   const fw=(window.CAL_FW||[]).map((f,i)=>{
@@ -1386,9 +1418,33 @@ function renderCal(){
     return '<div class="cg-row"><div class="cg-lab"><span class="t" style="color:'+colour+'">'+label+'</span>'
       +'<span class="c">'+count+'</span></div>'+cells+'</div>';
   }
+  /* the windows row: bars that start and end exactly where the window does */
+  function winRow(items){
+    const start=new Date(M[0].y,M[0].m,1).getTime();
+    const end=new Date(M[6].y,M[6].m+1,0).getTime();
+    const pct=ds=>{const d=new Date(ds).getTime();
+      return Math.max(0,Math.min(100,(d-start)/(end-start)*100));};
+    const lanes=[];
+    const bars=items.slice().sort((x,y)=>pct(x.a||0)-pct(y.a||0)).map(x=>{
+      let l=x.a?pct(x.a):0;if(!isFinite(l))l=0;
+      const pe=x.b?pct(x.b):NaN;
+      const r=isFinite(pe)?Math.max(l+7,pe):Math.min(100,l+12);
+      let lane=0;
+      while(lane<lanes.length&&l<lanes[lane]+1.5)lane++;
+      lanes[lane]=r;
+      return '<span class="wspan'+(x.open?' openg':'')+'" data-cal="'+x.key+'" '
+        +'style="left:'+l.toFixed(2)+'%;width:'+(r-l).toFixed(2)+'%;top:'+(9+lane*30)+'px">'
+        +'<i></i><span class="n">'+esc(x.n)+'</span><span class="d">'+esc(x.d)+'</span></span>';
+    }).join('');
+    const h=Math.max(1,lanes.length)*30+16;
+    let lines='';for(let i=1;i<7;i++)lines+='<span class="mline" style="left:'+(i*100/7).toFixed(3)+'%"></span>';
+    return '<div class="cg-row"><div class="cg-lab"><span class="t" style="color:#0e7c74">WINDOWS</span>'
+      +'<span class="c">'+items.filter(x=>x.open).length+' open</span></div>'
+      +'<div class="wtrack" style="min-height:'+h+'px">'+lines+bars+'</div></div>';
+  }
   $('cgRows').innerHTML=
     rowHTML('EVENTS','#1d4ed8',it.ev.length+' dated',it.ev)
-    +rowHTML('WINDOWS','#0e7c74',it.wi.filter(x=>x.open).length+' open',it.wi)
+    +winRow(it.wi)
     +rowHTML('FRAMEWORKS','#6b3fb5',it.fw.length+' tracked',it.fw);
   window._calLookup={};
   [].concat(it.ev,it.wi,it.fw).forEach(x=>{window._calLookup[x.key]=x;});
@@ -1448,16 +1504,16 @@ document.addEventListener('click',e=>{
        only one with a solid-white background */
     if(pop.classList.contains('on')&&pop.dataset.key===cal.dataset.cal){
       pop.classList.remove('on');pop.dataset.key='';
-      document.querySelectorAll('.cpill.sel').forEach(x=>x.classList.remove('sel'));
+      document.querySelectorAll('.cpill.sel,.wspan.sel').forEach(x=>x.classList.remove('sel'));
       e.stopPropagation();return;}
     pop.dataset.key=cal.dataset.cal;
-    document.querySelectorAll('.cpill.sel').forEach(x=>x.classList.remove('sel'));
+    document.querySelectorAll('.cpill.sel,.wspan.sel').forEach(x=>x.classList.remove('sel'));
     cal.classList.add('sel');
     const it=(window._calLookup||{})[cal.dataset.cal];if(!it)return;
     const kindLbl={ev:'EVENT',wi:'PLACEMENT WINDOW',fw:'FRAMEWORK'}[it.kind];
     const kc={ev:'#1d4ed8',wi:'#0e7c74',fw:'#6b3fb5'}[it.kind];
     pop.innerHTML='<div class="pk" style="color:'+kc+'">'+kindLbl+'</div>'
-      +'<div class="pn">'+esc(it.n)+'</div><div class="pd">'+esc(it.d)+(it.loc?' · '+esc(it.loc):'')+'</div>'
+      +'<div class="pn">'+esc(it.n)+'</div><div class="pd">'+esc(it.dates||it.d)+(it.loc?' · '+esc(it.loc):'')+'</div>'
       +(it.why?'<div class="pwl">WHY IT MATTERS</div><div class="pw">'+esc(it.why)+'</div>':'')
       +(it.url?'<a class="psrc" href="'+esc(it.url)+'" target="_blank" rel="noopener">View source '
       +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg></a>':'');
@@ -1467,7 +1523,7 @@ document.addEventListener('click',e=>{
     pop.classList.add('on');e.stopPropagation();return;
   }
   if(!e.target.closest('.cal-pop')){pop.classList.remove('on');pop.dataset.key='';
-    document.querySelectorAll('.cpill.sel').forEach(x=>x.classList.remove('sel'));}
+    document.querySelectorAll('.cpill.sel,.wspan.sel').forEach(x=>x.classList.remove('sel'));}
   const act=e.target.closest('[data-act]');
   if(act&&act.dataset.id){
     const id=act.dataset.id,a=act.dataset.act;
