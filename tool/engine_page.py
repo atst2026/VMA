@@ -363,6 +363,10 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .jrow .lnk svg{width:14px;height:14px}
 .jrow.done-dis .jt,.jrow.done-dis .jc{opacity:.45;text-decoration:line-through}
 .jrow.done-fu .jt{color:#1e7a41}
+/* Live Jobs is its OWN scroll region: the board scrolls inside the
+   section instead of stretching the page to the length of the list. */
+#strips{max-height:66vh;overflow-y:auto;overscroll-behavior:contain;
+  padding-right:4px;scrollbar-width:thin}
 .jacts{display:inline-flex;gap:6px;justify-self:end}
 .jact{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;
   color:var(--ink2);cursor:pointer;border:1px solid rgba(60,64,67,.16);background:#fff;transition:.15s}
@@ -404,6 +408,11 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
 #om-subject,#om-body{width:100%;box-sizing:border-box;border:1px solid rgba(60,64,67,.18);
   border-radius:8px;padding:8px 10px;font:inherit;font-size:13px}
 #om-body{resize:vertical;min-height:200px}
+.om-attach{display:flex;align-items:center;gap:7px;margin-top:10px;padding:8px 12px;
+  background:#F4F7FC;border:1px solid rgba(60,64,67,.12);border-radius:9px;
+  font-size:12.5px;color:#101626}
+.om-attach svg{width:14px;height:14px;color:#1A3D7C;flex-shrink:0}
+.om-attach b{font-weight:650}
 .om-actions{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
 .om-btn{display:inline-flex;align-items:center;gap:6px;font:600 12px/1 "Inter",sans-serif;
   border-radius:9px;height:32px;padding:0 13px;cursor:pointer;border:1px solid rgba(60,64,67,.16);
@@ -1956,6 +1965,12 @@ renderEngine();renderBoard();renderCal();
       <input id="om-subject" type="text">
       <label class="om-lab" for="om-body">Message — the identification + opt-out footer is appended automatically</label>
       <textarea id="om-body" rows="11"></textarea>
+      {% if outreach_brochure %}
+      <div class="om-attach">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        <b>{{ outreach_brochure.name }}</b><span class="om-dim"> · {{ outreach_brochure.mb }} MB — attached to every send</span>
+      </div>
+      {% endif %}
       <div class="om-actions">
         <button class="om-btn primary" id="om-send" type="button">⮞ Send</button>
         <button class="om-btn" id="om-copy" type="button">Copy text</button>
