@@ -313,6 +313,21 @@ def upsert(ranked_stacks: list[tuple[Stack, float]]) -> dict:
     except Exception as e:
         log.exception("pipeline: failed to refresh seeded contacts: %s", e)
 
+    # Incumbency check on every active entry: is someone already sitting
+    # in the predicted seat's TITLE FAMILY at this company? Cached (45d)
+    # and a no-op without Bright Data, so cost is one request per
+    # (company, seat family) per window. The verdict reframes the card —
+    # "pitch the build under the incumbent" vs "seat looks open" —
+    # instead of asserting a vacancy nobody checked.
+    try:
+        from tool import incumbency
+        for entry in predictors.values():
+            if entry.get("status") == "dismissed":
+                continue
+            incumbency.annotate_entry(entry)
+    except Exception as e:
+        log.exception("pipeline: incumbency refresh failed: %s", e)
+
     save_pipeline(pipeline)
 
     total_active = sum(1 for p in predictors.values() if p.get("status") == "active")

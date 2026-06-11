@@ -348,6 +348,7 @@ def main() -> int:
         from tool.sources.jobs import get_ats_headcounts as _ats_counts
         _propmod.ingest_ats_counts(_ats_counts())
         _propmod.scan_signals_for_agency_awards(signals)
+        _propmod.scan_job_signals_for_agency_posted_ads(signals)
     except Exception as e:
         log.info("propensity store: %s", e)
 
