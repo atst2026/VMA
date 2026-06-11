@@ -352,6 +352,15 @@ def main() -> int:
     except Exception as e:
         log.info("propensity store: %s", e)
 
+    # RNS enquiries-block capture (warm-up for the contact-diff signal):
+    # archive raw blocks per issuer from day one so the differ has
+    # history the moment it lands.
+    try:
+        from tool import rns_contacts as _rnsc
+        _rnsc.capture_from_signals(signals)
+    except Exception as e:
+        log.info("rns contact capture: %s", e)
+
     # CH officer-change scan + contacts auto-update already ran earlier
     # (pre-enrichment) so signals are enriched with fresh data. The
     # ch_events list from that earlier call is reused here as part of

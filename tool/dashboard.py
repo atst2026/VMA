@@ -1786,6 +1786,34 @@ def _mr_src(url: str | None, source: str | None = None) -> str:
     return s if s and s.lower() != "google news" else (s or d)
 
 
+def _mr_pred_buyer(row: dict, seat: str | None) -> tuple[str, str]:
+    """Role-dependent buyer routing (the AD-room map): the comms-leader
+    seat at a listed company is bought at C-suite, not HR; structure and
+    process is the CHRO's purchase; a build under a sitting leader is
+    bought by that leader. Returns (who, why)."""
+    if (row.get("incumbent_status") == "found"
+            and (row.get("incumbent_name") or "").strip()):
+        return (row["incumbent_name"],
+                "a build under a sitting leader is bought by that leader")
+    s = (row.get("predicted_role") or seat or "").lower()
+    listed = any(isinstance(e, dict) and e.get("tier") == "listed"
+                 for e in (row.get("events") or []))
+    if "internal communications" in s or "employee" in s:
+        return ("CHRO / Chief People Officer",
+                "structure-and-process hires are bought by the People function")
+    if any(k in s for k in ("corporate affairs", "communications", "comms",
+                            "investor relations", "ir ", "brand",
+                            "marketing")):
+        if listed:
+            return ("CEO / CFO",
+                    "a senior comms/IR seat at a listed company is bought "
+                    "at C-suite, not HR")
+        return ("CEO", "the function leader's seat is the chief "
+                       "executive's purchase")
+    return ("CHRO / Chief People Officer",
+            "default buying seat where the function is unclear")
+
+
 def _mr_compact_window(text: str | None) -> str:
     """Pull just the duration out of a window string so it fits the compact
     grid badge. Funding rows carry 'Senior-comms window ~6 mo' — we want the
@@ -1930,6 +1958,14 @@ def _mr_gate_fields(row):
         prop, prop_why = ("Proven agency user" + (f" ({_scl})" if _scl else ""),
                           row.get("_propensity_note")
                           or "history of agency use on file")
+        # Coherence: when proven-ness comes from a rival mandate, the
+        # evidence sentence must say so — never the generic line while
+        # the gate reason talks about a competitor's search.
+        if lead.get("conflict"):
+            prop, prop_why = "Proven agency user (live rival mandate)", (
+                "a rival search firm currently holds their mandate — "
+                "they are paying a recruitment fee for this kind of "
+                "seat right now")
     elif prop_pts == _g.PROP_INTERNAL:
         prop, prop_why = "In-house route", (
             row.get("_propensity_note")
@@ -1966,6 +2002,8 @@ def _mr_gate_fields(row):
                     else "perm"),
         # Logged calibration outcome (the AD-room feedback loop).
         "outcome": row.get("outcome") or "",
+        # Tagged warm route (drives the BUYER 2/2 + 15-point rescore).
+        "warm": 1 if row.get("warm_route") else 0,
         # Qualification scorecard + per-fact verification tag.
         "qual": g.get("qual") or {},
         "ver": ("reg" if (ev.get("primary") or 0) >= 1
@@ -2189,6 +2227,8 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                 "age": _mr_row_age(row.get("first_seen")),
                 "type": typ, "key": key,
                 "seat": seat_disp, "why": why,
+                "predBuyer": _mr_pred_buyer(row, seat)[0],
+                "predBuyerWhy": _mr_pred_buyer(row, seat)[1],
                 "incumbent": row.get("incumbent_name") or "",
                 "incumbentTitle": row.get("incumbent_title") or "",
                 "incumbentUrl": row.get("incumbent_url") or "",
@@ -2429,6 +2469,13 @@ def _render_dashboard(legacy: bool = False):
         try:
             from tool import propensity as _prop
             _prop.annotate(_r)
+        except Exception:
+            pass
+        # Warm-route tags (AD one-click / CRM import) — the relationship
+        # layer that earns BUYER 2/2 and the full 15 strength points.
+        try:
+            from tool import warmth as _warmth
+            _warmth.annotate(_r)
         except Exception:
             pass
         _r["lead"] = lead_engine.score_lead(_r, _kind, _desk)
@@ -2748,6 +2795,24 @@ def api_lead_outcome():
         return jsonify({"ok": False, "detail": "invalid outcome"}), 400
     return jsonify({"ok": True, "id": lid, "outcome": outcome,
                     **lead_outcomes.calibration()})
+
+
+@app.route("/api/warmth", methods=["POST"])
+@_auth_required
+def api_warmth():
+    """Tag (or untag) a company's warm route — the AD one-click that
+    rescores BUYER. `source` defaults to manual; a CRM bulk import posts
+    source=imported and needs no schema change."""
+    from tool import warmth
+    data = _safe_json_body()
+    co = (data.get("company") or "").strip()
+    if not co:
+        return jsonify({"ok": False, "detail": "company required"}), 400
+    ok = warmth.set_warm(co, bool(data.get("warm", True)),
+                         rel_type=(data.get("type") or ""),
+                         note=(data.get("note") or ""),
+                         source=(data.get("source") or "manual"))
+    return jsonify({"ok": ok, "company": co})
 
 
 @app.route("/api/refresh", methods=["POST"])

@@ -23,13 +23,18 @@ def test_score_bounds_and_strong_lead_reads_high():
     s = gate.strength_score(_lead(fit=10, signal=10, n_pro=3),
                             _g(families=3, primary=1))
     assert s == 78
-    # Proven fee-payer (+15) with a named contact (+7 over the route)
-    # maxes the scale.
+    # Proven fee-payer (+15) with a WARM route (+7 over the cold routes)
+    # maxes the scale; a named-but-cold contact alone does not.
     full = gate.strength_score(_lead(fit=10, signal=10, n_pro=3),
                                _g(families=3, primary=1),
                                {"psl_status": "on",
-                                "seeded_contact_name": "Jane Doe"})
+                                "warm_route": {"warm": True}})
     assert full == 100
+    named = gate.strength_score(_lead(fit=10, signal=10, n_pro=3),
+                                _g(families=3, primary=1),
+                                {"psl_status": "on",
+                                 "seeded_contact_name": "Jane Doe"})
+    assert named == 93
     # Degenerate input never raises and lands at the floor of the scale
     # (neutral propensity + open-window timing only).
     assert gate.strength_score(None, None) == gate.strength_score({}, {}) <= 25
@@ -65,11 +70,15 @@ def test_source_volume_no_longer_scores_but_contradictions_do():
     assert full - contradicted == 8
 
 
-def test_named_or_warm_buyer_outranks_a_mapped_route():
-    base = gate.strength_score(_lead(), _g())
+def test_warm_route_outranks_every_cold_route():
+    # AD-room rescore: named-cold and mapped-seat are the same 8 (the gap
+    # between them is minutes of research); warm is the different animal.
+    base = gate.strength_score(_lead(), _g())                 # mapped seat
     named = gate.strength_score(_lead(), _g(), {"seeded_contact_name": "J"})
     warm = gate.strength_score(dict(_lead(), relationship="warm"), _g())
-    assert named - base == 7 and warm == named
+    tagged = gate.strength_score(_lead(), _g(), {"warm_route": {"warm": True}})
+    assert named == base
+    assert warm - named == 7 and tagged == warm
 
 
 def test_premature_scores_below_in_window():

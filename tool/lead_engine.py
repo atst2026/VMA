@@ -832,6 +832,15 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
         if conflict:
             anti_flags = anti_flags + ["competing_recruiter"]
             cap = True   # never routes above Monitor
+        # The freeze dampener (0.7) blocks the PERM line only: with live
+        # demand in the stack (open ads / an RFP / interim cover) the work
+        # demonstrably exists and the day-rate interim play runs at full
+        # strength — dampening it would unblock freezes into invisibility.
+        if "hiring_freeze" in anti_flags and any(
+                (e.get("trigger_key") or "") in
+                ("job_ad_cluster", "ic_platform_rfp", "interim_watch")
+                for e in events):
+            anti_mult = min(round(anti_mult / 0.7, 4), 1.0)
         signal = round(signal * anti_mult, 2)
         # Corroboration gate: 2+ independent sources OR one Tier-1 verified
         # signal. A lone single-source scrape can't reach Call today.
@@ -921,10 +930,14 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
         if dim_posture and not demand_now:
             pro_human.append("no in-house recruiter in sight")
 
-        # Warm/cold = do we hold a contact for this account (the proxy we can
-        # compute). contact_on_file is set by the caller from the contacts store.
-        warm = bool(name or item.get("contact_on_file"))
-        access_key, access_text = _access(triggers, warm, name)
+        # Warm/cold = a TAGGED warm route (AD one-click or CRM import) —
+        # the relationship layer scraping can't see. A contact merely on
+        # file is a named-but-cold route: once you know the seat, finding
+        # the name takes minutes; warmth is what changes conversion.
+        warm = bool(item.get("warm_route"))
+        access_key, access_text = _access(triggers,
+                                          warm or bool(name or item.get("contact_on_file")),
+                                          name)
         relationship = "warm" if warm else "cold"
 
         seat = (item.get("predicted_role") or "").strip() or None

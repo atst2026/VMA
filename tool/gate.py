@@ -128,20 +128,28 @@ def qualification(lead: dict, item: dict, ev: dict, wstate: str) -> dict:
     else:
         urgency, urgency_why = 1, "inside the predicted window"
 
-    # (d) Reachable buyer WITH a personal reason to engage (Savage: the
-    # research that moves a cold call to a warm one). Named contact or a
-    # warm relationship scores 2; a mapped buying seat plus a concrete
-    # access angle scores 1; nothing scores 0.
+    # (d) Reachable buyer. The AD-room rescore: a WARM route — direct or
+    # one credible hop, including past placements into the team — beats
+    # everything, because referral routes convert at a different order of
+    # magnitude from cold outreach. A scraped name is barely better than
+    # a mapped seat (once you know which seat buys, finding the name
+    # takes minutes), so named-cold and mapped-seat both score 1.
+    warm = bool(item.get("warm_route")) or lead.get("relationship") == "warm"
     named = bool(item.get("seeded_contact_name")
-                 or item.get("linkedin_profile_name"))
-    warm = (lead.get("relationship") == "warm") or bool(item.get("contact_on_file"))
+                 or item.get("linkedin_profile_name")
+                 or item.get("contact_on_file"))
     angle = bool((lead.get("access_text") or "").strip())
-    if named or warm:
+    if warm:
+        wr = item.get("warm_route") or {}
         buyer = 2
-        buyer_why = ("a named decision-maker is on file"
-                     if named else "an existing relationship to open with")
-        if angle:
+        buyer_why = "a warm route to the buyer — direct or one credible hop"
+        if wr.get("note"):
+            buyer_why += f" ({wr['note'][:80]})"
+        elif angle:
             buyer_why += " + a concrete access angle"
+    elif named:
+        buyer, buyer_why = 1, ("a named decision-maker on file, but cold"
+                               + (" — with an access angle" if angle else ""))
     elif (lead.get("who_to_call") or "").strip():
         buyer, buyer_why = 1, ("the buying seat is mapped"
                                + (" with an access angle" if angle
@@ -360,6 +368,14 @@ def propensity_points(lead: dict, item: dict | None = None) -> tuple[int, str]:
     the item (propensity store / AD seeds, via tool.propensity.annotate)
     outrank the engine's inferred posture direction."""
     item = item or {}
+    # A rival search firm holding their mandate is the strongest
+    # propensity evidence the system can see: they are paying a fee for
+    # exactly this kind of seat RIGHT NOW — it outranks even an in-house
+    # TA observation (the senior search went external despite the TA
+    # team). The card must never say "Unknown" while the gate reason
+    # says "proven fee-payer".
+    if (lead or {}).get("conflict"):
+        return PROP_PROVEN, "authoritative"
     if item.get("internal_ta") is True:
         return PROP_INTERNAL, "authoritative"
     if item.get("psl_status") in ("on", "yes", True):
@@ -384,15 +400,17 @@ def strength_score(lead: dict, g: dict, item: dict | None = None) -> int:
         score += min(max(float(lead.get("signal") or 0), 0), 10) * 3.0
         # Fee-propensity (0-25): the will-they-pay axis.
         score += propensity_points(lead, item)[0]
-        # Reachable buyer (0-15): a named, resolved decision-maker beats
-        # a mapped buying seat beats nothing. (Source-counting no longer
-        # scores — verification is a gate concern, shown on the card.)
-        if ((item or {}).get("seeded_contact_name")
-                or (item or {}).get("linkedin_profile_name")
-                or lead.get("relationship") == "warm"
-                or (item or {}).get("contact_on_file")):
+        # Reachable buyer (0-15), mirroring the qualification rescore:
+        # warm route 15 — named-but-cold and mapped-seat both 8 (the gap
+        # between them is minutes of research; the gap to warm is a
+        # different conversion rate) — nothing 0.
+        if ((item or {}).get("warm_route")
+                or lead.get("relationship") == "warm"):
             score += 15
-        elif (lead.get("who_to_call") or "").strip():
+        elif ((item or {}).get("seeded_contact_name")
+                or (item or {}).get("linkedin_profile_name")
+                or (item or {}).get("contact_on_file")
+                or (lead.get("who_to_call") or "").strip()):
             score += 8
         # Timing (0-10): in-window beats premature beats lapsed.
         reasons = " ".join(g.get("reasons") or [])
