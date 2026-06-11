@@ -1,0 +1,28 @@
+# Failsafe deploys: Render's own GitHub webhook silently stopped firing
+# (last auto-deploy lagged main by 6+ merges). This workflow makes GitHub
+# the trigger instead: every push to main POSTs the service's Deploy Hook,
+# so the site tracks main regardless of webhook health. Render queues and
+# deduplicates hook calls, so rapid merges are safe.
+#
+# Setup (one-off): Render dashboard -> vma-dashboard -> Settings ->
+# Deploy Hook -> copy the URL -> GitHub repo Settings -> Secrets ->
+# Actions -> new secret named RENDER_DEPLOY_HOOK with that URL.
+name: Deploy dashboard to Render
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy hook
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::warning::RENDER_DEPLOY_HOOK secret not set - add it (Render service Settings -> Deploy Hook) to enable auto-deploys from CI."
+            exit 0
+          fi
+          curl -fsS -X POST "$HOOK" >/dev/null && echo "Render deploy triggered for $GITHUB_SHA"
