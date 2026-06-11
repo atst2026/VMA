@@ -128,6 +128,14 @@ def test_build_seat_rewrites_to_the_build_under_the_incumbent():
         "Senior marketing hires under A. Buyer"
 
 
+def test_broad_seat_frames_the_function_not_a_chair():
+    assert INC.broad_seat("Corporate Affairs Director") == \
+        "Senior corporate affairs hire"
+    assert INC.broad_seat("Head of Investor Relations") == "Senior IR hire"
+    assert INC.broad_seat("Chief Marketing Officer") == "Senior marketing hire"
+    assert INC.broad_seat("") == "Senior comms hire"
+
+
 def test_annotate_entry_projects_fields(tmp_path, monkeypatch):
     _setup(tmp_path, monkeypatch)
     _force_bd(monkeypatch, _HTML)

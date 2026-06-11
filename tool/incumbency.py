@@ -249,6 +249,15 @@ def build_seat(predicted_role: str | None, incumbent_name: str | None) -> str:
     return f"Senior {func} hires under {who}"
 
 
+def broad_seat(predicted_role: str | None) -> str:
+    """What the trigger is actually signalling when nobody has confirmed
+    a seat: a senior hire in this FUNCTION. Guessing a precise chair
+    ('Corporate Affairs Director') is unearned precision — the broad
+    frame is what the evidence supports."""
+    family, _titles = family_for_seat(predicted_role)
+    return f"Senior {_FUNCTION_LABEL.get(family, 'comms')} hire"
+
+
 def annotate_entry(entry: dict) -> dict:
     """Project the incumbency verdict onto a pipeline entry as
     incumbent_* fields the dashboard reads. Mutates and returns `entry`;

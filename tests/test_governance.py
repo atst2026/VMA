@@ -78,21 +78,27 @@ def test_rows_without_gate_present_by_default():
 # ====================================================================
 # Daily cap: over-cap presented rows demote to the queue, visibly
 # ====================================================================
-def test_cap_demotes_overflow_to_queue():
-    rows = [_row() for _ in range(10)]
+def test_board_dedupes_to_one_row_per_company():
+    # The same company firing on several routes must appear ONCE — the
+    # section counts are real companies, not duplicate signals.
+    rows = [_row() for _ in range(10)]          # ten rows, all "Tesco"
     bd, _ = _build_mr_rows(rows, [], "Head of Communications", cap=7)
-    presented = [r for r in bd if r["presented"]]
+    assert len(bd) == 1
+    assert bd[0]["tier"] == "ready"
+
+
+def test_tier_reflects_gate_verdict_not_a_cap():
+    # The old daily-cap demotion relabelled ready overflow as 'dev',
+    # which made the Developing count lie. Tier is the gate's verdict.
+    def _named(i, presented=True):
+        r = _row(presented=presented)
+        r["company"] = f"Co {i}"
+        r["pid"] = f"co-{i}"
+        return r
+    rows = [_named(i) for i in range(10)] + [_named(99, presented=False)]
+    bd, _ = _build_mr_rows(rows, [], "Head of Communications", cap=7)
+    assert len(bd) == 11
+    assert sum(1 for r in bd if r["tier"] == "ready") == 10
+    assert all("cap" not in (r.get("gateWhy") or "") for r in bd)
     queued = [r for r in bd if not r["presented"]]
-    assert len(presented) == 7 and len(queued) == 3
-    assert all("cap of 7" in r["gateWhy"] for r in queued)
-    assert all(not r["conf"] for r in queued)
-    # Overflow tops the Developing tier — never hidden, never 'early'.
-    assert all(r["tier"] == "dev" for r in queued)
-    assert all(r["tier"] == "ready" for r in presented)
-
-
-def test_cap_does_not_touch_already_queued_rows():
-    rows = [_row(), _row(presented=False), _row()]
-    bd, _ = _build_mr_rows(rows, [], "Head of Communications", cap=7)
-    assert [r["presented"] for r in bd] == [1, 0, 1]
-    assert "Watch-grade" in bd[1]["gateWhy"]
+    assert len(queued) == 1 and "Watch-grade" in queued[0]["gateWhy"]

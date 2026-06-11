@@ -191,14 +191,17 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
   padding:14px 2px 18px}
 .pipedate .sp{color:var(--clay)}
 .pipedate #pipeDate{color:var(--ink2)}
-.stages{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
-.stages.jobs4{grid-template-columns:repeat(4,1fr)}
+.stages{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 .stages.jobs4 .stg.s3{display:none}
 /* jobs mode: the scene boxes stand down; the funnel numbers stay */
 .stages.noscene .mini{display:none}
-.rail{position:absolute;left:10%;right:10%;top:24px;height:2px;z-index:0;
+.rail{position:absolute;left:12.5%;right:12.5%;top:24px;height:2px;z-index:0;
   background:linear-gradient(90deg,rgba(154,160,166,.45),rgba(66,133,244,.5),rgba(26,61,124,.4),rgba(217,122,43,.5),rgba(30,158,87,.55))}
-.stages.jobs4 .rail{left:12.5%;right:12.5%}
+/* leads mode: PRODUCTION sits BELOW the top four, fed by a drop rail
+   from the stage row — the pipeline visibly continues downwards */
+.stages:not(.jobs4) .stg.s5{grid-column:1/-1;width:min(420px,56%);margin:40px auto 0;position:relative}
+.stages:not(.jobs4) .stg.s5::before{content:"";position:absolute;left:50%;top:-42px;height:42px;width:2px;margin-left:-1px;
+  background:linear-gradient(180deg,rgba(217,122,43,.5),rgba(30,158,87,.55))}
 .fdot{position:absolute;top:-2.5px;width:7px;height:7px;border-radius:50%;background:var(--blue);
   box-shadow:0 0 8px rgba(66,133,244,.65);opacity:0;animation:travel 5.4s linear infinite}
 .fdot.d2{animation-delay:1.8s}.fdot.d3{animation-delay:3.6s}
@@ -423,7 +426,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .gap{flex:1}
 .openerbox{margin:14px 28px 0;padding:11px 14px;border-left:2px solid var(--vma);border-radius:0 12px 12px 0;
   background:rgba(62,92,132,.06);font-size:12.5px;line-height:1.62;color:var(--ink2)}
-/* ---- the pipeline past PACKAGED INTO PORTFOLIO ----
+/* ---- the pipeline past PRODUCTION ----
    The engine keeps producing: a drop rail falls out of the stage row,
    splits, and sprouts into THREE portfolio cards across the page —
    Ready / Developing / Watch — using the same gradient + flow-dot
@@ -448,27 +451,43 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .pipe-sec{position:relative;z-index:1;border-radius:16px;min-width:0;
   background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.88);
   box-shadow:0 4px 14px rgba(26,61,124,.06);padding:2px 14px 8px;border-top:2px solid currentColor}
-/* a card grows to the full row while one of its dossiers is open */
-.pipe-sec.grown{grid-column:1/-1}
 .pipe-sec.t-ready{color:var(--grn)}
 .pipe-sec.t-dev{color:var(--amb)}
 .pipe-sec.t-watch{color:var(--dim)}
-.pipe-sec-h{display:flex;align-items:center;gap:12px;padding:13px 2px 11px;border-bottom:1px solid var(--hair)}
+.pipe-sec-h{display:flex;align-items:center;gap:10px;padding:13px 2px 11px;border-bottom:1px solid var(--hair)}
 .pipe-sec .pnode{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;
   background:currentColor;box-shadow:0 0 8px currentColor;vertical-align:1px}
 .pipe-sec .plbl{font:700 10px var(--mono);letter-spacing:.22em;color:currentColor}
 .pipe-sec .pcap{font-size:10.5px;color:var(--muted);margin-top:3px}
 .pipe-sec .pcount{margin-left:auto;font:700 22px var(--disp);letter-spacing:-.02em;color:currentColor}
+/* icon-only filter + sort per section; menus open on click */
+.secctrls{position:relative;display:flex;gap:4px;flex:none}
+.ictrl{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:9px;
+  border:1px solid rgba(255,255,255,.85);background:rgba(255,255,255,.7);color:var(--muted);cursor:pointer;transition:.15s}
+.ictrl:hover{color:var(--deep);background:#fff}
+.ictrl svg{width:12px;height:12px}
+.ictrl.live{color:var(--deep)}
+.secctrls .ctrlmenu{top:30px}
 .pipe-sec-list{color:var(--ink)}
 .pipe-sec-list .pempty{padding:16px 4px;font-size:12px;color:var(--dim)}
-/* compact in-card rows: company · type · window · score */
-.pipe-sec:not(.grown) .strip-h{grid-template-columns:minmax(0,1fr) auto auto auto;gap:8px;padding:12px 2px}
-.pipe-sec:not(.grown) .strip-h .chev{display:none}
-.pipe-sec:not(.grown) .idcell .co{font-size:13px}
-.pipe-sec:not(.grown) .tp{font-size:9.5px;padding:2px 8px}
-.pipe-sec:not(.grown) .strengthcell svg{display:none}
+/* compact in-card rows: company · type · window · score — every cell
+   shares the width (minmax(0,·)) so a long type pill can never crush
+   the company name out of the row */
+.pipe-sec .strip-h{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) max-content max-content;gap:8px;padding:12px 2px}
+.pipe-sec .strip-h .chev{display:none}
+.pipe-sec .idcell .co{font-size:13px}
+.pipe-sec .tp{font-size:9.5px;padding:2px 8px;justify-self:start}
+.pipe-sec .wincell{font-size:9px}
+.pipe-sec .strengthcell svg{display:none}
 /* quieter rows the further down the pipeline */
 .pipe-sec.t-dev .strip-h,.pipe-sec.t-watch .strip-h{opacity:.88}
+/* full-page dossier view: one open lead, a back button, nothing else */
+.backbtn{display:inline-flex;align-items:center;gap:8px;margin:14px 0 4px;padding:8px 16px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.85);background:rgba(255,255,255,.8);color:var(--ink2);
+  font:600 12px 'Inter';cursor:pointer;box-shadow:0 1px 4px rgba(26,61,124,.06);transition:.15s}
+.backbtn:hover{background:#fff;color:var(--deep)}
+.backbtn svg{width:13px;height:13px}
+#dossierView .dossier{max-height:none}
 /* calendar */
 .calwrap{position:relative}
 .calgrid{border:1px solid rgba(255,255,255,.75);border-radius:20px;overflow:hidden;background:rgba(255,255,255,.4)}
@@ -692,7 +711,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
         </div>
       </div>
       <div id="strips"></div>
-      <!-- The pipeline continues past PACKAGED INTO PORTFOLIO: a drop
+      <!-- The pipeline continues past PRODUCTION: a drop
            rail falls from the stage row, splits, and sprouts into the
            three portfolio cards across the page. Leads mode only. -->
       <div id="pipeSections">
@@ -709,6 +728,12 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
               <div><div class="plbl"><span class="pnode"></span>READY</div>
                 <div class="pcap">Gate-passed and corroborated — call this week</div></div>
               <span class="pcount" id="cnt-ready">0</span>
+              <span class="secctrls">
+                <button type="button" class="ictrl" data-menu="fm-ready" title="Filter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.2V19l-4 2v-7.8z"/></svg></button>
+                <div class="ctrlmenu" id="fm-ready"></div>
+                <button type="button" class="ictrl" data-menu="sm-ready" title="Sort"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 6h16M4 12h11M4 18h6"/></svg></button>
+                <div class="ctrlmenu" id="sm-ready"></div>
+              </span>
             </div>
             <div class="pipe-sec-list" id="list-ready"></div>
           </div>
@@ -717,6 +742,12 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
               <div><div class="plbl"><span class="pnode"></span>DEVELOPING</div>
                 <div class="pcap">Real signal, not yet call-ready — corroborate before opening</div></div>
               <span class="pcount" id="cnt-dev">0</span>
+              <span class="secctrls">
+                <button type="button" class="ictrl" data-menu="fm-dev" title="Filter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.2V19l-4 2v-7.8z"/></svg></button>
+                <div class="ctrlmenu" id="fm-dev"></div>
+                <button type="button" class="ictrl" data-menu="sm-dev" title="Sort"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 6h16M4 12h11M4 18h6"/></svg></button>
+                <div class="ctrlmenu" id="sm-dev"></div>
+              </span>
             </div>
             <div class="pipe-sec-list" id="list-dev"></div>
           </div>
@@ -725,10 +756,22 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
               <div><div class="plbl"><span class="pnode"></span>WATCH</div>
                 <div class="pcap">Early or thin — monitored; promotes itself when it stacks</div></div>
               <span class="pcount" id="cnt-watch">0</span>
+              <span class="secctrls">
+                <button type="button" class="ictrl" data-menu="fm-watch" title="Filter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.2V19l-4 2v-7.8z"/></svg></button>
+                <div class="ctrlmenu" id="fm-watch"></div>
+                <button type="button" class="ictrl" data-menu="sm-watch" title="Sort"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 6h16M4 12h11M4 18h6"/></svg></button>
+                <div class="ctrlmenu" id="sm-watch"></div>
+              </span>
             </div>
             <div class="pipe-sec-list" id="list-watch"></div>
           </div>
         </div>
+      </div>
+      <div id="dossierView" style="display:none">
+        <button type="button" class="backbtn" id="backBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back to portfolio</button>
+        <div id="dossierBody"></div>
       </div>
     </div>
 
@@ -1045,12 +1088,12 @@ $('pipeDate').textContent=new Date().toLocaleDateString('en-GB',
 /* ---------- engine stages + trigger pills ---------- */
 const STAGES={
   leads:{slots:[1,2,3,4,5],
-    lbl:['SEARCHED','FILTERED','BUILT OUT','STRESS-TESTED','PACKAGED INTO PORTFOLIO'],
+    lbl:['SEARCHED','FILTERED','BUILT OUT','STRESS-TESTED','PRODUCTION'],
     cap:['Automated agent search for any hiring signal',
          'Back-end filters coded to pick up and pull senior seat signals for this desk',
          'Cross-source intelligence to turn signals into comprehensive leads',
-         'Each lead undergoes rigorous testing in order to minimise noise and cold calls',
-         'Scored, ranked, and synthesised into brief dossiers — sorted into Ready / Developing / Watch below']},
+         'Rigorous testing against code in order to minimise noise and cold calls',
+         'Synthesised into brief dossiers, and organised based on lead strength metrics']},
   jobs:{slots:[1,2,4,5],
     lbl:['SEARCHED','FILTERED','VERIFIED','COMPILED AND READY'],
     cap:['Autonomous search of the internet for job vacancies',
@@ -1226,12 +1269,28 @@ setInterval(()=>{
 },1000);
 
 /* ---------- board ---------- */
-const FILTS=[['ready',{leads:'Packaged into Portfolio',jobs:'Live Jobs'}],['unc',{leads:'Uncategorised',jobs:'Uncategorised'}],
+const FILTS=[['ready',{leads:'All active',jobs:'Live Jobs'}],['unc',{leads:'Uncategorised',jobs:'Uncategorised'}],
   ['new',{leads:'New today',jobs:'New today'}],['followed',{leads:'Followed up',jobs:'Followed up'}],
   ['dismissed',{leads:'Dismissed',jobs:'Dismissed'}]];
 const SORTS={leads:[['strength','Strongest opportunity'],['window','Soonest window'],['new','Newest first']],
   jobs:[['new','Newest first'],['az','Company A–Z']]};
+/* per-section filter + sort (icon dropdowns inside each card header) */
+const SECF={ready:'ready',dev:'ready',watch:'ready'};
+const SECS={ready:'strength',dev:'strength',watch:'strength'};
+function renderSecCtrls(){
+  ['ready','dev','watch'].forEach(k=>{
+    if(!$('fm-'+k))return;
+    $('fm-'+k).innerHTML=FILTS.map(f=>'<button data-f="'+f[0]+'" data-sec="'+k+'"'+(SECF[k]===f[0]?' class="on"':'')+'>'+f[1].leads+'</button>').join('');
+    $('sm-'+k).innerHTML=SORTS.leads.map(s=>'<button data-s="'+s[0]+'" data-sec="'+k+'"'+(SECS[k]===s[0]?' class="on"':'')+'>'+s[1]+'</button>').join('');
+    const fb=document.querySelector('[data-menu="fm-'+k+'"]'),sb=document.querySelector('[data-menu="sm-'+k+'"]');
+    if(fb)fb.classList.toggle('live',SECF[k]!=='ready');
+    if(sb)sb.classList.toggle('live',SECS[k]!=='strength');
+  });
+}
 function renderCtrls(){
+  /* the global bar serves jobs mode only — leads filters live in the
+     section headers */
+  $('leadCtrls').style.display=(mode==='leads')?'none':'';
   $('filtmenu').innerHTML=FILTS.map(f=>'<button data-f="'+f[0]+'"'+(filt===f[0]?' class="on"':'')+'>'+f[1][mode]+'</button>').join('');
   $('filtLbl').textContent=FILTS.find(f=>f[0]===filt)[1][mode];
   $('sortmenu').innerHTML=SORTS[mode].map(s=>'<button data-s="'+s[0]+'"'+(sort===s[0]?' class="on"':'')+'>'+s[1]+'</button>').join('');
@@ -1328,8 +1387,25 @@ function stripHTML(l,i){
     +'<span class="tp '+(l.key||'lead')+'">'+esc(l.type||'Signal')+'</span>'
     +'<span class="wincell">'+esc((l.win||'').toUpperCase())+'</span>'
     +'<span class="strengthcell '+sband(l.score||0)+'"><span class="sn">'+(l.score==null?'—':l.score)+'</span>'+miniArc(l.score)+'</span>'
-    +'<span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>'
-    +'</div><div class="dossier">'+portfolioHTML(l)+'</div></div>';
+    +'</div></div>';
+}
+/* clicking ANY lead — whichever section — opens the same full-page
+   dossier in place of the portfolio; Back returns to the sections */
+let dossierOpen=false;
+function openDossier(id){
+  const l=BYID[id];if(!l)return;
+  dossierOpen=true;
+  $('dossierBody').innerHTML='<div class="strip open" data-id="'+l._id+'"><div class="dossier">'+portfolioHTML(l)+'</div></div>';
+  $('pipeSections').style.display='none';
+  $('dossierView').style.display='';
+  $('dossierView').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function closeDossier(){
+  if(!dossierOpen)return;
+  dossierOpen=false;
+  $('dossierView').style.display='none';
+  $('dossierBody').innerHTML='';
+  if(mode==='leads')$('pipeSections').style.display='';
 }
 function jobRow(l,i){
   const cls=(l.status==='followed_up'?' done-fu':'')+(l.status==='dismissed'?' done-dis':'');
@@ -1365,20 +1441,29 @@ function srcPills(l){
 }
 function winWeeks(s){s=(''+(s||'')).toLowerCase();const m=s.match(/(\d+)/);if(!m)return 9999;
   const n=+m[1];return /mo|month/.test(s)?n*4.33:n;}
-function statusFilter(l){
-  if(filt==='ready')return l.status!=='dismissed';
-  if(filt==='unc')return l.status==='active';
-  if(filt==='new')return l.isNew&&l.status!=='dismissed';
-  if(filt==='followed')return l.status==='followed_up';
-  if(filt==='dismissed')return l.status==='dismissed';
+function statusFilter(l,f){
+  f=f||filt;
+  if(f==='ready')return l.status!=='dismissed';
+  if(f==='unc')return l.status==='active';
+  if(f==='new')return l.isNew&&l.status!=='dismissed';
+  if(f==='followed')return l.status==='followed_up';
+  if(f==='dismissed')return l.status==='dismissed';
   return true;
+}
+function sortFnFor(s){
+  return s==='window'
+    ?(a,b)=>winWeeks(a.win)-winWeeks(b.win)||(b.score||0)-(a.score||0)
+    :s==='new'
+    ?(a,b)=>(((a.age===''?99:a.age)??99)-((b.age===''?99:b.age)??99))||(b.score||0)-(a.score||0)
+    :(a,b)=>(b.score||0)-(a.score||0);
 }
 function renderBoard(){
   const isLeads=mode==='leads';
-  $('pipeSections').style.display=isLeads?'':'none';
-  renderCtrls();
+  $('pipeSections').style.display=(isLeads&&!dossierOpen)?'':'none';
+  if(!isLeads)closeDossier();
+  renderCtrls();renderSecCtrls();
   if(!isLeads){
-    let jobs=JOBS.filter(statusFilter);
+    let jobs=JOBS.filter(l=>statusFilter(l));
     if(sort==='az')jobs.sort((a,b)=>(a.co||'').localeCompare(b.co||''));
     else jobs.sort((a,b)=>(b.isNew?1:0)-(a.isNew?1:0)||(a.co||'').localeCompare(b.co||''));
     $('strips').innerHTML=jobs.length?jobs.map((j,i)=>jobRow(j,i)).join('')
@@ -1386,26 +1471,23 @@ function renderBoard(){
     return;
   }
   $('strips').innerHTML='';
-  /* the pipeline continues past PACKAGED INTO PORTFOLIO: every packaged
-     lead lands in exactly one portfolio section. Blocked leads
-     (competing recruiter, freeze, administration) never surface —
-     the engine simply doesn't show them */
-  const sortFn=sort==='window'
-    ?(a,b)=>winWeeks(a.win)-winWeeks(b.win)||(b.score||0)-(a.score||0)
-    :sort==='new'
-    ?(a,b)=>(((a.age===''?99:a.age)??99)-((b.age===''?99:b.age)??99))||(b.score||0)-(a.score||0)
-    :(a,b)=>(b.score||0)-(a.score||0);
-  const secOf=l=>l.tier==='ready'?'ready':l.tier==='dev'?'dev':'watch';
+  /* the pipeline continues past PRODUCTION: each company appears ONCE,
+     in exactly one portfolio section (its strongest row wins, so the
+     counts are real companies, not duplicate signals). Blocked leads
+     (competing recruiter, freeze, administration) never surface */
+  const byCo={};
+  BD.filter(l=>l.tier!=='blocked'&&!l.conflict).forEach(l=>{
+    const k=(l.co||'').toLowerCase().trim();
+    if(!byCo[k]||(l.score||0)>(byCo[k].score||0))byCo[k]=l;
+  });
   const secs={ready:[],dev:[],watch:[]};
-  BD.filter(l=>l.tier!=='blocked'&&!l.conflict&&statusFilter(l))
-    .forEach(l=>secs[(l.tier||'ready')==='blocked'?'watch':secOf(l)].push(l));
+  Object.values(byCo).forEach(l=>secs[l.tier==='ready'?'ready':l.tier==='dev'?'dev':'watch'].push(l));
   ['ready','dev','watch'].forEach(k=>{
-    const arr=secs[k].sort(sortFn);
+    const arr=secs[k].filter(l=>statusFilter(l,SECF[k])).sort(sortFnFor(SECS[k]));
     $('cnt-'+k).textContent=arr.length;
     $('list-'+k).innerHTML=arr.length?arr.map((l,i)=>stripHTML(l,i)).join('')
-      :'<div class="pempty">Nothing in this stage'+(filt==='ready'?'':' under this filter')+'.</div>';
+      :'<div class="pempty">Nothing in this stage'+(SECF[k]==='ready'?'':' under this filter')+'.</div>';
   });
-  syncGrown();
 }
 function draftOpener(id){
   const l=BYID[id],box=$('ob-'+id);if(!l||!l.opener||!box)return;
@@ -1583,6 +1665,15 @@ document.addEventListener('click',e=>{
   if(fb){filt=fb.dataset.f;$('filtmenu').classList.remove('open');renderBoard();return;}
   const sb=e.target.closest('#sortmenu button');
   if(sb){sort=sb.dataset.s;$('sortmenu').classList.remove('open');renderBoard();return;}
+  const secb=e.target.closest('.secctrls .ctrlmenu button');
+  if(secb){
+    const k=secb.dataset.sec;
+    if(secb.dataset.f)SECF[k]=secb.dataset.f;
+    if(secb.dataset.s)SECS[k]=secb.dataset.s;
+    secb.closest('.ctrlmenu').classList.remove('open');
+    renderBoard();return;
+  }
+  if(e.target.closest('#backBtn')){closeDossier();return;}
   document.querySelectorAll('.ctrlmenu.open').forEach(x=>x.classList.remove('open'));
   const jt=e.target.closest('[data-jtri]');
   if(jt){e.stopPropagation();triage(jt.dataset.id,jt.dataset.jtri);return;}
@@ -1624,24 +1715,12 @@ document.addEventListener('click',e=>{
     return;
   }
   const h=e.target.closest('.strip-h');
-  if(h){
-    const strip=h.closest('.strip'),was=strip.classList.contains('open');
-    document.querySelectorAll('.strip.open').forEach(s=>s.classList.remove('open'));
-    if(!was)strip.classList.add('open');
-    syncGrown();
-    return;
-  }
+  if(h&&!dossierOpen){openDossier(h.dataset.id);return;}
 });
-/* a portfolio card spans the full row while one of its dossiers is open */
-function syncGrown(){
-  document.querySelectorAll('.pipe-sec').forEach(s=>
-    s.classList.toggle('grown',!!s.querySelector('.strip.open')));
-}
 document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&document.activeElement&&document.activeElement.classList.contains('strip-h'))
     document.activeElement.click();
-  if(e.key==='Escape'){document.querySelectorAll('.strip.open').forEach(s=>s.classList.remove('open'));
-    syncGrown();
+  if(e.key==='Escape'){closeDossier();
     pop.classList.remove('on');
     document.querySelectorAll('.ctrlmenu.open').forEach(x=>x.classList.remove('open'));}
 });
