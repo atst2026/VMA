@@ -9,3 +9,4 @@ pdfplumber>=0.10
 weasyprint>=60      # comms pitch-pack PDF (needs system pango/cairo libs)
 pillow>=9.1         # logo visibility/trim gate (also a WeasyPrint dependency)
 cairosvg>=2.7       # rasterise SVG Wikidata logos (P154); rides WeasyPrint's cairo
+anthropic>=0.92    # semantic signal reader (daily model pass over headlines)

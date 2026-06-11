@@ -99,6 +99,9 @@ jobs:
           # manual Daily Refresh.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMPANIES_HOUSE_KEY: ${{ secrets.COMPANIES_HOUSE_KEY }}
+          # Semantic signal reader (tool/semantic_scan.py) — without it
+          # the model pass silently no-ops and only regex triggers fire.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           BRIGHT_DATA_KEY: ${{ secrets.BRIGHT_DATA_KEY }}
           BRIGHT_DATA_ZONE: ${{ secrets.BRIGHT_DATA_ZONE }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
