@@ -2461,14 +2461,32 @@ def _render_dashboard(legacy: bool = False):
     _eng_ready = min(_eng_test, sum(1 for r in _mr_bd
                                     if r.get("tier") == "ready"
                                     and r.get("status", "active") != "dismissed"))
+    # Jobs funnel: real, decreasing counts from the same filters the loader
+    # applies — raw rows in the state file, rows surviving the relevance
+    # filters (kind/company), rows still live after retention, then active.
+    _j_raw = _j_rel = len(leads)
+    try:
+        _sig_path = STATE_DIR / "latest_signals.json"
+        if _sig_path.exists():
+            _sig = json.loads(_sig_path.read_text())
+            _j_raw = max(len(_sig), len(leads))
+            _j_rel = max(len(leads), sum(
+                1 for s in _sig
+                if (s.get("kind") or "").strip().lower() != "leadership_change"
+                and (s.get("company") or "").strip()))
+    except Exception as _e:
+        log.info("engine jobs funnel counts: %s", _e)
+    _j_ver = min(_j_rel, len(_mr_jobs))
+    _j_live = min(_j_ver, sum(1 for j in _mr_jobs
+                              if j.get("status", "active") == "active"))
     eng_counts = {
         "gen": len(leads) + len(premarket_rows),
         "filt": len(premarket_rows),
         "coll": _eng_coll, "test": _eng_test, "ready": _eng_ready,
-        "j_scraped": max(len(leads), len(_mr_jobs)),
-        "j_filt": len(_mr_jobs),
-        "j_ver": sum(1 for j in _mr_jobs if j.get("status", "active") != "dismissed"),
-        "j_live": sum(1 for j in _mr_jobs if j.get("status", "active") == "active"),
+        "j_scraped": _j_raw,
+        "j_filt": min(_j_raw, _j_rel),
+        "j_ver": _j_ver,
+        "j_live": _j_live,
     }
     eng_triggers = sorted({lbl for (lbl, _k) in _MR_TRIGGER.values()})
     eng_jobboards = sorted({j.get("source") for j in _mr_jobs if j.get("source")}) or [
