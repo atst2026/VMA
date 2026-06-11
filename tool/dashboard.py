@@ -1955,6 +1955,17 @@ def _mr_gate_fields(row):
         "propCls": ("pro" if prop_pts >= _g.PROP_PROVEN
                     else "int" if prop_pts == _g.PROP_INTERNAL
                     else "ext" if prop_pts == _g.PROP_EXTERNAL else "unk"),
+        # Product recommendation: a freeze, a rival perm mandate or
+        # cuts-direction finances kill the perm fee but raise day-rate
+        # interim demand — the card says which sale this is.
+        "product": ("interim"
+                    if (lead.get("conflict")
+                        or "hiring_freeze" in (lead.get("anti_triggers") or [])
+                        or (lead.get("financial") or {}).get("direction")
+                        in ("anti", "conflicting"))
+                    else "perm"),
+        # Logged calibration outcome (the AD-room feedback loop).
+        "outcome": row.get("outcome") or "",
         # Qualification scorecard + per-fact verification tag.
         "qual": g.get("qual") or {},
         "ver": ("reg" if (ev.get("primary") or 0) >= 1

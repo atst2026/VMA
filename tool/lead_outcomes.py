@@ -19,7 +19,14 @@ from datetime import datetime, timezone
 from tool.state_paths import state_dir
 
 STATE_DIR = state_dir()
-OUTCOMES = ("called", "converted", "dead")
+# The AD-room ladder: what actually happened to the call. The legacy
+# coarse values (called/converted/dead) stay accepted so old records and
+# callers keep working; new UI writes the fine-grained rungs.
+OUTCOMES = ("no_answer", "wrong_buyer", "conversation", "meeting",
+            "brief", "placement",
+            "called", "converted", "dead")
+# Rungs that count as a conversion for calibration purposes.
+CONVERTED = {"meeting", "brief", "placement", "converted"}
 CALIBRATION_TARGET = 50
 
 
@@ -82,6 +89,46 @@ def calibration() -> dict:
     flagged provisional) until CALIBRATION_TARGET outcomes are logged."""
     d = _load()
     logged = sum(1 for v in d.values() if v.get("outcome"))
-    converted = sum(1 for v in d.values() if v.get("outcome") == "converted")
+    converted = sum(1 for v in d.values() if v.get("outcome") in CONVERTED)
     return {"logged": logged, "target": CALIBRATION_TARGET,
             "converted": converted, "calibrating": logged < CALIBRATION_TARGET}
+
+
+def outcome_report() -> dict:
+    """The monthly weight-review input: outcomes aggregated against the
+    engine snapshot that produced each call. Answers 'did high scores
+    actually convert?' per outcome rung, per score band, per tier and per
+    fee-propensity reading — the raw material /learn reviews before
+    proposing weight changes. Pure read; never raises."""
+    try:
+        d = _load()
+        by_outcome: dict = {}
+        by_band: dict = {}
+        by_tier: dict = {}
+        by_prop: dict = {}
+        for v in d.values():
+            o = v.get("outcome")
+            if not o:
+                continue
+            conv = o in CONVERTED
+            snap = v.get("snapshot") or {}
+            by_outcome[o] = by_outcome.get(o, 0) + 1
+            score = snap.get("score")
+            if isinstance(score, (int, float)):
+                band = ("70+" if score >= 70 else
+                        "45-69" if score >= 45 else "<45")
+                b = by_band.setdefault(band, {"n": 0, "converted": 0})
+                b["n"] += 1
+                b["converted"] += 1 if conv else 0
+            for key, agg in (("tier", by_tier), ("prop", by_prop)):
+                k = snap.get(key)
+                if k:
+                    e = agg.setdefault(str(k), {"n": 0, "converted": 0})
+                    e["n"] += 1
+                    e["converted"] += 1 if conv else 0
+        return {"by_outcome": by_outcome, "by_score_band": by_band,
+                "by_tier": by_tier, "by_propensity": by_prop,
+                **calibration()}
+    except Exception:
+        return {"by_outcome": {}, "by_score_band": {}, "by_tier": {},
+                "by_propensity": {}}
