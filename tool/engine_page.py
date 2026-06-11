@@ -171,8 +171,9 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .tchip .plus{position:absolute;top:-8px;right:-3px;font:700 8.5px var(--mono);color:#fff;
   background:var(--clay);border-radius:999px;padding:2px 6px;opacity:0;transform:translateY(3px);transition:.3s}
 .tchip.match .plus{opacity:1;transform:none}
-/* jobs mode: the tab streams the boards being synthesised, source-style */
-#jobsTick{position:relative;padding:12px 0;border-radius:24px}
+/* jobs mode: the tab streams the boards being synthesised, source-style.
+   Sits below the pipeline sequence with a little breathing room. */
+#jobsTick{position:relative;padding:12px 0;margin-top:22px;border-radius:24px}
 #jobsTick .sline{display:block;font:500 10.5px/1.7 var(--mono);color:rgba(16,22,38,.32);
   white-space:nowrap;animation-duration:14s}
 #jobsTick .sline.s2{animation-duration:19s;animation-direction:reverse}
@@ -1180,11 +1181,11 @@ $('pipeDate').textContent=new Date().toLocaleDateString('en-GB',
 const STAGES={
   leads:{slots:[1,2,3,4,5],
     lbl:['SEARCHED','FILTERED','BUILT OUT','STRESS-TESTED','READY TO CHASE'],
-    cap:['Automated agent search for any hiring signal',
+    cap:['Automated daily search for potential pre-market hiring signals',
          'Back-end filters coded to pick up and pull senior seat signals for this desk',
          'Cross-source intelligence to turn signals into comprehensive leads',
-         'Rigorous testing against code in order to minimise noise and cold calls',
-         'Crystallising data into dossiers, ranked by lead strength metrics']},
+         'Testing against VMA-specific criteria to remove weak leads',
+         'Generating BD portfolios — scored and ranked with lead strength metrics']},
   jobs:{slots:[1,2,4,5],
     lbl:['SEARCHED','FILTERED','VERIFIED','COMPILED AND READY'],
     cap:['Autonomous search of the internet for job vacancies',
