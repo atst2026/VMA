@@ -59,6 +59,15 @@ MAX_EVIDENCE_AGE_DAYS = 365
 # A model answer never outranks a registry attestation in the store.
 STORE_CONFIDENCE_CAP = 0.88
 
+# Set when the API rejects a call for billing (out of credits) — the
+# rest of the run's passes would all fail identically, so don't burn
+# them. Reset at the top of each research pass.
+_billing_down = False
+
+
+def billing_error(e: Exception) -> bool:
+    return "credit balance" in str(e).lower()
+
 _SYSTEM = (
     "You are the hiring-contact researcher for a UK senior communications "
     "& marketing recruitment desk. You receive ONE live job vacancy and a "
@@ -231,6 +240,9 @@ def _run_model(brief: str) -> dict | None:
         return json.loads(text) if text else None
     except Exception as e:
         log.info("contact research model call failed: %s", e)
+        if billing_error(e):
+            global _billing_down
+            _billing_down = True
         return None
 
 
@@ -390,11 +402,17 @@ def research_signals(signals: list[dict], contacts: dict,
     priority). Mutates `contacts`; caller saves. Returns changes."""
     try:
         from tool.hiring_manager import is_job_like
+        global _billing_down
+        _billing_down = False
         ledger = _load_ledger()
         stats: dict = {"model_calls": 0}
         changed = 0
         for s in signals or []:
             if stats["model_calls"] >= max_jobs:
+                break
+            if _billing_down:
+                log.info("contact research: API credit balance exhausted "
+                         "— aborting remaining passes this run")
                 break
             if not isinstance(s, dict) or not is_job_like(s):
                 continue

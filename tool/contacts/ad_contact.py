@@ -99,73 +99,174 @@ def extract(signal: dict) -> dict | None:
         printed with no name nearby;
       - email may be "" when the ad names the person without an address
         (the nightly email pass then hunts for it).
-    Never raises."""
+
+    An enrichment-time result stored on the signal (signal['ad_contact'],
+    extracted from the FULL ad page — the feeds only carry teasers) wins
+    over live extraction from the snippet. Never raises."""
     try:
+        pre = signal.get("ad_contact")
+        if isinstance(pre, dict) and (pre.get("name") or pre.get("email")):
+            return pre
         text = " ".join(
             (signal.get(k) or "") for k in ("title", "summary"))
-        text = re.sub(r"<[^>]+>", " ", text)
-        text = re.sub(r"\s+", " ", text).strip()
-        if len(text) < 40:
-            return None
-        low = text.lower()
-        if any(m in low for m in _AGENCY_MARKERS):
-            return None
-
-        name = ""
-        title = ""
-        name_end = -1
-        for m in _CONTACT_NAME_RX.finditer(text):
-            words = m.group(1).split()
-            if not _is_person_name(words):
-                continue
-            name = " ".join(words)
-            name_end = m.end(1)
-            t = _TITLE_AFTER_RX.match(text[name_end:name_end + 90])
-            if t:
-                cand = t.group(1).strip(" ,-")
-                # A real title contains a role word; "Jane Smith, Leeds"
-                # must not become title="Leeds".
-                if re.search(r"(?i)\b(head|director|chief|manager|lead|"
-                             r"officer|partner|controller|vp|president|"
-                             r"executive)\b", cand):
-                    title = cand
-            break
-
-        email = ""
-        person_emails = [e.group(0).strip(".,;:'")
-                         for e in _EMAIL_RX.finditer(text)
-                         if not is_application_inbox(e.group(0))]
-        if name and person_emails:
-            # Prefer an address that carries the named person's surname;
-            # else the address printed nearest after the name.
-            sur = name.split()[-1].lower()
-            by_sur = [e for e in person_emails
-                      if sur in re.split(r"[._\-@]", e.lower())]
-            if by_sur:
-                email = by_sur[0]
-            else:
-                after = [e for e in person_emails
-                         if text.find(e) > name_end
-                         and text.find(e) - name_end < 200]
-                email = after[0] if after else ""
-        elif person_emails and not name:
-            # A bare personal work address with no name — still a direct
-            # line to a human at the employer; name stays empty and the
-            # named-contact gate keeps it out of one-click send until a
-            # person is attached.
-            email = person_emails[0]
-
-        if not name and not email:
-            return None
-        phone_m = re.search(
-            r"(?:\+44\s?|\b0)(?:\d[\s\-]?){9,10}\b", text)
-        return {
-            "name": name,
-            "title": title,
-            "email": email,
-            "phone": (phone_m.group(0).strip() if phone_m else ""),
-            "source_url": signal.get("url") or "",
-        }
+        return _extract_from_text(text, signal.get("url") or "")
     except Exception as e:
         log.info("ad_contact extract skipped (%s)", e)
         return None
+
+
+def _extract_from_text(raw: str, source_url: str) -> dict | None:
+    """Core extraction over any ad text (feed snippet or full page)."""
+    text = re.sub(r"<[^>]+>", " ", raw or "")
+    text = re.sub(r"\s+", " ", text).strip()
+    if len(text) < 40:
+        return None
+    low = text.lower()
+    if any(m in low for m in _AGENCY_MARKERS):
+        return None
+
+    name = ""
+    title = ""
+    name_end = -1
+    for m in _CONTACT_NAME_RX.finditer(text):
+        words = m.group(1).split()
+        if not _is_person_name(words):
+            continue
+        name = " ".join(words)
+        name_end = m.end(1)
+        t = _TITLE_AFTER_RX.match(text[name_end:name_end + 90])
+        if t:
+            cand = t.group(1).strip(" ,-")
+            # A real title contains a role word; "Jane Smith, Leeds"
+            # must not become title="Leeds".
+            if re.search(r"(?i)\b(head|director|chief|manager|lead|"
+                         r"officer|partner|controller|vp|president|"
+                         r"executive)\b", cand):
+                title = cand
+        break
+
+    email = ""
+    person_emails = [e.group(0).strip(".,;:'")
+                     for e in _EMAIL_RX.finditer(text)
+                     if not is_application_inbox(e.group(0))]
+    if name and person_emails:
+        # Prefer an address that carries the named person's surname;
+        # else the address printed nearest after the name.
+        sur = name.split()[-1].lower()
+        by_sur = [e for e in person_emails
+                  if sur in re.split(r"[._\-@]", e.lower())]
+        if by_sur:
+            email = by_sur[0]
+        else:
+            after = [e for e in person_emails
+                     if text.find(e) > name_end
+                     and text.find(e) - name_end < 200]
+            email = after[0] if after else ""
+    elif person_emails and not name:
+        # A bare personal work address with no name — still a direct
+        # line to a human at the employer; name stays empty and the
+        # named-contact gate keeps it out of one-click send until a
+        # person is attached.
+        email = person_emails[0]
+
+    if not name and not email:
+        return None
+    phone_m = re.search(
+        r"(?:\+44\s?|\b0)(?:\d[\s\-]?){9,10}\b", text)
+    return {
+        "name": name,
+        "title": title,
+        "email": email,
+        "phone": (phone_m.group(0).strip() if phone_m else ""),
+        "source_url": source_url,
+    }
+
+
+# ---- Full-page fetch (enrichment time) ---------------------------------
+# The feeds carry TEASERS: LinkedIn rows store just the location as the
+# summary; NHS/Adzuna snippets cut off before the contact line. Fetching
+# the actual ad page gives the extraction real text to read — free,
+# budgeted, cached so an ad is fetched once ever.
+
+# Hosts that bot-wall anonymous fetches — not worth the request.
+_NO_FETCH_HOSTS = ("linkedin.com", "glassdoor.")
+_PAGE_CACHE_MAX = 600
+
+
+def _cache_file():
+    from tool.state_paths import state_dir
+    return state_dir() / "ad_contact_pages.json"
+
+
+def _load_cache() -> dict:
+    try:
+        import json
+        f = _cache_file()
+        return json.loads(f.read_text()) if f.exists() else {}
+    except Exception:
+        return {}
+
+
+def _save_cache(d: dict) -> None:
+    try:
+        import json
+        if len(d) > _PAGE_CACHE_MAX:
+            # Drop oldest entries (insertion order survives JSON round-trip).
+            for k in list(d)[:len(d) - _PAGE_CACHE_MAX]:
+                d.pop(k, None)
+        _cache_file().write_text(json.dumps(d))
+    except Exception:
+        pass
+
+
+def _default_fetch(url: str) -> str | None:
+    try:
+        from tool.sources._http import get
+        r = get(url, timeout=15)
+        return (r.text if r is not None
+                and getattr(r, "status_code", 0) == 200 else None)
+    except Exception:
+        return None
+
+
+def fetch_and_extract(signal: dict, fetch=None,
+                      cache: dict | None = None) -> dict | None:
+    """Fetch the FULL ad page for a job lead and extract its contact.
+    Returns the contact dict (also cached) or None. The caller stores
+    the result on the signal (signal['ad_contact']) so the dashboard's
+    live extraction picks it up. Never raises."""
+    try:
+        url = (signal.get("url") or "").strip()
+        if not url or any(h in url for h in _NO_FETCH_HOSTS):
+            return None
+        own_cache = cache is None
+        if own_cache:
+            cache = _load_cache()
+        hit = cache.get(url)
+        if hit is not None:
+            return hit.get("contact") or None
+        html = (fetch or _default_fetch)(url)
+        contact = None
+        if html:
+            # Drop script/style payloads before tag-stripping.
+            page = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", " ", html)
+            contact = _extract_from_text(page, url)
+            if contact and not contact.get("name"):
+                # Full pages carry footers full of generic addresses; a
+                # bare email from a whole page is too weak to keep.
+                contact = None
+        cache[url] = {"at": datetime_now_iso(), "contact": contact}
+        if own_cache:
+            _save_cache(cache)
+        if contact:
+            log.info("ad page contact: %s — %s (%s)", contact["name"],
+                     contact.get("title") or "?", url)
+        return contact
+    except Exception as e:
+        log.info("ad_contact page fetch skipped (%s)", e)
+        return None
+
+
+def datetime_now_iso() -> str:
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).isoformat()
