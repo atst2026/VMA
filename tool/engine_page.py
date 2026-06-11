@@ -464,7 +464,11 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .ictrl svg{width:12px;height:12px}
 .ictrl.live{color:var(--deep)}
 .secctrls .ctrlmenu{top:30px}
-.pipe-sec-list{color:var(--ink)}
+.pipe-sec-list{color:var(--ink);max-height:430px;overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:rgba(16,22,38,.18) transparent}
+.pipe-sec-list::-webkit-scrollbar{width:5px}
+.pipe-sec-list::-webkit-scrollbar-thumb{background:rgba(16,22,38,.15);border-radius:99px}
+.srcl .xn{color:var(--clay);font-weight:700}
 .pipe-sec-list .pempty{padding:16px 4px;font-size:12px;color:var(--dim)}
 /* compact in-card rows: company · type · window · score — every cell
    shares the width (minmax(0,·)) so a long type pill can never crush
@@ -1317,7 +1321,7 @@ function portfolioHTML(l){
     h+='<div class="prow"><span class="pl2">SOURCES</span><div class="pv">'
       +srcs.map(s=>'<a class="srcl" href="'+esc(s.url||('https://'+(s.src||'')))+'" target="_blank" rel="noopener">'
       +'<span class="ek">'+srcKind(s.src||s.url)+'</span>'
-      +'<span class="el2">'+esc(s.label||s.src||'source')+'</span>'
+      +'<span class="el2">'+esc(s.label||s.src||'source')+((s.n||1)>1?' <b class="xn">×'+s.n+'</b>':'')+'</span>'
       +'<span class="ed2">'+esc(s.src||'')+(ageLabel(s.age)?' · '+ageLabel(s.age):'')+'</span>'
       +'<svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg></a>').join('')
       +'</div></div>';
