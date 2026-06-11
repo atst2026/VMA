@@ -424,32 +424,49 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .openerbox{margin:14px 28px 0;padding:11px 14px;border-left:2px solid var(--vma);border-radius:0 12px 12px 0;
   background:rgba(62,92,132,.06);font-size:12.5px;line-height:1.62;color:var(--ink2)}
 /* ---- the pipeline past PACKAGED INTO PORTFOLIO ----
-   A vertical trunk rail (same gradient/flow language as the horizontal
-   stage rail) carries the packaged leads downwards and fans them into
-   the three portfolio sections: Ready / Developing / Watch. */
-#pipeSections{position:relative;margin-top:16px;padding-left:36px}
-#pipeSections .vtrunk{position:absolute;left:12px;top:-12px;bottom:26px;width:2px;z-index:0;
-  background:linear-gradient(180deg,rgba(30,158,87,.55),rgba(66,133,244,.5),rgba(217,122,43,.5),rgba(154,160,166,.45))}
-.vdot{position:absolute;left:-2.5px;width:7px;height:7px;border-radius:50%;background:var(--blue);
-  box-shadow:0 0 8px rgba(66,133,244,.65);opacity:0;animation:travelY 5.4s linear infinite}
-.vdot.d2{animation-delay:1.8s}.vdot.d3{animation-delay:3.6s}
-@keyframes travelY{0%{top:0;opacity:0}8%{opacity:1}86%{opacity:1}100%{top:calc(100% - 7px);opacity:0}}
-.pipe-sec{position:relative;z-index:1;margin-bottom:16px;border-radius:16px;
+   The engine keeps producing: a drop rail falls out of the stage row,
+   splits, and sprouts into THREE portfolio cards across the page —
+   Ready / Developing / Watch — using the same gradient + flow-dot
+   language as the horizontal stage rail. */
+#pipeSections{position:relative;margin-top:2px}
+.pdrop{position:relative;width:2px;height:36px;margin:0 auto;
+  background:linear-gradient(180deg,rgba(30,158,87,.55),rgba(66,133,244,.5))}
+.psplit{position:relative;height:2px;width:calc(66.6% + 12px);margin:0 auto;
+  background:linear-gradient(90deg,rgba(30,158,87,.55),rgba(66,133,244,.5),rgba(217,122,43,.5),rgba(154,160,166,.45))}
+.pbranches{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;height:28px}
+.pbr{position:relative;display:block}
+.pbr::before{content:"";position:absolute;left:50%;margin-left:-1px;top:0;bottom:0;width:2px;
+  background:linear-gradient(180deg,rgba(66,133,244,.5),rgba(154,160,166,.35))}
+.vdot{position:absolute;left:50%;margin-left:-3.5px;width:7px;height:7px;border-radius:50%;background:var(--blue);
+  box-shadow:0 0 8px rgba(66,133,244,.65);opacity:0;animation:travelY 4.2s linear infinite}
+.pdrop .vdot{left:0;margin-left:-2.5px}
+.vdot.d2{animation-delay:1.4s}.vdot.d3{animation-delay:2.8s}
+@keyframes travelY{0%{top:0;opacity:0}10%{opacity:1}84%{opacity:1}100%{top:calc(100% - 7px);opacity:0}}
+.pipe-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
+@media(max-width:980px){.pipe-grid,.pbranches{grid-template-columns:1fr}.pbr:nth-child(n+2){display:none}
+  .psplit{width:2px;height:0}}
+.pipe-sec{position:relative;z-index:1;border-radius:16px;min-width:0;
   background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.88);
-  box-shadow:0 4px 14px rgba(26,61,124,.06);padding:4px 16px 8px}
-.pipe-sec .pnode{position:absolute;left:-29px;top:24px;width:10px;height:10px;border-radius:50%;
-  border:2px solid #fff;box-shadow:0 0 0 2px currentColor,0 0 10px currentColor;background:currentColor}
-.pipe-sec::before{content:"";position:absolute;left:-19px;top:29px;width:19px;height:2px;
-  background:currentColor;opacity:.35}
+  box-shadow:0 4px 14px rgba(26,61,124,.06);padding:2px 14px 8px;border-top:2px solid currentColor}
+/* a card grows to the full row while one of its dossiers is open */
+.pipe-sec.grown{grid-column:1/-1}
 .pipe-sec.t-ready{color:var(--grn)}
 .pipe-sec.t-dev{color:var(--amb)}
 .pipe-sec.t-watch{color:var(--dim)}
 .pipe-sec-h{display:flex;align-items:center;gap:12px;padding:13px 2px 11px;border-bottom:1px solid var(--hair)}
+.pipe-sec .pnode{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;
+  background:currentColor;box-shadow:0 0 8px currentColor;vertical-align:1px}
 .pipe-sec .plbl{font:700 10px var(--mono);letter-spacing:.22em;color:currentColor}
 .pipe-sec .pcap{font-size:10.5px;color:var(--muted);margin-top:3px}
 .pipe-sec .pcount{margin-left:auto;font:700 22px var(--disp);letter-spacing:-.02em;color:currentColor}
 .pipe-sec-list{color:var(--ink)}
 .pipe-sec-list .pempty{padding:16px 4px;font-size:12px;color:var(--dim)}
+/* compact in-card rows: company · type · window · score */
+.pipe-sec:not(.grown) .strip-h{grid-template-columns:minmax(0,1fr) auto auto auto;gap:8px;padding:12px 2px}
+.pipe-sec:not(.grown) .strip-h .chev{display:none}
+.pipe-sec:not(.grown) .idcell .co{font-size:13px}
+.pipe-sec:not(.grown) .tp{font-size:9.5px;padding:2px 8px}
+.pipe-sec:not(.grown) .strengthcell svg{display:none}
 /* quieter rows the further down the pipeline */
 .pipe-sec.t-dev .strip-h,.pipe-sec.t-watch .strip-h{opacity:.88}
 /* calendar */
@@ -675,37 +692,42 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
         </div>
       </div>
       <div id="strips"></div>
-      <!-- The pipeline continues past PACKAGED INTO PORTFOLIO: a vertical
-           rail carries the packaged leads down and fans them into the
-           three portfolio sections. Leads mode only. -->
+      <!-- The pipeline continues past PACKAGED INTO PORTFOLIO: a drop
+           rail falls from the stage row, splits, and sprouts into the
+           three portfolio cards across the page. Leads mode only. -->
       <div id="pipeSections">
-        <div class="vtrunk"><span class="vdot"></span><span class="vdot d2"></span><span class="vdot d3"></span></div>
-        <div class="pipe-sec t-ready" id="sec-ready">
-          <span class="pnode"></span>
-          <div class="pipe-sec-h">
-            <div><div class="plbl">READY</div>
-              <div class="pcap">Gate-passed and corroborated — call this week</div></div>
-            <span class="pcount" id="cnt-ready">0</span>
-          </div>
-          <div class="pipe-sec-list" id="list-ready"></div>
+        <div class="pdrop"><span class="vdot"></span><span class="vdot d2"></span></div>
+        <div class="psplit"></div>
+        <div class="pbranches">
+          <span class="pbr"><i class="vdot"></i></span>
+          <span class="pbr"><i class="vdot d2"></i></span>
+          <span class="pbr"><i class="vdot d3"></i></span>
         </div>
-        <div class="pipe-sec t-dev" id="sec-dev">
-          <span class="pnode"></span>
-          <div class="pipe-sec-h">
-            <div><div class="plbl">DEVELOPING</div>
-              <div class="pcap">Real signal, not yet call-ready — corroborate before opening</div></div>
-            <span class="pcount" id="cnt-dev">0</span>
+        <div class="pipe-grid">
+          <div class="pipe-sec t-ready" id="sec-ready">
+            <div class="pipe-sec-h">
+              <div><div class="plbl"><span class="pnode"></span>READY</div>
+                <div class="pcap">Gate-passed and corroborated — call this week</div></div>
+              <span class="pcount" id="cnt-ready">0</span>
+            </div>
+            <div class="pipe-sec-list" id="list-ready"></div>
           </div>
-          <div class="pipe-sec-list" id="list-dev"></div>
-        </div>
-        <div class="pipe-sec t-watch" id="sec-watch">
-          <span class="pnode"></span>
-          <div class="pipe-sec-h">
-            <div><div class="plbl">WATCH</div>
-              <div class="pcap">Early or thin — monitored; promotes itself when it stacks</div></div>
-            <span class="pcount" id="cnt-watch">0</span>
+          <div class="pipe-sec t-dev" id="sec-dev">
+            <div class="pipe-sec-h">
+              <div><div class="plbl"><span class="pnode"></span>DEVELOPING</div>
+                <div class="pcap">Real signal, not yet call-ready — corroborate before opening</div></div>
+              <span class="pcount" id="cnt-dev">0</span>
+            </div>
+            <div class="pipe-sec-list" id="list-dev"></div>
           </div>
-          <div class="pipe-sec-list" id="list-watch"></div>
+          <div class="pipe-sec t-watch" id="sec-watch">
+            <div class="pipe-sec-h">
+              <div><div class="plbl"><span class="pnode"></span>WATCH</div>
+                <div class="pcap">Early or thin — monitored; promotes itself when it stacks</div></div>
+              <span class="pcount" id="cnt-watch">0</span>
+            </div>
+            <div class="pipe-sec-list" id="list-watch"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1383,6 +1405,7 @@ function renderBoard(){
     $('list-'+k).innerHTML=arr.length?arr.map((l,i)=>stripHTML(l,i)).join('')
       :'<div class="pempty">Nothing in this stage'+(filt==='ready'?'':' under this filter')+'.</div>';
   });
+  syncGrown();
 }
 function draftOpener(id){
   const l=BYID[id],box=$('ob-'+id);if(!l||!l.opener||!box)return;
@@ -1605,13 +1628,20 @@ document.addEventListener('click',e=>{
     const strip=h.closest('.strip'),was=strip.classList.contains('open');
     document.querySelectorAll('.strip.open').forEach(s=>s.classList.remove('open'));
     if(!was)strip.classList.add('open');
+    syncGrown();
     return;
   }
 });
+/* a portfolio card spans the full row while one of its dossiers is open */
+function syncGrown(){
+  document.querySelectorAll('.pipe-sec').forEach(s=>
+    s.classList.toggle('grown',!!s.querySelector('.strip.open')));
+}
 document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&document.activeElement&&document.activeElement.classList.contains('strip-h'))
     document.activeElement.click();
   if(e.key==='Escape'){document.querySelectorAll('.strip.open').forEach(s=>s.classList.remove('open'));
+    syncGrown();
     pop.classList.remove('on');
     document.querySelectorAll('.ctrlmenu.open').forEach(x=>x.classList.remove('open'));}
 });
