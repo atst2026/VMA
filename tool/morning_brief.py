@@ -373,6 +373,17 @@ def main() -> int:
         log.info("hiring-gap detector: %s", e)
         hiring_gap_events = []
 
+    # Semantic signal reader: the model reads the day's unmatched news
+    # headlines once and maps confident comms/marketing-demand finds onto
+    # EXISTING trigger keys (frozen weights; new detector, not new
+    # pricing). Graceful no-op without ANTHROPIC_API_KEY.
+    try:
+        from tool import semantic_scan as _sem
+        semantic_events = _sem.detect(signals)
+    except Exception as e:
+        log.info("semantic scan: %s", e)
+        semantic_events = []
+
     # Seniority-gap detector: new senior leader + junior-only team.
     try:
         from tool.predictive.seniority_gap import detect_seniority_gaps
@@ -393,7 +404,7 @@ def main() -> int:
                   + ch_filing_events + ch_stream_events + charity_events
                   + wayback_events + techno_events + hiring_gap_events
                   + seniority_gap_events + displacement_events
-                  + inhouse_events + restart_events)
+                  + inhouse_events + restart_events + semantic_events)
     log.info("BD-strengthening lanes: %d CH-filing + %d CH-stream + %d charity "
              "+ %d wayback + %d technographics + %d in-house-failure "
              "+ %d hiring-restart events",
