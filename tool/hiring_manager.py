@@ -542,13 +542,11 @@ _BD_POC_SLOTS = {
     "marketing": ("cmo", "head_of_brand", "head_of_marketing",
                   "head_of_growth", "chro"),
 }
-# Verified-or-fallback: when the roster has no named owner, a precise
-# Recruiter role-search beats a guess. Two searches per desk — the
-# function owner, then the HR route.
-_BD_POC_FALLBACKS = {
-    "comms": ("Communications Director", "HR Director"),
-    "marketing": ("Marketing Director", "HR Director"),
-}
+# NO generic fallbacks by AD decision: a "Communications Director —
+# find on LinkedIn" row is noise. With no named, floor-clearing person
+# the section simply doesn't render; the nightly bd_poc_fill pass
+# (multi-source resolver + Bright Data profile lookup) exists to make
+# that state rare.
 
 
 def _li_talent_search(keywords: str) -> str:
@@ -571,8 +569,9 @@ def bd_points_of_contact(company: str, desk: str | None = None,
     re-verification, user-flagged entries skipped, deduped, capped at
     `limit`); each links to the person's LinkedIn profile when the
     roster holds one, else a precise name+company Recruiter search.
-    With no named owner at all, returns role-search fallbacks instead
-    — never empty, never a C-suite statutory seat. Never raises."""
+    Returns [] when no named owner clears the floor — the card then
+    shows no POC section at all (no generic role-search noise); the
+    nightly bd_poc_fill pass resolves the gap. Never raises."""
     try:
         desk = (desk or active_profile().key or "comms").strip().lower()
     except Exception:
@@ -619,12 +618,4 @@ def bd_points_of_contact(company: str, desk: str | None = None,
                 (fresh if entry.is_fresh() else stale).append(item)
         except Exception:
             pass
-    out = (fresh + stale)[:limit]
-    if out:
-        return out
-    return [{
-        "name": "",
-        "title": t,
-        "url": _li_talent_search(f'"{t}" "{company}"' if company else t),
-        "stale": False,
-    } for t in _BD_POC_FALLBACKS.get(desk, _BD_POC_FALLBACKS["comms"])]
+    return (fresh + stale)[:limit]
