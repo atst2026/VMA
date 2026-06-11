@@ -408,6 +408,25 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
 #om-subject,#om-body{width:100%;box-sizing:border-box;border:1px solid rgba(60,64,67,.18);
   border-radius:8px;padding:8px 10px;font:inherit;font-size:13px}
 #om-body{resize:vertical;min-height:200px}
+/* Recent Reports rows (inside the Build-A-Deck-format card) */
+.rr2-row{display:grid;grid-template-columns:130px 1fr 1.3fr 90px 110px;gap:12px;
+  align-items:center;padding:12px 16px;border-bottom:1px solid rgba(16,22,38,.06);
+  font-size:12.5px;color:var(--ink2)}
+.rr2-row:last-child{border-bottom:none}
+.rr2-type{font:600 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:#1A3D7C}
+.rr2-co{font-weight:650;color:var(--ink)}
+.rr2-when{color:var(--muted);font-size:11.5px}
+.rr2-mut{color:var(--dim)}
+.rr2-acts{display:flex;gap:8px;align-items:center;justify-self:end}
+.rr2-view{font:600 11.5px "Inter",sans-serif;color:#1A3D7C;text-decoration:none;
+  border:1px solid rgba(26,61,124,.3);border-radius:8px;padding:5px 12px}
+.rr2-view:hover{background:#1A3D7C;color:#fff}
+.rr2-dl{display:inline-flex;color:var(--muted)}
+.rr2-dl svg{width:14px;height:14px}
+.rr2-dl:hover{color:#1A3D7C}
+.rr2-gen{font-size:11.5px;color:var(--muted);font-style:italic}
+.rr2-empty{padding:26px 16px;font-size:12.5px;color:var(--muted);text-align:center}
+@media (max-width:640px){.rr2-row{grid-template-columns:1fr 90px;grid-auto-flow:row}}
 .om-attach{display:flex;align-items:center;gap:7px;margin-top:10px;padding:8px 12px;
   background:#F4F7FC;border:1px solid rgba(60,64,67,.12);border-radius:9px;
   font-size:12.5px;color:#101626}
@@ -718,7 +737,7 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
   <span class="sr-logo"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#3E5C84"/><text x="50" y="55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="30" letter-spacing="-1.5" fill="#fff">VMA</text><text x="51" y="76" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="300" font-size="13.5" letter-spacing="3" fill="#fff">GROUP</text></svg></span>
   <span class="sr-sep"></span>
   <button type="button" class="sr-btn on" id="vbEngine" title="Warm Signals">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5v-8"/><circle cx="12" cy="11" r="1.6" fill="currentColor" stroke="none"/><path d="M8.5 14.5a5 5 0 0 1 0-7"/><path d="M15.5 7.5a5 5 0 0 1 0 7"/><path d="M5.6 17.4a9 9 0 0 1 0-12.8"/><path d="M18.4 4.6a9 9 0 0 1 0 12.8"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 17.5 9 11l4.5 4.5 8-8"/><path d="M15.5 7.5h6v6"/></svg>
   </button>
   <button type="button" class="sr-btn" id="vbJobs" title="Live Jobs">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7.5" width="18" height="13" rx="2.5"/><path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5"/><path d="M3 12.5h18"/><path d="M12 11.5v2.5"/></svg>
@@ -727,7 +746,10 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>
   </button>
   <button type="button" class="sr-btn" id="vbShop" title="Build-A-Deck">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7.2 5.5c1.2-.85 8.4-.85 9.6 0"/><path d="M4.5 9.2c0-.95.8-1.7 1.75-1.7h11.5c.95 0 1.75.75 1.75 1.7v7.3a3.5 3.5 0 0 1-3.5 3.5H8a3.5 3.5 0 0 1-3.5-3.5z"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.2 5.5c1.2-.85 8.4-.85 9.6 0"/><path d="M4.5 9.2c0-.95.8-1.7 1.75-1.7h11.5c.95 0 1.75.75 1.75 1.7v7.3a3.5 3.5 0 0 1-3.5 3.5H8a3.5 3.5 0 0 1-3.5-3.5z"/></svg>
+  </button>
+  <button type="button" class="sr-btn" id="vbReports" title="Recent Reports">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z"/><path d="M14.5 3v4.5H19"/><path d="M9 13h6M9 16.5h6"/></svg>
   </button>
 </nav>
 
@@ -927,8 +949,6 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
                   <input id="pm-account" name="account_name" placeholder="e.g. Severn Trent" required>
                   <label for="pm-contact">Contact (optional)</label>
                   <input id="pm-contact" name="contact_name" placeholder="e.g. Carla Sherry">
-                  <label for="pm-context">Meeting context (optional)</label>
-                  <input id="pm-context" name="meeting_context" placeholder="e.g. 10am Mon, Zoom">
                   <button type="submit" class="send" title="Run"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
                   <div class="status" id="pm-status"></div>
                 </form>
@@ -955,6 +975,22 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
           <button class="shopchip" data-cap="reverse"><span class="i">↗</span>Reverse Match</button>
           <button class="shopchip" data-cap="premeeting"><span class="i">◷</span>Pre-meeting</button>
           <button class="shopchip" data-cap="sweep"><span class="i">⟲</span>Sweep</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ VIEW: recent reports (Build-A-Deck page format) ============ -->
+    <div class="view" id="v-reports">
+      <div class="shopwrap">
+        <div class="ea-hero">
+          <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z"/><path d="M14.5 3v4.5H19"/><path d="M9 13h6M9 16.5h6"/></svg></div>
+          <h1 class="gemini-title">Recent Reports</h1>
+          <div class="cc-sub">Everything generated in the last 48 hours — pitch packs, reverse matches, pre-meeting briefs and sweeps.</div>
+        </div>
+        <div class="composer">
+          <div class="inner">
+            <div id="reportsBody"><div class="rr2-empty">Loading…</div></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1175,12 +1211,15 @@ function setView(v){
   $('v-engine').classList.toggle('on',eng);
   $('v-cal').classList.toggle('on',view==='cal');
   $('v-shop').classList.toggle('on',view==='shop');
+  $('v-reports').classList.toggle('on',view==='reports');
   $('vbEngine').classList.toggle('on',view==='engine');
   $('vbJobs').classList.toggle('on',view==='jobs');
   $('vbCal').classList.toggle('on',view==='cal');
   $('vbShop').classList.toggle('on',view==='shop');
+  $('vbReports').classList.toggle('on',view==='reports');
   /* the dev-only footer belongs to the leads pages only */
   $('devFoot').style.display=eng?'':'none';
+  if(view==='reports')loadEngineReports();
   if(eng){
     const m=(view==='jobs')?'jobs':'leads';
     if(m!==mode){mode=m;filt='ready';sort=(mode==='leads')?'strength':'new';}
@@ -1191,6 +1230,48 @@ $('vbEngine').addEventListener('click',()=>setView('engine'));
 $('vbJobs').addEventListener('click',()=>setView('jobs'));
 $('vbCal').addEventListener('click',()=>setView('cal'));
 $('vbShop').addEventListener('click',()=>setView('shop'));
+$('vbReports').addEventListener('click',()=>setView('reports'));
+
+/* ---------- recent reports (same data as the legacy panel) ---------- */
+async function loadEngineReports(){
+  const body=$('reportsBody');if(!body)return;
+  try{
+    const r=await fetch('/api/output/recent');
+    const j=await r.json();
+    if(!j.rows||!j.rows.length){
+      body.innerHTML='<div class="rr2-empty">Nothing generated in the last 48 hours — build something on the Build-A-Deck page.</div>';
+      return;
+    }
+    const now=Date.now();
+    body.innerHTML=j.rows.slice(0,30).map(x=>{
+      const t=new Date(x.ts).getTime();
+      const mins=Math.max(0,Math.round((now-t)/60000));
+      const ago=mins<1?'just now':mins<60?mins+' min ago'
+        :mins<1440?Math.round(mins/60)+'h ago':Math.round(mins/1440)+'d ago';
+      let acts;
+      if(x.id){
+        const base='/api/output/view?artifact='+encodeURIComponent(x.artifact)
+          +'&id='+encodeURIComponent(x.id);
+        acts='<a class="rr2-view" href="'+base+'" target="_blank" rel="noopener">View</a>'
+          +'<a class="rr2-dl" href="'+base+'&download=1" title="Download" download>'
+          +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></a>';
+      }else{
+        acts='<span class="rr2-gen">generating…</span>';
+      }
+      return '<div class="rr2-row">'
+        +'<span class="rr2-type">'+esc(x.type||'Report')+'</span>'
+        +'<span class="rr2-co">'+(x.company&&x.company!=='—'?esc(x.company):'<span class="rr2-mut">—</span>')+'</span>'
+        +'<span class="rr2-name">'+(x.name?esc(x.name):'<span class="rr2-mut">—</span>')+'</span>'
+        +'<span class="rr2-when">'+esc(ago)+'</span>'
+        +'<span class="rr2-acts">'+acts+'</span></div>';
+    }).join('');
+  }catch(e){
+    body.innerHTML='<div class="rr2-empty">Could not load recent reports.</div>';
+  }
+}
+/* a deck dispatch shows up as "generating…" — keep the list live while
+   the reports page is open */
+setInterval(()=>{if(view==='reports')loadEngineReports();},15000);
 
 /* the daily stamp — UK date, regenerated on every load */
 $('pipeDate').textContent=new Date().toLocaleDateString('en-GB',
