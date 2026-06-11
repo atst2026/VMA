@@ -16,7 +16,7 @@ from pathlib import Path
 from tool.contacts.schema import (
     ContactCard, ContactEntry, ResolutionRecord, ReverifyEntry,
 )
-from tool.state_paths import state_root
+from tool import state_paths
 
 log = logging.getLogger("brief.contacts")
 
@@ -27,16 +27,20 @@ log = logging.getLogger("brief.contacts")
 # state_paths). Previously these were hardcoded to tool/state/, so the
 # marketing desk read the COMMS contact graph while its flags/feedback
 # wrote to the namespaced dir — an inconsistent split.
+# NB: resolved through the state_paths MODULE (not an imported name) so
+# the standard test fixture's monkeypatch of state_paths.state_root
+# reaches this module too — an import-time binding here once let tests
+# write fixture people into the real tracked roster.
 def _contacts_file() -> Path:
-    return state_root() / "hiring_contacts.json"
+    return state_paths.state_root() / "hiring_contacts.json"
 
 
 def _resolution_log_file() -> Path:
-    return state_root() / "contact_resolution_log.jsonl"
+    return state_paths.state_root() / "contact_resolution_log.jsonl"
 
 
 def _reverify_queue_file() -> Path:
-    return state_root() / "contact_reverify_queue.json"
+    return state_paths.state_root() / "contact_reverify_queue.json"
 
 
 # ---- Contacts table -----------------------------------------------------

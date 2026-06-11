@@ -502,6 +502,23 @@ def main() -> int:
     except Exception as e:
         log.info("auto-investigate: %s", e)
 
+    # BD Point of Contact fill: resolve NAMED function-owner contacts
+    # (with real LinkedIn profiles) for the board's top active BD
+    # companies via the multi-source resolver — CH / RNS / leadership
+    # page / LinkedIn, all free or Bright Data free tier. No Anthropic
+    # credits, no Hunter. Budgeted + attempt-ledgered.
+    try:
+        from tool.contacts import bd_poc_fill as _poc_fill
+        from tool.profiles import active_profile as _ap
+        _actives = sorted(
+            (p for p in (predictor_pipeline.all_predictors() or [])
+             if p.get("status") == "active" and (p.get("company") or "").strip()),
+            key=lambda p: p.get("score") or 0, reverse=True)
+        _poc_fill.run([p["company"] for p in _actives[:20]],
+                      desk=_ap().key)
+    except Exception as e:
+        log.info("bd poc fill: %s", e)
+
     # Universe expansion (weekly): propose watchlist additions from the
     # signal stream's off-universe companies. Proposals only — the AD
     # approves by hand; the model never widens the universe itself.

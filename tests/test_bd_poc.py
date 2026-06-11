@@ -61,15 +61,16 @@ def test_function_owner_first_then_hr_never_csuite(state):
     assert "Holly%20Rae" in hr["url"] or "Holly+Rae" in hr["url"]
 
 
-def test_csuite_only_card_falls_back_to_role_searches(state):
+def test_csuite_only_card_yields_nothing_not_the_ceo(state):
+    """No generic fallback rows: with no named function owner the
+    section is empty (hidden), and the CEO never leaks through."""
     contacts = {}
     upsert_contact(contacts, "Acme", "ceo",
                    _entry("Carl Exec", "ceo", "Chief Executive"))
-    poc = bd_points_of_contact("Acme", desk="comms", contacts=contacts)
-    assert all(not p["name"] for p in poc)
-    assert any("Communications" in p["title"] for p in poc)
-    assert any("HR" in p["title"] for p in poc)
-    assert all("linkedin.com/talent/search" in p["url"] for p in poc)
+    assert bd_points_of_contact("Acme", desk="comms",
+                                contacts=contacts) == []
+    assert bd_points_of_contact("Nocard Ltd", desk="comms",
+                                contacts={}) == []
 
 
 def test_marketing_desk_uses_marketing_family(state):
@@ -82,10 +83,6 @@ def test_marketing_desk_uses_marketing_family(state):
                                contacts=contacts)
     assert poc[0]["name"] == "Mark Eter"
     assert all(p["name"] != "Jane Smith" for p in poc)
-    # And the marketing fallback is marketing-flavoured.
-    empty = bd_points_of_contact("Nocard Ltd", desk="marketing",
-                                 contacts={})
-    assert any("Marketing" in p["title"] for p in empty)
 
 
 def test_stale_flagged_weak_and_duplicate_entries(state):
@@ -111,6 +108,79 @@ def test_stale_flagged_weak_and_duplicate_entries(state):
     assert "Wrong Person" not in names       # Sara's flag respected
     old = next(p for p in poc if p["name"] == "Old Hand")
     assert old["stale"] is True              # surfaced, marked verify
+
+
+def test_fill_resolves_names_and_attaches_profiles(state):
+    """The nightly fill: resolver hit -> roster entry with a real /in/
+    profile attached by name; companies with an owner never spend."""
+    from tool.contacts import bd_poc_fill
+    from tool.contacts.schema import ContactEntry as CE
+    from tool.contacts.store import load_contacts
+
+    seen_calls = []
+
+    def fake_resolver(company, slot, fetch=None):
+        from tool.contacts.schema import ResolutionRecord
+        seen_calls.append((company, slot))
+        rec = ResolutionRecord(timestamp=_iso(), company=company,
+                               role_slot=slot, role_title_query=slot,
+                               outcome="resolved_verified")
+        if company == "Acme" and slot == "cco":
+            return CE(name="Jane Smith", role_title="Group CCO",
+                      role_slot="cco", verified_at=_iso(),
+                      confidence=0.85), rec
+        rec.outcome = "resolved_no_match"
+        return None, rec
+
+    profiles = {"Acme|Jane Smith":
+                {"url": "https://uk.linkedin.com/in/janesmith"}}
+    stats = bd_poc_fill.run(
+        ["Acme", "Emptyco"], desk="comms",
+        resolver=fake_resolver, fetch=lambda u: None,
+        profile_resolver=lambda c, n: profiles.get(f"{c}|{n}"))
+    assert stats["resolved"] == 1 and stats["profile_links"] == 1, \
+        (stats, seen_calls)
+    contacts = load_contacts()
+    poc = bd_points_of_contact("Acme", desk="comms", contacts=contacts)
+    assert poc[0]["name"] == "Jane Smith"
+    assert poc[0]["url"] == "https://uk.linkedin.com/in/janesmith"
+    # Acme now has its owner — never re-spent. Emptyco's untried slots
+    # are probed progressively (2/run); once every slot is inside the
+    # 7-day attempt ledger, runs make zero resolver calls.
+    calls = {"n": 0}
+
+    def counting_resolver(company, slot, fetch=None):
+        calls["n"] += 1
+        return fake_resolver(company, slot, fetch)
+
+    bd_poc_fill.run(["Acme", "Emptyco"], desk="comms",
+                    resolver=counting_resolver, fetch=lambda u: None,
+                    profile_resolver=lambda c, n: None)
+    assert calls["n"] == 2          # only Emptyco's two remaining slots
+    assert all(c == "Emptyco" for c, _ in seen_calls[-2:])
+    calls["n"] = 0
+    bd_poc_fill.run(["Acme", "Emptyco"], desk="comms",
+                    resolver=counting_resolver, fetch=lambda u: None,
+                    profile_resolver=lambda c, n: None)
+    assert calls["n"] == 0          # everything ledgered — fully quiet
+
+
+def test_fill_budget_caps_resolver_calls(state):
+    from tool.contacts import bd_poc_fill
+    calls = {"n": 0}
+
+    def miss_resolver(company, slot, fetch=None):
+        from tool.contacts.schema import ResolutionRecord
+        calls["n"] += 1
+        return None, ResolutionRecord(
+            timestamp=_iso(), company=company, role_slot=slot,
+            role_title_query=slot, outcome="resolved_no_match")
+
+    bd_poc_fill.run([f"Co {i}" for i in range(20)], desk="comms",
+                    max_resolutions=5, resolver=miss_resolver,
+                    fetch=lambda u: None,
+                    profile_resolver=lambda c, n: None)
+    assert calls["n"] == 5
 
 
 def test_no_emails_anywhere(state):
