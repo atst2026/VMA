@@ -845,6 +845,20 @@ def draft_outreach_for_predictor(predictor: dict) -> str:
         insight = (f"A step up of that size usually triggers a {fn} build-out "
                    f"within {window}, with {seat} the senior hire that lands it.")
         offer = "We would want to map that search early, before it is briefed out."
+    elif key == "interim_watch":
+        obs = (f"I noticed {company} is covering a senior {fn} seat on an "
+               f"interim basis.")
+        insight = (f"Covers at that level usually convert to a permanent search "
+                   f"within {window}, often before the role is advertised.")
+        offer = ("We would map the market for the permanent seat now, so a "
+                 "shortlist is ready the day the brief is signed off.")
+    elif key == "follow_on":
+        obs = f"I saw {company}'s recent senior appointment."
+        insight = (f"Incoming leaders usually reshape their {fn} team within "
+                   f"{window}, and the first briefs go to whoever is already "
+                   f"in the room.")
+        offer = (f"We place senior {fn} leaders on a retained basis and would "
+                 "value an early conversation before those briefs are written.")
     else:
         obs = f"I saw the recent {label or 'development'} at {company}."
         insight = (f"Events like this usually open a senior {fn} mandate ({seat}) "
@@ -1000,6 +1014,7 @@ _HYDRATE_PATHS = [
     "tool/state/pulse_dismissed.json",
     "tool/state/report_log.json",
     "tool/state/predictor_status.json",
+    "tool/state/edge_watches.json",
     "tool/state/contact_flags.json",
     "tool/state/contact_feedback.json",
     "tool/state/cascade_events.json",
@@ -1730,6 +1745,8 @@ _MR_TRIGGER = {
     "water_sar":              ("Water SAR",          "warn"),
     "contract_end":           ("Contract end",       "warn"),
     "cascade":                ("Senior move",        "lead"),
+    "interim_watch":          ("Interim cover",      "lead"),
+    "follow_on":              ("Team build-out",     "people"),
     # v2 demand-first triggers (fee-probability over hire-probability)
     "inhouse_search_failing": ("In-house failing",   "warn"),
     "hiring_restart":         ("Hiring restart",     "fund"),
@@ -2001,18 +2018,21 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
         _mkt = False
     bd = []
     from tool import why_now as _wn
+    from tool.edge_detectors import intent_phrase as _intent
     for row in premarket_rows:
         _kind = row.get("_kind", "predictor")
-        if _kind in ("stale_mandate", "water_sar", "contract_end", "cascade"):
+        if _kind in ("stale_mandate", "water_sar", "contract_end", "cascade",
+                     "interim_watch", "follow_on"):
             typ, key = _MR_TRIGGER.get(_kind, ("Signal", "lead"))
             co = row.get("company") or "—"
             brief = (row.get("evidence") or row.get("title") or "")[:220] or typ
             url = row.get("url") or row.get("article_url") or ""
             _fee, _fee_tip = _wn.fee_driver([_kind])
+            _sp_seen = row.get("first_seen") or ""
             bd.append({
                 "co": co,
-                "isNew": 0,
-                "age": "",
+                "isNew": 1 if _sp_seen.startswith(today) else 0,
+                "age": _mr_row_age(_sp_seen) if _sp_seen else "",
                 "type": typ, "key": key,
                 "seat": role_label, "why": typ,
                 "whyNow": _wn.compose_why_now(
@@ -2021,13 +2041,14 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                 "fee": _fee, "feeTip": _fee_tip,
                 "brief": brief,
                 "url": url, "src": _mr_domain(url),
-                "win": "",
+                "win": row.get("window_label") or "",
                 "st": _mr_st(row.get("strength")),
                 "opp": row.get("_opp") or 0.0,
                 "idtype": _kind, "rid": row.get("fid") or "",
                 "status": row.get("status", "active"),
                 "pitchRole": role_label,
                 "pitchTrigger": brief,
+                "intent": _intent(row.get("evidence")),
                 **_mr_lead_fields(row),
                 **_mr_gate_fields(row),
                 **_mr_q4_field(row),
@@ -2075,6 +2096,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                 "status": row.get("status", "active"),
                 "pitchRole": role_label,
                 "pitchTrigger": f"a recent {why} funding round at {row.get('company') or ''}".strip(),
+                "intent": _intent(row.get("evidence")),
                 **_mr_lead_fields(row),
                 **_mr_gate_fields(row),
                 **_mr_q4_field(row),
@@ -2112,6 +2134,9 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                 "status": row.get("status", "active"),
                 "pitchRole": row.get("predicted_role") or "",
                 "pitchTrigger": row.get("pitch_trigger") or "",
+                "intent": _intent(" ".join(
+                    (e.get("evidence") or "") for e in evs
+                    if isinstance(e, dict))),
                 **_mr_lead_fields(row),
                 **_mr_gate_fields(row),
                 **_mr_q4_field(row),
@@ -2238,8 +2263,48 @@ def _render_dashboard(legacy: bool = False):
             })
     except Exception as _e:
         log.info("cascade rows load: %s", _e)
+    # Edge detectors: second-order signals derived from feeds already held
+    # (no new scraping) — the interim-to-perm watch and the new-leader
+    # build-out. Persisted in edge_watches.json so a watch outlives the
+    # 7-day Live Jobs rotation / cascade churn that produced it.
+    from tool import edge_detectors as _edge
+    _interim_rows = []
+    try:
+        _interim_rows = _edge.detect_interim_covers(leads, limit=10)
+    except Exception as _e:
+        log.info("interim watch load: %s", _e)
+    _follow_rows = []
+    try:
+        _follow_rows = _edge.detect_follow_on(raw_cascade, limit=10)
+    except Exception as _e:
+        log.info("follow-on load: %s", _e)
+    # Edge rows reach the dossier's "Draft opener" button like funding rows
+    # do — synthesise the outreach from their single event.
+    for _er in _interim_rows + _follow_rows:
+        if not _er.get("outreach"):
+            try:
+                _er["outreach"] = draft_outreach_for_predictor({
+                    "company": _er.get("company"),
+                    "predicted_role": _default_role_label(),
+                    "window_label": _er.get("window_label") or "",
+                    "events": _er.get("events") or [],
+                })
+            except Exception:
+                pass
 
-    _specialist_rows = _stale_rows + _water_rows + _contract_rows + _cascade_rows
+    _specialist_rows = (_stale_rows + _water_rows + _contract_rows
+                        + _cascade_rows + _interim_rows + _follow_rows)
+    # Specialist rows post their ✓/✕ to /api/predictor/<fid>/status, so
+    # read that same durable overlay back — a dismissed row must stay
+    # dismissed across refreshes and redeploys.
+    try:
+        from tool import predictor_status as _pstat
+        _pso = _pstat.get_statuses()
+        for _sp in _specialist_rows:
+            _sp["status"] = (_pso.get(_sp.get("fid"))
+                             or _sp.get("status", "active"))
+    except Exception as _e:
+        log.info("specialist status overlay: %s", _e)
     # Decorate with stable id + persisted triage status so the
     # Followed-up / Dismissed buttons can survive a refresh.
     from tool import funding_status as _fs
