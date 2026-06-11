@@ -19,6 +19,12 @@ services:
     region: frankfurt        # closest EU region; the team's in the UK
     branch: main
     rootDir: .
+    # requirements.txt is the SLIM web set. The pitch-pack PDF/logo stack
+    # (weasyprint, cairosvg, pdfplumber, pillow) lives in
+    # requirements-pitchpack.txt — the dashboard process never imports it
+    # (only the pitch-pack GitHub Action does, and that workflow installs it
+    # itself). Keeping it out of the web build keeps Render's slow free-tier
+    # builds fast and reliable.
     buildCommand: "pip install -r requirements.txt"
     startCommand: "gunicorn -w 1 -t 60 -b 0.0.0.0:$PORT tool.dashboard:app"
     autoDeploy: true
