@@ -801,10 +801,13 @@ def draft_outreach_for_lead(signal: dict) -> str:
 
 
 def draft_outreach_for_predictor(predictor: dict) -> str:
-    """A lead-SPECIFIC opener synthesised from this predictor's own signals —
-    the trigger, the predicted seat, the window and the scale — so the play
-    matches the diagnosis instead of a generic coffee-and-brochure. British, no
-    em dashes. Falls back to the default only if there's nothing to work with."""
+    """The soft opener — the AD-defined script. The engine knows the
+    trigger, the predicted seat and the window; the opener deliberately
+    REVEALS NONE OF IT. It acknowledges change in the vaguest credible
+    terms, offers sector insight as the value (call_ammo supplies the
+    actual goods), and asks for a low-stakes conversation. Never the
+    vacancy pitch: with too few companies willing to engage, one clumsy
+    opener doesn't cost a call, it poisons an account."""
     p = predictor or {}
     try:
         mkt = active_profile().key == "marketing"
@@ -814,59 +817,39 @@ def draft_outreach_for_predictor(predictor: dict) -> str:
     company = (p.get("company") or "").strip()
     if not company:
         return _default_outreach()
-    seat = (p.get("predicted_role")
-            or ("a senior marketing hire" if mkt else "a senior comms hire")).strip()
-    window = (p.get("window_label") or "the coming weeks").strip()
     evs = [e for e in (p.get("events") or []) if isinstance(e, dict)]
-    ev0 = evs[0] if evs else {}
-    key = ev0.get("trigger_key") or ""
-    label = (ev0.get("trigger_label") or "").strip().lower()
-    evidence = " ".join((e.get("evidence") or "") for e in evs).lower()
-    midlevel = (key == "job_ad_cluster" or "no senior" in evidence
-                or "mid-level" in evidence or "mid level" in evidence)
+    keys = {e.get("trigger_key") for e in evs}
 
-    if midlevel:
-        obs = (f"I noticed {company} is hiring across {fn} at mid level but "
-               f"hasn't posted a senior {fn} hire yet.")
-        insight = (f"That usually means the function is being built from the "
-                   f"middle, and the senior mandate ({seat}) tends to follow "
-                   f"within {window}.")
-        offer = ("We would map that senior search before it is briefed out, and "
-                 "can help with the mid-level hiring you are running now.")
-    elif key in ("ceo_change", "chro_change", "chair_change",
-                 "comms_leader_departure", "cfo_change", "ir_director_change"):
-        obs = f"I saw the recent leadership change at {company} ({label or 'a senior appointment'})."
-        insight = (f"A change at that level usually reshapes the {fn} team within "
-                   f"{window}, and {seat} is often the first senior appointment.")
-        offer = (f"We place senior {fn} leaders on a retained basis and would map "
-                 "the market for that seat before the search goes live.")
-    elif key in ("funding", "ipo_listing"):
-        obs = f"I saw {company}'s recent {label or 'raise'}."
-        insight = (f"A step up of that size usually triggers a {fn} build-out "
-                   f"within {window}, with {seat} the senior hire that lands it.")
-        offer = "We would want to map that search early, before it is briefed out."
-    elif key == "interim_watch":
-        obs = (f"I noticed {company} is covering a senior {fn} seat on an "
-               f"interim basis.")
-        insight = (f"Covers at that level usually convert to a permanent search "
-                   f"within {window}, often before the role is advertised.")
-        offer = ("We would map the market for the permanent seat now, so a "
-                 "shortlist is ready the day the brief is signed off.")
-    elif key == "follow_on":
-        obs = f"I saw {company}'s recent senior appointment."
-        insight = (f"Incoming leaders usually reshape their {fn} team within "
-                   f"{window}, and the first briefs go to whoever is already "
-                   f"in the room.")
-        offer = (f"We place senior {fn} leaders on a retained basis and would "
-                 "value an early conversation before those briefs are written.")
+    # The ONLY thing the trigger changes is how "change" is acknowledged —
+    # at a level the company would recognise from its own public picture,
+    # never specific enough to show our hand.
+    if keys & {"job_ad_cluster", "ic_platform_rfp", "inhouse_search_failing",
+               "interim_watch"}:
+        # Hiring is public — acknowledging it openly is safe.
+        obs = (f"I can see you're building out the team at {company} at "
+               f"the moment.")
+    elif keys & {"funding", "secured_financing", "ipo_listing",
+                 "pe_acquisition", "mna", "ownership_change",
+                 "market_entry"}:
+        obs = (f"Looks like an exciting period at {company}, congrats on "
+               f"the recent momentum.")
+    elif keys & {"crisis_event", "regulator_action", "regulator_probe_early",
+                 "profit_warning", "restructure", "redundancy",
+                 "contract_loss"}:
+        obs = (f"I appreciate there's a lot on at {company} right now, so "
+               f"I'll keep this short.")
     else:
-        obs = f"I saw the recent {label or 'development'} at {company}."
-        insight = (f"Events like this usually open a senior {fn} mandate ({seat}) "
-                   f"within {window}.")
-        offer = (f"We place senior {fn} leaders on a retained basis and would value "
-                 "a short conversation before the role goes live.")
-    ask = "Worth a brief call this week? Happy to share who is moving in the market right now."
-    return f"Hi (Name),\n\n{obs} {insight}\n\n{offer} {ask}\n\nBest,\n(Your name)"
+        # Leadership changes and everything else: the vaguest credible nod.
+        obs = (f"I can see things are changing at {company} at the moment.")
+
+    insight = (f"I spend my week across senior {fn} moves in your part of "
+               f"the market, so I have a fairly current picture of who's "
+               f"moving, what teams are building, and what good looks like "
+               f"right now. Happy to share some of it, no strings.")
+    ask = ("Worth a short conversation in the next week or two? Even if "
+           "there's nothing on your side, the sector picture is usually "
+           "worth the fifteen minutes.")
+    return f"Hi (Name),\n\n{obs} {insight}\n\n{ask}\n\nBest,\n(Your name)"
 
 
 def _people_search(keywords: str) -> str:
@@ -1786,6 +1769,15 @@ def _mr_src(url: str | None, source: str | None = None) -> str:
     return s if s and s.lower() != "google news" else (s or d)
 
 
+def _mr_call_ammo(company: str | None, mkt: bool) -> list:
+    try:
+        from tool import call_ammo
+        return call_ammo.sector_insights(
+            company, "marketing" if mkt else "comms")
+    except Exception:
+        return []
+
+
 def _mr_pred_buyer(row: dict, seat: str | None) -> tuple[str, str, str]:
     """Role-dependent buyer routing (the AD-room map): the comms-leader
     seat at a listed company is bought at C-suite, not HR; structure and
@@ -2248,6 +2240,9 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                 "age": _mr_row_age(row.get("first_seen")),
                 "type": typ, "key": key,
                 "seat": seat_disp, "why": why,
+                # The insight the opener promises ("I can tell you what
+                # I'm seeing in your sector") — supplied, not implied.
+                "ammo": _mr_call_ammo(row.get("company"), _mkt),
                 "predBuyer": _mr_pred_buyer(row, seat)[0],
                 "predBuyerWhy": _mr_pred_buyer(row, seat)[1],
                 "predBuyerRule": _mr_pred_buyer(row, seat)[2],

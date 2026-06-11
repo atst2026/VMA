@@ -47,26 +47,30 @@ def test_dedupe_keeps_distinct_companies():
 
 
 # ---- the play synthesises from the lead's own signals ----
-def test_opener_synthesises_cluster_lead():
+def test_opener_acknowledges_public_hiring_but_reveals_no_analysis():
+    # The soft-opener contract: hiring is public so it may be acknowledged,
+    # but the predicted seat and the window must never appear.
     op = d.draft_outreach_for_predictor({
         "company": "DWP", "predicted_role": "Head of Internal Communications",
         "window_label": "4-12 weeks",
         "events": [{"trigger_key": "job_ad_cluster", "trigger_label": "Job-ad cluster",
                     "evidence": "2+ mid-level comms, no senior yet"}]})
-    assert "DWP" in op
-    assert ("mid level" in op.lower() or "mid-level" in op.lower())
-    assert "4-12 weeks" in op                     # the window is used
+    assert "DWP" in op and "building out the team" in op
+    assert "4-12 weeks" not in op                 # never the clock
+    assert "internal communications" not in op.lower()  # never the seat
     assert "—" not in op                          # no em dashes
     assert "brochure" not in op.lower() and "coffee" not in op.lower()
 
 
-def test_opener_synthesises_leadership_lead():
+def test_opener_never_names_the_leadership_trigger():
     op = d.draft_outreach_for_predictor({
         "company": "Currys", "predicted_role": "Chief Marketing Officer",
         "window_label": "6-12 weeks",
         "events": [{"trigger_key": "ceo_change", "trigger_label": "CEO change",
                     "evidence": "new CEO appointed"}]})
-    assert "Currys" in op and "leadership change" in op.lower()
+    assert "Currys" in op
+    assert "things are changing at Currys" in op  # vague, credible nod
+    assert "ceo" not in op.lower() and "leadership change" not in op.lower()
     assert "—" not in op
 
 
