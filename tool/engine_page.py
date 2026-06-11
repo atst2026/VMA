@@ -418,6 +418,13 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .btn.good.on{color:#1e7a41;background:#f3faf5;border-color:#bfe3cd}
 .btn.bad.on{color:#c0392b;background:#fdf4f2;border-color:#f0c5bd}
 .gap{flex:1}
+.outrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 28px 2px}
+.outlbl{font:700 8.5px var(--mono);letter-spacing:.18em;color:var(--dim);margin-right:4px}
+.outbtn{font:600 10px 'Inter';color:var(--muted);background:rgba(255,255,255,.7);
+  border:1px solid rgba(16,22,38,.08);border-radius:999px;padding:4px 10px;cursor:pointer;transition:.15s}
+.outbtn:hover{color:var(--deep);background:#fff}
+.outbtn.on{color:#fff;background:var(--deep);border-color:var(--deep)}
+.chip.prod{color:#0e7c74;border-color:rgba(18,165,148,.4);background:rgba(221,243,240,.7)}
 .openerbox{margin:14px 28px 0;padding:11px 14px;border-left:2px solid var(--vma);border-radius:0 12px 12px 0;
   background:rgba(62,92,132,.06);font-size:12.5px;line-height:1.62;color:var(--ink2)}
 /* ---- the pipeline past PRODUCTION ----
@@ -1298,7 +1305,7 @@ function portfolioHTML(l){
     +(l.ver?chip('ver-'+l.ver,esc(VER_LABEL[l.ver]||l.ver).toUpperCase(),MEANING[l.ver]):'')
     +(l.rt?chip('rt','STRESS-TESTED ✓ '+(l.conviction||''),MEANING.rt+(l.conviction?' Conviction '+l.conviction+'/100.':'')):'')
     +(l.intent?chip('intent','STATED INTENT',MEANING.intent+' Here: “'+l.intent+'”.'):'')
-    +(l.conflict?chip('anti','COMPETING RECRUITER','A rival search firm already holds a mandate here — do not call.'):'')
+    +(l.conflict?chip('anti','RIVAL MANDATE','A rival firm holds the perm mandate — proof they pay fees. Watch on a timer for the search to stall; pitch interim cover while it runs.'):'')+(l.product==='interim'?chip('prod','INTERIM PLAY','Perm budget is blocked (freeze, rival mandate or cuts) but the work still exists — pitch day-rate interim; it comes from a different budget line.'):'')
     +'</div>'
     +'<div class="scorering"><svg width="62" height="62" viewBox="0 0 62 62">'
     +'<circle cx="31" cy="31" r="26" fill="none" stroke="rgba(16,22,38,.08)" stroke-width="3.5"/>'
@@ -1346,6 +1353,9 @@ function portfolioHTML(l){
     +'<span class="gap"></span>'
     +'<button type="button" class="btn good'+(l.status==='followed_up'?' on':'')+'" data-act="fu" data-id="'+l._id+'">✓ Followed up</button>'
     +'<button type="button" class="btn bad'+(l.status==='dismissed'?' on':'')+'" data-act="dis" data-id="'+l._id+'">✕ Dismiss</button>'
+    +'</div>'
+    +'<div class="outrow"><span class="outlbl" title="Log what actually happened — every weight in the engine is reviewed against these outcomes">OUTCOME</span>'
+    +OUTS.map(o=>'<button type="button" class="outbtn'+(l.outcome===o[0]?' on':'')+'" data-out="'+o[0]+'" data-id="'+l._id+'">'+o[1]+'</button>').join('')
     +'</div></div>';
   return h;
 }
@@ -1355,10 +1365,23 @@ function stripHTML(l,i){
     +'<div class="strip-h" tabindex="0" data-qa="lead-trigger" data-id="'+l._id+'">'
     +'<div class="idcell"><div class="co"><span class="nm">'+esc(l.co)+'</span>'
     +(l.isNew?'<span class="tag-new">NEW</span>':'')
-    +(l.conflict?'<span class="tag-dnc">DO NOT CALL</span>':'')+'</div></div>'
+    +(l.conflict?'<span class="tag-dnc">RIVAL MANDATE</span>':'')+'</div></div>'
     +'<span class="tp '+(l.key||'lead')+'">'+esc(l.type||'Signal')+'</span>'
     +'<span class="strengthcell '+sband(l.score||0)+'"><span class="sn">'+(l.score==null?'—':l.score)+'</span>'+miniArc(l.score)+'</span>'
     +'</div></div>';
+}
+const OUTS=[['no_answer','No answer'],['wrong_buyer','Wrong buyer'],['conversation','Conversation'],
+  ['meeting','Meeting'],['brief','Brief'],['placement','Placement']];
+function logOutcome(id,val){
+  const l=BYID[id];if(!l)return;
+  l.outcome=(l.outcome===val)?'':val;
+  document.querySelectorAll('.outbtn[data-id="'+id+'"]').forEach(b=>
+    b.classList.toggle('on',b.dataset.out===l.outcome));
+  toast(l.outcome?('Outcome logged: '+l.outcome.replace('_',' ')):'Outcome cleared');
+  fetch('/api/lead/outcome',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({id:l.rid,outcome:l.outcome,
+      snapshot:{score:l.score,tier:l.tier,prop:l.prop,qual:(l.qual||{}).total,fee:l.fee,type:l.type}})})
+    .catch(()=>{});
 }
 /* clicking ANY lead — whichever section — opens the same full-page
    dossier in place of the portfolio; Back returns to the sections */
@@ -1447,7 +1470,7 @@ function renderBoard(){
      counts are real companies, not duplicate signals). Blocked leads
      (competing recruiter, freeze, administration) never surface */
   const byCo={};
-  BD.filter(l=>l.tier!=='blocked'&&!l.conflict).forEach(l=>{
+  BD.filter(l=>l.tier!=='blocked').forEach(l=>{
     const k=(l.co||'').toLowerCase().trim();
     if(!byCo[k]||(l.score||0)>(byCo[k].score||0))byCo[k]=l;
   });
@@ -1672,6 +1695,8 @@ document.addEventListener('click',e=>{
   }
   if(!e.target.closest('.cal-pop')){pop.classList.remove('on');pop.dataset.key='';
     document.querySelectorAll('.cpill.sel,.wspan.sel').forEach(x=>x.classList.remove('sel'));}
+  const ob=e.target.closest('[data-out]');
+  if(ob){logOutcome(ob.dataset.id,ob.dataset.out);return;}
   const act=e.target.closest('[data-act]');
   if(act&&act.dataset.id){
     const id=act.dataset.id,a=act.dataset.act;

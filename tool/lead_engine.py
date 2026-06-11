@@ -424,7 +424,9 @@ _EVENT_GRADE = {"funding", "ipo_listing", "job_ad_cluster", "ic_platform_rfp"}
 # a competitor. Text-detected from evidence; a manual override flag can be
 # layered on top later.
 _ANTI = [
-    ("hiring_freeze",  re.compile(r"hiring freeze|freeze on hiring|recruitment freeze|pause(?:d|s)? hiring", re.I), "cap"),
+    # A freeze dampens perm strength but is NOT a hard cap: the work
+    # still exists and day-rate interim demand rises under a freeze.
+    ("hiring_freeze",  re.compile(r"hiring freeze|freeze on hiring|recruitment freeze|pause(?:d|s)? hiring", re.I), 0.7),
     ("layoffs",        re.compile(r"redundanc|lay[\s-]?offs?|job cuts|cutting \d+\s+jobs|axe[sd]? \d+", re.I), 1.0),
     ("administration", re.compile(r"\benters? administration|goes into administration|insolvenc|liquidation", re.I), "cap"),
     ("in_house_team",  re.compile(r"in[\s-]house (?:team|function|capabilit|comms|marketing)|built .{0,25}in[\s-]house|grew? .{0,25}in[\s-]house|fully[\s-]staffed|\d+[\s-]person .{0,20}in[\s-]house|brought .{0,20}in[\s-]house", re.I), 0.5),

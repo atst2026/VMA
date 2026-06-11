@@ -404,9 +404,12 @@ def strength_score(lead: dict, g: dict, item: dict | None = None) -> int:
             score += 10
         # Contradictions pull hard (-8 each, max -16).
         score -= min(len(lead.get("contradictions") or []), 2) * 8
-        # Hard blocks floor the score into the Blocked band.
+        # Administration is the only hard block left (the company can't
+        # buy). A rival mandate or hiring freeze converts the PLAY (timed
+        # watch / interim) but doesn't floor the score — those leads now
+        # rank on their merits inside Watch.
         anti = set(lead.get("anti_triggers") or [])
-        if lead.get("conflict") or anti & {"administration", "hiring_freeze"}:
+        if "administration" in anti:
             score = min(score, 15)
         return int(round(min(max(score, 0), 100)))
     except Exception:
@@ -418,8 +421,12 @@ def tier_for(lead: dict, g: dict, score: int) -> str:
     'dev' (worth developing), 'early' (weak signals)."""
     lead, g = lead or {}, g or {}
     anti = set(lead.get("anti_triggers") or [])
-    if lead.get("conflict") or anti & {"administration", "hiring_freeze"}:
+    if "administration" in anti:
         return "blocked"
+    # A rival mandate is a timed watch (their search may stall), never
+    # hidden and never blocked — the interim-cover pitch is live meanwhile.
+    if lead.get("conflict"):
+        return "early"
     if g.get("presented"):
         return "ready"
     return "dev" if score >= SCORE_DEVELOPING else "early"
@@ -468,16 +475,31 @@ def assess(item: dict, lead: dict, *, verdicts: list[dict] | None = None,
             return out
         confirmed = inv.get("verdict") == "confirmed"
 
-        # 2. Hard blockers.
-        if lead.get("conflict"):
-            out["reasons"].append("Competing recruiter — conflict, never presented")
-            return out
+        # 2. Hard blockers — administration only. The two old extra blocks
+        # discarded exactly the leads a quiet-market desk farms:
+        #   - A RIVAL MANDATE is the strongest fee-propensity evidence there
+        #     is, and senior searches stall often enough that it converts to
+        #     a timed watch (re-check ~8-12 weeks, when stalling shows) with
+        #     an interim-cover pitch live in the meantime.
+        #   - A HIRING FREEZE kills perm fees but the work still exists —
+        #     day rates come from a different budget line, so the lead
+        #     continues through the gate flagged as an interim play.
         anti = set(lead.get("anti_triggers") or [])
-        for blocker in ("administration", "hiring_freeze"):
-            if blocker in anti:
-                out["reasons"].append(f"Hard blocker: {blocker.replace('_', ' ')}")
-                out["recheck_days"] = 30
-                return out
+        if "administration" in anti:
+            out["reasons"].append("Hard blocker: administration")
+            out["recheck_days"] = 30
+            return out
+        if lead.get("conflict"):
+            out["reasons"].append(
+                "Rival search firm holds the mandate — a proven fee-payer; "
+                "watch on a timer for the search to stall, and pitch "
+                "interim cover while it runs")
+            out["recheck_days"] = 60
+            return out
+        if "hiring_freeze" in anti:
+            out["reasons"].append(
+                "Hiring freeze — perm is paused, so the live work is an "
+                "interim (day-rate) play")
 
         # 3. Amplifier-only stacks never present alone.
         live_keys = {t.get("key") for t in (lead.get("triggers") or [])

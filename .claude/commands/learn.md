@@ -40,6 +40,21 @@ print('REJECTED by trigger:', dict(rej))
 print('dossier companies on file:', len(idx.get('companies',{})))
 "
 ```
+Then pull the CALL-OUTCOME ladder — the strongest evidence in the
+system, because it records what actually happened on the phone
+(no_answer / wrong_buyer / conversation / meeting / brief / placement),
+each stamped with the engine snapshot that produced the call:
+```bash
+python3 -c "import json; from tool import lead_outcomes;
+print(json.dumps(lead_outcomes.outcome_report(), indent=1))"
+```
+Read it as calibration questions: do 70+ scores convert more than
+45-69s (if not, the weights are mis-set — find which component lies)?
+Do 'Proven agency user' leads out-convert 'Unknown' by enough to
+justify the 15-point gap? Is any tier producing wrong_buyer clusters
+(the buyer-mapping table is wrong for that trigger)? Propose weight
+changes only where n≥5 per cell.
+
 Also read, for the window: investigation overlays
 (`tool/state/investigations/*.json` — which red-team verdicts did the AD
 agree with?), the dossier index gate histories (which queue reasons keep

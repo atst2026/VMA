@@ -78,17 +78,26 @@ def test_premature_scores_below_in_window():
     assert in_window > fresh
 
 
-def test_hard_blocks_floor_into_blocked_band():
+def test_only_administration_floors_the_score():
+    # Rival mandates and freezes convert the play (timed watch / interim);
+    # they rank on their merits instead of being floored.
     s = gate.strength_score(_lead(fit=10, signal=10, conflict=True), _g())
-    assert s <= 15
+    assert s > 15
+    sf = gate.strength_score(_lead(fit=10, signal=10,
+                                   anti_triggers=["hiring_freeze"]), _g())
+    assert sf > 15
     s2 = gate.strength_score(_lead(anti_triggers=["administration"]), _g())
     assert s2 <= 15
 
 
 def test_tiers():
     assert gate.tier_for(_lead(), _g(presented=True), 80) == "ready"
-    assert gate.tier_for(_lead(conflict=True), _g(presented=False), 10) == "blocked"
+    # Rival mandate -> Watch (timed), never blocked or hidden.
+    assert gate.tier_for(_lead(conflict=True), _g(presented=False), 10) == "early"
+    # A freeze is an interim play — it tiers normally on score/gate.
     assert gate.tier_for(_lead(anti_triggers=["hiring_freeze"]),
+                         _g(presented=False), 60) == "dev"
+    assert gate.tier_for(_lead(anti_triggers=["administration"]),
                          _g(presented=False), 60) == "blocked"
     assert gate.tier_for(_lead(), _g(presented=False),
                          gate.SCORE_DEVELOPING) == "dev"

@@ -137,10 +137,16 @@ def test_partial_evidence_presents_moderate():
     assert g["presented"] and g["confidence"] == "Moderate"
 
 
-def test_conflict_never_presents():
+def test_conflict_becomes_timed_watch_not_a_block():
+    # A rival mandate is proven fee-propensity + a search that may stall:
+    # queued as a timed watch (re-check ~8-12 weeks) with the interim-cover
+    # pitch flagged — never presented as call-ready, never hidden.
     g = gate.assess({"company": "Rival Search", "events": _full_events()},
                     _lead(conflict=True), now=NOW)
-    assert not g["presented"] and "Competing recruiter" in g["reasons"][0]
+    assert not g["presented"]
+    assert "Rival search firm" in g["reasons"][0]
+    assert "interim" in g["reasons"][0]
+    assert g["recheck_days"] == 60
 
 
 def test_hard_blocker_queues_with_recheck():
