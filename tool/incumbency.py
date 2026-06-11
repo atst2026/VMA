@@ -224,6 +224,31 @@ def _result(status: str, family: str, hit: dict | None,
             "title": title, "url": url, "note": note}
 
 
+# Short function label per family, used to rewrite the predicted seat
+# when an incumbent is found: the opportunity is no longer the director
+# chair but the build UNDERNEATH it.
+_FUNCTION_LABEL = {
+    "investor_relations": "IR",
+    "internal_comms": "internal comms",
+    "sustainability": "sustainability comms",
+    "digital_comms": "digital comms",
+    "corporate_affairs": "corporate affairs",
+    "marketing_brand": "marketing",
+    "communications": "comms",
+}
+
+
+def build_seat(predicted_role: str | None, incumbent_name: str | None) -> str:
+    """The seat actually for sale when the predicted seat's family already
+    has a public incumbent: senior hires under them. Replaces the
+    predicted seat on the card so it never contradicts its own
+    incumbency verdict."""
+    family, _titles = family_for_seat(predicted_role)
+    func = _FUNCTION_LABEL.get(family, "comms")
+    who = (incumbent_name or "").strip() or "the incumbent"
+    return f"Senior {func} hires under {who}"
+
+
 def annotate_entry(entry: dict) -> dict:
     """Project the incumbency verdict onto a pipeline entry as
     incumbent_* fields the dashboard reads. Mutates and returns `entry`;

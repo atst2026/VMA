@@ -2120,6 +2120,12 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
             brief = (ev0.get("evidence") or "")[:220] or row.get("advisory") or why
             url = ev0.get("url") or ""
             seat = row.get("predicted_role") or role_label
+            # An incumbency hit rewrites the seat itself — the opportunity
+            # is the build UNDER the sitting leader, so the card must
+            # never advertise their chair as the vacancy.
+            if row.get("incumbent_status") == "found":
+                from tool import incumbency as _inc
+                seat = _inc.build_seat(seat, row.get("incumbent_name"))
             _fee, _fee_tip = _wn.fee_driver(
                 [e.get("trigger_key") for e in evs if isinstance(e, dict)])
             _why_now_txt = _wn.compose_why_now(
@@ -2150,7 +2156,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                 "opp": row.get("_opp") or 0.0,
                 "idtype": "predictor", "rid": row.get("pid") or "",
                 "status": row.get("status", "active"),
-                "pitchRole": row.get("predicted_role") or "",
+                "pitchRole": seat,
                 "pitchTrigger": row.get("pitch_trigger") or "",
                 "intent": _intent(" ".join(
                     (e.get("evidence") or "") for e in evs

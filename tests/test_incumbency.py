@@ -117,6 +117,17 @@ def test_unchecked_without_bright_data(tmp_path, monkeypatch):
     assert res["note"] == ""    # no claim either way
 
 
+def test_build_seat_rewrites_to_the_build_under_the_incumbent():
+    # The IMI case end-to-end: the card must sell the build under Erica
+    # Lockhart, not her chair.
+    assert INC.build_seat("Corporate Affairs Director", "Erica Lockhart") == \
+        "Senior corporate affairs hires under Erica Lockhart"
+    assert INC.build_seat("Head of Investor Relations", None) == \
+        "Senior IR hires under the incumbent"
+    assert INC.build_seat("Chief Marketing Officer", "A. Buyer") == \
+        "Senior marketing hires under A. Buyer"
+
+
 def test_annotate_entry_projects_fields(tmp_path, monkeypatch):
     _setup(tmp_path, monkeypatch)
     _force_bd(monkeypatch, _HTML)
