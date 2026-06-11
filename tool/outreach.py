@@ -42,6 +42,7 @@ import logging
 import os
 import re
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 from tool.contacts.schema import (EMAIL_SENDABLE_STATUSES,
                                   MIN_NAMED_CONFIDENCE)
@@ -53,6 +54,34 @@ log = logging.getLogger("brief.outreach")
 MODEL = "claude-opus-4-8"
 MAX_DRAFTS_PER_RUN = 30
 RESEND_COOL_OFF_DAYS = 30
+
+# The corporate brochure every outreach email attaches (the AD-approved
+# copy promises it: "I'll attach our corporate brochure"). Ships in the
+# repo so Render has it at runtime; kill-switch via env for go-live
+# tuning (heavy attachments can weigh on cold-email deliverability —
+# set OUTREACH_ATTACH_BROCHURE=0 to send link-free text only).
+BROCHURE_PATH = (Path(__file__).resolve().parent / "assets"
+                 / "vma_corporate_brochure.pdf")
+BROCHURE_FILENAME = "VMA Group - Corporate Brochure.pdf"
+_BROCHURE_CACHE: dict = {}
+
+
+def _brochure_attachment() -> list | None:
+    """[(filename, bytes, mimetype)] for email_send, or None when the
+    file is absent or disabled. Bytes cached per process."""
+    if (os.environ.get("OUTREACH_ATTACH_BROCHURE") or "").strip().lower() \
+            in ("0", "false", "no", "off"):
+        return None
+    try:
+        if "bytes" not in _BROCHURE_CACHE:
+            if not BROCHURE_PATH.exists():
+                return None
+            _BROCHURE_CACHE["bytes"] = BROCHURE_PATH.read_bytes()
+        raw = _BROCHURE_CACHE["bytes"]
+        return [(BROCHURE_FILENAME, raw, "application/pdf")] if raw else None
+    except Exception as e:
+        log.info("brochure attachment skipped (%s)", e)
+        return None
 
 
 # ---- Mode + identity ----------------------------------------------------
@@ -522,8 +551,10 @@ def send_outreach(lead: dict, body: str = "", subject: str = "") -> dict:
         "\n\n", "</p><p>").replace("\n", "<br>") + "</p></body></html>"
 
     from tool import email_send
+    attachments = _brochure_attachment()
     result = email_send.send(to, subject, html, text,
-                             from_name=sender_name())
+                             from_name=sender_name(),
+                             attachments=attachments)
     rec = {
         "at": datetime.now(timezone.utc).isoformat(),
         "mode": mode,
@@ -536,6 +567,7 @@ def send_outreach(lead: dict, body: str = "", subject: str = "") -> dict:
         "subject": subject,
         "email_status": contact.get("email_status") or "",
         "confidence": contact.get("confidence") or 0,
+        "brochure_attached": bool(attachments),
         "ok": bool(result.get("ok")),
         "provider": result.get("provider") or "",
         "detail": str(result.get("detail") or "")[:300],
