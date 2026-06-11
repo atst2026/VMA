@@ -62,7 +62,10 @@ BRONZE_KEYS = {"rebrand", "agency_account_move", "framework_award",
 # (a) SEAT: a live/structurally-open seat beats an imminent one beats none.
 SEAT_LIVE_KEYS = {"comms_leader_departure", "mishire_reversal",
                   "inhouse_search_failing", "job_ad_cluster",
-                  "ic_platform_rfp", "hiring_gap", "seniority_gap"}
+                  "ic_platform_rfp", "hiring_gap", "seniority_gap",
+                  # An advertised interim cover evidences a structurally
+                  # open senior seat — the perm search follows it.
+                  "interim_watch"}
 SEAT_IMMINENT_KEYS = {"ceo_change", "chair_change", "chro_change",
                       "cfo_change", "ir_director_change", "mna",
                       "pe_acquisition", "ipo_listing", "ownership_change",
@@ -70,7 +73,9 @@ SEAT_IMMINENT_KEYS = {"ceo_change", "chair_change", "chro_change",
                       "regulator_probe_early", "restructure", "redundancy",
                       "profit_warning", "contract_loss", "hiring_restart",
                       "funding", "secured_financing", "water_sar",
-                      "contract_end"}
+                      "contract_end",
+                      # A landed senior leader creates seats 1-2 quarters out.
+                      "follow_on"}
 # (b) BUDGET: capital events that fund an external build.
 BUDGET_KEYS = {"funding", "secured_financing", "ipo_listing",
                "pe_acquisition", "ownership_change"}

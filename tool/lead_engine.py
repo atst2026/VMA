@@ -81,6 +81,12 @@ _COMMS_TAXONOMY = {
     "seniority_gap":           (4, "demand", "fast"),
     "framework_displacement":  (3, "demand", "fast"),
     "esg_bcorp":               (2, "demand", "fast"),
+    # Edge detectors (tool.edge_detectors): a senior interim cover is a
+    # dated promise of a perm search; a landed senior leader is a dated
+    # promise of a team build-out. Slow decay — the payoff is 1-2
+    # quarters out, not this fortnight.
+    "interim_watch":           (4, "demand", "slow"),
+    "follow_on":               (3, "leadership", "slow"),
     # Access triggers
     "ic_platform_rfp":         (4, "access", "fast"),
     "martech_adoption":        (2, "access", "fast"),
@@ -125,6 +131,8 @@ _MKT_TAXONOMY = {
     "framework_displacement":  (3, "demand", "fast"),        # competitor agency disruption
     "ownership_change":         (3, "demand", "fast"),
     "secured_financing":        (3, "demand", "fast"),
+    "interim_watch":           (4, "demand", "slow"),        # interim-to-perm watch
+    "follow_on":               (3, "leadership", "slow"),    # new-leader build-out
     "martech_adoption":        (3, "access", "fast"),        # marketing-ops decision
     "esg_bcorp":               (2, "demand", "fast"),
     "ned_trustee_appointment": (1, "soft", "slow"),

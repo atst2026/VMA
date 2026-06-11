@@ -38,7 +38,8 @@ _FEE_CLASSES: list[tuple[str, str, set[str]]] = [
     ("Vacated seat",
      "A live seat is open or opening — the need is concrete, not "
      "speculative, and every week unfilled has a visible cost.",
-     {"comms_leader_departure", "cascade", "ir_director_change"}),
+     {"comms_leader_departure", "cascade", "ir_director_change",
+      "interim_watch"}),
     ("Deadline-driven",
      "The buying moment runs on the calendar, not the budget cycle — "
      "re-tenders and frameworks must go to market on fixed dates.",
@@ -56,7 +57,7 @@ _FEE_CLASSES: list[tuple[str, str, set[str]]] = [
      "the window where an incumbent-free pitch lands.",
      {"ceo_change", "cfo_change", "chro_change", "chair_change",
       "restructure", "redundancy", "activist_stake", "profit_warning",
-      "contract_loss", "leadership_tenure"}),
+      "contract_loss", "leadership_tenure", "follow_on"}),
 ]
 
 _DEFAULT = ("Live signal",

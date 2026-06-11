@@ -373,6 +373,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .chip.ver-multi{color:#1d4ed8;background:#e9effb}
 .chip.ver-single{color:#9a3412;background:#fff7ed}
 .chip.rt{color:#0e7c74;background:#ddf3f0}
+.chip.intent{color:#6d28d9;background:#f1ebfd}
 .chip.prop{color:#46556e;background:#edf0f4}
 .chip.anti{color:var(--red);background:#fdecea}
 .srcl{display:flex;align-items:baseline;gap:9px;padding:4px 0;font-size:12px;color:inherit;text-decoration:none;border-radius:8px}
@@ -920,7 +921,8 @@ const MEANING={
   rt:"Stress-tested — a sceptical second pass tried to kill this lead and failed.",
   fee:"Fee event — a trigger that historically converts into a paid search mandate.",
   q4:"Budget-flush window — the company's year-end is close, so unspent budget converts into signed briefs.",
-  prop:"Fee propensity — how likely this company is to pay an external search fee."
+  prop:"Fee propensity — how likely this company is to pay an external search fee.",
+  intent:"Stated intent — the company has publicly said it plans to invest in this function. Quote their own words on the call."
 };
 let mode='leads',filt='ready',sort='strength',view='engine';
 let toastT=null,openerT=null;
@@ -1177,6 +1179,7 @@ function portfolioHTML(l){
     +'<div class="pright"><div class="pchips">'
     +(l.ver?chip('ver-'+l.ver,esc(VER_LABEL[l.ver]||l.ver).toUpperCase(),MEANING[l.ver]):'')
     +(l.rt?chip('rt','STRESS-TESTED ✓ '+(l.conviction||''),MEANING.rt+(l.conviction?' Conviction '+l.conviction+'/100.':'')):'')
+    +(l.intent?chip('intent','STATED INTENT',MEANING.intent+' Here: “'+l.intent+'”.'):'')
     +(l.conflict?chip('anti','COMPETING RECRUITER','A rival search firm already holds a mandate here — do not call.'):'')
     +'</div>'
     +'<div class="scorering"><svg width="62" height="62" viewBox="0 0 62 62">'
