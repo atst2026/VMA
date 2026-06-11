@@ -213,10 +213,8 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .mini{position:relative;height:104px;margin-bottom:14px;border-radius:14px;overflow:hidden;
   background:rgba(255,255,255,.78);border:1px solid rgba(255,255,255,.9);
   box-shadow:0 4px 14px rgba(26,61,124,.07);text-align:left}
-.mini .embers{position:absolute;left:0;right:0;bottom:0;height:34px;pointer-events:none;
-  font:700 6.5px/1.1 var(--mono);color:var(--vma);white-space:pre;text-align:center;overflow:hidden}
-/* m1 — live crawl table over the ember skyline */
-.mini .crawlrows{position:absolute;left:0;right:0;top:4px;bottom:30px;overflow:hidden;
+/* m1 — live crawl table */
+.mini .crawlrows{position:absolute;left:0;right:0;top:4px;bottom:6px;overflow:hidden;
   -webkit-mask:linear-gradient(180deg,#000 55%,transparent);mask:linear-gradient(180deg,#000 55%,transparent)}
 .mini .crawltrack{animation:miniScroll 9s linear infinite}
 @keyframes miniScroll{from{transform:translateY(0)}to{transform:translateY(-50%)}}
@@ -228,7 +226,10 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .mini .ptrows{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:9px;overflow:hidden;
   -webkit-mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
   mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
-.mini .ptr{display:inline-flex;gap:6px;white-space:nowrap;animation:tick 42s linear infinite;width:max-content}
+/* two identical copies + uniform per-pill margin = the -50% loop point
+   is pixel-identical to the start, so the belt never gaps or jumps */
+.mini .ptr{display:inline-flex;white-space:nowrap;animation:tick 42s linear infinite;width:max-content}
+.mini .ptr .tpill{margin-right:6px}
 .mini .ptr.r2{animation-duration:54s}
 .tpill{position:relative;display:inline-flex;align-items:center;gap:5px;font:600 8.5px 'Inter';color:var(--ink2);
   padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.75);
@@ -268,28 +269,16 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .mini .doc .ftag{position:absolute;right:-9px;bottom:9px;background:#6b7686;color:#fff;
   font:700 5.5px var(--mono);letter-spacing:.08em;border-radius:3px;padding:2px 4px}
 .mini .ppill.low{top:auto;bottom:7px;transform:translateX(-50%)}
-/* m5 — paperwork collating itself into the dossier */
-.mini .collate{position:absolute;inset:0;z-index:2}
-.mini .sheetfly{position:absolute;top:24px;left:12%;width:22px;height:28px;background:#fff;
-  border:1px solid rgba(16,22,38,.12);border-radius:3px;padding:4px 3px;opacity:0;
-  box-shadow:0 3px 8px rgba(26,61,124,.14);animation:flyin 3.2s ease-in-out infinite}
-.mini .sheetfly i{display:block;height:2px;border-radius:99px;background:rgba(16,22,38,.12);margin-bottom:2.5px}
-.mini .sheetfly i.hl{background:var(--clay);opacity:.8}
-.mini .sheetfly.f2{top:38px;animation-delay:1.05s}
-.mini .sheetfly.f3{top:16px;animation-delay:2.1s}
-@keyframes flyin{0%{left:6%;opacity:0;transform:rotate(-6deg) scale(1)}
-  18%{opacity:1}62%{opacity:1;transform:rotate(3deg) scale(.92)}
-  82%{left:42%;opacity:0;transform:rotate(6deg) scale(.55)}100%{left:42%;opacity:0}}
-.mini .folderbox{position:absolute;left:50%;transform:translateX(-50%);top:50%;
-  margin-top:-24px;width:46px;height:40px;z-index:3}
-.mini .folderbox svg{width:100%;height:100%;color:var(--deep);
-  filter:drop-shadow(0 4px 8px rgba(26,61,124,.2))}
-.mini .folderbox::after{content:"";position:absolute;inset:-5px;border-radius:12px;
-  border:1.5px solid rgba(217,119,87,.45);animation:breathe 3.2s ease-in-out infinite}
-/* the dissolve field — the radar landing's ASCII ground, light-page tuning */
-.mini .dissolve{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
-.mini .folderbox .ftag2{position:absolute;left:50%;transform:translateX(-50%);bottom:-13px;
-  font:700 5.5px var(--mono);letter-spacing:.1em;color:var(--deep);white-space:nowrap}
+/* m4 — the stress-test runner: gate checks stream through with verdicts */
+.mini .testbox{position:absolute;left:12px;right:12px;top:8px;bottom:24px;overflow:hidden;
+  font:500 7.5px/1.7 var(--mono);color:var(--dim);
+  -webkit-mask:linear-gradient(180deg,transparent,#000 22%);mask:linear-gradient(180deg,transparent,#000 22%)}
+.mini .testbox .trow{display:flex;justify-content:space-between;gap:8px}
+.mini .testbox .trow.new{animation:trowIn .3s ease-out}
+@keyframes trowIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.mini .testbox .fn{color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mini .testbox .tp-pass{color:var(--grn);font-weight:700;flex:none}
+.mini .testbox .tp-fail{color:var(--clay);font-weight:700;flex:none}
 .stg .num{font-family:var(--disp);font-weight:700;font-size:36px;letter-spacing:-.02em;line-height:1;
   color:transparent;background:linear-gradient(125deg,var(--s1),var(--s2));
   -webkit-background-clip:text;background-clip:text}
@@ -457,10 +446,12 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .pipe-sec.t-dev{color:var(--amb)}
 .pipe-sec.t-watch{color:var(--dim)}
 .pipe-sec-h{display:flex;align-items:center;gap:10px;padding:13px 2px 11px;border-bottom:1px solid var(--hair)}
+.pipe-sec-h>div:first-child{min-width:0;flex:1}
 .pipe-sec .pnode{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;
   background:currentColor;box-shadow:0 0 8px currentColor;vertical-align:1px}
 .pipe-sec .plbl{font:700 10px var(--mono);letter-spacing:.22em;color:currentColor}
-.pipe-sec .pcap{font-size:10.5px;color:var(--muted);margin-top:3px}
+.pipe-sec .pcap{font-size:10.5px;color:var(--muted);margin-top:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pipe-sec .pcount{margin-left:auto;font:700 22px var(--disp);letter-spacing:-.02em;color:currentColor}
 /* icon-only filter + sort per section; menus open on click */
 .secctrls{position:relative;display:flex;gap:4px;flex:none}
@@ -670,8 +661,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
       <div class="stages" id="stagesEl">
         <div class="rail"><span class="fdot"></span><span class="fdot d2"></span><span class="fdot d3"></span></div>
         <div class="stg s1">
-          <div class="mini"><div class="crawlrows"><div class="crawltrack" id="crawlTrack"></div></div>
-            <div class="embers" data-ember></div></div>
+          <div class="mini"><div class="crawlrows"><div class="crawltrack" id="crawlTrack"></div></div></div>
           <div class="num" id="st1">0</div><div class="lbl" id="sl1"></div><div class="cap" id="cap1"></div></div>
         <div class="stg s2">
           <div class="mini"><div class="ptrows">
@@ -683,6 +673,11 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
             <span class="scrchip"><b>::</b> <span id="scrTxt"></span></span></div>
           <div class="num" id="st3">0</div><div class="lbl" id="sl3"></div><div class="cap" id="cap3"></div></div>
         <div class="stg s4">
+          <div class="mini"><div class="testbox" id="testBox"></div>
+            <span class="scrchip"><b>::</b> <span id="testTxt">RUNNING CHECKS</span></span></div>
+          <div class="num" id="st4">0</div><div class="lbl" id="sl4"></div><div class="cap" id="cap4"></div></div>
+        <div class="stg s5">
+          <div class="s5drop"><span class="vdot"></span><span class="vdot d2"></span></div>
           <div class="mini"><div class="bframe">
             <span class="skel" style="left:9%;top:14%;width:52%"></span>
             <span class="skel" style="left:9%;top:32%;width:70%"></span>
@@ -690,16 +685,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
             <span class="skel" style="left:9%;top:68%;width:62%"></span>
             <span class="skel" style="left:9%;top:84%;width:36%"></span>
             <div class="scanband"></div>
-            <span class="ppill"><i></i>VMA Testing</span></div></div>
-          <div class="num" id="st4">0</div><div class="lbl" id="sl4"></div><div class="cap" id="cap4"></div></div>
-        <div class="stg s5">
-          <div class="s5drop"><span class="vdot"></span><span class="vdot d2"></span></div>
-          <div class="mini"><div class="collate">
-            <span class="sheetfly"><i style="width:80%"></i><i style="width:55%"></i><i class="hl" style="width:90%"></i><i style="width:65%"></i></span>
-            <span class="sheetfly f2"><i style="width:70%"></i><i class="hl" style="width:85%"></i><i style="width:50%"></i><i style="width:75%"></i></span>
-            <span class="sheetfly f3"><i class="hl" style="width:88%"></i><i style="width:60%"></i><i style="width:78%"></i><i style="width:45%"></i></span>
-            <span class="folderbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5V18a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9.5a2 2 0 0 0-2-2h-8l-2-2.5H5a2 2 0 0 0-2 2.5z"/><path d="M8 14.5h8M8 17h5" stroke-width="1.3"/></svg><span class="ftag2">BD PORTFOLIO</span></span></div>
-            <canvas class="dissolve" id="m5fx"></canvas></div>
+            <span class="ppill"><i></i>Organising output</span></div></div>
           <div class="num" id="st5">0</div><div class="lbl" id="sl5"></div><div class="cap" id="cap5"></div></div>
       </div>
       <div class="boardbar" id="boardbar">
@@ -744,7 +730,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
           <div class="pipe-sec t-dev" id="sec-dev">
             <div class="pipe-sec-h">
               <div><div class="plbl"><span class="pnode"></span>DEVELOPING</div>
-                <div class="pcap">Real signal, not yet call-ready — corroborate before opening</div></div>
+                <div class="pcap">Real signal — corroborate before calling</div></div>
               <span class="pcount" id="cnt-dev">0</span>
               <span class="secctrls">
                 <button type="button" class="ictrl" data-menu="fm-dev" title="Filter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.2V19l-4 2v-7.8z"/></svg></button>
@@ -758,7 +744,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
           <div class="pipe-sec t-watch" id="sec-watch">
             <div class="pipe-sec-h">
               <div><div class="plbl"><span class="pnode"></span>WATCH</div>
-                <div class="pcap">Early or thin — monitored; promotes itself when it stacks</div></div>
+                <div class="pcap">Early or thin — monitored until it stacks</div></div>
               <span class="pcount" id="cnt-watch">0</span>
               <span class="secctrls">
                 <button type="button" class="ictrl" data-menu="fm-watch" title="Filter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.2V19l-4 2v-7.8z"/></svg></button>
@@ -1107,7 +1093,7 @@ const STAGES={
          'Back-end filters coded to pick up and pull senior seat signals for this desk',
          'Cross-source intelligence to turn signals into comprehensive leads',
          'Rigorous testing against code in order to minimise noise and cold calls',
-         'Synthesised into brief dossiers, and organised based on lead strength metrics']},
+         'Crystallising data into dossiers, ranked by lead strength metrics']},
   jobs:{slots:[1,2,4,5],
     lbl:['SEARCHED','FILTERED','VERIFIED','COMPILED AND READY'],
     cap:['Autonomous search of the internet for job vacancies',
@@ -1152,8 +1138,8 @@ function renderEngine(){
     const half=Math.ceil(items.length/2);
     const mk=arr=>arr.map(t=>'<span class="tpill"><i></i>'+esc(t)+'</span>').join('');
     const r1=mk(items.slice(0,half)),r2=mk(items.slice(half));
-    if($('m2r1'))$('m2r1').innerHTML=r1+r1+r1;
-    if($('m2r2'))$('m2r2').innerHTML=(r2||r1)+(r2||r1)+(r2||r1);
+    if($('m2r1'))$('m2r1').innerHTML=r1+r1;
+    if($('m2r2'))$('m2r2').innerHTML=(r2||r1)+(r2||r1);
   }
   requestAnimationFrame(sizeRail);
 }
@@ -1163,7 +1149,12 @@ function sizeRail(){
   const stages=$('stagesEl');
   const vis=stages.querySelectorAll('.stg');
   let first=null,last=null;
-  vis.forEach(s=>{if(s.offsetParent===null)return;if(!first)first=s;last=s;});
+  vis.forEach(s=>{
+    if(s.offsetParent===null)return;
+    /* PRODUCTION sits on its own row below (leads mode) — the top rail
+       must run the full top row, stage 1 through stress-tested */
+    if(s.classList.contains('s5')&&!stages.classList.contains('jobs4'))return;
+    if(!first)first=s;last=s;});
   if(!first||!last)return;
   const sb=stages.getBoundingClientRect();
   const fb=first.getBoundingClientRect(),lb=last.getBoundingClientRect();
@@ -1187,78 +1178,29 @@ window.addEventListener('resize',sizeRail);
   const rows=SRCS.map(s=>'<div class="crow"><span class="u">'+s[0]+'<b>'+s[1]+'</b></span>'
     +'<span class="ms2">'+s[2]+'ms</span></div>').join('');
   const ct=$('crawlTrack');if(ct)ct.innerHTML=rows+rows;
-  /* shared ember strips — the per-cell churn engine, miniature */
-  document.querySelectorAll('[data-ember]').forEach(box=>{
-    const GLYPH=['.',':','-','=','+','·'],ROWS=4,COLS=46;
-    const wisps=[];for(let i=0;i<9;i++)wisps.push({x:2+((i*COLS/9)|0)+((Math.random()*3)|0),w:1+(Math.random()<.5?1:0),h:1+((Math.random()*3)|0)});
-    function hAt(c){let h=1;for(const w of wisps){if(c>=w.x&&c<w.x+w.w)h=Math.max(h,w.h);}return h;}
-    let html='';for(let r=ROWS-1;r>=0;r--){for(let c=0;c<COLS;c++)html+='<span></span>';html+='\n';}
-    box.innerHTML=html;
-    const spans=box.querySelectorAll('span');
-    const at=(r,c)=>spans[(ROWS-1-r)*COLS+c];
-    setInterval(()=>{
-      for(let k=0;k<26;k++){
-        const r=(Math.random()*ROWS)|0,c=(Math.random()*COLS)|0,el=at(r,c);
-        if(r>=hAt(c)){el.textContent=' ';continue;}
-        if(Math.random()<.12){el.textContent=' ';}
-        else{el.textContent=GLYPH[(Math.random()*GLYPH.length)|0];
-          el.style.opacity=[.3,.55,.95][(Math.random()*3)|0];}
+  /* m4: the stress-test runner — gate checks streaming through with
+     their verdicts, like a test suite over every built-out lead */
+  const tb=$('testBox');
+  if(tb){
+    const TESTS=['seat_evidence','window_maturity','source_independence',
+      'contradiction_scan','fee_propensity','buyer_mapped',
+      'stack_corroboration','noise_floor','incumbent_check'];
+    let n=0;
+    function trun(){
+      n++;
+      let html='';
+      for(let k=5;k>=0;k--){
+        const i=n-k;if(i<1)continue;
+        const pass=(i%7)!==3;
+        html+='<div class="trow'+(k===0?' new':'')+'"><span class="fn">test_'
+          +TESTS[i%TESTS.length]+'()</span><span class="'+(pass?'tp-pass':'tp-fail')+'">'
+          +(pass?'PASS':'REJECT')+'</span></div>';
       }
-    },110);
-  });
-  /* m5: the ASCII dissolve field from the BD Lead Radar landing, running
-     through the whole box — same row-string mechanic and ' .:-=+X' density
-     ramp, retuned for the light page (VMA navy at low alpha) */
-  (function(){
-    const cv=$('m5fx');if(!cv)return;
-    const ctx=cv.getContext('2d');
-    const dpr=Math.min(window.devicePixelRatio||1,2);
-    const RAMP=' .:-=+X';
-    const COLOR='rgba(62,92,132,0.34)';
-    let W=0,H=0,CW=5,CH=10,cols=0,rows=0,phase=null;
-    function build(){
-      const r=cv.getBoundingClientRect();W=r.width;H=r.height;
-      if(!W||!H)return;
-      cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-      ctx.font='8px "JetBrains Mono",monospace';
-      ctx.textBaseline='top';
-      CW=ctx.measureText('X').width||4.8;
-      CH=Math.round(CW*2.04);
-      cols=Math.ceil(W/CW)+1;rows=Math.ceil(H/CH)+1;
-      phase=new Float32Array(cols*rows);
-      for(let i=0;i<phase.length;i++)phase[i]=Math.random()*6.2832;
+      tb.innerHTML=html;
+      const tt=$('testTxt');if(tt)tt.textContent='RUNNING '+(1000+((n*37)%9000));
     }
-    function draw(t){
-      if(!phase)return;
-      ctx.clearRect(0,0,W,H);
-      const ts=t*0.001;
-      ctx.fillStyle=COLOR;
-      for(let gy=0;gy<rows;gy++){
-        const y=gy*CH,vy=y/H;
-        let vert=(vy-0.05)/0.95;if(vert<0)vert=0;else if(vert>1)vert=1;vert*=vert;
-        if(vert<=0.0015)continue;
-        let row='';const base=gy*cols;
-        for(let gx=0;gx<cols;gx++){
-          const x=gx*CW,ph=phase[base+gx];
-          let l1=Math.sin(x*0.05+ts*0.30)*Math.sin(y*0.06-ts*0.24+ph*0.05);if(l1<0)l1=0;
-          let l2=Math.sin(x*0.09-ts*0.21)*Math.sin(y*0.10+ts*0.18);if(l2<0)l2=0;
-          const tex=0.5+0.5*Math.sin(x*0.16+y*0.13+ts*0.90+ph*0.30);
-          const tw=Math.sin(ts*12.0+ph);
-          const b=(vert*(1.10*l1+0.70*l2+0.10*tex)+0.12*tw*vert)*1.25;
-          let idx=(b*7)|0;if(idx<0)idx=0;else if(idx>6)idx=6;
-          row+=RAMP.charAt(idx);
-        }
-        ctx.fillText(row,0,y);
-      }
-    }
-    build();
-    window.addEventListener('resize',build);
-    (function frame(now){
-      if(!document.hidden&&cv.offsetParent!==null)draw(now||0);
-      requestAnimationFrame(frame);
-    })(0);
-  })();
+    trun();setInterval(trun,620);
+  }
   /* m3: structured output with live-scrambling values */
   const cb=$('codeBox');
   if(cb){
@@ -1283,7 +1225,7 @@ setInterval(()=>{
 },1000);
 
 /* ---------- board ---------- */
-const FILTS=[['ready',{leads:'All active',jobs:'Live Jobs'}],['unc',{leads:'Uncategorised',jobs:'Uncategorised'}],
+const FILTS=[['ready',{leads:'Active',jobs:'Live Jobs'}],
   ['new',{leads:'New today',jobs:'New today'}],['followed',{leads:'Followed up',jobs:'Followed up'}],
   ['dismissed',{leads:'Dismissed',jobs:'Dismissed'}]];
 const SORTS={leads:[['strength','Strongest opportunity'],['window','Soonest window'],['new','Newest first']],
