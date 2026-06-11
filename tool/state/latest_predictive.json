@@ -1,62 +1,167 @@
 [
   {
-    "company": "BP",
-    "score": 2.002,
-    "depth": 4,
+    "company": "British Land",
+    "score": 1.84,
+    "depth": 2,
     "account_tier": "watchlist",
-    "predicted_role": "Crisis / Corporate Affairs Director",
-    "window_weeks_min": 8,
-    "window_weeks_max": 16,
-    "window_label": "8\u201316 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "predicted_role": "Head of Communications",
+    "window_weeks_min": 6,
+    "window_weeks_max": 12,
+    "window_label": "6\u201312 weeks",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
-    "seeded_contact_name": "Geoff Morrell",
-    "seeded_contact_role": "Head of Corporate Affairs",
+    "seeded_contact_name": null,
+    "seeded_contact_role": null,
     "events": [
       {
-        "trigger_key": "chair_change",
-        "trigger_label": "Chair change",
-        "evidence": "BP Sacks Recently Appointed Chairman Albert Manifold On \u2018Serious Concerns\u2019 \u2013 Says \u2018Board Has Been Surprised And Disappointed\u2019 .",
-        "url": "https://news.google.com/rss/articles/CBMiowFBVV95cUxNNEN6bl95VnBCS1pqSjl3c2QyQ3RoREZNczlvcllVd05feVFKc1V2ZkpPNW5PcmpnQW1UNjllTjYyZDdxaDYtUU0xbU8wMkEzRzJ0SWFVRFc1LTN2OGFYV2VnbTlrY1dITE1ZbUx0WXBzMWVNMHFuVk1jUWpoNzdYWlBwVVJiMEpZbTJ0bFhQbS1pRXVuOXlPS1R2TzRIekpoYWxR?oc=5",
-        "source": "Google News",
-        "published": "2026-05-26T07:00:00+00:00",
+        "trigger_key": "ceo_change",
+        "trigger_label": "CEO change",
+        "evidence": "British Land appoints new chief executive from Oxford .",
+        "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxQNmdHam9HNU9jdURyQ3BSZHVxV29XM1h6TjV6SW5lRzczLUxaUEl5UGhuMEE3Mm1IZnhQTi1DbUNLdllzbU5EU3lVZFQzRFA2UU1vYTZDYmh0M3V1bXdwNHZyUUNsX3JLSTJKQ0w1MEFpRWEyQUwweTladTE0WUlWNmVDR1NqRzgyWlViNDlqNnc3M1FMdEtjU0lzeWEweFU?oc=5",
+        "source": "Oxford Mail",
+        "published": "2026-06-02T19:00:00+00:00",
         "tier": "other"
       },
       {
-        "trigger_key": "mna",
-        "trigger_label": "M&A (integration)",
-        "evidence": "GS Energy Corporation agreed to acquire 5% stake in Browse LNG Development Project from BP p.l.c.",
-        "url": "https://news.google.com/rss/articles/CBMi5AFBVV95cUxOQ3lSOHNSazdIdWdsRmVISkFHLUxHNHhPemFyWGRMb19qc3EzMzNhV1ExcHh0VFZhQV9kV1F5dzdvTjdZS2VmT1hCYWtfX1d6emdScXYyZkRkV3FjUGZZRE1yS3MwQUJhMnlxY1VJaVNhVERGZDJvNWpjU3hUa1VYU3VCdzBNYWo1MEgtZmpYVjA5dGJBc1BBLUVrLVpFTnFGZEFucnlkTHFob3dsV28zeGNmcVdPRU9kTlZDdUljLWNTeUE4LVhGdF9WVlRoUjJtNkwybDkzSl90MGVxbXl2eGowNGM?oc=5",
-        "source": "Google News",
-        "published": "2026-05-31T07:00:00+00:00",
+        "trigger_key": "ceo_change",
+        "trigger_label": "CEO change",
+        "evidence": "British Land (Announcement): new CEO appointed .",
+        "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxNZ3A4RkRwZVYtemUxNmFrbHVSMmxqeXBHeXFDaVBJVl9aeGZ1M3ZjbFpKaHJmNzRuYjJWZ1J6ZFRkWGxhVFc0MGlyX1ZrQ19sMS1GOXdtNW00ZF9zM1NqeXVrS002NkZ1SkNyRTVjUnNqWnB3ZFNsSGN6UkpwMW5tV19VTXVELUstTGpWWV80aw?oc=5",
+        "source": "Hargreaves Lansdown",
+        "published": "2026-06-01T07:00:00+00:00",
+        "tier": "other"
+      },
+      {
+        "trigger_key": "ceo_change",
+        "trigger_label": "CEO change",
+        "evidence": "British Land appoints new CEO .",
+        "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxNSzVyZDZyREFSMWhvNmlFUmtISFpQblFFcmlRcThyajNkZW10aWIyXzBvdk9tMVJmWm94RVp5YW9mcHZPcnZPWm9yZGxkeVhmc0ZEVlFGRFBJa1RFNTdCNGVaNUVEODVNc0FENGRjVW43WVV5ZTZpZmcxdmVRMTBCUUE4RQ?oc=5",
+        "source": "building.co.uk",
+        "published": "2026-06-02T09:40:44+00:00",
+        "tier": "other"
+      },
+      {
+        "trigger_key": "ceo_change",
+        "trigger_label": "CEO change",
+        "evidence": "British Land picks new CEO .",
+        "url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTFA2S2RYSEJMQmdYVDdNVl9EMExzTWwzTDcxYWpNTmRNRkc0T2U5LUtKWmZBd1pTN0Q5anlPUnluQ2tsdFVMOFFoWHg0ZmtqNC1jekNoejRxVmdjeHB6bEE?oc=5",
+        "source": "PrimeResi",
+        "published": "2026-06-02T07:51:51+00:00",
+        "tier": "other"
+      },
+      {
+        "trigger_key": "secured_financing",
+        "trigger_label": "Share allotment (capital raise)",
+        "evidence": "British Land filed an allotment of shares (SH01) on 2026-05-29 \u2014 fresh equity capital (Companies House filing).",
+        "url": "https://find-and-update.company-information.service.gov.uk/company/00621920/filing-history",
+        "source": "Companies House (share allotment)",
+        "published": "2026-05-29T00:00:00+00:00",
+        "tier": "listed"
+      }
+    ],
+    "pid": "british_land",
+    "first_seen": "2026-05-16T21:29:48.590954+00:00",
+    "status": "active",
+    "followed_up_at": null,
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
+  },
+  {
+    "company": "Segro",
+    "score": 1.656,
+    "depth": 2,
+    "account_tier": "watchlist",
+    "predicted_role": "Crisis / Corporate Affairs Director",
+    "window_weeks_min": 8,
+    "window_weeks_max": 26,
+    "window_label": "8\u201326 weeks",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
+    "linkedin_profile_url": null,
+    "linkedin_profile_role": null,
+    "linkedin_profile_name": null,
+    "seeded_contact_name": null,
+    "seeded_contact_role": null,
+    "events": [
+      {
+        "trigger_key": "activist_stake",
+        "trigger_label": "Activist stake / shareholder pressure",
+        "evidence": "Activist investor urges SEGRO to spin off data centre business .",
+        "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxOVXVNb0ZLbTdsYkdmM3d5eFVDSmZFSnNrVXVvbzF4M1djeEo2Uk5FeWR0ZHBhb25ZdW1ud042Nmw0SWRJVTYwZWp2S1dveGpQc2lBWU1ab0JWN3NXWnR3M1A4cHYtZ3ZpdHFUVXB0TUdibUtEbGNNcDFTZ1ZubjZWdnd4cVV6RkhBUmVxNXNmejM1TmlqdFNJcGdwemw?oc=5",
+        "source": "Property Week",
+        "published": "2026-06-10T12:48:10+00:00",
         "tier": "other"
       },
       {
         "trigger_key": "activist_stake",
         "trigger_label": "Activist stake / shareholder pressure",
-        "evidence": "GS Energy Corporation agreed to acquire 5% stake in Browse LNG Development Project from BP p.l.c.",
-        "url": "https://news.google.com/rss/articles/CBMi5AFBVV95cUxOQ3lSOHNSazdIdWdsRmVISkFHLUxHNHhPemFyWGRMb19qc3EzMzNhV1ExcHh0VFZhQV9kV1F5dzdvTjdZS2VmT1hCYWtfX1d6emdScXYyZkRkV3FjUGZZRE1yS3MwQUJhMnlxY1VJaVNhVERGZDJvNWpjU3hUa1VYU3VCdzBNYWo1MEgtZmpYVjA5dGJBc1BBLUVrLVpFTnFGZEFucnlkTHFob3dsV28zeGNmcVdPRU9kTlZDdUljLWNTeUE4LVhGdF9WVlRoUjJtNkwybDkzSl90MGVxbXl2eGowNGM?oc=5",
-        "source": "Google News",
-        "published": "2026-05-31T07:00:00+00:00",
+        "evidence": "Activist investor urges Segro to spin off data center business - report .",
+        "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxNaFVoYjF1RElieU85R2hsdm43d3dDTERVVzBBNGxTUHpUVVJ6UUJjM1g0eGpmbnA0clFIcVhYendtNzg3YTVxNVNRWDcwaTJMMXUxcnFQV2dDTVNPSDZEV1BXd3preE1qZ29PRlMtNXRLaWdma2xvdWZOWEFqb1BRenlFQjU5a1pmUUtueDlUbkJYcEpoZ3RwYllnSHVodm9LUkwyd0MzVnkxdlZsMVR0RnYzQQ?oc=5",
+        "source": "Data Center Dynamics",
+        "published": "2026-06-08T14:42:47+00:00",
         "tier": "other"
       },
       {
-        "trigger_key": "restructure",
-        "trigger_label": "Restructure / transformation announced",
-        "evidence": "BP announces corporate restructuring .",
-        "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxQcm4tNmdaWVZzXy1KM2hrUGlVRW5tZm13MGl1WnJkVHJJUC1tZVQ2YUIzeXNUN1FKTzhycVlKUHp0OWxxOW00U0VHdGVvY29MSmJ4eU40VHhJY3NGUkFjOTJBV2NjN3M2d0RzLUJJMjJYaEZmeFhVRDEtZDJON1BmMGo2RFhHZkJvNzE3dkFnTQ?oc=5",
-        "source": "Google News",
-        "published": "2026-06-09T12:49:14+00:00",
+        "trigger_key": "activist_stake",
+        "trigger_label": "Activist stake / shareholder pressure",
+        "evidence": "Activist investor urges Segro to spin off data centres .",
+        "url": "https://news.google.com/rss/articles/CBMilgFBVV95cUxOaktHWjdEVk5GUGh4cDJWcUxHcm0xdGlyVDZOWFI0VWdSN04xQ0JObzZNTzZtaVIyMFVLRTVNTEx0V2x4Zkhpc0pUMEd0VTZERXVHZElkQktiTFk3TUtQbXl0aU4wbmJVT2t4ZVdWNXdXWWo5ZmJWN3ZJS0VsZFNnbjV2RTJFME94elB0Q2ZNMWlaX2lXSmc?oc=5",
+        "source": "Green Street News",
+        "published": "2026-06-08T06:54:35+00:00",
         "tier": "other"
+      },
+      {
+        "trigger_key": "secured_financing",
+        "trigger_label": "Share allotment (capital raise)",
+        "evidence": "Segro filed an allotment of shares (SH01) on 2026-06-08 \u2014 fresh equity capital (Companies House filing).",
+        "url": "https://find-and-update.company-information.service.gov.uk/company/00167591/filing-history",
+        "source": "Companies House (share allotment)",
+        "published": "2026-06-08T00:00:00+00:00",
+        "tier": "listed"
+      },
+      {
+        "trigger_key": "secured_financing",
+        "trigger_label": "Share allotment (capital raise)",
+        "evidence": "Segro filed an allotment of shares (SH01) on 2026-06-08 \u2014 fresh equity capital (Companies House filing).",
+        "url": "https://find-and-update.company-information.service.gov.uk/company/00167591/filing-history",
+        "source": "Companies House (share allotment)",
+        "published": "2026-06-08T00:00:00+00:00",
+        "tier": "listed"
+      },
+      {
+        "trigger_key": "secured_financing",
+        "trigger_label": "Share allotment (capital raise)",
+        "evidence": "Segro filed an allotment of shares (SH01) on 2026-05-29 \u2014 fresh equity capital (Companies House filing).",
+        "url": "https://find-and-update.company-information.service.gov.uk/company/00167591/filing-history",
+        "source": "Companies House (share allotment)",
+        "published": "2026-05-29T00:00:00+00:00",
+        "tier": "listed"
+      },
+      {
+        "trigger_key": "secured_financing",
+        "trigger_label": "Share allotment (capital raise)",
+        "evidence": "Segro filed an allotment of shares (SH01) on 2026-05-14 \u2014 fresh equity capital (Companies House filing).",
+        "url": "https://find-and-update.company-information.service.gov.uk/company/00167591/filing-history",
+        "source": "Companies House (share allotment)",
+        "published": "2026-05-14T00:00:00+00:00",
+        "tier": "listed"
       }
     ],
-    "pid": "bp",
-    "first_seen": "2026-05-15T22:22:25.556624+00:00",
+    "pid": "segro",
+    "first_seen": "2026-06-08T10:09:30.695487+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Trustpilot",
@@ -97,7 +202,12 @@
     "first_seen": "2026-06-09T08:50:53.530721+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Henderson Group",
@@ -108,7 +218,7 @@
     "window_weeks_min": 4,
     "window_weeks_max": 12,
     "window_label": "4\u201312 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -118,7 +228,7 @@
       {
         "trigger_key": "job_ad_cluster",
         "trigger_label": "Job-ad cluster (2+ mid-level comms, no senior yet)",
-        "evidence": "7 mid-level comms/PR roles posted at Henderson Group in the last 30 days; no senior Head-of-Comms role currently posted. Titles: Group Corporate Communications Lead; Group Corporate Communications Lead; Group Corporate Communications Lead",
+        "evidence": "8 mid-level comms/PR roles posted at Henderson Group in the last 30 days; no senior Head-of-Comms role currently posted. Titles: Group Corporate Communications Lead; Group Corporate Communications Lead; Group Corporate Communications Lead",
         "url": "https://www.adzuna.co.uk/jobs/land/ad/5756535054?se=stGM0d9j8RG_KqnWdnFn5Q&utm_medium=api&utm_source=2317bb5a&v=CD3E92185542E2276CEAFA3F85CD126837578AC0",
         "source": "Adzuna (Indeed + aggregators)",
         "published": "2026-06-08T21:05:32+00:00",
@@ -129,7 +239,12 @@
     "first_seen": "2026-06-09T08:50:53.530721+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Department for Work and Pensions",
@@ -140,7 +255,7 @@
     "window_weeks_min": 4,
     "window_weeks_max": 12,
     "window_label": "4\u201312 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -161,7 +276,12 @@
     "first_seen": "2026-06-04T09:16:00.137692+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Virgin Atlantic",
@@ -172,7 +292,7 @@
     "window_weeks_min": 6,
     "window_weeks_max": 12,
     "window_label": "6\u201312 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -184,7 +304,7 @@
         "trigger_label": "CEO change",
         "evidence": "Virgin Group chief executive appointed chair of Virgin Atlantic - Travel Weekly .",
         "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxOeVpzM2lZRHN3VEo1RVN1Q0lqMHQ5YzdZZTlOcFFXSEtaUWdZQ1NKWGV4Y3FpUWNQOGRYajE5Tml6THhBdVVIRmFPUWowT2dZYnQzTXN0c25rVnl1bEtCeTlJNEVNV3VPenVTZzZ5aTN4RFFid3VYMDJhcllCcjMzQXF5ZjR2Wl92dmxDNkpQVHVDSHVjSFR5R3VwUQ?oc=5",
-        "source": "Google News",
+        "source": "Travel Weekly - Home",
         "published": "2026-05-14T07:00:00+00:00",
         "tier": "other"
       },
@@ -193,7 +313,7 @@
         "trigger_label": "Chair change",
         "evidence": "Virgin Group chief executive appointed chair of Virgin Atlantic - Travel Weekly .",
         "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxOeVpzM2lZRHN3VEo1RVN1Q0lqMHQ5YzdZZTlOcFFXSEtaUWdZQ1NKWGV4Y3FpUWNQOGRYajE5Tml6THhBdVVIRmFPUWowT2dZYnQzTXN0c25rVnl1bEtCeTlJNEVNV3VPenVTZzZ5aTN4RFFid3VYMDJhcllCcjMzQXF5ZjR2Wl92dmxDNkpQVHVDSHVjSFR5R3VwUQ?oc=5",
-        "source": "Google News",
+        "source": "Travel Weekly - Home",
         "published": "2026-05-14T07:00:00+00:00",
         "tier": "other"
       }
@@ -202,7 +322,12 @@
     "first_seen": "2026-05-16T21:29:48.590954+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Lloyds Banking Group",
@@ -243,7 +368,12 @@
     "first_seen": "2026-06-08T10:09:30.695487+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "St James's Place",
@@ -275,7 +405,12 @@
     "first_seen": "2026-06-08T10:09:30.695487+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Rathbones Group",
@@ -316,7 +451,12 @@
     "first_seen": "2026-06-08T10:09:30.695487+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Intermediate Capital Group",
@@ -357,7 +497,12 @@
     "first_seen": "2026-06-08T10:09:30.695487+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "United Utilities",
@@ -389,7 +534,12 @@
     "first_seen": "2026-06-09T08:50:53.530721+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Prudential",
@@ -421,7 +571,12 @@
     "first_seen": "2026-05-22T09:05:49.503720+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Gill Cooke Personnel Ltd T/A The Recruitment Group",
@@ -432,7 +587,7 @@
     "window_weeks_min": 4,
     "window_weeks_max": 12,
     "window_label": "4\u201312 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -453,7 +608,12 @@
     "first_seen": "2026-06-03T10:24:08.597421+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Government Recruitment Service",
@@ -464,7 +624,7 @@
     "window_weeks_min": 4,
     "window_weeks_max": 12,
     "window_label": "4\u201312 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -485,7 +645,160 @@
     "first_seen": "2026-06-03T10:24:08.597421+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
+  },
+  {
+    "company": "Land Securities",
+    "score": 0.977,
+    "depth": 1,
+    "account_tier": "watchlist",
+    "predicted_role": "Corporate Affairs Director",
+    "window_weeks_min": 8,
+    "window_weeks_max": 26,
+    "window_label": "8\u201326 weeks",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
+    "linkedin_profile_url": null,
+    "linkedin_profile_role": null,
+    "linkedin_profile_name": null,
+    "seeded_contact_name": null,
+    "seeded_contact_role": null,
+    "events": [
+      {
+        "trigger_key": "secured_financing",
+        "trigger_label": "Share allotment (capital raise)",
+        "evidence": "Land Securities filed an allotment of shares (SH01) on 2026-05-18 \u2014 fresh equity capital (Companies House filing).",
+        "url": "https://find-and-update.company-information.service.gov.uk/company/04369054/filing-history",
+        "source": "Companies House (share allotment)",
+        "published": "2026-05-18T00:00:00+00:00",
+        "tier": "listed"
+      }
+    ],
+    "pid": "land_securities",
+    "first_seen": "2026-06-11T21:47:29.112274+00:00",
+    "status": "active",
+    "followed_up_at": null,
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
+  },
+  {
+    "company": "Persimmon",
+    "score": 0.977,
+    "depth": 1,
+    "account_tier": "watchlist",
+    "predicted_role": "Corporate Affairs Director",
+    "window_weeks_min": 8,
+    "window_weeks_max": 26,
+    "window_label": "8\u201326 weeks",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
+    "linkedin_profile_url": null,
+    "linkedin_profile_role": null,
+    "linkedin_profile_name": null,
+    "seeded_contact_name": null,
+    "seeded_contact_role": null,
+    "events": [
+      {
+        "trigger_key": "secured_financing",
+        "trigger_label": "Share allotment (capital raise)",
+        "evidence": "Persimmon filed an allotment of shares (SH01) on 2026-05-29 \u2014 fresh equity capital (Companies House filing).",
+        "url": "https://find-and-update.company-information.service.gov.uk/company/01818486/filing-history",
+        "source": "Companies House (share allotment)",
+        "published": "2026-05-29T00:00:00+00:00",
+        "tier": "listed"
+      }
+    ],
+    "pid": "persimmon",
+    "first_seen": "2026-06-11T21:47:29.112274+00:00",
+    "status": "active",
+    "followed_up_at": null,
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
+  },
+  {
+    "company": "Tritax Big Box REIT",
+    "score": 0.977,
+    "depth": 1,
+    "account_tier": "watchlist",
+    "predicted_role": "Corporate Affairs Director",
+    "window_weeks_min": 8,
+    "window_weeks_max": 26,
+    "window_label": "8\u201326 weeks",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
+    "linkedin_profile_url": null,
+    "linkedin_profile_role": null,
+    "linkedin_profile_name": null,
+    "seeded_contact_name": null,
+    "seeded_contact_role": null,
+    "events": [
+      {
+        "trigger_key": "secured_financing",
+        "trigger_label": "Share allotment (capital raise)",
+        "evidence": "Tritax Big Box REIT filed an allotment of shares (SH01) on 2026-06-02 \u2014 fresh equity capital (Companies House filing).",
+        "url": "https://find-and-update.company-information.service.gov.uk/company/08215888/filing-history",
+        "source": "Companies House (share allotment)",
+        "published": "2026-06-02T00:00:00+00:00",
+        "tier": "listed"
+      }
+    ],
+    "pid": "tritax_big_box_reit",
+    "first_seen": "2026-06-11T21:47:29.112274+00:00",
+    "status": "active",
+    "followed_up_at": null,
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
+  },
+  {
+    "company": "Capital & Counties Properties",
+    "score": 0.977,
+    "depth": 1,
+    "account_tier": "watchlist",
+    "predicted_role": "Corporate Affairs Director",
+    "window_weeks_min": 8,
+    "window_weeks_max": 26,
+    "window_label": "8\u201326 weeks",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
+    "linkedin_profile_url": null,
+    "linkedin_profile_role": null,
+    "linkedin_profile_name": null,
+    "seeded_contact_name": null,
+    "seeded_contact_role": null,
+    "events": [
+      {
+        "trigger_key": "secured_financing",
+        "trigger_label": "Share allotment (capital raise)",
+        "evidence": "Capital & Counties Properties filed an allotment of shares (SH01) on 2026-05-20 \u2014 fresh equity capital (Companies House filing).",
+        "url": "https://find-and-update.company-information.service.gov.uk/company/07145051/filing-history",
+        "source": "Companies House (share allotment)",
+        "published": "2026-05-20T00:00:00+00:00",
+        "tier": "listed"
+      }
+    ],
+    "pid": "capital_counties_properties",
+    "first_seen": "2026-06-11T21:47:29.112274+00:00",
+    "status": "active",
+    "followed_up_at": null,
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "HSBC",
@@ -517,7 +830,12 @@
     "first_seen": "2026-05-20T09:03:22.762542+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Oxford Biomedica",
@@ -528,7 +846,7 @@
     "window_weeks_min": 26,
     "window_weeks_max": 52,
     "window_label": "26\u201352 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -540,7 +858,7 @@
         "trigger_label": "M&A (integration)",
         "evidence": "Oxford BioMedica leaves door open to private equity takeover .",
         "url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxPZ185SlltcUQ3elg4eUxGTjAzZ2lQVC1uYVZSZlcxTHNmQmZpem5GQWt0Q3dXM3M3eVozdTgyeUFRbzBKR3VKQVR1bXJLNFRrQ2R0bVVVSXFNUHl4NFZabGZVa1VQYnN4UGc3MVg1bUE4QU9MR0wyVjFMN09EM1VkSllhQWo?oc=5",
-        "source": "Google News",
+        "source": "Financial Times",
         "published": "2026-06-05T04:02:01+00:00",
         "tier": "other"
       }
@@ -549,7 +867,12 @@
     "first_seen": "2026-06-08T10:09:30.695487+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Quilter",
@@ -581,7 +904,12 @@
     "first_seen": "2026-06-10T09:09:54.465435+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "GSK",
@@ -592,7 +920,7 @@
     "window_weeks_min": 26,
     "window_weeks_max": 52,
     "window_label": "26\u201352 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -604,7 +932,7 @@
         "trigger_label": "M&A (integration)",
         "evidence": "GSK plc agreed to acquire Nuvalent, Inc.",
         "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxOdkg0NG9ZNkpMVXNORElKN2thbVBwSlgwZG1mTTV1QVFYS0RRMTRyTl9jN0JvMkdzNzNUWFBScXVyTzJWanpaSHA3clNMSTVheGNLM25YeUVOVkktVmp2VUpROGZUal9nWkdCR3d0a2R3em40S3lpdlFjZFZ3SUhkRWJvV0FWV1U0bmc5eGhiTi01M3FWTTNQNHVpcXJzTjJxR2pVbkFPMFVyQQ?oc=5",
-        "source": "Google News",
+        "source": "marketscreener.com",
         "published": "2026-06-09T08:20:52+00:00",
         "tier": "other"
       }
@@ -613,7 +941,12 @@
     "first_seen": "2026-06-10T09:09:54.465435+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Deloitte",
@@ -654,7 +987,12 @@
     "first_seen": "2026-06-11T09:56:32.972467+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Pearson",
@@ -695,7 +1033,12 @@
     "first_seen": "2026-05-22T09:05:49.503720+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Hollywood Bowl Group",
@@ -727,7 +1070,12 @@
     "first_seen": "2026-06-11T09:56:32.972467+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Everyman Media Group",
@@ -759,7 +1107,12 @@
     "first_seen": "2026-06-11T09:56:32.972467+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "IMI",
@@ -809,7 +1162,12 @@
     "first_seen": "2026-06-10T09:09:54.465435+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Admiral Group",
@@ -840,7 +1198,12 @@
     "first_seen": "2026-06-02T09:52:08.892596+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Brown-Forman",
@@ -871,57 +1234,12 @@
     "followed_up_at": null,
     "dismissed_at": null,
     "seeded_contact_name": null,
-    "seeded_contact_role": null
-  },
-  {
-    "company": "British Land",
-    "score": 0.805,
-    "depth": 1,
-    "account_tier": "watchlist",
-    "predicted_role": "Head of Communications",
-    "window_weeks_min": 6,
-    "window_weeks_max": 12,
-    "window_label": "6\u201312 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
-    "linkedin_profile_url": null,
-    "linkedin_profile_role": null,
-    "linkedin_profile_name": null,
-    "seeded_contact_name": null,
     "seeded_contact_role": null,
-    "events": [
-      {
-        "trigger_key": "ceo_change",
-        "trigger_label": "CEO change",
-        "evidence": "British Land appoints new chief executive from Oxford .",
-        "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxQNmdHam9HNU9jdURyQ3BSZHVxV29XM1h6TjV6SW5lRzczLUxaUEl5UGhuMEE3Mm1IZnhQTi1DbUNLdllzbU5EU3lVZFQzRFA2UU1vYTZDYmh0M3V1bXdwNHZyUUNsX3JLSTJKQ0w1MEFpRWEyQUwweTladTE0WUlWNmVDR1NqRzgyWlViNDlqNnc3M1FMdEtjU0lzeWEweFU?oc=5",
-        "source": "Google News",
-        "published": "2026-06-02T19:00:00+00:00",
-        "tier": "other"
-      },
-      {
-        "trigger_key": "ceo_change",
-        "trigger_label": "CEO change",
-        "evidence": "British Land (Announcement): new CEO appointed .",
-        "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxNZ3A4RkRwZVYtemUxNmFrbHVSMmxqeXBHeXFDaVBJVl9aeGZ1M3ZjbFpKaHJmNzRuYjJWZ1J6ZFRkWGxhVFc0MGlyX1ZrQ19sMS1GOXdtNW00ZF9zM1NqeXVrS002NkZ1SkNyRTVjUnNqWnB3ZFNsSGN6UkpwMW5tV19VTXVELUstTGpWWV80aw?oc=5",
-        "source": "Google News",
-        "published": "2026-06-01T07:00:00+00:00",
-        "tier": "other"
-      },
-      {
-        "trigger_key": "ceo_change",
-        "trigger_label": "CEO change",
-        "evidence": "British Land appoints new CEO .",
-        "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxNSzVyZDZyREFSMWhvNmlFUmtISFpQblFFcmlRcThyajNkZW10aWIyXzBvdk9tMVJmWm94RVp5YW9mcHZPcnZPWm9yZGxkeVhmc0ZEVlFGRFBJa1RFNTdCNGVaNUVEODVNc0FENGRjVW43WVV5ZTZpZmcxdmVRMTBCUUE4RQ?oc=5",
-        "source": "Google News",
-        "published": "2026-06-02T09:40:44+00:00",
-        "tier": "other"
-      }
-    ],
-    "pid": "british_land",
-    "first_seen": "2026-05-16T21:29:48.590954+00:00",
-    "status": "active",
-    "followed_up_at": null,
-    "dismissed_at": null
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Henry Boot",
@@ -953,7 +1271,49 @@
     "first_seen": "2026-05-16T21:29:48.590954+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
+  },
+  {
+    "company": "Derwent London",
+    "score": 0.805,
+    "depth": 1,
+    "account_tier": "watchlist",
+    "predicted_role": "Head of Communications",
+    "window_weeks_min": 6,
+    "window_weeks_max": 12,
+    "window_label": "6\u201312 weeks",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
+    "linkedin_profile_url": null,
+    "linkedin_profile_role": null,
+    "linkedin_profile_name": null,
+    "seeded_contact_name": null,
+    "seeded_contact_role": null,
+    "events": [
+      {
+        "trigger_key": "ceo_change",
+        "trigger_label": "CEO change",
+        "evidence": "Derwent London Has Appointed Jonathan Murphy as Chief Executive .",
+        "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxPdzFWZmF6S1kycWQ2QnlHaHBxZFpDWXpHbUdtZngzU1lxblFtbHlQeGx4VTRReVRfZnhQVFFzZzdRVW10YkJrWGpmdXExZGU3aGh4UXJHdWRzc1ZUUWNGY2hIeHFudmNLeml1REUyQnFMLTBCWHUzSTZidW1yOXhPZTlXSVlhZGRhM254Z1ByTUNMSGJfNFRr?oc=5",
+        "source": "Proptech Connect",
+        "published": "2026-06-11T17:15:00+00:00",
+        "tier": "other"
+      }
+    ],
+    "pid": "derwent_london",
+    "first_seen": "2026-06-11T21:47:29.112274+00:00",
+    "status": "active",
+    "followed_up_at": null,
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Workspace Group",
@@ -985,57 +1345,12 @@
     "first_seen": "2026-05-16T21:29:48.590954+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
-  },
-  {
-    "company": "Segro",
-    "score": 0.724,
-    "depth": 1,
-    "account_tier": "watchlist",
-    "predicted_role": "Crisis / Corporate Affairs Director",
-    "window_weeks_min": 12,
-    "window_weeks_max": 26,
-    "window_label": "12\u201326 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
-    "linkedin_profile_url": null,
-    "linkedin_profile_role": null,
-    "linkedin_profile_name": null,
-    "seeded_contact_name": null,
-    "seeded_contact_role": null,
-    "events": [
-      {
-        "trigger_key": "activist_stake",
-        "trigger_label": "Activist stake / shareholder pressure",
-        "evidence": "Activist investor urges SEGRO to spin off data centre business .",
-        "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxOVXVNb0ZLbTdsYkdmM3d5eFVDSmZFSnNrVXVvbzF4M1djeEo2Uk5FeWR0ZHBhb25ZdW1ud042Nmw0SWRJVTYwZWp2S1dveGpQc2lBWU1ab0JWN3NXWnR3M1A4cHYtZ3ZpdHFUVXB0TUdibUtEbGNNcDFTZ1ZubjZWdnd4cVV6RkhBUmVxNXNmejM1TmlqdFNJcGdwemw?oc=5",
-        "source": "Google News",
-        "published": "2026-06-10T12:48:10+00:00",
-        "tier": "other"
-      },
-      {
-        "trigger_key": "activist_stake",
-        "trigger_label": "Activist stake / shareholder pressure",
-        "evidence": "Activist investor urges Segro to spin off data center business - report .",
-        "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxNaFVoYjF1RElieU85R2hsdm43d3dDTERVVzBBNGxTUHpUVVJ6UUJjM1g0eGpmbnA0clFIcVhYendtNzg3YTVxNVNRWDcwaTJMMXUxcnFQV2dDTVNPSDZEV1BXd3preE1qZ29PRlMtNXRLaWdma2xvdWZOWEFqb1BRenlFQjU5a1pmUUtueDlUbkJYcEpoZ3RwYllnSHVodm9LUkwyd0MzVnkxdlZsMVR0RnYzQQ?oc=5",
-        "source": "Google News",
-        "published": "2026-06-08T14:42:47+00:00",
-        "tier": "other"
-      },
-      {
-        "trigger_key": "activist_stake",
-        "trigger_label": "Activist stake / shareholder pressure",
-        "evidence": "Activist investor urges Segro to spin off data centres .",
-        "url": "https://news.google.com/rss/articles/CBMilgFBVV95cUxOaktHWjdEVk5GUGh4cDJWcUxHcm0xdGlyVDZOWFI0VWdSN04xQ0JObzZNTzZtaVIyMFVLRTVNTEx0V2x4Zkhpc0pUMEd0VTZERXVHZElkQktiTFk3TUtQbXl0aU4wbmJVT2t4ZVdWNXdXWWo5ZmJWN3ZJS0VsZFNnbjV2RTJFME94elB0Q2ZNMWlaX2lXSmc?oc=5",
-        "source": "Google News",
-        "published": "2026-06-08T06:54:35+00:00",
-        "tier": "other"
-      }
-    ],
-    "pid": "segro",
-    "first_seen": "2026-06-08T10:09:30.695487+00:00",
-    "status": "active",
-    "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "KPMG",
@@ -1066,7 +1381,12 @@
     "first_seen": "2026-05-25T17:28:55.428360+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Hays",
@@ -1098,7 +1418,12 @@
     "first_seen": "2026-05-25T17:28:55.428360+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Inchcape",
@@ -1130,7 +1455,12 @@
     "first_seen": "2026-05-25T18:45:09.969995+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Computacenter",
@@ -1141,7 +1471,7 @@
     "window_weeks_min": 26,
     "window_weeks_max": 52,
     "window_label": "26\u201352 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -1153,7 +1483,7 @@
         "trigger_label": "M&A (integration)",
         "evidence": "Computacenter plc agreed to acquire Government Acquisitions, Inc.",
         "url": "https://news.google.com/rss/articles/CBMi5AFBVV95cUxPelJQS3piOWtUcDVYdjRBRU1POHBmYXVUdk16MnRtN29qUkNrd2tjeGN2V295ckwxTXFWaFJSU2E3M25Jd2lkelJDVEZKejdTNDdkeXVUQ3ZuUXdxVlBHdENnYnA2djA4WTB0bV9OTklCbWlabUpLYlBOS05EUGpHYWhOMmFDRVZmd0NPX3ZEQm52RUdsdFBOUG9ONVlGRWZSRDcyeUUwWnJ5cTdLNEF5NFFkVVExNnZiRzBMWUFoMkVod244T1l1aF9iT2cyTml3WFhVdWRMQnJNWkJWUkpRaWp0YUc?oc=5",
-        "source": "Google News",
+        "source": "marketscreener.com",
         "published": "2026-05-28T07:00:00+00:00",
         "tier": "other"
       }
@@ -1162,7 +1492,12 @@
     "first_seen": "2026-05-29T09:00:46.474198+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Arts Council England",
@@ -1173,7 +1508,7 @@
     "window_weeks_min": 8,
     "window_weeks_max": 16,
     "window_label": "8\u201316 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -1185,17 +1520,8 @@
         "trigger_label": "Chair change",
         "evidence": "Dawn Airey CBE appointed as Chair of Arts Council England .",
         "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxPVThwYk5pWXZNQUNaUjVLTkhlMFhWT3R2azJIYjNqeWlJUHBTck9uRU5ZZDNoYUduMVdPelBYc0RSYXc5X092djlWUUpYdlBkeEhxTnpMNkluWk5nYnFXTzRjRkxoelpqMFA5VEdwejVsdGJpSk5MbEw1Wk1hNEFsak5ZNlBoTURjcnBuN1d2a3pCMEx4LWRB?oc=5",
-        "source": "Google News",
+        "source": "GOV.UK",
         "published": "2026-06-02T07:00:00+00:00",
-        "tier": "other"
-      },
-      {
-        "trigger_key": "chair_change",
-        "trigger_label": "Chair change",
-        "evidence": "Dawn Airey appointed chair of Arts Council England .",
-        "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxNYUFoVzIxZV9JX0JDV0E2c1dJV3JNQ2plTTFqbjdXNjVub2tuYnFjellyc3ZsZUw0MWdEZlJGdVY0blZ0bmhaYUx4eWN0OUlfbHpIMkU2Zl8yVUlmdlFUTm9kMTdJemo3bGM2X2RFdGdDUXl2ak16VFYzbno3ZGNTTDdreFlvcFlsSElRTXpHTTlYdjVuV1hYVkdYMA?oc=5",
-        "source": "Google News",
-        "published": "2026-06-02T10:09:00+00:00",
         "tier": "other"
       }
     ],
@@ -1203,7 +1529,12 @@
     "first_seen": "2026-06-02T09:52:08.892596+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "easyJet",
@@ -1214,7 +1545,7 @@
     "window_weeks_min": 26,
     "window_weeks_max": 52,
     "window_label": "26\u201352 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -1224,9 +1555,18 @@
       {
         "trigger_key": "mna",
         "trigger_label": "M&A (integration)",
+        "evidence": "EasyJet in takeover sights of US private equity firm .",
+        "url": "https://news.google.com/rss/articles/CBMijAFBVV95cUxQcFJ0V0F0MnNNMGJfc3ZEV1hwQ0hFMkV4cko3SDh1TXBMMEFUUU53anAwTUxvNnRTWmpkeV9QWVBUaXN6d01hRU5PYm1YUlktTXpKR3o4ZEFUOTg3Z1hBNC1lRjlvSElaNEhSWkVqcE5xOV9GRXFpQmNDT19EUDgxNWQ4dkx5SVljc1lURA?oc=5",
+        "source": "The Times",
+        "published": "2026-05-29T07:00:00+00:00",
+        "tier": "other"
+      },
+      {
+        "trigger_key": "mna",
+        "trigger_label": "M&A (integration)",
         "evidence": "EasyJet targeted for cut-price takeover as jet fuel costs soar .",
         "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxQMXJJVkRXMkZ3TXdYX0hCbFBxUlhVT1RTZVRNSlFrUE9sbGNDVlg4bmVRRTRWamhYUHNoWTdqZC14YUtyS21KSlpUNmRLaWJzTUE1NkRFTEk4ZFhJdVBqUDR1ZGlKcXhzNHB0NjRVRWRzTXNKZ0JhY3B2YVZVTGg1eFpoVm1NWG01VnVrajdjSExfRWhRTHAxNjF3?oc=5",
-        "source": "Google News",
+        "source": "The Telegraph",
         "published": "2026-05-29T07:00:00+00:00",
         "tier": "other"
       }
@@ -1235,7 +1575,12 @@
     "first_seen": "2026-06-02T09:52:08.892596+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Accenture",
@@ -1246,7 +1591,7 @@
     "window_weeks_min": 26,
     "window_weeks_max": 52,
     "window_label": "26\u201352 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -1258,8 +1603,17 @@
         "trigger_label": "M&A (integration)",
         "evidence": "Accenture to Acquire Leading Creator and Social Agency Whalar, from Whalar Group .",
         "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxNZ0FLVjJHcW51VUpCcV8yMkZVUl9NbFdETlNELWNsMVFidndnTEpFeUUwc2xrMHYwaTJ4NVYzUUlySG9YRHhoV3gweDJlVTQ5eWp0RFdvbUI3ZVZUSFozTGxtU2xkRTRhUFljZElfUTdjV3dzZXBTaXQ0S0dTQXUyNWwxUmcxcFlwZDl6RXYzc3Zqbmd0N2FFWkczSVJ2bGZ3M1FaZXFpTF9QUmFlVXZwT290dl9TNWpNRWM0Rw?oc=5",
-        "source": "Google News",
+        "source": "Accenture",
         "published": "2026-06-08T15:32:43+00:00",
+        "tier": "other"
+      },
+      {
+        "trigger_key": "mna",
+        "trigger_label": "M&A (integration)",
+        "evidence": "Accenture Song plans to acquire creator and social agency Whalar .",
+        "url": "https://news.google.com/rss/articles/CBMibkFVX3lxTE83TDZUS0s2NGx2MFJFdm5BTW5ZNDI1dnRBLTN3R2ZjakVTbF9GTmR5R1BJVWgzN0RFWW5HMHJXYUVHcVZaN0tKUkxZejJkOTJQRVVpU0JKajB5dkVZUTd0RVlQbzJuTWtpdW40ZWdB?oc=5",
+        "source": "Ad Age",
+        "published": "2026-06-08T15:41:00+00:00",
         "tier": "other"
       },
       {
@@ -1267,7 +1621,7 @@
         "trigger_label": "M&A (integration)",
         "evidence": "Accenture plc agreed to acquire Whalar Inc.",
         "url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxPbVRsTFRuRnZVemRJOWhSNV9BQmdFQ1lXTlA1TDM4a2xvYXhHTUhiYzY4dWl0cG1fU19DeGFKM3VsM2FUT1daVHlmSE1mRFhjcV80VlI0c3ByRjlmc3c0a3h6VXgwQjk0SjZpaFk3anB1TTlnbDZhQjZFbThBdTNUZk9abDY1emhJbXd4UEFwZUtKTG5xWDZRNDh4VDNwUk5Uemw5UDR3QUZQM0lPdkxsNUlPUzJ3c1BX?oc=5",
-        "source": "Google News",
+        "source": "marketscreener.com",
         "published": "2026-06-07T22:00:00+00:00",
         "tier": "other"
       }
@@ -1276,7 +1630,12 @@
     "first_seen": "2026-06-09T08:50:53.530721+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Whitbread",
@@ -1317,7 +1676,12 @@
     "first_seen": "2026-05-16T21:29:48.590954+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "AJ Bell",
@@ -1328,7 +1692,7 @@
     "window_weeks_min": 6,
     "window_weeks_max": 26,
     "window_label": "6\u201326 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -1340,7 +1704,7 @@
         "trigger_label": "Early regulatory probe",
         "evidence": "AJ Bell : Nursery costs under the microscope as education secretary calls for CMA investigation .",
         "url": "https://news.google.com/rss/articles/CBMi3wFBVV95cUxQUVhFRHpPc0U1VUNlV2R4Y2dVSzc5WEEwT2hQTnkyVDNoRkxtUElQT18ycnpORlo0Q3RJaUVsTTU3YTAyLVlUQnFsVUdZMngxdHBNQXlZSFJWdUVIOUViZnVyOVNGMG8zeVN2OFhOdWtFLTJiRmhkeXFZMHhFU2hZV0NnYm5DLUhuQzQ2SnE0QUttWE9lMVFVMFpEVGhmZ2U2R0pMTlg3dkFBRUNUV2NqeTJvb201RHl6VUVpWXRCa3dsVzFBS183azhpRXVJSXdEYW9jRGtEQ2x0M2hvOVU4?oc=5",
-        "source": "Google News",
+        "source": "marketscreener.com",
         "published": "2026-05-27T07:00:00+00:00",
         "tier": "other"
       }
@@ -1349,7 +1713,12 @@
     "first_seen": "2026-06-09T08:50:53.530721+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Premier Inn",
@@ -1360,7 +1729,7 @@
     "window_weeks_min": 12,
     "window_weeks_max": 26,
     "window_label": "12\u201326 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -1372,7 +1741,7 @@
         "trigger_label": "Activist stake / shareholder pressure",
         "evidence": "Premier Inn owner defiant as activist investor calls for sale .",
         "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxPMGpOZFpXTnBPTmhnVnBQcV9vOGpGWjRiTm1SMDJERFNvYnZtZUU3REs4UXZNaFBuYTVaallFQ05JaTNGaExrbVp2VGVZNU1HSGZSd0EwOFBLVnQwTU5rdGc2cGVyenhueURpaWhfNWJaMlZfY2NZQW9Bbm5fLTVCT1l2ZUUwWWJaT1BvdWcyUDloQmpicWw5Qg?oc=5",
-        "source": "Google News",
+        "source": "The Caterer",
         "published": "2026-05-18T07:00:00+00:00",
         "tier": "other"
       },
@@ -1381,7 +1750,7 @@
         "trigger_label": "Activist stake / shareholder pressure",
         "evidence": "Whitbread: Activist investor pushes for sale of FTSE 100 Premier Inn owner .",
         "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxOX201WldIX3ZuaW56RzJjc0JtTENVaDA3MEFNeHRRdDB3OW50Z3lsZGZHeTdRWnUtTTV0eDhZeG9GOHF3RFlTUzc2aV8tZ2hWdEpiUGhMejZDUlFLdTVwRmloYmhMVURUNkl4UE1qeEJwZ2dQRXdGZHEzS3otV0R3Y3dtUFNHa3ZQajlZcjFBQzl3Zw?oc=5",
-        "source": "Google News",
+        "source": "City AM",
         "published": "2026-05-18T07:00:00+00:00",
         "tier": "other"
       },
@@ -1390,7 +1759,7 @@
         "trigger_label": "Activist stake / shareholder pressure",
         "evidence": "Activist investor tells Premier Inn owner Whitbread to put itself up for sale .",
         "url": "https://news.google.com/rss/articles/CBMivwFBVV95cUxPeDdUSm1WTkNxbnBwZzEyVVV3Q3dLdkVLdm9EcUVZSGlNV25MbGh2NGJzTkxjUkZBN1AzeWRReFVhVjhUajFVemxjRnNhQVBkZElqakZFckcyV1BOeDVidnFMMTg5TmFGNWRpLUJpNG5ncjFDVHlXSVhOd2dhdlZfSnprd3A0TlVoN2RzUW9DcnhnYzllZjlxRzRGWFVDMUs4eHZpT2JTZjZMQ3lfRTkxcVU0NjdaMVh4ZmtlNVlQVdIBxAFBVV95cUxOTUswTEVuRWtIcTFQMTd2Zkc5U2dmN3VqSEFJU0xscjNQNTVZbGpBWjBMQjRFUDF1ckxmLXgzcHZRVFRCbUZKWTRuQjFvaVl2ekJvODVCZDg5Uk9TUnhMd1JZWVVkemNhdFVybUZST2Q3eGwxQ05lLURVNWs4UDVQUFpHWlRzMEZFN2x0REVReFhfX29QNVFaMTZfN094TWcyTzRpMzBlYTRVWlNCRG1mV3lPNDJYUmxRTE8xX2I4Ri15Q3Qy?oc=5",
-        "source": "Google News",
+        "source": "This is Money",
         "published": "2026-05-18T07:00:00+00:00",
         "tier": "other"
       },
@@ -1399,7 +1768,7 @@
         "trigger_label": "Activist stake / shareholder pressure",
         "evidence": "Premier Inn Owner Under Pressure: Sell Now, Demands Activist Investor .",
         "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxNTUFsVGo1VW1mckltRTZmN0lLdFRrUzBocXdLZGt1SXVWUWZjSVVzSVN1eVJ5UWRyVDliUEtKYjRmY2laNmoxOFhhb25mUFhDQ3RZYTNENjE5Zmg2aEtOYWk2REl6MjV1TFpfeWVIVURPWFUwSTRzMTFUeHJpcnA1YmJucjNVbExoaHNrcHhuQVd1dnlLZGFkcDVRZDVzUQ?oc=5",
-        "source": "Google News",
+        "source": "Skift",
         "published": "2026-05-18T07:00:00+00:00",
         "tier": "other"
       },
@@ -1408,7 +1777,7 @@
         "trigger_label": "Activist stake / shareholder pressure",
         "evidence": "Activist investor Corvex pushes Premier Inn-owner Whitbread to consider sale, FT reports .",
         "url": "https://news.google.com/rss/articles/CBMi1wFBVV95cUxPclJOMmJxckNRNUJreHBjVnNNOW9VRm1WN1pkdmM0UzNMRkEzVjFUbklwSjhhWVl1dzNTOHFiZXVRTFhyakxiWXg1eFQzUDBneEI4VXgxYS1IMnlNN3JWOGFGbmdYY3NhUDEwR2lRYVIwRDgySkEzS0hzNG5OVk1FR25ObUwtUE1nN2haQXVQUHBLRklKWjRoYVV5UFpTQXp2YlVvaWstQmJubUJPZ1JmQmhYYzNpbnZKWUxkNnl6VUtWRzEyU3drUzlaVzE1ZnhTc1drbXY2MA?oc=5",
-        "source": "Google News",
+        "source": "marketscreener.com",
         "published": "2026-05-18T07:00:00+00:00",
         "tier": "other"
       }
@@ -1417,7 +1786,12 @@
     "first_seen": "2026-05-22T09:05:49.503720+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Capita",
@@ -1449,7 +1823,12 @@
     "first_seen": "2026-05-22T09:05:49.503720+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Entain",
@@ -1481,7 +1860,12 @@
     "first_seen": "2026-05-25T09:35:58.083816+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Microsoft",
@@ -1492,7 +1876,7 @@
     "window_weeks_min": 6,
     "window_weeks_max": 26,
     "window_label": "6\u201326 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -1504,7 +1888,7 @@
         "trigger_label": "Early regulatory probe",
         "evidence": "Microsoft (MSFT) Faces CMA Investigation into Market Practices .",
         "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxQejVPZElNNzJTQWxGdFZ0SW00bGdkRm5sbUVJLTJELS1OYTFtanBGUE9hRHBseEZEX0thWGhFamdQdERDSkprUlBRVXRkeGM2WUpGVDNNcDRYdU9NRnJIVjdvbDVxamxhNWV3THYxMGdSR3RwOGlzcXdWV1dWRGswREZsNWt2MnVUeGMwcnpkWmFWak14T0Vzb3p5czBxbzFraGhVWlljM2c0cXlQc0ZmYg?oc=5",
-        "source": "Google News",
+        "source": "GuruFocus",
         "published": "2026-06-05T16:18:45+00:00",
         "tier": "other"
       },
@@ -1513,7 +1897,7 @@
         "trigger_label": "Activist stake / shareholder pressure",
         "evidence": "Microsoft stock falls as Bill Ackman builds stake amid Azure growth concerns .",
         "url": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxNaGVYa2ZJSWc5dGFpMEVEWDNFTnFQeGotbGRVYW5Sb1FYdmY5TVRGLV9xUVRMUGlKRVdWZjMtRHVOQXByakE2Wl8xSUJoY3FWMDJ2Mjc0VUJ3azNNTzdvQ1dHbzlxTS1HMmphcFR0Y3JFMFg2NEJublY5eWNoMjVXOG51OXM4bXJFdFgyeTAzUzZzUkItVVg2czc1RUEtZjROZHNCTXo0cVE?oc=5",
-        "source": "Google News",
+        "source": "eciks.org",
         "published": "2026-05-15T07:00:00+00:00",
         "tier": "other"
       }
@@ -1522,7 +1906,12 @@
     "first_seen": "2026-05-16T00:58:06.067071+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Toyota",
@@ -1562,7 +1951,12 @@
     "first_seen": "2026-05-16T21:29:48.590954+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Equinor",
@@ -1620,7 +2014,12 @@
     "first_seen": "2026-05-25T09:35:58.083816+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Barratt Developments",
@@ -1652,7 +2051,12 @@
     "first_seen": "2026-05-16T21:29:48.590954+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "MJ Gleeson",
@@ -1663,7 +2067,7 @@
     "window_weeks_min": 2,
     "window_weeks_max": 26,
     "window_label": "2\u201326 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -1675,7 +2079,7 @@
         "trigger_label": "Profit warning / negative trading update",
         "evidence": "MJ Gleeson issues profit warning amid \u2018frustrating\u2019 land sale delays .",
         "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxQU0dWZzlxLUlRcDNxRjROZVNjUFRyXzZyMXBvQWNJVEpJLU9YSGtVUkZpeWt6OFV4WkNERTg3Yi1uSFk5TjBZU2hvcC1BdXFOd01TMXdMOE5zd0loRTlDLUVnUklVVVpIdl9EUzFsdmNlMVpUcjdYbGV6VDV3YVJ1SVp1LXI2NlhTeXdQRjg3Ti1PSEVUQVJQbC1nNmozRjZreWc1S1NKa2FaaUZta3c?oc=5",
-        "source": "Google News",
+        "source": "Construction Wave",
         "published": "2026-06-09T11:55:46+00:00",
         "tier": "other"
       },
@@ -1684,7 +2088,7 @@
         "trigger_label": "Profit warning / negative trading update",
         "evidence": "UK\u2019s MJ Gleeson warns on profit as weak market delays land sale .",
         "url": "https://news.google.com/rss/articles/CBMizgFBVV95cUxQUloxckhnckw2ajRLTnp4TEVvS1ZTalpaUnlReGRWR21WbHJ6d0VHN0EyZ3FLUU9qdmtrX1VfZGgyd3cwUzc4T09qWVVzMm5uY3R3a1FLcVRqVDloTWtCRXQ4bHR4ZUZEc1BzaVdwSzZ5Y2RGTTN3Y1hvemw2VWVmT1Y5cVk2VXM5bmFQbndKNGVKaE41bkVDNTRRM1BtWVVOMU5XV3R2TFZTZ0FPcGstak9QRE0wX2ZLcGh2ajNqenhkN3VmVkNENnVJdGRnUQ?oc=5",
-        "source": "Google News",
+        "source": "TradingView",
         "published": "2026-06-09T06:59:00+00:00",
         "tier": "other"
       },
@@ -1693,7 +2097,7 @@
         "trigger_label": "Profit warning / negative trading update",
         "evidence": "MJ Gleeson: Yorkshire firm issues profit warning after delay to \u2018major\u2019 land deal .",
         "url": "https://news.google.com/rss/articles/CBMixgFBVV95cUxPN0xoQ05TUFp4d2N5OXZjNzdNWDVMSU9UMUxVQkF2MHBBMXBReXFBX1ZyZHpnODVqQVdTeFhOM0M0R0ZiOU9UTE8tbjVMYmZKVXlrQ25yTllRbk9yLWFnRjJPRlJ3aS1OVTEyU2FxeFJ4UVVVb1VpQS1KVmtucG4yclRLVjQwdklEek1sazFRRkZsVXYxUWJxNW5ZVmFKejFqMzZuc3JCMkt2Wmlua3RhZjlJTWhpX2JKWXJteFFLZlFGOGNxWHc?oc=5",
-        "source": "Google News",
+        "source": "Yorkshire Post",
         "published": "2026-06-09T13:28:00+00:00",
         "tier": "other"
       }
@@ -1702,7 +2106,12 @@
     "first_seen": "2026-05-16T23:44:38.529363+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "University of Bristol",
@@ -1734,7 +2143,12 @@
     "first_seen": "2026-05-16T21:29:48.590954+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "ITV",
@@ -1766,7 +2180,12 @@
     "first_seen": "2026-06-03T10:24:08.597421+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Mitchells & Butlers",
@@ -1798,7 +2217,12 @@
     "first_seen": "2026-06-10T09:09:54.465435+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "British American Tobacco",
@@ -1830,7 +2254,49 @@
     "first_seen": "2026-06-10T09:09:54.465435+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
+  },
+  {
+    "company": "BP",
+    "score": 0.546,
+    "depth": 1,
+    "account_tier": "watchlist",
+    "predicted_role": "Head of Internal Communications",
+    "window_weeks_min": 8,
+    "window_weeks_max": 24,
+    "window_label": "8\u201324 weeks",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
+    "linkedin_profile_url": null,
+    "linkedin_profile_role": null,
+    "linkedin_profile_name": null,
+    "seeded_contact_name": "Murray Auchincloss",
+    "seeded_contact_role": "Chief Executive Officer",
+    "events": [
+      {
+        "trigger_key": "restructure",
+        "trigger_label": "Restructure / transformation announced",
+        "evidence": "BP announces corporate restructuring .",
+        "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxQcm4tNmdaWVZzXy1KM2hrUGlVRW5tZm13MGl1WnJkVHJJUC1tZVQ2YUIzeXNUN1FKTzhycVlKUHp0OWxxOW00U0VHdGVvY29MSmJ4eU40VHhJY3NGUkFjOTJBV2NjN3M2d0RzLUJJMjJYaEZmeFhVRDEtZDJON1BmMGo2RFhHZkJvNzE3dkFnTQ?oc=5",
+        "source": "Upstream Online",
+        "published": "2026-06-09T12:49:14+00:00",
+        "tier": "other"
+      }
+    ],
+    "pid": "bp",
+    "first_seen": "2026-05-15T22:22:25.556624+00:00",
+    "status": "active",
+    "followed_up_at": null,
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Spire Healthcare",
@@ -1862,7 +2328,12 @@
     "first_seen": "2026-05-16T21:29:48.590954+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Close Brothers",
@@ -1894,7 +2365,12 @@
     "first_seen": "2026-05-21T09:05:47.858778+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Thames Water",
@@ -1905,7 +2381,7 @@
     "window_weeks_min": 8,
     "window_weeks_max": 24,
     "window_label": "8\u201324 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -1917,7 +2393,7 @@
         "trigger_label": "Restructure / transformation announced",
         "evidence": "Thames Water to pay \u00a3750m if restructuring deal approved .",
         "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxQb1M1S1hTZkVYR1ZqTC1GVy10MmxFeTRnSVlla2VxTXVUd1gwX1FIcFFpODhxQWZibi0wYWxUaWFISDJianF2TmFkZFRXaVJ3NEg4N2I3NEFKYl9TdFZMSTFkUW84Ymxpa3lvZ2V1Y0V5YXQ2cDZBWmFkZzlWdUxMZFhtSlVaR3FHT0ZOU0c0RlJzaXlkd1NSN2pmWGR4U09HVm1rM0E0SVNQWEFXM2tNT1VNMA?oc=5",
-        "source": "Google News",
+        "source": "The Times",
         "published": "2026-06-10T14:30:00+00:00",
         "tier": "other"
       }
@@ -1926,7 +2402,12 @@
     "first_seen": "2026-06-11T09:56:32.972467+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "British Airways",
@@ -1994,7 +2475,12 @@
     "first_seen": "2026-05-16T21:29:48.590954+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "IAG",
@@ -2035,7 +2521,12 @@
     "first_seen": "2026-05-16T22:31:02.271010+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Crest Nicholson",
@@ -2046,7 +2537,7 @@
     "window_weeks_min": 8,
     "window_weeks_max": 24,
     "window_label": "8\u201324 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -2058,7 +2549,7 @@
         "trigger_label": "Restructure / transformation announced",
         "evidence": "Crest Nicholson lenders hire A&M for help with restructuring - report .",
         "url": "https://news.google.com/rss/articles/CBMi0wFBVV95cUxNX1VjY1lxdWJQYjZFNnJHQ0lZajJQY2Q4b21xSWRpQUttTTJxeEhQVFhTYnZzYk84TjEzOXAweDltY3NLNUp3MFg3Z3F2WFFVLWgtVFJkbFRUYW1TU3VYcHlxdktMRk9YSWVsU3dHZ1FQVGZlcU1zdEwyNVRDbDNGTW02eURPTXgzY252R3V6TUNlNm9aUy0xQTl4UV9BNEh1VkRPbzdsakVVN2pmRGtudi0zNC1kYS1HV2xYTzk2Tm14MU55YjFzYVRQd2QyMXR6aGhJ?oc=5",
-        "source": "Google News",
+        "source": "Sharecast.com",
         "published": "2026-06-05T12:44:07+00:00",
         "tier": "other"
       }
@@ -2067,7 +2558,12 @@
     "first_seen": "2026-05-16T21:29:48.590954+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Starbucks",
@@ -2117,7 +2613,12 @@
     "first_seen": "2026-05-20T09:03:22.762542+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Standard Chartered",
@@ -2128,7 +2629,7 @@
     "window_weeks_min": 12,
     "window_weeks_max": 24,
     "window_label": "12\u201324 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -2140,7 +2641,7 @@
         "trigger_label": "CFO change",
         "evidence": "A bank analyst who has long criticized Standard Chartered has been appointed as the bank's Chief Financial Officer .",
         "url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTE5CUDZ5WDduM0NkRkFDVUxzTlpVNXFzOHdmUHYwUFRGTHBJdGRQQk1MTHBRZXhPV01xam0zT05MVV9EMGZ5bDVwY1BrTjlhM0hUSm02QmxZSnZCUDRCRnfSAWNBVV95cUxQTWtsX29ndE42WGxtNWh5X3dmdDhzVWpUVVN4YVF4MDQ0MEg0czl6cTZLMjdmVHlwZTRQNXR1WGl5Y0ZlN3ItS25PS05jMGJScVoyanpLamhvLS1Sb0R1LU8wM2s?oc=5",
-        "source": "Google News",
+        "source": "Bitget",
         "published": "2026-05-17T19:50:04+00:00",
         "tier": "other"
       }
@@ -2149,7 +2650,12 @@
     "first_seen": "2026-05-18T09:12:48.249149+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Costa Coffee",
@@ -2180,7 +2686,12 @@
     "first_seen": "2026-05-25T09:35:58.083816+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Pets at Home",
@@ -2191,7 +2702,7 @@
     "window_weeks_min": 6,
     "window_weeks_max": 12,
     "window_label": "6\u201312 weeks",
-    "last_seen": "2026-06-10T09:09:54.465435+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -2201,10 +2712,10 @@
       {
         "trigger_key": "ceo_change",
         "trigger_label": "CEO change",
-        "evidence": "Pets at Home higher after it rejigs shareholder returns and new CEO backs outlook - UPDATE .",
-        "url": "https://news.google.com/rss/articles/CBMijgFBVV95cUxQM01zYVFtZ3U0T0FDQ3I3Q0FJQWdTM1JMbFJmWEZFSTQtdkY5WWctQ3VaeDNzbWpkMm1YWDdLT19FMXJvZ3lwREZNWUhxSDhJeFJxS25XSzhoVEMzVDBONXBmTmRNd2oxWVYwVnBrdnpBM2t6M1hzZXQ4WHpXYW1SVTRyQ285UnhDVWRUdVdn?oc=5",
-        "source": "Google News",
-        "published": "2026-05-26T07:00:00+00:00",
+        "evidence": "Pets at Home profits plummet \u2013 but new CEO is bullish .",
+        "url": "https://news.google.com/rss/articles/CBMijgFBVV95cUxQREpRZndzRGZLYjR1S21HZTRfVGY5ek1nR0pQcHJ5YjRURE9iWnd5V2dpQ0FpQWlIOEoyM3JPczdkY1JzWWNmM3EzM1kzLVEwZzNScDY2ODNOWGlBQUYxaHpFSlZWTEg2YXgyWWRKVmFaNWpvZFh3TTVsSUxCRnA5Z29NMHpVR2ZlVTUzcWZR?oc=5",
+        "source": "businesscloud.co.uk",
+        "published": "2026-05-27T07:52:46+00:00",
         "tier": "other"
       }
     ],
@@ -2212,7 +2723,12 @@
     "first_seen": "2026-05-27T08:55:50.790550+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Currys",
@@ -2223,7 +2739,7 @@
     "window_weeks_min": 6,
     "window_weeks_max": 12,
     "window_label": "6\u201312 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -2233,18 +2749,9 @@
       {
         "trigger_key": "ceo_change",
         "trigger_label": "CEO change",
-        "evidence": "Currys names former shop assistant as its new chief executive .",
-        "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxOaklGd2p4VU1OT1NaZmJGd3dHYWpmc2hWeHBhcnpEYWttWElxMXBfR2hmaklRamt2cDdmN3lsNGZLcWJjMEp1dGo5RFBMbkdwOThld0NMcTlRbVhlQUJYV1JOcE4tRHhfbGdOLV9BTEtIa1JYWXBQQlo5YVQwNlB4MXFncHppUlFhLV84Y3BWbk1EOW1hZ1k5Q2xzRmplV1dwcXd3MXdWZ3luajhvTTlqVHFJd3dYSzhUZ3Nrb9IBwgFBVV95cUxPNXR6UjBMYkRRd1NQSGg0VHp1QmNhRVJDWkF3YnNyNXRYR1ZObmp6bmNibi1IMWdsRktFd0VFcU50LU0wTXVTeTFwaVNBWWdpek1YcW92N05jLU9pazhzVS1YS216ckhERFIzVTdFWklCUTBUZFZKN1lfdjFZcVVERG15UGFIdXdmOXdjTEJXeDV6Y0NmdF9mTUx6OUhIbk5YQVUzMzlYTEZEdEhqVHFDMEhVLUllbkw2Y1dIQy1MLVZkdw?oc=5",
-        "source": "Google News",
-        "published": "2026-06-03T08:14:13+00:00",
-        "tier": "other"
-      },
-      {
-        "trigger_key": "ceo_change",
-        "trigger_label": "CEO change",
         "evidence": "Currys new CEO gets muted reaction but analysts hail continuity move .",
         "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxOQmJ0WGJnTlNyLVc0em8tYXJfendzZGRaVFdRWE1URExLUTRMdWRwazNZOW5FSkxMVjJiczlFSnhlSHAtMmFEajRMN0UzR2ZVMjZVUzF4Smt6eC1qSUlpamVxa1R3ZXpaOG4za3NKR2VORnJmZGZJb3JFaHduZTNGMTM4NUY1Zw?oc=5",
-        "source": "Google News",
+        "source": "Yahoo Finance UK",
         "published": "2026-06-03T11:31:00+00:00",
         "tier": "other"
       }
@@ -2253,7 +2760,12 @@
     "first_seen": "2026-06-03T10:24:08.597421+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Home Group",
@@ -2285,7 +2797,12 @@
     "first_seen": "2026-06-04T09:16:00.137692+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Nestl\u00e9",
@@ -2296,7 +2813,7 @@
     "window_weeks_min": 6,
     "window_weeks_max": 12,
     "window_label": "6\u201312 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -2308,8 +2825,8 @@
         "trigger_label": "CEO change",
         "evidence": "Barry Callebaut: new CEO will negotiate with Nestl\u00e9 and Mondelez personally .",
         "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxNU1BVaVFVYmJ0N3QwY3FVUnNYa21zbk9Wb292OE9oYnBMZHd6ODRpTU9KTzRweE9sWWxlSlhjakthMVZQZEZQbUhQcFNGUDUxX0hNeG8tU3NMQzFsSmFmaVdwaWx5UjB5ZFdoZzBHNmNUOW84ZjZGZHVUSXZuRlBScGc0NWp4b2xqaUVzaF9uWVplSDUxWkNUT1hDd1JmTU9NdFB4eXp1SFRnN3BJTVo2U3lwOA?oc=5",
-        "source": "Google News",
-        "published": "2026-06-02T08:32:26+00:00",
+        "source": "RetailDetail EU",
+        "published": "2026-06-02T08:27:46+00:00",
         "tier": "other"
       }
     ],
@@ -2317,7 +2834,12 @@
     "first_seen": "2026-05-13T22:56:28.395014+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Sanofi",
@@ -2349,7 +2871,12 @@
     "first_seen": "2026-05-16T21:29:48.590954+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Siemens",
@@ -2360,7 +2887,7 @@
     "window_weeks_min": 6,
     "window_weeks_max": 12,
     "window_label": "6\u201312 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -2370,9 +2897,18 @@
       {
         "trigger_key": "ceo_change",
         "trigger_label": "CEO change",
+        "evidence": "Brian Holliday appointed Chief Executive Officer of Siemens UK and Ireland .",
+        "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxQaVlRU3RyUXh6TlpOVmh4QVNFeW9tX0pYTFo5ZmZMNHdpMXBldXpSZzVhbU1LOW9IaUVsZWVES1ZHVkptMWdzRTRFRWUwZnZaNWR5aUxlTGFyZFZGRmJYSzRmMTdXb0pMUVFvQ0JsZ25feVR1aktjemFmMEl6eEsxZm14czJyZjlQc1pWWVBwNHl6NTAyQjMwYkJzSldZck95dWVQZUcxODFWZw?oc=5",
+        "source": "Siemens",
+        "published": "2026-05-18T07:00:00+00:00",
+        "tier": "other"
+      },
+      {
+        "trigger_key": "ceo_change",
+        "trigger_label": "CEO change",
         "evidence": "Siemens UK and Ireland appoints Brian Holliday as new CEO .",
         "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxOV1FCSnVQM1pNdHFmZXpfWnVXU0JBNUtEdXhMTXd6T3JYQTg3VHB2QzZsVjNwZzZPdGQ2eS1aVXlYNWJGVkdIUndUODFNZlMzS21ja2lGVmFZNFI2cEZTdnZCZzU0Q0RYakhYZklmcjBGZU1EelNpNlhyYm04akdLekZmN1dhTmNkNUtqYjRoUkNjT1RzWmhvTnNrZGwwTTZU?oc=5",
-        "source": "Google News",
+        "source": "The Manufacturer",
         "published": "2026-05-19T04:39:26+00:00",
         "tier": "other"
       }
@@ -2381,7 +2917,12 @@
     "first_seen": "2026-05-16T21:29:48.590954+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "EY",
@@ -2413,7 +2954,12 @@
     "first_seen": "2026-05-16T23:44:38.529363+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Roche",
@@ -2445,7 +2991,12 @@
     "first_seen": "2026-05-25T09:35:58.083816+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Merck KGaA",
@@ -2477,7 +3028,12 @@
     "first_seen": "2026-05-25T17:28:55.428360+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Bain Capital",
@@ -2509,7 +3065,12 @@
     "first_seen": "2026-05-27T08:55:50.790550+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Cambridge University",
@@ -2541,7 +3102,12 @@
     "first_seen": "2026-06-03T10:24:08.597421+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Orange",
@@ -2573,7 +3139,12 @@
     "first_seen": "2026-06-03T10:24:08.597421+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Royal Mail",
@@ -2605,7 +3176,12 @@
     "first_seen": "2026-06-03T10:24:08.597421+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Deutsche Beteiligungs AG stock (DE000A1TNUT7)",
@@ -2616,7 +3192,7 @@
     "window_weeks_min": 8,
     "window_weeks_max": 17,
     "window_label": "8\u201317 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -2628,7 +3204,7 @@
         "trigger_label": "PE acquisition / take-private (completed)",
         "evidence": "Deutsche Beteiligungs AG stock (DE000A1TNUT7): Portfolio exit and buyout activity stay in focus .",
         "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxPRUJsT1plcjlwd2xyTHNfZFY0ZEkwVFRkTFo1NG5KbzFJajl3Y3NiYksxdGxPOWRPSHkxV0I0UDl4VXRYM3A4ZzFrN0E2ZktQODJkTjB3SjhYSFZaOVFoMWZySDFZLXhzdXhtZnNuQXlOR2pmZ0RMcGNIZDJPWk5ZejFxNDllN1VlbzhyYjhJSW5KdHpwc0lPdUhrdWREb0hMcDhpOHVCNE1OajZ2YWs0X1BiQ3B3cjV3MGNYVGZOU2U1c3RTdjlz?oc=5",
-        "source": "Google News",
+        "source": "AD HOC NEWS",
         "published": "2026-05-15T07:00:00+00:00",
         "tier": "other"
       }
@@ -2637,7 +3213,12 @@
     "first_seen": "2026-06-03T10:24:08.597421+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Medway NHS Foundation Trust",
@@ -2669,7 +3250,12 @@
     "first_seen": "2026-06-08T10:09:30.695487+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Cambridge University Hospitals NHS Foundation Trust",
@@ -2701,7 +3287,12 @@
     "first_seen": "2026-06-08T10:09:30.695487+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Alphabet",
@@ -2733,7 +3324,12 @@
     "first_seen": "2026-06-08T10:09:30.695487+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "PwC",
@@ -2744,7 +3340,7 @@
     "window_weeks_min": 8,
     "window_weeks_max": 24,
     "window_label": "8\u201324 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -2756,7 +3352,7 @@
         "trigger_label": "Restructure / transformation announced",
         "evidence": "PwC appoints Haroon Ahmed as partner in Restructuring practice - Consultancy-me.com .",
         "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxOTlVnOEtvazZQVDhmUFFKTzIyZlZsZC1jbU5qQ2pET193cm9hUDlJMXAyQXlnUlBiVGlMd2p1cjg1cWVnQzlPZHpHcVA0NDZ2b3F2TFFfOEQtOEkxWXBySi1IbnNwVGlsRlEyWllCNTlvN0I0VlVzTGFBR2NEMlpwbkEzeXo2aXlTdm9zdml6VDcyVzhZRUFfamVnOWZTUVNSU1QyWWZlb9IBrAFBVV95cUxPNkhCdENUNDN6ZjZBc3RaM0ItTV9NLUlxY0pKRkZKa0pieV8zTkNsWEg1Wl9GV3FlUkVRbmFXcXdsalk2YnNsaWNxSkk1cGsxTkQycC1KZ3V6dHJ2SllhTHBJalNTbEdPYXJZQk4wX2U2RHRDMHY4MWFnVG1nckFPT3lFUmszOGRncFEyNWNOOXozdFAyTXU5UVdPQk5RUTQ0R1lJdW1YMkFGcGQy?oc=5",
-        "source": "Google News",
+        "source": "Consultancy-me.com",
         "published": "2026-06-05T10:38:42+00:00",
         "tier": "other"
       }
@@ -2765,7 +3361,12 @@
     "first_seen": "2026-06-08T10:09:30.695487+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Carlyle Group",
@@ -2776,7 +3377,7 @@
     "window_weeks_min": 26,
     "window_weeks_max": 52,
     "window_label": "26\u201352 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -2788,7 +3389,7 @@
         "trigger_label": "M&A (integration)",
         "evidence": "Triton agreed to acquire Flender GmbH from The Carlyle Group Inc.",
         "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxOb3JBMHFUXzVIU2h4U28zTnFqV21LUU5tVzFPbmpSajVvd3VoODE3RjFTUXktb2ROYlBIdnBBb19yNzJWaUJIeGZ2Rm5LM2RIZWtJQm1uU08wQWxRMXJOY1hKVjJ3Z2p0U2c4T29fRHJ2bVJrRUF6TVE0NmNybzV1YjVoUDhxVDd6b2RhN2RQTkZGeURTclVfSWdQeVkzUGZDT19DMEJiUlUyRlZYU2FWOU0xZUNNeVlsTExxa1pfbTdyS1IwZ2NjRg?oc=5",
-        "source": "Google News",
+        "source": "marketscreener.com",
         "published": "2026-06-02T22:00:00+00:00",
         "tier": "other"
       }
@@ -2797,7 +3398,12 @@
     "first_seen": "2026-06-08T10:09:30.695487+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Allianz",
@@ -2829,7 +3435,12 @@
     "first_seen": "2026-06-09T08:50:53.530721+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Unilever",
@@ -2840,7 +3451,7 @@
     "window_weeks_min": 12,
     "window_weeks_max": 26,
     "window_label": "12\u201326 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -2852,7 +3463,7 @@
         "trigger_label": "Activist stake / shareholder pressure",
         "evidence": "McCormick stock ticks up slightly as Toms Capital builds stake after Unilever deal .",
         "url": "https://news.google.com/rss/articles/CBMi3AFBVV95cUxOTVB0SnJwTTRuLW9GWEozdHFrZXFCZkFCcHJYTlFmcG5JZENPdnBYc0hrSTItcUdtMXFocWRsY01oTHU0SENYQnRWRkxVSHdxZy1NUGtfZkJPeF9wd2IyaGFpWm9fQ3pnM25jVmxHMWtqVWJ6NHFsMjdiOVNMU2hGME1LdzdNa0dya1dDQ2FuRXFTVlZZcnd2ZlhLTF9yR3diZkRIWUMwU1dFdlJYR2R0OUdsRllXQ3dkSG02c2hLVHFoSkVJVkw0U2t0LVB5b2kxVTBNSzBMVUhzSkNJ?oc=5",
-        "source": "Google News",
+        "source": "Investing.com",
         "published": "2026-05-29T07:00:00+00:00",
         "tier": "other"
       }
@@ -2861,7 +3472,12 @@
     "first_seen": "2026-06-01T10:41:53.327943+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "ANZ",
@@ -2893,7 +3509,12 @@
     "first_seen": "2026-05-22T09:05:49.503720+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Blackstone",
@@ -2925,7 +3546,12 @@
     "first_seen": "2026-05-16T21:29:48.590954+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Deutsche Bank",
@@ -2956,7 +3582,12 @@
     "first_seen": "2026-05-16T22:31:02.271010+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "SAP",
@@ -2987,7 +3618,12 @@
     "first_seen": "2026-05-16T22:31:02.271010+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "PepsiCo",
@@ -3019,7 +3655,12 @@
     "first_seen": "2026-05-22T09:05:49.503720+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Mercedes-Benz",
@@ -3051,7 +3692,12 @@
     "first_seen": "2026-05-25T09:35:58.083816+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "ABL Group ASA (OB",
@@ -3083,7 +3729,12 @@
     "first_seen": "2026-06-03T10:24:08.597421+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Ryanair",
@@ -3094,7 +3745,7 @@
     "window_weeks_min": 6,
     "window_weeks_max": 26,
     "window_label": "6\u201326 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -3113,10 +3764,28 @@
       {
         "trigger_key": "regulator_probe_early",
         "trigger_label": "Early regulatory probe",
+        "evidence": "Ryanair seating fees don't fly with the CMA: investigation launched (via Passle) .",
+        "url": "https://news.google.com/rss/articles/CBMitwFBVV95cUxPanBJNEUtaDBjUVNwa2s0TXJ4cHJhRTFNM0NyeERPLTh5dWtmOTgwRjdISGp4OHdrNllRR0xKUUZHOTE2ZFdHdDNmS1JSbXVQN3BSSFY3SXRJdVZKVkZBVzFzRDNCYXRrTzIzbDlvNkw0dGRkckJNNEZJVVpmY2lFRUZxN1RyOXFyS1hLVi1EOWxxeTFTQU9ZcllZZHBTdTl6SmRobWpDbTBEQUtPZVRVc3pPLUFBazg?oc=5",
+        "source": "Bristows",
+        "published": "2026-06-11T14:04:01+00:00",
+        "tier": "other"
+      },
+      {
+        "trigger_key": "regulator_probe_early",
+        "trigger_label": "Early regulatory probe",
         "evidence": "Ryanair fight back over CMA investigation into charging for family seats .",
-        "url": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxPWXlaM0FCbWdjejhRcWVScENLTFBxZ0hIWk1nQVZSUk5jeGMxLUxIUVRFVDF0V1k3MUQxbkJ4eGxxYS1EamZTdGx1VE1VTzh4MDAyVEpwUkc1eG5nMmFUQ2kzb1JhLXRwUzhrQVQtUmtRemp3bFZNZWx0TjZmQnJWSTd1M1JvQ0FYNlJYTmpkMHptS3RwR2NMUzRNUU51V0FGLXh6UXNKcWPSAagBQVVfeXFMT1l5WjNBQm1nY3o4UXFlUnBDS0xQcWdISFpNZ0FWUlJOY3hjMS1MSFFURVQxdFdZNzFEMW5CeHhscWEtRGpmU3RsdVRNVU84eDAwMlRKcFJHNXhuZzJhVENpM29SYS10cFM4a0FULVJrUXpqd2xWTWVsdE42ZkJyVkk3dTNSb0NBWDZSWE5qZDB6bUt0cEdjTFM0TVFOdVdBRi14elFzSnFj?oc=5",
-        "source": "Google News",
+        "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxOM3Yyallwc1JOWXVnM2tmaWFaMTJRVFpnLXlNVG5FNXZPMHJ2ZmpmQ1FYZ2NkemIycXRUcjVta25OdDdlenNpYmxYOWJER1V5cEpweHg2MjNlT1o4UENpdTB0V1ZLTUhLVmotaDgxY0c1SDZQZ25OYlNsNWw0al9WRERUdV85aDN0V0gxc3JNeTl6YjFGeHlvdlVKTEFSU2dZ0gGoAUFVX3lxTE9ZeVozQUJtZ2N6OFFxZVJwQ0tMUHFnSEhaTWdBVlJSTmN4YzEtTEhRVEVUMXRXWTcxRDFuQnh4bHFhLURqZlN0bHVUTVVPOHgwMDJUSnBSRzV4bmcyYVRDaTNvUmEtdHBTOGtBVC1Sa1F6andsVk1lbHRONmZCclZJN3UzUm9DQVg2UlhOamQwem1LdHBHY0xTNE1RTnVXQUYteHpRc0pxYw?oc=5",
+        "source": "deadlinenews.co.uk",
         "published": "2026-06-11T08:00:00+00:00",
+        "tier": "other"
+      },
+      {
+        "trigger_key": "regulator_probe_early",
+        "trigger_label": "Early regulatory probe",
+        "evidence": "Ryanair Family Seat Fee Faces CMA Investigation Into Child Safety Charges .",
+        "url": "https://news.google.com/rss/articles/CBMitwFBVV95cUxQT0Nkbm4zZXN3aFRfb2VjeFlvZ3FxbkVzUVdfaUNjUnpYNHppS1ZWdkRzRUNuSzQ4QlZ6ZlE2amRDQ2FESlUxa24yRGZSRk9qSW9MTExUQ1dNRElOYjF2b1d2S1E2Q19Ta0dLemF5WWw1R3ZvM2lhbzJkbTRNZThiNlB6SE9GNHFZa0FxNVN6eVRjZi1HNTdMVGo4a1VScFB0MnljeE95QmFwMXh3SmR4SHpBUHI1UGs?oc=5",
+        "source": "Columnist24",
+        "published": "2026-06-11T11:54:51+00:00",
         "tier": "other"
       }
     ],
@@ -3124,7 +3793,12 @@
     "first_seen": "2026-06-11T09:56:32.972467+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Channel 4",
@@ -3156,7 +3830,12 @@
     "first_seen": "2026-06-10T09:09:54.465435+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "JD Sports",
@@ -3188,7 +3867,12 @@
     "first_seen": "2026-05-16T21:29:48.590954+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "WH Smith",
@@ -3199,7 +3883,7 @@
     "window_weeks_min": 2,
     "window_weeks_max": 26,
     "window_label": "2\u201326 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -3211,7 +3895,7 @@
         "trigger_label": "Profit warning / negative trading update",
         "evidence": "WH Smith seeks \u00a3100m from investors after profit warning .",
         "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxOMXFXR0FpVFdZRHllSWg3blBXeDBpME5USVJnVEw4QXh1WVBnMWNZREFtalFscC1kZnpScnZNdmRRbjFfc0VUdExlR1pMaDVhMVluSWtQZzFhay16bldvY05IVXdRQVIteWd1Zk8xT3kyRXFxZHdhX1A3RVhPdXQ5VWNtRnE5dmZNenltbld4bVg3eE0tNkRoendfbjVMSEUyaVk3SHJMY3RWbjJxQndPeXJiYTFXc2V6MkNCcTBSem93bFE?oc=5",
-        "source": "Google News",
+        "source": "The Times",
         "published": "2026-06-10T07:23:24+00:00",
         "tier": "other"
       },
@@ -3220,7 +3904,7 @@
         "trigger_label": "Profit warning / negative trading update",
         "evidence": "WH Smith Shares Sink 16% as Profit Warning and Fundraising Spook Investors .",
         "url": "https://news.google.com/rss/articles/CBMiowFBVV95cUxOSDY1U2dYMzlVaVhvV1VQNmt2WUFwM0xFcFRBQTktVHhmV0h0bVBLZnlZN0pHSUo4UnVteDEzemRlSTZTcFZ5UFFGcE05MUhrUHJQcU0tRnN4OEY2dURrV3JUdmNSTDY0b2NCZlhMSzlDTU8wd1JNMnFNdndvdGNWVDF2RjZtY2RXYkt6Z1NsaGlGcDhYcjlWOXhEeUdXWXpLekJz?oc=5",
-        "source": "Google News",
+        "source": "Share Talk",
         "published": "2026-06-10T07:44:24+00:00",
         "tier": "other"
       },
@@ -3229,8 +3913,17 @@
         "trigger_label": "Profit warning / negative trading update",
         "evidence": "Market Open: WH Smith Profit Warning, Pennon Trust Rebuild .",
         "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxQSXVtbEdjTjgza1VrbW40RE05dHE3Q1lwZlNXSEF3bDBobDBTN1E5T05aVjliSmk2UUFDUTJqZGs4M2dSUGxIOFZrVFN0TGMxZ2xQWWhDNHMweEFXZlNWWTdSbXBrMDY5MlBWYUJzZV9weWdQYjE3aFRRNW53WVphQjdB?oc=5",
-        "source": "Google News",
+        "source": "Yahoo Finance UK",
         "published": "2026-06-10T09:08:33+00:00",
+        "tier": "other"
+      },
+      {
+        "trigger_key": "profit_warning",
+        "trigger_label": "Profit warning / negative trading update",
+        "evidence": "FTSE 100 rises but profit warning rocks WH Smith .",
+        "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxQcGVWVC1lc3ZLdGdVZ2p0ZS1nc0xtOGgtTFVZaEUxM251WmZpSzg3OXFXUmJlSVl5WXZYM1hVazh0Y3FZSC1KbzB6QmczNFUwT1hZSW9tbDUxbjJwWkJCYnRFR3lmMGpTTUdnc2h6bFlhd1dGWFFKRmRiaC1jbGQ4RHQ5UEdIajVoWE12cmFzdG02WWQtYkE3V0xCV2UwWlRncDFpZ3pEdjlRZw?oc=5",
+        "source": "London Evening Standard",
+        "published": "2026-06-10T16:29:10+00:00",
         "tier": "other"
       },
       {
@@ -3238,7 +3931,7 @@
         "trigger_label": "Profit warning / negative trading update",
         "evidence": "WH Smith shares nosedive as travel chaos triggers second profit warning .",
         "url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxOdXBuQUFfdnc2RGl5MkN2UkNoQlpabmZHZFptc24xXzFqcDVTLWdneFV3X0hSV2dkWFFlREFtUnl2MDh1MVRpYnk0YXctVmhWY3U0Tms0US1XMTRKY19kbUF1Q2pEdjBaS3ZDenFNY29rMGt4dlhYM09jdDZCbXYzZjl3ZkhvcmdGM0ZmV056VkhadHFZazBIR0p5aTdRSC1wdWxRMmVMdEowNFg3b1BndGNDakpVM2Zk?oc=5",
-        "source": "Google News",
+        "source": "Retail Gazette",
         "published": "2026-06-11T06:57:37+00:00",
         "tier": "other"
       },
@@ -3247,17 +3940,8 @@
         "trigger_label": "Profit warning / negative trading update",
         "evidence": "WH Smith Shares Plunge 16% After Profit Warning and \u00a3100m Fundraising Plan .",
         "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxQVG5kRlFTS29icHljdzNHeGE3WFdYZkdEeWJNd2xVS1lNRy1PTllPVjVFYWRxM0NaNFZvX2FpeUpCeV9PZW1lQUVZSUs4OUh4ZFZZcE1wT0NZd0xNVU1PWVJPb0VkRDNqTTZQdjc1N09ReFJEUnJmYWxWOGJvQ0xvMEdjVVBneXFVX1RYbHRiMGxVVnZxUDZTNGUyQWYydkdXWWc?oc=5",
-        "source": "Google News",
+        "source": "Share Talk",
         "published": "2026-06-10T07:44:24+00:00",
-        "tier": "other"
-      },
-      {
-        "trigger_key": "profit_warning",
-        "trigger_label": "Profit warning / negative trading update",
-        "evidence": "FTSE 100 rises but profit warning rocks WH Smith .",
-        "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxQcGVWVC1lc3ZLdGdVZ2p0ZS1nc0xtOGgtTFVZaEUxM251WmZpSzg3OXFXUmJlSVl5WXZYM1hVazh0Y3FZSC1KbzB6QmczNFUwT1hZSW9tbDUxbjJwWkJCYnRFR3lmMGpTTUdnc2h6bFlhd1dGWFFKRmRiaC1jbGQ4RHQ5UEdIajVoWE12cmFzdG02WWQtYkE3V0xCV2UwWlRncDFpZ3pEdjlRZw?oc=5",
-        "source": "Google News",
-        "published": "2026-06-10T23:58:41+00:00",
         "tier": "other"
       },
       {
@@ -3265,8 +3949,8 @@
         "trigger_label": "Profit warning / negative trading update",
         "evidence": "WH Smith seeks \u00a3120m after profit warning and travel sales hit .",
         "url": "https://news.google.com/rss/articles/CBMi9gFBVV95cUxNaWhJS1had2RkbEFuYmRHalRjSzlqb0lzWkExMTVZamFqVVNtQnlldkVwT0RmQllBZThzYUFCVlhseFhLOER4QjhaUWctWnMwRUszOVVKaWRMZDI2ZFpTTnZ2NHFTQlZjazl2eWtaZnV3UWJ5dzJQQW93NmFGSzgxSzRUeWExR19ib3pubjc5cmwyWWYxSXk5Rjl3Y1BFSHBZOXRZWE5pa01tbG5oc01OOFVabUVCMVBkVzY0aDYxc1l6Wk1WYkRNRWJab3BLTWFHUEliLUc5ZU1PUGY1T0t4SnJwNWFrNTlFSUs0RjhQSlJUY3k3VFE?oc=5",
-        "source": "Google News",
-        "published": "2026-06-10T14:44:13+00:00",
+        "source": "MSN",
+        "published": "2026-06-11T07:36:27+00:00",
         "tier": "other"
       },
       {
@@ -3274,7 +3958,7 @@
         "trigger_label": "Profit warning / negative trading update",
         "evidence": "WH Smith shares dive as retailer issues \u00a315m profit warning amid Iran war travel chaos .",
         "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxOVU56dXY4VVR1SW0wME5sZDlXTGtRNnVUaC15RmZxNlhCbXoyRDlONWlucHBlX2d4T2NURjFLbVNaYVVtbmFTQm5jVGd2WFROT0xNZ0ZxRW5nQjByMFJHQzdKcDFjZGpEYXhxTEhpWGlaT0s3SHBSTENtdUhIVmhndWRLZDA0XzJpcHJWdHUzMNIBlAFBVV95cUxQcXVzUHV1MXl0WmF2ZkU2YTFRN3MyRVdGX1pacHVTbjMxa3ltc2JqbDRPOGMzdk9hRHE3T1laUUhOcVhBMDlzemZCdmRfUW5sWHJqb3B6Q1lDM0ota2c0Wkl0MFI4VGcwNzJ2amhJQ05KcV9MWVdIODNZbk1yOURMLWVvU1lZTHpTazRKQnl1U3E2cmNR?oc=5",
-        "source": "Google News",
+        "source": "Business Live",
         "published": "2026-06-10T07:50:36+00:00",
         "tier": "other"
       },
@@ -3283,17 +3967,8 @@
         "trigger_label": "Profit warning / negative trading update",
         "evidence": "UPDATE: WH Smith raises GBP106 million after latest profit warning .",
         "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxQRmo5UnFJbkJBY3Z5UzZzR2wtT2dKdzAyMmtBNWk2UXU2YmZoRkNhSWhmVjV6SFcyZGVSdzZXWjc4QmkxR2d4RldscUtjLW9aUTY3MkFKZFhnYWNiTnRNOFpLeEFPcHRBWWdWT2JCeTlTOUZ1YkNWME1NcmlWNzNYdUloTGw2R0ZHc1ZISDY1eW1NaXQwVldseHpFV05ncU13OVl2WmlJNXRGZFhGRGh2bkE3bw?oc=5",
-        "source": "Google News",
+        "source": "London South East",
         "published": "2026-06-10T14:35:00+00:00",
-        "tier": "other"
-      },
-      {
-        "trigger_key": "profit_warning",
-        "trigger_label": "Profit warning / negative trading update",
-        "evidence": "WH Smith turns to investors for \u00a3100m lifeline as US slowdown and Middle East conflict trigger profit warning .",
-        "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTE5faFJXQ0tfeVctOVdDMVZhU0M3UjZkYzVhOU9kV1psQkQ3cHp0U1R0SDRxR3pVN3NsbUlrX0ptRUJiUG41aEpaMTI0UGpiSzFHOGZ4VkF0NzhfOU96TllGQW1YR0NyZTgzbXZSM2RkXzhEYjBKZm0zNmxvNHBWUQ?oc=5",
-        "source": "Google News",
-        "published": "2026-06-10T07:40:19+00:00",
         "tier": "other"
       },
       {
@@ -3301,8 +3976,17 @@
         "trigger_label": "Profit warning / negative trading update",
         "evidence": "WH Smith raises fresh capital, warns on profit as Iran war hits travel spend .",
         "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxOX2tjbTBIcVNjcjhJRWJLVzNrd3p3SDZzeWc3RHZueldfQmtpOHdzNzd4Tl8zUUNyb3FkUHlSdkFfdU5XdGQyNEdhcVRqWU9OYjJ3UVowWVA4emJzTTl1UnlWZHowdTYySnVuNE9BWkpPaTNld203cGpySDZ2ZHZMTUZuX2lvYVBRZjJ1UEZGV05YOGxIdi14d1hzQlg0V1QweFlVVXNR?oc=5",
-        "source": "Google News",
-        "published": "2026-06-10T14:24:28+00:00",
+        "source": "Reuters",
+        "published": "2026-06-10T06:10:00+00:00",
+        "tier": "other"
+      },
+      {
+        "trigger_key": "profit_warning",
+        "trigger_label": "Profit warning / negative trading update",
+        "evidence": "WH Smith turns to investors for \u00a3100m lifeline as US slowdown and Middle East conflict trigger profit warning .",
+        "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTE5faFJXQ0tfeVctOVdDMVZhU0M3UjZkYzVhOU9kV1psQkQ3cHp0U1R0SDRxR3pVN3NsbUlrX0ptRUJiUG41aEpaMTI0UGpiSzFHOGZ4VkF0NzhfOU96TllGQW1YR0NyZTgzbXZSM2RkXzhEYjBKZm0zNmxvNHBWUQ?oc=5",
+        "source": "Business Matters",
+        "published": "2026-06-10T07:40:19+00:00",
         "tier": "other"
       },
       {
@@ -3310,7 +3994,7 @@
         "trigger_label": "Profit warning / negative trading update",
         "evidence": "WH Smith raises fresh capital, warns on profit as Iran war hits travel spend .",
         "url": "https://news.google.com/rss/articles/CBMiugFBVV95cUxNa2lPdXRXXzZ5c3NMMDZSc0d3bjAyVWRJWGIyeGNfd0JyYUF6QlVhbm1YNUhEcFJfSGpSRTlORTU3WkZuOW51YjU4clY1Wm5Zb2NnaFRfZ1Y1S3V4STFJQUJOV1MtQUZUMGZnblpocVI5R0F3bmcyek56WkZHLWFnejlrR1dPcTNsdVhwYVhPMjFpMFN1eFZxM2htemlTaU5TMG45M3VDV2pqVWVKaU9seDZnSktOdkdLdUE?oc=5",
-        "source": "Google News",
+        "source": "London South East",
         "published": "2026-06-10T14:24:00+00:00",
         "tier": "other"
       },
@@ -3319,7 +4003,7 @@
         "trigger_label": "Profit warning / negative trading update",
         "evidence": "WH Smith warns on profit and plans equity raise as airport passenger numbers dip .",
         "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxPc2FEQVhrQi1kYWd2Zld1bXVZN0RtZ1RfbFFaMTZqZHVhZWVQdUxNUXhpeEFBbU5GdXlxYml1WWFaZkZheHVCQ184ZW52c0VfT3cwbVNPWXd2aUVaenB4b1NRYlJQR3BieW5DMWtoZnU0czNlZDVONjRDSWtlbWg3Ry1NMEVUZmh3VkhsNHBWdV9OUHZYb3kwdlNBMFU?oc=5",
-        "source": "Google News",
+        "source": "London Evening Standard",
         "published": "2026-06-10T11:38:00+00:00",
         "tier": "other"
       },
@@ -3328,7 +4012,7 @@
         "trigger_label": "Profit warning / negative trading update",
         "evidence": "WH Smith warns on profit as Iran war hits sales .",
         "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQMGNjMFlZelV0LVY4WFJoUXN6YUVTY1BNZFo5bDlsZm9MczNzcXhVb3F2YzNxd2pfUmlIbW81UmtNd1pjNXlDNHpFaW1sQ1dOaGYzVGFEZXE4OHJaSTY5dUZxUHhsay04MGFYOFhsNDd1aUhLWS1ldml0QXUwR3NqSmVkV2czbGhM?oc=5",
-        "source": "Google News",
+        "source": "RTE.ie",
         "published": "2026-06-10T07:06:11+00:00",
         "tier": "other"
       },
@@ -3337,7 +4021,7 @@
         "trigger_label": "Profit warning / negative trading update",
         "evidence": "WH Smith warns on profit, seeks fresh capital amid Iran war impact .",
         "url": "https://news.google.com/rss/articles/CBMic0FVX3lxTE1ET2o1clAtNURuSTRfQ0hpSTlJaTBSMXRHVjZxanhmZ0hnNWZXWWdidG9Sekt2RUZOalQ3QmlWNjBkUEtQZ0ZYb3pURkJZaEpQTzRpRkhEWVpSUXdpRnNQRGIxVlhMdUU2cHhsVkZNcFY3VW8?oc=5",
-        "source": "Google News",
+        "source": "Crypto Briefing",
         "published": "2026-06-10T12:18:56+00:00",
         "tier": "other"
       }
@@ -3346,7 +4030,12 @@
     "first_seen": "2026-05-16T21:29:48.590954+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "JD Wetherspoon",
@@ -3387,7 +4076,12 @@
     "first_seen": "2026-05-16T21:29:48.590954+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Dunelm",
@@ -3419,7 +4113,12 @@
     "first_seen": "2026-05-16T23:01:31.876234+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Powys County Council",
@@ -3451,7 +4150,12 @@
     "first_seen": "2026-06-05T08:58:37.510457+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Nintendo",
@@ -3483,7 +4187,12 @@
     "first_seen": "2026-05-18T09:12:48.249149+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Elior Group Stock",
@@ -3515,7 +4224,12 @@
     "first_seen": "2026-06-03T10:24:08.597421+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "TUI AG stock (DE000TUAG505)",
@@ -3556,7 +4270,12 @@
     "first_seen": "2026-06-08T10:09:30.695487+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Amazon",
@@ -3606,7 +4325,12 @@
     "first_seen": "2026-05-16T21:29:48.590954+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Mastercard",
@@ -3638,7 +4362,12 @@
     "first_seen": "2026-05-16T21:29:48.590954+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Walmart",
@@ -3649,7 +4378,7 @@
     "window_weeks_min": 1,
     "window_weeks_max": 12,
     "window_label": "1\u201312 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -3661,7 +4390,7 @@
         "trigger_label": "Redundancy / layoffs announced",
         "evidence": "Walmart announces 1,000 job cuts, relocations - The Arkansas Democrat-Gazette .",
         "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxNMV9WTUxyUnAzUXZqcXB5aW1xR3FfbTJMTVk2YjY3YXBHNk9LSFNpSUVfRFlKWVVnQU13SjdvNXZzXzhSZnBwZUlVTGlxRldsSFB2UWl6ekJrWW4yTEh2bmlLcmt6TEtaR2g1aUtQTkRaNHBJZllyRFk0TnhpUm50NEZVZUhUN2h2dlMyMi1zRFBmTjNBWlNV?oc=5",
-        "source": "Google News",
+        "source": "The Arkansas Democrat-Gazette",
         "published": "2026-05-13T07:00:00+00:00",
         "tier": "other"
       }
@@ -3670,7 +4399,12 @@
     "first_seen": "2026-05-22T09:05:49.503720+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Salesforce",
@@ -3702,7 +4436,12 @@
     "first_seen": "2026-06-08T10:09:30.695487+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Kering",
@@ -3734,7 +4473,12 @@
     "first_seen": "2026-06-08T10:09:30.695487+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "John Lewis Partnership",
@@ -3765,7 +4509,12 @@
     "first_seen": "2026-05-16T21:29:48.590954+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Greene King",
@@ -3776,7 +4525,7 @@
     "window_weeks_min": 8,
     "window_weeks_max": 24,
     "window_label": "8\u201324 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -3788,7 +4537,7 @@
         "trigger_label": "Restructure / transformation announced",
         "evidence": "Fate of Greasby pub under consideration over Greene King restructuring strategy .",
         "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxOUmE4NGsxYTNvNUpVT2tpdmEwSDV0QWgxeUlrUXcyV1lfZHNrZE0xVno2NmlKdjB3c1lMSmxHZUVQNXFVUVN4a2wyWEtTWHFuZ3dXcEFjMUFESzRERy0yX2ZVY1UzZEY3NlhVWG1QZUEtZkxEQzcwUHprcFFVd3Q3b2trNllMbml6bXhKWDBXejNyd2xsR0tzSzNJNTk4cE5QQzBVLWxuSmVKN1JpTF9KTVY1RUJzbGt0ODlkZlBqZllTVjl0clVz?oc=5",
-        "source": "Google News",
+        "source": "wirraltoday.co.uk",
         "published": "2026-06-04T07:00:00+00:00",
         "tier": "other"
       }
@@ -3797,7 +4546,12 @@
     "first_seen": "2026-05-21T09:05:47.858778+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Travis Perkins",
@@ -3829,7 +4583,12 @@
     "first_seen": "2026-06-02T09:52:08.892596+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "PayPal",
@@ -3840,7 +4599,7 @@
     "window_weeks_min": 8,
     "window_weeks_max": 24,
     "window_label": "8\u201324 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -3852,7 +4611,7 @@
         "trigger_label": "Restructure / transformation announced",
         "evidence": "What PayPal Holdings (PYPL)'s Burry Stake, Restructuring and New Financing Moves Mean For Shareholders .",
         "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxPRlI1SU9wQWtYdDBLZmRURTJXSjBpUTZEQXp5bUtvdmRQbWVHSnRFVHliZU5pYTlUa0ljZFIzNHhBRmtfbGd6NHhRX0RRTEtPQlpzZHVxRm4yMVVSTW1INEJNY2lLSUtNSWFjc2xpYUx6YTdlODVyVHJDb0FfVG15Q0NEZk00SGpjMkI4WnJCdkZIbUgxb1kxSnNFQzZwUQ?oc=5",
-        "source": "Google News",
+        "source": "Yahoo Finance",
         "published": "2026-05-21T07:00:00+00:00",
         "tier": "other"
       }
@@ -3861,7 +4620,12 @@
     "first_seen": "2026-05-16T21:29:48.590954+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Nike",
@@ -3893,7 +4657,12 @@
     "first_seen": "2026-05-16T23:01:31.876234+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "ASML",
@@ -3925,7 +4694,12 @@
     "first_seen": "2026-05-16T23:44:38.529363+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Morgan Stanley",
@@ -3957,7 +4731,12 @@
     "first_seen": "2026-06-03T10:24:08.597421+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "CEPT University",
@@ -3968,7 +4747,7 @@
     "window_weeks_min": 8,
     "window_weeks_max": 16,
     "window_label": "8\u201316 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -3980,7 +4759,7 @@
         "trigger_label": "CHRO / HR leadership change",
         "evidence": "Priya J Singh Appointed Chief Human Resources Officer at CEPT University .",
         "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxQa2MzR1h4ZnFjSkN2VzZNbFVEMXRUNG1QZjFnVDZLQVZ3bmg5TXpBWGRNUm1wX0s3Z1ZKWDZXRnFqWHBSamFvVzlQa3F4a1dieXFSaDViT3R5dVpiNkZVRzJkRlVCM29wU3VwUy10cVZOTHduRjhSN2hXZk01TGVsbnFpQ2J3VmtUeTVMY0hnMmtsX0QySU8w?oc=5",
-        "source": "Google News",
+        "source": "hrtoday.in",
         "published": "2026-06-10T07:51:26+00:00",
         "tier": "other"
       }
@@ -3989,7 +4768,12 @@
     "first_seen": "2026-06-10T09:09:54.465435+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "UBS",
@@ -4000,7 +4784,7 @@
     "window_weeks_min": 8,
     "window_weeks_max": 24,
     "window_label": "8\u201324 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -4012,7 +4796,7 @@
         "trigger_label": "Restructure / transformation announced",
         "evidence": "UBS Reduces Asia ESG Staff by Half in Global Restructuring .",
         "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxQSE9RNjJ3RVVnZV9GNTJKNWhlckVZNXdfbklqNUFnV08tT2hYcjV3bzkxSE9oVXFIS2h2X1V2S1RoWUw3M240UDZabUlReW9pNEI2RHh4aXRUSGJsekFfMnQ1ZnY5UEoxa3Roa0pqaXdMWWl3c2lOOFZqQ1RQYWl5TFd3dUpubEtobVpNdXdja0NOS09nRTVCb3RSZUhGejR0NUVWZ1lPRVpfUjBHM2c?oc=5",
-        "source": "Google News",
+        "source": "Bloomberg.com",
         "published": "2026-06-09T08:27:06+00:00",
         "tier": "other"
       }
@@ -4021,7 +4805,12 @@
     "first_seen": "2026-06-10T09:09:54.465435+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Bayer",
@@ -4032,7 +4821,7 @@
     "window_weeks_min": 8,
     "window_weeks_max": 24,
     "window_label": "8\u201324 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -4042,10 +4831,10 @@
       {
         "trigger_key": "restructure",
         "trigger_label": "Restructure / transformation announced",
-        "evidence": "Bayer names new consumer health leaders in restructuring .",
-        "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxNWlJiR05JekpZZ2JxQmdNd1E2NG9vdmc2NE1EN3JRZHR3WC1PN1pEX3JyX1ZFbVRIRmdTM1g5a0FhQTJPckViMFh0WEZYNVN6MVZldjBEUEJWbzZrSHh0d1h5QmI0VlZJV3NXQXQydFhwTzg1UHd5YS1lUHdfcWdPX2tOejQ3NXUxS3hVRmhBLWxQRWtoUlRRR01Ccm9rV3ZQLXJxN19wS0pUQTgxMVg0LXBTSGlaR2VGOXRkeTZwZXB4MlJDU1k5QQ?oc=5",
-        "source": "Google News",
-        "published": "2026-06-08T12:41:53+00:00",
+        "evidence": "Bayer names new consumer health leaders in restructuring By Investing.com .",
+        "url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxPbFBORHdJTW9Mbmx4VmxpU2ZmZzJ3QVFXUHVYVmRsZW51eG9JQ1RKWG9VaWl1TTYyUHBLblFQZm9EZmxlMUs3UkRqRU1hSlBWZklQeDI5NE1xei00N2dXRjN4UTlMMlR2dlotLXA5aUt2Tm5xcDE1SHRWTnZqUUxma3FOc1VNOG5lb0VkaUtNcGkyX2NseGI2MDhnVDVsVjVWTG11RW5DUzc0Zy1mbV9jQjcwVkJfQkpx?oc=5",
+        "source": "Investing.com UK",
+        "published": "2026-06-08T12:18:00+00:00",
         "tier": "other"
       }
     ],
@@ -4053,7 +4842,49 @@
     "first_seen": "2026-06-10T09:09:54.465435+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
+  },
+  {
+    "company": "D\u00c9KUPLE Group",
+    "score": 0.252,
+    "depth": 1,
+    "account_tier": "off_watchlist",
+    "predicted_role": "Head of Internal Communications",
+    "window_weeks_min": 8,
+    "window_weeks_max": 24,
+    "window_label": "8\u201324 weeks",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
+    "linkedin_profile_url": null,
+    "linkedin_profile_role": null,
+    "linkedin_profile_name": null,
+    "seeded_contact_name": null,
+    "seeded_contact_role": null,
+    "events": [
+      {
+        "trigger_key": "restructure",
+        "trigger_label": "Restructure / transformation announced",
+        "evidence": "D\u00c9KUPLE Group: Strategic Review of the Insurance Business .",
+        "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxPRldXX2Nxd2dBdUh4M1lZREEyM3IteFMtcWVveGdJWm5qaGt3ek4tcWExWVdpVjd1UUY0Tl8yZHBFajFQbXdrSUdLQnVQVkhEZllRaTR1SUpCQ0hhMl9LeFpoQVlwR2U3Nk93QlNQN2xpNmRWQnB4RmpoNVEtczhXUVdGLVFhNklIRmRjcG1SWmU2M3Mtb3AzRGVkZw?oc=5",
+        "source": "Yahoo Finance",
+        "published": "2026-06-11T15:45:00+00:00",
+        "tier": "other"
+      }
+    ],
+    "pid": "d_kuple_group",
+    "first_seen": "2026-06-11T21:47:29.112274+00:00",
+    "status": "active",
+    "followed_up_at": null,
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Procter & Gamble",
@@ -4084,7 +4915,12 @@
     "first_seen": "2026-06-01T10:41:53.327943+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   },
   {
     "company": "Kingsoft Corporation (03888)",
@@ -4095,7 +4931,7 @@
     "window_weeks_min": 12,
     "window_weeks_max": 24,
     "window_label": "12\u201324 weeks",
-    "last_seen": "2026-06-11T09:56:32.972467+00:00",
+    "last_seen": "2026-06-11T21:47:29.112274+00:00",
     "linkedin_profile_url": null,
     "linkedin_profile_role": null,
     "linkedin_profile_name": null,
@@ -4107,7 +4943,7 @@
         "trigger_label": "CFO change",
         "evidence": "Kingsoft Corporation (03888): Zhao Yu has been appointed Chief Financial Officer.",
         "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxOWUllX2VzTWtoN1paSlhVT2tqT29pM1I3ejBJU0ZxeVJpdERTTlJqZEZXU3lveC1HUVJ2aVlod3ZQVHZMOFNocm03d3NhX0YwX01UVGNqNm5DZWt6ekx1MlFnR1Z5ZkVxM2d2Q3BsbWgtc2pmNmF1RGNnQVMxa1JmazN1WkFZQW1heDRiN0UybFRYbkJnZWNoWXZoTGdDTjAyQXdYdUxEbC1OWDlJcnJlbg?oc=5",
-        "source": "Google News",
+        "source": "Moomoo",
         "published": "2026-05-27T09:15:24+00:00",
         "tier": "other"
       }
@@ -4116,6 +4952,11 @@
     "first_seen": "2026-06-03T10:24:08.597421+00:00",
     "status": "active",
     "followed_up_at": null,
-    "dismissed_at": null
+    "dismissed_at": null,
+    "incumbent_status": "unchecked",
+    "incumbent_name": null,
+    "incumbent_title": null,
+    "incumbent_url": null,
+    "incumbent_note": ""
   }
 ]
