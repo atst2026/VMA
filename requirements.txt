@@ -1,12 +1,16 @@
+# SLIM web-service deps — this is what the Render web build installs
+# (render.yaml buildCommand) and what the dashboard process actually imports.
+#
+# The pitch-pack PDF / logo-rasterising stack (weasyprint, cairosvg,
+# pdfplumber, pypdf, pillow + the apt cairo/pango libs) is NOT here: the
+# dashboard never imports it — only tool/pitch_pack.py does, which runs in the
+# pitch-pack GitHub Action (that workflow installs the stack itself). Keeping
+# it out of the web build keeps Render's slow free-tier builds fast/reliable.
+# See requirements-pitchpack.txt for that stack; tests.yml installs both.
 flask>=3.0
 requests>=2.28
 beautifulsoup4>=4.12
 lxml>=4.9
 python-dateutil>=2.8
 gunicorn>=21.0
-pypdf>=4.0
-pdfplumber>=0.10
-weasyprint>=60      # comms pitch-pack PDF (needs system pango/cairo libs)
-pillow>=9.1         # logo visibility/trim gate (also a WeasyPrint dependency)
-cairosvg>=2.7       # rasterise SVG Wikidata logos (P154); rides WeasyPrint's cairo
-anthropic>=0.92    # semantic signal reader (daily model pass over headlines)
+anthropic>=0.92    # semantic/universe model paths reachable from the dashboard

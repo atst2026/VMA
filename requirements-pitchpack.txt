@@ -1,0 +1,14 @@
+# Pitch-pack PDF / logo-rasterising stack — NOT installed by the Render web
+# build. Used only by tool/pitch_pack.py (and pitch_proposal.py /
+# company_domain.py / annual_report.py beneath it), which runs in the
+# pitch-pack GitHub Action. That workflow also apt-installs the system
+# cairo/pango libs these need at runtime (libcairo2, libpango*, etc.).
+#
+# Kept here so tests.yml (which imports those modules) can install the full
+# set with `-r requirements.txt -r requirements-pitchpack.txt`, while the
+# Render web service stays slim.
+pypdf>=4.0
+pdfplumber>=0.10
+weasyprint>=60      # comms pitch-pack PDF (needs system pango/cairo libs)
+pillow>=9.1         # logo visibility/trim gate (also a WeasyPrint dependency)
+cairosvg>=2.7       # rasterise SVG Wikidata logos (P154); rides WeasyPrint's cairo

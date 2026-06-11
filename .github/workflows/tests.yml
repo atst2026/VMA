@@ -25,7 +25,9 @@ jobs:
       - name: Install Python deps
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          # Full set: slim web reqs + the pitch-pack PDF/logo stack, so tests
+          # that import pitch_proposal/company_domain/annual_report resolve.
+          pip install -r requirements.txt -r requirements-pitchpack.txt
           pip install pytest
       - name: Run tests
         run: pytest -q
