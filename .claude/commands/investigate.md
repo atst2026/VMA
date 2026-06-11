@@ -61,8 +61,16 @@ more than ten "rechecks".
    ```bash
    python3 -c "from tool import propensity; propensity.record_finding(
        '<company>', internal_ta=<True|False|None>,
-       agency_user=<True|False|None>, note='<finding>', source_url='<url>')"
+       agency_user=<True|False|None>,
+       agency_scope='<comms_marketing|general|temp_staffing>',
+       note='<finding>', source_url='<url>')"
    ```
+   Scope the agency fact honestly: `comms_marketing` only when the fee
+   was for VMA's disciplines (an agency-posted comms/marketing ad, a
+   trade-press appointment crediting a search firm, a function-scoped
+   award); `temp_staffing` when the only evidence is temp/interim volume
+   supply (this deliberately does NOT count as a proven search
+   fee-payer); `general` otherwise.
 
 6. **Record the verdict** (this is what the gate reads — one per company):
    ```bash
@@ -78,6 +86,25 @@ more than ten "rechecks".
 7. **Report back in chat**: verdict, the three strongest facts with
    sources, the weakest link, and — if confirmed — the named buyer and
    the first move the AD should make.
+
+## Mandatory: the incumbent check (every trigger class)
+
+Before treating the predicted seat as real, ask the question the
+pipeline cannot answer alone: **who, if anyone, already holds this
+function at the company?** Search the TITLE FAMILY, never just the
+predicted title — "Corporate Affairs Director" must also surface a
+"Group Corporate Communications Director", an "External Affairs
+Director", etc. (LinkedIn public profiles, the team/leadership page and
+its Wayback history, trade-press appointment notes.) Then:
+
+- **Incumbent found and current** — the lead is NOT dead, it is
+  reframed: the trigger funds a build UNDER them and they are likely the
+  economic buyer. Name them in the verdict. If their tenure is short or
+  the team page is churning beneath them, say so.
+- **Seat genuinely open/absent** — say what you checked; absence of a
+  LinkedIn profile alone is weak evidence.
+- Either way the pipeline's own `incumbent_status` on the entry is a
+  lead, not a verdict — it is a single cached search; verify it.
 
 ## Playbooks (confirm / stack / kill / window)
 

@@ -69,7 +69,95 @@ def test_award_scan_records_watchlist_buyer(tmp_path, monkeypatch):
     assert PR.scan_signals_for_agency_awards(signals) == 1
     f = PR.flags_for("Severn Trent")
     assert f.get("agency_user") is True
+    assert f.get("agency_scope") == PR.SCOPE_GENERAL
     assert "proven fee-payer" in f["agency_evidence"]
+
+
+# ====================================================================
+# Agency-use SCOPE: function-aware tiers
+# ====================================================================
+def test_award_scope_classification():
+    assert PR._award_scope(
+        "Contract award: executive search for a Director of "
+        "Communications") == PR.SCOPE_COMMS_MKT
+    assert PR._award_scope(
+        "Contract award: temporary staffing services") == PR.SCOPE_TEMP
+    assert PR._award_scope(
+        "Contract award: interim management services and temporary "
+        "staff") == PR.SCOPE_TEMP
+    assert PR._award_scope(
+        "Contract award: executive search services") == PR.SCOPE_GENERAL
+
+
+def test_temp_only_award_does_not_make_a_proven_fee_payer(tmp_path, monkeypatch):
+    _setup(tmp_path, monkeypatch)
+    PR.scan_signals_for_agency_awards([
+        {"title": "Contract award notice: temporary staffing",
+         "summary": "Severn Trent awarded a temporary staffing contract."}])
+    f = PR.flags_for("Severn Trent")
+    assert f.get("agency_scope") == PR.SCOPE_TEMP
+    item = PR.annotate({"company": "Severn Trent"})
+    # Temp supply must NOT light the proven-fee-payer input…
+    assert item.get("psl_status") != "on"
+    # …but the caveat is surfaced.
+    assert "NOT evidence" in item.get("_propensity_note", "")
+
+
+def test_temp_award_never_downgrades_comms_evidence(tmp_path, monkeypatch):
+    _setup(tmp_path, monkeypatch)
+    PR.scan_signals_for_agency_awards([
+        {"title": "Contract award: executive search, Head of Communications",
+         "summary": "Severn Trent awarded an executive search contract for "
+                    "its communications leadership."}])
+    PR.scan_signals_for_agency_awards([
+        {"title": "Contract award notice: temporary staffing",
+         "summary": "Severn Trent awarded a temporary staffing contract."}])
+    assert PR.flags_for("Severn Trent")["agency_scope"] == PR.SCOPE_COMMS_MKT
+
+
+def test_agency_posted_job_ad_records_comms_scope(tmp_path, monkeypatch):
+    _setup(tmp_path, monkeypatch)
+    import tool.account_match as AM
+    monkeypatch.setattr(
+        AM, "classify_account",
+        lambda _c, text: (("Severn Trent", "watchlist")
+                          if "severn trent" in (text or "").lower()
+                          else (None, None)))
+    signals = [
+        # Agency-posted comms ad naming a watchlist client — recorded.
+        {"kind": "job", "company": "Hanson Search",
+         "title": "Head of Communications — Severn Trent",
+         "summary": "Our client Severn Trent seeks a Head of Communications.",
+         "url": "https://example.com/ad"},
+        # Direct employer posting — poster isn't an agency; ignored.
+        {"kind": "job", "company": "Severn Trent",
+         "title": "Head of Communications",
+         "summary": "Join Severn Trent."},
+        # Agency poster but no identifiable client — ignored.
+        {"kind": "job", "company": "Premier Resourcing",
+         "title": "PR Account Director", "summary": "Our client, a fintech."},
+    ]
+    assert PR.scan_job_signals_for_agency_posted_ads(signals) == 1
+    f = PR.flags_for("Severn Trent")
+    assert f.get("agency_user") is True
+    assert f.get("agency_scope") == PR.SCOPE_COMMS_MKT
+    assert "Hanson Search" in f["agency_evidence"]
+    item = PR.annotate({"company": "Severn Trent"})
+    assert item.get("psl_status") == "on"
+    assert item.get("agency_scope") == PR.SCOPE_COMMS_MKT
+
+
+def test_record_finding_carries_scope(tmp_path, monkeypatch):
+    _setup(tmp_path, monkeypatch)
+    assert PR.record_finding("Acme Co", agency_user=True,
+                             agency_scope="comms_marketing",
+                             note="PRWeek: appointment via search firm",
+                             source_url="https://prweek.com/x")
+    f = PR.flags_for("Acme Co")
+    assert f["agency_scope"] == PR.SCOPE_COMMS_MKT
+    # An unknown scope string degrades to general, not an error.
+    PR.record_finding("Beta Ltd", agency_user=True, agency_scope="bogus")
+    assert PR.flags_for("Beta Ltd")["agency_scope"] == PR.SCOPE_GENERAL
 
 
 # ====================================================================

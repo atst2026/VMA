@@ -1896,8 +1896,11 @@ def _mr_gate_fields(row):
     score = _g.strength_score(lead, g, row)
     prop_pts, prop_basis = _g.propensity_points(lead, row)
     if prop_pts >= _g.PROP_PROVEN:
-        prop, prop_why = "Proven agency user", (
-            row.get("_propensity_note") or "history of agency use on file")
+        from tool import propensity as _pr
+        _scl = _pr.scope_label(row.get("agency_scope"))
+        prop, prop_why = ("Proven agency user" + (f" ({_scl})" if _scl else ""),
+                          row.get("_propensity_note")
+                          or "history of agency use on file")
     elif prop_pts == _g.PROP_INTERNAL:
         prop, prop_why = "In-house route", (
             row.get("_propensity_note")
@@ -1907,6 +1910,11 @@ def _mr_gate_fields(row):
         prop, prop_why = "Leans external", (
             "; ".join(((lead.get("posture") or {}).get("reasons")) or [])
             or "external-hiring signals")
+    elif row.get("agency_scope") == "temp_staffing":
+        prop, prop_why = "Unknown (temp use only)", (
+            row.get("_propensity_note")
+            or "pays for temp/interim supply only — no evidence they'd "
+               "retain a comms/marketing search")
     else:
         prop, prop_why = "Unknown", ("no fee-propensity evidence yet — "
                                      "score carries the neutral default")
@@ -2114,16 +2122,26 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
             seat = row.get("predicted_role") or role_label
             _fee, _fee_tip = _wn.fee_driver(
                 [e.get("trigger_key") for e in evs if isinstance(e, dict)])
+            _why_now_txt = _wn.compose_why_now(
+                evs, (row.get("lead") or {}).get("why_now")
+                or _why_now(tkey, _mkt, seat, row.get("window_label")),
+                _fee_tip)
+            # The incumbency verdict travels with the narrative so the
+            # card never asserts a vacancy nobody checked.
+            if row.get("incumbent_note"):
+                _why_now_txt = (_why_now_txt + " "
+                                + row["incumbent_note"]).strip()
             bd.append({
                 "co": row.get("company") or "—",
                 "isNew": 1 if row.get("is_new") else 0,
                 "age": _mr_row_age(row.get("first_seen")),
                 "type": typ, "key": key,
                 "seat": seat, "why": why,
-                "whyNow": _wn.compose_why_now(
-                    evs, (row.get("lead") or {}).get("why_now")
-                    or _why_now(tkey, _mkt, seat, row.get("window_label")),
-                    _fee_tip),
+                "incumbent": row.get("incumbent_name") or "",
+                "incumbentTitle": row.get("incumbent_title") or "",
+                "incumbentUrl": row.get("incumbent_url") or "",
+                "incumbentStatus": row.get("incumbent_status") or "",
+                "whyNow": _why_now_txt,
                 "fee": _fee, "feeTip": _fee_tip,
                 "brief": brief,
                 "url": url, "src": _mr_domain(url),

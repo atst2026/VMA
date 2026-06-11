@@ -10,8 +10,12 @@ mandate. The two strongest pre-contact propensity facts, both free:
          what that team exists to avoid.
   PRO  — the company demonstrably buys recruitment. Public-sector award
          notices naming a recruitment/search supplier prove the buyer
-         pays fees; /red-team and /investigate research the rest online
-         and write what they find back here (record_finding).
+         pays fees; agency-posted comms/marketing job ads prove they pay
+         them for VMA's disciplines specifically; /red-team and
+         /investigate research the rest online and write what they find
+         back here (record_finding). Every agency_user fact carries a
+         SCOPE (comms_marketing / general / temp_staffing) — temp-only
+         supply never counts as a proven search fee-payer.
 
 The store persists per-company flags with evidence + dates, and
 annotate() projects them onto a pipeline entry as the `internal_ta` /
@@ -54,6 +58,52 @@ _AGENCY_AWARD_RX = re.compile(
     r"interim management services|temporary staff(?:ing)?|"
     r"permanent recruitment)\b", re.I)
 _AWARD_RX = re.compile(r"\b(award(?:ed)?|contract award|awarded to)\b", re.I)
+
+# ---- Agency-use SCOPE -------------------------------------------------
+# "They pay recruitment fees" is not one fact. A temp-staffing contract
+# for seasonal ops is not evidence anyone would retain a search firm for
+# a Head of Communications; an agency-posted comms ad is. Every
+# agency_user flag therefore carries a scope:
+#   comms_marketing  — fees paid for VMA's disciplines (the gold tier)
+#   general          — fees paid, function unverified
+#   temp_staffing    — temp/interim volume supply only (does NOT count
+#                      as a proven fee-payer for a retained search)
+SCOPE_COMMS_MKT = "comms_marketing"
+SCOPE_GENERAL = "general"
+SCOPE_TEMP = "temp_staffing"
+
+_COMMS_MKT_RX = re.compile(
+    r"\b(communications?|comms|public relations|\bPR\b|press office|"
+    r"corporate affairs|external affairs|public affairs|investor relations|"
+    r"media relations|marketing|brand)\b", re.I)
+# Award-regex matches that only ever prove temp/interim volume supply.
+_TEMP_TERM_RX = re.compile(
+    r"^(interim management services|temporary staff(?:ing)?)$", re.I)
+
+# Posters that look like recruitment agencies (the company field on an
+# agency-posted job ad is the agency, not the employer).
+_AGENCY_POSTER_RX = re.compile(
+    r"\b(recruit\w*|resourcing|staffing|headhunt\w*|talent|search|"
+    r"search and selection|executive search)\b", re.I)
+
+
+def _award_scope(text: str) -> str:
+    """Classify an award notice's scope. Comms/marketing language wins;
+    a notice whose only recruitment terms are temp/interim is temp-only;
+    everything else is a general (function-unverified) fee-payer."""
+    if _COMMS_MKT_RX.search(text or ""):
+        return SCOPE_COMMS_MKT
+    terms = _AGENCY_AWARD_RX.findall(text or "")
+    if terms and all(_TEMP_TERM_RX.match(t) for t in terms):
+        return SCOPE_TEMP
+    return SCOPE_GENERAL
+
+
+def scope_label(scope: str | None) -> str:
+    """Short human label for a scope, used by the dashboard pill."""
+    return {SCOPE_COMMS_MKT: "comms/marketing",
+            SCOPE_TEMP: "temp staffing only",
+            SCOPE_GENERAL: "function unverified"}.get(scope or "", "")
 
 
 def _store_path() -> Path:
@@ -155,13 +205,31 @@ def scan_signals_for_agency_awards(signals: list[dict]) -> int:
             buyer, tier = classify_account(None, text)
             if not buyer or tier != "watchlist":
                 continue
+            scope = _award_scope(text)
+            if scope == SCOPE_COMMS_MKT:
+                ev = (f"{buyer} awarded a recruitment/search contract "
+                      f"covering comms/marketing (public procurement "
+                      f"notice) — a proven fee-payer for VMA's disciplines.")
+            elif scope == SCOPE_TEMP:
+                ev = (f"{buyer} awarded a temp-staffing/interim supply "
+                      f"contract (public procurement notice) — pays for "
+                      f"volume supply, NOT evidence they'd retain a "
+                      f"comms/marketing search.")
+            else:
+                ev = (f"{buyer} awarded a recruitment/search services "
+                      f"contract (public procurement notice) — a "
+                      f"proven fee-payer (function unverified).")
             key = _norm(buyer)
             rec = store.setdefault(key, {"company": buyer})
+            existing = rec.get("agency_user") or {}
+            # Never let a temp-only notice overwrite stronger scoped
+            # evidence already on file.
+            if (existing.get("scope") == SCOPE_COMMS_MKT
+                    and scope != SCOPE_COMMS_MKT
+                    and _fresh(existing.get("seen"), AGENCY_EXPIRE_DAYS)):
+                continue
             rec["agency_user"] = {
-                "seen": now,
-                "evidence": (f"{buyer} awarded a recruitment/search services "
-                             f"contract (public procurement notice) — a "
-                             f"proven fee-payer."),
+                "seen": now, "scope": scope, "evidence": ev,
                 "url": sig.get("url") or ""}
             found += 1
         if found:
@@ -173,15 +241,73 @@ def scan_signals_for_agency_awards(signals: list[dict]) -> int:
         return 0
 
 
+def scan_job_signals_for_agency_posted_ads(signals: list[dict]) -> int:
+    """The strongest function-specific propensity fact available for free:
+    a comms/marketing job ad POSTED BY a recruitment agency on a watchlist
+    company's behalf. Job signals already passed the comms/marketing role
+    filter at ingest, so poster-is-an-agency + client-named-in-the-ad
+    proves the client pays fees for exactly VMA's disciplines. Records the
+    CLIENT as a comms/marketing-scope agency user. Never raises."""
+    try:
+        from tool.account_match import classify_account
+        try:
+            from tool.sources.jobs import JOB_AGGREGATORS
+        except Exception:
+            JOB_AGGREGATORS = ()
+        store = _load(_store_path())
+        now = datetime.now(timezone.utc).isoformat()
+        found = 0
+        for sig in signals or []:
+            if not isinstance(sig, dict) or sig.get("kind") != "job":
+                continue
+            poster = (sig.get("company") or "").strip()
+            # Poster must look like a recruitment agency — and not be a
+            # job board/aggregator wearing a recruitment-y name (Reed,
+            # Totaljobs etc. host direct-employer ads).
+            if (not poster or poster.lower() in JOB_AGGREGATORS
+                    or not _AGENCY_POSTER_RX.search(poster)):
+                continue
+            text = f"{sig.get('title') or ''} . {sig.get('summary') or ''}"
+            client, tier = classify_account(None, text)
+            if (not client or tier != "watchlist"
+                    or _norm(client) == _norm(poster)):
+                continue
+            key = _norm(client)
+            rec = store.setdefault(key, {"company": client})
+            title = (sig.get("title") or "this role").strip()
+            rec["agency_user"] = {
+                "seen": now, "scope": SCOPE_COMMS_MKT,
+                "evidence": (f"“{title}” at {client} is advertised "
+                             f"by {poster} — they demonstrably pay agency "
+                             f"fees for comms/marketing hires."),
+                "url": sig.get("url") or ""}
+            found += 1
+        if found:
+            _save(store)
+        log.info("propensity: %d agency-posted comms/marketing ads recorded",
+                 found)
+        return found
+    except Exception as e:
+        log.info("propensity agency-posted-ad scan skipped (%s)", e)
+        return 0
+
+
 def record_finding(company: str | None, *,
                    internal_ta: bool | None = None,
                    agency_user: bool | None = None,
+                   agency_scope: str | None = None,
                    note: str = "", source_url: str = "") -> bool:
     """Write API for /red-team and /investigate: persist a researched
     propensity fact for a company. Findings outrank machine observations
     and expire like them (TA 120d, agency-user 730d), so a researched
-    fact is re-checked rather than trusted forever. Returns False when
-    there is nothing to record. Never raises."""
+    fact is re-checked rather than trusted forever.
+
+    `agency_scope` qualifies agency_user=True: "comms_marketing" (they
+    pay fees for VMA's disciplines — agency-posted comms ad, a search-
+    credited appointment in the trade press), "general" (fees paid,
+    function unverified — the default), or "temp_staffing" (volume temp
+    supply only, which does NOT count as a proven search fee-payer).
+    Returns False when there is nothing to record. Never raises."""
     try:
         key = _norm(company)
         if not key or (internal_ta is None and agency_user is None):
@@ -195,7 +321,11 @@ def record_finding(company: str | None, *,
                                       "evidence": (note or "research finding")[:300],
                                       "url": source_url[:300]}
         if agency_user is not None:
+            scope = (agency_scope or SCOPE_GENERAL).strip().lower()
+            if scope not in (SCOPE_COMMS_MKT, SCOPE_GENERAL, SCOPE_TEMP):
+                scope = SCOPE_GENERAL
             finding["agency_user"] = {"value": bool(agency_user), "seen": now,
+                                      "scope": scope,
                                       "evidence": (note or "research finding")[:300],
                                       "url": source_url[:300]}
         _save(store)
@@ -222,6 +352,7 @@ def flags_for(company: str | None,
     ag = rec.get("agency_user") or {}
     if ag and _fresh(ag.get("seen"), AGENCY_EXPIRE_DAYS, now):
         out["agency_user"] = True
+        out["agency_scope"] = ag.get("scope") or SCOPE_GENERAL
         out["agency_evidence"] = ag.get("evidence") or ""
     # Researched findings (written by /red-team and /investigate after
     # checking the company online) outrank passive observations — they
@@ -239,9 +370,11 @@ def flags_for(company: str | None,
     if rag and _fresh(rag.get("seen"), AGENCY_EXPIRE_DAYS, now):
         if rag.get("value"):
             out["agency_user"] = True
+            out["agency_scope"] = rag.get("scope") or SCOPE_GENERAL
             out["agency_evidence"] = rag.get("evidence") or ""
         else:
             out.pop("agency_user", None)
+            out.pop("agency_scope", None)
             out.pop("agency_evidence", None)
     seed = _load(_seeds_path()).get(key) or {}
     if isinstance(seed, dict):
@@ -250,6 +383,7 @@ def flags_for(company: str | None,
             out["internal_ta_evidence"] = seed.get("note") or "AD seed"
         if seed.get("agency_user") is not None:
             out["agency_user"] = bool(seed["agency_user"])
+            out["agency_scope"] = seed.get("agency_scope") or SCOPE_GENERAL
             out["agency_evidence"] = seed.get("note") or "AD seed"
     return out
 
@@ -266,8 +400,16 @@ def annotate(item: dict) -> dict:
             item["internal_ta"] = True
             item["_propensity_note"] = f.get("internal_ta_evidence", "")
         if f.get("agency_user"):
-            item["psl_status"] = "on"   # _posture's history-of-agency-use input
-            item["_propensity_note"] = f.get("agency_evidence", "")
+            scope = f.get("agency_scope") or SCOPE_GENERAL
+            item["agency_scope"] = scope
+            if scope == SCOPE_TEMP:
+                # Temp/interim volume supply proves nothing about retained
+                # search fees — surface the caveat, leave propensity at
+                # the neutral default rather than "proven fee-payer".
+                item["_propensity_note"] = f.get("agency_evidence", "")
+            else:
+                item["psl_status"] = "on"   # _posture's history-of-agency-use input
+                item["_propensity_note"] = f.get("agency_evidence", "")
         return item
     except Exception:
         return item

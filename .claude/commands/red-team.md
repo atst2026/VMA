@@ -50,6 +50,13 @@ where possible; each returns only its typed verdict.
 six AD questions, verifying live on the web, citing every fact kept:
 1. Is the seat genuinely open or about to be? (Companies House officers,
    RNS, team page vs its Wayback archive, the company's own careers board.)
+   **Always run the incumbent check across the seat's TITLE FAMILY**, not
+   the predicted title alone — a "Corporate Affairs Director" card is
+   answered by a sitting "Group Corporate Communications Director" all
+   the same. A current incumbent does not kill the lead by default: it
+   reframes it — the trigger funds a build UNDER them and they are
+   likely the buyer. Pitching an occupied seat as a vacancy does kill
+   it. The entry's `incumbent_*` fields are one cached search; verify.
 2. Does budget plausibly exist? (Listed/funded/profitable vs cutting;
    a fine's size relative to revenue; the fee-propensity line.)
    **If propensity reads Unknown, research it now**: do they advertise
@@ -61,8 +68,16 @@ six AD questions, verifying live on the web, citing every fact kept:
    python3 -c "from tool import propensity; propensity.record_finding(
        '<company>', internal_ta=<True|False|None>,
        agency_user=<True|False|None>,
+       agency_scope='<comms_marketing|general|temp_staffing>',
        note='<what you found>', source_url='<url>')"
    ```
+   Scope the agency fact: `comms_marketing` only when the fee was for
+   VMA's disciplines (agency-posted comms/marketing ad, a search-firm-
+   credited appointment in the trade press, a function-scoped award);
+   `temp_staffing` when the only evidence is temp/interim volume supply
+   (deliberately NOT counted as a proven search fee-payer); `general`
+   otherwise. Agency use in engineering or temp ops is not evidence
+   they'd retain a comms search — say which it is.
 3. Who is the economic buyer — named person, current title, verified in
    seat? (`tool/state/hiring_contacts.json` first, then public record.)
 4. Is there a champion path? (Check the dossier history and the
