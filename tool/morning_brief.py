@@ -572,6 +572,20 @@ def main() -> int:
     text = render_plaintext(ranked, now_str, covered, predictive_text=predictive_text)
     (STATE_DIR / "latest_brief.html").write_text(html)
     (STATE_DIR / "latest_brief.txt").write_text(text)
+    # SEND OUTREACH enrichment — per-job hiring-contact research (model
+    # + live web search), published/verified email resolution, and a
+    # personalised draft per lead (signal['outreach_ai']; the dashboard
+    # falls back to the fixed template wherever this didn't run). All
+    # budgeted; graceful no-op without ANTHROPIC_API_KEY / HUNTER_API_KEY.
+    # Runs BEFORE latest_signals.json is written so the drafts ship in
+    # the same payload, and BEFORE the workflow's auto-commit step so
+    # researched contacts/emails persist in hiring_contacts.json.
+    try:
+        from tool import outreach as _outreach
+        _outreach.enrich_signals(ranked_all)
+    except Exception as _e:
+        log.info("outreach enrichment skipped (%s)", _e)
+
     # Dashboard reads latest_signals.json — write the FULL ranked set
     # (not the email-fresh-only subset) so Sara sees every current
     # lead matching her criteria, regardless of when it first appeared.

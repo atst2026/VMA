@@ -47,3 +47,18 @@ services:
         sync: false
       - key: DASHBOARD_PASSWORD
         sync: false
+      # SEND OUTREACH (the button on Live Jobs). The dashboard sends via
+      # Gmail SMTP — the SAME two values as the GitHub Actions secrets.
+      - key: GMAIL_USER
+        sync: false
+      - key: GMAIL_APP_PASSWORD
+        sync: false
+      # Test-first: while unset (or anything but 0/false), every send is
+      # rerouted to the profile's test inbox with the would-be recipient
+      # stamped on it. Set to "0" to go live.
+      - key: OUTREACH_TEST_MODE
+        sync: false
+      # Optional: the display name outreach goes out under (defaults to
+      # the desk's AD, e.g. "Sara Tehrani").
+      - key: OUTREACH_FROM_NAME
+        sync: false
