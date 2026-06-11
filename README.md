@@ -155,6 +155,29 @@ An AD must never be shown a watching brief dressed up as a lead:
   or kill a queued hypothesis; the verdict overlay
   (`tool/investigations.py`) outranks every other gate rule for 21 days.
 
+## BD Build v4 — capability-gap closers
+
+Four gaps between the pitch and the build, closed:
+
+- **`cmo_change` trigger** — new CMO / marketing-leader appointments and
+  departures (incoming CMOs rebuild their team in the first 90 days; a
+  departure opens the seat itself). Bare "CMO" is guarded against the
+  Chief Medical / Manufacturing Officer senses in the detector.
+- **`market_entry` trigger** — UK / European launches, first local office
+  or HQ. Entrants build in-country comms / marketing capability around
+  launch; bronze-tier (corroboration-grade alone), per the research tiering.
+- **Agency-relationship ledger** (`tool/agency_relationships.py`) — every
+  detected agency account move (PRWeek / Campaign "Pitch Update" lane) is
+  folded into a per-company history: agency, discipline, appointed/ended,
+  date, source. "What was their last agency relationship?" is now
+  accumulated public record, not job-ad-age inference (which
+  `competitor_mandates.py` still provides as the stale-brief layer).
+- **Living team maps** (`tool/team_map.py`) — every leadership-page fetch
+  the Wayback diff already makes now also folds the parsed (name, role)
+  roster into a per-company team map: the current team, since when each
+  name has been listed, and every observed joiner/leaver. Both ledgers
+  render into the company dossiers.
+
 ## What the tool deliberately does not do
 
 - Touch Sara's LinkedIn / Sales Nav / Recruiter seat
