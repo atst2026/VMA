@@ -431,6 +431,9 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .chip.mktc{color:#b5530e;border-color:rgba(217,122,43,.4);background:rgba(253,236,219,.7)}
 .chip.mktp{color:#1d4ed8;border-color:rgba(66,133,244,.35);background:rgba(233,239,251,.7)}
 .chip.prod{color:#0e7c74;border-color:rgba(18,165,148,.4);background:rgba(221,243,240,.7)}
+.ammohead{font:600 10px var(--mono);letter-spacing:.06em;color:var(--dim);margin-bottom:6px}
+.ammoline{position:relative;padding-left:14px;margin-bottom:5px;font-size:12px;line-height:1.55}
+.ammoline::before{content:"\2022";position:absolute;left:2px;color:var(--clay)}
 .openerbox{margin:14px 28px 0;padding:11px 14px;border-left:2px solid var(--vma);border-radius:0 12px 12px 0;
   background:rgba(62,92,132,.06);font-size:12.5px;line-height:1.62;color:var(--ink2)}
 /* ---- the pipeline past PRODUCTION ----
@@ -1325,6 +1328,9 @@ function portfolioHTML(l){
     h+='<div class="prow"><span class="pl2">WHY NOT CALL-READY</span><div class="pv"><div class="gatebox">'+esc(l.gateWhy)+'</div></div></div>';
   }
   if(l.whyNow||l.brief)h+='<div class="prow"><span class="pl2">OPPORTUNITY</span><div class="pv">'+esc(l.whyNow||l.brief)+'</div></div>';
+  if(l.ammo&&l.ammo.length)h+='<div class="prow alt"><span class="pl2">CALL AMMO</span><div class="pv">'
+    +'<div class="ammohead">Sector insight to give away on the call — the value the opener promises:</div>'
+    +l.ammo.map(a=>'<div class="ammoline">'+esc(a)+'</div>').join('')+'</div></div>';
   h+='<div class="prow alt"><span class="pl2">MANDATE</span><div class="pv"><b>'+esc(l.seat||'')+'</b>'
     +(l.win?' · decision window '+esc(l.win):'')
     +(l.fee?' &nbsp;'+chip('fee',esc(l.fee),MEANING.fee+' '+(l.feeTip||'')):'')
