@@ -16,7 +16,7 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-10T09:10:04.853104+00:00"
+      "last_seen": "2026-06-11T09:56:40.225118+00:00"
     },
     "communicate_ic_engagement_live_2026": {
       "key": "communicate_ic_engagement_live_2026",
@@ -34,7 +34,7 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-10T09:10:04.853104+00:00"
+      "last_seen": "2026-06-11T09:56:40.225118+00:00"
     },
     "ioic_awards_2026": {
       "key": "ioic_awards_2026",
@@ -52,7 +52,7 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-10T09:10:04.853104+00:00"
+      "last_seen": "2026-06-11T09:56:40.225118+00:00"
     },
     "icco_global_summit_2026": {
       "key": "icco_global_summit_2026",
@@ -70,7 +70,7 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-10T09:10:04.853104+00:00"
+      "last_seen": "2026-06-11T09:56:40.225118+00:00"
     },
     "cipr_conference_2026": {
       "key": "cipr_conference_2026",
@@ -88,7 +88,7 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-10T09:10:04.853104+00:00"
+      "last_seen": "2026-06-11T09:56:40.225118+00:00"
     },
     "european_excellence_2026": {
       "key": "european_excellence_2026",
@@ -106,8 +106,8 @@
       "status": "active",
       "followed_up_at": null,
       "dismissed_at": null,
-      "last_seen": "2026-06-10T09:10:04.853104+00:00"
+      "last_seen": "2026-06-11T09:56:40.225118+00:00"
     }
   },
-  "updated_at": "2026-06-10T09:10:04.853818+00:00"
+  "updated_at": "2026-06-11T09:56:40.225903+00:00"
 }
