@@ -1769,6 +1769,23 @@ def _mr_domain(url: str | None) -> str:
         return ""
 
 
+# Aggregator/redirect hosts: the URL's domain is the aggregator, not the
+# publisher. Showing "news.google.com" four times for four different
+# papers tells the AD nothing — for these, the stored source label (the
+# RSS <source> publisher) is the honest credit. Universal: every source
+# pill goes through _mr_src.
+_AGGREGATOR_DOMAINS = {"news.google.com", "google.com", "news.google.co.uk",
+                       "googleusercontent.com", "feedproxy.google.com"}
+
+
+def _mr_src(url: str | None, source: str | None = None) -> str:
+    d = _mr_domain(url)
+    if d and d not in _AGGREGATOR_DOMAINS:
+        return d
+    s = (source or "").strip()
+    return s if s and s.lower() != "google news" else (s or d)
+
+
 def _mr_compact_window(text: str | None) -> str:
     """Pull just the duration out of a window string so it fits the compact
     grid badge. Funding rows carry 'Senior-comms window ~6 mo' — we want the
@@ -1878,7 +1895,7 @@ def _mr_lead_fields(row):
         # stack carries the source URLs the "View sources" button opens.
         "stack": [{"label": t.get("label"), "confidence": t.get("confidence"),
                    "age": t.get("age_days"), "url": t.get("url") or "",
-                   "src": _mr_domain(t.get("url")) or (t.get("source") or "")}
+                   "src": _mr_src(t.get("url"), t.get("source"))}
                   for t in (L.get("triggers") or [])[:4]],
     }
 
@@ -2048,7 +2065,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                     _fee_tip),
                 "fee": _fee, "feeTip": _fee_tip,
                 "brief": brief,
-                "url": url, "src": _mr_domain(url),
+                "url": url, "src": _mr_src(url, row.get("source")),
                 "win": row.get("window_label") or "",
                 "st": _mr_st(row.get("strength")),
                 "opp": row.get("_opp") or 0.0,
@@ -2096,7 +2113,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                     _fee_tip),
                 "fee": _fee, "feeTip": _fee_tip,
                 "brief": brief or "Funding round — senior build-out likely.",
-                "url": url, "src": _mr_domain(url),
+                "url": url, "src": _mr_src(url, row.get("source")),
                 "win": _mr_compact_window(row.get("window")),
                 "st": _mr_st(row.get("strength")),
                 "opp": row.get("_opp") or 0.0,
@@ -2156,7 +2173,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                 "whyNow": _why_now_txt,
                 "fee": _fee, "feeTip": _fee_tip,
                 "brief": brief,
-                "url": url, "src": _mr_domain(url),
+                "url": url, "src": _mr_src(url, ev0.get("source")),
                 "win": row.get("window_label") or "",
                 "st": _mr_st(row.get("strength")),
                 "opp": row.get("_opp") or 0.0,

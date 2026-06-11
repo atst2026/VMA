@@ -111,7 +111,10 @@ def fetch_predictive_signals(when_days: int | None = None) -> list[dict]:
             seen.add(url)
             out.append({
                 "id": signal_id("gnews", url),
-                "source": "Google News",
+                # The RSS <source> names the actual publisher (FT, Sky News,
+                # The Grocer …). The link is an opaque news.google.com
+                # redirect, so this name is the only honest source label.
+                "source": (it.get("source_name") or "").strip() or "Google News",
                 "kind": "news",
                 "title": title,
                 # IMPORTANT: do NOT carry the RSS <description>. Google

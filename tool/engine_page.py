@@ -308,7 +308,10 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
   font:600 11.5px 'Inter';color:var(--ink2);padding:8px 11px;border-radius:10px;cursor:pointer;text-align:left}
 .ctrlmenu button:hover{background:rgba(232,240,254,.7)}
 .ctrlmenu button.on{background:var(--wash);color:var(--deep)}
-.ctrlmenu button.on::after{content:"✓";margin-left:auto;font-weight:800;color:var(--deep)}
+.ctrlmenu button.on::after{content:"✓";font-weight:800;color:var(--deep)}
+.ctrlmenu .cnt{margin-left:auto;min-width:17px;text-align:center;font:700 9px var(--mono);color:var(--muted);
+  background:rgba(16,22,38,.06);border-radius:999px;padding:2px 5px}
+.ctrlmenu button.on .cnt{background:rgba(255,255,255,.9)}
 .strip{border-bottom:1px solid var(--hair)}
 .strip:last-of-type{border-bottom:none}
 .strip-h{display:grid;grid-template-columns:1fr 150px 104px 86px 30px;gap:14px;align-items:center;
@@ -466,11 +469,10 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 /* compact in-card rows: company · type · window · score — every cell
    shares the width (minmax(0,·)) so a long type pill can never crush
    the company name out of the row */
-.pipe-sec .strip-h{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) max-content max-content;gap:8px;padding:12px 2px}
+.pipe-sec .strip-h{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) max-content;gap:8px;padding:12px 2px}
 .pipe-sec .strip-h .chev{display:none}
 .pipe-sec .idcell .co{font-size:13px}
 .pipe-sec .tp{font-size:9.5px;padding:2px 8px;justify-self:start}
-.pipe-sec .wincell{font-size:9px}
 /* the card shows the score as the ring, not the number — the precise
    figure lives in the dossier */
 .pipe-sec .strengthcell .sn{display:none}
@@ -1088,7 +1090,7 @@ $('pipeDate').textContent=new Date().toLocaleDateString('en-GB',
 /* ---------- engine stages + trigger pills ---------- */
 const STAGES={
   leads:{slots:[1,2,3,4,5],
-    lbl:['SEARCHED','FILTERED','BUILT OUT','STRESS-TESTED','PRODUCTION'],
+    lbl:['SEARCHED','FILTERED','BUILT OUT','STRESS-TESTED','READY TO CHASE'],
     cap:['Automated agent search for any hiring signal',
          'Back-end filters coded to pick up and pull senior seat signals for this desk',
          'Cross-source intelligence to turn signals into comprehensive leads',
@@ -1228,15 +1230,20 @@ setInterval(()=>{
 const FILTS=[['ready',{leads:'Active',jobs:'Live Jobs'}],
   ['new',{leads:'New today',jobs:'New today'}],['followed',{leads:'Followed up',jobs:'Followed up'}],
   ['dismissed',{leads:'Dismissed',jobs:'Dismissed'}]];
-const SORTS={leads:[['strength','Strongest opportunity'],['window','Soonest window'],['new','Newest first']],
+const SORTS={leads:[['strength','Lead strength'],['window','Soonest window'],['new','Newest first']],
   jobs:[['new','Newest first'],['az','Company A–Z']]};
 /* per-section filter + sort (icon dropdowns inside each card header) */
 const SECF={ready:'ready',dev:'ready',watch:'ready'};
 const SECS={ready:'strength',dev:'strength',watch:'strength'};
-function renderSecCtrls(){
+function renderSecCtrls(secs){
   ['ready','dev','watch'].forEach(k=>{
     if(!$('fm-'+k))return;
-    $('fm-'+k).innerHTML=FILTS.map(f=>'<button data-f="'+f[0]+'" data-sec="'+k+'"'+(SECF[k]===f[0]?' class="on"':'')+'>'+f[1].leads+'</button>').join('');
+    const base=(secs&&secs[k])||[];
+    $('fm-'+k).innerHTML=FILTS.map(f=>{
+      const n=base.filter(l=>statusFilter(l,f[0])).length;
+      return '<button data-f="'+f[0]+'" data-sec="'+k+'"'+(SECF[k]===f[0]?' class="on"':'')
+        +'>'+f[1].leads+'<span class="cnt">'+n+'</span></button>';
+    }).join('');
     $('sm-'+k).innerHTML=SORTS.leads.map(s=>'<button data-s="'+s[0]+'" data-sec="'+k+'"'+(SECS[k]===s[0]?' class="on"':'')+'>'+s[1]+'</button>').join('');
     const fb=document.querySelector('[data-menu="fm-'+k+'"]'),sb=document.querySelector('[data-menu="sm-'+k+'"]');
     if(fb)fb.classList.toggle('live',SECF[k]!=='ready');
@@ -1247,7 +1254,12 @@ function renderCtrls(){
   /* the global bar serves the Live Jobs page only — leads filters live
      in the section headers, so the stages flow straight into the cards */
   $('boardbar').style.display=(mode==='leads')?'none':'';
-  $('filtmenu').innerHTML=FILTS.map(f=>'<button data-f="'+f[0]+'"'+(filt===f[0]?' class="on"':'')+'>'+f[1][mode]+'</button>').join('');
+  $('filtmenu').innerHTML=FILTS.map(f=>{
+    const pool=(mode==='jobs')?JOBS:BD;
+    const n=pool.filter(l=>statusFilter(l,f[0])).length;
+    return '<button data-f="'+f[0]+'"'+(filt===f[0]?' class="on"':'')
+      +'>'+f[1][mode]+'<span class="cnt">'+n+'</span></button>';
+  }).join('');
   $('filtLbl').textContent=FILTS.find(f=>f[0]===filt)[1][mode];
   $('sortmenu').innerHTML=SORTS[mode].map(s=>'<button data-s="'+s[0]+'"'+(sort===s[0]?' class="on"':'')+'>'+s[1]+'</button>').join('');
   $('sortLbl').textContent=SORTS[mode].find(s=>s[0]===sort)[1].split(' ')[0];
@@ -1341,7 +1353,6 @@ function stripHTML(l,i){
     +(l.isNew?'<span class="tag-new">NEW</span>':'')
     +(l.conflict?'<span class="tag-dnc">DO NOT CALL</span>':'')+'</div></div>'
     +'<span class="tp '+(l.key||'lead')+'">'+esc(l.type||'Signal')+'</span>'
-    +'<span class="wincell">'+esc((l.win||'').toUpperCase())+'</span>'
     +'<span class="strengthcell '+sband(l.score||0)+'"><span class="sn">'+(l.score==null?'—':l.score)+'</span>'+miniArc(l.score)+'</span>'
     +'</div></div>';
 }
@@ -1417,7 +1428,7 @@ function renderBoard(){
   const isLeads=mode==='leads';
   $('pipeSections').style.display=(isLeads&&!dossierOpen)?'':'none';
   if(!isLeads)closeDossier();
-  renderCtrls();renderSecCtrls();
+  renderCtrls();
   if(!isLeads){
     let jobs=JOBS.filter(l=>statusFilter(l));
     if(sort==='az')jobs.sort((a,b)=>(a.co||'').localeCompare(b.co||''));
@@ -1438,6 +1449,7 @@ function renderBoard(){
   });
   const secs={ready:[],dev:[],watch:[]};
   Object.values(byCo).forEach(l=>secs[l.tier==='ready'?'ready':l.tier==='dev'?'dev':'watch'].push(l));
+  renderSecCtrls(secs);
   ['ready','dev','watch'].forEach(k=>{
     const arr=secs[k].filter(l=>statusFilter(l,SECF[k])).sort(sortFnFor(SECS[k]));
     $('cnt-'+k).textContent=arr.length;

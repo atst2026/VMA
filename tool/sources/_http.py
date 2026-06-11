@@ -64,6 +64,9 @@ def parse_rss(content: bytes) -> list[dict]:
             "published": _text(it.find("pubDate")) or _text(it.find("dc:date", ns)),
             "summary": _text(it.find("description")) or _text(it.find("content:encoded", ns)),
             "guid": _text(it.find("guid")),
+            # Aggregator feeds (Google News) name the real publisher here —
+            # the only honest source label their redirect links allow.
+            "source_name": _text(it.find("source")),
             # Job feeds (Guardian Jobs / jobs.ac.uk) carry the employer or
             # recruiter here; harmless extra field for the news feeds.
             "author": _text(it.find("author")) or _text(it.find("dc:creator", ns)),
