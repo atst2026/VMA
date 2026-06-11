@@ -2119,19 +2119,21 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
             why = tlabel or typ
             brief = (ev0.get("evidence") or "")[:220] or row.get("advisory") or why
             url = ev0.get("url") or ""
-            seat = row.get("predicted_role") or role_label
-            # The incumbency verdict rewrites the seat itself — the card
-            # must never advertise a sitting leader's chair as a vacancy,
-            # and must never present an UNCHECKED seat as a fact either.
+            # The incumbency verdict frames the seat. Found incumbent ->
+            # the build under them. Otherwise the card frames the FUNCTION
+            # the trigger signals — a precise chair nobody verified is
+            # unearned precision, not a finding.
+            from tool import incumbency as _inc
+            _predicted = row.get("predicted_role") or role_label
             _inc_st = row.get("incumbent_status")
             if _inc_st == "found":
-                from tool import incumbency as _inc
-                seat = _inc.build_seat(seat, row.get("incumbent_name"))
+                seat = _inc.build_seat(_predicted, row.get("incumbent_name"))
                 seat_disp = seat
-            elif _inc_st == "none_found":
-                seat_disp = f"{seat} — seat appears open"
             else:
-                seat_disp = f"{seat} — unverified"
+                seat = _inc.broad_seat(_predicted)
+                seat_disp = seat + (" — seat appears open"
+                                    if _inc_st == "none_found"
+                                    else " (exact seat TBC)")
             _fee, _fee_tip = _wn.fee_driver(
                 [e.get("trigger_key") for e in evs if isinstance(e, dict)])
             _why_now_txt = _wn.compose_why_now(
@@ -2172,24 +2174,20 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                 **_mr_q4_field(row),
                 **_mr_cross_desk_field(row),
             })
-    # Daily cap (the blueprint's ~7 cards): rows arrive board-ordered, so
-    # the strongest fill the board and the overflow queues by capacity —
-    # still visible under the Queued filter, never silently dropped.
-    shown = 0
+    # One row per company: the same company can fire on several signal
+    # routes (predictor + funding, multiple stacks), which used to inflate
+    # the board with duplicate rows — and the section counts with phantom
+    # leads. The strongest row wins; its tier is the company's tier.
+    best: dict = {}
     for r in bd:
-        if not r.get("presented"):
-            continue
-        shown += 1
-        if shown > max(1, cap):
-            r["presented"] = 0
-            r["tier"] = "dev"   # cap overflow tops the Developing section
-            r["conf"] = ""
-            r["gateWhy"] = (f"Above today's cap of {cap} — stronger leads "
-                            f"filled the board")
-            r["recheck"] = 1
-            r["needsInv"] = 0
-            r["kill"] = ""
-            r["move"] = ""
+        k = (r.get("co") or "").strip().lower()
+        cur = best.get(k)
+        if cur is None or (r.get("score") or 0) > (cur.get("score") or 0):
+            best[k] = r
+    bd = [r for r in bd if best.get((r.get("co") or "").strip().lower()) is r]
+    # NOTE: the old "daily cap" demotion (overflow re-labelled 'dev') is
+    # gone — it made the Developing count lie. Tier now always reflects
+    # the gate's actual verdict.
     jobs = []
     for s in leads:
         jobs.append({
