@@ -1277,6 +1277,18 @@ def _desk_response(profile_key: str):
     return resp
 
 
+@app.route("/healthz")
+def healthz():
+    """Unauthenticated liveness + deploy-verification probe. Returns the
+    running commit so a redeploy can be confirmed from outside without the
+    dashboard password (Render's GitHub webhook silently stopped firing once
+    — see .github/workflows/render-deploy.yml — and the only at-a-glance way
+    to tell whether the live site tracks `main` is the deployed SHA). Exposes
+    only the short commit; no auth gate by design so uptime monitors and CI
+    can hit it."""
+    return {"status": "ok", "rev": _DEPLOY_REV}
+
+
 @app.route("/comms")
 @_auth_required
 def comms_desk():
