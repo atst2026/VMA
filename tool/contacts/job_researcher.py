@@ -44,7 +44,10 @@ from tool.state_paths import state_dir
 log = logging.getLogger("brief.contacts.research")
 
 MODEL = "claude-opus-4-8"
-MAX_JOBS_PER_RUN = 10
+# High enough that every NEW live job gets researched within a day of
+# appearing (the 7-day TTL means a job only spends a pass once a week);
+# tune via env without a deploy.
+MAX_JOBS_PER_RUN = int(os.environ.get("OUTREACH_RESEARCH_MAX_JOBS") or 25)
 MAX_CONTINUATIONS = 6
 RESEARCH_TTL_DAYS = 7
 # Below this the answer is treated as "didn't find them" and the lead
@@ -76,9 +79,13 @@ _SYSTEM = (
     "4. STILL THERE: actively search for the person leaving (\"<name> "
     "departs|joins|appointed\"). A departure or a newer appointment to "
     "the same seat overrides everything older.\n"
-    "5. EMAIL: report a work email ONLY if you saw it printed verbatim "
-    "in a public source, with that source's URL. NEVER infer or "
-    "construct an address.\n\n"
+    "5. EMAIL: actively HUNT for the person's published work address — "
+    "the company's press/media-enquiries page, team and people pages, "
+    "press-release contact footers, university/NHS staff directories, "
+    "conference speaker bios, professional-body listings. Report an "
+    "address ONLY if you saw it printed verbatim in a public source, "
+    "with that source's URL. NEVER infer or construct an address from "
+    "a name pattern.\n\n"
     "Confidence is calibrated, not optimistic: 0.9 = current primary "
     "source names them in the seat this quarter; 0.7 = solid but the "
     "newest evidence is months old; below 0.5 = you are guessing — say "
@@ -170,9 +177,24 @@ def _brief_for(signal: dict, inference: dict) -> str:
         f"  Basis: {inference.get('basis') or ''}",
         f"  Acceptable role slots: "
         f"{', '.join(inference.get('slots') or ())}",
-        "",
-        "Who currently holds this seat at this employer?",
     ]
+    # If the ad itself names a contact, that's the strongest possible
+    # lead — the model's job becomes verifying currency and hunting the
+    # published email rather than discovering the person from scratch.
+    try:
+        from tool.contacts import ad_contact as _adc
+        _ad = _adc.extract(signal)
+    except Exception:
+        _ad = None
+    if _ad and _ad.get("name"):
+        lines += [
+            "",
+            "AD-NAMED CONTACT (printed in the job ad itself — verify "
+            "this person is current and find their published email):",
+            f"  Name: {_ad['name']}",
+            f"  Title (as printed): {_ad.get('title') or '(none given)'}",
+        ]
+    lines += ["", "Who currently holds this seat at this employer?"]
     return "\n".join(lines)
 
 

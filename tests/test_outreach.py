@@ -392,3 +392,95 @@ def test_enrich_signals_attaches_drafts_with_budget(state, monkeypatch):
     assert stats["drafts"] == 3
     assert signals[0]["outreach_ai"] == "draft for Co 0"
     assert "outreach_ai" not in signals[4]
+
+
+# ====================================================================
+# 8. Hunter monthly ledger — the free-tier guard
+# ====================================================================
+def test_hunter_ledger_caps_monthly_spend(state, monkeypatch):
+    from tool.contacts import email_resolver as er
+    monkeypatch.setenv("HUNTER_API_KEY", "k")
+    monkeypatch.setenv("HUNTER_MONTHLY_SEARCH_BUDGET", "2")
+    monkeypatch.setenv("HUNTER_MONTHLY_VERIFY_BUDGET", "1")
+    calls = {"n": 0}
+    monkeypatch.setattr(er, "_get", lambda p, q: (calls.__setitem__(
+        "n", calls["n"] + 1) or {"email": "a@b.com", "score": 90,
+                                 "verification": {"status": "valid"}}))
+    er.reset_budget()
+    assert er.hunter_find("b.com", "Jane Smith") is not None
+    assert er.hunter_find("b.com", "Tom Jones") is not None
+    # Third search this month: blocked BEFORE any network call.
+    before = calls["n"]
+    assert er.hunter_find("b.com", "Amy Long") is None
+    assert calls["n"] == before
+    # Verify cap works independently.
+    er.reset_budget()
+    monkeypatch.setattr(er, "_get", lambda p, q: {"status": "valid"})
+    assert er.hunter_verify("x@b.com") == "valid"
+    assert er.hunter_verify("y@b.com") == ""      # monthly cap of 1
+    left = er.budget_remaining()
+    assert left["searches_left"] == 0 and left["verifications_left"] == 0
+
+
+def test_hunter_ledger_rolls_over_month(state, monkeypatch):
+    from tool.contacts import email_resolver as er
+    er._save_ledger({"month": "1999-01", "searches": 999,
+                     "verifications": 999})
+    fresh = er._load_ledger()                      # stale month -> reset
+    assert fresh["searches"] == 0 and fresh["month"] != "1999-01"
+
+
+def test_no_key_spends_nothing(state, monkeypatch):
+    from tool.contacts import email_resolver as er
+    monkeypatch.delenv("HUNTER_API_KEY", raising=False)
+    er.reset_budget()
+    assert er.hunter_find("b.com", "Jane Smith") is None
+    assert er.hunter_verify("x@b.com") == ""
+    assert er.hunter_domain_contacts("b.com") == []
+    assert er._load_ledger()["searches"] == 0      # ledger untouched
+
+
+# ====================================================================
+# 9. Domain-search fill — last-resort named contact, pattern-gated
+# ====================================================================
+def test_domain_fill_writes_slot_matched_contact(state, monkeypatch):
+    from tool.contacts import email_resolver as er
+    from tool.contacts.store import get_contact
+    from tool import company_domain
+    monkeypatch.setenv("HUNTER_API_KEY", "k")
+    monkeypatch.setattr(company_domain, "resolve_domain",
+                        lambda name: "acme.com")
+    monkeypatch.setattr(er, "hunter_domain_contacts", lambda d, desk="comms": [
+        {"email": "bob@acme.com", "name": "Bob Ray",
+         "position": "Sales Director", "score": 95,
+         "verification_status": "valid", "source_url": "u1"},
+        {"email": "jane@acme.com", "name": "Jane Smith",
+         "position": "Group Communications Director", "score": 80,
+         "verification_status": "valid", "source_url": "u2"},
+    ])
+    contacts = {}
+    assert er.fill_from_domain_search(
+        "Acme", ("cco", "head_of_comms"), contacts)
+    e = get_contact(contacts, "Acme").get("cco")
+    assert e.name == "Jane Smith"               # title-pattern gated
+    assert e.email == "jane@acme.com" and e.email_status == "verified"
+    assert e.confidence == 0.72                 # researcher can override
+    # A company that already has a fresh named contact never spends.
+    monkeypatch.setattr(er, "hunter_domain_contacts",
+                        lambda d, desk="comms": (_ for _ in ()).throw(
+                            AssertionError("should not be called")))
+    assert not er.fill_from_domain_search(
+        "Acme", ("cco", "head_of_comms"), contacts)
+
+
+def test_find_for_person_published_first(state, monkeypatch):
+    from tool.contacts import email_resolver as er
+    from tool import rns_contacts
+    monkeypatch.setattr(rns_contacts, "published_emails", lambda c: [
+        {"email": "jane.smith@acme.com", "name_hint": "Jane Smith",
+         "generic": False, "in_house": True, "url": "https://x/rns",
+         "at": _iso(2)}])
+    found = er.find_for_person("Acme", "Jane Smith")
+    assert found["email"] == "jane.smith@acme.com"
+    assert found["status"] == "published"
+    assert found["source_url"] == "https://x/rns"

@@ -326,6 +326,41 @@ def resolve_lead_contact(signal: dict, contacts: dict | None = None) -> dict:
         # Company-specific structure (e.g. comms reports to HR) reorders
         # the slot priority before we look up the roster.
         slots = _apply_structure(slots, _company_structure(company, contacts))
+        # The ad's OWN named contact outranks every inference and every
+        # roster entry: the employer attached this person to THIS
+        # vacancy. A printed address is published evidence (the ad URL
+        # is the citation); an address the nightly pass found later
+        # rides on the signal with its own status.
+        try:
+            from tool.contacts import ad_contact as _adc
+            _ad = _adc.extract(signal)
+        except Exception:
+            _ad = None
+        if _ad and _ad.get("name"):
+            _ad_email = ((signal.get("ad_contact_email") or "").strip()
+                         or (_ad.get("email") or "").strip())
+            if _ad_email:
+                _ad_status = (signal.get("ad_contact_email_status")
+                              or "published")
+                _ad_src = (signal.get("ad_contact_email_source")
+                           or _ad.get("source_url") or "")
+            else:
+                _ad_status, _ad_src = "", ""
+            return {
+                "name": _ad["name"],
+                "title": _ad.get("title") or title,
+                "confidence": 0.88 if _ad_email else 0.85,
+                "basis": "ad_named_contact",
+                "linkedin_url": None,
+                "stale": False,
+                "verified_at": "",
+                "division": "",
+                "divisional_uncertain": False,
+                "slot": "",
+                "email": _ad_email,
+                "email_status": _ad_status,
+                "email_source_url": _ad_src,
+            }
     elif kind in ("leadership_change", "trade_press"):
         appointee = _appointee_name(signal.get("title") or "")
         if appointee:

@@ -198,13 +198,25 @@ send:
   contacts store as every other source (Sara's flags, freshness windows
   and the re-verify queue all apply), accepted only at >=0.7 confidence
   with evidence under a year old, capped below registry grade, 10 jobs/run.
+- **The ad's own contact first** (`tool/contacts/ad_contact.py`) — NHS,
+  charity, public-sector and many corporate ads print the hiring contact
+  in the advert ("for an informal discussion contact Jane Smith …
+  jane.smith@…"). That person was attached to THIS vacancy by the
+  employer — extracted deterministically on every render, instantly
+  sendable as `published` with the ad as the citation. Application
+  inboxes (jobs@/recruitment@) and agency-posted ads are excluded.
 - **Work-email layer** (`tool/contacts/email_resolver.py`) — published
   sources first (the RNS enquiries blocks the tool already archives are
   parsed for citable addresses, in-house domains outranking the issuer's
-  PR agency), then Hunter find+verify (`HUNTER_API_KEY`, free tier
-  pilot-sized). Statuses: `verified` / `published` may be one-click sent;
-  `pattern` guesses are stored for the human but NEVER sendable —
-  unverified guesses bounce 10–30% and poison the sending mailbox.
+  PR agency), then Hunter (`HUNTER_API_KEY`) — find+verify for named
+  people, and domain-search as last-resort named-contact fill (one
+  credit buys up to 10 senior comms/marketing people with addresses,
+  gated on the resolver's own title patterns). A persistent monthly
+  ledger (`state/hunter_ledger.json`, `HUNTER_MONTHLY_*_BUDGET`) keeps
+  spend inside the free tier. Statuses: `verified` / `published` may be
+  one-click sent; `pattern` guesses are stored for the human but NEVER
+  sendable — unverified guesses bounce 10–30% and poison the sending
+  mailbox.
 - **Personalised drafts** — the brief writes a per-lead draft from the
   job ad + contact facts only (no invented claims), falling back to the
   AD-approved fixed template wherever the budgeted pass didn't reach.

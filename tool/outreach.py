@@ -305,11 +305,13 @@ def enrich_signals(signals: list[dict], research_runner=None,
     written: research contacts for the day's job leads, resolve their
     emails, attach personalised drafts (signal['outreach_ai']). Every
     stage degrades gracefully; returns counters for the log."""
-    stats = {"research_changes": 0, "email_changes": 0, "drafts": 0}
+    stats = {"research_changes": 0, "ad_emails": 0, "email_changes": 0,
+             "domain_fills": 0, "drafts": 0}
     try:
         from tool.contacts.store import (load_contacts, save_contacts,
                                          get_contact)
-        from tool.contacts import email_resolver, job_researcher
+        from tool.contacts import (ad_contact, email_resolver,
+                                   job_researcher)
         from tool.hiring_manager import (is_job_like, manager_for_signal,
                                          resolve_lead_contact)
 
@@ -318,14 +320,31 @@ def enrich_signals(signals: list[dict], research_runner=None,
         stats["research_changes"] = job_researcher.research_signals(
             signals or [], contacts, runner=research_runner)
 
-        # Email pass: any named, fresh, confident entry the day's job
-        # leads point at, still missing a sendable address.
-        for s in signals or []:
-            if not isinstance(s, dict) or not is_job_like(s):
+        _job = [s for s in (signals or [])
+                if isinstance(s, dict) and is_job_like(s)
+                and (s.get("company") or "").strip()]
+
+        # 1. Ad-named contacts missing an address — the highest-value
+        #    sends, so they get first call on the email waterfall
+        #    (published sources free; Hunter behind the monthly ledger).
+        for s in _job:
+            ad = ad_contact.extract(s)
+            if not ad or not ad.get("name") or ad.get("email"):
                 continue
+            if (s.get("ad_contact_email") or "").strip():
+                continue   # an earlier run already found it
+            found = email_resolver.find_for_person(
+                (s.get("company") or "").strip(), ad["name"])
+            if found:
+                s["ad_contact_email"] = found["email"]
+                s["ad_contact_email_status"] = found["status"]
+                s["ad_contact_email_source"] = found["source_url"]
+                stats["ad_emails"] += 1
+
+        # 2. Roster entries the day's job leads point at, still missing
+        #    a sendable address.
+        for s in _job:
             company = (s.get("company") or "").strip()
-            if not company:
-                continue
             card = get_contact(contacts, company)
             if not card:
                 continue
@@ -338,7 +357,27 @@ def enrich_signals(signals: list[dict], research_runner=None,
                         stats["email_changes"] += 1
                     break
 
-        if stats["research_changes"] or stats["email_changes"]:
+        # 3. Companies where the ad, the roster AND the researcher all
+        #    came up empty: one Hunter domain-search credit buys named
+        #    senior comms/marketing people with addresses. Tightly
+        #    capped — the ledger protects the free tier regardless.
+        _desk = active_profile().key
+        _fills_attempted = 0
+        for s in _job:
+            if _fills_attempted >= 3:
+                break
+            company = (s.get("company") or "").strip()
+            c = resolve_lead_contact(s, contacts=contacts)
+            if (c.get("name") or "").strip():
+                continue   # someone is named by SOME source — skip
+            _fills_attempted += 1
+            slots = tuple(manager_for_signal(s).get("slots") or ())
+            if email_resolver.fill_from_domain_search(
+                    company, slots, contacts, desk=_desk):
+                stats["domain_fills"] += 1
+
+        if (stats["research_changes"] or stats["email_changes"]
+                or stats["domain_fills"]):
             save_contacts(contacts)
 
         # Drafts, in ranked order, against the refreshed contact graph.
