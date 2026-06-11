@@ -525,3 +525,106 @@ def best_named_contact(company: str, slots: tuple,
                 **_email,
             }
     return stale_fallback
+
+
+# --- BD Point of Contact ---------------------------------------------
+# For a BD lead (predictor stack, funding round, warm signal) the right
+# first conversation is NEVER the CEO/CFO: it's the senior owner of the
+# function future hires will sit in — comms/corporate affairs (or
+# marketing on that desk) — or the HR leader who runs the search. These
+# slot families deliberately exclude every statutory seat (ceo, cfo,
+# chair, gc, ir_director). Same roster, same flags, same freshness rules
+# as every other reader; LinkedIn is the only channel here by design —
+# no email lookups, no Hunter spend.
+_BD_POC_SLOTS = {
+    "comms": ("cco", "head_of_corporate_affairs", "head_of_comms",
+              "head_of_ic", "chro"),
+    "marketing": ("cmo", "head_of_brand", "head_of_marketing",
+                  "head_of_growth", "chro"),
+}
+# Verified-or-fallback: when the roster has no named owner, a precise
+# Recruiter role-search beats a guess. Two searches per desk — the
+# function owner, then the HR route.
+_BD_POC_FALLBACKS = {
+    "comms": ("Communications Director", "HR Director"),
+    "marketing": ("Marketing Director", "HR Director"),
+}
+
+
+def _li_talent_search(keywords: str) -> str:
+    """Same Recruiter Talent-search shape the rest of the dashboard
+    uses (Sara has Recruiter) — keyword pre-filled, never a dead end."""
+    from urllib.parse import quote_plus
+    return ("https://www.linkedin.com/talent/search?keywords="
+            + quote_plus((keywords or "").strip()))
+
+
+def bd_points_of_contact(company: str, desk: str | None = None,
+                         contacts: dict | None = None,
+                         limit: int = 3) -> list[dict]:
+    """The people to open the BD conversation with at `company`:
+
+      [{name, title, url, stale}]
+
+    Named, confidence-gated roster entries across the desk's
+    comms/marketing + HR slot families (fresh first, stale flagged for
+    re-verification, user-flagged entries skipped, deduped, capped at
+    `limit`); each links to the person's LinkedIn profile when the
+    roster holds one, else a precise name+company Recruiter search.
+    With no named owner at all, returns role-search fallbacks instead
+    — never empty, never a C-suite statutory seat. Never raises."""
+    try:
+        desk = (desk or active_profile().key or "comms").strip().lower()
+    except Exception:
+        desk = "comms"
+    slots = _BD_POC_SLOTS.get(desk, _BD_POC_SLOTS["comms"])
+    company = (company or "").strip()
+    fresh: list[dict] = []
+    stale: list[dict] = []
+    if company and company != "—":
+        try:
+            from tool.contacts.store import load_contacts, get_contact
+            from tool.contacts.routing import display_title_for_slot
+            if contacts is None:
+                contacts = load_contacts()
+            card = get_contact(contacts, company)
+            try:
+                from tool import contact_flags
+                flagged = contact_flags.get_flags()
+            except Exception:
+                flagged = {}
+            seen: set = set()
+            for slot in slots:
+                entry = card.get(slot) if card else None
+                if not entry or not getattr(entry, "name", ""):
+                    continue
+                if flagged.get(f"{company}::{slot}", {}).get("name") \
+                        == entry.name:
+                    continue
+                if not entry.meets_named_confidence():
+                    continue
+                key = entry.name.strip().lower()
+                if key in seen:
+                    continue
+                seen.add(key)
+                item = {
+                    "name": entry.name,
+                    "title": (getattr(entry, "role_title", "")
+                              or display_title_for_slot(slot)),
+                    "url": (entry.linkedin_url
+                            or _li_talent_search(
+                                f'"{entry.name}" "{company}"')),
+                    "stale": not entry.is_fresh(),
+                }
+                (fresh if entry.is_fresh() else stale).append(item)
+        except Exception:
+            pass
+    out = (fresh + stale)[:limit]
+    if out:
+        return out
+    return [{
+        "name": "",
+        "title": t,
+        "url": _li_talent_search(f'"{t}" "{company}"' if company else t),
+        "stale": False,
+    } for t in _BD_POC_FALLBACKS.get(desk, _BD_POC_FALLBACKS["comms"])]

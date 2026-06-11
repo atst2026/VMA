@@ -431,6 +431,16 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
 .prow .pv{font-size:12.5px;line-height:1.62;color:var(--ink2);min-width:0}
 .prow .pv b{color:var(--ink);font-weight:650}
 .prow.alt{background:rgba(62,92,132,.025)}
+/* Point of Contact links (LinkedIn profile / Recruiter search) */
+.pocl{display:flex;align-items:center;gap:6px;color:var(--ink2);text-decoration:none;
+  padding:3px 0;font-size:12.5px}
+.pocl b{color:#1A3D7C;font-weight:650}
+.pocl:hover b{text-decoration:underline}
+.pocl .pocr{color:var(--ink2)}
+.pocl .ext{width:11px;height:11px;color:#9AA0A6;flex-shrink:0}
+.pocl:hover .ext{color:#1A3D7C}
+.pocst{font:600 9px/1 "Inter",sans-serif;letter-spacing:.04em;text-transform:uppercase;
+  color:#B45309;background:#FEF3E2;border-radius:9999px;padding:3px 7px;margin-left:4px}
 .chip{font:700 8.5px var(--mono);letter-spacing:.08em;padding:4px 11px;border-radius:999px;border:1px solid var(--hair);white-space:nowrap}
 .chip.fee{color:#b5530e;background:#fdecdb}
 .chip.q4{color:#9a3412;background:#fff7ed}
@@ -1403,6 +1413,20 @@ function portfolioHTML(l){
     +' <span style="color:var(--muted)">— '+esc(winLogic(l))+'</span>'
     +(l.fee?' &nbsp;'+chip('fee',esc(l.fee),MEANING.fee+' '+(l.feeTip||'')):'')
     +(l.q4?' '+chip('q4',esc(l.q4),MEANING.q4):'')+'</div></div>';
+  /* Point of Contact: the senior comms/marketing/HR owner of future
+     hires — never the CEO/CFO. Named roster people link to their
+     LinkedIn profile; without a name it's a precise Recruiter
+     role-search. LinkedIn only — no email lookups here. */
+  if(l.poc&&l.poc.length){
+    h+='<div class="prow"><span class="pl2">POINT OF CONTACT</span><div class="pv">'
+      +l.poc.map(p=>'<a class="pocl" href="'+esc(p.url||'#')+'" target="_blank" rel="noopener">'
+        +(p.name
+          ?'<b>'+esc(p.name)+'</b><span class="pocr"> — '+esc(p.title)+'</span>'
+            +(p.stale?'<span class="pocst" title="Roster entry is past its freshness window — confirm they are still in the seat before opening">verify — may have moved</span>':'')
+          :'<span class="pocr">'+esc(p.title)+' — find on LinkedIn</span>')
+        +'<svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg></a>').join('')
+      +'</div></div>';
+  }
   if(l.champion)h+='<div class="prow alt"><span class="pl2">ROUTE IN</span><div class="pv">'+esc(l.champion)+'</div></div>';
   if(l.kill)h+='<div class="prow alt"><span class="pl2">RISK</span><div class="pv">'+esc(l.kill)+'</div></div>';
   if(srcs.length){

@@ -2275,6 +2275,24 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
     # NOTE: the old "daily cap" demotion (overflow re-labelled 'dev') is
     # gone — it made the Developing count lie. Tier now always reflects
     # the gate's actual verdict.
+    # Point of Contact: the senior comms/marketing/HR owner of future
+    # hires at each BD company — never the CEO/CFO (see
+    # hiring_manager.bd_points_of_contact). LinkedIn links only; no
+    # email lookups, no Hunter spend, by design.
+    try:
+        from tool.hiring_manager import bd_points_of_contact
+        from tool.contacts.store import load_contacts as _poc_load
+        _poc_contacts = _poc_load()
+        _poc_desk = active_profile().key
+        _poc_cache: dict = {}
+        for r in bd:
+            _co = (r.get("co") or "").strip()
+            if _co not in _poc_cache:
+                _poc_cache[_co] = bd_points_of_contact(
+                    _co, desk=_poc_desk, contacts=_poc_contacts)
+            r["poc"] = _poc_cache[_co]
+    except Exception as _e:
+        log.info("bd point-of-contact: %s", _e)
     jobs = []
     for s in leads:
         _c = s.get("contact") or {}
