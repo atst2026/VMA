@@ -1,27 +1,8 @@
-"""AD-room item 5: BUYER rescore + warmth, propensity coherence on rival
+"""AD-room item 5: BUYER rescore, propensity coherence on rival
 mandates, freeze dampening scoped to the perm reading, RNS capture."""
 from datetime import datetime, timedelta, timezone
 
-import tool.warmth as W
 from tool import gate, lead_engine as LE
-
-
-def _setup_warmth(tmp_path, monkeypatch):
-    monkeypatch.setattr(W, "_file", lambda: tmp_path / "warmth.json")
-
-
-# ---- warmth store ----------------------------------------------------
-def test_warmth_store_roundtrip_and_source(tmp_path, monkeypatch):
-    _setup_warmth(tmp_path, monkeypatch)
-    assert W.set_warm("Acme Co", note="placed their Head of IC in 2023")
-    rec = W.get("Acme Co")
-    assert rec["warm"] and rec["source"] == "manual"
-    assert W.set_warm("Beta Ltd", source="imported")
-    assert W.get("Beta Ltd")["source"] == "imported"
-    assert W.set_warm("Acme Co", warm=False)
-    assert W.get("Acme Co") is None
-    item = W.annotate({"company": "Beta Ltd"})
-    assert item["warm_route"]["source"] == "imported"
 
 
 # ---- BUYER rescore ---------------------------------------------------

@@ -2024,8 +2024,6 @@ def _mr_gate_fields(row):
                     else "perm"),
         # Logged calibration outcome (the AD-room feedback loop).
         "outcome": row.get("outcome") or "",
-        # Tagged warm route (drives the BUYER 2/2 + 15-point rescore).
-        "warm": 1 if row.get("warm_route") else 0,
         # Pre-market (predicted, exclusive window) vs contested (a public
         # ad/RFP is live — every agency sees it; speed matters).
         "market": ("contested" if any(
@@ -2509,13 +2507,6 @@ def _render_dashboard(legacy: bool = False):
             _prop.annotate(_r)
         except Exception:
             pass
-        # Warm-route tags (AD one-click / CRM import) — the relationship
-        # layer that earns BUYER 2/2 and the full 15 strength points.
-        try:
-            from tool import warmth as _warmth
-            _warmth.annotate(_r)
-        except Exception:
-            pass
         _r["lead"] = lead_engine.score_lead(_r, _kind, _desk)
         _r["outcome"] = _outc.get(_id)
         # The presentation gate: presented (earns a card) vs queued (a
@@ -2741,15 +2732,6 @@ def _render_dashboard(legacy: bool = False):
         eng_universe=__import__("tool.universe_expand",
                                 fromlist=["fresh_proposals"]
                                 ).fresh_proposals(),
-        # One-line scoring note (date-gated): turns the buyer-repricing
-        # deflation into the adoption prompt for the warmth tag.
-        eng_scoring_note=(
-            "Scoring update: buyer scoring tightened — scraped names no "
-            "longer count as warm routes; tag genuine relationships with "
-            "\u2665 Warm route to restore their score. Leadership leads now "
-            "carry two windows (0\u20138 wks support \u00b7 3\u20139 mo rebuild)."
-            if datetime.now(timezone.utc).date().isoformat() <= "2026-07-09"
-            else ""),
         eng_triggers=eng_triggers,
         eng_jobboards=eng_jobboards,
         eng_events=eng_events,
@@ -2846,24 +2828,6 @@ def api_lead_outcome():
         return jsonify({"ok": False, "detail": "invalid outcome"}), 400
     return jsonify({"ok": True, "id": lid, "outcome": outcome,
                     **lead_outcomes.calibration()})
-
-
-@app.route("/api/warmth", methods=["POST"])
-@_auth_required
-def api_warmth():
-    """Tag (or untag) a company's warm route — the AD one-click that
-    rescores BUYER. `source` defaults to manual; a CRM bulk import posts
-    source=imported and needs no schema change."""
-    from tool import warmth
-    data = _safe_json_body()
-    co = (data.get("company") or "").strip()
-    if not co:
-        return jsonify({"ok": False, "detail": "company required"}), 400
-    ok = warmth.set_warm(co, bool(data.get("warm", True)),
-                         rel_type=(data.get("type") or ""),
-                         note=(data.get("note") or ""),
-                         source=(data.get("source") or "manual"))
-    return jsonify({"ok": ok, "company": co})
 
 
 @app.route("/api/refresh", methods=["POST"])
