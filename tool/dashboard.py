@@ -1887,16 +1887,28 @@ def _mr_lead_fields(row):
     L = row.get("lead") or {}
     if not L.get("action"):
         return {}
+    # stack carries the source URLs the "View sources" button opens.
+    # Identical (label, source) pairs collapse to ONE row with a ×N count:
+    # three same-day Companies House share-allotment filings are one line
+    # of evidence three deep, not three rows of visual noise.
+    stack, seen = [], {}
+    for t in (L.get("triggers") or []):
+        src = _mr_src(t.get("url"), t.get("source"))
+        key = ((t.get("label") or "").strip().lower(), src)
+        if key in seen:
+            seen[key]["n"] += 1
+            continue
+        e = {"label": t.get("label"), "confidence": t.get("confidence"),
+             "age": t.get("age_days"), "url": t.get("url") or "",
+             "src": src, "n": 1}
+        seen[key] = e
+        stack.append(e)
     return {
         "action": L.get("action"), "actionLabel": L.get("action_label"),
         "conflict": L.get("conflict") or False,
         "anti": L.get("anti_triggers") or [],
         "opener": row.get("outreach") or "",
-        # stack carries the source URLs the "View sources" button opens.
-        "stack": [{"label": t.get("label"), "confidence": t.get("confidence"),
-                   "age": t.get("age_days"), "url": t.get("url") or "",
-                   "src": _mr_src(t.get("url"), t.get("source"))}
-                  for t in (L.get("triggers") or [])[:4]],
+        "stack": stack[:4],
     }
 
 
