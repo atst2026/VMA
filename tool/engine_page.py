@@ -152,8 +152,8 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 /* jobs mode: the tab streams the boards being synthesised, source-style */
 #jobsTick{position:relative;padding:12px 0;border-radius:24px}
 #jobsTick .sline{display:block;font:500 10.5px/1.7 var(--mono);color:rgba(16,22,38,.32);
-  white-space:nowrap;animation-duration:70s}
-#jobsTick .sline.s2{animation-duration:95s;animation-direction:reverse}
+  white-space:nowrap;animation-duration:14s}
+#jobsTick .sline.s2{animation-duration:19s;animation-direction:reverse}
 .synthpill{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
   display:inline-flex;align-items:center;background:#fff;border:1px solid rgba(16,22,38,.08);
   border-radius:999px;padding:8px 16px;font:600 13px var(--mono);color:var(--ink);
@@ -172,9 +172,8 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .stages{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
 .stages.jobs4{grid-template-columns:repeat(4,1fr)}
 .stages.jobs4 .stg.s3{display:none}
-/* jobs mode: no scene boxes, no numbers — the board pills loop up top */
-.stages.nonum .mini,.stages.nonum .num{display:none}
-.stages.nonum .rail{top:50%}
+/* jobs mode: the scene boxes stand down; the funnel numbers stay */
+.stages.noscene .mini{display:none}
 .rail{position:absolute;left:10%;right:10%;top:24px;height:2px;z-index:0;
   background:linear-gradient(90deg,rgba(154,160,166,.45),rgba(66,133,244,.5),rgba(26,61,124,.4),rgba(217,122,43,.5),rgba(30,158,87,.55))}
 .stages.jobs4 .rail{left:12.5%;right:12.5%}
@@ -473,7 +472,9 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .cal-pop .psrc:hover{text-decoration:underline}
 .cal-pop .psrc svg{width:11px;height:11px}
 /* workshop (the live Personal Assistant section, renamed) */
-.shopwrap{max-width:900px;margin:0 auto;padding:10px 0 8px}
+/* centred to the viewport's true middle: pull back half the rail width */
+.shopwrap{max-width:900px;margin:0 auto;padding:10px 0 8px;transform:translateX(-34px)}
+@media(max-width:980px){.shopwrap{transform:none}}
 .ea-hero{text-align:center;margin-bottom:26px}
 .cc-bigicon{width:78px;height:78px;border-radius:18px;margin:0 auto 22px;display:grid;
   place-items:center;color:#1F1F1F;background:transparent}
@@ -976,9 +977,11 @@ function renderEngine(){
     :[E.gen||0,E.filt||0,E.coll||0,E.test||0,E.ready||0];
   const cfg=STAGES[mode];
   $('stagesEl').classList.toggle('jobs4',isJobs);
-  $('stagesEl').classList.toggle('nonum',isJobs);
+  /* jobs mode keeps the scene boxes down but counts like warm signals:
+     a real, narrowing funnel from searched through to compiled */
+  $('stagesEl').classList.toggle('noscene',isJobs);
   cfg.slots.forEach((slot,i)=>{
-    if(!isJobs)countUp($('st'+slot),nums[i]||0);
+    countUp($('st'+slot),nums[i]||0);
     $('sl'+slot).textContent=cfg.lbl[i];
     $('cap'+slot).textContent=cfg.cap[i];
   });
@@ -1400,7 +1403,8 @@ function calItems(){
     let m=monthIdx(a);if(m<0)m=0;
     return {kind:'fw',key:'fw'+i,n:f.title||f.name||'',m:m,
       d:open?'OPEN':(a?('FROM '+fmtD(a)):(f.status||'').toUpperCase().slice(0,12)),
-      loc:f.buyer||'',why:f.note||f.why||('Buyer: '+(f.buyer||'')),url:f.url||f.source||'',open:open?1:0};});
+      loc:f.buyer||'',why:f.note||f.why||('Buyer: '+(f.buyer||'')),
+      url:f.portal||f.url||f.source||'',open:open?1:0};});
   return {ev,wi,fw};
 }
 function renderCal(){
