@@ -82,7 +82,10 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .sr-btn.on{color:var(--ink);background:rgba(16,22,38,.08);box-shadow:none}
 .panel{padding:0;flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
 .mainhead{display:flex;align-items:center;gap:14px;padding-bottom:20px;margin-bottom:6px;
-  border-bottom:1px solid var(--hair)}
+  border-bottom:1px solid var(--hair);
+  /* sit above #v-shop, whose centring region overlaps this band from the top
+     (see #v-shop.on margin-top) so the nav pills stay clickable */
+  position:relative;z-index:3}
 .logo-mini{width:48px;height:48px;border-radius:11px;overflow:hidden;flex:none;
   box-shadow:0 5px 14px rgba(62,92,132,.38)}
 .logo-mini svg{display:block;width:100%;height:100%}
@@ -134,15 +137,22 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .view{display:none;position:relative}
 .view.on{display:block;animation:vin .3s ease}
 /* Build-A-Deck: centre the whole group (title, subtitle, composer pill, chips)
-   as one block in the middle of the main content area — full-height flex box,
-   both axes, no fragile margins. The view grows to fill the panel height below
-   the header, so justify-content vertically centres and align-items horizontally
-   centres. (Horizontal centre = the area to the right of the fixed nav rail,
-   which is the visually balanced "centre of the page".) */
+   as one block in the middle of the WHOLE page — full-height flex box, both axes,
+   no fragile per-element margins. The view grows to fill the panel, then negative
+   margins extend its centring region past the page padding AND the header band so
+   it spans the full viewport top→bottom — the group's vertical midpoint lands on
+   the true centre of the whole page (header included), not just the area below it.
+   (Horizontal centre = the area to the right of the fixed nav rail, which is the
+   visually balanced "centre of the page".) */
 #v-shop.on{display:flex;flex-direction:column;justify-content:center;align-items:center;flex:1 1 auto;
-  /* cancel .page's asymmetric bottom padding (56px) so the centring region is the
-     full area below the header (header.bottom → viewport bottom) — true vertical centre */
-  margin-bottom:-56px}
+  /* Extend the centring region to the full viewport on BOTH ends:
+       margin-top:-81px  → past .page's 22px top padding + the 59px header band,
+                           so the region starts at the viewport TOP (header included)
+       margin-bottom:-56px → past .page's 56px bottom padding, to the viewport bottom
+     Net region = [0 → viewport bottom], centre = true page centre. The empty top of
+     this overlapping flex box would otherwise swallow clicks on the header pills, so
+     .mainhead is given a z-index above it (below). */
+  margin-top:-81px;margin-bottom:-56px}
 @keyframes vin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .tickwrap{padding:10px 0;border-radius:999px;overflow:hidden;margin-bottom:24px;
   background:linear-gradient(135deg,rgba(255,255,255,.5),rgba(255,255,255,.22));
