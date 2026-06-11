@@ -84,6 +84,10 @@ BUDGET_KEYS = {"funding", "secured_financing", "ipo_listing",
 URGENT_KEYS = {"crisis_event", "regulator_action", "water_sar",
                "mishire_reversal", "inhouse_search_failing", "redundancy",
                "contract_end"}
+# Leadership changes run on two clocks (support play 0-8wks, restructure
+# play 3-9mo) — see qualification().
+LEADERSHIP_KEYS = {"ceo_change", "cfo_change", "chro_change",
+                   "chair_change", "cmo_change"}
 
 
 def qualification(lead: dict, item: dict, ev: dict, wstate: str) -> dict:
@@ -118,13 +122,28 @@ def qualification(lead: dict, item: dict, ev: dict, wstate: str) -> dict:
     else:
         budget, budget_why = 1, "no budget evidence either way"
 
-    # (c) Urgency.
+    # (c) Urgency. Leadership changes carry TWO clocks (the AD-room
+    # split): an immediate support window (weeks 0-8 — announcing the
+    # change, results support, interim cover) and a restructure window
+    # (months 3-9 — team redesign, incumbent churn). Each is a different
+    # play; a single 4-12 week window served neither.
     demand_now = any(t.get("key") in ("job_ad_cluster", "ic_platform_rfp")
                      and (t.get("recency_mult") or 0) >= 0.6 for t in live)
+    _ldr_ages = [t.get("age_days") for t in live
+                 if t.get("key") in LEADERSHIP_KEYS
+                 and t.get("age_days") is not None]
     if keys & URGENT_KEYS or demand_now:
         urgency, urgency_why = 2, "forced / failure-driven / live-demand timing"
+    elif _ldr_ages and min(_ldr_ages) <= 56:
+        urgency, urgency_why = 2, ("inside the immediate support window "
+                                   "(0-8 weeks post-change: announcement "
+                                   "support, results comms, interim cover)")
     elif lead.get("premature") or wstate == "lapsed":
         urgency, urgency_why = 0, "outside the actionable window"
+    elif _ldr_ages and 90 <= min(_ldr_ages) <= 270:
+        urgency, urgency_why = 1, ("inside the restructure window (3-9 "
+                                   "months post-change: team redesign and "
+                                   "incumbent churn)")
     else:
         urgency, urgency_why = 1, "inside the predicted window"
 
@@ -354,7 +373,11 @@ def first_move(lead: dict, company: str) -> str:
 # fact is true on its own), shown on the card as a tag. The card shows
 # the evidence behind every component; the number is for scanning.
 SCORE_READY = 70      # >= this renders green
-SCORE_DEVELOPING = 45  # >= this renders amber; below renders grey
+# Re-based after the buyer repricing (named-cold 15->8): every scraped-
+# contact lead dropped ~7 points with no new facts, so the dev/early
+# boundary moves with the distribution rather than silently demoting
+# half of Developing into Watch.
+SCORE_DEVELOPING = 38  # >= this renders amber; below renders grey
 
 # Fee-propensity points by posture; authoritative facts beat inference.
 PROP_PROVEN = 25      # award notice / AD seed: a proven fee-payer
@@ -377,6 +400,13 @@ def propensity_points(lead: dict, item: dict | None = None) -> tuple[int, str]:
     if (lead or {}).get("conflict"):
         return PROP_PROVEN, "authoritative"
     if item.get("internal_ta") is True:
+        # TA teams remove agency fees from MID-LEVEL VOLUME hiring; the
+        # senior/niche seats VMA sells still go external — and the TA
+        # lead is a route in, not a wall. The penalty applies only when
+        # the predicted seat is one a TA team would actually fill.
+        from tool.seniority import role_is_senior
+        if role_is_senior(item.get("predicted_role")):
+            return PROP_NEUTRAL, "ta_senior"
         return PROP_INTERNAL, "authoritative"
     if item.get("psl_status") in ("on", "yes", True):
         return PROP_PROVEN, "authoritative"
@@ -513,6 +543,9 @@ def assess(item: dict, lead: dict, *, verdicts: list[dict] | None = None,
                 "watch on a timer for the search to stall, and pitch "
                 "interim cover while it runs")
             out["recheck_days"] = 60
+            # The scorecard still renders on the card — and must agree
+            # with the pill/ring that this is a proven fee-payer.
+            out["qual"] = qualification(lead, item, {}, "open")
             return out
         if "hiring_freeze" in anti:
             out["reasons"].append(

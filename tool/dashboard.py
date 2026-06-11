@@ -1786,32 +1786,36 @@ def _mr_src(url: str | None, source: str | None = None) -> str:
     return s if s and s.lower() != "google news" else (s or d)
 
 
-def _mr_pred_buyer(row: dict, seat: str | None) -> tuple[str, str]:
+def _mr_pred_buyer(row: dict, seat: str | None) -> tuple[str, str, str]:
     """Role-dependent buyer routing (the AD-room map): the comms-leader
     seat at a listed company is bought at C-suite, not HR; structure and
     process is the CHRO's purchase; a build under a sitting leader is
-    bought by that leader. Returns (who, why)."""
+    bought by that leader. Returns (who, why, map_rule) — the rule
+    name is stamped into outcome snapshots so wrong-buyer clicks can
+    cluster by map rule, not just by trigger."""
     if (row.get("incumbent_status") == "found"
             and (row.get("incumbent_name") or "").strip()):
         return (row["incumbent_name"],
-                "a build under a sitting leader is bought by that leader")
+                "a build under a sitting leader is bought by that leader",
+                "incumbent_leader")
     s = (row.get("predicted_role") or seat or "").lower()
     listed = any(isinstance(e, dict) and e.get("tier") == "listed"
                  for e in (row.get("events") or []))
     if "internal communications" in s or "employee" in s:
         return ("CHRO / Chief People Officer",
-                "structure-and-process hires are bought by the People function")
+                "structure-and-process hires are bought by the People function",
+                "structure_chro")
     if any(k in s for k in ("corporate affairs", "communications", "comms",
                             "investor relations", "ir ", "brand",
                             "marketing")):
         if listed:
             return ("CEO / CFO",
                     "a senior comms/IR seat at a listed company is bought "
-                    "at C-suite, not HR")
+                    "at C-suite, not HR", "listed_csuite")
         return ("CEO", "the function leader's seat is the chief "
-                       "executive's purchase")
+                       "executive's purchase", "private_ceo")
     return ("CHRO / Chief People Officer",
-            "default buying seat where the function is unclear")
+            "default buying seat where the function is unclear", "default")
 
 
 def _mr_compact_window(text: str | None) -> str:
@@ -1975,6 +1979,11 @@ def _mr_gate_fields(row):
         prop, prop_why = "Leans external", (
             "; ".join(((lead.get("posture") or {}).get("reasons")) or [])
             or "external-hiring signals")
+    elif prop_basis == "ta_senior":
+        prop, prop_why = "In-house TA (volume hires)", (
+            "their TA team removes mid-level fees, but senior/niche "
+            "searches still go external — the TA lead is a route in, "
+            "not a wall")
     elif row.get("agency_scope") == "temp_staffing":
         prop, prop_why = "Unknown (temp use only)", (
             row.get("_propensity_note")
@@ -2004,6 +2013,12 @@ def _mr_gate_fields(row):
         "outcome": row.get("outcome") or "",
         # Tagged warm route (drives the BUYER 2/2 + 15-point rescore).
         "warm": 1 if row.get("warm_route") else 0,
+        # Pre-market (predicted, exclusive window) vs contested (a public
+        # ad/RFP is live — every agency sees it; speed matters).
+        "market": ("contested" if any(
+            t.get("key") in ("job_ad_cluster", "ic_platform_rfp")
+            for t in (lead.get("triggers") or []) if isinstance(t, dict))
+            else "premarket"),
         # Qualification scorecard + per-fact verification tag.
         "qual": g.get("qual") or {},
         "ver": ("reg" if (ev.get("primary") or 0) >= 1
@@ -2199,6 +2214,12 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
             url = ev0.get("url") or ""
             _tkeys = [e.get("trigger_key") for e in evs if isinstance(e, dict)]
             _fee, _fee_tip = _wn.fee_driver(_tkeys)
+            _win_lbl = row.get("window_label") or ""
+            if tkey in ("ceo_change", "cfo_change", "chro_change",
+                        "chair_change", "cmo_change"):
+                # Two clocks, two plays (AD-room split) — the single
+                # 4-12 week window served neither.
+                _win_lbl = "0\u20138 wks support \u00b7 3\u20139 mo rebuild"
             # The seat line states what the SIGNAL indicates, at the
             # breadth the evidence supports: a verified incumbent earns
             # the precise framing (the build under them); everything else
@@ -2229,6 +2250,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                 "seat": seat_disp, "why": why,
                 "predBuyer": _mr_pred_buyer(row, seat)[0],
                 "predBuyerWhy": _mr_pred_buyer(row, seat)[1],
+                "predBuyerRule": _mr_pred_buyer(row, seat)[2],
                 "incumbent": row.get("incumbent_name") or "",
                 "incumbentTitle": row.get("incumbent_title") or "",
                 "incumbentUrl": row.get("incumbent_url") or "",
@@ -2237,7 +2259,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                 "fee": _fee, "feeTip": _fee_tip,
                 "brief": brief,
                 "url": url, "src": _mr_src(url, ev0.get("source")),
-                "win": row.get("window_label") or "",
+                "win": _win_lbl,
                 "st": _mr_st(row.get("strength")),
                 "opp": row.get("_opp") or 0.0,
                 "idtype": "predictor", "rid": row.get("pid") or "",
@@ -2699,6 +2721,15 @@ def _render_dashboard(legacy: bool = False):
             _y += 1
     ctx.update(
         eng_counts=eng_counts,
+        # One-line scoring note (date-gated): turns the buyer-repricing
+        # deflation into the adoption prompt for the warmth tag.
+        eng_scoring_note=(
+            "Scoring update: buyer scoring tightened — scraped names no "
+            "longer count as warm routes; tag genuine relationships with "
+            "\u2665 Warm route to restore their score. Leadership leads now "
+            "carry two windows (0\u20138 wks support \u00b7 3\u20139 mo rebuild)."
+            if datetime.now(timezone.utc).date().isoformat() <= "2026-07-09"
+            else ""),
         eng_triggers=eng_triggers,
         eng_jobboards=eng_jobboards,
         eng_events=eng_events,
