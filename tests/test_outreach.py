@@ -484,3 +484,42 @@ def test_find_for_person_published_first(state, monkeypatch):
     assert found["email"] == "jane.smith@acme.com"
     assert found["status"] == "published"
     assert found["source_url"] == "https://x/rns"
+
+
+# ====================================================================
+# 10. The brochure rides on every send
+# ====================================================================
+def test_send_attaches_brochure(state, monkeypatch, tmp_path):
+    from tool import outreach, email_send
+    fake = tmp_path / "brochure.pdf"
+    fake.write_bytes(b"%PDF-1.6 fake")
+    monkeypatch.setattr(outreach, "BROCHURE_PATH", fake)
+    outreach._BROCHURE_CACHE.clear()
+    sent = {}
+
+    def stub(to, subject, html, text=None, bcc=None, attachments=None,
+             from_name=None):
+        sent["attachments"] = attachments
+        return {"ok": True, "provider": "gmail", "detail": "stub"}
+
+    monkeypatch.setattr(email_send, "send", stub)
+    assert outreach.send_outreach(_lead())["ok"]
+    (fn, raw, mime), = sent["attachments"]
+    assert fn == outreach.BROCHURE_FILENAME
+    assert raw == b"%PDF-1.6 fake" and mime == "application/pdf"
+    # Kill-switch and missing-file paths send clean, attachment-free.
+    monkeypatch.setenv("OUTREACH_ATTACH_BROCHURE", "0")
+    outreach.send_outreach(_lead(lead_id="l2"))
+    assert sent["attachments"] is None
+    monkeypatch.delenv("OUTREACH_ATTACH_BROCHURE")
+    monkeypatch.setattr(outreach, "BROCHURE_PATH", tmp_path / "gone.pdf")
+    outreach._BROCHURE_CACHE.clear()
+    outreach.send_outreach(_lead(lead_id="l3"))
+    assert sent["attachments"] is None
+    outreach._BROCHURE_CACHE.clear()
+
+
+def test_real_brochure_asset_is_a_pdf():
+    from tool.outreach import BROCHURE_PATH
+    raw = BROCHURE_PATH.read_bytes()
+    assert raw[:5] == b"%PDF-" and len(raw) > 1_000_000
