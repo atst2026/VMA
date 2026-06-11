@@ -50,13 +50,13 @@ _FEE_CLASSES: list[tuple[str, str, set[str]]] = [
      {"funding", "secured_financing", "ipo_listing", "pe_acquisition",
       "mna", "ownership_change", "hiring_gap", "seniority_gap",
       "job_ad_cluster", "martech_adoption", "rebrand", "esg_bcorp",
-      "press_velocity_spike"}),
+      "press_velocity_spike", "market_entry"}),
     ("Leadership reset",
      "A leadership or strategy reset reopens the supplier relationship — "
      "the window where an incumbent-free pitch lands.",
      {"ceo_change", "cfo_change", "chro_change", "chair_change",
-      "restructure", "redundancy", "activist_stake", "profit_warning",
-      "contract_loss", "leadership_tenure"}),
+      "cmo_change", "restructure", "redundancy", "activist_stake",
+      "profit_warning", "contract_loss", "leadership_tenure"}),
 ]
 
 _DEFAULT = ("Live signal",

@@ -346,6 +346,14 @@ def detect_events(signals: Iterable[dict]) -> list[TriggerEvent]:
                     log.info("drop (no comms-role context): %s — %r",
                              trigger.key, title[:90])
                     continue
+            if trigger.key == "cmo_change":
+                # Bare "CMO" collides with Chief Medical / Manufacturing
+                # Officer (pharma, NHS, manufacturing). Drop those senses
+                # entirely — precision over recall, as everywhere else.
+                if P.CMO_NON_MARKETING_RX.search(body):
+                    log.info("drop (cmo_change non-marketing CMO): %s — %r",
+                             company, title[:90])
+                    continue
             if trigger.key == "contract_loss":
                 # Filter false positives: a contract loss only counts if it's
                 # (a) reported via RNS (legally material by definition) or

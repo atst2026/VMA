@@ -60,3 +60,7 @@ tool/state/top_three_state.json
 tool/state/*.lock
 
 tool/state/ch_scan_cursor.json
+
+# Capability-gap closers: agency-relationship ledger + living team maps
+tool/state/agency_relationships.json
+tool/state/team_maps.json

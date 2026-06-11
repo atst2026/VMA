@@ -56,7 +56,7 @@ AMPLIFIER_ONLY = {"press_velocity_spike", "personal_brand_velocity",
 # hiring_gap — a live cluster with no internal recruiter is direct
 # evidence of external hiring happening now, our strongest call route.
 BRONZE_KEYS = {"rebrand", "agency_account_move", "framework_award",
-               "esg_bcorp", "martech_adoption"}
+               "esg_bcorp", "martech_adoption", "market_entry"}
 
 # ---- Qualification dimensions (the AD scorecard) -------------------------
 # (a) SEAT: a live/structurally-open seat beats an imminent one beats none.
@@ -64,7 +64,8 @@ SEAT_LIVE_KEYS = {"comms_leader_departure", "mishire_reversal",
                   "inhouse_search_failing", "job_ad_cluster",
                   "ic_platform_rfp", "hiring_gap", "seniority_gap"}
 SEAT_IMMINENT_KEYS = {"ceo_change", "chair_change", "chro_change",
-                      "cfo_change", "ir_director_change", "mna",
+                      "cfo_change", "cmo_change", "market_entry",
+                      "ir_director_change", "mna",
                       "pe_acquisition", "ipo_listing", "ownership_change",
                       "crisis_event", "regulator_action",
                       "regulator_probe_early", "restructure", "redundancy",
@@ -271,6 +272,8 @@ _KILL = {
     "cfo_change": "Routine succession with no comms or IR implication.",
     "chair_change": "A governance-only change with no executive reset behind it.",
     "comms_leader_departure": "The seat is being absorbed or backfilled internally; the departure was a planned retirement long flagged.",
+    "cmo_change": "An internal promotion with the team inherited intact; the incoming CMO brings their own bench from a previous employer.",
+    "market_entry": "The entry is distribution-only or runs through a local partner; in-country marketing stays at regional HQ.",
     "ir_director_change": "An internal promotion; IR support already retained externally.",
     "mishire_reversal": "The exit was a restructure casualty rather than a failed hire; the function is being dissolved, not refilled.",
     "inhouse_search_failing": "The role was quietly filled or pulled for budget reasons rather than search failure.",

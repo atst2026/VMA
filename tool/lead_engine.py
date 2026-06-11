@@ -56,6 +56,7 @@ _COMMS_TAXONOMY = {
     "comms_leader_departure":  (4, "leadership", "slow"),
     "ir_director_change":      (3, "leadership", "slow"),
     "ceo_change":              (3, "leadership", "slow"),
+    "cmo_change":              (2, "leadership", "slow"),   # cross-sell: brand/comms reset follows
     "chair_change":            (2, "leadership", "slow"),
     "cfo_change":              (2, "leadership", "slow"),
     # Demand triggers
@@ -76,6 +77,7 @@ _COMMS_TAXONOMY = {
     "secured_financing":        (3, "demand", "fast"),
     "rebrand":                 (2, "demand", "fast"),
     "agency_account_move":     (2, "demand", "fast"),
+    "market_entry":            (2, "demand", "slow"),   # launch windows run months, not weeks
     "framework_award":         (3, "demand", "fast"),
     "hiring_gap":              (3, "demand", "fast"),
     "seniority_gap":           (4, "demand", "fast"),
@@ -98,6 +100,7 @@ _COMMS_TAXONOMY = {
 # gate as comms (see tests).
 _MKT_TAXONOMY = {
     "comms_leader_departure":  (5, "leadership", "slow"),   # CMO / brand-lead change
+    "cmo_change":              (5, "leadership", "slow"),   # incoming CMO rebuilds in 90 days
     "chro_change":             (5, "leadership", "slow"),
     "ceo_change":              (4, "leadership", "slow"),
     "cfo_change":              (3, "leadership", "slow"),    # ROI / efficiency marketing
@@ -119,6 +122,7 @@ _MKT_TAXONOMY = {
     "ic_platform_rfp":         (2, "access", "fast"),
     "rebrand":                 (4, "demand", "fast"),        # marketing brand trigger
     "agency_account_move":     (4, "demand", "fast"),        # client + agency-side reshuffle
+    "market_entry":            (3, "demand", "slow"),        # UK launch builds in-country marketing
     "framework_award":         (3, "demand", "fast"),        # agency scaling after gov win
     "hiring_gap":              (3, "demand", "fast"),        # scaling with no comms
     "seniority_gap":           (4, "demand", "fast"),        # senior hire + junior team
@@ -447,6 +451,8 @@ _WHO = {
     "contract_loss": "CEO office / Corporate Affairs",
     "rebrand": "CCO / Head of Brand & Reputation",
     "agency_account_move": "Head of Brand / Corporate Affairs",
+    "cmo_change": "The incoming CMO directly / CEO office",
+    "market_entry": "CEO / country MD — in-country comms is built around launch",
     "framework_award": "Agency MD / Head of Delivery",
     "hiring_gap": "CEO / CHRO — no comms function exists yet",
     "seniority_gap": "The new CCO / Head of Comms directly",
@@ -492,6 +498,8 @@ _MKT_WHO = {
     "crisis_event": "CMO / Corporate Affairs",
     "rebrand": "CMO / Head of Brand",
     "agency_account_move": "CMO / Marketing Director",
+    "cmo_change": "The incoming CMO directly — they rebuild the team in their first 90 days",
+    "market_entry": "Country MD / incoming CMO — in-country marketing is built around launch",
     "framework_award": "Agency MD / Head of Delivery",
     "hiring_gap": "CEO / CHRO — no marketing function exists yet",
     "seniority_gap": "The new CMO / Marketing Director directly",

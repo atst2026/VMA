@@ -138,6 +138,22 @@ def _render_md(pid: str, rec: dict, verdicts: list[dict]) -> str:
         lines += ["", "## AD verdicts", ""]
         for v in pid_verdicts[-10:]:
             lines.append(f"- {(v.get('date') or '')[:10]}: {v.get('verdict')}")
+    # Living team map + agency-relationship history (both accumulate
+    # independently of the dossier; render whatever is on file).
+    try:
+        from tool import team_map as _tm
+        tm_lines = _tm.summary_lines(company)
+    except Exception:
+        tm_lines = []
+    if tm_lines:
+        lines += ["", "## Team map (leadership page)", ""] + tm_lines
+    try:
+        from tool import agency_relationships as _ar
+        ar_lines = _ar.summary_lines(company)
+    except Exception:
+        ar_lines = []
+    if ar_lines:
+        lines += ["", "## Agency relationships", ""] + ar_lines
     notes = _dir() / f"{pid}.notes.md"
     if notes.exists():
         try:

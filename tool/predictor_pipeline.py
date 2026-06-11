@@ -87,6 +87,7 @@ def _predicted_role_for(stk: Stack, desk: str | None = None) -> str:
         ("ic_platform_rfp",        "Head of Internal Communications"),
         ("ipo_listing",            "Corporate Affairs Director"),
         ("ceo_change",             "Head of Communications"),
+        ("cmo_change",             "Head of Marketing & Brand"),
         ("pe_acquisition",         "Corporate Affairs Director (new ownership)"),
         ("activist_stake",         "Crisis / Corporate Affairs Director"),
         ("mna",                    "Corporate Affairs Director"),
@@ -95,6 +96,7 @@ def _predicted_role_for(stk: Stack, desk: str | None = None) -> str:
         ("crisis_event",           "Crisis / Head of Comms"),
         ("profit_warning",         "IR Director / Head of Corporate Affairs"),
         ("contract_loss",          "Head of Communications"),
+        ("market_entry",           "Head of Communications (UK launch)"),
         ("chair_change",           "Head of Communications"),
         ("cfo_change",             "Head of Investor Relations"),
         ("ir_director_change",     "Head of Investor Relations"),
@@ -114,6 +116,7 @@ def _predicted_role_for(stk: Stack, desk: str | None = None) -> str:
     ]
     marketing_map = [
         ("comms_leader_departure", "Chief Marketing Officer"),
+        ("cmo_change",             "Marketing Director / Head of Brand (CMO rebuild)"),
         ("ic_platform_rfp",        "Head of Marketing"),
         ("ipo_listing",            "Brand / Corporate Marketing Director"),
         ("ceo_change",             "Chief Marketing Officer"),
@@ -125,6 +128,7 @@ def _predicted_role_for(stk: Stack, desk: str | None = None) -> str:
         ("crisis_event",           "Brand-Trust / Customer Marketing Lead"),
         ("profit_warning",         "Head of Demand Generation"),
         ("contract_loss",          "Head of Marketing"),
+        ("market_entry",           "Head of Marketing (UK launch)"),
         ("chair_change",           "Chief Marketing Officer"),
         ("cfo_change",             "Head of Marketing (ROI/efficiency)"),
         ("ir_director_change",     "Brand / Investor Marketing"),

@@ -283,6 +283,14 @@ def main() -> int:
         velocity_events = []
     trigger_events = pdet.detect_events(signals)
     cluster_events = pcluster.detect_clusters()
+    # Agency-relationship ledger: fold today's account-move events into the
+    # per-company history (who holds / held the PR-creative-media account),
+    # so "last agency relationship" is accumulated record, not inference.
+    try:
+        from tool import agency_relationships as _agrel
+        _agrel.record_moves(trigger_events)
+    except Exception as e:
+        log.info("agency-relationship ledger: %s", e)
 
     # BD-strengthening event lanes (all free). Each is bounded + non-fatal:
     # a failure logs and yields [] so the brief always completes.
