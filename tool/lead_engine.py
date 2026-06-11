@@ -742,16 +742,8 @@ def _anti_triggers(events: list[dict]) -> tuple[list[str], float, bool]:
     return flags, mult, cap
 
 
-def _access(triggers: list[dict], warm: bool, contact_name: str | None) -> tuple[str, str]:
-    """The single most important thing before a BD call: warm or cold. `warm`
-    means VMA has a contact on file for this account (the relationship proxy we
-    can actually compute). The trigger supplies the angle; the relationship
-    decides whether it's a warm follow-up or a cold open.
-
-    NOTE: this is a contact-on-file proxy, not full relationship history — VMA
-    has no integrated placements feed yet, so a genuine prior placement we
-    don't have a contact card for will read 'cold'. That feed is the
-    highest-value data integration still missing (see README/notes)."""
+def _access(triggers: list[dict]) -> str:
+    """The opening angle for the call — the trigger supplies it."""
     fams = {t["family"] for t in triggers}
     if "access" in fams:
         angle = "A live RFP / platform re-tender is underway"
@@ -761,10 +753,7 @@ def _access(triggers: list[dict], warm: bool, contact_name: str | None) -> tuple
         angle = "A senior build-out usually follows a move of this size, before the role is briefed out"
     else:
         angle = "Reachable on the trigger above, before the role is briefed out"
-    if warm:
-        nm = f" ({contact_name})" if contact_name else ""
-        return ("warm", f"Warm: VMA has a contact on file{nm}. {angle}.")
-    return ("cold", f"Cold: no VMA relationship on file. {angle}.")
+    return f"{angle}."
 
 
 def _scale(triggers: list[dict]) -> str:
@@ -994,15 +983,7 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
         if dim_posture and not demand_now:
             pro_human.append("no in-house recruiter in sight")
 
-        # Warm/cold = a TAGGED warm route (AD one-click or CRM import) —
-        # the relationship layer scraping can't see. A contact merely on
-        # file is a named-but-cold route: once you know the seat, finding
-        # the name takes minutes; warmth is what changes conversion.
-        warm = bool(item.get("warm_route"))
-        access_key, access_text = _access(triggers,
-                                          warm or bool(name or item.get("contact_on_file")),
-                                          name)
-        relationship = "warm" if warm else "cold"
+        access_text = _access(triggers)
 
         seat = (item.get("predicted_role") or "").strip() or None
         window = (item.get("window_label") or item.get("window") or "").strip() or None
@@ -1016,8 +997,7 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
             "signal_band": ("high" if signal >= _SIGNAL_HIGH
                             else "medium" if signal >= 3 else "low"),
             "action": action, "action_label": _ACTION_LABEL[action],
-            "access": access_key, "access_text": access_text,
-            "relationship": relationship,
+            "access_text": access_text,
             "scale": _scale(triggers),
             "conflict": conflict,
             "who_to_call": _who_to_call(triggers, name, name_role, who_map, who_default),
@@ -1042,7 +1022,7 @@ def score_lead(item: dict, kind: str = "predictor", desk: str = "comms") -> dict
     except Exception:
         return {"fit": 0, "fit_band": "out", "fit_why": "", "signal": 0.0,
                 "signal_band": "low", "action": "monitor", "action_label": "Monitor",
-                "access": "cold", "access_text": "", "relationship": "cold",
+                "access_text": "",
                 "scale": "single senior search", "conflict": False,
                 "who_to_call": _WHO_DEFAULT,
                 "who_url": "", "corroboration": 0, "corroborated": False,

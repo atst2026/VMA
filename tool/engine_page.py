@@ -427,7 +427,6 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .outbtn:hover{color:var(--deep);background:#fff}
 .outbtn.on{color:#fff;background:var(--deep);border-color:var(--deep)}
 .chip.warm{color:#b00b55;border-color:rgba(214,31,105,.35);background:rgba(252,231,240,.7)}
-.btn.warmbtn.on{color:#b00b55;border-color:rgba(214,31,105,.5);background:rgba(252,231,240,.8)}
 .chip.mktc{color:#b5530e;border-color:rgba(217,122,43,.4);background:rgba(253,236,219,.7)}
 .chip.mktp{color:#1d4ed8;border-color:rgba(66,133,244,.35);background:rgba(233,239,251,.7)}
 .chip.prod{color:#0e7c74;border-color:rgba(18,165,148,.4);background:rgba(221,243,240,.7)}
@@ -675,7 +674,6 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
     <!-- ============ VIEW: engine + board ============ -->
     <div class="view on" id="v-engine">
       <div class="pipedate"><span class="sp">✦</span> TODAY’S AGENT PIPELINE · <span id="pipeDate"></span></div>
-      {% if eng_scoring_note %}<div class="scorenote">{{ eng_scoring_note }}</div>{% endif %}
       {% if eng_universe %}<div class="scorenote">Universe proposals (weekly model pass — approve by adding to the watchlist):
         {% for p in eng_universe %} <b>{{ p.company }}</b> — {{ p.case }}{{ ";" if not loop.last }}{% endfor %}</div>{% endif %}
       <div class="tickwrap" id="jobsTick" style="display:none">
@@ -1318,8 +1316,7 @@ function portfolioHTML(l){
     +(l.rt?chip('rt','STRESS-TESTED ✓ '+(l.conviction||''),MEANING.rt+(l.conviction?' Conviction '+l.conviction+'/100.':'')):'')
     +(l.intent?chip('intent','STATED INTENT',MEANING.intent+' Here: “'+l.intent+'”.'):'')
     +(l.conflict?chip('anti','RIVAL MANDATE','A rival firm holds the perm mandate — proof they pay fees. Watch on a timer for the search to stall; pitch interim cover while it runs.'):'')+(l.product==='interim'?chip('prod','INTERIM PLAY','Perm budget is blocked (freeze, rival mandate or cuts) but the work still exists — pitch day-rate interim; it comes from a different budget line.'):'')
-    +(l.warm?chip('warm','WARM ROUTE','A tagged warm relationship — direct or one credible hop. The strongest opener in recruitment.'):'')
-    +(l.market==='contested'?chip('mktc','CONTESTED','A public ad/RFP is live — every agency sees this; speed matters.'):l.market==='premarket'?chip('mktp','PRE-MARKET','Predicted before any ad exists — an exclusive window; an experienced AD values this above a public lead.'):'')
+    +(l.market==='contested'?chip('mktc','CONTESTED','A public ad/RFP is live — every agency sees this; speed matters.'):'')
     +'</div>'
     +'<div class="scorering"><svg width="62" height="62" viewBox="0 0 62 62">'
     +'<circle cx="31" cy="31" r="26" fill="none" stroke="rgba(16,22,38,.08)" stroke-width="3.5"/>'
@@ -1369,7 +1366,6 @@ function portfolioHTML(l){
     +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5z"/><path d="M13.5 3v5.5H19"/><path d="M9.2 13l.55 1.65 1.65.55-1.65.55L9.2 17.4l-.55-1.65L7 15.2l1.65-.55z" fill="currentColor" stroke="none"/></svg>'
     +'Generate pitch</button>'
     +(l.opener?'<button type="button" class="btn" data-act="opener" data-id="'+l._id+'">✦ Draft opener</button>':'')
-    +'<button type="button" class="btn warmbtn'+(l.warm?' on':'')+'" data-act="warmth" data-id="'+l._id+'" title="Tag a warm relationship — direct or one credible hop (incl. past placements). Rescores BUYER.">♥ Warm route</button>'
     +'<span class="gap"></span>'
     +'<button type="button" class="btn good'+(l.status==='followed_up'?' on':'')+'" data-act="fu" data-id="'+l._id+'">✓ Followed up</button>'
     +'<button type="button" class="btn bad'+(l.status==='dismissed'?' on':'')+'" data-act="dis" data-id="'+l._id+'">✕ Dismiss</button>'
@@ -1392,17 +1388,6 @@ function stripHTML(l,i){
 }
 const OUTS=[['no_answer','No answer'],['wrong_buyer','Wrong buyer'],['conversation','Conversation'],
   ['meeting','Meeting'],['brief','Brief'],['placement','Placement']];
-function toggleWarm(id,btn){
-  const l=BYID[id];if(!l)return;
-  const on=!l.warm;
-  let note='';
-  if(on){note=prompt('Warm route note (optional) — e.g. "placed their Head of IC in 2023":','')||'';}
-  l.warm=on?1:0;
-  btn.classList.toggle('on',on);
-  toast(on?'Warm route tagged — BUYER rescores on next refresh':'Warm tag removed');
-  fetch('/api/warmth',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({company:l.co,warm:on,note:note,type:'manual',source:'manual'})}).catch(()=>{});
-}
 function logOutcome(id,val){
   const l=BYID[id];if(!l)return;
   l.outcome=(l.outcome===val)?'':val;
@@ -1411,7 +1396,7 @@ function logOutcome(id,val){
   toast(l.outcome?('Outcome logged: '+l.outcome.replace('_',' ')):'Outcome cleared');
   fetch('/api/lead/outcome',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({id:l.rid,outcome:l.outcome,
-      snapshot:{score:l.score,tier:l.tier,prop:l.prop,qual:(l.qual||{}).total,fee:l.fee,type:l.type,key:l.key,trigger:l.why,evidence:(l.brief||'').slice(0,160),warm:l.warm?1:0,product:l.product||'',market:l.market||'',predicted_buyer:{role:l.predBuyer||l.buyer||'',rule:l.predBuyerRule||''}}})})
+      snapshot:{score:l.score,tier:l.tier,prop:l.prop,qual:(l.qual||{}).total,fee:l.fee,type:l.type,key:l.key,trigger:l.why,evidence:(l.brief||'').slice(0,160),product:l.product||'',market:l.market||'',predicted_buyer:{role:l.predBuyer||l.buyer||'',rule:l.predBuyerRule||''}}})})
     .catch(()=>{});
 }
 /* clicking ANY lead — whichever section — opens the same full-page
@@ -1733,7 +1718,6 @@ document.addEventListener('click',e=>{
     const id=act.dataset.id,a=act.dataset.act;
     if(a==='pitch')pitchFromLead(id,act);
     else if(a==='opener')draftOpener(id);
-    else if(a==='warmth')toggleWarm(id,act);
     else if(a==='fu')triage(id,'followed_up');
     else if(a==='dis')triage(id,'dismissed');
     return;

@@ -227,34 +227,21 @@ def test_funding_event_synthesises_demand_trigger():
     assert lead["signal"] > 0
 
 
-# ---- ACCESS: warm / cold relationship + who-to-call ----
-def test_contact_on_file_gives_warm_access_but_cold_relationship():
-    # A contact merely on file is a named-but-cold route: the access text
-    # still leads with them, but relationship-warmth needs a TAGGED route.
+# ---- ACCESS angle + who-to-call ----
+def test_access_angle_from_leadership_trigger():
+    # The access line is now just the opening angle — no warm/cold
+    # relationship labelling (that feature was removed).
+    lead = LE.score_lead(_pred(events=[_ev("ceo_change", 1)]))
+    assert "new leader has just landed" in lead["access_text"]
+    assert "relationship" not in lead and "access" not in lead
+
+
+def test_who_to_call_resolves_to_seeded_name():
     item = _pred(events=[_ev("chro_change", 1)])
     item["seeded_contact_name"] = "Jane Doe"
     item["seeded_contact_role"] = "Group HRD"
     lead = LE.score_lead(item)
-    assert lead["relationship"] == "cold"
-    assert lead["access"] == "warm"
-    assert "contact on file" in lead["access_text"]
-    # who-to-call resolves to the NAME, not just the role
     assert lead["who_to_call"].startswith("Jane Doe")
-
-
-def test_access_cold_when_no_relationship():
-    lead = LE.score_lead(_pred(events=[_ev("ceo_change", 1)]))
-    assert lead["relationship"] == "cold"
-    assert lead["access"] == "cold"
-    assert "new leader has just landed" in lead["access_text"]
-
-
-def test_warm_via_tagged_route_not_contact_on_file():
-    item = _pred(events=[_ev("ceo_change", 1)])
-    item["contact_on_file"] = True
-    assert LE.score_lead(item)["relationship"] == "cold"
-    item["warm_route"] = {"warm": True, "note": "placed their Head of IC"}
-    assert LE.score_lead(item)["relationship"] == "warm"
 
 
 def test_scale_build_out_on_cluster():
