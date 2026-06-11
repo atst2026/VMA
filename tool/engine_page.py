@@ -424,6 +424,8 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
   border:1px solid rgba(16,22,38,.08);border-radius:999px;padding:4px 10px;cursor:pointer;transition:.15s}
 .outbtn:hover{color:var(--deep);background:#fff}
 .outbtn.on{color:#fff;background:var(--deep);border-color:var(--deep)}
+.chip.warm{color:#b00b55;border-color:rgba(214,31,105,.35);background:rgba(252,231,240,.7)}
+.btn.warmbtn.on{color:#b00b55;border-color:rgba(214,31,105,.5);background:rgba(252,231,240,.8)}
 .chip.prod{color:#0e7c74;border-color:rgba(18,165,148,.4);background:rgba(221,243,240,.7)}
 .openerbox{margin:14px 28px 0;padding:11px 14px;border-left:2px solid var(--vma);border-radius:0 12px 12px 0;
   background:rgba(62,92,132,.06);font-size:12.5px;line-height:1.62;color:var(--ink2)}
@@ -1306,6 +1308,7 @@ function portfolioHTML(l){
     +(l.rt?chip('rt','STRESS-TESTED ✓ '+(l.conviction||''),MEANING.rt+(l.conviction?' Conviction '+l.conviction+'/100.':'')):'')
     +(l.intent?chip('intent','STATED INTENT',MEANING.intent+' Here: “'+l.intent+'”.'):'')
     +(l.conflict?chip('anti','RIVAL MANDATE','A rival firm holds the perm mandate — proof they pay fees. Watch on a timer for the search to stall; pitch interim cover while it runs.'):'')+(l.product==='interim'?chip('prod','INTERIM PLAY','Perm budget is blocked (freeze, rival mandate or cuts) but the work still exists — pitch day-rate interim; it comes from a different budget line.'):'')
+    +(l.warm?chip('warm','WARM ROUTE','A tagged warm relationship — direct or one credible hop. The strongest opener in recruitment.'):'')
     +'</div>'
     +'<div class="scorering"><svg width="62" height="62" viewBox="0 0 62 62">'
     +'<circle cx="31" cy="31" r="26" fill="none" stroke="rgba(16,22,38,.08)" stroke-width="3.5"/>'
@@ -1320,7 +1323,9 @@ function portfolioHTML(l){
     +(l.win?' · decision window '+esc(l.win):'')
     +(l.fee?' &nbsp;'+chip('fee',esc(l.fee),MEANING.fee+' '+(l.feeTip||'')):'')
     +(l.q4?' '+chip('q4',esc(l.q4),MEANING.q4):'')+'</div></div>';
-  if(l.buyer)h+='<div class="prow"><span class="pl2">DECISION MAKER</span><div class="pv"><b>'+esc(l.buyer)+'</b></div></div>';
+  const buyerName=l.buyer||l.predBuyer;
+  if(buyerName)h+='<div class="prow"><span class="pl2">DECISION MAKER</span><div class="pv"><b>'+esc(buyerName)+'</b>'
+    +((!l.buyer&&l.predBuyerWhy)?' <span style="color:var(--muted)">— '+esc(l.predBuyerWhy)+'</span>':'')+'</div></div>';
   if(l.champion)h+='<div class="prow alt"><span class="pl2">ROUTE IN</span><div class="pv">'+esc(l.champion)+'</div></div>';
   if(l.opening||l.move)h+='<div class="prow"><span class="pl2">OPENING LINE</span><div class="pv">'+esc(l.opening||l.move)+'</div></div>';
   if(l.kill)h+='<div class="prow alt"><span class="pl2">RISK</span><div class="pv">'+esc(l.kill)+'</div></div>';
@@ -1350,6 +1355,7 @@ function portfolioHTML(l){
     +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5z"/><path d="M13.5 3v5.5H19"/><path d="M9.2 13l.55 1.65 1.65.55-1.65.55L9.2 17.4l-.55-1.65L7 15.2l1.65-.55z" fill="currentColor" stroke="none"/></svg>'
     +'Generate pitch</button>'
     +(l.opener?'<button type="button" class="btn" data-act="opener" data-id="'+l._id+'">✦ Draft opener</button>':'')
+    +'<button type="button" class="btn warmbtn'+(l.warm?' on':'')+'" data-act="warmth" data-id="'+l._id+'" title="Tag a warm relationship — direct or one credible hop (incl. past placements). Rescores BUYER.">♥ Warm route</button>'
     +'<span class="gap"></span>'
     +'<button type="button" class="btn good'+(l.status==='followed_up'?' on':'')+'" data-act="fu" data-id="'+l._id+'">✓ Followed up</button>'
     +'<button type="button" class="btn bad'+(l.status==='dismissed'?' on':'')+'" data-act="dis" data-id="'+l._id+'">✕ Dismiss</button>'
@@ -1372,6 +1378,17 @@ function stripHTML(l,i){
 }
 const OUTS=[['no_answer','No answer'],['wrong_buyer','Wrong buyer'],['conversation','Conversation'],
   ['meeting','Meeting'],['brief','Brief'],['placement','Placement']];
+function toggleWarm(id,btn){
+  const l=BYID[id];if(!l)return;
+  const on=!l.warm;
+  let note='';
+  if(on){note=prompt('Warm route note (optional) — e.g. "placed their Head of IC in 2023":','')||'';}
+  l.warm=on?1:0;
+  btn.classList.toggle('on',on);
+  toast(on?'Warm route tagged — BUYER rescores on next refresh':'Warm tag removed');
+  fetch('/api/warmth',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({company:l.co,warm:on,note:note,type:'manual',source:'manual'})}).catch(()=>{});
+}
 function logOutcome(id,val){
   const l=BYID[id];if(!l)return;
   l.outcome=(l.outcome===val)?'':val;
@@ -1380,7 +1397,7 @@ function logOutcome(id,val){
   toast(l.outcome?('Outcome logged: '+l.outcome.replace('_',' ')):'Outcome cleared');
   fetch('/api/lead/outcome',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({id:l.rid,outcome:l.outcome,
-      snapshot:{score:l.score,tier:l.tier,prop:l.prop,qual:(l.qual||{}).total,fee:l.fee,type:l.type}})})
+      snapshot:{score:l.score,tier:l.tier,prop:l.prop,qual:(l.qual||{}).total,fee:l.fee,type:l.type,key:l.key,trigger:l.why,evidence:(l.brief||'').slice(0,160),warm:l.warm?1:0,product:l.product||''}})})
     .catch(()=>{});
 }
 /* clicking ANY lead — whichever section — opens the same full-page
@@ -1702,6 +1719,7 @@ document.addEventListener('click',e=>{
     const id=act.dataset.id,a=act.dataset.act;
     if(a==='pitch')pitchFromLead(id,act);
     else if(a==='opener')draftOpener(id);
+    else if(a==='warmth')toggleWarm(id,act);
     else if(a==='fu')triage(id,'followed_up');
     else if(a==='dis')triage(id,'dismissed');
     return;

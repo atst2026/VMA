@@ -125,7 +125,8 @@ def test_high_confidence_needs_a_seven_dimension_case():
     lead["triggers"].append({"key": "mishire_reversal", "label": "Mishire",
                              "recency_mult": 0.9, "age_days": 10.0})
     g = gate.assess({"company": "Acme", "events": _full_events(),
-                     "seeded_contact_name": "Jane Doe"}, lead, now=NOW)
+                     "seeded_contact_name": "Jane Doe",
+                     "warm_route": {"warm": True}}, lead, now=NOW)
     assert g["presented"] and g["confidence"] == "High"
     assert g["qual"]["total"] == 8
 
@@ -207,9 +208,9 @@ def test_single_registry_source_is_verified_truth():
     assert not under["presented"]
     assert "not qualified" in under["reasons"][0].lower()
     assert "source" not in under["reasons"][0].lower()
-    # The same single registry fact + a named buyer = 5/8: PRESENTS.
+    # The same single registry fact + a WARM route = 5/8: PRESENTS.
     qualified = gate.assess({"company": "A", "events": ev,
-                             "seeded_contact_name": "Jane Doe"},
+                             "warm_route": {"warm": True}},
                             ceo_only, now=NOW)
     assert qualified["presented"]   # quiet company, one registry source
 

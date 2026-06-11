@@ -52,8 +52,12 @@ Read it as calibration questions: do 70+ scores convert more than
 45-69s (if not, the weights are mis-set — find which component lies)?
 Do 'Proven agency user' leads out-convert 'Unknown' by enough to
 justify the 15-point gap? Is any tier producing wrong_buyer clusters
-(the buyer-mapping table is wrong for that trigger)? Propose weight
-changes only where n≥5 per cell.
+(the buyer-mapping table is wrong for that trigger)? The report carries
+n per cell — on a small desk at monthly cadence the first month or two
+is noise, so SUPPRESS any outcome-driven weight suggestion below n=20
+in that cell; report the trend as "accumulating, not yet actionable"
+instead. (Status-based patterns — followed-up vs dismissed — keep the
+lower n≥5 bar; they accumulate faster.)
 
 Also read, for the window: investigation overlays
 (`tool/state/investigations/*.json` — which red-team verdicts did the AD

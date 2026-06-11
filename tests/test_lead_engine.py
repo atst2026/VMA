@@ -228,12 +228,14 @@ def test_funding_event_synthesises_demand_trigger():
 
 
 # ---- ACCESS: warm / cold relationship + who-to-call ----
-def test_access_warm_when_contact_on_file():
+def test_contact_on_file_gives_warm_access_but_cold_relationship():
+    # A contact merely on file is a named-but-cold route: the access text
+    # still leads with them, but relationship-warmth needs a TAGGED route.
     item = _pred(events=[_ev("chro_change", 1)])
     item["seeded_contact_name"] = "Jane Doe"
     item["seeded_contact_role"] = "Group HRD"
     lead = LE.score_lead(item)
-    assert lead["relationship"] == "warm"
+    assert lead["relationship"] == "cold"
     assert lead["access"] == "warm"
     assert "contact on file" in lead["access_text"]
     # who-to-call resolves to the NAME, not just the role
@@ -247,9 +249,11 @@ def test_access_cold_when_no_relationship():
     assert "new leader has just landed" in lead["access_text"]
 
 
-def test_warm_via_contact_on_file_flag():
+def test_warm_via_tagged_route_not_contact_on_file():
     item = _pred(events=[_ev("ceo_change", 1)])
     item["contact_on_file"] = True
+    assert LE.score_lead(item)["relationship"] == "cold"
+    item["warm_route"] = {"warm": True, "note": "placed their Head of IC"}
     assert LE.score_lead(item)["relationship"] == "warm"
 
 

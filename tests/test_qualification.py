@@ -53,21 +53,27 @@ def test_urgency_dimension():
     assert _q(_lead(["ceo_change"]), wstate="lapsed")["urgency"] == 0
 
 
-def test_buyer_dimension_personal_reason_to_engage():
-    # Named contact or a warm relationship = 2 (Savage's warm call).
-    assert _q(_lead(["ceo_change"]),
-              {"seeded_contact_name": "Jane"})["buyer"] == 2
+def test_buyer_dimension_warm_beats_named_cold():
+    # AD-room rescore: warmth (tagged route / relationship) = 2; a scraped
+    # name and a mapped seat are both 1; nothing = 0.
     assert _q(_lead(["ceo_change"], relationship="warm"))["buyer"] == 2
+    assert _q(_lead(["ceo_change"]),
+              {"warm_route": {"warm": True}})["buyer"] == 2
+    named = _q(_lead(["ceo_change"]), {"seeded_contact_name": "Jane"})
+    assert named["buyer"] == 1 and "cold" in named["buyer_why"]
     routed = _q(_lead(["ceo_change"],
                       access_text="New leader, supplier relationship open."))
-    assert routed["buyer"] == 1 and "access angle" in routed["buyer_why"]
+    assert routed["buyer"] == 1
     assert _q(_lead(["ceo_change"], who_to_call=""))["buyer"] == 0
 
 
 def test_total_and_weakest():
     q = _q(_lead(["mishire_reversal", "funding"]),
-           {"seeded_contact_name": "Jane"})
+           {"warm_route": {"warm": True}})
     assert q["total"] == 8
+    # A named-but-cold contact caps the same stack at 7.
+    assert _q(_lead(["mishire_reversal", "funding"]),
+              {"seeded_contact_name": "Jane"})["total"] == 7
     q2 = _q(_lead(["ceo_change"]))
     assert q2["total"] == 4 and q2["weakest_why"]
 
