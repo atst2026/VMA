@@ -74,6 +74,37 @@ def fee_driver(trigger_keys: list[str | None]) -> tuple[str, str]:
     return _DEFAULT
 
 
+# What kind of hire each fee-driver class actually signals. Used as the
+# card's seat line when no incumbent has been verified: the signal earns
+# a direction ("a build-out", "a replacement", "a reshuffle"), not a
+# precise chair nobody has confirmed. Deliberately broader than one
+# function where the trigger genuinely is broader (growth events fund
+# builds across comms AND marketing).
+_HIRE_HINT = {
+    "Forced & confidential": "Crisis-response {func} leadership",
+    "Failed DIY":            "External search for a stalled senior hire",
+    "Budget thaw":           "Senior {func} hiring (post-freeze restart)",
+    "Vacated seat":          "Replacement for an open senior {func} seat",
+    "Deadline-driven":       "Senior {func} capability to a fixed deadline",
+    "Leadership reset":      "Senior {func} reshuffle under new leadership",
+}
+
+
+def hire_hint(trigger_keys, marketing: bool = False) -> str:
+    """The kind of hire the stack's strongest trigger indicates."""
+    label, _tip = fee_driver(list(trigger_keys or []))
+    if label == "Growth demand":
+        # Growth/transaction events fund team builds across the desks —
+        # honestly broader than any single function.
+        return ("Marketing & brand team build-out (growth or "
+                "transaction funded)" if marketing
+                else "Comms & marketing team build-out (growth or "
+                     "transaction funded)")
+    func = "marketing" if marketing else "comms"
+    t = _HIRE_HINT.get(label)
+    return t.format(func=func) if t else f"Senior {func} hire likely"
+
+
 def _date(iso: str | None) -> str:
     try:
         d = datetime.fromisoformat((iso or "").replace("Z", "+00:00"))

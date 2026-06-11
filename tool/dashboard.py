@@ -2119,23 +2119,21 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
             why = tlabel or typ
             brief = (ev0.get("evidence") or "")[:220] or row.get("advisory") or why
             url = ev0.get("url") or ""
-            # The incumbency verdict frames the seat. Found incumbent ->
-            # the build under them. Otherwise the card frames the FUNCTION
-            # the trigger signals — a precise chair nobody verified is
-            # unearned precision, not a finding.
-            from tool import incumbency as _inc
-            _predicted = row.get("predicted_role") or role_label
-            _inc_st = row.get("incumbent_status")
-            if _inc_st == "found":
-                seat = _inc.build_seat(_predicted, row.get("incumbent_name"))
-                seat_disp = seat
+            _tkeys = [e.get("trigger_key") for e in evs if isinstance(e, dict)]
+            _fee, _fee_tip = _wn.fee_driver(_tkeys)
+            # The seat line states what the SIGNAL indicates, at the
+            # breadth the evidence supports: a verified incumbent earns
+            # the precise framing (the build under them); everything else
+            # gets the trigger's hire direction — build-out, replacement,
+            # reshuffle — not a precise chair nobody confirmed.
+            if row.get("incumbent_status") == "found":
+                from tool import incumbency as _inc
+                seat = _inc.build_seat(
+                    row.get("predicted_role") or role_label,
+                    row.get("incumbent_name"))
             else:
-                seat = _inc.broad_seat(_predicted)
-                seat_disp = seat + (" — seat appears open"
-                                    if _inc_st == "none_found"
-                                    else " (exact seat TBC)")
-            _fee, _fee_tip = _wn.fee_driver(
-                [e.get("trigger_key") for e in evs if isinstance(e, dict)])
+                seat = _wn.hire_hint(_tkeys, marketing=_mkt)
+            seat_disp = seat
             _why_now_txt = _wn.compose_why_now(
                 evs, (row.get("lead") or {}).get("why_now")
                 or _why_now(tkey, _mkt, seat, row.get("window_label")),

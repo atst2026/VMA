@@ -199,9 +199,11 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
   background:linear-gradient(90deg,rgba(154,160,166,.45),rgba(66,133,244,.5),rgba(26,61,124,.4),rgba(217,122,43,.5),rgba(30,158,87,.55))}
 /* leads mode: PRODUCTION sits BELOW the top four, fed by a drop rail
    from the stage row — the pipeline visibly continues downwards */
-.stages:not(.jobs4) .stg.s5{grid-column:1/-1;width:min(420px,56%);margin:40px auto 0;position:relative}
-.stages:not(.jobs4) .stg.s5::before{content:"";position:absolute;left:50%;top:-42px;height:42px;width:2px;margin-left:-1px;
+.stages:not(.jobs4) .stg.s5{grid-column:1/-1;width:min(420px,56%);margin:38px auto 0;position:relative}
+.stg.s5 .s5drop{position:absolute;left:50%;top:-40px;height:40px;width:2px;margin-left:-1px;
   background:linear-gradient(180deg,rgba(217,122,43,.5),rgba(30,158,87,.55))}
+.stg.s5 .s5drop .vdot{left:0;margin-left:-2.5px}
+.stages.jobs4 .stg.s5 .s5drop{display:none}
 .fdot{position:absolute;top:-2.5px;width:7px;height:7px;border-radius:50%;background:var(--blue);
   box-shadow:0 0 8px rgba(66,133,244,.65);opacity:0;animation:travel 5.4s linear infinite}
 .fdot.d2{animation-delay:1.8s}.fdot.d3{animation-delay:3.6s}
@@ -478,7 +480,9 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .pipe-sec .idcell .co{font-size:13px}
 .pipe-sec .tp{font-size:9.5px;padding:2px 8px;justify-self:start}
 .pipe-sec .wincell{font-size:9px}
-.pipe-sec .strengthcell svg{display:none}
+/* the card shows the score as the ring, not the number — the precise
+   figure lives in the dossier */
+.pipe-sec .strengthcell .sn{display:none}
 /* quieter rows the further down the pipeline */
 .pipe-sec.t-dev .strip-h,.pipe-sec.t-watch .strip-h{opacity:.88}
 /* full-page dossier view: one open lead, a back button, nothing else */
@@ -630,8 +634,11 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 <nav class="siderail">
   <span class="sr-logo"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#3E5C84"/><text x="50" y="55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="30" letter-spacing="-1.5" fill="#fff">VMA</text><text x="51" y="76" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="300" font-size="13.5" letter-spacing="3" fill="#fff">GROUP</text></svg></span>
   <span class="sr-sep"></span>
-  <button type="button" class="sr-btn on" id="vbEngine" title="Leads">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 19.5h17"/><path d="M4.5 15.5l4.5-4.5 3.5 3.5 7-7.5"/><path d="M15.5 7h4v4"/></svg>
+  <button type="button" class="sr-btn on" id="vbEngine" title="Warm Signals">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5v-8"/><circle cx="12" cy="11" r="1.6" fill="currentColor" stroke="none"/><path d="M8.5 14.5a5 5 0 0 1 0-7"/><path d="M15.5 7.5a5 5 0 0 1 0 7"/><path d="M5.6 17.4a9 9 0 0 1 0-12.8"/><path d="M18.4 4.6a9 9 0 0 1 0 12.8"/></svg>
+  </button>
+  <button type="button" class="sr-btn" id="vbJobs" title="Live Jobs">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7.5" width="18" height="13" rx="2.5"/><path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5"/><path d="M3 12.5h18"/><path d="M12 11.5v2.5"/></svg>
   </button>
   <button type="button" class="sr-btn" id="vbCal" title="Calendar">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>
@@ -686,6 +693,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
             <span class="ppill"><i></i>VMA Testing</span></div></div>
           <div class="num" id="st4">0</div><div class="lbl" id="sl4"></div><div class="cap" id="cap4"></div></div>
         <div class="stg s5">
+          <div class="s5drop"><span class="vdot"></span><span class="vdot d2"></span></div>
           <div class="mini"><div class="collate">
             <span class="sheetfly"><i style="width:80%"></i><i style="width:55%"></i><i class="hl" style="width:90%"></i><i style="width:65%"></i></span>
             <span class="sheetfly f2"><i style="width:70%"></i><i class="hl" style="width:85%"></i><i style="width:50%"></i><i style="width:75%"></i></span>
@@ -694,11 +702,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
             <canvas class="dissolve" id="m5fx"></canvas></div>
           <div class="num" id="st5">0</div><div class="lbl" id="sl5"></div><div class="cap" id="cap5"></div></div>
       </div>
-      <div class="boardbar">
-        <div class="seg" id="modeSeg">
-          <button data-m="leads" class="on">Warm Signals</button>
-          <button data-m="jobs">Live Jobs</button>
-        </div>
+      <div class="boardbar" id="boardbar">
         <div class="ctrls" id="leadCtrls">
           <div class="ctrl"><button type="button" class="ctrlbtn" data-menu="filtmenu">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.2V19l-4 2v-7.8z"/></svg>
@@ -770,7 +774,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
       <div id="dossierView" style="display:none">
         <button type="button" class="backbtn" id="backBtn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-          Back to portfolio</button>
+          Back to all signals</button>
         <div id="dossierBody"></div>
       </div>
     </div>
@@ -1068,16 +1072,26 @@ function countUp(el,target){const t0=performance.now();
 /* ---------- views ---------- */
 function setView(v){
   view=v;
-  $('v-engine').classList.toggle('on',view==='engine');
+  /* Warm Signals and Live Jobs are separate pages sharing the engine
+     container — the mode drives which pipeline + board renders */
+  const eng=(view==='engine'||view==='jobs');
+  $('v-engine').classList.toggle('on',eng);
   $('v-cal').classList.toggle('on',view==='cal');
   $('v-shop').classList.toggle('on',view==='shop');
   $('vbEngine').classList.toggle('on',view==='engine');
+  $('vbJobs').classList.toggle('on',view==='jobs');
   $('vbCal').classList.toggle('on',view==='cal');
   $('vbShop').classList.toggle('on',view==='shop');
   /* the dev-only footer belongs to the leads pages only */
-  $('devFoot').style.display=(view==='engine')?'':'none';
+  $('devFoot').style.display=eng?'':'none';
+  if(eng){
+    const m=(view==='jobs')?'jobs':'leads';
+    if(m!==mode){mode=m;filt='ready';sort=(mode==='leads')?'strength':'new';}
+    renderEngine();renderBoard();
+  }
 }
 $('vbEngine').addEventListener('click',()=>setView('engine'));
+$('vbJobs').addEventListener('click',()=>setView('jobs'));
 $('vbCal').addEventListener('click',()=>setView('cal'));
 $('vbShop').addEventListener('click',()=>setView('shop'));
 
@@ -1288,9 +1302,9 @@ function renderSecCtrls(){
   });
 }
 function renderCtrls(){
-  /* the global bar serves jobs mode only — leads filters live in the
-     section headers */
-  $('leadCtrls').style.display=(mode==='leads')?'none':'';
+  /* the global bar serves the Live Jobs page only — leads filters live
+     in the section headers, so the stages flow straight into the cards */
+  $('boardbar').style.display=(mode==='leads')?'none':'';
   $('filtmenu').innerHTML=FILTS.map(f=>'<button data-f="'+f[0]+'"'+(filt===f[0]?' class="on"':'')+'>'+f[1][mode]+'</button>').join('');
   $('filtLbl').textContent=FILTS.find(f=>f[0]===filt)[1][mode];
   $('sortmenu').innerHTML=SORTS[mode].map(s=>'<button data-s="'+s[0]+'"'+(sort===s[0]?' class="on"':'')+'>'+s[1]+'</button>').join('');
@@ -1652,11 +1666,6 @@ $('cprompt').addEventListener('keydown',e=>{if(e.key==='Enter')$('composerSend')
 
 /* ---------- global events ---------- */
 document.addEventListener('click',e=>{
-  const ms=e.target.closest('#modeSeg button');
-  if(ms&&ms.dataset.m!==mode){mode=ms.dataset.m;
-    document.querySelectorAll('#modeSeg button').forEach(x=>x.classList.toggle('on',x===ms));
-    filt='ready';sort=(mode==='leads')?'strength':'new';
-    renderEngine();renderBoard();return;}
   const mb=e.target.closest('[data-menu]');
   if(mb){const m=$(mb.dataset.menu);
     document.querySelectorAll('.ctrlmenu.open').forEach(x=>{if(x!==m)x.classList.remove('open');});

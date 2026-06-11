@@ -56,3 +56,27 @@ def test_compose_ignores_malformed_events():
     out = compose_why_now([None, {}, {"trigger_label": "  "}],
                           "Base.", "t")
     assert out == "Base. Fee case: t"
+
+
+# ====================================================================
+# hire_hint — the seat line states what the SIGNAL indicates
+# ====================================================================
+def test_hire_hint_is_broad_where_the_trigger_is_broad():
+    from tool.why_now import hire_hint
+    # Growth/transaction triggers fund builds across both desks.
+    assert hire_hint(["secured_financing"]) == \
+        "Comms & marketing team build-out (growth or transaction funded)"
+    assert hire_hint(["mna"], marketing=True).startswith(
+        "Marketing & brand team build-out")
+
+
+def test_hire_hint_matches_the_trigger_class():
+    from tool.why_now import hire_hint
+    assert hire_hint(["comms_leader_departure"]) == \
+        "Replacement for an open senior comms seat"
+    assert hire_hint(["crisis_event"]) == "Crisis-response comms leadership"
+    assert hire_hint(["ceo_change"]) == \
+        "Senior comms reshuffle under new leadership"
+    assert hire_hint(["ceo_change"], marketing=True) == \
+        "Senior marketing reshuffle under new leadership"
+    assert hire_hint([]) == "Senior comms hire likely"
