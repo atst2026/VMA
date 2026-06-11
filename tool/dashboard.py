@@ -773,6 +773,21 @@ def _outreach_test_recipient() -> str:
         return ""
 
 
+def _outreach_brochure_info() -> dict:
+    """{name, mb} when the corporate brochure will ride on sends, {}
+    when it's absent or disabled — drives the attachment line in the
+    Send Outreach modal so the AD can see what the prospect receives."""
+    try:
+        from tool.outreach import _brochure_attachment, BROCHURE_FILENAME
+        att = _brochure_attachment()
+        if not att:
+            return {}
+        return {"name": BROCHURE_FILENAME,
+                "mb": round(len(att[0][1]) / 1048576, 1)}
+    except Exception:
+        return {}
+
+
 def draft_outreach_for_predictor(predictor: dict) -> str:
     """The soft opener — the AD-defined script. The engine knows the
     trigger, the predicted seat and the window; the opener deliberately
@@ -2639,6 +2654,7 @@ def _render_dashboard(legacy: bool = False):
         leads=leads,
         outreach_test_mode=_outreach_test_mode(),
         outreach_test_recipient=_outreach_test_recipient(),
+        outreach_brochure=_outreach_brochure_info(),
         predictors=predictors,
         funding_events=funding_events,
         premarket_rows=premarket_rows,
@@ -4460,6 +4476,10 @@ TEMPLATE = r"""
       border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
       font: inherit; font-size: 13px; }
     #om-body { resize: vertical; }
+    .om-attach { display: flex; align-items: center; gap: 7px; margin-top: 10px;
+      padding: 8px 12px; background: #F4F7FC; border: 1px solid rgba(60,64,67,.12);
+      border-radius: 9px; font-size: 12.5px; }
+    .om-attach b { font-weight: 650; }
     .om-actions { display: flex; gap: 8px; align-items: center; margin-top: 12px;
       flex-wrap: wrap; }
     #om-send:disabled { opacity: .45; cursor: not-allowed; transform: none; }
@@ -8383,6 +8403,9 @@ async function loadRecentReports() {
         <input id="om-subject" type="text">
         <label class="om-lab" for="om-body">Message — the identification + opt-out footer is appended automatically</label>
         <textarea id="om-body" rows="12"></textarea>
+        {% if outreach_brochure %}
+        <div class="om-attach">📎 <b>{{ outreach_brochure.name }}</b><span class="om-dim"> · {{ outreach_brochure.mb }} MB — attached to every send</span></div>
+        {% endif %}
         <div class="om-actions">
           <button class="btn-mini" id="om-send" type="button">⮞ Send</button>
           <button class="btn-mini" id="om-copy" type="button">Copy text</button>
