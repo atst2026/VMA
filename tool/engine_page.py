@@ -317,7 +317,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .ctrlmenu button.on::after{content:"✓";margin-left:auto;font-weight:800;color:var(--deep)}
 .strip{border-bottom:1px solid var(--hair)}
 .strip:last-of-type{border-bottom:none}
-.strip-h{display:grid;grid-template-columns:34px 1fr 150px 104px 86px 30px;gap:14px;align-items:center;
+.strip-h{display:grid;grid-template-columns:1fr 150px 104px 86px 30px;gap:14px;align-items:center;
   padding:15px 4px;cursor:pointer;transition:background .15s;border-radius:16px}
 .strip-h:hover{background:rgba(255,255,255,.5)}
 .strip-h:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
@@ -423,19 +423,35 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .gap{flex:1}
 .openerbox{margin:14px 28px 0;padding:11px 14px;border-left:2px solid var(--vma);border-radius:0 12px 12px 0;
   background:rgba(62,92,132,.06);font-size:12.5px;line-height:1.62;color:var(--ink2)}
-.bl-toggle{display:inline-flex;align-items:center;gap:8px;font:600 11.5px 'Inter';color:var(--muted);
-  background:none;border:none;cursor:pointer;padding:14px 4px 2px}
-.bl-toggle:hover{color:var(--deep)}
-.bl-toggle .chev2{transition:transform .25s;display:inline-flex}
-.bl-toggle.on .chev2{transform:rotate(180deg)}
-.bl-toggle svg{width:13px;height:13px}
-.bl-list{max-height:0;overflow:hidden;transition:max-height .35s ease}
-.bl-list.on{max-height:560px;overflow-y:auto}
-.bl-row{display:grid;grid-template-columns:34px 1fr 150px auto;gap:14px;align-items:center;
-  padding:10px 4px;border-bottom:1px solid rgba(16,22,38,.05);opacity:.78}
-.bl-row .co2{font-weight:600;font-size:12.5px;display:flex;gap:8px;align-items:center;min-width:0}
-.bl-row .gw{font-size:10.5px;color:var(--amb);text-align:right;max-width:420px}
-.bl-row.blocked .gw{color:var(--red)}
+/* ---- the pipeline past PACKAGED INTO PORTFOLIO ----
+   A vertical trunk rail (same gradient/flow language as the horizontal
+   stage rail) carries the packaged leads downwards and fans them into
+   the three portfolio sections: Ready / Developing / Watch. */
+#pipeSections{position:relative;margin-top:16px;padding-left:36px}
+#pipeSections .vtrunk{position:absolute;left:12px;top:-12px;bottom:26px;width:2px;z-index:0;
+  background:linear-gradient(180deg,rgba(30,158,87,.55),rgba(66,133,244,.5),rgba(217,122,43,.5),rgba(154,160,166,.45))}
+.vdot{position:absolute;left:-2.5px;width:7px;height:7px;border-radius:50%;background:var(--blue);
+  box-shadow:0 0 8px rgba(66,133,244,.65);opacity:0;animation:travelY 5.4s linear infinite}
+.vdot.d2{animation-delay:1.8s}.vdot.d3{animation-delay:3.6s}
+@keyframes travelY{0%{top:0;opacity:0}8%{opacity:1}86%{opacity:1}100%{top:calc(100% - 7px);opacity:0}}
+.pipe-sec{position:relative;z-index:1;margin-bottom:16px;border-radius:16px;
+  background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.88);
+  box-shadow:0 4px 14px rgba(26,61,124,.06);padding:4px 16px 8px}
+.pipe-sec .pnode{position:absolute;left:-29px;top:24px;width:10px;height:10px;border-radius:50%;
+  border:2px solid #fff;box-shadow:0 0 0 2px currentColor,0 0 10px currentColor;background:currentColor}
+.pipe-sec::before{content:"";position:absolute;left:-19px;top:29px;width:19px;height:2px;
+  background:currentColor;opacity:.35}
+.pipe-sec.t-ready{color:var(--grn)}
+.pipe-sec.t-dev{color:var(--amb)}
+.pipe-sec.t-watch{color:var(--dim)}
+.pipe-sec-h{display:flex;align-items:center;gap:12px;padding:13px 2px 11px;border-bottom:1px solid var(--hair)}
+.pipe-sec .plbl{font:700 10px var(--mono);letter-spacing:.22em;color:currentColor}
+.pipe-sec .pcap{font-size:10.5px;color:var(--muted);margin-top:3px}
+.pipe-sec .pcount{margin-left:auto;font:700 22px var(--disp);letter-spacing:-.02em;color:currentColor}
+.pipe-sec-list{color:var(--ink)}
+.pipe-sec-list .pempty{padding:16px 4px;font-size:12px;color:var(--dim)}
+/* quieter rows the further down the pipeline */
+.pipe-sec.t-dev .strip-h,.pipe-sec.t-watch .strip-h{opacity:.88}
 /* calendar */
 .calwrap{position:relative}
 .calgrid{border:1px solid rgba(255,255,255,.75);border-radius:20px;overflow:hidden;background:rgba(255,255,255,.4)}
@@ -659,11 +675,39 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
         </div>
       </div>
       <div id="strips"></div>
-      <button type="button" class="bl-toggle" id="blToggle">
-        <span class="chev2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
-        <span id="blLabel"></span>
-      </button>
-      <div class="bl-list" id="blList"></div>
+      <!-- The pipeline continues past PACKAGED INTO PORTFOLIO: a vertical
+           rail carries the packaged leads down and fans them into the
+           three portfolio sections. Leads mode only. -->
+      <div id="pipeSections">
+        <div class="vtrunk"><span class="vdot"></span><span class="vdot d2"></span><span class="vdot d3"></span></div>
+        <div class="pipe-sec t-ready" id="sec-ready">
+          <span class="pnode"></span>
+          <div class="pipe-sec-h">
+            <div><div class="plbl">READY</div>
+              <div class="pcap">Gate-passed and corroborated — call this week</div></div>
+            <span class="pcount" id="cnt-ready">0</span>
+          </div>
+          <div class="pipe-sec-list" id="list-ready"></div>
+        </div>
+        <div class="pipe-sec t-dev" id="sec-dev">
+          <span class="pnode"></span>
+          <div class="pipe-sec-h">
+            <div><div class="plbl">DEVELOPING</div>
+              <div class="pcap">Real signal, not yet call-ready — corroborate before opening</div></div>
+            <span class="pcount" id="cnt-dev">0</span>
+          </div>
+          <div class="pipe-sec-list" id="list-dev"></div>
+        </div>
+        <div class="pipe-sec t-watch" id="sec-watch">
+          <span class="pnode"></span>
+          <div class="pipe-sec-h">
+            <div><div class="plbl">WATCH</div>
+              <div class="pcap">Early or thin — monitored; promotes itself when it stacks</div></div>
+            <span class="pcount" id="cnt-watch">0</span>
+          </div>
+          <div class="pipe-sec-list" id="list-watch"></div>
+        </div>
+      </div>
     </div>
 
     <!-- ============ VIEW: calendar ============ -->
@@ -930,7 +974,6 @@ const esc=s=>(s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').r
 const BD=(window.MR_BD||[]).map((l,i)=>({...l,_id:'b'+i,status:l.status||'active'}));
 const JOBS=(window.MR_JOBS||[]).map((l,i)=>({...l,_id:'j'+i,status:l.status||'active'}));
 const BYID={};BD.concat(JOBS).forEach(l=>{BYID[l._id]=l;});
-const TIER_WORD={dev:'Developing',early:'Watch',blocked:'Blocked',ready:'Ready'};
 const VER_LABEL={reg:'Registry-attested',multi:'2+ sources',single:'Single source'};
 const MEANING={
   seat:"SEAT — is there a real, vacant or forming senior seat to fill?",
@@ -980,12 +1023,12 @@ $('pipeDate').textContent=new Date().toLocaleDateString('en-GB',
 /* ---------- engine stages + trigger pills ---------- */
 const STAGES={
   leads:{slots:[1,2,3,4,5],
-    lbl:['SEARCHED','FILTERED','BUILT OUT','STRESS-TESTED','READY LEADS'],
+    lbl:['SEARCHED','FILTERED','BUILT OUT','STRESS-TESTED','PACKAGED INTO PORTFOLIO'],
     cap:['Automated agent search for any hiring signal',
          'Back-end filters coded to pick up and pull senior seat signals for this desk',
          'Cross-source intelligence to turn signals into comprehensive leads',
          'Each lead undergoes rigorous testing in order to minimise noise and cold calls',
-         'Scored, ranked, and synthesised into brief dossier — ready for AD']},
+         'Scored, ranked, and synthesised into brief dossiers — sorted into Ready / Developing / Watch below']},
   jobs:{slots:[1,2,4,5],
     lbl:['SEARCHED','FILTERED','VERIFIED','COMPILED AND READY'],
     cap:['Autonomous search of the internet for job vacancies',
@@ -1161,7 +1204,7 @@ setInterval(()=>{
 },1000);
 
 /* ---------- board ---------- */
-const FILTS=[['ready',{leads:'Ready Leads',jobs:'Live Jobs'}],['unc',{leads:'Uncategorised',jobs:'Uncategorised'}],
+const FILTS=[['ready',{leads:'Packaged into Portfolio',jobs:'Live Jobs'}],['unc',{leads:'Uncategorised',jobs:'Uncategorised'}],
   ['new',{leads:'New today',jobs:'New today'}],['followed',{leads:'Followed up',jobs:'Followed up'}],
   ['dismissed',{leads:'Dismissed',jobs:'Dismissed'}]];
 const SORTS={leads:[['strength','Strongest opportunity'],['window','Soonest window'],['new','Newest first']],
@@ -1257,11 +1300,9 @@ function stripHTML(l,i){
   const cls=(l.status==='followed_up'?' done-fu':'')+(l.status==='dismissed'?' done-dis':'');
   return '<div class="strip'+cls+'" data-id="'+l._id+'">'
     +'<div class="strip-h" tabindex="0" data-qa="lead-trigger" data-id="'+l._id+'">'
-    +'<span class="rank">'+String(i+1).padStart(2,'0')+'</span>'
     +'<div class="idcell"><div class="co"><span class="nm">'+esc(l.co)+'</span>'
     +(l.isNew?'<span class="tag-new">NEW</span>':'')
-    +(l.conflict?'<span class="tag-dnc">DO NOT CALL</span>':'')+'</div>'
-    +'<div class="seat">'+esc(l.seat||'')+'</div></div>'
+    +(l.conflict?'<span class="tag-dnc">DO NOT CALL</span>':'')+'</div></div>'
     +'<span class="tp '+(l.key||'lead')+'">'+esc(l.type||'Signal')+'</span>'
     +'<span class="wincell">'+esc((l.win||'').toUpperCase())+'</span>'
     +'<span class="strengthcell '+sband(l.score||0)+'"><span class="sn">'+(l.score==null?'—':l.score)+'</span>'+miniArc(l.score)+'</span>'
@@ -1312,8 +1353,7 @@ function statusFilter(l){
 }
 function renderBoard(){
   const isLeads=mode==='leads';
-  $('blToggle').style.display=isLeads?'':'none';
-  $('blList').classList.remove('on');$('blToggle').classList.remove('on');
+  $('pipeSections').style.display=isLeads?'':'none';
   renderCtrls();
   if(!isLeads){
     let jobs=JOBS.filter(statusFilter);
@@ -1321,29 +1361,28 @@ function renderBoard(){
     else jobs.sort((a,b)=>(b.isNew?1:0)-(a.isNew?1:0)||(a.co||'').localeCompare(b.co||''));
     $('strips').innerHTML=jobs.length?jobs.map((j,i)=>jobRow(j,i)).join('')
       :'<div style="padding:26px 4px;font-size:12.5px;color:var(--dim)">Nothing under this filter.</div>';
-    $('blLabel').textContent='';$('blList').innerHTML='';
     return;
   }
-  /* blocked leads (competing recruiter, freeze, administration) never
-     surface — the engine simply doesn't show them */
-  const readyAll=BD.filter(l=>(l.tier||'ready')==='ready'&&!l.conflict);
-  const rest=BD.filter(l=>l.tier==='dev'||l.tier==='early');
-  let ready=readyAll.filter(statusFilter);
-  if(sort==='window')ready.sort((a,b)=>winWeeks(a.win)-winWeeks(b.win)||(b.score||0)-(a.score||0));
-  else if(sort==='new')ready.sort((a,b)=>((a.age===''?99:a.age)??99)-((b.age===''?99:b.age)??99)||(b.score||0)-(a.score||0));
-  else ready.sort((a,b)=>(b.score||0)-(a.score||0));
-  $('strips').innerHTML=ready.length?ready.map((l,i)=>stripHTML(l,i)).join('')
-    :'<div style="padding:26px 4px;font-size:12.5px;color:var(--dim)">Nothing under this filter.</div>';
-  const nDev=rest.filter(l=>l.tier==='dev').length,
-        nEarly=rest.filter(l=>l.tier==='early').length;
-  $('blLabel').textContent='Below the line — '+nDev+' developing · '+nEarly+' watch';
-  $('blList').innerHTML=rest.map(l=>'<div class="bl-row'+(l.tier==='blocked'?' blocked':'')+'">'
-    +'<span class="rank">·</span>'
-    +'<div class="co2"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(l.co)+'</span>'
-    +(l.tier==='blocked'||l.conflict?'<span class="tag-dnc">DO NOT CALL</span>':'')
-    +'<span style="font:600 9px var(--mono);letter-spacing:.1em;color:var(--dim)">'+(TIER_WORD[l.tier]||'').toUpperCase()+'</span></div>'
-    +'<span class="tp '+(l.key||'lead')+'">'+esc(l.type||'Signal')+'</span>'
-    +'<span class="gw">'+esc(l.gateWhy||'')+'</span></div>').join('');
+  $('strips').innerHTML='';
+  /* the pipeline continues past PACKAGED INTO PORTFOLIO: every packaged
+     lead lands in exactly one portfolio section. Blocked leads
+     (competing recruiter, freeze, administration) never surface —
+     the engine simply doesn't show them */
+  const sortFn=sort==='window'
+    ?(a,b)=>winWeeks(a.win)-winWeeks(b.win)||(b.score||0)-(a.score||0)
+    :sort==='new'
+    ?(a,b)=>(((a.age===''?99:a.age)??99)-((b.age===''?99:b.age)??99))||(b.score||0)-(a.score||0)
+    :(a,b)=>(b.score||0)-(a.score||0);
+  const secOf=l=>l.tier==='ready'?'ready':l.tier==='dev'?'dev':'watch';
+  const secs={ready:[],dev:[],watch:[]};
+  BD.filter(l=>l.tier!=='blocked'&&!l.conflict&&statusFilter(l))
+    .forEach(l=>secs[(l.tier||'ready')==='blocked'?'watch':secOf(l)].push(l));
+  ['ready','dev','watch'].forEach(k=>{
+    const arr=secs[k].sort(sortFn);
+    $('cnt-'+k).textContent=arr.length;
+    $('list-'+k).innerHTML=arr.length?arr.map((l,i)=>stripHTML(l,i)).join('')
+      :'<div class="pempty">Nothing in this stage'+(filt==='ready'?'':' under this filter')+'.</div>';
+  });
 }
 function draftOpener(id){
   const l=BYID[id],box=$('ob-'+id);if(!l||!l.opener||!box)return;
@@ -1576,8 +1615,6 @@ document.addEventListener('keydown',e=>{
     pop.classList.remove('on');
     document.querySelectorAll('.ctrlmenu.open').forEach(x=>x.classList.remove('open'));}
 });
-document.querySelectorAll('#blToggle').forEach(b=>b.addEventListener('click',()=>{
-  b.classList.toggle('on');$('blList').classList.toggle('on');}));
 
 renderEngine();renderBoard();renderCal();
 })();
