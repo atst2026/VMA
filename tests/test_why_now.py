@@ -25,7 +25,10 @@ def test_fee_driver_unknown_key_gets_default():
     assert tip
 
 
-def test_compose_stacks_chronologically_with_dates():
+def test_compose_drops_stack_chronology_preamble():
+    # The dated "Stacked and corroborated: …" preamble was removed — the
+    # narrative base line already covers the triggers; events are accepted
+    # but no longer rendered.
     events = [
         {"trigger_key": "chro_change", "trigger_label": "CHRO change",
          "published": "2026-05-28T09:00:00+00:00", "evidence": "x"},
@@ -34,10 +37,9 @@ def test_compose_stacks_chronologically_with_dates():
     ]
     label, tip = fee_driver([e["trigger_key"] for e in events])
     out = compose_why_now(events, "A comms reset usually follows", tip)
-    # Earliest first, dates rendered, count stated.
-    assert out.index("Profit warning (12 May)") < out.index("CHRO change (28 May)")
-    assert "2 independent signals" in out
-    assert "A comms reset usually follows." in out
+    assert "Stacked and corroborated" not in out
+    assert "independent signals" not in out
+    assert out.startswith("A comms reset usually follows.")
     assert out.endswith("Fee case: " + tip)
 
 
@@ -46,9 +48,9 @@ def test_compose_single_event_and_empty_degrade_gracefully():
         [{"trigger_label": "CEO change",
           "published": "2026-06-01T00:00:00+00:00"}],
         "Base line.", "tip here")
-    assert one.startswith("Signal: CEO change (1 Jun).")
-    assert "Base line." in one and one.endswith("Fee case: tip here")
-    # No events, no fee tip → exactly the base line (never worse than v1).
+    assert "Signal:" not in one
+    assert one.startswith("Base line.") and one.endswith("Fee case: tip here")
+    # No events, no fee tip → exactly the base line.
     assert compose_why_now([], "Base line.") == "Base line."
 
 

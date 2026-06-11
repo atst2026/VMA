@@ -535,6 +535,15 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .cpill .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cpill .d{margin-left:auto;font:700 8px var(--mono);color:var(--dim);flex:none}
 .cpill.openg i{box-shadow:0 0 7px rgba(18,165,148,.8);animation:breathe 3s ease-in-out infinite}
+/* NEW-item highlight: a shooting blue star orbits the pill's border until
+   the user clicks it (seen-state kept in localStorage) */
+.cpill.fresh,.wspan.fresh{overflow:visible;box-shadow:0 0 0 1.5px rgba(37,99,235,.35),0 1px 4px rgba(26,61,124,.06)}
+.cpill .nstar,.wspan .nstar{position:absolute;top:0;left:0;width:7px;height:7px;border-radius:50%;
+  background:#2563eb;box-shadow:0 0 7px 2px rgba(37,99,235,.85),-9px 0 11px 1px rgba(37,99,235,.35);
+  offset-path:border-box;offset-distance:0%;animation:nsorbit 2.4s linear infinite;
+  pointer-events:none;z-index:3}
+@keyframes nsorbit{from{offset-distance:0%}to{offset-distance:100%}}
+.cpill.fresh{position:relative}
 /* window bars: they start and end exactly where the window does */
 .wtrack{position:relative;grid-column:2/-1;border-left:1px solid rgba(16,22,38,.04)}
 .wtrack .mline{position:absolute;top:0;bottom:0;width:1px;background:rgba(16,22,38,.04);pointer-events:none}
@@ -739,7 +748,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
           <div class="pipe-sec t-ready" id="sec-ready">
             <div class="pipe-sec-h">
               <div><div class="plbl"><span class="pnode"></span>READY</div>
-                <div class="pcap">Gate-passed and corroborated — call this week</div></div>
+                <div class="pcap">Passed all checks — ready for AD</div></div>
               <span class="pcount" id="cnt-ready">0</span>
               <span class="secctrls">
                 <button type="button" class="ictrl" data-menu="fm-ready" title="Filter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.2V19l-4 2v-7.8z"/></svg></button>
@@ -767,7 +776,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
           <div class="pipe-sec t-watch" id="sec-watch">
             <div class="pipe-sec-h">
               <div><div class="plbl"><span class="pnode"></span>WATCH</div>
-                <div class="pcap">Early or thin — monitored until it stacks</div></div>
+                <div class="pcap">Early or thin — monitor and consider nurturing</div></div>
               <span class="pcount" id="cnt-watch">0</span>
               <span class="secctrls">
                 <button type="button" class="ictrl" data-menu="fm-watch" title="Filter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.2V19l-4 2v-7.8z"/></svg></button>
@@ -1072,6 +1081,21 @@ let toastT=null,openerT=null;
 function toast(m){const t=$('toast');t.innerHTML='<span class="sp">✦</span> '+esc(m);
   t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2600);}
 function ageLabel(a){if(a==null||a==='')return '';return a===0?'today':a+'d ago';}
+/* The reasoning behind the predicted window, keyed on the trigger type:
+   each window is the trigger date plus the historical lag between that
+   signal and a search actually being briefed out. */
+function winLogic(l){
+  const k=(l.key||l.idtype||'').toLowerCase();
+  if(/ceo|cfo|chro|cmo|leader|leadership/.test(k))
+    return 'based on how new leaders behave: support hires land in the first 8 weeks, and the wider team rebuild typically follows at 3–9 months once their plan forms';
+  if(/fund/.test(k))
+    return 'based on funded build-outs: the senior brief is normally released within a quarter of the raise being announced, while the growth plan is fresh';
+  if(/cluster|job/.test(k))
+    return 'based on the live ad cluster: budget is already released, so the senior search usually follows within weeks';
+  if(/rfp|tender|platform/.test(k))
+    return 'based on the procurement timetable: supplier decisions track the published tender dates';
+  return 'estimated from the trigger date plus the typical lag between this signal type and a search being briefed';
+}
 function scol(s){return s>=70?'#1E9E57':s>=45?'#D97A2B':'#8A94A6';}
 function sband(s){return s>=70?'s-hi':s>=45?'s-md':'s-lo';}
 function countUp(el,target){const t0=performance.now();
@@ -1330,15 +1354,11 @@ function portfolioHTML(l){
   if(l.ammo&&l.ammo.length)h+='<div class="prow alt"><span class="pl2">CALL AMMO</span><div class="pv">'
     +'<div class="ammohead">Sector insight to give away on the call — the value the opener promises:</div>'
     +l.ammo.map(a=>'<div class="ammoline">'+esc(a)+'</div>').join('')+'</div></div>';
-  h+='<div class="prow alt"><span class="pl2">MANDATE</span><div class="pv"><b>'+esc(l.seat||'')+'</b>'
-    +(l.win?' · decision window '+esc(l.win):'')
+  h+='<div class="prow alt"><span class="pl2">WINDOW</span><div class="pv"><b>'+esc(l.win||'Timing not yet established')+'</b>'
+    +' <span style="color:var(--muted)">— '+esc(winLogic(l))+'</span>'
     +(l.fee?' &nbsp;'+chip('fee',esc(l.fee),MEANING.fee+' '+(l.feeTip||'')):'')
     +(l.q4?' '+chip('q4',esc(l.q4),MEANING.q4):'')+'</div></div>';
-  const buyerName=l.buyer||l.predBuyer;
-  if(buyerName)h+='<div class="prow"><span class="pl2">DECISION MAKER</span><div class="pv"><b>'+esc(buyerName)+'</b>'
-    +((!l.buyer&&l.predBuyerWhy)?' <span style="color:var(--muted)">— '+esc(l.predBuyerWhy)+'</span>':'')+'</div></div>';
   if(l.champion)h+='<div class="prow alt"><span class="pl2">ROUTE IN</span><div class="pv">'+esc(l.champion)+'</div></div>';
-  if(l.opening||l.move)h+='<div class="prow"><span class="pl2">OPENING LINE</span><div class="pv">'+esc(l.opening||l.move)+'</div></div>';
   if(l.kill)h+='<div class="prow alt"><span class="pl2">RISK</span><div class="pv">'+esc(l.kill)+'</div></div>';
   if(srcs.length){
     h+='<div class="prow"><span class="pl2">SOURCES</span><div class="pv">'
@@ -1369,9 +1389,6 @@ function portfolioHTML(l){
     +'<span class="gap"></span>'
     +'<button type="button" class="btn good'+(l.status==='followed_up'?' on':'')+'" data-act="fu" data-id="'+l._id+'">✓ Followed up</button>'
     +'<button type="button" class="btn bad'+(l.status==='dismissed'?' on':'')+'" data-act="dis" data-id="'+l._id+'">✕ Dismiss</button>'
-    +'</div>'
-    +'<div class="outrow"><span class="outlbl" title="Log what actually happened — every weight in the engine is reviewed against these outcomes">OUTCOME</span>'
-    +OUTS.map(o=>'<button type="button" class="outbtn'+(l.outcome===o[0]?' on':'')+'" data-out="'+o[0]+'" data-id="'+l._id+'">'+o[1]+'</button>').join('')
     +'</div></div>';
   return h;
 }
@@ -1386,19 +1403,8 @@ function stripHTML(l,i){
     +'<span class="strengthcell '+sband(l.score||0)+'"><span class="sn">'+(l.score==null?'—':l.score)+'</span>'+miniArc(l.score)+'</span>'
     +'</div></div>';
 }
-const OUTS=[['no_answer','No answer'],['wrong_buyer','Wrong buyer'],['conversation','Conversation'],
-  ['meeting','Meeting'],['brief','Brief'],['placement','Placement']];
-function logOutcome(id,val){
-  const l=BYID[id];if(!l)return;
-  l.outcome=(l.outcome===val)?'':val;
-  document.querySelectorAll('.outbtn[data-id="'+id+'"]').forEach(b=>
-    b.classList.toggle('on',b.dataset.out===l.outcome));
-  toast(l.outcome?('Outcome logged: '+l.outcome.replace('_',' ')):'Outcome cleared');
-  fetch('/api/lead/outcome',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({id:l.rid,outcome:l.outcome,
-      snapshot:{score:l.score,tier:l.tier,prop:l.prop,qual:(l.qual||{}).total,fee:l.fee,type:l.type,key:l.key,trigger:l.why,evidence:(l.brief||'').slice(0,160),product:l.product||'',market:l.market||'',predicted_buyer:{role:l.predBuyer||l.buyer||'',rule:l.predBuyerRule||''}}})})
-    .catch(()=>{});
-}
+/* Outcome logging UI removed for now — /api/lead/outcome stays live for
+   when the section returns. */
 /* clicking ANY lead — whichever section — opens the same full-page
    dossier in place of the portfolio; Back returns to the sections */
 let dossierOpen=false;
@@ -1578,24 +1584,47 @@ function calItems(){
       loc:'',why:why,url:w.source_url||w.url||'',open:open?1:0};});
   const fw=(window.CAL_FW||[]).map((f,i)=>{
     const open=(f.status==='live'||f.status==='refresh_window'||f.in_window);
-    const a=f.window_start||f.refresh_date||f.start||null;
-    let m=monthIdx(a);if(m<0)m=0;
+    /* Each framework has its OWN re-procurement date: the refresh window
+       opens ~9 months before that framework's expiry (mirrors
+       framework_watch.REFRESH_LEAD_MONTHS). Previously every framework
+       fell into the current month because none carries window_start, so
+       they all LOOKED simultaneous. */
+    let a=f.window_start||f.refresh_date||f.start||null;
+    if(!a&&f.expiry_date){const e=new Date(f.expiry_date);
+      if(!isNaN(e)){e.setMonth(e.getMonth()-9);a=e.toISOString();}}
+    let m=monthIdx(a);
+    if(m<0){/* outside the 7-month grid: clamp open/past to now, far-future to the last column */
+      const M=window.CAL_MONTHS||[];const d=a?new Date(a):null;
+      m=(d&&!isNaN(d)&&M.length&&d>new Date(M[M.length-1].y,M[M.length-1].m+1,0))?M.length-1:0;}
     return {kind:'fw',key:'fw'+i,n:f.title||f.name||'',m:m,
-      d:open?'OPEN':(a?('FROM '+fmtD(a)):(f.status||'').toUpperCase().slice(0,12)),
-      loc:f.buyer||'',why:f.note||f.why||('Buyer: '+(f.buyer||'')),
+      d:f.window_pill||(open?'OPEN':(a?('FROM '+fmtD(a)):(f.status||'').toUpperCase().slice(0,12))),
+      loc:f.buyer||'',why:f.window_label||f.note||f.why||('Buyer: '+(f.buyer||'')),
       url:f.portal||f.url||f.source||'',open:open?1:0};});
   return {ev,wi,fw};
 }
+/* "New" pill highlighting: a blue star orbits any framework / placement
+   window / event the user hasn't clicked yet. Identity = kind+name+date,
+   remembered in localStorage; the very first visit baselines everything
+   as seen so only items that APPEAR LATER sparkle. */
+function _calSeenLoad(){try{const v=JSON.parse(localStorage.getItem('vmaCalSeen'));return Array.isArray(v)?v:null;}catch(e){return null;}}
+function _calSeenSave(a){try{localStorage.setItem('vmaCalSeen',JSON.stringify(a));}catch(e){}}
+function calSid(x){return x.kind+'|'+x.n+'|'+(x.d||'');}
 function renderCal(){
   const M=window.CAL_MONTHS||[];
   $('cgHead').innerHTML='<span></span>'+M.map((m,i)=>'<span'+(i===0?' class="today" data-td="TODAY · '+m.td+'"':'')+'>'+m.lbl+'</span>').join('');
   const it=calItems();
+  const all=[].concat(it.ev,it.wi,it.fw);
+  const ids=all.map(calSid);
+  let seen=_calSeenLoad();
+  if(!seen){seen=ids.slice();_calSeenSave(seen);}
+  const seenSet=new Set(seen);
+  all.forEach(x=>{x.fresh=seenSet.has(calSid(x))?0:1;});
   function rowHTML(label,colour,count,items){
     let cells='';
     for(let m=0;m<7;m++){
       cells+='<div class="cg-cell">'
-        +items.filter(x=>x.m===m).map(x=>'<span class="cpill '+x.kind+(x.open?' openg':'')+'" data-cal="'+x.key+'">'
-          +'<i></i><span class="n">'+esc(x.n)+'</span><span class="d">'+esc(x.d)+'</span></span>').join('')
+        +items.filter(x=>x.m===m).map(x=>'<span class="cpill '+x.kind+(x.open?' openg':'')+(x.fresh?' fresh':'')+'" data-cal="'+x.key+'">'
+          +'<i></i><span class="n">'+esc(x.n)+'</span><span class="d">'+esc(x.d)+'</span>'+(x.fresh?'<span class="nstar"></span>':'')+'</span>').join('')
         +'</div>';
     }
     return '<div class="cg-row"><div class="cg-lab"><span class="t" style="color:'+colour+'">'+label+'</span>'
@@ -1615,9 +1644,9 @@ function renderCal(){
       let lane=0;
       while(lane<lanes.length&&l<lanes[lane]+1.5)lane++;
       lanes[lane]=r;
-      return '<span class="wspan'+(x.open?' openg':'')+'" data-cal="'+x.key+'" '
+      return '<span class="wspan'+(x.open?' openg':'')+(x.fresh?' fresh':'')+'" data-cal="'+x.key+'" '
         +'style="left:'+l.toFixed(2)+'%;width:'+(r-l).toFixed(2)+'%;top:'+(9+lane*30)+'px">'
-        +'<i></i><span class="n">'+esc(x.n)+'</span><span class="d">'+esc(x.d)+'</span></span>';
+        +'<i></i><span class="n">'+esc(x.n)+'</span><span class="d">'+esc(x.d)+'</span>'+(x.fresh?'<span class="nstar"></span>':'')+'</span>';
     }).join('');
     const h=Math.max(1,lanes.length)*30+16;
     let lines='';for(let i=1;i<7;i++)lines+='<span class="mline" style="left:'+(i*100/7).toFixed(3)+'%"></span>';
@@ -1697,6 +1726,10 @@ document.addEventListener('click',e=>{
     document.querySelectorAll('.cpill.sel,.wspan.sel').forEach(x=>x.classList.remove('sel'));
     cal.classList.add('sel');
     const it=(window._calLookup||{})[cal.dataset.cal];if(!it)return;
+    /* first click clears the "new" star and remembers it */
+    if(it.fresh){it.fresh=0;cal.classList.remove('fresh');
+      const st=cal.querySelector('.nstar');if(st)st.remove();
+      const s=_calSeenLoad()||[];if(s.indexOf(calSid(it))<0){s.push(calSid(it));_calSeenSave(s);}}
     const kindLbl={ev:'EVENT',wi:'PLACEMENT WINDOW',fw:'FRAMEWORK'}[it.kind];
     const kc={ev:'#1d4ed8',wi:'#0e7c74',fw:'#6b3fb5'}[it.kind];
     pop.innerHTML='<div class="pk" style="color:'+kc+'">'+kindLbl+'</div>'
@@ -1711,8 +1744,6 @@ document.addEventListener('click',e=>{
   }
   if(!e.target.closest('.cal-pop')){pop.classList.remove('on');pop.dataset.key='';
     document.querySelectorAll('.cpill.sel,.wspan.sel').forEach(x=>x.classList.remove('sel'));}
-  const ob=e.target.closest('[data-out]');
-  if(ob){logOutcome(ob.dataset.id,ob.dataset.out);return;}
   const act=e.target.closest('[data-act]');
   if(act&&act.dataset.id){
     const id=act.dataset.id,a=act.dataset.act;

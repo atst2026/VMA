@@ -14,8 +14,6 @@ published / evidence). No fetches, no model calls — unit-tested.
 """
 from __future__ import annotations
 
-from datetime import datetime
-
 # Fee-driver classes, strongest first. A stack is classified by the
 # highest-priority class any of its triggers belongs to: a mishire
 # stacked with a funding round is "Forced & confidential", not "Growth".
@@ -105,37 +103,15 @@ def hire_hint(trigger_keys, marketing: bool = False) -> str:
     return t.format(func=func) if t else f"Senior {func} hire likely"
 
 
-def _date(iso: str | None) -> str:
-    try:
-        d = datetime.fromisoformat((iso or "").replace("Z", "+00:00"))
-        return d.strftime("%-d %b")
-    except Exception:
-        return ""
-
-
 def compose_why_now(events: list[dict], base_line: str,
                     fee_tip: str = "") -> str:
-    """Compose the v2 Why-Now: dated stack chronology + the desk-correct
-    implication (base_line, built by the caller so desk copy is
-    preserved) + the closing fee case. Degrades gracefully: with no
-    usable events it is base_line + fee case — never less than v1."""
+    """Compose the Why-Now: the desk-correct implication (base_line, built
+    by the caller so desk copy is preserved) + the closing fee case. The
+    old dated stack-chronology preamble ("Stacked and corroborated: …" /
+    "Signal: …") was dropped — it repeated the trigger labels the
+    narrative already covers and read as noise on the card. `events` is
+    kept in the signature so call sites are untouched."""
     parts: list[str] = []
-    evs = [e for e in (events or []) if isinstance(e, dict)
-           and (e.get("trigger_label") or "").strip()]
-    evs.sort(key=lambda e: e.get("published") or "")
-    if len(evs) >= 2:
-        steps = []
-        for e in evs[:4]:
-            d = _date(e.get("published"))
-            steps.append(e["trigger_label"].strip()
-                         + (f" ({d})" if d else ""))
-        parts.append(f"Stacked and corroborated: {' → '.join(steps)} — "
-                     f"{len(evs)} independent signals at this company "
-                     f"inside one window.")
-    elif len(evs) == 1:
-        d = _date(evs[0].get("published"))
-        parts.append(f"Signal: {evs[0]['trigger_label'].strip()}"
-                     + (f" ({d})." if d else "."))
     base = (base_line or "").strip()
     if base:
         parts.append(base if base.endswith((".", "!", "?")) else base + ".")
