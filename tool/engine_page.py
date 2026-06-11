@@ -61,7 +61,9 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
   box-shadow:0 12px 32px rgba(0,0,0,.32)}
 [data-tip]:hover::before{content:"";position:absolute;top:calc(100% + 3px);left:50%;transform:translateX(-50%);
   border:5px solid transparent;border-bottom-color:rgba(16,22,38,.96);z-index:60}
-.page{max-width:1232px;margin:0 auto;padding:22px 26px 56px}
+/* full-height column: header pins to the top, the active view fills the rest.
+   lets the Build-A-Deck view centre its group vertically with no magic numbers. */
+.page{max-width:1232px;margin:0 auto;padding:22px 26px 56px;min-height:100vh;display:flex;flex-direction:column}
 @keyframes breathe{0%,100%{transform:scale(1);opacity:.8}50%{transform:scale(1.18);opacity:1}}
 /* ============ the sidebar — flat, full-height, Gemini-style ============ */
 .siderail{position:fixed;left:0;top:0;bottom:0;z-index:50;width:68px;
@@ -78,7 +80,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .sr-btn svg{width:21px;height:21px}
 .sr-btn:hover{color:var(--ink);background:rgba(16,22,38,.05)}
 .sr-btn.on{color:var(--ink);background:rgba(16,22,38,.08);box-shadow:none}
-.panel{padding:0}
+.panel{padding:0;flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
 .mainhead{display:flex;align-items:center;gap:14px;padding-bottom:20px;margin-bottom:6px;
   border-bottom:1px solid var(--hair)}
 .logo-mini{width:48px;height:48px;border-radius:11px;overflow:hidden;flex:none;
@@ -131,6 +133,16 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .pin-cal .grid i.hot{background:var(--clay);box-shadow:0 0 4px rgba(217,119,87,.7)}
 .view{display:none;position:relative}
 .view.on{display:block;animation:vin .3s ease}
+/* Build-A-Deck: centre the whole group (title, subtitle, composer pill, chips)
+   as one block in the middle of the main content area — full-height flex box,
+   both axes, no fragile margins. The view grows to fill the panel height below
+   the header, so justify-content vertically centres and align-items horizontally
+   centres. (Horizontal centre = the area to the right of the fixed nav rail,
+   which is the visually balanced "centre of the page".) */
+#v-shop.on{display:flex;flex-direction:column;justify-content:center;align-items:center;flex:1 1 auto;
+  /* cancel .page's asymmetric bottom padding (56px) so the centring region is the
+     full area below the header (header.bottom → viewport bottom) — true vertical centre */
+  margin-bottom:-56px}
 @keyframes vin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .tickwrap{padding:10px 0;border-radius:999px;overflow:hidden;margin-bottom:24px;
   background:linear-gradient(135deg,rgba(255,255,255,.5),rgba(255,255,255,.22));
@@ -474,7 +486,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .cal-pop .psrc svg{width:11px;height:11px}
 /* workshop (the live Personal Assistant section, renamed) */
 /* centred within the page column, exactly like the old PA page */
-.shopwrap{max-width:900px;margin:0 auto;padding:10px 0 8px}
+.shopwrap{max-width:900px;width:100%;margin:0 auto;padding:10px 0 8px;display:flex;flex-direction:column;align-items:center}
 .ea-hero{text-align:center;margin-bottom:26px}
 .cc-bigicon{width:78px;height:78px;border-radius:18px;margin:0 auto 22px;display:grid;
   place-items:center;color:#1F1F1F;background:transparent}
@@ -962,7 +974,7 @@ const STAGES={
     cap:['Automated agent search for any hiring signal',
          'Back-end filters coded to pick up and pull senior seat signals for this desk',
          'Cross-source intelligence to turn signals into comprehensive leads',
-         'Rigorous testing performed through the code, to minimise noise and cold calls',
+         'Each lead undergoes rigorous testing in order to minimise noise and cold calls',
          'Scored, ranked, and synthesised into brief dossier — ready for AD']},
   jobs:{slots:[1,2,4,5],
     lbl:['SEARCHED','FILTERED','VERIFIED','COMPILED AND READY'],

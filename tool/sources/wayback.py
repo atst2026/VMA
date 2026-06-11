@@ -146,16 +146,27 @@ def _leading_name(segment: str) -> str | None:
     return _clean_run(run)
 
 
-def people_with_senior_role(html: str) -> set[str]:
-    """Return the set of person names that sit next to a senior comms /
-    marketing role phrase on the page. Leadership pages render either
-    'Name then Title' or 'Title then Name', so for each role hit we take the
-    clean Title-Case run immediately before AND after it. Role / title words
-    are excluded token-by-token, so flattened text that interleaves names and
-    titles ('Sarah Mitchell Chief Communications Officer James Okoro …') still
-    yields clean person names and an exact old-vs-new diff."""
+def _display_role(matched: str) -> str:
+    """Normalise a matched role phrase for display ('cmo' -> 'Chief
+    Marketing Officer', otherwise title-case the phrase)."""
+    r = _WS_RX.sub(" ", matched or "").strip()
+    if r.lower() == "cmo":
+        return "Chief Marketing Officer"
+    return r.title()
+
+
+def roster_with_roles(html: str) -> dict[str, str]:
+    """Return {person name: role} for every person who sits next to a
+    senior comms / marketing role phrase on the page. Leadership pages
+    render either 'Name then Title' or 'Title then Name', so for each role
+    hit we take the clean Title-Case run immediately before AND after it.
+    Role / title words are excluded token-by-token, so flattened text that
+    interleaves names and titles ('Sarah Mitchell Chief Communications
+    Officer James Okoro …') still yields clean person names and an exact
+    old-vs-new diff. Feeds both the departure diff and the living team
+    map (tool/team_map.py)."""
     text = _page_text(html)
-    people: set[str] = set()
+    roster: dict[str, str] = {}
     for m in _SENIOR_ROLE_RX.finditer(text):
         before = text[max(0, m.start() - 80):m.start()]
         after = text[m.end():m.end() + 80]
@@ -165,8 +176,14 @@ def people_with_senior_role(html: str) -> set[str]:
         # name AFTER the title for 'Title then Name' pages.
         nm = _trailing_name(before) or _leading_name(after)
         if nm and nm not in _NAME_STOPWORDS:
-            people.add(nm)
-    return people
+            roster.setdefault(nm, _display_role(m.group(0)))
+    return roster
+
+
+def people_with_senior_role(html: str) -> set[str]:
+    """The set of person names next to a senior comms/marketing role
+    phrase — the roster without its roles (the departure diff's view)."""
+    return set(roster_with_roles(html))
 
 
 def _cdx_nearest(url: str, days_ago: int) -> str | None:
@@ -236,6 +253,15 @@ def diff_company(company: str, url: str,
     live_html = _fetch(url)
     if not live_html:
         return []
+    roster_now = roster_with_roles(live_html)
+    # Living team map: fold today's parsed roster in so the current team
+    # (and every observed joiner/leaver) accumulates per company — even on
+    # runs where no archived snapshot exists for the departure diff.
+    try:
+        from tool import team_map as _team_map
+        _team_map.update_roster(company, url, roster_now)
+    except Exception as e:
+        log.info("team map update failed for %s: %s", company, e)
     ts = _cdx_nearest(url, lookback_days)
     if not ts:
         return []
@@ -243,7 +269,7 @@ def diff_company(company: str, url: str,
     old_html = _fetch(f"{WAYBACK_BASE}/{ts}id_/{url}")
     if not old_html:
         return []
-    now_people = people_with_senior_role(live_html)
+    now_people = set(roster_now)
     then_people = people_with_senior_role(old_html)
     departed = then_people - now_people
     # Guard: if the live page parsed to zero people, the page layout/JS

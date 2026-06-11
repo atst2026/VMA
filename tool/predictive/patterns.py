@@ -527,6 +527,61 @@ COMMS_LEADER_DEPARTURE = TriggerType(
 )
 
 
+# ---- CMO / marketing-leader appointment or departure --------------------
+# The pre-vacancy trigger the taxonomy under-covered: an incoming CMO
+# rebuilds the marketing leadership team in their first 90 days, and a CMO
+# departure opens the top marketing seat itself. Bare "CMO" collides with
+# Chief Medical / Manufacturing Officer (pharma, manufacturing), so the
+# detector drops any hit where CMO_NON_MARKETING_RX also matches.
+_CMO_TITLE = (
+    r"\b(?:chief marketing officer|cmo|chief brand officer|"
+    r"(?:group |global )?marketing director|director of marketing|"
+    r"head of marketing|brand director|head of brand)\b"
+)
+CMO_CHANGE = TriggerType(
+    key="cmo_change",
+    label="CMO / marketing-leader change",
+    weight=1.0,
+    lead_time_weeks=(4, 12),
+    who_to_call=("The incoming CMO directly (appointment) / CEO office "
+                 "(departure) — incoming CMOs rebuild their team in the "
+                 "first 90 days"),
+    implication=(
+        "CMO / senior marketing-leader change at {company}. An incoming "
+        "CMO typically rebuilds the marketing leadership team within "
+        "their first 90 days; a departure opens the seat itself. Senior "
+        "marketing / brand hires follow within 4–12 weeks."
+    ),
+    patterns=[
+        re.compile(p, re.IGNORECASE) for p in (
+            # Appointment phrasings
+            r"(?:appoints?|names?|hires?|promotes?)\b.{0,45}?(?:as (?:its |their |the )?)?(?:first |new |incoming |global |group )?" + _CMO_TITLE,
+            r"appointment of.{0,45}?" + _CMO_TITLE,
+            r"\b(?:new|incoming) " + _CMO_TITLE,
+            r"joins?\b.{0,40}?\bas (?:its |their |the )?(?:first |new )?" + _CMO_TITLE,
+            # Departure phrasings — title first, then verb
+            _CMO_TITLE + r".{0,40}?(?:steps? down|stepping down|to step down|departs?|departing|to depart|to leave|leaves|exit(?:s|ed|ing)|resigns?|has left|moves? on)",
+            # Verb first, then title
+            r"(?:departs?|leaves|exits?|resigns?|steps? down|stepping down)\b.{0,40}?\b(?:as|from)(?: (?:its|their|the))? " + _CMO_TITLE,
+            r"departure of.{0,40}?" + _CMO_TITLE,
+            r"loses (?:its |their )?" + _CMO_TITLE,
+        )
+    ],
+)
+
+# Bare "CMO" senses that are NOT marketing: Chief Medical Officer
+# (pharma / health / NHS) and Chief Manufacturing Officer, plus contract-
+# manufacturing usage. The detector drops a cmo_change hit when this
+# matches the same item (same belt-and-braces list as the marketing
+# profile's EXCLUDE_TITLE_TERMS).
+CMO_NON_MARKETING_RX = re.compile(
+    r"\b(?:chief medical officer|chief manufacturing officer|"
+    r"medical officer|contract manufacturing|clinical|medicines|"
+    r"pharmacovigilance)\b",
+    re.IGNORECASE,
+)
+
+
 # ---- IC platform RFP / case-study leak / adjacent-job-ad mention -----
 # Internal Communications + employee-engagement platforms whose
 # purchase or RFP almost always coincides with a senior comms hire
@@ -797,6 +852,44 @@ AGENCY_ACCOUNT_MOVE = TriggerType(
 )
 
 
+# ---- New market entry / UK launch ----------------------------------------
+# A company entering the UK (or pushing into Europe / a new region) builds
+# in-country comms + marketing capability around the launch: a country
+# lead first, then the function heads. Pre-vacancy by construction — the
+# entry is announced months before any role is advertised. Patterns are
+# anchored to explicit UK / European entry language ("first UK office",
+# "enters the UK market") so generic "new office" expansion news at
+# established UK companies does not fire.
+MARKET_ENTRY = TriggerType(
+    key="market_entry",
+    label="New market entry / UK launch",
+    weight=0.7,
+    lead_time_weeks=(8, 26),
+    who_to_call=("CEO / country MD of the entering company — in-country "
+                 "comms & marketing teams are built around launch"),
+    implication=(
+        "New-market entry at {company} (UK / European launch, first local "
+        "office or HQ). Market entrants build in-country comms / marketing "
+        "capability around the launch window — a senior local hire "
+        "commonly follows within 8–26 weeks."
+    ),
+    patterns=[
+        re.compile(p, re.IGNORECASE) for p in (
+            r"\benters? the (?:uk|british|european|irish) market\b",
+            r"\bentry into the (?:uk|british|european) market\b",
+            r"\bexpand(?:s|ing)? into (?:the )?(?:uk|united kingdom|europe|britain|emea|ireland)\b",
+            r"\bexpansion into (?:the )?(?:uk|united kingdom|europe|emea)\b",
+            r"\blaunch(?:es|ing)? in the (?:uk|united kingdom)\b",
+            r"\buk (?:launch|debut)\b",
+            r"\bopens? (?:its |their |a )?first (?:uk|london|european) (?:office|store|site|hub|outpost)\b",
+            r"\bopens? (?:a |its |their )?(?:new )?(?:uk|european) (?:headquarters|hq)\b",
+            r"\bestablish(?:es|ing)? (?:a |its |their )?(?:uk|london|european) (?:presence|headquarters|hq|office|base|operation)\b",
+            r"\bsets? up (?:a |its |their )?(?:uk|european) (?:operation|office|base|subsidiary)\b",
+        )
+    ],
+)
+
+
 # ---- Public-sector framework award (agency scaling signal) ---------------
 # When a comms / PR / digital agency wins a slot on a government framework
 # (Find a Tender / Contracts Finder award notices), it will instantly need
@@ -1025,16 +1118,16 @@ MISHIRE_REVERSAL = TriggerType(
 
 
 TRIGGERS = [CEO_CHANGE, CHAIR_CHANGE, CHRO_CHANGE, CFO_CHANGE,
-            IR_DIRECTOR_CHANGE, COMMS_LEADER_DEPARTURE,
+            IR_DIRECTOR_CHANGE, COMMS_LEADER_DEPARTURE, CMO_CHANGE,
             MNA, ACTIVIST_STAKE, PE_ACQUISITION,
             REGULATOR_ACTION, REGULATOR_PROBE_EARLY, CRISIS_EVENT,
             PROFIT_WARNING, RESTRUCTURE, REDUNDANCY, IC_PLATFORM_RFP,
             IPO_LISTING, CONTRACT_LOSS, PRESS_VELOCITY_SPIKE,
             PERSONAL_BRAND_VELOCITY, NED_TRUSTEE_APPOINTMENT,
             # BD-strengthening additions
-            REBRAND, AGENCY_ACCOUNT_MOVE, FRAMEWORK_AWARD, ESG_BCORP,
-            MARTECH_ADOPTION, LEADERSHIP_TENURE, SECURED_FINANCING,
-            OWNERSHIP_CHANGE,
+            REBRAND, AGENCY_ACCOUNT_MOVE, MARKET_ENTRY, FRAMEWORK_AWARD,
+            ESG_BCORP, MARTECH_ADOPTION, LEADERSHIP_TENURE,
+            SECURED_FINANCING, OWNERSHIP_CHANGE,
             # v2 demand-first additions
             INHOUSE_SEARCH_FAILING, HIRING_RESTART, MISHIRE_REVERSAL]
 BY_KEY = {t.key: t for t in TRIGGERS}
@@ -1092,6 +1185,14 @@ if _active_profile().key == "marketing":
         "comms_leader_departure": ("CEO office / CMO — the marketing seat is open NOW",
             "Senior marketing leader has left {company}. The vacated seat is a "
             "live replacement search."),
+        "cmo_change": ("The incoming CMO directly — they rebuild the team in their first 90 days",
+            "CMO change at {company}. An incoming CMO typically rebuilds the "
+            "marketing leadership team within the first 90 days; a departure "
+            "opens the top marketing seat itself."),
+        "market_entry": ("Country MD / incoming CMO — in-country marketing is built around launch",
+            "New-market entry at {company}. UK / European launches build "
+            "in-country brand and growth-marketing teams around the launch "
+            "window."),
         "ic_platform_rfp": ("CMO / Head of Marketing",
             "Marketing / CRM platform activity at {company} signals a senior "
             "marketing hire in 6–12 weeks."),
@@ -1266,6 +1367,8 @@ _MARKETING_TRIGGER_KEYS = {
     "pe_acquisition",          # new owners refresh marketing & growth
     "ipo_listing",             # brand + investor-marketing build pre-admission
     "comms_leader_departure",  # = marketing-leader departure (profile regex)
+    "cmo_change",              # incoming CMO rebuilds the team in 90 days
+    "market_entry",            # UK/European launch builds in-country marketing
     "restructure",             # marketing function reorganised
     "press_velocity_spike",    # brand / share-of-voice surge
     "job_ad_cluster",          # cluster of mid-level marketing ads → senior hire
