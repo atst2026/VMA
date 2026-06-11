@@ -97,6 +97,90 @@ def test_resolve_lead_contact_prefers_ad_contact(tmp_path, monkeypatch):
     assert c2["email_status"] == "verified"
 
 
+def test_enrichment_stored_ad_contact_overrides_snippet():
+    s = _sig("London, England, United Kingdom")   # LinkedIn-style stub
+    s["ad_contact"] = {"name": "Jane Smith", "title": "Head of Comms",
+                       "email": "jane@x.nhs.uk", "phone": "",
+                       "source_url": "https://jobs/x"}
+    assert ad_contact.extract(s)["name"] == "Jane Smith"
+
+
+def test_fetch_and_extract_full_page(tmp_path, monkeypatch):
+    import tool.state_paths as sp
+    monkeypatch.setattr(sp, "state_root", lambda profile_key=None: tmp_path)
+    calls = {"n": 0}
+
+    def fetch(url):
+        calls["n"] += 1
+        return ("<html><script>var x=1;</script><body><h1>Head of "
+                "Communications</h1><p>" + NHS_AD + "</p></body></html>")
+
+    s = _sig("London Area, United Kingdom", url="https://beta.jobs.nhs.uk/ad1")
+    got = ad_contact.fetch_and_extract(s, fetch=fetch)
+    assert got["name"] == "Jane Smith"
+    assert got["email"] == "jane.smith@leedsth.nhs.uk"
+    # Cached: second call never refetches.
+    assert ad_contact.fetch_and_extract(s, fetch=fetch)["name"] == "Jane Smith"
+    assert calls["n"] == 1
+    # Bot-walled hosts are never fetched.
+    li = _sig("x", url="https://uk.linkedin.com/jobs/view/123")
+    assert ad_contact.fetch_and_extract(li, fetch=fetch) is None
+    assert calls["n"] == 1
+    # A full page with only a bare footer email (no name) is discarded.
+    s2 = _sig("x", url="https://example.org/ad2")
+    got2 = ad_contact.fetch_and_extract(
+        s2, fetch=lambda u: "word " * 30 + " enquiries to jane.x@acme.com")
+    assert got2 is None
+
+
+def test_enrich_signals_page_pass_names_thin_leads(tmp_path, monkeypatch):
+    import tool.state_paths as sp
+    monkeypatch.setattr(sp, "state_root", lambda profile_key=None: tmp_path)
+    for var in ("HUNTER_API_KEY", "ANTHROPIC_API_KEY"):
+        monkeypatch.delenv(var, raising=False)
+    from tool import outreach
+    from tool.hiring_manager import resolve_lead_contact
+
+    s = _sig("London, England, United Kingdom",
+             company="Leeds Teaching Hospitals",
+             url="https://beta.jobs.nhs.uk/ad9")
+    stats = outreach.enrich_signals(
+        [s], page_fetch=lambda u: "<p>" + NHS_AD + "</p>", draft_max=0)
+    assert stats["ad_page_contacts"] == 1
+    assert s["ad_contact"]["name"] == "Jane Smith"
+    c = resolve_lead_contact(s, contacts={})
+    assert c["name"] == "Jane Smith" and c["email_status"] == "published"
+
+
+def test_researcher_aborts_run_when_credits_exhausted(tmp_path, monkeypatch):
+    import tool.state_paths as sp
+    monkeypatch.setattr(sp, "state_root", lambda profile_key=None: tmp_path)
+    from tool.contacts import job_researcher as jr
+    calls = {"n": 0}
+
+    def broke_runner(brief):
+        calls["n"] += 1
+        jr._billing_down = True     # what _run_model does on the 400
+        return None
+
+    sigs = [_sig(f"role {i}", company=f"Co {i}", url=f"https://j/{i}")
+            for i in range(4)]
+    jr.research_signals(sigs, {}, runner=broke_runner)
+    assert calls["n"] == 1          # 1 failed call, 3 saved
+    assert jr.billing_error(Exception(
+        "Error code: 400 - Your credit balance is too low"))
+
+
+def test_ai_draft_breaker_short_circuits(monkeypatch):
+    from tool import outreach
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "k")
+    outreach._draft_billing_down = True
+    try:
+        assert outreach.ai_draft(_sig(NHS_AD)) is None   # no API attempt
+    finally:
+        outreach._draft_billing_down = False
+
+
 def test_non_job_signals_never_get_ad_contacts(tmp_path, monkeypatch):
     import tool.state_paths as sp
     monkeypatch.setattr(sp, "state_root", lambda profile_key=None: tmp_path)

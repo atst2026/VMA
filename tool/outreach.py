@@ -255,9 +255,18 @@ _DRAFT_SYSTEM = (
 )
 
 
+# Billing circuit-breaker for drafts: once the API says the credit
+# balance is exhausted, every further call this run would fail the same
+# way. Reset per enrichment pass.
+_draft_billing_down = False
+
+
 def ai_draft(signal: dict, contact: dict | None = None) -> str | None:
     """One personalised draft for one lead, or None (no key / weak
     output). The fixed template stays the fallback everywhere."""
+    global _draft_billing_down
+    if _draft_billing_down:
+        return None
     if not (os.environ.get("ANTHROPIC_API_KEY") or "").strip():
         return None
     c = contact if contact is not None else (signal.get("contact") or {})
@@ -290,6 +299,10 @@ def ai_draft(signal: dict, contact: dict | None = None) -> str | None:
         text = text.strip().strip("`").strip()
     except Exception as e:
         log.info("outreach draft model call failed (%s)", e)
+        if "credit balance" in str(e).lower():
+            _draft_billing_down = True
+            log.info("outreach drafts: API credit balance exhausted — "
+                     "template fallback for the rest of this run")
         return None
     # A draft with leftover placeholders or silly length is worse than
     # the fixed template — reject and fall back.
@@ -299,14 +312,20 @@ def ai_draft(signal: dict, contact: dict | None = None) -> str | None:
 
 
 # ---- The nightly enrichment pass -----------------------------------------
+AD_PAGE_FETCH_MAX = 20
+
+
 def enrich_signals(signals: list[dict], research_runner=None,
-                   draft_max: int = MAX_DRAFTS_PER_RUN) -> dict:
+                   draft_max: int = MAX_DRAFTS_PER_RUN,
+                   page_fetch=None,
+                   ad_fetch_max: int = AD_PAGE_FETCH_MAX) -> dict:
     """Run in the brief AFTER ranking, BEFORE latest_signals.json is
-    written: research contacts for the day's job leads, resolve their
-    emails, attach personalised drafts (signal['outreach_ai']). Every
-    stage degrades gracefully; returns counters for the log."""
-    stats = {"research_changes": 0, "ad_emails": 0, "email_changes": 0,
-             "domain_fills": 0, "drafts": 0}
+    written: fetch full ad pages for their printed contacts, research
+    contacts for the day's job leads, resolve their emails, attach
+    personalised drafts (signal['outreach_ai']). Every stage degrades
+    gracefully; returns counters for the log."""
+    stats = {"ad_page_contacts": 0, "research_changes": 0, "ad_emails": 0,
+             "email_changes": 0, "domain_fills": 0, "drafts": 0}
     try:
         from tool.contacts.store import (load_contacts, save_contacts,
                                          get_contact)
@@ -315,14 +334,44 @@ def enrich_signals(signals: list[dict], research_runner=None,
         from tool.hiring_manager import (is_job_like, manager_for_signal,
                                          resolve_lead_contact)
 
+        global _draft_billing_down
+        _draft_billing_down = False
         contacts = load_contacts()
         email_resolver.reset_budget()
-        stats["research_changes"] = job_researcher.research_signals(
-            signals or [], contacts, runner=research_runner)
 
         _job = [s for s in (signals or [])
                 if isinstance(s, dict) and is_job_like(s)
                 and (s.get("company") or "").strip()]
+
+        # 0. Full ad pages: the feeds only carry teasers (LinkedIn rows
+        #    store just the location; NHS/Adzuna snippets cut off before
+        #    the contact line), so fetch the actual ad for leads whose
+        #    snippet yielded nothing. Free; cached per URL forever (an
+        #    ad's text doesn't change); bot-walled hosts skipped.
+        _page_cache = ad_contact._load_cache()
+        _fetches = 0
+        for s in _job:
+            if _fetches >= ad_fetch_max:
+                break
+            if ad_contact.extract(s):
+                continue   # snippet (or an earlier run) already found one
+            url = (s.get("url") or "").strip()
+            if not url or url in _page_cache:
+                # cache says this ad was fetched before (hit or miss)
+                got = (_page_cache.get(url) or {}).get("contact")
+            else:
+                _fetches += 1
+                got = ad_contact.fetch_and_extract(s, fetch=page_fetch,
+                                                   cache=_page_cache)
+            if got:
+                s["ad_contact"] = got
+                stats["ad_page_contacts"] += 1
+        ad_contact._save_cache(_page_cache)
+
+        # Research runs AFTER the page pass so the ad-named hypothesis
+        # (now from full pages too) reaches the model's brief.
+        stats["research_changes"] = job_researcher.research_signals(
+            signals or [], contacts, runner=research_runner)
 
         # 1. Ad-named contacts missing an address — the highest-value
         #    sends, so they get first call on the email waterfall
