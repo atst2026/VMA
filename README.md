@@ -184,6 +184,50 @@ Four gaps between the pitch and the build, closed:
   name has been listed, and every observed joiner/leaver. Both ledgers
   render into the company dossiers.
 
+## BD Build v6 — the Talent-Consultancy lens (service fit)
+
+VMA is moving from recruitment-only toward a talent consultancy: the
+Advisory Services brochure sells **Strategy & Organisation Design**
+(consultation & stakeholder analysis → benchmarking & design →
+implementation — the Network Rail engagement), **Benchmarking** of
+structure / headcount / salary against comparable organisations (the
+L'Oréal "what do 10 peer comms teams look like?" report),
+**Professional Development & Coaching** (Change Oasis, Famn) and
+**ED&I Consulting** (RiverRoad, neuroinclusion). On top sit two referral
+lanes: a **partner delivery agency** (e.g. Sequel Group) when there's
+work but no headcount budget, and an **employee-engagement platform**
+introduction (e.g. Workvivo by Zoom, Staffbase) when channels are the
+gap.
+
+v6 reads every signal the engine already trusts through that catalogue
+(`tool/advisory.py: service_fit_for`) — no new fetches, no detection
+changes:
+
+- **Per-trigger service mix** — every trigger key (all predictor
+  triggers, the programmatic predictors, the standalone detectors and
+  every calendar pulse — coverage is test-enforced) maps to a ranked
+  service mix with a signal-specific reason. A funding round isn't just
+  "senior hire in ~6 months": it's *search + design-for-scale benchmark +
+  function design + the first engagement-platform decision*. An IC
+  platform RFP leads with the platform introduction; gender-pay-gap
+  season leads with ED&I consulting and literal remuneration
+  benchmarking.
+- **Stacks combine** — every event in a stack votes, so CEO change +
+  restructure surfaces org design and benchmarking above the bare hire.
+- **Budget-strain steer** — money-is-tight triggers (profit warning,
+  redundancy, restructure, contract loss, water SAR…) force a
+  project-fee route (interim / agency referral) into the mix and stamp
+  the card: perm headcount may be frozen, lead with fees that don't need
+  a requisition.
+- **Profile-aware** — the same lens re-tunes for the Marketing desk per
+  request, like the rest of the advisory layer.
+- **Surfaces** — "WHAT VMA CAN SELL" on the engine-page lead portfolio
+  and the BD radar dossier; a service-fit block on the legacy predictor
+  and funding cards; compact "Sell: …" lines on calendar pulses and the
+  specialist panels; a "Service fit" section in every company dossier
+  (voted across the company's full accumulated signal history); and a
+  per-stack "Sell:" line in the emailed pre-advert section.
+
 ## BD Build v5 — SEND OUTREACH (the button on Live Jobs)
 
 Every live job now carries the full chain from vacancy to a sent,

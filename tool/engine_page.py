@@ -517,6 +517,15 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
 .ammohead{font:600 10px var(--mono);letter-spacing:.06em;color:var(--dim);margin-bottom:6px}
 .ammoline{position:relative;padding-left:14px;margin-bottom:5px;font-size:12px;line-height:1.55}
 .ammoline::before{content:"\2022";position:absolute;left:2px;color:var(--clay)}
+/* Service-fit — the Talent-Consultancy lens: the ranked VMA service mix
+   the signal stack indicates (search/interim, Advisory Services, agency
+   referral, engagement platform). Chips colour by revenue family. */
+.svcline{display:flex;gap:8px;align-items:baseline;margin-bottom:5px;font-size:12px;line-height:1.55}
+.svcchip{flex:none;font:650 9.5px var(--mono);letter-spacing:.04em;padding:1px 8px;border-radius:9px;white-space:nowrap;
+  color:#5B459E;background:rgba(123,97,196,.12);border:1px solid rgba(123,97,196,.3)}
+.svcchip.hire{color:#1D5FA8;background:rgba(66,133,244,.1);border-color:rgba(66,133,244,.3)}
+.svcchip.referral{color:#9A6A14;background:rgba(217,151,43,.12);border-color:rgba(217,151,43,.35)}
+.svcnote{margin-top:5px;padding-top:5px;border-top:1px dashed rgba(16,22,38,.12);font-size:11.5px;font-style:italic;color:#9A6A14}
 .openerbox{margin:14px 28px 0;padding:11px 14px;border-left:2px solid var(--vma);border-radius:0 12px 12px 0;
   background:rgba(62,92,132,.06);font-size:12.5px;line-height:1.62;color:var(--ink2)}
 /* ---- the pipeline past PRODUCTION ----
@@ -1504,6 +1513,16 @@ function portfolioHTML(l){
     h+='<div class="prow"><span class="pl2">WHY NOT CALL-READY</span><div class="pv"><div class="gatebox">'+esc(l.gateWhy)+'</div></div></div>';
   }
   if(l.whyNow||l.brief)h+='<div class="prow"><span class="pl2">OPPORTUNITY</span><div class="pv">'+esc(l.whyNow||l.brief)+'</div></div>';
+  /* Service-fit — what this signal stack says the account NEEDS and VMA
+     can sell: hires, Advisory Services (org design / benchmarking /
+     coaching / ED&I) and the referral lanes (partner agency, engagement
+     platform). Budget-strained stacks carry the project-fee steer. */
+  if(l.serviceFit&&l.serviceFit.services&&l.serviceFit.services.length){
+    h+='<div class="prow alt"><span class="pl2">WHAT VMA CAN SELL</span><div class="pv">'
+      +l.serviceFit.services.map(s=>'<div class="svcline"><span class="svcchip '+esc(s.family||'advisory')+'" title="'+esc(s.label||'')+'">'+esc((s.short||s.key||'').toUpperCase())+'</span><span>'+esc(s.reason||'')+'</span></div>').join('')
+      +(l.serviceFit.budget_note?'<div class="svcnote">'+esc(l.serviceFit.budget_note)+'</div>':'')
+      +'</div></div>';
+  }
   if(l.ammo&&l.ammo.length)h+='<div class="prow alt"><span class="pl2">CALL AMMO</span><div class="pv">'
     +'<div class="ammohead">Sector insight to give away on the call — the value the opener promises:</div>'
     +l.ammo.map(a=>'<div class="ammoline">'+esc(a)+'</div>').join('')+'</div></div>';
