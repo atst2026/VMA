@@ -363,14 +363,12 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .jrow .lnk svg{width:14px;height:14px}
 .jrow.done-dis .jt,.jrow.done-dis .jc{opacity:.45;text-decoration:line-through}
 .jrow.done-fu .jt{color:#1e7a41}
-/* Live Jobs is its OWN section, wearing the same card chrome as the
-   Warm Signals pipeline sections, and scrolls inside itself instead of
-   stretching the page to the length of the list. */
-#strips{max-height:66vh;overflow-y:auto;overscroll-behavior:contain;
-  scrollbar-width:thin;border-radius:16px;
-  background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.88);
-  box-shadow:0 4px 14px rgba(26,61,124,.06);border-top:2px solid #3E5C84;
-  padding:6px 14px 8px}
+/* Live Jobs section: the card chrome comes from .pipe-sec (shared with
+   the signals sections); the list scrolls inside it. */
+.pipe-sec.t-jobs{color:#3E5C84;margin-top:14px}
+.pipe-sec-h .boardbar{padding:0;margin-left:14px}
+#strips{max-height:54vh;overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin}
 .jacts{display:inline-flex;gap:6px;justify-self:end}
 .jact{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;
   color:var(--ink2);cursor:pointer;border:1px solid rgba(60,64,67,.16);background:#fff;transition:.15s}
@@ -709,10 +707,13 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
 .shopchip .i{color:var(--ink2);font-size:13px}
 .shopchip.active{background:var(--ink);color:#fff;border-color:var(--ink)}
 .shopchip.active .i{color:#fff}
-/* the View Recent Reports pill is deliberately quieter than the decks */
-.shopchip.mini{padding:4px 11px;font-size:10.5px;letter-spacing:.02em;color:var(--muted)}
-.shopchip.mini .i{font-size:11px}
-.shopchip.mini.active{color:#fff}
+/* the View Recent Reports pill sits on its own row beneath the deck
+   pills, centred and deliberately smaller/quieter than them */
+.shopchips.sub{margin-top:10px}
+.shopchip.tiny{padding:3px 10px;font-size:9.5px;letter-spacing:.03em;
+  color:var(--muted);gap:6px}
+.shopchip.tiny .i{font-size:10px}
+.shopchip.tiny.active{color:#fff}
 .toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,16px);z-index:70;
   background:rgba(16,22,38,.92);backdrop-filter:blur(10px);color:#fff;font:600 12px 'Inter';
   padding:11px 18px;border-radius:999px;box-shadow:0 8px 26px rgba(0,0,0,.25);opacity:0;transition:.25s;pointer-events:none}
@@ -811,19 +812,29 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
         <div class="ticktrack sline s2" id="jt2"></div>
         <span class="synthpill"><span class="dotgrid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>Synthesising..</span>
       </div>
-      <div class="boardbar" id="boardbar">
-        <div class="ctrls" id="leadCtrls">
-          <div class="ctrl"><button type="button" class="ctrlbtn" data-menu="filtmenu">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.2V19l-4 2v-7.8z"/></svg>
-            <span id="filtLbl"></span></button>
-            <div class="ctrlmenu" id="filtmenu"></div></div>
-          <div class="ctrl"><button type="button" class="ctrlbtn" data-menu="sortmenu" title="Sort">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 6h16M4 12h11M4 18h6"/></svg>
-            <span id="sortLbl"></span></button>
-            <div class="ctrlmenu" id="sortmenu"></div></div>
+      <!-- Live Jobs: one section card wearing the signals-section
+           chrome — count + title + copy on the left, the written
+           filter/sort controls on the right, list scrolling inside. -->
+      <div class="pipe-sec t-jobs" id="jobsSec" style="display:none">
+        <div class="pipe-sec-h">
+          <div><div class="plbl"><span class="pnode"></span>LIVE JOBS</div>
+            <div class="pcap">Advertised senior roles on the open market — outreach-ready</div></div>
+          <span class="pcount" id="cnt-jobs">0</span>
+          <div class="boardbar" id="boardbar">
+            <div class="ctrls" id="leadCtrls">
+              <div class="ctrl"><button type="button" class="ctrlbtn" data-menu="filtmenu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.2V19l-4 2v-7.8z"/></svg>
+                <span id="filtLbl"></span></button>
+                <div class="ctrlmenu" id="filtmenu"></div></div>
+              <div class="ctrl"><button type="button" class="ctrlbtn" data-menu="sortmenu" title="Sort">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 6h16M4 12h11M4 18h6"/></svg>
+                <span id="sortLbl"></span></button>
+                <div class="ctrlmenu" id="sortmenu"></div></div>
+            </div>
+          </div>
         </div>
+        <div id="strips"></div>
       </div>
-      <div id="strips"></div>
       <!-- The pipeline continues past PRODUCTION: a drop
            rail falls from the stage row, splits, and sprouts into the
            three portfolio cards across the page. Leads mode only. -->
@@ -984,9 +995,11 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
         <div class="shopchips" id="shopChips">
           <button class="shopchip" data-cap="pitch"><span class="i">✦</span>Pitch Pack</button>
           <button class="shopchip" data-cap="reverse"><span class="i">↗</span>Reverse Match</button>
-          <button class="shopchip mini" data-cap="reports"><span class="i">▤</span>View Recent Reports</button>
           <button class="shopchip" data-cap="premeeting"><span class="i">◷</span>Pre-meeting</button>
           <button class="shopchip" data-cap="sweep"><span class="i">⟲</span>Sweep</button>
+        </div>
+        <div class="shopchips sub" id="shopChipsSub">
+          <button class="shopchip tiny" data-cap="reports"><span class="i">▤</span>View Recent Reports</button>
         </div>
       </div>
     </div>
@@ -1438,7 +1451,7 @@ function renderSecCtrls(secs){
 function renderCtrls(){
   /* the global bar serves the Live Jobs page only — leads filters live
      in the section headers, so the stages flow straight into the cards */
-  $('boardbar').style.display=(mode==='leads')?'none':'';
+  $('jobsSec').style.display=(mode==='leads')?'none':'';
   $('filtmenu').innerHTML=FILTS.map(f=>{
     const pool=(mode==='jobs')?JOBS:BD;
     const n=pool.filter(l=>statusFilter(l,f[0])).length;
@@ -1644,6 +1657,7 @@ function renderBoard(){
     let jobs=JOBS.filter(l=>statusFilter(l));
     if(sort==='az')jobs.sort((a,b)=>(a.co||'').localeCompare(b.co||''));
     else jobs.sort((a,b)=>(b.isNew?1:0)-(a.isNew?1:0)||(a.co||'').localeCompare(b.co||''));
+    $('cnt-jobs').textContent=jobs.length;
     $('strips').innerHTML=jobs.length?jobs.map((j,i)=>jobRow(j,i)).join('')
       :'<div style="padding:26px 4px;font-size:12.5px;color:var(--dim)">Nothing under this filter.</div>';
     return;
@@ -1926,6 +1940,9 @@ function setCap(cap){
   if(next==='reports')loadEngineReports();
 }
 $('shopChips').addEventListener('click',e=>{
+  const c=e.target.closest('.shopchip');if(c)setCap(c.dataset.cap);
+});
+$('shopChipsSub').addEventListener('click',e=>{
   const c=e.target.closest('.shopchip');if(c)setCap(c.dataset.cap);
 });
 $('composerSend').addEventListener('click',()=>{
