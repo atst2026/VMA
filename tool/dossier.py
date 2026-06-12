@@ -163,10 +163,9 @@ def _render_md(pid: str, rec: dict, verdicts: list[dict]) -> str:
         ar_lines = []
     if ar_lines:
         lines += ["", "## Agency relationships", ""] + ar_lines
-    # Account thesis — the AI-researched, evidence-cited read of what
-    # this company NEEDS and VMA can plug (advisory_research overlay).
-    # When fresh it replaces the generic service-fit section below; the
-    # static mix remains the fallback so the dossier never goes silent.
+    # Advisory Brief — AI-researched (advisory_research overlay) when
+    # fresh; static service-fit playbook as fallback so the dossier
+    # never goes silent.
     thesis = None
     try:
         from tool import advisory_research as _advres
@@ -175,12 +174,11 @@ def _render_md(pid: str, rec: dict, verdicts: list[dict]) -> str:
         thesis = None
     if thesis and thesis.get("needs"):
         when = (thesis.get("researched_at") or "")[:10]
-        lines += ["", f"## Account thesis — researched {when}", "",
+        lines += ["", f"## Advisory Brief — researched {when}", "",
                   f"**{thesis.get('headline')}**", ""]
         if thesis.get("function_snapshot"):
             lines += [thesis["function_snapshot"], ""]
-        lines.append("### What they need (and what VMA sells into it)")
-        lines.append("")
+        lines += ["### The opportunity", ""]
         for n in thesis["needs"]:
             cite = f" ([source]({n['url']}))" if n.get("url") else ""
             when_e = f", {n['date']}" if n.get("date") else ""
@@ -190,22 +188,31 @@ def _render_md(pid: str, rec: dict, verdicts: list[dict]) -> str:
                 f"(evidence: {n.get('evidence')}{when_e}{cite}; "
                 f"confidence {n.get('confidence')})")
         if thesis.get("hiring_needs"):
-            lines += ["", "### Hiring needs", ""]
-            lines += [f"- {h}" for h in thesis["hiring_needs"]]
-        lines += ["", "### The meeting hook", "",
-                  f"> {thesis.get('meeting_hook')}"]
-        if thesis.get("talking_points"):
-            lines += ["", "### Talking points", ""]
-            lines += [f"- {t}" for t in thesis["talking_points"]]
+            lines += ["", "**Hiring needs:** "
+                      + " · ".join(thesis["hiring_needs"])]
+        mp = thesis.get("meeting_prep") or {}
+        lines += ["", "### Meeting preparation", ""]
+        if mp.get("lead_with"):
+            lines += [f"**Lead with:** {mp['lead_with']}", ""]
+        if mp.get("opening_questions"):
+            lines += ["**Open with:**", ""]
+            lines += [f"- {q}" for q in mp["opening_questions"]]
+            lines.append("")
+        if mp.get("anticipated_objections"):
+            lines += ["**Anticipate:**", ""]
+            lines += [f"- {o}" for o in mp["anticipated_objections"]]
+            lines.append("")
+        if mp.get("engagement_scope"):
+            lines += [f"**If they say yes:** {mp['engagement_scope']}", ""]
+        if thesis.get("meeting_hook"):
+            lines += [f"> {thesis.get('meeting_hook')}"]
         if thesis.get("sources"):
             lines += ["", "### Sources", ""]
             lines += [f"- [{s.get('label') or 'source'}]({s['url']})"
                       for s in thesis["sources"]]
     else:
-        # Service-fit fallback — the static playbook voted across the
-        # FULL accumulated signal history: a slow-burn story of three
-        # signals over five months gets a combined mix no single event
-        # would surface.
+        # Static service-fit fallback — the playbook voted across the
+        # full accumulated signal history.
         try:
             from tool.advisory import service_fit_for
             keys = [e.get("key") for e in rec.get("events") or []
@@ -214,7 +221,7 @@ def _render_md(pid: str, rec: dict, verdicts: list[dict]) -> str:
         except Exception:
             fit = None
         if fit and fit.get("services"):
-            lines += ["", "## Service fit — what VMA can sell here", ""]
+            lines += ["", "## Advisory services — signal-led playbook", ""]
             for s in fit["services"]:
                 lines.append(f"- **{s.get('label')}** — {s.get('reason')}")
             if fit.get("budget_note"):
