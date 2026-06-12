@@ -2,6 +2,7 @@
   "HSBC": {
     "company": "HSBC",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Georges Elhedery",
@@ -11,8 +12,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Sir Mark Tucker",
@@ -23,7 +29,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "Pam Kaur",
@@ -33,8 +44,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "head_of_corporate_affairs": {
         "name": "Aileen Taylor",
@@ -45,7 +61,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "gc": {
         "name": "Bob Hoyt",
@@ -56,13 +77,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "NatWest Group": {
     "company": "NatWest Group",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Paul Thwaite",
@@ -73,7 +100,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Rick Haythornthwaite",
@@ -84,7 +116,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "Katie Murray",
@@ -94,8 +131,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chro": {
         "name": "Maria Allen",
@@ -106,7 +148,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "gc": {
         "name": "Hema Kerai",
@@ -117,13 +164,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.85
+        "confidence": 0.85,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "Lloyds Banking Group": {
     "company": "Lloyds Banking Group",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Charlie Nunn",
@@ -134,7 +187,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Sir Robin Budenberg",
@@ -144,8 +202,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "William Chalmers",
@@ -155,8 +218,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chro": {
         "name": "Sharon Doherty",
@@ -167,7 +235,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "head_of_corporate_affairs": {
         "name": "Andrew Walton",
@@ -178,7 +251,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "gc": {
         "name": "Kate Cheetham",
@@ -189,13 +267,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "Barclays": {
     "company": "Barclays",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "C.S. Venkatakrishnan",
@@ -206,7 +290,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Nigel Higgins",
@@ -216,8 +305,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "Anna Cross",
@@ -227,8 +321,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "gc": {
         "name": "Stephen Shapiro",
@@ -239,13 +338,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "Aviva": {
     "company": "Aviva",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Amanda Blanc",
@@ -255,8 +360,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Pippa Lambert",
@@ -267,7 +377,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.7
+        "confidence": 0.7,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "Charlotte Jones",
@@ -277,8 +392,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chro": {
         "name": "Danny Harmer",
@@ -289,7 +409,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "gc": {
         "name": "Kirsty Cooper",
@@ -300,13 +425,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "Legal & General": {
     "company": "Legal & General",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Ant\u00f3nio Sim\u00f5es",
@@ -317,7 +448,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Sir John Kingman",
@@ -328,7 +464,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "Jeff Davies",
@@ -339,13 +480,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.8
+        "confidence": 0.8,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "Phoenix Group": {
     "company": "Phoenix Group",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Andy Briggs",
@@ -356,7 +503,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Nicholas Lyons",
@@ -367,7 +519,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.85
+        "confidence": 0.85,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "Rakesh Thakrar",
@@ -378,7 +535,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chro": {
         "name": "Sara Thompson",
@@ -389,7 +551,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "gc": {
         "name": "Andy Moss",
@@ -400,13 +567,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "Standard Chartered": {
     "company": "Standard Chartered",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Bill Winters",
@@ -417,7 +590,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Jos\u00e9 Vi\u00f1als",
@@ -428,7 +606,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.85
+        "confidence": 0.85,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "Diego De Giorgi",
@@ -439,7 +622,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chro": {
         "name": "Tanuj Kapilashrami",
@@ -450,7 +638,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "gc": {
         "name": "David Fein",
@@ -461,13 +654,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "Schroders": {
     "company": "Schroders",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Richard Oldfield",
@@ -477,8 +676,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Dame Elizabeth Corley",
@@ -488,8 +692,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "Meagen Burnett",
@@ -499,8 +708,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chro": {
         "name": "Sonia Cassidy",
@@ -511,7 +725,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cco": {
         "name": "Beth Saint",
@@ -522,7 +741,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "ir_director": {
         "name": "Edward Houghton",
@@ -533,13 +757,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "AstraZeneca": {
     "company": "AstraZeneca",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Pascal Soriot",
@@ -549,8 +779,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Michel Demar\u00e9",
@@ -561,7 +796,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "Aradhana Sarin",
@@ -571,8 +811,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "head_of_corporate_affairs": {
         "name": "Rebekah Martin",
@@ -583,7 +828,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "gc": {
         "name": "Jeff Pott",
@@ -594,13 +844,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "GSK": {
     "company": "GSK",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Emma Walmsley",
@@ -611,7 +867,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Jonathan Symonds",
@@ -621,8 +882,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "Julie Brown",
@@ -632,8 +898,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chro": {
         "name": "Adrian Connell",
@@ -644,7 +915,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.85
+        "confidence": 0.85,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "head_of_corporate_affairs": {
         "name": "Tim Allen",
@@ -655,7 +931,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.85
+        "confidence": 0.85,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "gc": {
         "name": "James Ford",
@@ -666,13 +947,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "Haleon": {
     "company": "Haleon",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Brian McNamara",
@@ -682,8 +969,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Dave Lewis",
@@ -694,7 +986,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "Dawn Allen",
@@ -704,8 +1001,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "head_of_corporate_affairs": {
         "name": "Ed Petter",
@@ -716,7 +1018,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "gc": {
         "name": "Stuart Williams",
@@ -727,13 +1034,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "Bupa UK": {
     "company": "Bupa UK",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "I\u00f1aki Ere\u00f1o",
@@ -744,7 +1057,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "David Hynam",
@@ -755,7 +1073,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.8
+        "confidence": 0.8,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chro": {
         "name": "Nigel Sullivan",
@@ -766,13 +1089,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "NHS England": {
     "company": "NHS England",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Sir Jim Mackey",
@@ -783,7 +1112,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Penny Dash",
@@ -794,7 +1128,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "Julian Kelly",
@@ -805,7 +1144,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chro": {
         "name": "Dr Navina Evans",
@@ -816,7 +1160,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "head_of_corporate_affairs": {
         "name": "Rob Cooper",
@@ -827,7 +1176,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "gc": {
         "name": "Christopher Forester",
@@ -838,13 +1192,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.8
+        "confidence": 0.8,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "National Grid": {
     "company": "National Grid",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "John Pettigrew",
@@ -855,7 +1215,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Paula Rosput Reynolds",
@@ -865,8 +1230,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chro": {
         "name": "Amanda Lyne",
@@ -877,7 +1247,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.8
+        "confidence": 0.8,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "gc": {
         "name": "Alison Kay",
@@ -888,13 +1263,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "SSE": {
     "company": "SSE",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Rhian Kelly",
@@ -905,7 +1286,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.85
+        "confidence": 0.85,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Sir John Manzoni",
@@ -915,8 +1301,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.8
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.8,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "Barry O'Regan",
@@ -926,8 +1317,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "gc": {
         "name": "Sally Fairbairn",
@@ -938,13 +1334,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.8
+        "confidence": 0.8,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "BP": {
     "company": "BP",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Murray Auchincloss",
@@ -955,7 +1357,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Helge Lund",
@@ -966,7 +1373,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "Kate Thomson",
@@ -977,7 +1389,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "head_of_corporate_affairs": {
         "name": "Geoff Morrell",
@@ -988,7 +1405,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.8
+        "confidence": 0.8,
+        "email": "geoff.morrell@bp.com",
+        "email_status": "verified",
+        "email_source": "hunter",
+        "email_source_url": "",
+        "email_checked_at": "2026-06-12T11:12:05.100541+00:00"
       },
       "gc": {
         "name": "Eric Nitcher",
@@ -999,13 +1421,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "Shell": {
     "company": "Shell",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Wael Sawan",
@@ -1015,8 +1443,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Sir Andrew Mackenzie",
@@ -1026,8 +1459,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "Anna Mason",
@@ -1038,7 +1476,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "head_of_corporate_affairs": {
         "name": "Pia Heidenmark Cook",
@@ -1049,7 +1492,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.8
+        "confidence": 0.8,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "gc": {
         "name": "Donny Ching",
@@ -1060,13 +1508,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "Severn Trent": {
     "company": "Severn Trent",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Liv Garfield",
@@ -1077,7 +1531,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Christine Hodgson",
@@ -1087,8 +1546,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chro": {
         "name": "Carla Sherry",
@@ -1099,7 +1563,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "gc": {
         "name": "Bronagh Kennedy",
@@ -1110,13 +1579,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "United Utilities": {
     "company": "United Utilities",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Louise Beardmore",
@@ -1126,8 +1601,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Sir David Lewis",
@@ -1137,8 +1617,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.8
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.8,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "Phil Aspin",
@@ -1149,7 +1634,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.85
+        "confidence": 0.85,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "gc": {
         "name": "Sally Cabrini",
@@ -1160,13 +1650,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.7
+        "confidence": 0.7,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "BT Group": {
     "company": "BT Group",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Allison Kirkby",
@@ -1176,8 +1672,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Adam Crozier",
@@ -1187,8 +1688,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "Simon Lowth",
@@ -1198,8 +1704,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chro": {
         "name": "Alison Wilcox",
@@ -1210,7 +1721,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.85
+        "confidence": 0.85,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "gc": {
         "name": "Sabine Chalmers",
@@ -1220,14 +1736,20 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "Vodafone": {
     "company": "Vodafone",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Margherita Della Valle",
@@ -1238,7 +1760,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Jean-Fran\u00e7ois van Boxmeer",
@@ -1249,7 +1776,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "Luka Mucic",
@@ -1260,7 +1792,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chro": {
         "name": "Leanne Wood",
@@ -1271,7 +1808,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.85
+        "confidence": 0.85,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "head_of_corporate_affairs": {
         "name": "Nicki Lyons",
@@ -1282,7 +1824,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "gc": {
         "name": "Maaike de Bie",
@@ -1293,13 +1840,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "Microsoft": {
     "company": "Microsoft",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Satya Nadella",
@@ -1310,7 +1863,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "Amy Hood",
@@ -1321,7 +1879,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chro": {
         "name": "Kathleen Hogan",
@@ -1332,7 +1895,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "head_of_corporate_affairs": {
         "name": "Clare Barclay",
@@ -1343,7 +1911,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "gc": {
         "name": "Brad Smith",
@@ -1354,13 +1927,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "Google": {
     "company": "Google",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Debbie Weinstein",
@@ -1371,7 +1950,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "John L. Hennessy",
@@ -1382,7 +1966,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "Anat Ashkenazi",
@@ -1393,7 +1982,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chro": {
         "name": "Fiona Cicconi",
@@ -1404,7 +1998,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "head_of_corporate_affairs": {
         "name": "Karan Bhatia",
@@ -1415,7 +2014,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "gc": {
         "name": "Kent Walker",
@@ -1426,13 +2030,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "Sage Group": {
     "company": "Sage Group",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Steve Hare",
@@ -1443,7 +2053,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Andrew Duff",
@@ -1454,7 +2069,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "Jonathan Howell",
@@ -1465,13 +2085,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.85
+        "confidence": 0.85,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "BBC": {
     "company": "BBC",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Tim Davie",
@@ -1482,7 +2108,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Samir Shah",
@@ -1493,13 +2124,35 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.95
+        "confidence": 0.95,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
+      },
+      "cco": {
+        "name": "Dan Timms",
+        "role_title": "Director of Communications",
+        "role_slot": "cco",
+        "linkedin_url": null,
+        "source_url": "https://www.google.com/search?q=site:linkedin.com%20dan%20timms%20bbc",
+        "source_label": "Hunter domain search",
+        "tenure_start": null,
+        "verified_at": "2026-06-12T11:12:12.093552+00:00",
+        "confidence": 0.72,
+        "email": "dan.timms@bbc.co.uk",
+        "email_status": "verified",
+        "email_source": "hunter",
+        "email_source_url": "https://www.google.com/search?q=site:linkedin.com%20dan%20timms%20bbc",
+        "email_checked_at": "2026-06-12T11:12:12.093552+00:00"
       }
     }
   },
   "Cabinet Office": {
     "company": "Cabinet Office",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Simon Baugh",
@@ -1510,7 +2163,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.85
+        "confidence": 0.85,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Sir Chris Wormald",
@@ -1521,13 +2179,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "FCA": {
     "company": "FCA",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Nikhil Rathi",
@@ -1538,7 +2202,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Ashley Alder",
@@ -1549,7 +2218,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chro": {
         "name": "Sarah Pritchard",
@@ -1560,7 +2234,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.8
+        "confidence": 0.8,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cco": {
         "name": "Tom Chambers",
@@ -1571,13 +2250,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "Macmillan Cancer Support": {
     "company": "Macmillan Cancer Support",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Gemma Peters",
@@ -1588,13 +2273,19 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   },
   "BAE Systems": {
     "company": "BAE Systems",
     "last_seeded_at": "2026-05-15T15:08:08.965778+00:00",
+    "structure": "",
     "entries": {
       "ceo": {
         "name": "Charles Woodburn",
@@ -1604,8 +2295,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chair": {
         "name": "Cressida Hogg",
@@ -1615,8 +2311,13 @@
         "source_url": "",
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
-        "verified_at": "2026-05-15T23:30:10.506635+00:00",
-        "confidence": 0.92
+        "verified_at": "2026-06-12T11:07:35.890299+00:00",
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "cfo": {
         "name": "Brad Greve",
@@ -1627,7 +2328,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "chro": {
         "name": "Tom Keaney",
@@ -1638,7 +2344,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       },
       "gc": {
         "name": "David Parkes",
@@ -1649,7 +2360,12 @@
         "source_label": "Tier-A FY27 watchlist (deep-research report, May 2026)",
         "tenure_start": null,
         "verified_at": "2026-05-15T15:08:08.965778+00:00",
-        "confidence": 0.92
+        "confidence": 0.92,
+        "email": "",
+        "email_status": "",
+        "email_source": "",
+        "email_source_url": "",
+        "email_checked_at": ""
       }
     }
   }
