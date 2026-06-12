@@ -77,6 +77,7 @@ jobs:
           OUTREACH_RESEARCH_MAX_JOBS: ${{ secrets.OUTREACH_RESEARCH_MAX_JOBS }}
           BD_POC_RESEARCH_MAX: ${{ secrets.BD_POC_RESEARCH_MAX }}
           ADVISORY_RESEARCH_MAX: ${{ secrets.ADVISORY_RESEARCH_MAX }}
+          VMA_RESEARCH_MODEL: ${{ secrets.VMA_RESEARCH_MODEL }}
           BRIGHT_DATA_KEY: ${{ secrets.BRIGHT_DATA_KEY }}
           BRIGHT_DATA_ZONE: ${{ secrets.BRIGHT_DATA_ZONE }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
