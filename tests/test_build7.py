@@ -347,3 +347,31 @@ def test_research_status_diagnoses_the_unnamed(state, monkeypatch):
                               ledger=led).startswith("not yet researched")
     monkeypatch.delenv("ANTHROPIC_API_KEY")
     assert "ANTHROPIC_API_KEY" in jr.research_status("X", "head_of_comms")
+
+
+def test_billing_exhaustion_is_reported_not_misattributed(state, monkeypatch):
+    """When CI hit 'credit balance too low', the synced ledger carries the
+    truth — the chip and the banner must say CREDITS, not 'no key' (the
+    live dashboard's env legitimately has no research key)."""
+    from tool.contacts import job_researcher as jr
+    from tool.contacts.measure import contact_capabilities
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    led = {jr._ledger_key("Acme plc", "head_of_comms"):
+           {"at": _iso(0), "found": False}}
+    jr._mark_billing(led)
+    msg = jr.research_status("Acme plc", "head_of_comms", ledger=led)
+    assert "credits exhausted" in msg.lower()
+    assert "ANTHROPIC_API_KEY" not in msg
+    jr._save_ledger(led)
+    caps = contact_capabilities()
+    assert any("EXHAUSTED" in w for w in caps["warnings"])
+    # A successful pass clears the marker.
+    answer = {"found": True, "name": "Jane Doe",
+              "role_slot": "head_of_comms",
+              "evidence": [{"url": "https://x.example", "what": "page"}],
+              "newest_evidence_date": _iso(2), "confidence": 0.8}
+    contacts = {}
+    assert jr.research_company_owner("Beta plc", ("head_of_comms",),
+                                     contacts, runner=lambda b: answer,
+                                     ledger=led)
+    assert "::billing" not in led

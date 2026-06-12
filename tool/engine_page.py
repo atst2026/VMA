@@ -383,6 +383,10 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .jc-em.es-verified{color:#1e7a41}.jc-em.es-published{color:#1d4ed8}
 .jc-em.es-pattern,.jc-em.es-none{color:#b5530e}
 .jcontact.jdiag{color:#9a3412;font-style:italic}
+.caps-banner2{position:relative;z-index:60;margin:10px 14px 0 76px;padding:9px 14px;
+  border-radius:11px;background:#FFF7ED;border:1px solid #FDBA74;font:500 12.5px/1.55 "Inter",sans-serif}
+.caps-banner2 .cw{color:#9A3412;font-weight:650;margin:2px 0}
+.caps-banner2 .cn{color:#92660A;margin-top:3px}
 .om-backdrop{display:none;position:fixed;inset:0;background:rgba(20,28,46,.32);
   backdrop-filter:blur(4px);z-index:90;align-items:center;justify-content:center}
 .om-backdrop.open{display:flex}
@@ -759,6 +763,16 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
 </head>
 <body>
 <div class="amb a1"></div><div class="amb a2"></div><div class="amb a3"></div>
+{% if contact_caps and contact_caps.warnings %}
+<!-- Operational truth banner: a missing key, exhausted API credits or a
+     spent Hunter budget is state Sara must SEE — never a silent no-op. -->
+<div class="caps-banner2">
+  {% for w in contact_caps.warnings %}<div class="cw">⚠ {{ w }}</div>{% endfor %}
+  {% if contact_caps.hunter and contact_caps.hunter_searches_left is not none %}
+  <div class="cn">Hunter this month: {{ contact_caps.hunter_searches_left }} searches · {{ contact_caps.hunter_verifies_left }} verifications left</div>
+  {% endif %}
+</div>
+{% endif %}
 
 <nav class="siderail">
   <span class="sr-logo"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#3E5C84"/><text x="50" y="55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="30" letter-spacing="-1.5" fill="#fff">VMA</text><text x="51" y="76" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="300" font-size="13.5" letter-spacing="3" fill="#fff">GROUP</text></svg></span>

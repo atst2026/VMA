@@ -36,9 +36,24 @@ def contact_capabilities() -> dict:
     try:
         out["anthropic"] = bool(
             (os.environ.get("ANTHROPIC_API_KEY") or "").strip())
-        if not out["anthropic"]:
-            out["warnings"].append(
-                "contact research OFF — ANTHROPIC_API_KEY not set")
+        # Billing truth from the synced research ledger — the CI run
+        # records credits-exhausted there, so the live dashboard (whose
+        # own env has no research key) reports the real blocker.
+        try:
+            from tool.contacts import job_researcher as _jr
+            _billing = (_jr._load_ledger().get("::billing") or {}).get("at")
+            if _billing:
+                out["warnings"].append(
+                    f"Anthropic API credits EXHAUSTED (as of "
+                    f"{_billing[:10]}) — all research paused; top up at "
+                    f"console.anthropic.com to resume")
+            elif not out["anthropic"]:
+                out["warnings"].append(
+                    "contact research OFF — ANTHROPIC_API_KEY not set")
+        except Exception:
+            if not out["anthropic"]:
+                out["warnings"].append(
+                    "contact research OFF — ANTHROPIC_API_KEY not set")
         try:
             from tool.contacts import email_resolver as _er
             out["hunter"] = bool(
