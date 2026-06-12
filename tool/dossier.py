@@ -154,6 +154,23 @@ def _render_md(pid: str, rec: dict, verdicts: list[dict]) -> str:
         ar_lines = []
     if ar_lines:
         lines += ["", "## Agency relationships", ""] + ar_lines
+    # Service-fit — what VMA can sell this account, voted across the FULL
+    # accumulated signal history (the dossier's whole point): a slow-burn
+    # story of three signals over five months gets a combined mix no
+    # single event would surface.
+    try:
+        from tool.advisory import service_fit_for
+        keys = [e.get("key") for e in rec.get("events") or []
+                if isinstance(e, dict) and e.get("key")]
+        fit = service_fit_for(keys) if keys else None
+    except Exception:
+        fit = None
+    if fit and fit.get("services"):
+        lines += ["", "## Service fit — what VMA can sell here", ""]
+        for s in fit["services"]:
+            lines.append(f"- **{s.get('label')}** — {s.get('reason')}")
+        if fit.get("budget_note"):
+            lines += ["", f"_{fit['budget_note']}_"]
     notes = _dir() / f"{pid}.notes.md"
     if notes.exists():
         try:

@@ -103,6 +103,17 @@ def _implication(stk: Stack) -> str:
     return ""
 
 
+def _sell_line(stk: Stack) -> str:
+    """Compact service-fit headline for the stack — every event votes, so
+    the line reflects the combined signal, not just the lead trigger.
+    Empty string on any failure (the email never breaks for the lens)."""
+    try:
+        from tool.advisory import service_fit_line
+        return service_fit_line([e.trigger_key for e in stk.events])
+    except Exception:
+        return ""
+
+
 def _sources_line(stk: Stack) -> str:
     rows = []
     for e in sorted(stk.events, key=lambda x: x.published, reverse=True)[:4]:
@@ -176,6 +187,7 @@ def render_html(ranked: list[tuple[Stack, float]], limit: int = 5,
                 <strong>Window:</strong> {window} &nbsp;·&nbsp;
                 <strong>Call:</strong> {who}
             </div>
+            {f'<div style="color:#5B459E;font-size:12px;margin-top:4px;font-weight:600;">{_ESC(_sell_line(stk))}</div>' if _sell_line(stk) else ''}
             <div style="margin-top:6px;font-size:12px;">
                 {_sources_line(stk)}
             </div>
@@ -217,6 +229,8 @@ def render_text(ranked: list[tuple[Stack, float]], limit: int = 5,
         for e in sorted(stk.events, key=lambda x: x.published, reverse=True)[:3]:
             lines.append(f"     • {e.trigger_label}: {e.evidence}")
         lines.append(f"   Window: {_window(stk)}   Call: {_who_to_call(stk)}")
+        if _sell_line(stk):
+            lines.append(f"   {_sell_line(stk)}")
         for e in sorted(stk.events, key=lambda x: x.published, reverse=True)[:4]:
             lines.append(f"     {e.source_label} {_date(e.published)}  {e.url}")
         lines.append("")

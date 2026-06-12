@@ -293,7 +293,7 @@ def active_pulses(today: Optional[date] = None,
     Sorted high-confidence first, then by urgency (fewest days left in
     the window first) so the most time-critical pulse is at the top.
     """
-    from tool.advisory import advisory_for
+    from tool.advisory import advisory_for, service_fit_for
 
     if today is None:
         today = date.today()
@@ -336,6 +336,7 @@ def active_pulses(today: Optional[date] = None,
             "source_url":  p.get("source_url", ""),
             "discovered":  bool(p.get("discovered")),
             "advisory":    advisory_for(p["key"]),
+            "service_fit": service_fit_for([p["key"]]),
         })
 
     out.sort(key=lambda r: (r["confidence"] != "high", r["days_left"]))

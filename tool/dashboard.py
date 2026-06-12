@@ -666,7 +666,7 @@ def load_latest_predictive() -> list[dict]:
             except Exception:
                 data = []
 
-    from tool.advisory import advisory_for
+    from tool.advisory import advisory_for, service_fit_for
     from tool import predictor_status, bd_retention
     _ps_overlay = predictor_status.get_statuses()
     today = datetime.now(timezone.utc).date().isoformat()
@@ -706,6 +706,12 @@ def load_latest_predictive() -> list[dict]:
         p_item["advisory"] = advisory_for(
             evs[0].get("trigger_key") if evs and isinstance(evs[0], dict) else None
         )
+        # Service-fit lens: EVERY stacked event votes (not just the first),
+        # so a CEO-change + restructure stack surfaces org design and
+        # benchmarking above the bare hire, and budget-pressure events
+        # steer the mix toward project-fee routes.
+        p_item["service_fit"] = service_fit_for(
+            [e.get("trigger_key") for e in evs if isinstance(e, dict)])
         # Event phrase for a one-click, event-anchored Pitch Pack from this
         # lead — flows through as PITCH_TRIGGER so the pack's cost-of-vacancy
         # and "why now" lead with this specific trigger.
@@ -1372,6 +1378,14 @@ MR_CSS = r"""
 .mr-drow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:2px}
 .mr-dk{display:grid;grid-template-columns:82px 1fr;gap:12px;align-items:baseline;font-size:12px;color:var(--ink2);line-height:1.5}
 .mr-dlab{font:600 8.5px/1.6 "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+/* Service-fit on the BD radar dossier — the Talent-Consultancy lens. */
+.mr-svc{display:flex;flex-direction:column;gap:4px}
+.mr-svc-item{display:flex;gap:7px;align-items:baseline}
+.mr-svc-chip{flex:none;font:650 10px/1.6 "Inter",sans-serif;padding:1px 7px;border-radius:9px;white-space:nowrap;background:#EDE9F7;color:#5B459E}
+.mr-svc-chip.hire{background:#E3EEFB;color:#1D5FA8}
+.mr-svc-chip.referral{background:#FBF0DF;color:#9A6A14}
+.mr-svc-why{font-size:12px;color:var(--ink2);line-height:1.5}
+.mr-svc-note{font-size:11.5px;font-style:italic;color:#9A6A14;border-top:1px dashed var(--mrborder);margin-top:3px;padding-top:4px}
 .mr-play{color:var(--ink2);background:rgba(62,92,132,.05);border-left:2px solid var(--vma);border-radius:5px;padding:7px 10px;display:block;font-size:12px;line-height:1.55}
 .mr-acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:11px 0 2px}
 .mr-actbtn{display:inline-flex;align-items:center;gap:6px;font:500 11.5px/1 "Inter",sans-serif;color:var(--ink);background:#fff;border:1px solid var(--mrborder);border-radius:9px;padding:6px 11px;cursor:pointer;transition:.13s}.mr-actbtn svg{width:14px;height:14px;flex-shrink:0}.mr-actbtn:hover{background:var(--elevated);border-color:var(--dim)}
@@ -1503,6 +1517,17 @@ MR_JS = r"""
     var buyer=(l.buyer||l.champion)?dk('Economic buyer',esc(l.buyer||'')+(l.champion?' <span class="mr-evs">· path: '+esc(l.champion)+'</span>':'')):'';
     var kill=(pres(l)&&l.kill)?dk('What kills this',esc(l.kill)):'';
     var move=(pres(l)&&(l.opening||l.move))?dk(l.opening?'Warm opening':'First move',esc(l.opening||l.move)):'';
+    // Service-fit: the ranked VMA service mix the signal stack indicates —
+    // hires, Advisory Services and the referral lanes, with the per-signal
+    // reason. Budget-strained stacks carry the project-fee steer.
+    var svc='';
+    if(l.serviceFit&&l.serviceFit.services&&l.serviceFit.services.length){
+      var sfi='';
+      l.serviceFit.services.forEach(function(s){
+        sfi+='<div class="mr-svc-item"><span class="mr-svc-chip '+esc(s.family||'advisory')+'" title="'+esc(s.label||'')+'">'+esc(s.short||s.key||'')+'</span><span class="mr-svc-why">'+esc(s.reason||'')+'</span></div>';});
+      if(l.serviceFit.budget_note)sfi+='<div class="mr-svc-note">'+esc(l.serviceFit.budget_note)+'</div>';
+      svc=dk('What VMA can sell','<span class="mr-svc">'+sfi+'</span>');
+    }
     return '<div class="mr-doss">'
       +warn
       +gtop
@@ -1511,6 +1536,7 @@ MR_JS = r"""
       +bizc
       +buyer
       +dk('Why now',fb(l)+esc(l.whyNow||l.why))
+      +svc
       +kill
       +move
       +acts
@@ -2088,6 +2114,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
         _mkt = False
     bd = []
     from tool import why_now as _wn
+    from tool.advisory import service_fit_for as _svc
     from tool.edge_detectors import intent_phrase as _intent
     for row in premarket_rows:
         _kind = row.get("_kind", "predictor")
@@ -2109,6 +2136,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                     [], (row.get("lead") or {}).get("why_now") or brief,
                     _fee_tip),
                 "fee": _fee, "feeTip": _fee_tip,
+                "serviceFit": _svc([_kind]),
                 "brief": brief,
                 "url": url, "src": _mr_src(url, row.get("source")),
                 "win": row.get("window_label") or "",
@@ -2157,6 +2185,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                                 _mr_compact_window(row.get("window"))),
                     _fee_tip),
                 "fee": _fee, "feeTip": _fee_tip,
+                "serviceFit": _svc(["funding"]),
                 "brief": brief or "Funding round — senior build-out likely.",
                 "url": url, "src": _mr_src(url, row.get("source")),
                 "win": _mr_compact_window(row.get("window")),
@@ -2229,6 +2258,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                 "incumbentStatus": row.get("incumbent_status") or "",
                 "whyNow": _why_now_txt,
                 "fee": _fee, "feeTip": _fee_tip,
+                "serviceFit": _svc(_tkeys),
                 "brief": brief,
                 "url": url, "src": _mr_src(url, ev0.get("source")),
                 "win": _win_lbl,
@@ -4470,6 +4500,43 @@ TEMPLATE = r"""
       border-radius: 3px;
     }
 
+    /* Service-fit block — the Talent-Consultancy lens: the ranked VMA
+       service mix the signal stack indicates (search, interim, Advisory
+       Services, agency referral, engagement platform). Chips colour by
+       family so the AD reads the revenue route at a glance. */
+    .service-fit {
+      margin: 6px 0 2px;
+      padding: 7px 9px;
+      font-size: 12px;
+      line-height: 1.5;
+      background: #F7F5FC;
+      border-left: 2px solid #7B61C4;
+      border-radius: 3px;
+    }
+    .service-fit .sf-head {
+      font-weight: 650; font-size: 11px; letter-spacing: .04em;
+      text-transform: uppercase; color: #5B459E; margin-bottom: 4px;
+    }
+    .service-fit .sf-item { display: flex; gap: 7px; align-items: baseline;
+      margin: 3px 0; }
+    .service-fit .sf-chip {
+      flex: none; font-size: 10.5px; font-weight: 650; padding: 1px 7px;
+      border-radius: 9px; white-space: nowrap;
+      background: #EDE9F7; color: #5B459E;
+    }
+    .service-fit .sf-chip.sf-hire { background: #E3EEFB; color: #1D5FA8; }
+    .service-fit .sf-chip.sf-referral { background: #FBF0DF; color: #9A6A14; }
+    .service-fit .sf-reason { color: var(--text); }
+    .service-fit .sf-note {
+      margin-top: 5px; padding-top: 5px; font-size: 11.5px; font-style: italic;
+      color: #9A6A14; border-top: 1px dashed rgba(60,64,67,.18);
+    }
+    /* Compact one-line form for dense list rows (pulses, specialist
+       signals): "Sell: Benchmarking · Org design · Interim". */
+    .sf-line {
+      margin-top: 3px; font-size: 11.5px; font-weight: 600; color: #5B459E;
+    }
+
     /* Specialist Signals — four low-frequency detectors collapsed into
        one panel that renders ONLY when a sub-detector has results, so
        the dashboard never advertises empty panels (the empty-panel
@@ -6114,6 +6181,14 @@ TEMPLATE = r"""
                   </div>
                 </div>
                 {% endif %}
+                {% if f.service_fit and f.service_fit.services %}
+                <div class="service-fit">
+                  <div class="sf-head" title="The ranked VMA service mix this signal indicates — recruitment, Advisory Services (org design, benchmarking, coaching, ED&amp;I) and referral lanes (partner agency, engagement platform)">What VMA can sell here</div>
+                  {% for s in f.service_fit.services %}
+                  <div class="sf-item"><span class="sf-chip sf-{{ s.family }}" title="{{ s.label }}">{{ s.short }}</span><span class="sf-reason">{{ s.reason }}</span></div>
+                  {% endfor %}
+                </div>
+                {% endif %}
                 <div class="item-actions">
                   {% if f.status == 'active' %}
                     <button class="btn-mini funding-action" data-status="followed_up" type="button">&#10003; Mark followed up</button>
@@ -6150,6 +6225,15 @@ TEMPLATE = r"""
                   {% endfor %}
                 </div>
                 {% if p.advisory %}<div class="advisory-line">{{ p.advisory }}</div>{% endif %}
+                {% if p.service_fit and p.service_fit.services %}
+                <div class="service-fit">
+                  <div class="sf-head" title="The ranked VMA service mix this signal stack indicates — recruitment, Advisory Services (org design, benchmarking, coaching, ED&amp;I) and referral lanes (partner agency, engagement platform)">What VMA can sell here</div>
+                  {% for s in p.service_fit.services %}
+                  <div class="sf-item"><span class="sf-chip sf-{{ s.family }}" title="{{ s.label }}">{{ s.short }}</span><span class="sf-reason">{{ s.reason }}</span></div>
+                  {% endfor %}
+                  {% if p.service_fit.budget_note %}<div class="sf-note">{{ p.service_fit.budget_note }}</div>{% endif %}
+                </div>
+                {% endif %}
                 <pre class="outreach-text">{{ p.outreach }}</pre>
                 <div class="item-actions">
                   <button class="btn-mini lead-pitch-btn" type="button"
@@ -7152,6 +7236,7 @@ async function loadPulses() {
                  '" target="_blank" rel="noopener noreferrer" style="color:var(--blue-deep);text-decoration:none;">source</a>' : '') +
               '</div>' : '') +
             (p.advisory ? '<div class="win-scope">' + esc(p.advisory) + '</div>' : '') +
+            (p.service_fit && p.service_fit.headline ? '<div class="win-scope sf-line" title="The ranked VMA service mix this window indicates">Sell: ' + esc(p.service_fit.headline) + '</div>' : '') +
           '</div>' +
           rm +
         '</div>'
@@ -7351,6 +7436,7 @@ async function loadWaterSar() {
             (w.source ? ' &middot; ' + esc(w.source) : '') +
           '</div>' +
           (w.advisory ? '<div class="advisory-line">' + esc(w.advisory) + '</div>' : '') +
+          (w.service_fit && w.service_fit.headline ? '<div class="sf-line" title="The ranked VMA service mix this signal indicates">Sell: ' + esc(w.service_fit.headline) + ((w.service_fit.budget_note) ? ' · budget-strained: lead with project-fee routes' : '') + '</div>' : '') +
         '</li>'
       );
     }
@@ -7389,6 +7475,7 @@ async function loadContractEnd() {
             (c.sector ? ' &middot; ' + esc(c.sector) : '') +
           '</span>' +
           (c.advisory ? '<div class="advisory-line">' + esc(c.advisory) + '</div>' : '') +
+          (c.service_fit && c.service_fit.headline ? '<div class="sf-line" title="The ranked VMA service mix this signal indicates">Sell: ' + esc(c.service_fit.headline) + '</div>' : '') +
         '</li>'
       );
     }
