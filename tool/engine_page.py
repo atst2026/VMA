@@ -363,10 +363,14 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
 .jrow .lnk svg{width:14px;height:14px}
 .jrow.done-dis .jt,.jrow.done-dis .jc{opacity:.45;text-decoration:line-through}
 .jrow.done-fu .jt{color:#1e7a41}
-/* Live Jobs is its OWN scroll region: the board scrolls inside the
-   section instead of stretching the page to the length of the list. */
+/* Live Jobs is its OWN section, wearing the same card chrome as the
+   Warm Signals pipeline sections, and scrolls inside itself instead of
+   stretching the page to the length of the list. */
 #strips{max-height:66vh;overflow-y:auto;overscroll-behavior:contain;
-  padding-right:4px;scrollbar-width:thin}
+  scrollbar-width:thin;border-radius:16px;
+  background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.88);
+  box-shadow:0 4px 14px rgba(26,61,124,.06);border-top:2px solid #3E5C84;
+  padding:6px 14px 8px}
 .jacts{display:inline-flex;gap:6px;justify-self:end}
 .jact{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;
   color:var(--ink2);cursor:pointer;border:1px solid rgba(60,64,67,.16);background:#fff;transition:.15s}
@@ -705,6 +709,10 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
 .shopchip .i{color:var(--ink2);font-size:13px}
 .shopchip.active{background:var(--ink);color:#fff;border-color:var(--ink)}
 .shopchip.active .i{color:#fff}
+/* the View Recent Reports pill is deliberately quieter than the decks */
+.shopchip.mini{padding:4px 11px;font-size:10.5px;letter-spacing:.02em;color:var(--muted)}
+.shopchip.mini .i{font-size:11px}
+.shopchip.mini.active{color:#fff}
 .toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,16px);z-index:70;
   background:rgba(16,22,38,.92);backdrop-filter:blur(10px);color:#fff;font:600 12px 'Inter';
   padding:11px 18px;border-radius:999px;box-shadow:0 8px 26px rgba(0,0,0,.25);opacity:0;transition:.25s;pointer-events:none}
@@ -747,9 +755,6 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
   </button>
   <button type="button" class="sr-btn" id="vbShop" title="Build-A-Deck">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.2 5.5c1.2-.85 8.4-.85 9.6 0"/><path d="M4.5 9.2c0-.95.8-1.7 1.75-1.7h11.5c.95 0 1.75.75 1.75 1.7v7.3a3.5 3.5 0 0 1-3.5 3.5H8a3.5 3.5 0 0 1-3.5-3.5z"/></svg>
-  </button>
-  <button type="button" class="sr-btn" id="vbReports" title="Recent Reports">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z"/><path d="M14.5 3v4.5H19"/><path d="M9 13h6M9 16.5h6"/></svg>
   </button>
 </nav>
 
@@ -941,6 +946,12 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
                 </form>
               </div>
 
+              <div class="cap-form" data-cap="reports">
+                <div class="cfh"><span class="cf-dot"></span>Recent Reports</div>
+                <div class="cf-desc">Everything generated in the last 48 hours — view or download.</div>
+                <div id="reportsBody"><div class="rr2-empty">Loading…</div></div>
+              </div>
+
               <div class="cap-form" data-cap="premeeting">
                 <div class="cfh"><span class="cf-dot"></span>Pre-meeting Brief</div>
                 <div class="cf-desc">Walk into any client meeting with up-to-date prep.</div>
@@ -973,24 +984,9 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
         <div class="shopchips" id="shopChips">
           <button class="shopchip" data-cap="pitch"><span class="i">✦</span>Pitch Pack</button>
           <button class="shopchip" data-cap="reverse"><span class="i">↗</span>Reverse Match</button>
+          <button class="shopchip mini" data-cap="reports"><span class="i">▤</span>View Recent Reports</button>
           <button class="shopchip" data-cap="premeeting"><span class="i">◷</span>Pre-meeting</button>
           <button class="shopchip" data-cap="sweep"><span class="i">⟲</span>Sweep</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ============ VIEW: recent reports (Build-A-Deck page format) ============ -->
-    <div class="view" id="v-reports">
-      <div class="shopwrap">
-        <div class="ea-hero">
-          <div class="cc-bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z"/><path d="M14.5 3v4.5H19"/><path d="M9 13h6M9 16.5h6"/></svg></div>
-          <h1 class="gemini-title">Recent Reports</h1>
-          <div class="cc-sub">Everything generated in the last 48 hours — pitch packs, reverse matches, pre-meeting briefs and sweeps.</div>
-        </div>
-        <div class="composer">
-          <div class="inner">
-            <div id="reportsBody"><div class="rr2-empty">Loading…</div></div>
-          </div>
         </div>
       </div>
     </div>
@@ -1211,15 +1207,12 @@ function setView(v){
   $('v-engine').classList.toggle('on',eng);
   $('v-cal').classList.toggle('on',view==='cal');
   $('v-shop').classList.toggle('on',view==='shop');
-  $('v-reports').classList.toggle('on',view==='reports');
   $('vbEngine').classList.toggle('on',view==='engine');
   $('vbJobs').classList.toggle('on',view==='jobs');
   $('vbCal').classList.toggle('on',view==='cal');
   $('vbShop').classList.toggle('on',view==='shop');
-  $('vbReports').classList.toggle('on',view==='reports');
   /* the dev-only footer belongs to the leads pages only */
   $('devFoot').style.display=eng?'':'none';
-  if(view==='reports')loadEngineReports();
   if(eng){
     const m=(view==='jobs')?'jobs':'leads';
     if(m!==mode){mode=m;filt='ready';sort=(mode==='leads')?'strength':'new';}
@@ -1230,7 +1223,6 @@ $('vbEngine').addEventListener('click',()=>setView('engine'));
 $('vbJobs').addEventListener('click',()=>setView('jobs'));
 $('vbCal').addEventListener('click',()=>setView('cal'));
 $('vbShop').addEventListener('click',()=>setView('shop'));
-$('vbReports').addEventListener('click',()=>setView('reports'));
 
 /* ---------- recent reports (same data as the legacy panel) ---------- */
 async function loadEngineReports(){
@@ -1270,8 +1262,11 @@ async function loadEngineReports(){
   }
 }
 /* a deck dispatch shows up as "generating…" — keep the list live while
-   the reports page is open */
-setInterval(()=>{if(view==='reports')loadEngineReports();},15000);
+   the Recent Reports pill is open in the composer */
+setInterval(()=>{
+  if($('composer')&&$('composer').getAttribute('data-mode')==='reports')
+    loadEngineReports();
+},15000);
 
 /* the daily stamp — UK date, regenerated on every load */
 $('pipeDate').textContent=new Date().toLocaleDateString('en-GB',
@@ -1928,6 +1923,7 @@ function setCap(cap){
   document.querySelectorAll('.shopchip').forEach(c=>c.classList.toggle('active',c.dataset.cap===next));
   $('cprompt').style.display=(next==='free')?'':'none';
   if(next==='free')$('cprompt').focus();
+  if(next==='reports')loadEngineReports();
 }
 $('shopChips').addEventListener('click',e=>{
   const c=e.target.closest('.shopchip');if(c)setCap(c.dataset.cap);
