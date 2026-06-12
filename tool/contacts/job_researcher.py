@@ -190,22 +190,41 @@ def _recently_researched(ledger: dict, company: str, slot: str) -> bool:
 def research_status(company: str, slot: str = "head_of_comms",
                     ledger: dict | None = None) -> str:
     """One honest line about why a lead may have no contact yet — the
-    dashboard's diagnosis chip. Never raises."""
+    dashboard's diagnosis chip. Ledger-first: the ledger syncs from the
+    CI run that actually researches, so it tells the truth on the live
+    dashboard too (whose own env legitimately has no research key).
+    Never raises."""
     try:
-        if not (os.environ.get("ANTHROPIC_API_KEY") or "").strip():
-            return "research off — no ANTHROPIC_API_KEY"
         if ledger is None:
             ledger = _load_ledger()
+        billing = (ledger.get("::billing") or {}).get("at") or ""
         rec = ledger.get(_ledger_key(company, slot)) or {}
         at = (rec.get("at") or "")[:10]
-        if not at:
-            return "not yet researched (queued for the next run)"
         if rec.get("found"):
             return f"researched {at}: owner identified"
-        return (f"researched {at}: no defensible answer yet — "
-                f"retries in {FAILURE_RETRY_DAYS}d")
+        if billing:
+            return (f"research paused — Anthropic API credits exhausted "
+                    f"(as of {billing[:10]}; top up to resume)")
+        if at:
+            return (f"researched {at}: no defensible answer yet — "
+                    f"retries in {FAILURE_RETRY_DAYS}d")
+        # No ledger history at all: research has never run anywhere.
+        if not [k for k in ledger if not k.startswith("::")] \
+                and not (os.environ.get("ANTHROPIC_API_KEY") or "").strip():
+            return "research off — no ANTHROPIC_API_KEY"
+        return "not yet researched (queued for the next run)"
     except Exception:
         return ""
+
+
+def _mark_billing(ledger: dict) -> None:
+    """Record the credits-exhausted state in the synced ledger so the
+    live dashboard reports the truth instead of guessing."""
+    try:
+        ledger["::billing"] = {
+            "at": datetime.now(timezone.utc).isoformat()}
+    except Exception:
+        pass
 
 
 def _brief_for(signal: dict, inference: dict) -> str:
@@ -358,6 +377,10 @@ def research_job_contact(signal: dict, contacts: dict, runner=None,
             "at": datetime.now(timezone.utc).isoformat(),
             "found": bool(isinstance(data, dict) and data.get("found")),
         }
+        if data is None and _billing_down:
+            _mark_billing(ledger)
+        elif data is not None:
+            ledger.pop("::billing", None)   # credits flowing again
         if own_ledger:
             _save_ledger(ledger)
         if data is None:
@@ -502,6 +525,10 @@ def research_company_owner(company: str, slots: tuple, contacts: dict,
             "at": datetime.now(timezone.utc).isoformat(),
             "found": bool(isinstance(data, dict) and data.get("found")),
         }
+        if data is None and _billing_down:
+            _mark_billing(ledger)
+        elif data is not None:
+            ledger.pop("::billing", None)   # credits flowing again
         if own_ledger:
             _save_ledger(ledger)
         if data is None or not _acceptable(data, slots):
