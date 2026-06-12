@@ -1493,9 +1493,8 @@ MR_JS = r"""
       +(anti2.length?'<span class="mr-anti">⚠ '+esc(anti2.join(' · '))+'</span>':'')+'</div>':'';
     var gtop='';
     function vertag(l){var v=l.ver||'single';var lab=v==='reg'?'Registry-attested':v==='multi'?'2+ sources':'Single source';var tip=v==='reg'?'At least one fact comes from an official registry (Companies House / RNS / regulator) — true on its own, no press coverage needed':v==='multi'?'Corroborated by two or more independent outlets':'Rests on one non-registry source — /investigate can clear it';return '<span class="mr-ver '+v+'" title="'+tip+'">'+lab+'</span>';}
-    function qchip(lab,v,why){var c=v>=2?'q2':v===1?'q1':'q0';return '<span class="mr-qdim '+c+'" title="'+esc(why||'')+'">'+lab+(v>=2?' ✓✓':v===1?' ✓':' ✗')+'</span>';}
-    var qual='';
-    if(l.qual&&l.qual.total!==undefined){qual=dk('Qualification',qchip('Seat',l.qual.seat,l.qual.seat_why)+qchip('Budget',l.qual.budget,l.qual.budget_why)+qchip('Urgency',l.qual.urgency,l.qual.urgency_why)+qchip('Buyer',l.qual.buyer,l.qual.buyer_why)+'<span class="mr-evs">'+l.qual.total+'/8</span>');}
+    var budgetSec='';
+    if(l.qual&&l.qual.budget_why){var blab=l.qual.budget>=2?'Funded':'Budget unknown';var bcol=l.qual.budget>=2?'#1E7A41':l.qual.budget===1?'#B45309':'#9AA0A6';budgetSec=dk('Budget','<b style="color:'+bcol+'">'+esc(blab)+'</b> <span class="mr-evs">'+esc(l.qual.budget_why)+'</span>');}
     if(pres(l)&&l.conf){gtop=dk('Confidence','<span class="mr-confb '+(l.conf==='High'?'hi':'md')+'">'+esc(l.conf)+'</span>'+(l.rt?'<span class="mr-rtb" title="Survived the red-team pass: a sceptical AD persona tried to kill this lead and failed'+(l.conviction?'. Conviction '+l.conviction+'/100':'')+'">RED-TEAMED ✓'+(l.conviction?' '+l.conviction:'')+'</span>':'')+vertag(l));}
     else if(!pres(l)&&l.gateWhy!==undefined){var qt=l.gateWhy||'Needs more corroboration';if(l.recheck)qt+=' · recheck in '+l.recheck+'d';if(l.needsInv)qt+=' · run /investigate';gtop=dk('Why not call-ready',esc(qt));}
     var prop=l.prop?dk('Fee propensity','<span class="mr-propb '+(l.propCls||'unk')+'">'+esc(l.prop)+'</span><span class="mr-evs">'+esc(l.propWhy||'')+'</span>'):'';
@@ -1506,7 +1505,7 @@ MR_JS = r"""
     return '<div class="mr-doss">'
       +warn
       +gtop
-      +qual
+      +budgetSec
       +prop
       +bizc
       +buyer
