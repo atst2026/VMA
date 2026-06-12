@@ -391,22 +391,29 @@ def _detect_format(full_name: str, email: str) -> str | None:
 
 def observed_pairs(company: str) -> list[dict]:
     """Every (name, email) pairing the free sources have published for
-    this company — RNS enquiries blocks + the company's own pages."""
+    this company — RNS enquiries blocks + the company's own pages.
+    Carries in_house so format inference never learns from an agency's
+    addresses."""
     out = []
     try:
         from tool import rns_contacts
         for c in rns_contacts.published_emails(company):
             if c.get("name_hint") and not c.get("generic"):
                 out.append({"name": c["name_hint"], "email": c["email"],
-                            "url": c.get("url") or ""})
+                            "url": c.get("url") or "",
+                            "in_house": bool(c.get("in_house"))})
     except Exception:
         pass
     try:
         from tool.contacts import site_pages
-        for e in site_pages.harvest(company).get("emails") or []:
+        sp = site_pages.harvest(company)
+        dom = (sp.get("domain") or "").lower()
+        for e in sp.get("emails") or []:
             if e.get("name"):
                 out.append({"name": e["name"], "email": e["email"],
-                            "url": e.get("url") or ""})
+                            "url": e.get("url") or "",
+                            "in_house": bool(dom) and dom
+                            in e["email"].lower()})
     except Exception:
         pass
     return out
@@ -414,14 +421,18 @@ def observed_pairs(company: str) -> list[dict]:
 
 def format_guess(company: str, full_name: str) -> dict | None:
     """Construct {email, status:'pattern', source_url} for `full_name`
-    from the company's OBSERVED address format. Requires at least one
-    same-domain colleague pairing that decodes to a known format; the
-    modal format wins on ties. None when the evidence isn't there."""
+    from the company's OBSERVED address format. Only IN-HOUSE pairings
+    vote — an agency's addresses printed in the same enquiries block
+    must never decide the domain or the format. Requires at least one
+    decodable pairing; the modal format wins on ties. None when the
+    evidence isn't there."""
     np = _name_parts(full_name)
     if not np:
         return None
     votes: dict[tuple[str, str], list[str]] = {}
     for p in observed_pairs(company):
+        if not p.get("in_house"):
+            continue
         fmt = _detect_format(p["name"], p["email"])
         if not fmt:
             continue
