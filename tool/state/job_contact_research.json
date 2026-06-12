@@ -186,5 +186,25 @@
  "metro bank::cco": {
   "at": "2026-06-12T18:08:47.191389+00:00",
   "found": false
+ },
+ "smith & nephew::cco": {
+  "at": "2026-06-12T18:08:47.339683+00:00",
+  "found": false
+ },
+ "tristel::cco": {
+  "at": "2026-06-12T18:08:47.559179+00:00",
+  "found": false
+ },
+ "centrica::cco": {
+  "at": "2026-06-12T18:08:47.738742+00:00",
+  "found": false
+ },
+ "sse::cco": {
+  "at": "2026-06-12T18:08:47.981462+00:00",
+  "found": false
+ },
+ "severn trent::cco": {
+  "at": "2026-06-12T18:08:48.418803+00:00",
+  "found": false
  }
 }
