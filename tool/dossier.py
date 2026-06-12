@@ -163,69 +163,21 @@ def _render_md(pid: str, rec: dict, verdicts: list[dict]) -> str:
         ar_lines = []
     if ar_lines:
         lines += ["", "## Agency relationships", ""] + ar_lines
-    # Advisory Brief — AI-researched (advisory_research overlay) when
-    # fresh; static service-fit playbook as fallback so the dossier
-    # never goes silent.
-    thesis = None
+    # Advisory services — static signal-led playbook voted across the
+    # full accumulated signal history.
     try:
-        from tool import advisory_research as _advres
-        thesis = _advres.get(pid)
+        from tool.advisory import service_fit_for
+        keys = [e.get("key") for e in rec.get("events") or []
+                if isinstance(e, dict) and e.get("key")]
+        fit = service_fit_for(keys) if keys else None
     except Exception:
-        thesis = None
-    if thesis and thesis.get("needs"):
-        when = (thesis.get("researched_at") or "")[:10]
-        lines += ["", f"## Advisory Brief — researched {when}", "",
-                  f"**{thesis.get('headline')}**", ""]
-        if thesis.get("function_snapshot"):
-            lines += [thesis["function_snapshot"], ""]
-        lines += ["### The opportunity", ""]
-        for n in thesis["needs"]:
-            cite = f" ([source]({n['url']}))" if n.get("url") else ""
-            when_e = f", {n['date']}" if n.get("date") else ""
-            lines.append(
-                f"- **{n.get('service_label') or n.get('service')}** — "
-                f"{n.get('need')} _{n.get('why_now')}_ "
-                f"(evidence: {n.get('evidence')}{when_e}{cite}; "
-                f"confidence {n.get('confidence')})")
-        if thesis.get("hiring_needs"):
-            lines += ["", "**Hiring needs:** "
-                      + " · ".join(thesis["hiring_needs"])]
-        mp = thesis.get("meeting_prep") or {}
-        lines += ["", "### Meeting preparation", ""]
-        if mp.get("lead_with"):
-            lines += [f"**Lead with:** {mp['lead_with']}", ""]
-        if mp.get("opening_questions"):
-            lines += ["**Open with:**", ""]
-            lines += [f"- {q}" for q in mp["opening_questions"]]
-            lines.append("")
-        if mp.get("anticipated_objections"):
-            lines += ["**Anticipate:**", ""]
-            lines += [f"- {o}" for o in mp["anticipated_objections"]]
-            lines.append("")
-        if mp.get("engagement_scope"):
-            lines += [f"**If they say yes:** {mp['engagement_scope']}", ""]
-        if thesis.get("meeting_hook"):
-            lines += [f"> {thesis.get('meeting_hook')}"]
-        if thesis.get("sources"):
-            lines += ["", "### Sources", ""]
-            lines += [f"- [{s.get('label') or 'source'}]({s['url']})"
-                      for s in thesis["sources"]]
-    else:
-        # Static service-fit fallback — the playbook voted across the
-        # full accumulated signal history.
-        try:
-            from tool.advisory import service_fit_for
-            keys = [e.get("key") for e in rec.get("events") or []
-                    if isinstance(e, dict) and e.get("key")]
-            fit = service_fit_for(keys) if keys else None
-        except Exception:
-            fit = None
-        if fit and fit.get("services"):
-            lines += ["", "## Advisory services — signal-led playbook", ""]
-            for s in fit["services"]:
-                lines.append(f"- **{s.get('label')}** — {s.get('reason')}")
-            if fit.get("budget_note"):
-                lines += ["", f"_{fit['budget_note']}_"]
+        fit = None
+    if fit and fit.get("services"):
+        lines += ["", "## Advisory services", ""]
+        for s in fit["services"]:
+            lines.append(f"- **{s.get('label')}** — {s.get('reason')}")
+        if fit.get("budget_note"):
+            lines += ["", f"_{fit['budget_note']}_"]
     notes = _dir() / f"{pid}.notes.md"
     if notes.exists():
         try:

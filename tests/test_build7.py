@@ -203,124 +203,17 @@ def test_roster_entries_outrank_team_map_rows(state):
     assert any(p["name"] == "Sam Patel" for p in pocs)
 
 
-# ----------------------------------------------- 5. the account thesis
+# ----------------------------------------------- 5. advisory services
 
-def _thesis_payload(**over):
-    d = {
-        "headline": "Comms function lost 3 of 9 leaders since January",
-        "function_snapshot": "Team of ~9 led by an interim director.",
-        "needs": [{
-            "need": "No Head of Internal Comms for a 4,000-person workforce",
-            "service": "org_design",
-            "why_now": "Restructure announced in March.",
-            "evidence": "Leadership page lists no IC lead",
-            "url": "https://acme.example/leadership",
-            "date": "2026-06-01",
-            "confidence": "high",
-        }],
-        "hiring_needs": ["Interim Head of Internal Comms"],
-        "meeting_hook": "Their annual report commits to 'transforming "
-                        "stakeholder engagement' with no one owning IC.",
-        "talking_points": ["Network Rail-style benchmark as the door-opener"],
-        "sources": [{"url": "https://acme.example/leadership",
-                     "label": "Leadership page"}],
-    }
-    d.update(over)
-    return d
-
-
-def test_thesis_validation_locks_services_to_catalogue(state):
-    from tool import advisory_research as ar
-    bad = _thesis_payload(needs=[{
-        "need": "x", "service": "made_up_service", "why_now": "y",
-        "evidence": "z", "confidence": "high"}])
-    assert ar._validated(bad) is None
-    good = ar._validated(_thesis_payload())
-    assert good and good["needs"][0]["service"] == "org_design"
-    assert good["needs"][0]["service_label"].startswith("Advisory")
-
-
-def test_run_writes_overlay_and_skips_unchanged_event_sets(state, monkeypatch):
-    from tool import advisory_research as ar
-    entry = {"pid": "acme", "company": "Acme plc", "status": "active",
-             "events": [{"trigger_key": "restructure",
-                         "trigger_label": "Restructure",
-                         "published": "2026-06-01T00:00:00Z"}],
-             "_presented": True,
-             "_ev_hash": ar.events_hash([{"id": "e1", "date": "2026-06-01"}]),
-             "_score": 80}
-    monkeypatch.setattr(ar, "_candidates", lambda: [entry])
-    calls = []
-
-    def stub(brief):
-        calls.append(brief)
-        return _thesis_payload()
-
-    assert ar.run(runner=stub) == 1
-    t = ar.get("acme")
-    assert t and t["meeting_hook"].startswith("Their annual report")
-    assert t["events_hash"] == entry["_ev_hash"]
-    # The brief carried the engine's accumulated context sections.
-    assert "GENERIC SERVICE HYPOTHESIS" in calls[0]
-    # Same event set -> the real _candidates would now exclude it; the
-    # overlay round-trips through get_all() for render-time loads.
-    assert "acme" in ar.get_all()
-
-
-def test_thesis_overlay_expires(state, monkeypatch):
-    from tool import advisory_research as ar
-    monkeypatch.setattr(ar, "_candidates", lambda: [
-        {"pid": "old", "company": "Old plc", "_ev_hash": "h", "_score": 50,
-         "_presented": True, "events": []}])
-    ar.run(runner=lambda b: _thesis_payload())
-    d = json.loads(ar._file().read_text())
-    d["old"]["researched_at"] = (
-        datetime.now(timezone.utc)
-        - timedelta(days=ar.EXPIRY_DAYS + 1)).isoformat()
-    ar._file().write_text(json.dumps(d))
-    assert ar.get("old") is None
-
-
-def test_legacy_per_pid_files_migrate_into_single_store(state):
-    from tool import advisory_research as ar
-    legacy = ar._legacy_dir()
-    legacy.mkdir(parents=True, exist_ok=True)
-    t = _thesis_payload()
-    t["researched_at"] = _iso(1)
-    t["events_hash"] = "legacyhash"
-    (legacy / "acme.json").write_text(json.dumps(t))
-    got = ar.get("acme")
-    assert got and got["events_hash"] == "legacyhash"
-    assert not (legacy / "acme.json").exists()   # folded in, cleaned up
-    assert "acme" in json.loads(ar._file().read_text() or "{}") \
-        or ar.get("acme")   # persisted on next write path or readable
-
-
-def test_dossier_renders_thesis_over_static_service_fit(state, monkeypatch):
-    from tool import advisory_research as ar
+def test_dossier_renders_advisory_services_from_signals(state):
     from tool import dossier
-    monkeypatch.setattr(ar, "_candidates", lambda: [
-        {"pid": "acme", "company": "Acme plc", "_ev_hash": "h", "_score": 50,
-         "_presented": True, "events": []}])
-    ar.run(runner=lambda b: _thesis_payload())
     rec = {"company": "Acme plc", "last_seen": "2026-06-12",
            "status": "active",
            "events": [{"date": "2026-06-01", "key": "restructure",
                        "label": "Restructure", "evidence": "x",
                        "source": "RNS", "url": ""}]}
     md = dossier._render_md("acme", rec, [])
-    assert "## Advisory Brief" in md
-    assert "### Meeting preparation" in md
-    assert "Advisory services — signal-led playbook" not in md
-    # No overlay -> static service fit still renders (never silent).
-    md2 = dossier._render_md("other", rec, [])
-    assert "Advisory services — signal-led playbook" in md2
-
-
-def test_thesis_requires_grounded_needs(state):
-    from tool import advisory_research as ar
-    assert ar._validated(_thesis_payload(needs=[])) is None
-    assert ar._validated(_thesis_payload(meeting_hook="")) is None
+    assert "## Advisory services" in md
 
 
 # --------------------------------------------------- 6. never silent
@@ -387,10 +280,9 @@ def test_contacts_only_mode_gates_optional_passes(state, monkeypatch):
     def boom(*a, **k):
         raise AssertionError("optional pass spent credits")
 
-    from tool import advisory_research, auto_investigate, universe_expand
+    from tool import auto_investigate, universe_expand
     from tool import semantic_scan
     from tool.outreach import ai_draft
-    assert advisory_research.run(runner=boom) == 0
     assert auto_investigate.run(runner=boom) == 0
     assert universe_expand.run([], call=boom) == 0
     assert semantic_scan.detect([{"title": "x", "summary": "y"}],

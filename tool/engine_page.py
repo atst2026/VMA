@@ -1510,7 +1510,7 @@ function portfolioHTML(l){
   h+='<div class="port-top"><div>'
     +'<div class="eyeb">BUSINESS LEAD PORTFOLIO · VMA GROUP</div>'
     +'<div class="pco">'+esc(l.co)+'</div>'
-    +'<div class="pmand"><b>'+esc(l.seat||'')+'</b>'+(l.why?' · '+esc(l.why):'')
+    +'<div class="pmand">'+esc(l.why||'')
     +(ageLabel(l.age)?' · signal '+ageLabel(l.age):'')+'</div></div>'
     +'<div class="pright"><div class="pchips">'
     +(l.ver?chip('ver-'+l.ver,esc(VER_LABEL[l.ver]||l.ver).toUpperCase(),MEANING[l.ver]):'')
@@ -1527,7 +1527,6 @@ function portfolioHTML(l){
   if(!ready&&l.gateWhy){
     h+='<div class="prow"><span class="pl2">WHY NOT CALL-READY</span><div class="pv"><div class="gatebox">'+esc(l.gateWhy)+'</div></div></div>';
   }
-  if(l.whyNow||l.brief)h+='<div class="prow"><span class="pl2">OPPORTUNITY</span><div class="pv">'+esc(l.whyNow||l.brief)+'</div></div>';
   /* Account thesis (AI-researched, evidence-cited) outranks the static
      service mix: this is the AD-grade read of what THIS company needs —
      grounded needs across the full catalogue, plus the meeting hook.
@@ -1550,12 +1549,10 @@ function portfolioHTML(l){
     }
   }else if(l.serviceFit&&l.serviceFit.services&&l.serviceFit.services.length){
     h+='<div class="prow alt"><span class="pl2">WHAT VMA CAN SELL</span><div class="pv">'
-      +l.serviceFit.services.map(s=>'<div class="svcline"><span class="svcchip '+esc(s.family||'advisory')+'" title="'+esc(s.label||'')+'">'+esc((s.short||s.key||'').toUpperCase())+'</span><span>'+esc(s.reason||'')+'</span></div>').join('')
-      +(l.serviceFit.budget_note?'<div class="svcnote">'+esc(l.serviceFit.budget_note)+'</div>':'')
+      +l.serviceFit.services.map(s=>'<div class="svcline"><span class="svcchip '+esc(s.family||'advisory')+'" title="'+esc(s.label||'')+'">'+esc((s.short||s.key||'').toUpperCase())+'</span><span>'+esc(s.label||s.key||'')+'</span></div>').join('')
       +'</div></div>';
   }
-  if(l.ammo&&l.ammo.length)h+='<div class="prow alt"><span class="pl2">CALL AMMO</span><div class="pv">'
-    +'<div class="ammohead">Sector insight to give away on the call — the value the opener promises:</div>'
+  if(l.ammo&&l.ammo.length)h+='<div class="prow alt"><span class="pl2">SECTOR INSIGHT</span><div class="pv">'
     +l.ammo.map(a=>'<div class="ammoline">'+esc(a)+'</div>').join('')+'</div></div>';
   h+='<div class="prow alt"><span class="pl2">WINDOW</span><div class="pv"><b>'+esc(l.win||'Timing not yet established')+'</b>'
     +' <span style="color:var(--muted)">— '+esc(winLogic(l))+'</span>'
@@ -1580,18 +1577,15 @@ function portfolioHTML(l){
   if(srcs.length){
     h+='<div class="prow"><span class="pl2">SOURCES</span><div class="pv">'
       +srcs.map(s=>'<a class="srcl" href="'+esc(s.url||('https://'+(s.src||'')))+'" target="_blank" rel="noopener">'
-      +'<span class="ek">'+srcKind(s.src||s.url)+'</span>'
       +'<span class="el2">'+esc(s.label||s.src||'source')+((s.n||1)>1?' <b class="xn">×'+s.n+'</b>':'')+'</span>'
-      +'<span class="ed2">'+esc(s.src||'')+(ageLabel(s.age)?' · '+ageLabel(s.age):'')+'</span>'
       +'<svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg></a>').join('')
       +'</div></div>';
   }
-  if(q.budget_why||q.budget!=null){
-    const blab=q.budget>=2?'Funded':'Budget unknown';
+  if(q.budget!=null){
+    const blab=q.budget>=2?'Funded':q.budget===1?'Developing':'Constrained';
     const bcol=q.budget>=2?'#1E7A41':q.budget===1?'#B45309':'#9AA0A6';
     h+='<div class="prow alt"><span class="pl2">BUDGET</span><div class="pv">'
       +'<b style="color:'+bcol+'">'+esc(blab)+'</b>'
-      +(q.budget_why?' <span style="color:var(--muted)">— '+esc(q.budget_why)+'</span>':'')
       +(l.prop?' &nbsp;'+chip('prop',esc(l.prop).toUpperCase(),MEANING.prop+(l.propWhy?' Here: '+l.propWhy+'.':'')):'')
       +'</div></div>';
   }
