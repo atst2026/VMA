@@ -531,6 +531,13 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
 .svcchip.hire{color:#1D5FA8;background:rgba(66,133,244,.1);border-color:rgba(66,133,244,.3)}
 .svcchip.referral{color:#9A6A14;background:rgba(217,151,43,.12);border-color:rgba(217,151,43,.35)}
 .svcnote{margin-top:5px;padding-top:5px;border-top:1px dashed rgba(16,22,38,.12);font-size:11.5px;font-style:italic;color:#9A6A14}
+/* Lead insight tabs (Hiring Trigger / Potential Advisory Services) */
+.ptabs-wrap{border-bottom:1px solid rgba(16,22,38,.06)}
+.ptabs-bar{display:flex;gap:0;padding:0 28px;border-bottom:1px solid rgba(16,22,38,.09)}
+.ptab{background:none;border:none;border-bottom:2px solid transparent;padding:9px 14px 8px;margin-bottom:-1px;font:650 9.5px var(--mono);letter-spacing:.1em;color:var(--dim);cursor:pointer;transition:color .15s,border-color .15s}
+.ptab:hover{color:var(--ink2)}
+.ptab.active{color:var(--vma);border-bottom-color:var(--vma)}
+.ptab-pane{padding:13px 28px;font-size:12.5px;line-height:1.62;color:var(--ink2)}
 /* Account thesis — the AI-researched, evidence-cited account read. */
 .resbadge{font:700 8px var(--mono);letter-spacing:.1em;color:#1E7A41;background:rgba(30,122,65,.1);border:1px solid rgba(30,122,65,.3);border-radius:8px;padding:1px 6px;margin-left:6px;vertical-align:middle}
 .thheadline{font-weight:650;font-size:12.5px;margin-bottom:5px;color:var(--ink)}
@@ -1500,6 +1507,13 @@ function srcKind(src){
   if(/linkedin/.test(src))return 'SOCIAL';
   return 'PRESS';
 }
+function switchPortTab(btn){
+  const w=btn.closest('.ptabs-wrap');
+  w.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  w.querySelectorAll('.ptab-pane').forEach(p=>p.hidden=true);
+  w.querySelector('.ptab-pane[data-pane="'+btn.dataset.pane+'"]').hidden=false;
+}
 function portfolioHTML(l){
   const score=l.score==null?0:l.score;
   const C=2*Math.PI*26,dash=(C*score/100).toFixed(1),col=scol(score);
@@ -1547,10 +1561,25 @@ function portfolioHTML(l){
         +((T.talking_points||[]).length?'<div class="thpts">'+T.talking_points.map(t=>'<div class="ammoline">'+esc(t)+'</div>').join('')+'</div>':'')
         +'</div></div>';
     }
-  }else if(l.serviceFit&&l.serviceFit.services&&l.serviceFit.services.length){
-    h+='<div class="prow alt"><span class="pl2">WHAT VMA CAN SELL</span><div class="pv">'
-      +l.serviceFit.services.map(s=>'<div class="svcline"><span class="svcchip '+esc(s.family||'advisory')+'" title="'+esc(s.label||'')+'">'+esc((s.short||s.key||'').toUpperCase())+'</span><span>'+esc(s.label||s.key||'')+'</span></div>').join('')
-      +'</div></div>';
+  }
+  /* Two-tab insight block: Hiring Trigger (why this signal → hire) +
+     Potential Advisory Services (service fit chips + reason copy). */
+  const _hasTrig=!!(l.whyNow||l.brief);
+  const _hasSvc=!!(l.serviceFit&&l.serviceFit.services&&l.serviceFit.services.length);
+  if(_hasTrig||_hasSvc){
+    const _initTab=_hasTrig?'trigger':'advisory';
+    h+='<div class="ptabs-wrap">'
+      +'<div class="ptabs-bar">'
+      +(_hasTrig?'<button class="ptab'+(_initTab==='trigger'?' active':'')+'" data-pane="trigger" onclick="switchPortTab(this)">HIRING TRIGGER</button>':'')
+      +(_hasSvc?'<button class="ptab'+(_initTab==='advisory'?' active':'')+'" data-pane="advisory" onclick="switchPortTab(this)">POTENTIAL ADVISORY SERVICES</button>':'')
+      +'</div>'
+      +(_hasTrig?'<div class="ptab-pane" data-pane="trigger"'+(_initTab!=='trigger'?' hidden':'')+'>'
+        +esc(l.whyNow||l.brief||'')
+        +'</div>':'')
+      +(_hasSvc?'<div class="ptab-pane" data-pane="advisory"'+(_initTab!=='advisory'?' hidden':'')+'>'
+        +l.serviceFit.services.map(s=>'<div class="svcline"><span class="svcchip '+esc(s.family||'advisory')+'" title="'+esc(s.label||'')+'">'+esc((s.short||s.key||'').toUpperCase())+'</span>'+(s.reason?'<span>'+esc(s.reason)+'</span>':'<span>'+esc(s.label||s.key||'')+'</span>')+'</div>').join('')
+        +'</div>':'')
+      +'</div>';
   }
   if(l.ammo&&l.ammo.length)h+='<div class="prow alt"><span class="pl2">SECTOR INSIGHT</span><div class="pv">'
     +l.ammo.map(a=>'<div class="ammoline">'+esc(a)+'</div>').join('')+'</div></div>';
@@ -1584,8 +1613,9 @@ function portfolioHTML(l){
   if(q.budget!=null){
     const blab=q.budget>=2?'Funded':q.budget===1?'Developing':'Constrained';
     const bcol=q.budget>=2?'#1E7A41':q.budget===1?'#B45309':'#9AA0A6';
+    const _fundedType=q.budget>=2&&l.why?(l.why.match(/\(([^)]+)\)/)||[])[1]||'':'';
     h+='<div class="prow alt"><span class="pl2">BUDGET</span><div class="pv">'
-      +'<b style="color:'+bcol+'">'+esc(blab)+'</b>'
+      +'<b style="color:'+bcol+'">'+esc(blab)+(_fundedType?' ('+esc(_fundedType)+')':'')+'</b>'
       +(l.prop?' &nbsp;'+chip('prop',esc(l.prop).toUpperCase(),MEANING.prop+(l.propWhy?' Here: '+l.propWhy+'.':'')):'')
       +'</div></div>';
   }
