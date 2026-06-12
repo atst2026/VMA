@@ -31,10 +31,15 @@ from tool.state_paths import state_dir
 
 log = logging.getLogger("brief.contacts.bd_poc")
 
+# Per-run resolution budgets. Raised to clear the ~150-company first-pass
+# backlog in 2-3 nightly runs rather than a week — each resolution is
+# free (Companies House + RNS + the company's own site, all cached, all
+# behind the 7-day attempt ledger so nothing is re-spent). Override via
+# env to dial back without a deploy.
 MAX_RESOLUTIONS_PER_RUN = int(
-    os.environ.get("BD_POC_MAX_RESOLUTIONS") or 20)
+    os.environ.get("BD_POC_MAX_RESOLUTIONS") or 40)
 JOBS_MAX_RESOLUTIONS_PER_RUN = int(
-    os.environ.get("JOBS_CONTACT_MAX_RESOLUTIONS") or 15)
+    os.environ.get("JOBS_CONTACT_MAX_RESOLUTIONS") or 30)
 ATTEMPT_TTL_DAYS = 7
 MAX_SLOTS_PER_COMPANY = 2
 
