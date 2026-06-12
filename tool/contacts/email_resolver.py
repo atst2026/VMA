@@ -229,14 +229,29 @@ def _surname(full_name: str) -> str:
 
 
 def _published_for_person(company: str, full_name: str) -> dict | None:
-    """A published address attributable to THIS person: the name hint
-    next to the address matches, or their surname is in the local part.
-    In-house domains outrank the issuer's PR agency's."""
+    """A published address attributable to THIS person, from EITHER the
+    RNS enquiries archive OR the company's own pages (site_pages): the
+    name printed next to the address matches, or their surname is in
+    the local part. In-house domains outrank the issuer's PR agency's."""
+    cands = []
     try:
         from tool import rns_contacts
-        cands = rns_contacts.published_emails(company)
+        cands += rns_contacts.published_emails(company)
     except Exception:
-        return None
+        pass
+    try:
+        from tool.contacts import site_pages
+        sp = site_pages.harvest(company)
+        for e in sp.get("emails") or []:
+            cands.append({"email": e["email"],
+                          "name_hint": e.get("name") or "",
+                          "generic": not (e.get("name") or ""),
+                          "in_house": (sp.get("domain") or "")
+                          in e["email"].lower(),
+                          "url": e.get("url") or "",
+                          "at": sp.get("at") or ""})
+    except Exception:
+        pass
     if not cands:
         return None
     sur = _surname(full_name)
@@ -318,7 +333,107 @@ def resolve_email(company: str, entry: ContactEntry,
             log.info("email %s @ %s: hunter %s (score %s)", entry.name,
                      company, status, found["score"])
             return True
+
+    # 3. Free format inference — visible best-guess, never sendable.
+    guess = format_guess(company, entry.name)
+    if guess:
+        entry.email = guess["email"]
+        entry.email_status = "pattern"
+        entry.email_source = "format_inference"
+        entry.email_source_url = guess.get("source_url") or ""
+        entry.email_checked_at = now
+        log.info("email %s @ %s: format-inferred pattern (not sendable)",
+                 entry.name, company)
+        return True
     return False
+
+
+# ---- Email-format inference (free; produces PATTERN, never sendable) --
+# When a company's pages or RNS blocks publish even one colleague's
+# address with their name, the company's format is usually knowable
+# (jane.smith@ -> first.last). A constructed address for OUR contact is
+# evidence-grounded but unverified — stored as status "pattern" so the
+# AD can see and use it manually, while the one-click send stays
+# blocked exactly as the schema's sendable statuses dictate.
+_FORMATS = {
+    "first.last":  lambda f, l: f"{f}.{l}",
+    "firstlast":   lambda f, l: f"{f}{l}",
+    "flast":       lambda f, l: f"{f[0]}{l}",
+    "f.last":      lambda f, l: f"{f[0]}.{l}",
+    "first_last":  lambda f, l: f"{f}_{l}",
+    "first-last":  lambda f, l: f"{f}-{l}",
+    "lastf":       lambda f, l: f"{l}{f[0]}",
+    "last.first":  lambda f, l: f"{l}.{f}",
+    "first":       lambda f, l: f,
+}
+
+
+def _name_parts(full_name: str) -> tuple[str, str] | None:
+    parts = [re.sub(r"[^a-z]", "", p.lower())
+             for p in re.split(r"\s+", (full_name or "").strip())]
+    parts = [p for p in parts if p]
+    if len(parts) < 2 or len(parts[0]) < 2 or len(parts[-1]) < 2:
+        return None
+    return parts[0], parts[-1]
+
+
+def _detect_format(full_name: str, email: str) -> str | None:
+    np = _name_parts(full_name)
+    if not np:
+        return None
+    f, l = np
+    local = (email or "").lower().partition("@")[0]
+    for label, build in _FORMATS.items():
+        if build(f, l) == local:
+            return label
+    return None
+
+
+def observed_pairs(company: str) -> list[dict]:
+    """Every (name, email) pairing the free sources have published for
+    this company — RNS enquiries blocks + the company's own pages."""
+    out = []
+    try:
+        from tool import rns_contacts
+        for c in rns_contacts.published_emails(company):
+            if c.get("name_hint") and not c.get("generic"):
+                out.append({"name": c["name_hint"], "email": c["email"],
+                            "url": c.get("url") or ""})
+    except Exception:
+        pass
+    try:
+        from tool.contacts import site_pages
+        for e in site_pages.harvest(company).get("emails") or []:
+            if e.get("name"):
+                out.append({"name": e["name"], "email": e["email"],
+                            "url": e.get("url") or ""})
+    except Exception:
+        pass
+    return out
+
+
+def format_guess(company: str, full_name: str) -> dict | None:
+    """Construct {email, status:'pattern', source_url} for `full_name`
+    from the company's OBSERVED address format. Requires at least one
+    same-domain colleague pairing that decodes to a known format; the
+    modal format wins on ties. None when the evidence isn't there."""
+    np = _name_parts(full_name)
+    if not np:
+        return None
+    votes: dict[tuple[str, str], list[str]] = {}
+    for p in observed_pairs(company):
+        fmt = _detect_format(p["name"], p["email"])
+        if not fmt:
+            continue
+        domain = p["email"].lower().partition("@")[2]
+        votes.setdefault((domain, fmt), []).append(p.get("url") or "")
+    if not votes:
+        return None
+    (domain, fmt), urls = max(votes.items(), key=lambda kv: len(kv[1]))
+    f, l = np
+    return {"email": f"{_FORMATS[fmt](f, l)}@{domain}",
+            "status": "pattern",
+            "source_url": next((u for u in urls if u), "")}
 
 
 def find_for_person(company: str, full_name: str,
@@ -355,7 +470,8 @@ def find_for_person(company: str, full_name: str,
                     return None
             return {"email": found["email"], "status": status,
                     "source_url": ""}
-    return None
+    # Last rung, fully free: the company's observed address format.
+    return format_guess(company, full_name)
 
 
 def fill_from_domain_search(company: str, slots: tuple,

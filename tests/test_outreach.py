@@ -22,9 +22,13 @@ def _iso(days_ago=0):
 
 @pytest.fixture
 def state(tmp_path, monkeypatch):
-    """Point every state file at tmp and scrub the env knobs."""
+    """Point every state file at tmp, scrub the env knobs, and stub the
+    direct-site harvester so no test can reach the network."""
     import tool.state_paths as sp
+    from tool.contacts import site_pages
     monkeypatch.setattr(sp, "state_root", lambda profile_key=None: tmp_path)
+    monkeypatch.setattr(site_pages, "harvest", lambda c, **k: {
+        "domain": "", "people": [], "emails": [], "pages": [], "at": ""})
     for var in ("HUNTER_API_KEY", "ANTHROPIC_API_KEY", "OUTREACH_TEST_MODE",
                 "OUTREACH_FROM_NAME"):
         monkeypatch.delenv(var, raising=False)
@@ -254,7 +258,7 @@ def test_researcher_noop_without_api_key(state):
 # ====================================================================
 # 5. The contact dict carries the email only while sendable
 # ====================================================================
-def test_best_named_contact_carries_sendable_email_only(state):
+def test_best_named_contact_carries_email_with_status(state):
     from tool.hiring_manager import best_named_contact
     contacts = {}
     from tool.contacts.store import upsert_contact
@@ -269,7 +273,13 @@ def test_best_named_contact_carries_sendable_email_only(state):
         email_checked_at=_iso(1)))
     nc2 = best_named_contact("Patterny", ("head_of_comms",),
                              contacts=contacts)
-    assert nc2["email"] == "" and nc2["email_status"] == ""
+    # Pattern guesses are SHOWN (red chip, manual use) — the send gate
+    # blocks them; only a stale/absent address vanishes entirely.
+    assert nc2["email"] == "guess@patterny.com"
+    assert nc2["email_status"] == "pattern"
+    from tool.outreach import sendable_state
+    ok, why = sendable_state({**nc2, "title": "x"})
+    assert not ok and "pattern" in why
 
 
 # ====================================================================
@@ -381,9 +391,11 @@ def test_ai_draft_noop_without_key_and_template_fallback(state):
 
 def test_enrich_signals_attaches_drafts_with_budget(state, monkeypatch):
     from tool import outreach
-    from tool.contacts import job_researcher
+    from tool.contacts import bd_poc_fill, job_researcher
     monkeypatch.setattr(job_researcher, "research_signals",
                         lambda *a, **k: 0)
+    monkeypatch.setattr(bd_poc_fill, "fill_for_signals",
+                        lambda *a, **k: {"resolved": 0})
     monkeypatch.setattr(outreach, "ai_draft",
                         lambda s, c=None: f"draft for {s['company']}")
     signals = [{"kind": "job", "title": f"Head of Communications {i}",

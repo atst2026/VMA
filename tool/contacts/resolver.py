@@ -456,6 +456,38 @@ def resolve(company: str, role_slot: str, *,
             reason="fetch disabled (no Bright Data)",
         ))
 
+    # Source 3b: the company's OWN site, fetched DIRECTLY — no Bright
+    # Data, no Google. This is the free, highest-recall source (the BD
+    # path above silently no-ops without a configured zone, which is
+    # exactly how runs end up resolving nothing). Pages are cached per
+    # company by site_pages; the same name+title extractor and title
+    # taxonomy gate what counts as a candidate.
+    try:
+        from tool.contacts import site_pages as _sp_mod
+        _sp = _sp_mod.harvest(company)
+        sp_cands = []
+        for p in (_sp.get("people") or []):
+            slot = p.get("slot") or classify_title(p.get("title") or "")
+            if not slot:
+                continue
+            c = CandidateRecord(
+                name=p["name"], role_title=p.get("title") or "",
+                confidence=0.72, source="site_leadership",
+                linkedin_url=None,
+            )
+            c._slot = slot  # type: ignore[attr-defined]
+            sp_cands.append(c)
+        sources_queried.append(SourceQuery(
+            source="site_leadership", returned_data=bool(sp_cands),
+            reason="" if sp_cands else "no name/title pairs on site",
+        ))
+        all_candidates.extend(sp_cands)
+    except Exception as _e:
+        sources_queried.append(SourceQuery(
+            source="site_leadership", returned_data=False,
+            reason=f"error: {_e}",
+        ))
+
     # Pick the best matching candidate for the target role_slot first
     target_candidates = [
         c for c in all_candidates
