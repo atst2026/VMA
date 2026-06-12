@@ -103,6 +103,61 @@ def _fresh(rec: dict) -> bool:
         return False
 
 
+# A segment that is EXACTLY a person's name (2-3 capitalised words,
+# no role/org words) — used to pair sibling-element card layouts where
+# the name and the title live in adjacent tags.
+_PERSON_SEG_RX = re.compile(
+    r"[A-Z][a-z]*(?:[A-Z][a-z]+|['’\-][A-Za-z]+)*"
+    r"(?:\s+[A-Z][a-z]*(?:[A-Z][a-z]+|['’\-][A-Za-z]+)*){1,2}")
+_NOT_A_PERSON = frozenset(w.lower() for w in (
+    "Head", "Director", "Chief", "Group", "Officer", "Executive",
+    "Manager", "Team", "Board", "Leadership", "Communications",
+    "Corporate", "Affairs", "Marketing", "Investor", "Relations",
+    "People", "Media", "Press", "Contact", "About", "Our", "The",
+    "Senior", "Global", "Company", "Limited", "Plc", "Holdings",
+    "View", "Read", "More", "Profile", "Linkedin", "Email",
+))
+
+
+def _seg_person(seg: str) -> str | None:
+    seg = seg.strip(" -–—·•|,")
+    m = _PERSON_SEG_RX.fullmatch(seg)
+    if not m:
+        return None
+    words = seg.split()
+    if any(w.lower() in _NOT_A_PERSON for w in words):
+        return None
+    return seg
+
+
+def _paired_people(text: str) -> list[dict]:
+    """Real leadership pages put the name and the title in SIBLING
+    elements (<h3>Jane Smith</h3><p>Chief Comms Officer</p>) — the
+    inline 'Name — Title' regex never sees them as one string. The
+    block boundaries we inserted (' . ') turn that into adjacent
+    segments; pair a pure-name segment with a titled neighbour (next
+    first, then previous, for title-first cards)."""
+    from tool.contacts.resolver import classify_title
+    segs = [s.strip(" .·•|-–—,") for s in re.split(r"\s*\.\s+", text)]
+    segs = [s for s in segs if s]
+    out = []
+    for i, seg in enumerate(segs):
+        name = _seg_person(seg)
+        if not name:
+            continue
+        for j in (i + 1, i + 2, i - 1):
+            if j < 0 or j >= len(segs) or j == i:
+                continue
+            cand = segs[j].strip(" -–—·•|,")
+            if not (2 < len(cand) <= 90) or _seg_person(cand):
+                continue
+            slot = classify_title(cand)
+            if slot:
+                out.append({"name": name, "title": cand, "slot": slot})
+                break
+    return out
+
+
 def direct_fetch(url: str) -> str | None:
     """Plain browser-UA GET via the shared HTTP helper. None on any
     failure — a blocked site is an honest miss, never an error."""
@@ -225,13 +280,15 @@ def harvest(company: str, cache: dict | None = None,
             blocky = re.sub(
                 r"(?i)</(h[1-6]|p|li|div|td|th|tr|section|article|"
                 r"figcaption|span)>|<br\s*/?>", " . ", html)
-            for c in _extract_name_title_pairs(blocky):
-                k = c.name.lower()
+            found = [{"name": c.name, "title": c.role_title,
+                      "slot": getattr(c, "_slot", None)}
+                     for c in _extract_name_title_pairs(blocky)]
+            found += _paired_people(_page_text(blocky))
+            for p in found:
+                k = p["name"].lower()
                 if k not in seen_people:
                     seen_people.add(k)
-                    people.append({"name": c.name, "title": c.role_title,
-                                   "slot": getattr(c, "_slot", None),
-                                   "url": url})
+                    people.append({**p, "url": url})
             for e in _emails_from_text(_page_text(html)):
                 if e["email"].lower() not in seen_emails:
                     seen_emails.add(e["email"].lower())

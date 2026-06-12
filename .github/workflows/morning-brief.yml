@@ -230,7 +230,7 @@ jobs:
           # guard exit 1 is the ONLY hard failure path (real corruption).
           for attempt in 1 2 3; do
             if git fetch origin main \
-               && git rebase origin/main \
+               && git rebase --autostash origin/main \
                && git push origin HEAD:main; then
               echo "auto-commit pushed (attempt ${attempt})."
               exit 0
