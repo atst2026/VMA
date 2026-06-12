@@ -550,8 +550,59 @@ _BD_POC_SLOTS = {
 # NO generic fallbacks by AD decision: a "Communications Director —
 # find on LinkedIn" row is noise. With no named, floor-clearing person
 # the section simply doesn't render; the nightly bd_poc_fill pass
-# (multi-source resolver + Bright Data profile lookup) exists to make
-# that state rare.
+# (multi-source resolver + model research + Bright Data profile lookup)
+# exists to make that state rare. The team-map fallback below stays
+# inside that rule: it only ever adds NAMED people observed on the
+# company's own leadership page, flagged for verification.
+
+# Desk → which leadership-page titles count as the function family for
+# the team-map POC fallback. Deliberately tight: a finance or ops title
+# must never surface as a comms POC.
+_TEAM_PAGE_TITLE_RX = {
+    "comms": re.compile(
+        r"communicat|corporate affairs|public affairs|external affairs|"
+        r"media relations|press|public relations|internal comms|"
+        r"investor relations|\bcco\b", re.IGNORECASE),
+    "marketing": re.compile(
+        r"market|brand|growth|customer|digital|\bcmo\b", re.IGNORECASE),
+}
+
+
+def _team_page_pocs(company: str, desk: str, exclude: set,
+                    flagged: dict, limit: int) -> list[dict]:
+    """NAMED function-family people from the accumulated leadership-page
+    roster (tool/team_map) — the free fallback when the contacts store
+    has nobody. Page-observed, so always flagged stale ('verify before
+    opening'); links to a precise name+company Recruiter search. Never
+    raises."""
+    out: list[dict] = []
+    if limit <= 0:
+        return out
+    try:
+        from tool import team_map as _tm
+        rx = _TEAM_PAGE_TITLE_RX.get(desk, _TEAM_PAGE_TITLE_RX["comms"])
+        roster = _tm.team(company) or {}
+        for name, info in roster.items():
+            role = (info or {}).get("role") or ""
+            if not name or not rx.search(role):
+                continue
+            key = name.strip().lower()
+            if key in exclude:
+                continue
+            if any(v.get("name") == name for v in flagged.values()):
+                continue
+            exclude.add(key)
+            out.append({
+                "name": name,
+                "title": role,
+                "url": _li_talent_search(f'"{name}" "{company}"'),
+                "stale": True,   # page-observed — verify before opening
+            })
+            if len(out) >= limit:
+                break
+    except Exception:
+        pass
+    return out
 
 
 def _li_talent_search(keywords: str) -> str:
@@ -585,6 +636,8 @@ def bd_points_of_contact(company: str, desk: str | None = None,
     company = (company or "").strip()
     fresh: list[dict] = []
     stale: list[dict] = []
+    seen: set = set()
+    flagged: dict = {}
     if company and company != "—":
         try:
             from tool.contacts.store import load_contacts, get_contact
@@ -597,7 +650,6 @@ def bd_points_of_contact(company: str, desk: str | None = None,
                 flagged = contact_flags.get_flags()
             except Exception:
                 flagged = {}
-            seen: set = set()
             for slot in slots:
                 entry = card.get(slot) if card else None
                 if not entry or not getattr(entry, "name", ""):
@@ -623,4 +675,11 @@ def bd_points_of_contact(company: str, desk: str | None = None,
                 (fresh if entry.is_fresh() else stale).append(item)
         except Exception:
             pass
+        # Roster came up short: fill the remaining rows with NAMED
+        # function-family people observed on the company's own
+        # leadership page (team_map) — never generic role rows.
+        if len(fresh) + len(stale) < limit:
+            stale += _team_page_pocs(
+                company, desk, seen, flagged,
+                limit - len(fresh) - len(stale))
     return (fresh + stale)[:limit]

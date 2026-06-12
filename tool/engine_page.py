@@ -382,6 +382,7 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .jc-em.es-verified{color:#1e7a41}.jc-em.es-published{color:#1d4ed8}
 .jc-em.es-pattern,.jc-em.es-none{color:#b5530e}
+.jcontact.jdiag{color:#9a3412;font-style:italic}
 .om-backdrop{display:none;position:fixed;inset:0;background:rgba(20,28,46,.32);
   backdrop-filter:blur(4px);z-index:90;align-items:center;justify-content:center}
 .om-backdrop.open{display:flex}
@@ -526,6 +527,14 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
 .svcchip.hire{color:#1D5FA8;background:rgba(66,133,244,.1);border-color:rgba(66,133,244,.3)}
 .svcchip.referral{color:#9A6A14;background:rgba(217,151,43,.12);border-color:rgba(217,151,43,.35)}
 .svcnote{margin-top:5px;padding-top:5px;border-top:1px dashed rgba(16,22,38,.12);font-size:11.5px;font-style:italic;color:#9A6A14}
+/* Account thesis — the AI-researched, evidence-cited account read. */
+.resbadge{font:700 8px var(--mono);letter-spacing:.1em;color:#1E7A41;background:rgba(30,122,65,.1);border:1px solid rgba(30,122,65,.3);border-radius:8px;padding:1px 6px;margin-left:6px;vertical-align:middle}
+.thheadline{font-weight:650;font-size:12.5px;margin-bottom:5px;color:var(--ink)}
+.thsnap{font-size:12px;color:#5a6577;margin-bottom:7px;line-height:1.55}
+.thev{color:#5a6577;font-size:11.5px}
+.thev a{color:#1d4ed8;text-decoration:none}
+.thhook{padding:9px 12px;border-left:2px solid #1E7A41;border-radius:0 9px 9px 0;background:rgba(30,122,65,.06);font-size:12.5px;line-height:1.6;color:var(--ink2)}
+.thpts{margin-top:7px}
 .openerbox{margin:14px 28px 0;padding:11px 14px;border-left:2px solid var(--vma);border-radius:0 12px 12px 0;
   background:rgba(62,92,132,.06);font-size:12.5px;line-height:1.62;color:var(--ink2)}
 /* ---- the pipeline past PRODUCTION ----
@@ -1513,11 +1522,27 @@ function portfolioHTML(l){
     h+='<div class="prow"><span class="pl2">WHY NOT CALL-READY</span><div class="pv"><div class="gatebox">'+esc(l.gateWhy)+'</div></div></div>';
   }
   if(l.whyNow||l.brief)h+='<div class="prow"><span class="pl2">OPPORTUNITY</span><div class="pv">'+esc(l.whyNow||l.brief)+'</div></div>';
-  /* Service-fit — what this signal stack says the account NEEDS and VMA
-     can sell: hires, Advisory Services (org design / benchmarking /
-     coaching / ED&I) and the referral lanes (partner agency, engagement
-     platform). Budget-strained stacks carry the project-fee steer. */
-  if(l.serviceFit&&l.serviceFit.services&&l.serviceFit.services.length){
+  /* Account thesis (AI-researched, evidence-cited) outranks the static
+     service mix: this is the AD-grade read of what THIS company needs —
+     grounded needs across the full catalogue, plus the meeting hook.
+     Falls back to the trigger-class service-fit when no fresh thesis. */
+  if(l.thesis&&l.thesis.needs&&l.thesis.needs.length){
+    const T=l.thesis;
+    h+='<div class="prow alt"><span class="pl2">ACCOUNT THESIS <span class="resbadge" title="Researched with live web evidence on '+esc((T.researched_at||'').slice(0,10))+'">RESEARCHED</span></span><div class="pv">'
+      +'<div class="thheadline">'+esc(T.headline||'')+'</div>'
+      +(T.function_snapshot?'<div class="thsnap">'+esc(T.function_snapshot)+'</div>':'')
+      +T.needs.map(n=>'<div class="svcline"><span class="svcchip '+esc(n.family||'advisory')+'" title="'+esc(n.service_label||'')+'">'+esc((n.service_short||n.service||'').toUpperCase())+'</span><span>'+esc(n.need||'')
+        +(n.why_now?' <i>'+esc(n.why_now)+'</i>':'')
+        +' <span class="thev">— '+esc(n.evidence||'')
+        +(n.url?' <a href="'+esc(n.url)+'" target="_blank" rel="noopener">[source]</a>':'')
+        +'</span></span></div>').join('')
+      +'</div></div>';
+    if(T.meeting_hook){
+      h+='<div class="prow"><span class="pl2">MEETING HOOK</span><div class="pv"><div class="thhook">'+esc(T.meeting_hook)+'</div>'
+        +((T.talking_points||[]).length?'<div class="thpts">'+T.talking_points.map(t=>'<div class="ammoline">'+esc(t)+'</div>').join('')+'</div>':'')
+        +'</div></div>';
+    }
+  }else if(l.serviceFit&&l.serviceFit.services&&l.serviceFit.services.length){
     h+='<div class="prow alt"><span class="pl2">WHAT VMA CAN SELL</span><div class="pv">'
       +l.serviceFit.services.map(s=>'<div class="svcline"><span class="svcchip '+esc(s.family||'advisory')+'" title="'+esc(s.label||'')+'">'+esc((s.short||s.key||'').toUpperCase())+'</span><span>'+esc(s.reason||'')+'</span></div>').join('')
       +(l.serviceFit.budget_note?'<div class="svcnote">'+esc(l.serviceFit.budget_note)+'</div>':'')
@@ -1616,7 +1641,9 @@ function jobRow(l,i){
     :'';
   const who=l.contactName
     ?'<div class="jcontact">→ '+esc(l.contactName)+(l.contactTitle?' · '+esc(l.contactTitle):'')+em+'</div>'
-    :'';
+    :(l.contactDiag
+      ?'<div class="jcontact jdiag" title="Contact-research diagnosis">→ no named contact — '+esc(l.contactDiag)+'</div>'
+      :'');
   return '<div class="jrow'+cls+'" data-url="'+esc(l.url||'')+'" title="Open posting">'
     +'<span class="rank">'+String(i+1).padStart(2,'0')+'</span>'
     +'<div><div class="jt">'+esc(l.jt||'')+'</div><div class="jc">'+esc(l.co)+'</div>'+who+'</div>'

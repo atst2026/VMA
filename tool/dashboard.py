@@ -630,6 +630,15 @@ def load_latest_signals() -> list[dict]:
     except Exception:
         _cc = {}
     _lstat = lead_status.get_statuses()
+    # Research-ledger diagnosis: why a lead has no named contact yet —
+    # loaded once, read per row. Never silent again.
+    try:
+        from tool.contacts import job_researcher as _jr
+        from tool.hiring_manager import manager_for_signal as _mfs
+        _research_ledger = _jr._load_ledger()
+    except Exception:
+        _jr = None
+        _research_ledger = {}
     for s in data:
         # lead_id already set during retention filter above
         s["status"] = _lstat.get(s["lead_id"], "active")
@@ -649,6 +658,16 @@ def load_latest_signals() -> list[dict]:
             _ok, _why = False, "outreach unavailable"
         s["send_ok"] = _ok
         s["send_block_reason"] = _why
+        # Diagnosis chip for the un-named: which stage is the blocker.
+        if _jr is not None and not (s.get("contact") or {}).get("name"):
+            try:
+                _slots = tuple(_mfs(s).get("slots") or ()) or (
+                    "head_of_comms",)
+                s["contact_diag"] = _jr.research_status(
+                    s.get("company") or "", _slots[0],
+                    ledger=_research_ledger)
+            except Exception:
+                s["contact_diag"] = ""
     return data
 
 
@@ -1547,11 +1566,17 @@ MR_JS = r"""
     var buyer=(l.buyer||l.champion)?dk('Economic buyer',esc(l.buyer||'')+(l.champion?' <span class="mr-evs">· path: '+esc(l.champion)+'</span>':'')):'';
     var kill=(pres(l)&&l.kill)?dk('What kills this',esc(l.kill)):'';
     var move=(pres(l)&&(l.opening||l.move))?dk(l.opening?'Warm opening':'First move',esc(l.opening||l.move)):'';
-    // Service-fit: the ranked VMA service mix the signal stack indicates —
-    // hires, Advisory Services and the referral lanes, with the per-signal
-    // reason. Budget-strained stacks carry the project-fee steer.
+    // Account thesis (AI-researched, evidence-cited) outranks the static
+    // service mix; falls back to the trigger-class playbook when no
+    // fresh thesis exists for this lead.
     var svc='';
-    if(l.serviceFit&&l.serviceFit.services&&l.serviceFit.services.length){
+    if(l.thesis&&l.thesis.needs&&l.thesis.needs.length){
+      var thi='<div class="mr-svc-item" style="font-weight:650">'+esc(l.thesis.headline||'')+'</div>';
+      l.thesis.needs.forEach(function(n){
+        thi+='<div class="mr-svc-item"><span class="mr-svc-chip '+esc(n.family||'advisory')+'" title="'+esc(n.service_label||'')+'">'+esc(n.service_short||n.service||'')+'</span><span class="mr-svc-why">'+esc(n.need||'')+' — '+esc(n.evidence||'')+(n.url?' <a href="'+esc(n.url)+'" target="_blank" rel="noopener">[source]</a>':'')+'</span></div>';});
+      svc=dk('Account thesis','<span class="mr-svc">'+thi+'</span>');
+      if(l.thesis.meeting_hook)svc+=dk('Meeting hook',esc(l.thesis.meeting_hook));
+    }else if(l.serviceFit&&l.serviceFit.services&&l.serviceFit.services.length){
       var sfi='';
       l.serviceFit.services.forEach(function(s){
         sfi+='<div class="mr-svc-item"><span class="mr-svc-chip '+esc(s.family||'advisory')+'" title="'+esc(s.label||'')+'">'+esc(s.short||s.key||'')+'</span><span class="mr-svc-why">'+esc(s.reason||'')+'</span></div>';});
@@ -2146,6 +2171,13 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
     from tool import why_now as _wn
     from tool.advisory import service_fit_for as _svc
     from tool.edge_detectors import intent_phrase as _intent
+    # AD-grade account theses (advisory_research overlays): grounded,
+    # evidence-cited needs that outrank the static service mix on cards.
+    try:
+        from tool import advisory_research as _advres
+        _theses = _advres.get_all()
+    except Exception:
+        _theses = {}
     for row in premarket_rows:
         _kind = row.get("_kind", "predictor")
         if _kind in ("stale_mandate", "water_sar", "contract_end", "cascade",
@@ -2289,6 +2321,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                 "whyNow": _why_now_txt,
                 "fee": _fee, "feeTip": _fee_tip,
                 "serviceFit": _svc(_tkeys),
+                "thesis": _theses.get(row.get("pid") or ""),
                 "brief": brief,
                 "url": url, "src": _mr_src(url, ev0.get("source")),
                 "win": _win_lbl,
@@ -2369,8 +2402,21 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
             "confidence": int(round(100 * float(_c.get("confidence") or 0))),
             "sendOk": 1 if s.get("send_ok") else 0,
             "blockReason": s.get("send_block_reason") or "",
+            # Why there's no named contact yet (research-ledger
+            # diagnosis) — empty when a contact is named.
+            "contactDiag": s.get("contact_diag") or "",
         })
     return bd, jobs
+
+
+def _contact_caps_safe() -> dict:
+    """Contact-engine capability + budget state for the banner; empty
+    dict (no banner) on any failure."""
+    try:
+        from tool.contacts.measure import contact_capabilities
+        return contact_capabilities()
+    except Exception:
+        return {}
 
 
 def _render_dashboard(legacy: bool = False):
@@ -2713,6 +2759,7 @@ def _render_dashboard(legacy: bool = False):
         has_token=bool(GITHUB_TOKEN),
         build_stamp=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         deploy_rev=_DEPLOY_REV,
+        contact_caps=_contact_caps_safe(),
     )
     ctx.pop("TEMPLATE_IGNORED")
     if legacy:
@@ -4567,6 +4614,15 @@ TEMPLATE = r"""
       margin-top: 3px; font-size: 11.5px; font-weight: 600; color: #5B459E;
     }
 
+    /* Contact-engine capability banner + per-lead diagnosis chip — a
+       missing key or exhausted budget must be visible, never silent. */
+    .caps-banner { margin: 0 0 14px; padding: 9px 13px; border-radius: 9px;
+      background: #FFF7ED; border: 1px solid #FDBA74; font-size: 12.5px; }
+    .caps-banner .caps-warn { color: #9A3412; font-weight: 600; margin: 2px 0; }
+    .caps-banner .caps-note { color: #92660A; margin-top: 3px; }
+    .badge.diag-chip { background: #FFF7ED; color: #9A3412;
+      border: 1px solid #FDBA74; }
+
     /* Specialist Signals — four low-frequency detectors collapsed into
        one panel that renders ONLY when a sub-detector has results, so
        the dashboard never advertises empty panels (the empty-panel
@@ -6097,6 +6153,17 @@ TEMPLATE = r"""
   <script>window.MR_BD={{ mr_bd|tojson }};window.MR_JOBS={{ mr_jobs|tojson }};window.MR_CAL={{ mr_cal|tojson }};window.MR_META={{ mr_meta|tojson }};</script>
   <script>{{ mr_js|safe }}</script>
 
+  {% if contact_caps and contact_caps.warnings %}
+  <!-- Contact-engine capability banner: a missing key or an exhausted
+       budget is operational state Sara must SEE, never a silent no-op. -->
+  <div class="caps-banner">
+    {% for w in contact_caps.warnings %}<div class="caps-warn">⚠ {{ w }}</div>{% endfor %}
+    {% if contact_caps.hunter and contact_caps.hunter_searches_left is not none %}
+    <div class="caps-note">Hunter this month: {{ contact_caps.hunter_searches_left }} searches · {{ contact_caps.hunter_verifies_left }} verifications left</div>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <!-- LEADS + PREDICTORS (legacy panels — hidden; retained for refresh JS) -->
   <div class="row">
 
@@ -6143,6 +6210,7 @@ TEMPLATE = r"""
                   <span class="badge">→ {{ c.name }}{% if c.title %} · {{ c.title }}{% endif %}</span>
                 {% else %}
                   <span class="badge">→ {{ c.title or 'hiring contact' }} — not yet named</span>
+                  {% if s.contact_diag %}<span class="badge diag-chip" title="Contact-research diagnosis">{{ s.contact_diag }}</span>{% endif %}
                 {% endif %}
                 {% if c.email %}<span class="badge email-chip es-{{ c.email_status or 'none' }}">{{ c.email }} · {{ c.email_status }}</span>{% endif %}
                 <span class="badge">conf {{ '%.0f' % (100 * (c.confidence or 0)) }}%</span>

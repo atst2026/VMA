@@ -26,6 +26,53 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
+def contact_capabilities() -> dict:
+    """The contact engine's live capability + budget state, for the
+    dashboard banner — so an exhausted budget or a missing key is never
+    silent again. Never raises."""
+    out = {"anthropic": False, "hunter": False, "bright_data": False,
+           "hunter_searches_left": None, "hunter_verifies_left": None,
+           "warnings": []}
+    try:
+        out["anthropic"] = bool(
+            (os.environ.get("ANTHROPIC_API_KEY") or "").strip())
+        if not out["anthropic"]:
+            out["warnings"].append(
+                "contact research OFF — ANTHROPIC_API_KEY not set")
+        try:
+            from tool.contacts import email_resolver as _er
+            out["hunter"] = bool(
+                (os.environ.get("HUNTER_API_KEY") or "").strip())
+            if out["hunter"]:
+                rem = _er.budget_remaining()
+                out["hunter_searches_left"] = rem.get("searches_left")
+                out["hunter_verifies_left"] = rem.get("verifications_left")
+                if (not rem.get("searches_left")
+                        and not rem.get("verifications_left")):
+                    out["warnings"].append(
+                        "Hunter monthly budget exhausted — email "
+                        "verification paused until the ledger resets")
+            else:
+                out["warnings"].append(
+                    "email find/verify OFF — HUNTER_API_KEY not set "
+                    "(published addresses only)")
+        except Exception:
+            pass
+        bd_key = (os.environ.get("BRIGHT_DATA_KEY") or "").strip()
+        bd_zone = (os.environ.get("BRIGHT_DATA_ZONE") or "").strip()
+        out["bright_data"] = bool(bd_key and bd_zone)
+        if bd_key and not bd_zone:
+            out["warnings"].append(
+                "BRIGHT_DATA_ZONE not set — LinkedIn/leadership-page "
+                "sources disabled despite the key being present")
+        elif not bd_key:
+            out["warnings"].append(
+                "Bright Data OFF — LinkedIn profile resolution disabled")
+    except Exception:
+        pass
+    return out
+
+
 def _measure_once() -> int:
     from tool.profiles import active_profile
     from tool.contacts.store import load_contacts

@@ -184,6 +184,54 @@ Four gaps between the pitch and the build, closed:
   name has been listed, and every observed joiner/leaver. Both ledgers
   render into the company dossiers.
 
+## BD Build v7 — roster-free contacts + the AD-grade account thesis
+
+Two ceilings raised at once:
+
+**Universal contact resolution (no manual roster).** The contacts store
+is now a research CACHE, not a hand-seeded list — any company the board
+or the job feed surfaces gets resolved automatically, in layers:
+
+- the FREE chain first (Companies House officers → RNS appointments →
+  leadership pages → LinkedIn via Bright Data free tier), then
+- **model + live-web-search research** for whatever the free chain
+  couldn't name — the same engine for live jobs
+  (`OUTREACH_RESEARCH_MAX_JOBS`, default 40/run, misses retried in 3
+  days) and now for BD-board companies too
+  (`tool/contacts/job_researcher.research_company_owner`, budgeted by
+  `BD_POC_RESEARCH_MAX`), with trigger evidence as search anchors;
+- the POC card falls back to NAMED function-family people observed on
+  the company's own leadership page (`tool/team_map`) — never generic
+  role rows (AD decision stands);
+- the email layer is verification-first: a free format-inferred guess
+  is VERIFIED (½ a Hunter credit) before a finder search (1 credit) is
+  ever spent — the same monthly budget closes roughly twice the leads;
+- nothing fails silently any more: every un-named live job carries a
+  research-diagnosis chip, and a dashboard banner shows missing keys
+  and exhausted budgets (`tool/contacts/measure.contact_capabilities`).
+
+Paid requirements, stated plainly: **Anthropic API** (powers all
+research) and **Hunter** for email verification only — the one
+capability that can't be self-built safely (SMTP verification needs
+clean dedicated IPs; DIY attempts get the sending domain blacklisted).
+Free tier works for a trial; Starter (~$49/mo) for scale. Nothing else.
+
+**Advisory Gap Research (`tool/advisory_research.py`).** For the
+Ready/Developing leads, a nightly model pass with live web search reads
+EVERYTHING the engine has accumulated (dossier timeline, living team
+map, agency ledger, peer activity, investigation verdict, the static
+service mix as a hypothesis) and works the account like an AD the night
+before a first meeting: what the comms/marketing function actually
+looks like today, the GENUINE evidence-cited gaps VMA can plug across
+the full service catalogue (services schema-locked to
+`tool/advisory.SERVICES` — the model grounds the mix, it can't invent
+product lines), the hiring needs, and the specific meeting hook.
+Theses are 21-day overlays (re-run early when the lead's event set
+changes), render as the **Account thesis + Meeting hook** on the
+engine-page portfolio and the BD radar (outranking the static
+service-fit block), and as the dossier's lead section. Budget:
+`ADVISORY_RESEARCH_MAX` (default 8/run).
+
 ## BD Build v6 — the Talent-Consultancy lens (service fit)
 
 VMA is moving from recruitment-only toward a talent consultancy: the
