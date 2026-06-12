@@ -797,47 +797,17 @@ def draft_outreach_for_predictor(predictor: dict) -> str:
     vacancy pitch: with too few companies willing to engage, one clumsy
     opener doesn't cost a call, it poisons an account."""
     p = predictor or {}
-    try:
-        mkt = active_profile().key == "marketing"
-    except Exception:
-        mkt = False
-    fn = "marketing" if mkt else "communications"
     company = (p.get("company") or "").strip()
     if not company:
         return _default_outreach()
-    evs = [e for e in (p.get("events") or []) if isinstance(e, dict)]
-    keys = {e.get("trigger_key") for e in evs}
-
-    # The ONLY thing the trigger changes is how "change" is acknowledged —
-    # at a level the company would recognise from its own public picture,
-    # never specific enough to show our hand.
-    if keys & {"job_ad_cluster", "ic_platform_rfp", "inhouse_search_failing",
-               "interim_watch"}:
-        # Hiring is public — acknowledging it openly is safe.
-        obs = (f"I can see you're building out the team at {company} at "
-               f"the moment.")
-    elif keys & {"funding", "secured_financing", "ipo_listing",
-                 "pe_acquisition", "mna", "ownership_change",
-                 "market_entry"}:
-        obs = (f"Looks like an exciting period at {company}, congrats on "
-               f"the recent momentum.")
-    elif keys & {"crisis_event", "regulator_action", "regulator_probe_early",
-                 "profit_warning", "restructure", "redundancy",
-                 "contract_loss"}:
-        obs = (f"I appreciate there's a lot on at {company} right now, so "
-               f"I'll keep this short.")
-    else:
-        # Leadership changes and everything else: the vaguest credible nod.
-        obs = (f"I can see things are changing at {company} at the moment.")
-
-    insight = (f"I spend my week across senior {fn} moves in your part of "
-               f"the market, so I have a fairly current picture of who's "
-               f"moving, what teams are building, and what good looks like "
-               f"right now. Happy to share some of it, no strings.")
-    ask = ("Worth a short conversation in the next week or two? Even if "
-           "there's nothing on your side, the sector picture is usually "
-           "worth the fifteen minutes.")
-    return f"Hi (Name),\n\n{obs} {insight}\n\n{ask}\n\nBest,\n(Your name)"
+    return (
+        f"Hi (Name),\n\n"
+        f"I can see there is some change happening at {company}, so I thought it would be worth us connecting. "
+        f"I work closely with senior communications professionals in your industry and have a good sense of "
+        f"current market movement and how teams are evolving. Very happy to share market insight if useful. "
+        f"Would you be open to a coffee or chat in the next couple of weeks?\n\n"
+        f"Best, (Your name)"
+    )
 
 
 def _people_search(keywords: str) -> str:
