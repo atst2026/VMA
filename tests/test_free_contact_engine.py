@@ -126,8 +126,10 @@ def test_format_detection_and_guess(state, monkeypatch):
     assert er._detect_format("Tom O'Brien", "tom.obrien@x.com") == "first.last"
     assert er._detect_format("Jane Smith", "press@x.com") is None
     monkeypatch.setattr(er, "observed_pairs", lambda c: [
-        {"name": "Tom Brown", "email": "tom.brown@acme.com", "url": "u1"},
-        {"name": "Amy Long", "email": "amy.long@acme.com", "url": "u2"},
+        {"name": "Tom Brown", "email": "tom.brown@acme.com", "url": "u1",
+         "in_house": True},
+        {"name": "Amy Long", "email": "amy.long@acme.com", "url": "u2",
+         "in_house": True},
     ])
     g = er.format_guess("Acme", "Jane Smith")
     assert g == {"email": "jane.smith@acme.com", "status": "pattern",
@@ -213,3 +215,42 @@ def test_capability_line_reports_bright_data_state(state, monkeypatch):
     from tool.contacts import bd_poc_fill
     line = bd_poc_fill.capability_line()
     assert "bright_data=" in line and "anthropic_key=" in line
+
+
+# ====================================================================
+# Final-audit fixes: press-title taxonomy + in-house-only inference
+# ====================================================================
+def test_press_facing_titles_classify_into_the_comms_family():
+    from tool.contacts.resolver import classify_title
+    assert classify_title("Head of Media Relations") == "head_of_comms"
+    assert classify_title("Director of Media Relations") == "head_of_comms"
+    assert classify_title("Head of Press Office") == "head_of_comms"
+    assert classify_title("Head of Public Relations") == "head_of_comms"
+    assert classify_title("Communications Director") == "head_of_comms"
+    assert classify_title("Corporate Communications Director") == "head_of_comms"
+    assert classify_title("Director of External Communications") == "head_of_comms"
+    # Non-regression: the seniors keep their existing slots.
+    assert classify_title("Group Communications Director") == "cco"
+    assert classify_title("Internal Communications Director") == "head_of_ic"
+    assert classify_title("Director of Corporate Affairs") == "head_of_corporate_affairs"
+    # Juniors still classify to nothing.
+    assert classify_title("Press Officer") is None
+    assert classify_title("Media Relations Manager") is None
+
+
+def test_format_inference_ignores_agency_pairs(state, monkeypatch):
+    from tool.contacts import email_resolver as er
+    # Only agency pairings observed -> NO guess (never build on the
+    # agency's domain).
+    monkeypatch.setattr(er, "observed_pairs", lambda c: [
+        {"name": "Tom Jones", "email": "tjones@buchanan.uk.com",
+         "url": "u1", "in_house": False}])
+    assert er.format_guess("Acme", "Jane Smith") is None
+    # An in-house pairing alongside agency noise -> in-house wins.
+    monkeypatch.setattr(er, "observed_pairs", lambda c: [
+        {"name": "Tom Jones", "email": "tjones@buchanan.uk.com",
+         "url": "u1", "in_house": False},
+        {"name": "Amy Long", "email": "amy.long@acme.com",
+         "url": "u2", "in_house": True}])
+    g = er.format_guess("Acme", "Jane Smith")
+    assert g["email"] == "jane.smith@acme.com"

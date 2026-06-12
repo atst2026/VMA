@@ -77,7 +77,22 @@ ROLE_TITLE_PATTERNS = {
         re.IGNORECASE,
     ),
     "head_of_comms": re.compile(
-        r"\bhead of (?:external |corporate |group )?communications?\b",
+        # The classic family…
+        r"\bhead of (?:external |corporate |group )?communications?\b|"
+        # …plus the press-facing titles that actually appear on the
+        # media/press pages the site harvester fetches — these are the
+        # comms team's public faces and were classifying to nothing.
+        r"\bhead of media relations\b|\bdirector of media relations\b|"
+        r"\bmedia relations director\b|\bhead of press(?: office)?\b|"
+        r"\bpress office (?:director|head)\b|"
+        r"\bhead of (?:pr|public relations)\b|"
+        r"\bdirector of (?:pr|public relations)\b|"
+        r"\bdirector of external (?:communications?|affairs)\b|"
+        # Bare/inverted "Communications Director" — the lookbehinds keep
+        # "Group Communications Director" with cco and "Internal
+        # Communications Director" with head_of_ic (both checked first).
+        r"\b(?<!group )(?<!internal )(?:corporate |external )?"
+        r"communications? director\b",
         re.IGNORECASE,
     ),
     "head_of_corporate_affairs": re.compile(
