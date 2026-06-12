@@ -1555,15 +1555,14 @@ function portfolioHTML(l){
       +'<svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg></a>').join('')
       +'</div></div>';
   }
-  if(q.total!=null){
-    h+='<div class="prow alt"><span class="pl2">QUALIFICATION</span><div class="pv"><div class="qmarks">'
-      +[['Seat',q.seat,MEANING.seat,q.seat_why],['Budget',q.budget,MEANING.budget,q.budget_why],
-        ['Urgency',q.urgency,MEANING.urgency,q.urgency_why],['Buyer',q.buyer,MEANING.buyer,q.buyer_why]]
-        .map(x=>'<span class="qmark" data-tip="'+esc(x[2])+(x[3]?' Here: '+esc(x[3])+'.':'')+'">'+x[0]+' <b style="color:'
-        +(x[1]>=2?'#1E7A41':x[1]===1?'#B45309':'#9AA0A6')+'">'+(x[1]>=2?'✓✓':x[1]===1?'✓':'✗')+'</b></span>').join('')
-      +'<span class="qmark"><b>'+q.total+'/8</b></span>'
-      +(l.prop?chip('prop',esc(l.prop).toUpperCase(),MEANING.prop+(l.propWhy?' Here: '+l.propWhy+'.':'')):'')
-      +'</div></div></div>';
+  if(q.budget_why||q.budget!=null){
+    const blab=q.budget>=2?'Funded':'Budget unknown';
+    const bcol=q.budget>=2?'#1E7A41':q.budget===1?'#B45309':'#9AA0A6';
+    h+='<div class="prow alt"><span class="pl2">BUDGET</span><div class="pv">'
+      +'<b style="color:'+bcol+'">'+esc(blab)+'</b>'
+      +(q.budget_why?' <span style="color:var(--muted)">— '+esc(q.budget_why)+'</span>':'')
+      +(l.prop?' &nbsp;'+chip('prop',esc(l.prop).toUpperCase(),MEANING.prop+(l.propWhy?' Here: '+l.propWhy+'.':'')):'')
+      +'</div></div>';
   }
   if(l.bizCase)h+='<div class="prow"><span class="pl2">FEE BASIS</span><div class="pv"><b>'+esc(l.bizCase)+'</b></div></div>';
   h+='<div class="openerbox" id="ob-'+l._id+'" hidden></div>';
