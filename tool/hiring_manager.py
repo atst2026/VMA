@@ -491,16 +491,21 @@ def best_named_contact(company: str, slots: tuple,
         # stale fallback), so the lead falls through to a role-search.
         if not entry.meets_named_confidence():
             continue
-        # Email fields ride along only while they're themselves current
-        # (sendable) — a dead address presented as sendable is exactly
-        # the bounce-risk the schema's statuses exist to prevent.
-        _email_ok = entry.email_is_sendable() if hasattr(
-            entry, "email_is_sendable") else False
+        # Email fields ride along WITH their status: verified/published
+        # drive the one-click send; a pattern guess is shown (red chip)
+        # for the AD to use manually but the send gate blocks it — the
+        # status, not the display, is the bounce-risk control. An
+        # address past its re-check window is treated as a miss.
+        _has_email = bool(getattr(entry, "email", ""))
+        _current = (entry.email_is_sendable()
+                    if hasattr(entry, "email_is_sendable") else False)
+        _show = _has_email and (
+            _current or getattr(entry, "email_status", "") == "pattern")
         _email = {
-            "email": (entry.email if _email_ok else "") or "",
-            "email_status": (entry.email_status if _email_ok else "") or "",
+            "email": (entry.email if _show else "") or "",
+            "email_status": (entry.email_status if _show else "") or "",
             "email_source_url": (getattr(entry, "email_source_url", "")
-                                 if _email_ok else "") or "",
+                                 if _show else "") or "",
         }
         if entry.is_fresh():
             return {

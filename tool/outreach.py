@@ -353,8 +353,9 @@ def enrich_signals(signals: list[dict], research_runner=None,
     contacts for the day's job leads, resolve their emails, attach
     personalised drafts (signal['outreach_ai']). Every stage degrades
     gracefully; returns counters for the log."""
-    stats = {"ad_page_contacts": 0, "research_changes": 0, "ad_emails": 0,
-             "email_changes": 0, "domain_fills": 0, "drafts": 0}
+    stats = {"ad_page_contacts": 0, "jobs_fill": 0, "research_changes": 0,
+             "ad_emails": 0, "email_changes": 0, "domain_fills": 0,
+             "drafts": 0}
     try:
         from tool.contacts.store import (load_contacts, save_contacts,
                                          get_contact)
@@ -396,6 +397,18 @@ def enrich_signals(signals: list[dict], research_runner=None,
                 s["ad_contact"] = got
                 stats["ad_page_contacts"] += 1
         ad_contact._save_cache(_page_cache)
+
+        # 0b. Deterministic roster fill for the day's job companies:
+        #     the SAME multi-source resolver the BD board uses (CH /
+        #     RNS / direct company-site / Bright Data when configured),
+        #     aimed at each vacancy's own inferred seat. Names + titles
+        #     + LinkedIn with zero model credits and zero Hunter spend.
+        from tool.contacts import bd_poc_fill
+        contacts = load_contacts()   # re-read: the fill saves itself
+        _jf = bd_poc_fill.fill_for_signals(
+            _job, desk=active_profile().key)
+        stats["jobs_fill"] = _jf.get("resolved", 0)
+        contacts = load_contacts()
 
         # Research runs AFTER the page pass so the ad-named hypothesis
         # (now from full pages too) reaches the model's brief.

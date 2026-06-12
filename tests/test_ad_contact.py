@@ -139,7 +139,12 @@ def test_enrich_signals_page_pass_names_thin_leads(tmp_path, monkeypatch):
     for var in ("HUNTER_API_KEY", "ANTHROPIC_API_KEY"):
         monkeypatch.delenv(var, raising=False)
     from tool import outreach
+    from tool.contacts import bd_poc_fill, site_pages
     from tool.hiring_manager import resolve_lead_contact
+    monkeypatch.setattr(bd_poc_fill, "fill_for_signals",
+                        lambda *a, **k: {"resolved": 0})
+    monkeypatch.setattr(site_pages, "harvest", lambda c, **k: {
+        "domain": "", "people": [], "emails": [], "pages": [], "at": ""})
 
     s = _sig("London, England, United Kingdom",
              company="Leeds Teaching Hospitals",
