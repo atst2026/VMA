@@ -763,16 +763,8 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
 </head>
 <body>
 <div class="amb a1"></div><div class="amb a2"></div><div class="amb a3"></div>
-{% if contact_caps and contact_caps.warnings %}
-<!-- Operational truth banner: a missing key, exhausted API credits or a
-     spent Hunter budget is state Sara must SEE — never a silent no-op. -->
-<div class="caps-banner2">
-  {% for w in contact_caps.warnings %}<div class="cw">⚠ {{ w }}</div>{% endfor %}
-  {% if contact_caps.hunter and contact_caps.hunter_searches_left is not none %}
-  <div class="cn">Hunter this month: {{ contact_caps.hunter_searches_left }} searches · {{ contact_caps.hunter_verifies_left }} verifications left</div>
-  {% endif %}
-</div>
-{% endif %}
+{# Capability banner removed by AD preference — operational state lives
+   in the logs and the run output, not on every page. #}
 
 <nav class="siderail">
   <span class="sr-logo"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#3E5C84"/><text x="50" y="55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="30" letter-spacing="-1.5" fill="#fff">VMA</text><text x="51" y="76" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="300" font-size="13.5" letter-spacing="3" fill="#fff">GROUP</text></svg></span>
@@ -1655,9 +1647,7 @@ function jobRow(l,i){
     :'';
   const who=l.contactName
     ?'<div class="jcontact">→ '+esc(l.contactName)+(l.contactTitle?' · '+esc(l.contactTitle):'')+em+'</div>'
-    :(l.contactDiag
-      ?'<div class="jcontact jdiag" title="Contact-research diagnosis">→ no named contact — '+esc(l.contactDiag)+'</div>'
-      :'');
+    :'';
   return '<div class="jrow'+cls+'" data-url="'+esc(l.url||'')+'" title="Open posting">'
     +'<span class="rank">'+String(i+1).padStart(2,'0')+'</span>'
     +'<div><div class="jt">'+esc(l.jt||'')+'</div><div class="jc">'+esc(l.co)+'</div>'+who+'</div>'

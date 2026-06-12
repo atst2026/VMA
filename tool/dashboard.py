@@ -6158,16 +6158,8 @@ TEMPLATE = r"""
   <script>window.MR_BD={{ mr_bd|tojson }};window.MR_JOBS={{ mr_jobs|tojson }};window.MR_CAL={{ mr_cal|tojson }};window.MR_META={{ mr_meta|tojson }};</script>
   <script>{{ mr_js|safe }}</script>
 
-  {% if contact_caps and contact_caps.warnings %}
-  <!-- Contact-engine capability banner: a missing key or an exhausted
-       budget is operational state Sara must SEE, never a silent no-op. -->
-  <div class="caps-banner">
-    {% for w in contact_caps.warnings %}<div class="caps-warn">⚠ {{ w }}</div>{% endfor %}
-    {% if contact_caps.hunter and contact_caps.hunter_searches_left is not none %}
-    <div class="caps-note">Hunter this month: {{ contact_caps.hunter_searches_left }} searches · {{ contact_caps.hunter_verifies_left }} verifications left</div>
-    {% endif %}
-  </div>
-  {% endif %}
+  {# Capability banner removed by AD preference — operational state
+     lives in the logs and the run output, not on every page. #}
 
   <!-- LEADS + PREDICTORS (legacy panels — hidden; retained for refresh JS) -->
   <div class="row">
@@ -6215,7 +6207,6 @@ TEMPLATE = r"""
                   <span class="badge">→ {{ c.name }}{% if c.title %} · {{ c.title }}{% endif %}</span>
                 {% else %}
                   <span class="badge">→ {{ c.title or 'hiring contact' }} — not yet named</span>
-                  {% if s.contact_diag %}<span class="badge diag-chip" title="Contact-research diagnosis">{{ s.contact_diag }}</span>{% endif %}
                 {% endif %}
                 {% if c.email %}<span class="badge email-chip es-{{ c.email_status or 'none' }}">{{ c.email }} · {{ c.email_status }}</span>{% endif %}
                 <span class="badge">conf {{ '%.0f' % (100 * (c.confidence or 0)) }}%</span>
