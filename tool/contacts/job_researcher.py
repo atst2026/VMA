@@ -151,7 +151,18 @@ def _load_ledger() -> dict:
 
 def _save_ledger(d: dict) -> None:
     try:
-        _ledger_file().write_text(json.dumps(d, indent=1))
+        payload = json.dumps(d, indent=1)
+        _ledger_file().write_text(payload)
+        # The live dashboard's diagnosis chips read this ledger; the CI
+        # run that researches and the Render process that renders are
+        # different machines — push so the chips tell the truth there.
+        try:
+            from tool import github_state
+            github_state.push_async(
+                "tool/state/job_contact_research.json", payload,
+                "contact-research: update ledger")
+        except Exception:
+            pass
     except Exception:
         pass
 

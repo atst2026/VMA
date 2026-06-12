@@ -998,6 +998,11 @@ _HYDRATE_PATHS = [
     "tool/state/calendar_pipeline_windows.json",
     "tool/state/calendar_pipeline_events.json",
     "tool/state/calendar_pipeline_frameworks.json",
+    # Build v7: the CI run researches, the dashboard renders — these two
+    # files are the pipe. Account theses (advisory_research) and the
+    # contact-research ledger (drives the per-lead diagnosis chips).
+    "tool/state/advisory_research.json",
+    "tool/state/job_contact_research.json",
 ]
 
 
