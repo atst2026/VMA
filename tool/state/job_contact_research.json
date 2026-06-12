@@ -210,5 +210,33 @@
  "boots uk::cco": {
   "at": "2026-06-12T18:11:42.167269+00:00",
   "found": false
+ },
+ "ecruit::cco": {
+  "at": "2026-06-12T18:11:42.327654+00:00",
+  "found": false
+ },
+ "cips::cco": {
+  "at": "2026-06-12T18:11:42.492057+00:00",
+  "found": false
+ },
+ "pic::head_of_ic": {
+  "at": "2026-06-12T18:11:42.653225+00:00",
+  "found": false
+ },
+ "csl plasma::cco": {
+  "at": "2026-06-12T18:11:42.816248+00:00",
+  "found": false
+ },
+ "jpmorganchase::cco": {
+  "at": "2026-06-12T18:11:42.990700+00:00",
+  "found": false
+ },
+ "compass group::cco": {
+  "at": "2026-06-12T18:11:43.135135+00:00",
+  "found": false
+ },
+ "nhs central east icb::cco": {
+  "at": "2026-06-12T18:11:43.275578+00:00",
+  "found": false
  }
 }
