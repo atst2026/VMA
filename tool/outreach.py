@@ -293,6 +293,12 @@ _draft_billing_down = False
 def ai_draft(signal: dict, contact: dict | None = None) -> str | None:
     """One personalised draft for one lead, or None (no key / weak
     output). The fixed template stays the fallback everywhere."""
+    try:
+        from tool.config import model_spend_allowed
+        if not model_spend_allowed("optional"):
+            return None
+    except Exception:
+        pass
     global _draft_billing_down
     if _draft_billing_down:
         return None
