@@ -594,6 +594,11 @@ def assess(item: dict, lead: dict, *, verdicts: list[dict] | None = None,
             return out
 
         # 6. Action grade.
+        # Compute the qualification scorecard here so every lead that reaches
+        # this point carries budget data for the dossier, regardless of whether
+        # the gate passes or queues it.
+        qual = qualification(lead, item or {}, ev, wstate)
+        out["qual"] = qual
         action = lead.get("action")
         if action == "monitor" and not confirmed:
             out["reasons"].append("Watch-grade — needs corroboration before an AD sees it")
@@ -612,8 +617,6 @@ def assess(item: dict, lead: dict, *, verdicts: list[dict] | None = None,
         # demoted to a per-fact VERIFICATION check: a registry-attested
         # fact (Companies House / RNS / regulator) is true on its own —
         # quiet companies with no press coverage are not less qualified.
-        qual = qualification(lead, item or {}, ev, wstate)
-        out["qual"] = qual
         attested = (ev.get("primary") or 0) >= 1
         verified = confirmed or attested or (ev.get("families") or 0) >= 2
         if not verified:
