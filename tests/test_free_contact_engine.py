@@ -70,6 +70,33 @@ def test_harvest_people_emails_and_cache(state, monkeypatch):
     assert {p["name"] for p in again["people"]} == set(names)
 
 
+SIBLING = ('<div class="card"><h3>Jane Smith</h3>'
+           '<p>Chief Communications Officer</p></div>'
+           '<div class="card"><h3>Tom O\'Brien</h3>'
+           '<p>Group Director of Corporate Affairs</p></div>'
+           '<div class="card"><p>Chief Marketing Officer</p>'
+           '<h3>Amy Long</h3></div>'
+           '<div class="card"><h3>Read More</h3><p>Our leadership</p></div>')
+
+
+def test_harvest_pairs_sibling_element_cards(state, monkeypatch):
+    """Real leadership pages put name and title in adjacent tags — the
+    layout that made live runs resolve nothing. Both name-first and
+    title-first cards must pair; nav junk must not."""
+    from tool.contacts import site_pages
+    from tool import company_domain
+    monkeypatch.setattr(company_domain, "resolve_domain",
+                        lambda name: "acme.com")
+    fetch = _stub_fetch({"acme.com/about/leadership": SIBLING,
+                         "https://acme.com": HOME})
+    got = site_pages.harvest("Acme", fetch=fetch)
+    by = {p["name"]: p for p in got["people"]}
+    assert by["Jane Smith"]["slot"] == "cco"
+    assert by["Tom O'Brien"]["slot"] == "head_of_corporate_affairs"
+    assert by["Amy Long"]["slot"] == "cmo"        # title-first card
+    assert "Read More" not in by                  # junk filtered
+
+
 def test_resolver_site_source_needs_no_bright_data(state, monkeypatch):
     from tool.contacts import resolver, site_pages
     monkeypatch.setattr(site_pages, "harvest", lambda c, **k: {
