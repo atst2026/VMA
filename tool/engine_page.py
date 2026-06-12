@@ -1653,9 +1653,9 @@ function winWeeks(s){s=(''+(s||'')).toLowerCase();const m=s.match(/(\d+)/);if(!m
   const n=+m[1];return /mo|month/.test(s)?n*4.33:n;}
 function statusFilter(l,f){
   f=f||filt;
-  if(f==='ready')return l.status!=='dismissed';
+  if(f==='ready')return l.status==='active';
   if(f==='unc')return l.status==='active';
-  if(f==='new')return l.isNew&&l.status!=='dismissed';
+  if(f==='new')return l.isNew&&l.status==='active';
   if(f==='followed')return l.status==='followed_up';
   if(f==='dismissed')return l.status==='dismissed';
   return true;
