@@ -80,9 +80,8 @@ def contact_capabilities() -> dict:
             out["warnings"].append(
                 "BRIGHT_DATA_ZONE not set — LinkedIn/leadership-page "
                 "sources disabled despite the key being present")
-        elif not bd_key:
-            out["warnings"].append(
-                "Bright Data OFF — LinkedIn profile resolution disabled")
+        # No key at all is a deliberate cost choice (the model researcher
+        # covers LinkedIn discovery) — not a warning.
     except Exception:
         pass
     return out

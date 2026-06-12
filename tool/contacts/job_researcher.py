@@ -43,7 +43,10 @@ from tool.state_paths import state_dir
 
 log = logging.getLogger("brief.contacts.research")
 
-MODEL = "claude-opus-4-8"
+# Override via VMA_RESEARCH_MODEL (e.g. claude-sonnet-4-6 cuts cost
+# ~40% with a modest quality trade-off) without a deploy.
+MODEL = (os.environ.get("VMA_RESEARCH_MODEL") or "").strip() \
+    or "claude-opus-4-8"
 # High enough that every NEW live job gets researched within a day of
 # appearing (the success TTL means a found answer only re-spends weekly;
 # misses retry sooner); tune via env without a deploy.
