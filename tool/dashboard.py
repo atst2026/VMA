@@ -1001,7 +1001,6 @@ _HYDRATE_PATHS = [
     # Build v7: the CI run researches, the dashboard renders — these two
     # files are the pipe. Account theses (advisory_research) and the
     # contact-research ledger (drives the per-lead diagnosis chips).
-    "tool/state/advisory_research.json",
     "tool/state/job_contact_research.json",
 ]
 
@@ -2145,13 +2144,6 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
     from tool import why_now as _wn
     from tool.advisory import service_fit_for as _svc
     from tool.edge_detectors import intent_phrase as _intent
-    # AD-grade account theses (advisory_research overlays): grounded,
-    # evidence-cited needs that outrank the static service mix on cards.
-    try:
-        from tool import advisory_research as _advres
-        _theses = _advres.get_all()
-    except Exception:
-        _theses = {}
     for row in premarket_rows:
         _kind = row.get("_kind", "predictor")
         if _kind in ("stale_mandate", "water_sar", "contract_end", "cascade",
@@ -2295,7 +2287,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                 "whyNow": _why_now_txt,
                 "fee": _fee, "feeTip": _fee_tip,
                 "serviceFit": _svc(_tkeys),
-                "thesis": _theses.get(row.get("pid") or ""),
+                "thesis": None,
                 "brief": brief,
                 "url": url, "src": _mr_src(url, ev0.get("source")),
                 "win": _win_lbl,

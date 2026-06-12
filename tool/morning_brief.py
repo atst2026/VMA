@@ -502,17 +502,6 @@ def main() -> int:
     except Exception as e:
         log.info("auto-investigate: %s", e)
 
-    # Advisory Gap Research: the AD-grade account thesis for the top
-    # Ready/Developing leads — one model pass per company with live web
-    # search over everything the engine has accumulated (dossier
-    # timeline, team map, agency ledger, peer activity), producing
-    # evidence-cited needs across the FULL service catalogue and the
-    # meeting hook. No-op without ANTHROPIC_API_KEY.
-    try:
-        from tool import advisory_research as _advres
-        _advres.run()
-    except Exception as e:
-        log.info("advisory research: %s", e)
 
     # BD Point of Contact fill: resolve NAMED function-owner contacts
     # (with real LinkedIn profiles) for the board's top active BD
