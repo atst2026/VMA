@@ -142,6 +142,13 @@ def run(max_leads: int = MAX_LEADS, runner=None) -> int:
     """Investigate the top unscored-on predictors. Returns the number of
     overlays written. Never raises."""
     try:
+        from tool.config import model_spend_allowed
+        if not model_spend_allowed("optional"):
+            log.info("%s skipped: VMA_MODEL_SPEND=contacts", "auto-investigate")
+            return 0
+    except Exception:
+        pass
+    try:
         from tool import investigations
         from tool.predictor_pipeline import load_pipeline
 

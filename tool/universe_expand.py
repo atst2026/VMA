@@ -143,6 +143,13 @@ def run(signals: list[dict], call=None, now: datetime | None = None) -> int:
     """Weekly proposal pass. Returns the number of proposals stored
     (0 when skipped/no-op). Never raises."""
     try:
+        from tool.config import model_spend_allowed
+        if not model_spend_allowed("optional"):
+            log.info("%s skipped: VMA_MODEL_SPEND=contacts", "universe expansion")
+            return 0
+    except Exception:
+        pass
+    try:
         call = call or _call_model
         now = now or datetime.now(timezone.utc)
         store = _load()

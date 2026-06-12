@@ -147,6 +147,13 @@ def detect(signals: list[dict], call=None) -> list:
     """Read the day's unscanned news headlines; return TriggerEvents for
     confident, watchlist-resolved finds. Never raises."""
     try:
+        from tool.config import model_spend_allowed
+        if not model_spend_allowed("optional"):
+            log.info("%s skipped: VMA_MODEL_SPEND=contacts", "semantic scan")
+            return []
+    except Exception:
+        pass
+    try:
         from tool.account_match import classify_account
         from tool.predictive.detector import TriggerEvent
         from tool.predictive.patterns import BY_KEY

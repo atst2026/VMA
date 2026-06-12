@@ -495,6 +495,13 @@ def run(max_leads: int = MAX_LEADS, runner=None) -> int:
     """Research the top Ready/Developing leads without a current thesis.
     Returns the number of overlays written. Never raises."""
     try:
+        from tool.config import model_spend_allowed
+        if not model_spend_allowed("optional"):
+            log.info("%s skipped: VMA_MODEL_SPEND=contacts", "advisory research")
+            return 0
+    except Exception:
+        pass
+    try:
         runner = runner or _run_model
         written = 0
         cands = _candidates()

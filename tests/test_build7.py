@@ -375,3 +375,37 @@ def test_billing_exhaustion_is_reported_not_misattributed(state, monkeypatch):
                                      contacts, runner=lambda b: answer,
                                      ledger=led)
     assert "::billing" not in led
+
+
+# ------------------------------------------- 7. contacts-only spend mode
+
+def test_contacts_only_mode_gates_optional_passes(state, monkeypatch):
+    """VMA_MODEL_SPEND=contacts: ONLY the two funded contact-research
+    lanes may call the API; the five optional model passes no-op."""
+    monkeypatch.setenv("VMA_MODEL_SPEND", "contacts")
+
+    def boom(*a, **k):
+        raise AssertionError("optional pass spent credits")
+
+    from tool import advisory_research, auto_investigate, universe_expand
+    from tool import semantic_scan
+    from tool.outreach import ai_draft
+    assert advisory_research.run(runner=boom) == 0
+    assert auto_investigate.run(runner=boom) == 0
+    assert universe_expand.run([], call=boom) == 0
+    assert semantic_scan.detect([{"title": "x", "summary": "y"}],
+                                call=boom) == []
+    assert ai_draft({"company": "X", "title": "Y"}) is None
+    # The funded lane still runs.
+    from tool.contacts.job_researcher import research_company_owner
+    answer = {"found": True, "name": "Jane Doe",
+              "role_slot": "head_of_comms",
+              "evidence": [{"url": "https://x.example", "what": "page"}],
+              "newest_evidence_date": _iso(2), "confidence": 0.8}
+    contacts = {}
+    assert research_company_owner("Acme plc", ("head_of_comms",), contacts,
+                                  runner=lambda b: answer)
+    # Default mode: nothing gated.
+    monkeypatch.delenv("VMA_MODEL_SPEND")
+    from tool.config import model_spend_allowed
+    assert model_spend_allowed("optional")
