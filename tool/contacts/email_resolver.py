@@ -305,7 +305,26 @@ def resolve_email(company: str, entry: ContactEntry,
         log.info("email %s @ %s: published address failed verification — "
                  "dropped", entry.name, company)
 
-    # 2. Hunter finder — needs the company's real domain.
+    # 2. Verification-first: a free format-inferred guess verified by
+    # Hunter costs HALF a finder search and, when valid, yields the same
+    # sendable "verified" status — so the guess is checked BEFORE the
+    # finder is spent. An invalid verdict falls through to the finder
+    # (the format may simply be wrong for this person); an unknown /
+    # unspent verdict leaves the guess for step 4's pattern fallback.
+    guess = format_guess(company, entry.name)
+    if guess:
+        verdict = hunter_verify(guess["email"])
+        if verdict == "valid":
+            entry.email = guess["email"]
+            entry.email_status = "verified"
+            entry.email_source = "format_inference+verified"
+            entry.email_source_url = guess.get("source_url") or ""
+            entry.email_checked_at = now
+            log.info("email %s @ %s: format guess verified (sendable)",
+                     entry.name, company)
+            return True
+
+    # 3. Hunter finder — needs the company's real domain.
     if not domain:
         try:
             from tool.company_domain import resolve_domain
@@ -334,8 +353,7 @@ def resolve_email(company: str, entry: ContactEntry,
                      company, status, found["score"])
             return True
 
-    # 3. Free format inference — visible best-guess, never sendable.
-    guess = format_guess(company, entry.name)
+    # 4. Free format inference — visible best-guess, never sendable.
     if guess:
         entry.email = guess["email"]
         entry.email_status = "pattern"

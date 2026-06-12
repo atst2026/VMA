@@ -502,11 +502,25 @@ def main() -> int:
     except Exception as e:
         log.info("auto-investigate: %s", e)
 
+    # Advisory Gap Research: the AD-grade account thesis for the top
+    # Ready/Developing leads — one model pass per company with live web
+    # search over everything the engine has accumulated (dossier
+    # timeline, team map, agency ledger, peer activity), producing
+    # evidence-cited needs across the FULL service catalogue and the
+    # meeting hook. No-op without ANTHROPIC_API_KEY.
+    try:
+        from tool import advisory_research as _advres
+        _advres.run()
+    except Exception as e:
+        log.info("advisory research: %s", e)
+
     # BD Point of Contact fill: resolve NAMED function-owner contacts
     # (with real LinkedIn profiles) for the board's top active BD
-    # companies via the multi-source resolver — CH / RNS / leadership
-    # page / LinkedIn, all free or Bright Data free tier. No Anthropic
-    # credits, no Hunter. Budgeted + attempt-ledgered.
+    # companies — the FREE multi-source resolver first (CH / RNS /
+    # leadership page / LinkedIn), then the model+web-search research
+    # layer for whatever the free chain couldn't name (the roster-free
+    # path: any company the board surfaces gets researched, no seeding
+    # required). Budgeted + attempt-ledgered.
     try:
         from tool.contacts import bd_poc_fill as _poc_fill
         from tool.profiles import active_profile as _ap
@@ -514,8 +528,15 @@ def main() -> int:
             (p for p in (predictor_pipeline.all_predictors() or [])
              if p.get("status") == "active" and (p.get("company") or "").strip()),
             key=lambda p: p.get("score") or 0, reverse=True)
-        _poc_fill.run([p["company"] for p in _actives[:20]],
-                      desk=_ap().key)
+        # Trigger evidence doubles as the researcher's search anchors.
+        _ev_ctx = {}
+        for p in _actives[:40]:
+            _ev_ctx[p["company"]] = "; ".join(
+                f"{e.get('trigger_label')}: {(e.get('evidence') or '')[:120]}"
+                for e in (p.get("events") or [])[:3] if isinstance(e, dict))
+        _poc_fill.run([p["company"] for p in _actives[:40]],
+                      desk=_ap().key,
+                      context_for=lambda c: _ev_ctx.get(c, ""))
     except Exception as e:
         log.info("bd poc fill: %s", e)
 

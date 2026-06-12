@@ -2,23 +2,29 @@
 
 The POC section on BD lead cards is only worth anything when it shows a
 REAL person — name, title, and their actual LinkedIn profile. This pass
-makes that happen: for the board's top active BD companies it runs the
-full multi-source resolver (Companies House officers -> RNS
-appointments -> leadership page via Bright Data -> LinkedIn search) for
-the desk's function-family slots, writes verified entries into the
-shared roster, and attaches a real /in/ profile URL via the existing
-Bright Data profile resolver when the source didn't carry one.
+makes that happen for ANY company the board surfaces (no pre-seeded
+roster required — the contacts store is a research CACHE, not a manual
+list), in two layers per company:
+
+  1. FREE multi-source resolver — Companies House officers -> RNS
+     appointments -> leadership page via Bright Data -> LinkedIn search
+     for the desk's function-family slots, plus the Bright Data profile
+     resolver to attach a real /in/ URL.
+  2. MODEL research fallback — when the free chain can't name an owner,
+     the same model + live-web-search engine that researches live jobs
+     (tool/contacts/job_researcher) answers "who owns this function at
+     this employer today?", budgeted separately and writing through the
+     same store under the same acceptance rules.
 
 Everything lands through the same store as every other source, so the
 confidence floor, freshness window, Sara's flags and the resolution log
-all apply. Free: Companies House and RNS need no spend; Bright Data is
-the existing 5k-requests/month free tier. No Anthropic credits, no
-Hunter.
+all apply.
 
-Budget: MAX_RESOLUTIONS_PER_RUN resolver calls per run (each is 1-3
-fetches), a 7-day per-(company, slot) attempt ledger so misses aren't
-re-spent daily, and at most 2 slot attempts per company per run.
-Never raises.
+Budget: MAX_RESOLUTIONS_PER_RUN free-resolver calls + RESEARCH_MAX
+model passes per run; a per-(company, slot) attempt ledger keeps misses
+from re-spending daily (successes hold ATTEMPT_TTL_DAYS, misses retry
+after FAILURE_RETRY_DAYS), and at most 2 slot attempts per company per
+run. Never raises.
 """
 from __future__ import annotations
 
@@ -34,13 +40,18 @@ log = logging.getLogger("brief.contacts.bd_poc")
 # Per-run resolution budgets. Raised to clear the ~150-company first-pass
 # backlog in 2-3 nightly runs rather than a week — each resolution is
 # free (Companies House + RNS + the company's own site, all cached, all
-# behind the 7-day attempt ledger so nothing is re-spent). Override via
+# behind the attempt ledger so nothing is re-spent). Override via
 # env to dial back without a deploy.
 MAX_RESOLUTIONS_PER_RUN = int(
-    os.environ.get("BD_POC_MAX_RESOLUTIONS") or 40)
+    os.environ.get("BD_POC_MAX_RESOLUTIONS") or 60)
 JOBS_MAX_RESOLUTIONS_PER_RUN = int(
     os.environ.get("JOBS_CONTACT_MAX_RESOLUTIONS") or 30)
+# Model-research fallback passes per run (Anthropic credits) for board
+# companies the free chain couldn't name an owner at.
+RESEARCH_MAX_PER_RUN = int(
+    os.environ.get("BD_POC_RESEARCH_MAX") or 10)
 ATTEMPT_TTL_DAYS = 7
+FAILURE_RETRY_DAYS = 3
 MAX_SLOTS_PER_COMPANY = 2
 
 
@@ -86,13 +97,17 @@ def _save_ledger(d: dict) -> None:
 
 
 def _recently_tried(ledger: dict, company: str, slot: str) -> bool:
-    at = (ledger.get(f"{company.lower()}::{slot}") or {}).get("at") or ""
+    rec = ledger.get(f"{company.lower()}::{slot}") or {}
+    at = rec.get("at") or ""
     try:
         t = datetime.fromisoformat(at)
         if t.tzinfo is None:
             t = t.replace(tzinfo=timezone.utc)
-        return (datetime.now(timezone.utc) - t) < timedelta(
-            days=ATTEMPT_TTL_DAYS)
+        # Failure-aware: a resolved slot holds the full window; a miss
+        # frees up for retry sooner (team pages and registries change).
+        days = (ATTEMPT_TTL_DAYS if rec.get("resolved")
+                else FAILURE_RETRY_DAYS)
+        return (datetime.now(timezone.utc) - t) < timedelta(days=days)
     except Exception:
         return False
 
@@ -144,12 +159,17 @@ def fill_for_signals(signals: list[dict], desk: str = "comms",
 def run(companies: list[str], desk: str = "comms",
         max_resolutions: int = MAX_RESOLUTIONS_PER_RUN,
         fetch=None, resolver=None, profile_resolver=None,
-        slots_for=None) -> dict:
+        slots_for=None, research_max: int = RESEARCH_MAX_PER_RUN,
+        research_runner=None, context_for=None) -> dict:
     """Fill missing function-owner contacts for `companies` (ranked
     order = spend priority). `slots_for(company)` optionally overrides
     the desk's default slot family (the live-jobs fill passes each
-    vacancy's own inferred seat). Returns counters. Never raises."""
-    stats = {"resolved": 0, "attempted": 0, "profile_links": 0}
+    vacancy's own inferred seat). Companies the FREE chain can't name an
+    owner at fall through to the model-research layer (`research_max`
+    passes; `context_for(company)` supplies trigger context as search
+    anchors). Returns counters. Never raises."""
+    stats = {"resolved": 0, "attempted": 0, "profile_links": 0,
+             "researched": 0, "research_resolved": 0}
     try:
         from tool.contacts.resolver import resolve as _resolve
         from tool.contacts.store import (load_contacts, save_contacts,
@@ -181,6 +201,7 @@ def run(companies: list[str], desk: str = "comms",
         contacts = load_contacts()
         ledger = _load_ledger()
         changed = False
+        unresolved: list[tuple[str, tuple]] = []
         for company in companies or []:
             company = (company or "").strip()
             if not company or company == "—":
@@ -207,7 +228,8 @@ def run(companies: list[str], desk: str = "comms",
                 stats["attempted"] += 1
                 tried_here += 1
                 ledger[f"{company.lower()}::{slot}"] = {
-                    "at": datetime.now(timezone.utc).isoformat()}
+                    "at": datetime.now(timezone.utc).isoformat(),
+                    "resolved": False}
                 try:
                     new_entry, record = resolver(company, slot, fetch=fetch)
                     try:
@@ -242,11 +264,49 @@ def run(companies: list[str], desk: str = "comms",
                 card = upsert_contact(contacts, company, slot, new_entry)
                 changed = True
                 stats["resolved"] += 1
+                ledger[f"{company.lower()}::{slot}"]["resolved"] = True
                 if new_entry.meets_named_confidence():
                     break   # owner found — next company
+            # Free chain done for this company: still no floor-clearing
+            # owner? Queue it for the model-research layer below.
+            if not _has_fresh_owner(get_contact(contacts, company), slots):
+                unresolved.append((company, slots))
         if changed:
             save_contacts(contacts)
         _save_ledger(ledger)
+
+        # ---- Layer 2: model + live web search for the leftovers ------
+        # The roster-free path: any company the registries and team pages
+        # couldn't name an owner at gets the same research engine a live
+        # job gets. Budgeted; failure-aware TTL lives in the researcher's
+        # own ledger; graceful no-op without ANTHROPIC_API_KEY.
+        if unresolved and research_max > 0:
+            try:
+                from tool.contacts import job_researcher as _jr
+                contacts = load_contacts()
+                r_changed = False
+                r_stats: dict = {"model_calls": 0}
+                for company, slots in unresolved:
+                    if r_stats["model_calls"] >= research_max:
+                        break
+                    ctx = ""
+                    if context_for is not None:
+                        try:
+                            ctx = context_for(company) or ""
+                        except Exception:
+                            ctx = ""
+                    if _jr.research_company_owner(
+                            company, slots, contacts, desk=desk,
+                            context=ctx, runner=research_runner,
+                            stats=r_stats):
+                        stats["research_resolved"] += 1
+                        r_changed = True
+                stats["researched"] = r_stats["model_calls"]
+                if r_changed:
+                    save_contacts(contacts)
+            except Exception as e:
+                log.info("bd poc research layer skipped (%s)", e)
+
         log.info("bd poc fill: %s", stats)
         return stats
     except Exception as e:
