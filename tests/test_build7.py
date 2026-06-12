@@ -273,12 +273,27 @@ def test_thesis_overlay_expires(state, monkeypatch):
         {"pid": "old", "company": "Old plc", "_ev_hash": "h", "_score": 50,
          "_presented": True, "events": []}])
     ar.run(runner=lambda b: _thesis_payload())
-    p = ar._dir() / "old.json"
-    d = json.loads(p.read_text())
-    d["researched_at"] = (datetime.now(timezone.utc)
-                          - timedelta(days=ar.EXPIRY_DAYS + 1)).isoformat()
-    p.write_text(json.dumps(d))
+    d = json.loads(ar._file().read_text())
+    d["old"]["researched_at"] = (
+        datetime.now(timezone.utc)
+        - timedelta(days=ar.EXPIRY_DAYS + 1)).isoformat()
+    ar._file().write_text(json.dumps(d))
     assert ar.get("old") is None
+
+
+def test_legacy_per_pid_files_migrate_into_single_store(state):
+    from tool import advisory_research as ar
+    legacy = ar._legacy_dir()
+    legacy.mkdir(parents=True, exist_ok=True)
+    t = _thesis_payload()
+    t["researched_at"] = _iso(1)
+    t["events_hash"] = "legacyhash"
+    (legacy / "acme.json").write_text(json.dumps(t))
+    got = ar.get("acme")
+    assert got and got["events_hash"] == "legacyhash"
+    assert not (legacy / "acme.json").exists()   # folded in, cleaned up
+    assert "acme" in json.loads(ar._file().read_text() or "{}") \
+        or ar.get("acme")   # persisted on next write path or readable
 
 
 def test_dossier_renders_thesis_over_static_service_fit(state, monkeypatch):

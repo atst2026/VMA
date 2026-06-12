@@ -42,6 +42,14 @@ jobs:
       - name: Run sweep
         env:
           COMPANIES_HOUSE_KEY: ${{ secrets.COMPANIES_HOUSE_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          HUNTER_API_KEY: ${{ secrets.HUNTER_API_KEY }}
+          # Spend governors - see morning-brief.yml.
+          HUNTER_MONTHLY_SEARCH_BUDGET: ${{ secrets.HUNTER_MONTHLY_SEARCH_BUDGET }}
+          HUNTER_MONTHLY_VERIFY_BUDGET: ${{ secrets.HUNTER_MONTHLY_VERIFY_BUDGET }}
+          OUTREACH_RESEARCH_MAX_JOBS: ${{ secrets.OUTREACH_RESEARCH_MAX_JOBS }}
+          BD_POC_RESEARCH_MAX: ${{ secrets.BD_POC_RESEARCH_MAX }}
+          ADVISORY_RESEARCH_MAX: ${{ secrets.ADVISORY_RESEARCH_MAX }}
           BRIGHT_DATA_KEY: ${{ secrets.BRIGHT_DATA_KEY }}
           BRIGHT_DATA_ZONE: ${{ secrets.BRIGHT_DATA_ZONE }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}

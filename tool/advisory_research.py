@@ -130,14 +130,69 @@ def _schema() -> dict:
 
 
 # ---------------------------------------------------------------- store
+# Single-file store (tool/state/advisory_research.json, pid -> thesis):
+# one file pushes to the dashboard-state branch and hydrates on the
+# live dashboard's boot — the CI run that researches and the Render
+# process that renders are different machines, and this file is the
+# pipe between them.
 
-def _dir():
-    d = state_dir() / "advisory_research"
+_STORE = "advisory_research.json"
+
+
+def _file():
+    return state_dir() / _STORE
+
+
+def _legacy_dir():
+    return state_dir() / "advisory_research"
+
+
+def _load_all() -> dict:
+    out: dict = {}
     try:
-        d.mkdir(parents=True, exist_ok=True)
+        f = _file()
+        if f.exists():
+            d = json.loads(f.read_text())
+            if isinstance(d, dict):
+                out = d
+    except Exception:
+        out = {}
+    # One-off migration: fold in any per-pid files from the first v7
+    # cut (kept newest-wins so today's research isn't re-spent), and
+    # persist IMMEDIATELY — the legacy files are deleted as they fold,
+    # so the merged store must hit disk before this function returns.
+    try:
+        ld = _legacy_dir()
+        if ld.is_dir():
+            migrated = False
+            for p in ld.glob("*.json"):
+                try:
+                    d = json.loads(p.read_text())
+                    cur = out.get(p.stem)
+                    if not cur or (d.get("researched_at") or "") > \
+                            (cur.get("researched_at") or ""):
+                        out[p.stem] = d
+                    p.unlink()
+                    migrated = True
+                except Exception:
+                    continue
+            if migrated:
+                _save_all(out)
     except Exception:
         pass
-    return d
+    return out
+
+
+def _save_all(d: dict) -> None:
+    payload = json.dumps(d, indent=1, sort_keys=True)
+    _file().write_text(payload)
+    try:
+        from tool import github_state
+        github_state.push_async(
+            f"tool/state/{_STORE}", payload,
+            "advisory-research: update account theses")
+    except Exception:
+        pass
 
 
 def events_hash(events: list) -> str:
@@ -149,13 +204,10 @@ def events_hash(events: list) -> str:
     return hashlib.sha1("|".join(ids).encode()).hexdigest()[:16]
 
 
-def get(pid: str) -> dict | None:
-    """The fresh thesis overlay for a lead, or None. Never raises."""
+def _fresh(d: dict | None) -> dict | None:
     try:
-        p = _dir() / f"{pid}.json"
-        if not p.exists():
+        if not isinstance(d, dict):
             return None
-        d = json.loads(p.read_text())
         at = datetime.fromisoformat(d.get("researched_at"))
         if at.tzinfo is None:
             at = at.replace(tzinfo=timezone.utc)
@@ -166,14 +218,22 @@ def get(pid: str) -> dict | None:
         return None
 
 
+def get(pid: str) -> dict | None:
+    """The fresh thesis overlay for a lead, or None. Never raises."""
+    try:
+        return _fresh(_load_all().get(pid))
+    except Exception:
+        return None
+
+
 def get_all() -> dict:
     """pid -> fresh thesis, for render-time bulk loads. Never raises."""
     out = {}
     try:
-        for p in _dir().glob("*.json"):
-            d = get(p.stem)
-            if d:
-                out[p.stem] = d
+        for pid, d in _load_all().items():
+            f = _fresh(d)
+            if f:
+                out[pid] = f
     except Exception:
         pass
     return out
@@ -181,8 +241,9 @@ def get_all() -> dict:
 
 def _write(pid: str, data: dict) -> bool:
     try:
-        (_dir() / f"{pid}.json").write_text(
-            json.dumps(data, indent=1, sort_keys=True))
+        d = _load_all()
+        d[pid] = data
+        _save_all(d)
         return True
     except Exception as e:
         log.info("advisory research write %s failed: %s", pid, e)
