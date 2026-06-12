@@ -309,12 +309,12 @@ def test_dossier_renders_thesis_over_static_service_fit(state, monkeypatch):
                        "label": "Restructure", "evidence": "x",
                        "source": "RNS", "url": ""}]}
     md = dossier._render_md("acme", rec, [])
-    assert "## Account thesis" in md
-    assert "The meeting hook" in md
-    assert "Service fit — what VMA can sell here" not in md
+    assert "## Advisory Brief" in md
+    assert "### Meeting preparation" in md
+    assert "Advisory services — signal-led playbook" not in md
     # No overlay -> static service fit still renders (never silent).
     md2 = dossier._render_md("other", rec, [])
-    assert "Service fit — what VMA can sell here" in md2
+    assert "Advisory services — signal-led playbook" in md2
 
 
 def test_thesis_requires_grounded_needs(state):

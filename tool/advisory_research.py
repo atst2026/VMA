@@ -78,7 +78,16 @@ _SYSTEM = (
     "cannot ground in evidence does not go in the list.\n"
     "3. THE MEETING HOOK: write the specific opener that earns a "
     "meeting — the one observation about their world that proves we did "
-    "the work, tied to the single service we'd lead with.\n\n"
+    "the work, tied to the single service we'd lead with.\n"
+    "4. MEETING PREPARATION: write the brief an AD uses five minutes "
+    "before the call — (a) lead_with: which single service to open with "
+    "and the specific observation that earns permission to go deeper; "
+    "(b) opening_questions: three questions that diagnose the gap and "
+    "build rapport simultaneously; (c) anticipated_objections: the two "
+    "most likely pushbacks and the honest, specific counter for each; "
+    "(d) engagement_scope: one sentence on what a scoped engagement "
+    "looks like if they say yes. Every line must be specific to THIS "
+    "company — nothing recyclable for another client.\n\n"
     "Rules: be specific or be silent — generic trigger-class reasoning "
     "is already on the card and is worthless here. Calibrate "
     "confidence honestly (high = primary source this quarter). Never "
@@ -117,6 +126,22 @@ def _schema() -> dict:
             "hiring_needs": {"type": "array", "items": {"type": "string"}},
             "meeting_hook": {"type": "string"},
             "talking_points": {"type": "array", "items": {"type": "string"}},
+            "meeting_prep": {
+                "type": "object",
+                "properties": {
+                    "lead_with": {"type": "string"},
+                    "opening_questions": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    "anticipated_objections": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    "engagement_scope": {"type": "string"},
+                },
+                "required": ["lead_with", "opening_questions"],
+            },
             "sources": {
                 "type": "array",
                 "items": {
@@ -423,6 +448,20 @@ def _validated(data: dict) -> dict | None:
             })
         if not needs:
             return None
+        mp = data.get("meeting_prep") or {}
+        meeting_prep = {
+            "lead_with": (mp.get("lead_with") or "").strip()[:300],
+            "opening_questions": [
+                q.strip()[:200] for q in (mp.get("opening_questions") or [])[:4]
+                if isinstance(q, str) and q.strip()
+            ],
+            "anticipated_objections": [
+                o.strip()[:250] for o in
+                (mp.get("anticipated_objections") or [])[:3]
+                if isinstance(o, str) and o.strip()
+            ],
+            "engagement_scope": (mp.get("engagement_scope") or "").strip()[:300],
+        }
         return {
             "headline": headline,
             "function_snapshot":
@@ -435,6 +474,7 @@ def _validated(data: dict) -> dict | None:
             "talking_points": [t.strip()[:220] for t in
                                (data.get("talking_points") or [])[:4]
                                if isinstance(t, str) and t.strip()],
+            "meeting_prep": meeting_prep,
             "sources": [{"url": s.get("url", "")[:400],
                          "label": (s.get("label") or "source")[:80]}
                         for s in (data.get("sources") or [])[:10]
