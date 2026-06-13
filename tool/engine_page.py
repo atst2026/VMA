@@ -552,6 +552,9 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
   color:#5B459E;background:rgba(123,97,196,.12);border:1px solid rgba(123,97,196,.3)}
 .svcchip.hire{color:#1D5FA8;background:rgba(66,133,244,.1);border-color:rgba(66,133,244,.3)}
 .svcchip.referral{color:#9A6A14;background:rgba(217,151,43,.12);border-color:rgba(217,151,43,.35)}
+.svcchip.edi-bad{color:#B0123A;background:rgba(214,31,105,.1);border-color:rgba(214,31,105,.35)}
+.svcchip.edi-mid{color:#9A6A14;background:rgba(217,151,43,.12);border-color:rgba(217,151,43,.35)}
+.svcchip.benchmark{color:#0E7C74;background:rgba(18,165,148,.12);border-color:rgba(18,165,148,.32)}
 .svcnote{margin-top:5px;padding-top:5px;border-top:1px dashed rgba(16,22,38,.12);font-size:11.5px;font-style:italic;color:#9A6A14}
 /* Account thesis — the AI-researched, evidence-cited account read. */
 .resbadge{font:700 8px var(--mono);letter-spacing:.1em;color:#1E7A41;background:rgba(30,122,65,.1);border:1px solid rgba(30,122,65,.3);border-radius:8px;padding:1px 6px;margin-left:6px;vertical-align:middle}
@@ -1583,6 +1586,22 @@ function portfolioHTML(l){
   if(l.serviceFit&&l.serviceFit.services&&l.serviceFit.services.length){
     h+='<div class="prow alt"><span class="pl2">POTENTIAL ADVISORY SERVICES</span><div class="pv">'
       +l.serviceFit.services.map(s=>'<div class="svcline"><span class="svcchip '+esc(s.family||'advisory')+'" title="'+esc(s.label||'')+'">'+esc((s.short||s.key||'').toUpperCase())+'</span>'+(s.reason?'<span>'+esc(s.reason)+'</span>':'<span>'+esc(s.label||s.key||'')+'</span>')+'</div>').join('')
+      +'</div></div>';
+  }
+  /* ED&I angle — only when the GOV.UK gender pay-gap return shows a
+     real, evidenced gap (wide / very wide / filed late). The economic
+     buyer for this is the CEO/CHRO. */
+  if(l.edi&&l.edi.line){
+    h+='<div class="prow alt"><span class="pl2">ED&amp;I ANGLE</span><div class="pv">'
+      +'<div class="svcline"><span class="svcchip '+esc(l.edi.cls||'edi-mid')+'">'+esc(l.edi.short||'ED&I')+'</span>'
+      +'<span>'+esc(l.edi.line)+(l.edi.url?' <a href="'+esc(l.edi.url)+'" target="_blank" rel="noopener">[statement]</a>':'')+'</span></div>'
+      +'</div></div>';
+  }
+  /* Resourcing benchmark — the Gartner-anchored "are you right-sized vs
+     peers?" hook, from the employer's headcount band. */
+  if(l.benchmark&&l.benchmark.line){
+    h+='<div class="prow alt"><span class="pl2">RESOURCING BENCHMARK</span><div class="pv">'
+      +'<div class="svcline"><span class="svcchip benchmark">BENCHMARK</span><span>'+esc(l.benchmark.line)+'</span></div>'
       +'</div></div>';
   }
   if(l.ammo&&l.ammo.length)h+='<div class="prow alt"><span class="pl2">SECTOR INSIGHT</span><div class="pv">'
