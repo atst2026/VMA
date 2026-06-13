@@ -117,7 +117,7 @@
   "7dd72bf619123c9d": {
     "anchor": "2026-06-06",
     "first_seen": "2026-06-12",
-    "expired": false
+    "expired": true
   },
   "6e938fb86c9115d5": {
     "anchor": "2026-06-09",
@@ -142,7 +142,7 @@
   "c8dcb724b4414285": {
     "anchor": "2026-06-06",
     "first_seen": "2026-06-12",
-    "expired": false
+    "expired": true
   },
   "5494cabb757fa0e2": {
     "anchor": "2026-06-08",
@@ -482,7 +482,7 @@
   "37484e11e2011798": {
     "anchor": "2026-06-06",
     "first_seen": "2026-06-12",
-    "expired": false
+    "expired": true
   },
   "9af9e72c22f3a840": {
     "anchor": "2026-06-11",
@@ -572,7 +572,7 @@
   "02db4a54f8351a5e": {
     "anchor": "2026-06-06",
     "first_seen": "2026-06-12",
-    "expired": false
+    "expired": true
   },
   "e1eb10bed47f7b86": {
     "anchor": "2026-06-07",
