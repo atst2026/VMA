@@ -549,6 +549,16 @@ def main() -> int:
     except Exception as e:
         log.info("gender pay gap refresh: %s", e)
 
+    # Resourcing-benchmark outlier scan (deterministic, no model, free):
+    # the Gartner comms-FTE ratio run proactively across the freshly-built
+    # GPG universe → a ranked benchmarking lead list (the Network Rail
+    # engagement, productised), persisted for the advisory surfaces.
+    try:
+        from tool import resourcing_outlier as _rout
+        _rout.scan_and_store()
+    except Exception as e:
+        log.info("resourcing-outlier scan: %s", e)
+
     # Universe expansion (weekly): propose watchlist additions from the
     # signal stream's off-universe companies. Proposals only — the AD
     # approves by hand; the model never widens the universe itself.
