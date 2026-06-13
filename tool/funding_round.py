@@ -394,6 +394,13 @@ def load_funding(limit: int = 30) -> list[dict]:
                                    statuses.get(fid, "active")):
             continue  # past its 30d/90d window — gone from every tab
         uk.append(r)
+    # Service-fit lens — computed per load (not persisted) so the mix is
+    # desk-correct for the requesting desk and stale stored rows still
+    # carry it.
+    from tool.advisory import service_fit_for
+    fit = service_fit_for(["funding"])
+    for r in uk[:limit]:
+        r["service_fit"] = fit
     return uk[:limit]
 
 

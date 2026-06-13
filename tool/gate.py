@@ -117,8 +117,48 @@ def qualification(lead: dict, item: dict, ev: dict, wstate: str) -> dict:
             "budget" in c or "cuts" in c for c in contras):
         budget, budget_why = 0, "budget direction points the wrong way"
     elif keys & BUDGET_KEYS or prop_pts >= PROP_PROVEN or fin == "pro":
-        budget, budget_why = 2, ("fresh capital / proven fee-payer / growth "
-                                 "funding the build")
+        budget = 2
+        _parts: list[str] = []
+        # 1. Capital event trigger — name it and quote the evidence snippet.
+        _cap = [t for t in live if t.get("key") in BUDGET_KEYS]
+        if _cap:
+            _t = _cap[0]
+            _snip = (_t.get("evidence") or "").strip()
+            _snip = (_snip[:110] + "…") if len(_snip) > 110 else _snip
+            _lbl = _t.get("label") or _t.get("key") or "capital event"
+            _parts.append(f"Capital event — {_lbl}"
+                          + (f": {_snip}" if _snip else ""))
+        # 2. Proven fee-payer — surface the authoritative evidence text.
+        if prop_pts >= PROP_PROVEN:
+            if lead.get("conflict"):
+                _parts.append(
+                    "Rival search mandate confirmed — paying a fee for this "
+                    "seat type right now")
+            else:
+                _note = (item.get("_propensity_note") or "").strip()
+                _parts.append(
+                    (_note[:200] + ("…" if len(_note) > 200 else ""))
+                    if _note else
+                    "Proven fee-payer: authoritative record of external agency "
+                    "use on file (procurement award or AD seed)")
+        # 3. Growth financial direction — only when no capital trigger already
+        # explains it (those keys overlap _FIN_PRO_KEYS so it's redundant).
+        if fin == "pro" and not _cap:
+            _gtrig = next((t for t in live if t.get("evidence")), None)
+            if _gtrig:
+                _gsnip = (_gtrig.get("evidence") or "").strip()
+                _gsnip = (_gsnip[:100] + "…") if len(_gsnip) > 100 else _gsnip
+                _glbl = _gtrig.get("label") or ""
+                _parts.append(
+                    "Growth direction — "
+                    + (_glbl + (f": {_gsnip}" if _gsnip else "")
+                       if _glbl else _gsnip or "evidenced in trigger stack"))
+            else:
+                _parts.append(
+                    "Net growth signals in trigger stack — budget available "
+                    "for an external build")
+        budget_why = ". ".join(_parts) if _parts else (
+            "fresh capital / proven fee-payer / growth funding the build")
     else:
         budget, budget_why = 1, "no budget evidence either way"
 
@@ -594,6 +634,11 @@ def assess(item: dict, lead: dict, *, verdicts: list[dict] | None = None,
             return out
 
         # 6. Action grade.
+        # Compute the qualification scorecard here so every lead that reaches
+        # this point carries budget data for the dossier, regardless of whether
+        # the gate passes or queues it.
+        qual = qualification(lead, item or {}, ev, wstate)
+        out["qual"] = qual
         action = lead.get("action")
         if action == "monitor" and not confirmed:
             out["reasons"].append("Watch-grade — needs corroboration before an AD sees it")
@@ -612,8 +657,6 @@ def assess(item: dict, lead: dict, *, verdicts: list[dict] | None = None,
         # demoted to a per-fact VERIFICATION check: a registry-attested
         # fact (Companies House / RNS / regulator) is true on its own —
         # quiet companies with no press coverage are not less qualified.
-        qual = qualification(lead, item or {}, ev, wstate)
-        out["qual"] = qual
         attested = (ev.get("primary") or 0) >= 1
         verified = confirmed or attested or (ev.get("families") or 0) >= 2
         if not verified:

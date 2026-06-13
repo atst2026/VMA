@@ -270,3 +270,21 @@ def sweep_days() -> int:
 def is_sweep() -> bool:
     return sweep_days() > 1
 
+
+
+def model_spend_allowed(lane: str) -> bool:
+    """Central spend gate. VMA_MODEL_SPEND:
+      - unset / 'all'      -> every model pass runs (default)
+      - 'contacts'         -> ONLY lane='contacts' runs (live-job +
+                              dossier POC research); the optional passes
+                              (semantic scan, auto-investigate, universe
+                              expansion, AI drafts, advisory theses)
+                              no-op so credits go to contacts alone.
+    """
+    import os
+    scope = (os.environ.get("VMA_MODEL_SPEND") or "all").strip().lower()
+    if scope in ("", "all"):
+        return True
+    if scope == "contacts":
+        return lane == "contacts"
+    return True   # unknown value: fail open, never break a run

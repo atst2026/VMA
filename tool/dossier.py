@@ -105,6 +105,10 @@ def _fold_entry(rec: dict, entry: dict, gate: dict | None,
         rec["gate_why"] = why
         rec["recheck_days"] = gate.get("recheck_days")
         rec["needs_investigation"] = bool(gate.get("investigate"))
+        qual = gate.get("qual") or {}
+        if qual.get("budget_why"):
+            rec["budget_score"] = qual.get("budget")
+            rec["budget_why"] = qual["budget_why"]
 
 
 def _render_md(pid: str, rec: dict, verdicts: list[dict]) -> str:
@@ -133,6 +137,11 @@ def _render_md(pid: str, rec: dict, verdicts: list[dict]) -> str:
     for h in rec.get("gate_history") or []:
         rk = f" · recheck {h['recheck_days']}d" if h.get("recheck_days") else ""
         lines.append(f"- {h.get('date')}: {h.get('state')} — {h.get('why')}{rk}")
+    if rec.get("budget_why"):
+        _bscore = rec.get("budget_score")
+        _blabel = ("Funded" if _bscore == 2
+                   else ("Developing" if _bscore == 1 else "Constrained"))
+        lines += ["", f"## Budget — {_blabel}", "", rec["budget_why"]]
     pid_verdicts = [v for v in verdicts if v.get("rid") == pid]
     if pid_verdicts:
         lines += ["", "## AD verdicts", ""]
@@ -154,6 +163,21 @@ def _render_md(pid: str, rec: dict, verdicts: list[dict]) -> str:
         ar_lines = []
     if ar_lines:
         lines += ["", "## Agency relationships", ""] + ar_lines
+    # Advisory services — static signal-led playbook voted across the
+    # full accumulated signal history.
+    try:
+        from tool.advisory import service_fit_for
+        keys = [e.get("key") for e in rec.get("events") or []
+                if isinstance(e, dict) and e.get("key")]
+        fit = service_fit_for(keys) if keys else None
+    except Exception:
+        fit = None
+    if fit and fit.get("services"):
+        lines += ["", "## Advisory services", ""]
+        for s in fit["services"]:
+            lines.append(f"- **{s.get('label')}** — {s.get('reason')}")
+        if fit.get("budget_note"):
+            lines += ["", f"_{fit['budget_note']}_"]
     notes = _dir() / f"{pid}.notes.md"
     if notes.exists():
         try:

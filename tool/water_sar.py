@@ -223,4 +223,12 @@ def load_water_sar(limit: int = 20) -> list[dict]:
     except Exception as e:
         log.info("latest_water_sar.json parse failed: %s", e)
         return []
-    return data[:limit] if isinstance(data, list) else []
+    if not isinstance(data, list):
+        return []
+    # Service-fit lens — per load, so stale stored rows carry it too.
+    from tool.advisory import service_fit_for
+    fit = service_fit_for(["water_sar"])
+    for r in data[:limit]:
+        if isinstance(r, dict):
+            r["service_fit"] = fit
+    return data[:limit]

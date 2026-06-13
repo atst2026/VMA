@@ -43,13 +43,20 @@ from tool.state_paths import state_dir
 
 log = logging.getLogger("brief.contacts.research")
 
-MODEL = "claude-opus-4-8"
+# Override via VMA_RESEARCH_MODEL (e.g. claude-sonnet-4-6 cuts cost
+# ~40% with a modest quality trade-off) without a deploy.
+MODEL = (os.environ.get("VMA_RESEARCH_MODEL") or "").strip() \
+    or "claude-opus-4-8"
 # High enough that every NEW live job gets researched within a day of
-# appearing (the 7-day TTL means a job only spends a pass once a week);
-# tune via env without a deploy.
-MAX_JOBS_PER_RUN = int(os.environ.get("OUTREACH_RESEARCH_MAX_JOBS") or 25)
+# appearing (the success TTL means a found answer only re-spends weekly;
+# misses retry sooner); tune via env without a deploy.
+MAX_JOBS_PER_RUN = int(os.environ.get("OUTREACH_RESEARCH_MAX_JOBS") or 40)
 MAX_CONTINUATIONS = 6
 RESEARCH_TTL_DAYS = 7
+# A pass that found nobody is worth retrying sooner — the web changes
+# (a press release lands, a team page updates) and a miss is often a
+# timing problem, not a permanent fact.
+FAILURE_RETRY_DAYS = 3
 # Below this the answer is treated as "didn't find them" and the lead
 # stays on the role-search fallback — same philosophy as the resolver's
 # verified-or-fallback tiers.
@@ -147,7 +154,18 @@ def _load_ledger() -> dict:
 
 def _save_ledger(d: dict) -> None:
     try:
-        _ledger_file().write_text(json.dumps(d, indent=1))
+        payload = json.dumps(d, indent=1)
+        _ledger_file().write_text(payload)
+        # The live dashboard's diagnosis chips read this ledger; the CI
+        # run that researches and the Render process that renders are
+        # different machines — push so the chips tell the truth there.
+        try:
+            from tool import github_state
+            github_state.push_async(
+                "tool/state/job_contact_research.json", payload,
+                "contact-research: update ledger")
+        except Exception:
+            pass
     except Exception:
         pass
 
@@ -157,15 +175,59 @@ def _ledger_key(company: str, slot: str) -> str:
 
 
 def _recently_researched(ledger: dict, company: str, slot: str) -> bool:
-    at = (ledger.get(_ledger_key(company, slot)) or {}).get("at") or ""
+    rec = ledger.get(_ledger_key(company, slot)) or {}
+    at = rec.get("at") or ""
     try:
         t = datetime.fromisoformat(at)
         if t.tzinfo is None:
             t = t.replace(tzinfo=timezone.utc)
-        return (datetime.now(timezone.utc) - t) < timedelta(
-            days=RESEARCH_TTL_DAYS)
+        # Failure-aware TTL: a found answer holds for the full window; a
+        # miss frees up for retry sooner.
+        days = (RESEARCH_TTL_DAYS if rec.get("found")
+                else FAILURE_RETRY_DAYS)
+        return (datetime.now(timezone.utc) - t) < timedelta(days=days)
     except Exception:
         return False
+
+
+def research_status(company: str, slot: str = "head_of_comms",
+                    ledger: dict | None = None) -> str:
+    """One honest line about why a lead may have no contact yet — the
+    dashboard's diagnosis chip. Ledger-first: the ledger syncs from the
+    CI run that actually researches, so it tells the truth on the live
+    dashboard too (whose own env legitimately has no research key).
+    Never raises."""
+    try:
+        if ledger is None:
+            ledger = _load_ledger()
+        billing = (ledger.get("::billing") or {}).get("at") or ""
+        rec = ledger.get(_ledger_key(company, slot)) or {}
+        at = (rec.get("at") or "")[:10]
+        if rec.get("found"):
+            return f"researched {at}: owner identified"
+        if billing:
+            return (f"research paused — Anthropic API credits exhausted "
+                    f"(as of {billing[:10]}; top up to resume)")
+        if at:
+            return (f"researched {at}: no defensible answer yet — "
+                    f"retries in {FAILURE_RETRY_DAYS}d")
+        # No ledger history at all: research has never run anywhere.
+        if not [k for k in ledger if not k.startswith("::")] \
+                and not (os.environ.get("ANTHROPIC_API_KEY") or "").strip():
+            return "research off — no ANTHROPIC_API_KEY"
+        return "not yet researched (queued for the next run)"
+    except Exception:
+        return ""
+
+
+def _mark_billing(ledger: dict) -> None:
+    """Record the credits-exhausted state in the synced ledger so the
+    live dashboard reports the truth instead of guessing."""
+    try:
+        ledger["::billing"] = {
+            "at": datetime.now(timezone.utc).isoformat()}
+    except Exception:
+        pass
 
 
 def _brief_for(signal: dict, inference: dict) -> str:
@@ -318,6 +380,10 @@ def research_job_contact(signal: dict, contacts: dict, runner=None,
             "at": datetime.now(timezone.utc).isoformat(),
             "found": bool(isinstance(data, dict) and data.get("found")),
         }
+        if data is None and _billing_down:
+            _mark_billing(ledger)
+        elif data is not None:
+            ledger.pop("::billing", None)   # credits flowing again
         if own_ledger:
             _save_ledger(ledger)
         if data is None:
@@ -393,6 +459,129 @@ def research_job_contact(signal: dict, contacts: dict, runner=None,
         return True
     except Exception as e:
         log.info("contact research skipped (%s)", e)
+        return False
+
+
+def _company_brief(company: str, slots: tuple, desk: str,
+                   context: str = "") -> str:
+    """The company-level brief: no vacancy, just 'who OWNS this function
+    at this employer today?' — the question behind every BD lead's POC."""
+    fam = ("communications / corporate affairs / internal comms"
+           if desk != "marketing" else "marketing / brand / growth")
+    lines = [
+        "BD TARGET (no specific vacancy — this is a business-development "
+        "lead; we need the senior FUNCTION OWNER to open a conversation "
+        "with)",
+        f"  Company: {company}",
+        f"  Function family: {fam}",
+        f"  Acceptable role slots: {', '.join(slots)}",
+    ]
+    if context:
+        lines += ["", "WHY THIS COMPANY IS LIVE (recent trigger events — "
+                      "useful search anchors):", context[:800]]
+    lines += ["", f"Who currently owns the {fam} function at this "
+                  "employer? Senior-most named owner wins; their direct "
+                  "LinkedIn profile URL if findable."]
+    return "\n".join(lines)
+
+
+def research_company_owner(company: str, slots: tuple, contacts: dict,
+                           desk: str = "comms", context: str = "",
+                           runner=None, ledger: dict | None = None,
+                           stats: dict | None = None) -> bool:
+    """Research the senior function owner for ONE company (no vacancy) —
+    the universal, roster-free path that puts a named POC on any BD
+    lead. Same acceptance rules, same store, same ledger as the per-job
+    researcher. Returns True if the store changed. Never raises."""
+    try:
+        from tool.contacts.store import upsert_contact, get_contact
+        from tool.contacts.schema import ContactEntry
+
+        company = (company or "").strip()
+        slots = tuple(slots or ()) or ("head_of_comms",)
+        if not company or company == "—":
+            return False
+        primary_slot = slots[0]
+
+        own_ledger = ledger is None
+        if own_ledger:
+            ledger = _load_ledger()
+        if _recently_researched(ledger, company, primary_slot):
+            return False
+
+        # Already holding a fresh, named owner in any family slot? Don't
+        # spend — the POC card has what it needs (email is the live-jobs
+        # layer's concern, not the BD card's).
+        card = get_contact(contacts, company)
+        if card:
+            for s in slots:
+                e = card.get(s)
+                if (e and e.name and e.is_fresh()
+                        and e.meets_named_confidence()):
+                    return False
+
+        if stats is not None:
+            stats["model_calls"] = stats.get("model_calls", 0) + 1
+        data = (runner or _run_model)(_company_brief(company, slots, desk,
+                                                     context))
+        ledger[_ledger_key(company, primary_slot)] = {
+            "at": datetime.now(timezone.utc).isoformat(),
+            "found": bool(isinstance(data, dict) and data.get("found")),
+        }
+        if data is None and _billing_down:
+            _mark_billing(ledger)
+        elif data is not None:
+            ledger.pop("::billing", None)   # credits flowing again
+        if own_ledger:
+            _save_ledger(ledger)
+        if data is None or not _acceptable(data, slots):
+            if data is not None:
+                log.info("bd contact research %s: no defensible answer "
+                         "(found=%s conf=%s)", company,
+                         (data or {}).get("found"),
+                         (data or {}).get("confidence"))
+            return False
+
+        slot = data["role_slot"]
+        evidence = [e for e in (data.get("evidence") or [])
+                    if isinstance(e, dict) and e.get("url")]
+        now = datetime.now(timezone.utc).isoformat()
+        entry = ContactEntry(
+            name=data["name"].strip(),
+            role_title=(data.get("role_title") or "").strip(),
+            role_slot=slot,
+            linkedin_url=(data.get("linkedin_url") or "").strip() or None,
+            source_url=evidence[0]["url"] if evidence else "",
+            source_label="AI web research (BD board)",
+            verified_at=now,
+            confidence=round(min(float(data.get("confidence") or 0),
+                                 STORE_CONFIDENCE_CAP), 2),
+        )
+        pub_email = (data.get("published_email") or "").strip()
+        pub_url = (data.get("published_email_url") or "").strip()
+        if pub_email and pub_url and "@" in pub_email:
+            from tool.contacts import email_resolver
+            verdict = email_resolver.hunter_verify(pub_email)
+            if verdict != "invalid":
+                entry.email = pub_email
+                entry.email_status = ("verified" if verdict == "valid"
+                                      else "published")
+                entry.email_source = "ai_web_research"
+                entry.email_source_url = pub_url
+                entry.email_checked_at = now
+
+        existing = card.get(slot) if card else None
+        if (existing and existing.name and existing.is_fresh()
+                and existing.confidence > entry.confidence
+                and existing.name.lower() != entry.name.lower()):
+            return False
+        upsert_contact(contacts, company, slot, entry)
+        log.info("bd contact research %s: %s — %s (slot %s, conf %.2f)",
+                 company, entry.name, entry.role_title, slot,
+                 entry.confidence)
+        return True
+    except Exception as e:
+        log.info("bd contact research skipped (%s)", e)
         return False
 
 

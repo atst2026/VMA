@@ -382,6 +382,11 @@ body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .jc-em.es-verified{color:#1e7a41}.jc-em.es-published{color:#1d4ed8}
 .jc-em.es-pattern,.jc-em.es-none{color:#b5530e}
+.jcontact.jdiag{color:#9a3412;font-style:italic}
+.caps-banner2{position:relative;z-index:60;margin:10px 14px 0 76px;padding:9px 14px;
+  border-radius:11px;background:#FFF7ED;border:1px solid #FDBA74;font:500 12.5px/1.55 "Inter",sans-serif}
+.caps-banner2 .cw{color:#9A3412;font-weight:650;margin:2px 0}
+.caps-banner2 .cn{color:#92660A;margin-top:3px}
 .om-backdrop{display:none;position:fixed;inset:0;background:rgba(20,28,46,.32);
   backdrop-filter:blur(4px);z-index:90;align-items:center;justify-content:center}
 .om-backdrop.open{display:flex}
@@ -539,6 +544,23 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
 .ammohead{font:600 10px var(--mono);letter-spacing:.06em;color:var(--dim);margin-bottom:6px}
 .ammoline{position:relative;padding-left:14px;margin-bottom:5px;font-size:12px;line-height:1.55}
 .ammoline::before{content:"\2022";position:absolute;left:2px;color:var(--clay)}
+/* Service-fit — the Talent-Consultancy lens: the ranked VMA service mix
+   the signal stack indicates (search/interim, Advisory Services, agency
+   referral, engagement platform). Chips colour by revenue family. */
+.svcline{display:flex;gap:8px;align-items:baseline;margin-bottom:5px;font-size:12px;line-height:1.55}
+.svcchip{flex:none;font:650 9.5px var(--mono);letter-spacing:.04em;padding:1px 8px;border-radius:9px;white-space:nowrap;
+  color:#5B459E;background:rgba(123,97,196,.12);border:1px solid rgba(123,97,196,.3)}
+.svcchip.hire{color:#1D5FA8;background:rgba(66,133,244,.1);border-color:rgba(66,133,244,.3)}
+.svcchip.referral{color:#9A6A14;background:rgba(217,151,43,.12);border-color:rgba(217,151,43,.35)}
+.svcnote{margin-top:5px;padding-top:5px;border-top:1px dashed rgba(16,22,38,.12);font-size:11.5px;font-style:italic;color:#9A6A14}
+/* Account thesis — the AI-researched, evidence-cited account read. */
+.resbadge{font:700 8px var(--mono);letter-spacing:.1em;color:#1E7A41;background:rgba(30,122,65,.1);border:1px solid rgba(30,122,65,.3);border-radius:8px;padding:1px 6px;margin-left:6px;vertical-align:middle}
+.thheadline{font-weight:650;font-size:12.5px;margin-bottom:5px;color:var(--ink)}
+.thsnap{font-size:12px;color:#5a6577;margin-bottom:7px;line-height:1.55}
+.thev{color:#5a6577;font-size:11.5px}
+.thev a{color:#1d4ed8;text-decoration:none}
+.thhook{padding:9px 12px;border-left:2px solid #1E7A41;border-radius:0 9px 9px 0;background:rgba(30,122,65,.06);font-size:12.5px;line-height:1.6;color:var(--ink2)}
+.thpts{margin-top:7px}
 .openerbox{margin:14px 28px 0;padding:11px 14px;border-left:2px solid var(--vma);border-radius:0 12px 12px 0;
   background:rgba(62,92,132,.06);font-size:12.5px;line-height:1.62;color:var(--ink2)}
 /* ---- the pipeline past PRODUCTION ----
@@ -763,6 +785,8 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
 </head>
 <body>
 <div class="amb a1"></div><div class="amb a2"></div><div class="amb a3"></div>
+{# Capability banner removed by AD preference — operational state lives
+   in the logs and the run output, not on every page. #}
 
 <nav class="siderail">
   <span class="sr-logo"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#3E5C84"/><text x="50" y="55" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="30" letter-spacing="-1.5" fill="#fff">VMA</text><text x="51" y="76" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="300" font-size="13.5" letter-spacing="3" fill="#fff">GROUP</text></svg></span>
@@ -1508,7 +1532,7 @@ function portfolioHTML(l){
   h+='<div class="port-top"><div>'
     +'<div class="eyeb">BUSINESS LEAD PORTFOLIO · VMA GROUP</div>'
     +'<div class="pco">'+esc(l.co)+'</div>'
-    +'<div class="pmand"><b>'+esc(l.seat||'')+'</b>'+(l.why?' · '+esc(l.why):'')
+    +'<div class="pmand">'+esc(l.why||'')
     +(ageLabel(l.age)?' · signal '+ageLabel(l.age):'')+'</div></div>'
     +'<div class="pright"><div class="pchips">'
     +(l.ver?chip('ver-'+l.ver,esc(VER_LABEL[l.ver]||l.ver).toUpperCase(),MEANING[l.ver]):'')
@@ -1533,10 +1557,35 @@ function portfolioHTML(l){
   if(!ready&&l.gateWhy){
     h+='<div class="prow"><span class="pl2">WHY NOT CALL-READY</span><div class="pv"><div class="gatebox">'+esc(l.gateWhy)+'</div></div></div>';
   }
-  if(l.whyNow||l.brief)h+='<div class="prow"><span class="pl2">OPPORTUNITY</span><div class="pv">'+esc(l.whyNow||l.brief)+'</div></div>';
+  /* Account thesis (AI-researched, evidence-cited) outranks the static
+     service mix: this is the AD-grade read of what THIS company needs —
+     grounded needs across the full catalogue, plus the meeting hook.
+     Falls back to the trigger-class service-fit when no fresh thesis. */
+  if(l.thesis&&l.thesis.needs&&l.thesis.needs.length){
+    const T=l.thesis;
+    h+='<div class="prow alt"><span class="pl2">ACCOUNT THESIS <span class="resbadge" title="Researched with live web evidence on '+esc((T.researched_at||'').slice(0,10))+'">RESEARCHED</span></span><div class="pv">'
+      +'<div class="thheadline">'+esc(T.headline||'')+'</div>'
+      +(T.function_snapshot?'<div class="thsnap">'+esc(T.function_snapshot)+'</div>':'')
+      +T.needs.map(n=>'<div class="svcline"><span class="svcchip '+esc(n.family||'advisory')+'" title="'+esc(n.service_label||'')+'">'+esc((n.service_short||n.service||'').toUpperCase())+'</span><span>'+esc(n.need||'')
+        +(n.why_now?' <i>'+esc(n.why_now)+'</i>':'')
+        +' <span class="thev">— '+esc(n.evidence||'')
+        +(n.url?' <a href="'+esc(n.url)+'" target="_blank" rel="noopener">[source]</a>':'')
+        +'</span></span></div>').join('')
+      +'</div></div>';
+    if(T.meeting_hook){
+      h+='<div class="prow"><span class="pl2">MEETING HOOK</span><div class="pv"><div class="thhook">'+esc(T.meeting_hook)+'</div>'
+        +((T.talking_points||[]).length?'<div class="thpts">'+T.talking_points.map(t=>'<div class="ammoline">'+esc(t)+'</div>').join('')+'</div>':'')
+        +'</div></div>';
+    }
+  }
+  if(l.whyNow||l.brief)h+='<div class="prow"><span class="pl2">HIRING TRIGGER</span><div class="pv">'+esc(l.whyNow||l.brief)+'</div></div>';
   if(l.phase)h+='<div class="prow alt"><span class="pl2">SITUATION</span><div class="pv"><b>'+esc(l.phase).toUpperCase()+'</b> — '+esc(l.phaseWhy||'')+'</div></div>';
-  if(l.ammo&&l.ammo.length)h+='<div class="prow alt"><span class="pl2">CALL AMMO</span><div class="pv">'
-    +'<div class="ammohead">Sector insight to give away on the call — the value the opener promises:</div>'
+  if(l.serviceFit&&l.serviceFit.services&&l.serviceFit.services.length){
+    h+='<div class="prow alt"><span class="pl2">POTENTIAL ADVISORY SERVICES</span><div class="pv">'
+      +l.serviceFit.services.map(s=>'<div class="svcline"><span class="svcchip '+esc(s.family||'advisory')+'" title="'+esc(s.label||'')+'">'+esc((s.short||s.key||'').toUpperCase())+'</span>'+(s.reason?'<span>'+esc(s.reason)+'</span>':'<span>'+esc(s.label||s.key||'')+'</span>')+'</div>').join('')
+      +'</div></div>';
+  }
+  if(l.ammo&&l.ammo.length)h+='<div class="prow alt"><span class="pl2">SECTOR INSIGHT</span><div class="pv">'
     +l.ammo.map(a=>'<div class="ammoline">'+esc(a)+'</div>').join('')+'</div></div>';
   h+='<div class="prow alt"><span class="pl2">WINDOW</span><div class="pv"><b>'+esc(l.win||'Timing not yet established')+'</b>'
     +' <span style="color:var(--muted)">— '+esc(winLogic(l))+'</span>'
@@ -1579,21 +1628,18 @@ function portfolioHTML(l){
   if(srcs.length){
     h+='<div class="prow"><span class="pl2">SOURCES</span><div class="pv">'
       +srcs.map(s=>'<a class="srcl" href="'+esc(s.url||('https://'+(s.src||'')))+'" target="_blank" rel="noopener">'
-      +'<span class="ek">'+srcKind(s.src||s.url)+'</span>'
       +'<span class="el2">'+esc(s.label||s.src||'source')+((s.n||1)>1?' <b class="xn">×'+s.n+'</b>':'')+'</span>'
-      +'<span class="ed2">'+esc(s.src||'')+(ageLabel(s.age)?' · '+ageLabel(s.age):'')+'</span>'
       +'<svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg></a>').join('')
       +'</div></div>';
   }
-  if(q.total!=null){
-    h+='<div class="prow alt"><span class="pl2">QUALIFICATION</span><div class="pv"><div class="qmarks">'
-      +[['Seat',q.seat,MEANING.seat,q.seat_why],['Budget',q.budget,MEANING.budget,q.budget_why],
-        ['Urgency',q.urgency,MEANING.urgency,q.urgency_why],['Buyer',q.buyer,MEANING.buyer,q.buyer_why]]
-        .map(x=>'<span class="qmark" data-tip="'+esc(x[2])+(x[3]?' Here: '+esc(x[3])+'.':'')+'">'+x[0]+' <b style="color:'
-        +(x[1]>=2?'#1E7A41':x[1]===1?'#B45309':'#9AA0A6')+'">'+(x[1]>=2?'✓✓':x[1]===1?'✓':'✗')+'</b></span>').join('')
-      +'<span class="qmark"><b>'+q.total+'/8</b></span>'
-      +(l.prop?chip('prop',esc(l.prop).toUpperCase(),MEANING.prop+(l.propWhy?' Here: '+l.propWhy+'.':'')):'')
-      +'</div></div></div>';
+  if(q.budget!=null){
+    const blab=q.budget>=2?'Funded':q.budget===1?'Developing':'Constrained';
+    const bcol=q.budget>=2?'#1E7A41':q.budget===1?'#B45309':'#9AA0A6';
+    const _fundedType=q.budget>=2&&l.why?(l.why.match(/\(([^)]+)\)/)||[])[1]||'':'';
+    h+='<div class="prow alt"><span class="pl2">BUDGET</span><div class="pv">'
+      +'<b style="color:'+bcol+'">'+esc(blab)+(_fundedType?' ('+esc(_fundedType)+')':'')+'</b>'
+      +(l.prop?' &nbsp;'+chip('prop',esc(l.prop).toUpperCase(),MEANING.prop+(l.propWhy?' Here: '+l.propWhy+'.':'')):'')
+      +'</div></div>';
   }
   if(l.deal&&l.deal.value){
     h+='<div class="prow"><span class="pl2">FEE AT STAKE</span><div class="pv"><b>'+esc(l.deal.type)+' · '+esc(l.deal.value)+'</b>'
@@ -1690,9 +1736,9 @@ function winWeeks(s){s=(''+(s||'')).toLowerCase();const m=s.match(/(\d+)/);if(!m
   const n=+m[1];return /mo|month/.test(s)?n*4.33:n;}
 function statusFilter(l,f){
   f=f||filt;
-  if(f==='ready')return l.status!=='dismissed';
+  if(f==='ready')return l.status==='active';
   if(f==='unc')return l.status==='active';
-  if(f==='new')return l.isNew&&l.status!=='dismissed';
+  if(f==='new')return l.isNew&&l.status==='active';
   if(f==='followed')return l.status==='followed_up';
   if(f==='dismissed')return l.status==='dismissed';
   return true;

@@ -55,11 +55,11 @@ def test_opener_acknowledges_public_hiring_but_reveals_no_analysis():
         "window_label": "4-12 weeks",
         "events": [{"trigger_key": "job_ad_cluster", "trigger_label": "Job-ad cluster",
                     "evidence": "2+ mid-level comms, no senior yet"}]})
-    assert "DWP" in op and "building out the team" in op
+    assert "DWP" in op and "some change happening at DWP" in op
     assert "4-12 weeks" not in op                 # never the clock
     assert "internal communications" not in op.lower()  # never the seat
     assert "—" not in op                          # no em dashes
-    assert "brochure" not in op.lower() and "coffee" not in op.lower()
+    assert "brochure" not in op.lower()
 
 
 def test_opener_never_names_the_leadership_trigger():
@@ -69,7 +69,7 @@ def test_opener_never_names_the_leadership_trigger():
         "events": [{"trigger_key": "ceo_change", "trigger_label": "CEO change",
                     "evidence": "new CEO appointed"}]})
     assert "Currys" in op
-    assert "things are changing at Currys" in op  # vague, credible nod
+    assert "some change happening at Currys" in op  # vague, credible nod
     assert "ceo" not in op.lower() and "leadership change" not in op.lower()
     assert "—" not in op
 

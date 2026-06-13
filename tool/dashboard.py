@@ -630,6 +630,15 @@ def load_latest_signals() -> list[dict]:
     except Exception:
         _cc = {}
     _lstat = lead_status.get_statuses()
+    # Research-ledger diagnosis: why a lead has no named contact yet —
+    # loaded once, read per row. Never silent again.
+    try:
+        from tool.contacts import job_researcher as _jr
+        from tool.hiring_manager import manager_for_signal as _mfs
+        _research_ledger = _jr._load_ledger()
+    except Exception:
+        _jr = None
+        _research_ledger = {}
     for s in data:
         # lead_id already set during retention filter above
         s["status"] = _lstat.get(s["lead_id"], "active")
@@ -649,6 +658,16 @@ def load_latest_signals() -> list[dict]:
             _ok, _why = False, "outreach unavailable"
         s["send_ok"] = _ok
         s["send_block_reason"] = _why
+        # Diagnosis chip for the un-named: which stage is the blocker.
+        if _jr is not None and not (s.get("contact") or {}).get("name"):
+            try:
+                _slots = tuple(_mfs(s).get("slots") or ()) or (
+                    "head_of_comms",)
+                s["contact_diag"] = _jr.research_status(
+                    s.get("company") or "", _slots[0],
+                    ledger=_research_ledger)
+            except Exception:
+                s["contact_diag"] = ""
     return data
 
 
@@ -666,7 +685,7 @@ def load_latest_predictive() -> list[dict]:
             except Exception:
                 data = []
 
-    from tool.advisory import advisory_for
+    from tool.advisory import advisory_for, service_fit_for
     from tool import predictor_status, bd_retention
     _ps_overlay = predictor_status.get_statuses()
     today = datetime.now(timezone.utc).date().isoformat()
@@ -706,6 +725,12 @@ def load_latest_predictive() -> list[dict]:
         p_item["advisory"] = advisory_for(
             evs[0].get("trigger_key") if evs and isinstance(evs[0], dict) else None
         )
+        # Service-fit lens: EVERY stacked event votes (not just the first),
+        # so a CEO-change + restructure stack surfaces org design and
+        # benchmarking above the bare hire, and budget-pressure events
+        # steer the mix toward project-fee routes.
+        p_item["service_fit"] = service_fit_for(
+            [e.get("trigger_key") for e in evs if isinstance(e, dict)])
         # Event phrase for a one-click, event-anchored Pitch Pack from this
         # lead — flows through as PITCH_TRIGGER so the pack's cost-of-vacancy
         # and "why now" lead with this specific trigger.
@@ -797,47 +822,17 @@ def draft_outreach_for_predictor(predictor: dict) -> str:
     vacancy pitch: with too few companies willing to engage, one clumsy
     opener doesn't cost a call, it poisons an account."""
     p = predictor or {}
-    try:
-        mkt = active_profile().key == "marketing"
-    except Exception:
-        mkt = False
-    fn = "marketing" if mkt else "communications"
     company = (p.get("company") or "").strip()
     if not company:
         return _default_outreach()
-    evs = [e for e in (p.get("events") or []) if isinstance(e, dict)]
-    keys = {e.get("trigger_key") for e in evs}
-
-    # The ONLY thing the trigger changes is how "change" is acknowledged —
-    # at a level the company would recognise from its own public picture,
-    # never specific enough to show our hand.
-    if keys & {"job_ad_cluster", "ic_platform_rfp", "inhouse_search_failing",
-               "interim_watch"}:
-        # Hiring is public — acknowledging it openly is safe.
-        obs = (f"I can see you're building out the team at {company} at "
-               f"the moment.")
-    elif keys & {"funding", "secured_financing", "ipo_listing",
-                 "pe_acquisition", "mna", "ownership_change",
-                 "market_entry"}:
-        obs = (f"Looks like an exciting period at {company}, congrats on "
-               f"the recent momentum.")
-    elif keys & {"crisis_event", "regulator_action", "regulator_probe_early",
-                 "profit_warning", "restructure", "redundancy",
-                 "contract_loss"}:
-        obs = (f"I appreciate there's a lot on at {company} right now, so "
-               f"I'll keep this short.")
-    else:
-        # Leadership changes and everything else: the vaguest credible nod.
-        obs = (f"I can see things are changing at {company} at the moment.")
-
-    insight = (f"I spend my week across senior {fn} moves in your part of "
-               f"the market, so I have a fairly current picture of who's "
-               f"moving, what teams are building, and what good looks like "
-               f"right now. Happy to share some of it, no strings.")
-    ask = ("Worth a short conversation in the next week or two? Even if "
-           "there's nothing on your side, the sector picture is usually "
-           "worth the fifteen minutes.")
-    return f"Hi (Name),\n\n{obs} {insight}\n\n{ask}\n\nBest,\n(Your name)"
+    return (
+        f"Hi (Name),\n\n"
+        f"I can see there is some change happening at {company}, so I thought it would be worth us connecting. "
+        f"I work closely with senior communications professionals in your industry and have a good sense of "
+        f"current market movement and how teams are evolving. Very happy to share market insight if useful. "
+        f"Would you be open to a coffee or chat in the next couple of weeks?\n\n"
+        f"Best, (Your name)"
+    )
 
 
 def _people_search(keywords: str) -> str:
@@ -1003,6 +998,10 @@ _HYDRATE_PATHS = [
     "tool/state/calendar_pipeline_windows.json",
     "tool/state/calendar_pipeline_events.json",
     "tool/state/calendar_pipeline_frameworks.json",
+    # Build v7: the CI run researches, the dashboard renders — these two
+    # files are the pipe. Account theses (advisory_research) and the
+    # contact-research ledger (drives the per-lead diagnosis chips).
+    "tool/state/job_contact_research.json",
 ]
 
 
@@ -1402,6 +1401,14 @@ MR_CSS = r"""
 .mr-drow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:2px}
 .mr-dk{display:grid;grid-template-columns:82px 1fr;gap:12px;align-items:baseline;font-size:12px;color:var(--ink2);line-height:1.5}
 .mr-dlab{font:600 8.5px/1.6 "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+/* Service-fit on the BD radar dossier — the Talent-Consultancy lens. */
+.mr-svc{display:flex;flex-direction:column;gap:4px}
+.mr-svc-item{display:flex;gap:7px;align-items:baseline}
+.mr-svc-chip{flex:none;font:650 10px/1.6 "Inter",sans-serif;padding:1px 7px;border-radius:9px;white-space:nowrap;background:#EDE9F7;color:#5B459E}
+.mr-svc-chip.hire{background:#E3EEFB;color:#1D5FA8}
+.mr-svc-chip.referral{background:#FBF0DF;color:#9A6A14}
+.mr-svc-why{font-size:12px;color:var(--ink2);line-height:1.5}
+.mr-svc-note{font-size:11.5px;font-style:italic;color:#9A6A14;border-top:1px dashed var(--mrborder);margin-top:3px;padding-top:4px}
 .mr-play{color:var(--ink2);background:rgba(62,92,132,.05);border-left:2px solid var(--vma);border-radius:5px;padding:7px 10px;display:block;font-size:12px;line-height:1.55}
 .mr-acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:11px 0 2px}
 .mr-actbtn{display:inline-flex;align-items:center;gap:6px;font:500 11.5px/1 "Inter",sans-serif;color:var(--ink);background:#fff;border:1px solid var(--mrborder);border-radius:9px;padding:6px 11px;cursor:pointer;transition:.13s}.mr-actbtn svg{width:14px;height:14px;flex-shrink:0}.mr-actbtn:hover{background:var(--elevated);border-color:var(--dim)}
@@ -1523,9 +1530,8 @@ MR_JS = r"""
       +(anti2.length?'<span class="mr-anti">⚠ '+esc(anti2.join(' · '))+'</span>':'')+'</div>':'';
     var gtop='';
     function vertag(l){var v=l.ver||'single';var lab=v==='reg'?'Registry-attested':v==='multi'?'2+ sources':'Single source';var tip=v==='reg'?'At least one fact comes from an official registry (Companies House / RNS / regulator) — true on its own, no press coverage needed':v==='multi'?'Corroborated by two or more independent outlets':'Rests on one non-registry source — /investigate can clear it';return '<span class="mr-ver '+v+'" title="'+tip+'">'+lab+'</span>';}
-    function qchip(lab,v,why){var c=v>=2?'q2':v===1?'q1':'q0';return '<span class="mr-qdim '+c+'" title="'+esc(why||'')+'">'+lab+(v>=2?' ✓✓':v===1?' ✓':' ✗')+'</span>';}
-    var qual='';
-    if(l.qual&&l.qual.total!==undefined){qual=dk('Qualification',qchip('Seat',l.qual.seat,l.qual.seat_why)+qchip('Budget',l.qual.budget,l.qual.budget_why)+qchip('Urgency',l.qual.urgency,l.qual.urgency_why)+qchip('Buyer',l.qual.buyer,l.qual.buyer_why)+'<span class="mr-evs">'+l.qual.total+'/8</span>');}
+    var budgetSec='';
+    if(l.qual&&l.qual.budget_why){var blab=l.qual.budget>=2?'Funded':'Budget unknown';var bcol=l.qual.budget>=2?'#1E7A41':l.qual.budget===1?'#B45309':'#9AA0A6';budgetSec=dk('Budget','<b style="color:'+bcol+'">'+esc(blab)+'</b> <span class="mr-evs">'+esc(l.qual.budget_why)+'</span>');}
     if(pres(l)&&l.conf){gtop=dk('Confidence','<span class="mr-confb '+(l.conf==='High'?'hi':'md')+'">'+esc(l.conf)+'</span>'+(l.rt?'<span class="mr-rtb" title="Survived the red-team pass: a sceptical AD persona tried to kill this lead and failed'+(l.conviction?'. Conviction '+l.conviction+'/100':'')+'">RED-TEAMED ✓'+(l.conviction?' '+l.conviction:'')+'</span>':'')+vertag(l));}
     else if(!pres(l)&&l.gateWhy!==undefined){var qt=l.gateWhy||'Needs more corroboration';if(l.recheck)qt+=' · recheck in '+l.recheck+'d';if(l.needsInv)qt+=' · run /investigate';gtop=dk('Why not call-ready',esc(qt));}
     var prop=l.prop?dk('Fee propensity','<span class="mr-propb '+(l.propCls||'unk')+'">'+esc(l.prop)+'</span><span class="mr-evs">'+esc(l.propWhy||'')+'</span>'):'';
@@ -1533,14 +1539,32 @@ MR_JS = r"""
     var buyer=(l.buyer||l.champion)?dk('Economic buyer',esc(l.buyer||'')+(l.champion?' <span class="mr-evs">· path: '+esc(l.champion)+'</span>':'')):'';
     var kill=(pres(l)&&l.kill)?dk('What kills this',esc(l.kill)):'';
     var move=(pres(l)&&(l.opening||l.move))?dk(l.opening?'Warm opening':'First move',esc(l.opening||l.move)):'';
+    // Account thesis (AI-researched, evidence-cited) outranks the static
+    // service mix; falls back to the trigger-class playbook when no
+    // fresh thesis exists for this lead.
+    var svc='';
+    if(l.thesis&&l.thesis.needs&&l.thesis.needs.length){
+      var thi='<div class="mr-svc-item" style="font-weight:650">'+esc(l.thesis.headline||'')+'</div>';
+      l.thesis.needs.forEach(function(n){
+        thi+='<div class="mr-svc-item"><span class="mr-svc-chip '+esc(n.family||'advisory')+'" title="'+esc(n.service_label||'')+'">'+esc(n.service_short||n.service||'')+'</span><span class="mr-svc-why">'+esc(n.need||'')+' — '+esc(n.evidence||'')+(n.url?' <a href="'+esc(n.url)+'" target="_blank" rel="noopener">[source]</a>':'')+'</span></div>';});
+      svc=dk('Account thesis','<span class="mr-svc">'+thi+'</span>');
+      if(l.thesis.meeting_hook)svc+=dk('Meeting hook',esc(l.thesis.meeting_hook));
+    }else if(l.serviceFit&&l.serviceFit.services&&l.serviceFit.services.length){
+      var sfi='';
+      l.serviceFit.services.forEach(function(s){
+        sfi+='<div class="mr-svc-item"><span class="mr-svc-chip '+esc(s.family||'advisory')+'" title="'+esc(s.label||'')+'">'+esc(s.short||s.key||'')+'</span><span class="mr-svc-why">'+esc(s.reason||'')+'</span></div>';});
+      if(l.serviceFit.budget_note)sfi+='<div class="mr-svc-note">'+esc(l.serviceFit.budget_note)+'</div>';
+      svc=dk('What VMA can sell','<span class="mr-svc">'+sfi+'</span>');
+    }
     return '<div class="mr-doss">'
       +warn
       +gtop
-      +qual
+      +budgetSec
       +prop
       +bizc
       +buyer
       +dk('Why now',fb(l)+esc(l.whyNow||l.why))
+      +svc
       +kill
       +move
       +acts
@@ -2118,6 +2142,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
         _mkt = False
     bd = []
     from tool import why_now as _wn
+    from tool.advisory import service_fit_for as _svc
     from tool.edge_detectors import intent_phrase as _intent
     for row in premarket_rows:
         _kind = row.get("_kind", "predictor")
@@ -2139,6 +2164,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                     [], (row.get("lead") or {}).get("why_now") or brief,
                     _fee_tip),
                 "fee": _fee, "feeTip": _fee_tip,
+                "serviceFit": _svc([_kind]),
                 "brief": brief,
                 "url": url, "src": _mr_src(url, row.get("source")),
                 "win": row.get("window_label") or "",
@@ -2188,6 +2214,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                                 _mr_compact_window(row.get("window"))),
                     _fee_tip),
                 "fee": _fee, "feeTip": _fee_tip,
+                "serviceFit": _svc(["funding"]),
                 "brief": brief or "Funding round — senior build-out likely.",
                 "url": url, "src": _mr_src(url, row.get("source")),
                 "win": _mr_compact_window(row.get("window")),
@@ -2261,6 +2288,8 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                 "incumbentStatus": row.get("incumbent_status") or "",
                 "whyNow": _why_now_txt,
                 "fee": _fee, "feeTip": _fee_tip,
+                "serviceFit": _svc(_tkeys),
+                "thesis": None,
                 "brief": brief,
                 "url": url, "src": _mr_src(url, ev0.get("source")),
                 "win": _win_lbl,
@@ -2358,8 +2387,21 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
             "confidence": int(round(100 * float(_c.get("confidence") or 0))),
             "sendOk": 1 if s.get("send_ok") else 0,
             "blockReason": s.get("send_block_reason") or "",
+            # Why there's no named contact yet (research-ledger
+            # diagnosis) — empty when a contact is named.
+            "contactDiag": s.get("contact_diag") or "",
         })
     return bd, jobs
+
+
+def _contact_caps_safe() -> dict:
+    """Contact-engine capability + budget state for the banner; empty
+    dict (no banner) on any failure."""
+    try:
+        from tool.contacts.measure import contact_capabilities
+        return contact_capabilities()
+    except Exception:
+        return {}
 
 
 def _render_dashboard(legacy: bool = False):
@@ -2702,6 +2744,7 @@ def _render_dashboard(legacy: bool = False):
         has_token=bool(GITHUB_TOKEN),
         build_stamp=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         deploy_rev=_DEPLOY_REV,
+        contact_caps=_contact_caps_safe(),
     )
     ctx.pop("TEMPLATE_IGNORED")
     if legacy:
@@ -4519,6 +4562,52 @@ TEMPLATE = r"""
       border-radius: 3px;
     }
 
+    /* Service-fit block — the Talent-Consultancy lens: the ranked VMA
+       service mix the signal stack indicates (search, interim, Advisory
+       Services, agency referral, engagement platform). Chips colour by
+       family so the AD reads the revenue route at a glance. */
+    .service-fit {
+      margin: 6px 0 2px;
+      padding: 7px 9px;
+      font-size: 12px;
+      line-height: 1.5;
+      background: #F7F5FC;
+      border-left: 2px solid #7B61C4;
+      border-radius: 3px;
+    }
+    .service-fit .sf-head {
+      font-weight: 650; font-size: 11px; letter-spacing: .04em;
+      text-transform: uppercase; color: #5B459E; margin-bottom: 4px;
+    }
+    .service-fit .sf-item { display: flex; gap: 7px; align-items: baseline;
+      margin: 3px 0; }
+    .service-fit .sf-chip {
+      flex: none; font-size: 10.5px; font-weight: 650; padding: 1px 7px;
+      border-radius: 9px; white-space: nowrap;
+      background: #EDE9F7; color: #5B459E;
+    }
+    .service-fit .sf-chip.sf-hire { background: #E3EEFB; color: #1D5FA8; }
+    .service-fit .sf-chip.sf-referral { background: #FBF0DF; color: #9A6A14; }
+    .service-fit .sf-reason { color: var(--text); }
+    .service-fit .sf-note {
+      margin-top: 5px; padding-top: 5px; font-size: 11.5px; font-style: italic;
+      color: #9A6A14; border-top: 1px dashed rgba(60,64,67,.18);
+    }
+    /* Compact one-line form for dense list rows (pulses, specialist
+       signals): "Sell: Benchmarking · Org design · Interim". */
+    .sf-line {
+      margin-top: 3px; font-size: 11.5px; font-weight: 600; color: #5B459E;
+    }
+
+    /* Contact-engine capability banner + per-lead diagnosis chip — a
+       missing key or exhausted budget must be visible, never silent. */
+    .caps-banner { margin: 0 0 14px; padding: 9px 13px; border-radius: 9px;
+      background: #FFF7ED; border: 1px solid #FDBA74; font-size: 12.5px; }
+    .caps-banner .caps-warn { color: #9A3412; font-weight: 600; margin: 2px 0; }
+    .caps-banner .caps-note { color: #92660A; margin-top: 3px; }
+    .badge.diag-chip { background: #FFF7ED; color: #9A3412;
+      border: 1px solid #FDBA74; }
+
     /* Specialist Signals — four low-frequency detectors collapsed into
        one panel that renders ONLY when a sub-detector has results, so
        the dashboard never advertises empty panels (the empty-panel
@@ -6049,6 +6138,9 @@ TEMPLATE = r"""
   <script>window.MR_BD={{ mr_bd|tojson }};window.MR_JOBS={{ mr_jobs|tojson }};window.MR_CAL={{ mr_cal|tojson }};window.MR_META={{ mr_meta|tojson }};</script>
   <script>{{ mr_js|safe }}</script>
 
+  {# Capability banner removed by AD preference — operational state
+     lives in the logs and the run output, not on every page. #}
+
   <!-- LEADS + PREDICTORS (legacy panels — hidden; retained for refresh JS) -->
   <div class="row">
 
@@ -6163,6 +6255,14 @@ TEMPLATE = r"""
                   </div>
                 </div>
                 {% endif %}
+                {% if f.service_fit and f.service_fit.services %}
+                <div class="service-fit">
+                  <div class="sf-head" title="The ranked VMA service mix this signal indicates — recruitment, Advisory Services (org design, benchmarking, coaching, ED&amp;I) and referral lanes (partner agency, engagement platform)">What VMA can sell here</div>
+                  {% for s in f.service_fit.services %}
+                  <div class="sf-item"><span class="sf-chip sf-{{ s.family }}" title="{{ s.label }}">{{ s.short }}</span><span class="sf-reason">{{ s.reason }}</span></div>
+                  {% endfor %}
+                </div>
+                {% endif %}
                 <div class="item-actions">
                   {% if f.status == 'active' %}
                     <button class="btn-mini funding-action" data-status="followed_up" type="button">&#10003; Mark followed up</button>
@@ -6199,6 +6299,15 @@ TEMPLATE = r"""
                   {% endfor %}
                 </div>
                 {% if p.advisory %}<div class="advisory-line">{{ p.advisory }}</div>{% endif %}
+                {% if p.service_fit and p.service_fit.services %}
+                <div class="service-fit">
+                  <div class="sf-head" title="The ranked VMA service mix this signal stack indicates — recruitment, Advisory Services (org design, benchmarking, coaching, ED&amp;I) and referral lanes (partner agency, engagement platform)">What VMA can sell here</div>
+                  {% for s in p.service_fit.services %}
+                  <div class="sf-item"><span class="sf-chip sf-{{ s.family }}" title="{{ s.label }}">{{ s.short }}</span><span class="sf-reason">{{ s.reason }}</span></div>
+                  {% endfor %}
+                  {% if p.service_fit.budget_note %}<div class="sf-note">{{ p.service_fit.budget_note }}</div>{% endif %}
+                </div>
+                {% endif %}
                 <pre class="outreach-text">{{ p.outreach }}</pre>
                 <div class="item-actions">
                   <button class="btn-mini lead-pitch-btn" type="button"
@@ -7201,6 +7310,7 @@ async function loadPulses() {
                  '" target="_blank" rel="noopener noreferrer" style="color:var(--blue-deep);text-decoration:none;">source</a>' : '') +
               '</div>' : '') +
             (p.advisory ? '<div class="win-scope">' + esc(p.advisory) + '</div>' : '') +
+            (p.service_fit && p.service_fit.headline ? '<div class="win-scope sf-line" title="The ranked VMA service mix this window indicates">Sell: ' + esc(p.service_fit.headline) + '</div>' : '') +
           '</div>' +
           rm +
         '</div>'
@@ -7400,6 +7510,7 @@ async function loadWaterSar() {
             (w.source ? ' &middot; ' + esc(w.source) : '') +
           '</div>' +
           (w.advisory ? '<div class="advisory-line">' + esc(w.advisory) + '</div>' : '') +
+          (w.service_fit && w.service_fit.headline ? '<div class="sf-line" title="The ranked VMA service mix this signal indicates">Sell: ' + esc(w.service_fit.headline) + ((w.service_fit.budget_note) ? ' · budget-strained: lead with project-fee routes' : '') + '</div>' : '') +
         '</li>'
       );
     }
@@ -7438,6 +7549,7 @@ async function loadContractEnd() {
             (c.sector ? ' &middot; ' + esc(c.sector) : '') +
           '</span>' +
           (c.advisory ? '<div class="advisory-line">' + esc(c.advisory) + '</div>' : '') +
+          (c.service_fit && c.service_fit.headline ? '<div class="sf-line" title="The ranked VMA service mix this signal indicates">Sell: ' + esc(c.service_fit.headline) + '</div>' : '') +
         '</li>'
       );
     }
