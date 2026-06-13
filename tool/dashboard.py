@@ -2356,6 +2356,29 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
             }))
     except Exception as _e:
         log.info("conversion layer: %s", _e)
+    # Gender Pay Gap enrichment: an ED&I advisory angle (only on a real,
+    # evidenced gap) + the Gartner-anchored resourcing benchmark, from the
+    # free GOV.UK service. Enrichment-only — never creates a lead. A clean
+    # no-op until gender-pay-gap.service.gov.uk is on the egress allowlist.
+    try:
+        from tool import gender_pay_gap as _gpg
+        _gpg_seen: dict = {}
+        for r in bd:
+            _co = (r.get("co") or "").strip()
+            if not _co or _co == "—":
+                continue
+            if _co not in _gpg_seen:
+                _gpg_seen[_co] = _gpg.lookup(_co)
+            _rec = _gpg_seen[_co]
+            if _rec:
+                _edi = _gpg.edi_angle(_rec, marketing=_mkt)
+                _bm = _gpg.resourcing_benchmark(_rec, marketing=_mkt)
+                if _edi:
+                    r["edi"] = _edi
+                if _bm:
+                    r["benchmark"] = _bm
+    except Exception as _e:
+        log.info("gender pay gap enrich: %s", _e)
     jobs = []
     for s in leads:
         _c = s.get("contact") or {}

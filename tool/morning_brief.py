@@ -529,6 +529,16 @@ def main() -> int:
     except Exception as e:
         log.info("bd poc fill: %s", e)
 
+    # Gender Pay Gap index (free GOV.UK bulk CSV; annual data, 30-day
+    # cache). Powers the ED&I advisory angle + the Gartner resourcing
+    # benchmark on BD dossiers. No-op until gender-pay-gap.service.gov.uk
+    # is on the egress allowlist; one bounded fetch per refresh window.
+    try:
+        from tool import gender_pay_gap as _gpg
+        _gpg.refresh()
+    except Exception as e:
+        log.info("gender pay gap refresh: %s", e)
+
     # Universe expansion (weekly): propose watchlist additions from the
     # signal stream's off-universe companies. Proposals only — the AD
     # approves by hand; the model never widens the universe itself.
