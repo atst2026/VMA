@@ -768,5 +768,25 @@
     "anchor": "2026-06-12",
     "first_seen": "2026-06-12",
     "expired": false
+  },
+  "53cc44f57eacaae0": {
+    "anchor": "2026-06-13",
+    "first_seen": "2026-06-13",
+    "expired": false
+  },
+  "dcc43c7ca98deb1e": {
+    "anchor": "2026-06-13",
+    "first_seen": "2026-06-13",
+    "expired": false
+  },
+  "4d1ed1e03e1c2a46": {
+    "anchor": "2026-06-13",
+    "first_seen": "2026-06-13",
+    "expired": false
+  },
+  "b5d8c96b3a821b9e": {
+    "anchor": "2026-06-12",
+    "first_seen": "2026-06-13",
+    "expired": false
   }
 }
