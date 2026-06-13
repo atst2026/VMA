@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kingfisher — Free engine vs. API-funded intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@500;600;700&family=Newsreader:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#101626;--ink2:#3C4043;--muted:#5A6577;--dim:#9AA0A6;
+  --vma:#3E5C84;--deep:#1A3D7C;--blue:#4285F4;--wash:#E8F0FE;--clay:#D97757;
+  --grn:#1E7A41;--amb:#B45309;--red:#C0392B;--teal:#0e7c74;--viol:#6b3fb5;
+  --hair:rgba(16,22,38,.09);--border:rgba(60,64,67,.18);
+  --mono:'JetBrains Mono',ui-monospace,monospace;--disp:'Space Grotesk','Inter',sans-serif;
+}
+body{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:var(--ink);
+  background-color:rgb(250,251,254);-webkit-font-smoothing:antialiased;letter-spacing:-.005em;overflow-x:hidden}
+.amb{position:fixed;z-index:-1;border-radius:50%;filter:blur(80px);pointer-events:none}
+.amb.a1{width:1300px;height:950px;top:38%;left:50%;transform:translate(-50%,-50%);
+  background:radial-gradient(closest-side,rgba(125,190,255,.45),rgba(157,210,255,.26) 50%,transparent 78%)}
+.amb.a2{width:700px;height:600px;right:-160px;top:-120px;
+  background:radial-gradient(closest-side,rgba(217,119,87,.14),transparent 75%)}
+.amb.a3{width:640px;height:560px;left:-180px;bottom:-140px;
+  background:radial-gradient(closest-side,rgba(62,92,132,.16),transparent 75%)}
+
+.wrap{max-width:1480px;margin:0 auto;padding:40px 30px 80px}
+
+/* ---- masthead ---- */
+.masthead{margin-bottom:10px}
+.masthead .kick{font:700 9px var(--mono);letter-spacing:.24em;color:var(--clay);text-transform:uppercase}
+.masthead h1{font-family:var(--disp);font-weight:700;font-size:30px;letter-spacing:-.02em;margin-top:8px;line-height:1.15}
+.masthead .sub{font-size:14px;color:var(--muted);margin-top:8px;max-width:760px;line-height:1.6}
+.howread{margin:22px 0 30px;padding:14px 18px;border-left:3px solid var(--vma);border-radius:0 14px 14px 0;
+  background:rgba(62,92,132,.06);font-size:12.5px;line-height:1.65;color:var(--ink2);max-width:1100px}
+.howread b{color:var(--ink);font-weight:650}
+
+/* ---- two-column compare grid ---- */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start}
+@media(max-width:1080px){.cols{grid-template-columns:1fr}}
+.colhead{display:flex;align-items:center;gap:10px;margin:0 4px 10px}
+.colhead .tag{font:700 8.5px var(--mono);letter-spacing:.14em;padding:4px 11px;border-radius:999px;flex:none}
+.colhead .tag.free{color:var(--muted);background:rgba(16,22,38,.06);border:1px solid var(--hair)}
+.colhead .tag.paid{color:#1e7a41;background:#e7f3ec;border:1px solid #bfe3cd}
+.colhead .ct{font:600 12px 'Inter';color:var(--ink2)}
+
+/* ---- the lead card (port) ---- */
+.port{margin:0 0 20px;background:rgba(255,255,255,.96);border:1px solid rgba(255,255,255,.95);
+  border-radius:22px;box-shadow:0 18px 50px rgba(26,61,124,.12),inset 0 1px 0 #fff;overflow:hidden}
+.port.dim{opacity:.97}
+.port-top{display:flex;align-items:flex-start;gap:20px;padding:22px 28px 18px;border-bottom:2px solid var(--ink)}
+.port-top .eyeb{font:700 8px var(--mono);letter-spacing:.24em;color:var(--clay)}
+.port-top .pco{font-family:var(--disp);font-weight:700;font-size:24px;letter-spacing:-.015em;margin-top:6px}
+.port-top .pmand{font-size:12.5px;color:var(--muted);margin-top:4px}
+.port-top .pmand b{color:var(--ink2);font-weight:600}
+.port-top .pright{margin-left:auto;display:flex;align-items:center;gap:16px;flex:none}
+.port-top .pchips{display:flex;flex-direction:column;gap:5px;align-items:flex-end}
+.scorering{position:relative;width:62px;height:62px;flex:none}
+.scorering .sv{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 15px var(--mono)}
+
+.prow{display:grid;grid-template-columns:132px 1fr;gap:18px;padding:13px 28px;border-bottom:1px solid rgba(16,22,38,.06);align-items:baseline}
+.prow .pl2{font:700 8.5px var(--mono);letter-spacing:.18em;color:var(--dim)}
+.prow .pv{font-size:12.5px;line-height:1.62;color:var(--ink2);min-width:0}
+.prow .pv b{color:var(--ink);font-weight:650}
+.prow.alt{background:rgba(62,92,132,.025)}
+
+.chip{font:700 8.5px var(--mono);letter-spacing:.08em;padding:4px 11px;border-radius:999px;border:1px solid var(--hair);white-space:nowrap}
+.chip.ver-reg{color:#1e7a41;background:#e7f3ec}
+.chip.rt{color:#0e7c74;background:#ddf3f0}
+.chip.intent{color:#6d28d9;background:#f1ebfd}
+
+.callband{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:13px 28px;
+  border-bottom:1px solid rgba(16,22,38,.06);font-size:12.5px}
+.callband .cbv{font:800 11px var(--mono);letter-spacing:.14em;padding:5px 12px;border-radius:999px;flex:none}
+.callband.yes .cbv{color:#1e7a41;background:#e7f3ec;border:1px solid #bfe3cd}
+.callband.wait .cbv{color:#B45309;background:#fff7ed;border:1px solid #fdba74}
+.callband.no .cbv{color:var(--red);background:#fdecea;border:1px solid rgba(192,57,43,.35)}
+.callband .cbw{color:var(--ink2);line-height:1.5;flex:1;min-width:200px}
+.callband .cbd{font:700 10px var(--mono);letter-spacing:.04em;color:#46556e;background:#edf0f4;
+  border:1px solid var(--hair);border-radius:999px;padding:4px 11px;flex:none}
+
+.accpill{font:700 8.5px var(--mono);letter-spacing:.12em;padding:3px 10px;border-radius:999px}
+.acc-good{color:#1e7a41;background:#e7f3ec}
+.acc-mid{color:#B45309;background:#fff7ed}
+.acc-bad{color:var(--red);background:#fdecea}
+.accline{position:relative;padding-left:14px;margin-top:5px;font-size:12px;line-height:1.55;color:var(--ink2)}
+.accline::before{content:"\2022";position:absolute;left:2px;color:var(--clay)}
+
+.miniwin{font:700 7.5px var(--mono);letter-spacing:.04em;color:#9a3412;background:#fff7ed;border:1px solid #fdba74;
+  border-radius:999px;padding:3px 8px;margin-left:8px;white-space:nowrap}
+
+.stratline{display:grid;grid-template-columns:74px 1fr;gap:10px;margin-bottom:7px;font-size:12px;line-height:1.55;color:var(--ink2)}
+.stratline .sk{font:700 8px var(--mono);letter-spacing:.14em;color:var(--dim);padding-top:2px}
+
+.bullets{margin:0}
+.bline{position:relative;padding-left:14px;margin-bottom:6px;font-size:12px;line-height:1.55;color:var(--ink2)}
+.bline:last-child{margin-bottom:0}
+.bline::before{content:"\2022";position:absolute;left:2px;color:var(--clay)}
+
+/* service-fit chips */
+.svcline{display:flex;gap:8px;align-items:baseline;margin-bottom:6px;font-size:12px;line-height:1.55;color:var(--ink2)}
+.svcline:last-child{margin-bottom:0}
+.svcchip{flex:none;font:650 9.5px var(--mono);letter-spacing:.04em;padding:1px 8px;border-radius:9px;white-space:nowrap;
+  color:#5B459E;background:rgba(123,97,196,.12);border:1px solid rgba(123,97,196,.3)}
+.svcchip.hire{color:#1D5FA8;background:rgba(66,133,244,.1);border-color:rgba(66,133,244,.3)}
+.svcchip.referral{color:#9A6A14;background:rgba(217,151,43,.12);border-color:rgba(217,151,43,.35)}
+.svcchip.benchmark{color:#0E7C74;background:rgba(18,165,148,.12);border-color:rgba(18,165,148,.32)}
+
+/* researched account thesis */
+.resbadge{font:700 8px var(--mono);letter-spacing:.1em;color:#1E7A41;background:rgba(30,122,65,.1);
+  border:1px solid rgba(30,122,65,.3);border-radius:8px;padding:1px 6px;margin-left:6px;vertical-align:middle}
+.thheadline{font-weight:650;font-size:12.5px;margin-bottom:6px;color:var(--ink);line-height:1.55}
+.thsnap{font-size:12px;color:#5a6577;margin-bottom:2px;line-height:1.58}
+.thev{color:#5a6577;font-size:11.5px;font-style:italic}
+.thev a,.thev .cite{color:#1d4ed8;text-decoration:none;font-style:normal}
+.thev b{color:var(--ink2);font-style:normal}
+.thhook{padding:11px 14px;border-left:2px solid #1E7A41;border-radius:0 9px 9px 0;background:rgba(30,122,65,.06);
+  font-size:12.5px;line-height:1.62;color:var(--ink2)}
+.needitem{margin-bottom:10px}
+.needitem:last-child{margin-bottom:0}
+.needhead{display:flex;gap:8px;align-items:baseline;margin-bottom:3px;font-size:12px;line-height:1.5;color:var(--ink)}
+.needhead b{font-weight:650}
+.verdictbox{padding:12px 15px;border-left:2px solid #B45309;border-radius:0 10px 10px 0;
+  background:rgba(180,83,9,.06);font-size:12.5px;line-height:1.62;color:var(--ink2)}
+.verdictbox b{color:var(--ink);font-weight:650}
+.verdictbox .why{display:block;margin-top:7px;font-style:italic;color:#9A6A14;font-size:11.5px}
+.preplist{margin:0}
+.prepline{margin-bottom:7px;font-size:12px;line-height:1.56;color:var(--ink2)}
+.prepline:last-child{margin-bottom:0}
+.prepline b{color:var(--ink);font-weight:650}
+.qa{color:var(--ink2)}
+
+.minihead{font:700 8px var(--mono);letter-spacing:.16em;color:var(--dim);margin:2px 0 7px}
+
+.port-foot{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:16px 28px 18px;background:rgba(62,92,132,.04)}
+.btn{display:inline-flex;align-items:center;gap:7px;font:600 11px 'Inter';padding:8px 16px;border-radius:999px;cursor:pointer;
+  color:var(--ink);background:#fff;border:1px solid var(--border);box-shadow:0 1px 5px rgba(26,61,124,.07)}
+.btn.primary{color:var(--deep);background:transparent;border:1px solid rgba(26,61,124,.4);font-weight:700;box-shadow:none}
+.btn.good{color:#1e7a41;background:#f3faf5;border-color:#bfe3cd}
+.btn.bad{color:#c0392b;background:#fdf4f2;border-color:#f0c5bd}
+.gap{flex:1}
+
+/* ---- row-by-row table ---- */
+.tablewrap{margin-top:48px}
+.tablewrap h2{font-family:var(--disp);font-weight:700;font-size:20px;letter-spacing:-.01em;margin-bottom:4px}
+.tablewrap .tsub{font-size:13px;color:var(--muted);margin-bottom:18px}
+table.cmp{width:100%;border-collapse:collapse;background:rgba(255,255,255,.96);border-radius:18px;overflow:hidden;
+  box-shadow:0 14px 40px rgba(26,61,124,.1);border:1px solid rgba(255,255,255,.9)}
+table.cmp th,table.cmp td{text-align:left;padding:13px 18px;vertical-align:top;font-size:12.5px;line-height:1.55}
+table.cmp thead th{font:700 8.5px var(--mono);letter-spacing:.16em;color:var(--dim);text-transform:uppercase;
+  border-bottom:2px solid var(--ink);background:rgba(62,92,132,.04)}
+table.cmp tbody tr{border-bottom:1px solid rgba(16,22,38,.06)}
+table.cmp tbody tr:last-child{border-bottom:none}
+table.cmp td.row-lbl{font:700 9px var(--mono);letter-spacing:.08em;color:var(--ink2);white-space:nowrap;width:120px}
+table.cmp td.free{color:var(--muted);width:38%}
+table.cmp td.paid{color:var(--ink2)}
+table.cmp td.paid b{color:var(--ink);font-weight:650}
+.cmp .em{color:#9AA0A6;font-style:italic}
+.oneliner{margin-top:22px;padding:16px 20px;border-radius:14px;background:rgba(30,122,65,.06);
+  border:1px solid rgba(30,122,65,.22);font-size:13px;line-height:1.6;color:var(--ink2)}
+.oneliner b{color:var(--ink);font-weight:650}
+.foot{margin-top:40px;font-size:11px;color:var(--dim);text-align:center;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="amb a1"></div><div class="amb a2"></div><div class="amb a3"></div>
+
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="kick">Same lead · two engines</div>
+    <h1>Kingfisher — free template vs. API-funded intelligence</h1>
+    <div class="sub">The <b>same Kingfisher lead</b> shown on the live board, rendered first as the free engine produces it today, then as the API-funded engine returns it once it has researched the account.</div>
+  </div>
+
+  <div class="howread">
+    <b>How to read this.</b> The right-hand card is an <i>illustrative reconstruction</i> built from publicly known facts about Kingfisher — the live engine generates every named person, figure, quote and URL from real-time web research and <b>cites the dated source for each</b>. Treat the evidence lines as showing the <i>shape and specificity</i> the engine returns, not as pre-verified facts. The contrast with the current card is the point.
+  </div>
+
+  <div class="cols">
+
+    <!-- ============== A. FREE ENGINE ============== -->
+    <div>
+      <div class="colhead">
+        <span class="tag free">A · FREE ENGINE — TODAY</span>
+        <span class="ct">the live card</span>
+      </div>
+
+      <div class="port dim">
+        <div class="port-top">
+          <div>
+            <div class="eyeb">BUSINESS LEAD PORTFOLIO · VMA GROUP</div>
+            <div class="pco">Kingfisher plc</div>
+            <div class="pmand">Share allotment (capital raise) · <b>signal 3d ago</b></div>
+          </div>
+          <div class="pright">
+            <div class="pchips">
+              <span class="chip ver-reg">REGISTRY-ATTESTED</span>
+              <span class="chip rt">STRESS-TESTED ✓</span>
+            </div>
+            <div class="scorering">
+              <svg width="62" height="62" viewBox="0 0 62 62">
+                <circle cx="31" cy="31" r="26" fill="none" stroke="rgba(16,22,38,.08)" stroke-width="3.5"/>
+                <circle cx="31" cy="31" r="26" fill="none" stroke="#1E9E57" stroke-width="3.5" stroke-linecap="round"
+                  stroke-dasharray="127 163" transform="rotate(-90 31 31)"/>
+              </svg>
+              <span class="sv" style="color:#1E9E57">71</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="callband yes">
+          <span class="cbv">CALL: YES</span>
+          <span class="cbw">Cleared the evidence gate — corroborated, in-window, no blockers.</span>
+          <span class="cbd">Team build · £30k–£93k</span>
+        </div>
+
+        <div class="prow">
+          <span class="pl2">HIRING TRIGGER</span>
+          <div class="pv">Share allotment (capital raise) at Kingfisher. A real trigger for Corporate Affairs Director; a team build, not a backfill — and growth funding the build already point the right way, but the hiring market is contracting, so lone triggers are often absorbed in-house. Prepare and watch for the build-out within 8–26 weeks. Fee case: Fresh capital or expansion funds an external build-out — speed matters to the investment case, which favours a search firm.</div>
+        </div>
+
+        <div class="prow alt">
+          <span class="pl2">SITUATION</span>
+          <div class="pv"><b>SCALE</b> — Money or mandate is expanding the function — roles get created here, and speed matters to whoever funded it.</div>
+        </div>
+
+        <div class="prow">
+          <span class="pl2">POTENTIAL ADVISORY SERVICES</span>
+          <div class="pv">
+            <div class="svcline"><span class="svcchip">BENCHMARKING</span><span>New capital, new plan — benchmark the comms function against where the business is going, not where it has been.</span></div>
+            <div class="svcline"><span class="svcchip hire">SEARCH</span><span>Funded growth converts to senior hires within about two quarters.</span></div>
+            <div class="svcline"><span class="svcchip hire">INTERIM</span><span>Project capacity for the expansion push without waiting for perm sign-off.</span></div>
+          </div>
+        </div>
+
+        <div class="prow alt">
+          <span class="pl2">SECTOR INSIGHT</span>
+          <div class="pv">
+            <div class="bullets">
+              <div class="bline">Live in your peer set: WH Smith (profit warning / negative trading update, Jun); Unilever (activist stake / shareholder pressure, May) — 25 senior-team triggers across the group in the last 90 days.</div>
+              <div class="bline">Cost-of-living pricing politics and supplier disputes keep retailers in near-permanent reputation management.</div>
+              <div class="bline">Store-estate restructuring and automation drive heavy internal-change communications demand.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prow">
+          <span class="pl2">WINDOW</span>
+          <div class="pv"><b>8–26 weeks</b> — estimated from the trigger date plus the typical lag between this signal type and a search being briefed <span class="miniwin">Growth demand</span></div>
+        </div>
+
+        <div class="prow alt">
+          <span class="pl2">ACCESS</span>
+          <div class="pv">
+            <span class="accpill acc-mid">UNMAPPED</span>
+            <div class="accline">No named function contact yet — the nightly resolver keeps attempting it from free sources.</div>
+          </div>
+        </div>
+
+        <div class="prow">
+          <span class="pl2">HOW TO WIN</span>
+          <div class="pv">
+            <div class="stratline"><span class="sk">LEAD WITH</span><span>Retained build-out: one exclusive multi-role mandate rather than role-by-role contingency.</span></div>
+            <div class="stratline"><span class="sk">POSITION</span><span>Speed protects the investment case — a planned build with benchmarked salaries beats sequential hiring, and retained is how it stays on schedule.</span></div>
+            <div class="stratline"><span class="sk">AVOID</span><span>Joining a contingency race on single roles — it concedes the build-out and caps the fee at a third of its retained value.</span></div>
+            <div class="stratline"><span class="sk">ENTRY</span><span>The function owner once the resolver names them (it re-attempts nightly); don't cold-call the switchboard on a senior brief.</span></div>
+            <div class="stratline"><span class="sk">GOAL</span><span>A meeting to scope the whole build, not one vacancy.</span></div>
+            <div class="stratline"><span class="sk">OFFER</span><span>A build-out salary benchmark across the planned seats; intros at the next practice roundtable.</span></div>
+          </div>
+        </div>
+
+        <div class="prow alt">
+          <span class="pl2">RISK</span>
+          <div class="pv">Refinancing of existing debt rather than growth capital.</div>
+        </div>
+
+        <div class="prow">
+          <span class="pl2">SOURCES</span>
+          <div class="pv">Share allotment (capital raise) <b>×3</b></div>
+        </div>
+
+        <div class="prow alt">
+          <span class="pl2">BUDGET</span>
+          <div class="pv"><b style="color:var(--grn)">Funded (capital raise)</b> <span class="chip" style="color:var(--muted)">UNKNOWN</span></div>
+        </div>
+
+        <div class="prow">
+          <span class="pl2">FEE AT STAKE</span>
+          <div class="pv"><b>Team build · £30k–£93k</b> — 3–5 roles at £55k–£85k base × 18.5%–22% house rates. Confidence: High.</div>
+        </div>
+
+        <div class="port-foot">
+          <button class="btn primary" type="button">Generate pitch</button>
+          <span class="gap"></span>
+          <button class="btn good" type="button">✓ Followed up</button>
+          <button class="btn bad" type="button">✕ Dismiss</button>
+        </div>
+      </div>
+
+      <div class="howread" style="border-color:var(--dim);background:rgba(16,22,38,.03);max-width:none;font-style:italic">
+        Accurate in shape, generic in substance. The same words any growth-signal lead receives. No contact. No actual knowledge of Kingfisher.
+      </div>
+    </div>
+
+    <!-- ============== B. API-FUNDED ENGINE ============== -->
+    <div>
+      <div class="colhead">
+        <span class="tag paid">B · API-FUNDED ENGINE — RESEARCHED</span>
+        <span class="ct">the same lead</span>
+      </div>
+
+      <div class="port">
+        <div class="port-top">
+          <div>
+            <div class="eyeb">BUSINESS LEAD PORTFOLIO · VMA GROUP</div>
+            <div class="pco">Kingfisher plc</div>
+            <div class="pmand">Retail-media &amp; marketplace pivot · <b>investigated · 11 sources</b></div>
+          </div>
+          <div class="pright">
+            <div class="pchips">
+              <span class="chip ver-reg">REGISTRY-ATTESTED</span>
+              <span class="chip rt">STRESS-TESTED ✓</span>
+              <span class="chip intent">DOOR OPEN</span>
+            </div>
+            <div class="scorering">
+              <svg width="62" height="62" viewBox="0 0 62 62">
+                <circle cx="31" cy="31" r="26" fill="none" stroke="rgba(16,22,38,.08)" stroke-width="3.5"/>
+                <circle cx="31" cy="31" r="26" fill="none" stroke="#B45309" stroke-width="3.5" stroke-linecap="round"
+                  stroke-dasharray="106 163" transform="rotate(-90 31 31)"/>
+              </svg>
+              <span class="sv" style="color:#B45309">82</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="callband wait">
+          <span class="cbv">CALL: WAIT → REFRAMED</span>
+          <span class="cbw">Door open. The original trigger was misread — the real angle is stronger.</span>
+          <span class="cbd">Retained search + advisory · £35k–£70k</span>
+        </div>
+
+        <div class="prow">
+          <span class="pl2">INVESTIGATION VERDICT</span>
+          <div class="pv">
+            <div class="verdictbox">
+              The share allotment that fired this lead is a routine <b>employee share-scheme vesting</b>, not growth capital — so the "team build from a capital raise" thesis is <b>killed</b>. But the research surfaces a <i>stronger, genuinely live</i> reason to call: Kingfisher is mid-pivot from a DIY retailer to a <b>retail-media and marketplace platform</b> while restructuring a weak French business — a marketing / corporate-affairs reshape the free card never saw.
+              <span class="why">Why this matters: the free engine would have sent an AD in on a false premise. The funded engine corrects it and finds the real angle.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="prow alt">
+          <span class="pl2">ACCOUNT THESIS<span class="resbadge">RESEARCHED</span></span>
+          <div class="pv">
+            <div class="thheadline">Kingfisher is building a retail-media business and a marketplace with a marketing function designed for stores — the org chart hasn't caught up with the strategy, and France is absorbing the leadership's attention.</div>
+            <div class="thsnap"><b>Function snapshot:</b> Group Corporate Affairs sits centrally; marketing is run brand-by-brand (B&amp;Q, Screwfix, Castorama) with a thin group layer. Retail media is named as a profit growth pillar but is under-resourced versus the Tesco / Boots media networks. France (Castorama / Brico Dépôt) is under cost and management pressure.</div>
+          </div>
+        </div>
+
+        <div class="prow">
+          <span class="pl2">NEEDS<span class="resbadge">EVIDENCED</span></span>
+          <div class="pv">
+            <div class="needitem">
+              <div class="needhead"><span class="svcchip hire">SEARCH</span><b>Retail-media commercial &amp; marketing leadership</b> to scale the media network into a real profit line.</div>
+              <div class="thev">Evidence: FY results name retail media as a growth pillar <span class="cite">[results announcement, date/URL]</span>. <b>Why now:</b> it's a stated current-year priority with no senior owner visible.</div>
+            </div>
+            <div class="needitem">
+              <div class="needhead"><span class="svcchip benchmark">BENCHMARKING</span><b>Group marketing / comms operating-model review</b> — the function is brand-fragmented while the strategy is now group-platform.</div>
+              <div class="thev">Evidence: brand-level leadership pages show no unified group marketing layer <span class="cite">[careers / leadership pages, URL]</span>.</div>
+            </div>
+            <div class="needitem">
+              <div class="needhead"><span class="svcchip referral">INTERIM · CHANGE-COMMS</span><b>France restructuring change &amp; stakeholder comms.</b></div>
+              <div class="thev">Evidence: France weakness and management change flagged in results <span class="cite">[date/URL]</span>. <b>Why now:</b> restructures live or die on change comms; this can't wait for a permanent hire.</div>
+            </div>
+            <div class="needitem">
+              <div class="needhead"><span class="svcchip">ADVISORY</span><b>Sustainability-narrative ownership</b> ("Forest Positive" / responsible sourcing) ahead of the next reporting cycle.</div>
+              <div class="thev">Evidence: published ESG commitments vs. no dedicated senior comms owner <span class="cite">[ESG report, URL]</span>.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prow alt">
+          <span class="pl2">MEETING HOOK<span class="resbadge">RESEARCHED</span></span>
+          <div class="pv">
+            <div class="thhook">"Most home-improvement retailers we talk to are trying to stand up a retail-media business with a marketing team that was built for stores, not media — and your last results put media front-and-centre while the org chart hasn't moved. We've mapped how [a named peer] resourced exactly this transition. Worth a 20-minute compare?"</div>
+          </div>
+        </div>
+
+        <div class="prow">
+          <span class="pl2">MEETING PREP</span>
+          <div class="pv">
+            <div class="minihead">5 MINUTES BEFORE THE CALL</div>
+            <div class="preplist">
+              <div class="prepline"><b>Lead with:</b> the retail-media capability gap — a commercial observation, not a recruitment pitch.</div>
+              <div class="prepline"><b>Opening questions:</b> <span class="qa">(1) Where does retail-media P&amp;L ownership sit today? (2) Is the group marketing layer resourced to serve both the store brands <i>and</i> the media network? (3) How are you running France change-comms internally right now?</span></div>
+              <div class="prepline"><b>Likely objections + counters:</b> <span class="qa"><i>"We recruit ourselves"</i> → specialist retail-media commercial talent is a thin, passive market in-house TA rarely reaches. <i>"Budget's tight after France"</i> → interim-first / advisory-first needs no permanent headcount sign-off, and the media build is designed to fund itself.</span></div>
+              <div class="prepline"><b>Scoped engagement if yes:</b> a benchmarking read of the group marketing / comms operating model vs. three retail-media peers, plus a market map of retail-media commercial leaders — ~3 weeks.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prow alt">
+          <span class="pl2">ACCESS</span>
+          <div class="pv">
+            <span class="accpill acc-good">DOOR OPEN</span>
+            <div class="accline"><i>‹live-researched: the named Group Corporate Affairs / Communications Director, with tenure and LinkedIn›</i> — the free card shows UNMAPPED here; the contacts lane fills it with the real, current person and a verified email where one exists.</div>
+          </div>
+        </div>
+
+        <div class="prow">
+          <span class="pl2">FEE AT STAKE</span>
+          <div class="pv">A <b>retained search</b> for a retail-media commercial leader <b>plus a benchmarking project</b> — a grounded, multi-line opportunity, not a speculative team build. And an advisory engagement that opens the account <i>before</i> any placement.</div>
+        </div>
+
+        <div class="port-foot">
+          <button class="btn primary" type="button">Generate pitch</button>
+          <span class="gap"></span>
+          <button class="btn good" type="button">✓ Followed up</button>
+          <button class="btn bad" type="button">✕ Dismiss</button>
+        </div>
+      </div>
+
+      <div class="howread" style="border-color:#1E7A41;background:rgba(30,122,65,.06);max-width:none;font-style:italic">
+        A researched brief an AD can walk in on — named door, evidenced needs, an opener that proves the work was done, and a corrected premise that stops a wasted call.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============== C. ROW-BY-ROW ============== -->
+  <div class="tablewrap">
+    <h2>Row-by-row: what funding changes</h2>
+    <div class="tsub">The same eight fields, side by side.</div>
+    <table class="cmp">
+      <thead>
+        <tr><th>Row</th><th>Free engine (today)</th><th>API-funded engine</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="row-lbl">CALL</td><td class="free">"CALL: YES" on a misread trigger</td><td class="paid">Trigger <b>verified and corrected</b> — calls only when it's real, and says why</td></tr>
+        <tr><td class="row-lbl">SITUATION</td><td class="free">"SCALE" (trigger-class label)</td><td class="paid">The <b>actual</b> strategic situation, from their results and reports</td></tr>
+        <tr><td class="row-lbl">NEEDS</td><td class="free">Generic service playbook</td><td class="paid">3–4 <b>evidenced, dated, company-specific</b> needs across the <b>full</b> catalogue</td></tr>
+        <tr><td class="row-lbl">HOOK</td><td class="free"><span class="em">— none</span></td><td class="paid">A specific opener that proves we did the work</td></tr>
+        <tr><td class="row-lbl">MEETING PREP</td><td class="free"><span class="em">— none</span></td><td class="paid">Lead-with, 3 questions, objections + counters, scoped engagement</td></tr>
+        <tr><td class="row-lbl">ACCESS</td><td class="free">"UNMAPPED"</td><td class="paid">A <b>named</b> decision-maker + verified email</td></tr>
+        <tr><td class="row-lbl">ADVISORY</td><td class="free"><span class="em">Invisible</span></td><td class="paid">The org-design / benchmarking / change-comms revenue line, surfaced</td></tr>
+        <tr><td class="row-lbl">FEE</td><td class="free">Speculative team build</td><td class="paid">A grounded retained search <b>+</b> an advisory project</td></tr>
+      </tbody>
+    </table>
+
+    <div class="oneliner">
+      <b>The point in one line:</b> funding turns a confident <i>template</i> into a researched <i>brief an AD can walk in on</i> — and, as the Kingfisher reframe shows, it also stops the engine sending people in on the wrong premise. That is the difference between a lead list and intelligence.
+    </div>
+  </div>
+
+  <div class="foot">Illustrative reconstruction · VMA Group Business Development Engine · the live engine cites a dated source for every named person, figure, quote and URL.</div>
+
+</div>
+</body>
+</html>
