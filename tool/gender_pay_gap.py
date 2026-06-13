@@ -310,6 +310,30 @@ def edi_angle(record: dict | None, marketing: bool = False) -> dict | None:
             "short": "ED&I", "url": record.get("url") or ""}
 
 
+def expected_comms_fte(band: str | None):
+    """Gartner-anchored expected FTE range for a headcount BAND. Returns
+    (lo, hi, mid, range_label) or None when the band is unknown. The single
+    source of truth for the ratio maths, shared by the per-lead benchmark
+    below and the proactive resourcing-outlier scan (tool.resourcing_outlier)."""
+    mid = _SIZE_MID.get((band or "").strip())
+    if not mid:
+        return None
+    lo = max(1, round(mid / 1000 * 1))
+    hi = round(mid / 1000 * 4)
+    rng = f"{lo}–{hi}" + ("+" if mid >= 20000 else "")
+    return lo, hi, mid, rng
+
+
+def all_records() -> list[dict]:
+    """Every indexed employer record (read-only; never fetches). Powers the
+    proactive resourcing-outlier universe scan. [] when the index is empty
+    (host blocked / not yet refreshed)."""
+    try:
+        return list(_index_read().get("by_norm", {}).values())
+    except Exception:
+        return []
+
+
 def resourcing_benchmark(record: dict | None,
                          marketing: bool = False) -> dict | None:
     """The Gartner-anchored 'are you right-sized vs peers?' hook, from the
@@ -317,13 +341,11 @@ def resourcing_benchmark(record: dict | None,
     if not record:
         return None
     band = record.get("size") or ""
-    mid = _SIZE_MID.get(band)
-    if not mid:
+    exp = expected_comms_fte(band)
+    if not exp:
         return None
     fn = "marketing" if marketing else "comms"
-    lo = max(1, round(mid / 1000 * 1))
-    hi = round(mid / 1000 * 4)
-    rng = f"{lo}–{hi}" + ("+" if mid >= 20000 else "")
+    _lo, _hi, _mid, rng = exp
     line = (f"At {band} staff, comparable {fn} functions run roughly "
             f"{rng} professionals (Gartner 2024: ~1 per 1,000 above "
             f"£3bn revenue, ~4 below). Most leaders can't say where they "
