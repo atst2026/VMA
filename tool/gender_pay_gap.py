@@ -70,6 +70,7 @@ _SUFFIX = {"ltd", "limited", "plc", "llp", "llc", "group", "holdings",
            "services", "service"}
 
 _INDEX: dict | None = None      # process memo
+_INDEX_MTIME = None             # cache-file mtime the memo was built from
 
 
 # ---- name normalisation ---------------------------------------------
@@ -127,36 +128,56 @@ def _f(v):
         return None
 
 
+def _resolve_get(fetch):
+    """The HTTP getter, or raise ImportError if the shared helper (and its
+    deps, e.g. lxml) can't be imported — so a missing dependency is
+    diagnosed as exactly that, not silently masked as a per-year network
+    miss (the brief showed lxml-not-installed looking like a blocked host)."""
+    if fetch is not None:
+        return fetch
+    from tool.sources._http import get
+    return get
+
+
 def _build_index(fetch=None) -> dict:
     """Fetch the newest available year, slim + index it. Returns the
     index dict (possibly empty when the host is blocked); always writes a
     cache marker so a blocked host isn't re-hit every run."""
     now = datetime.now(timezone.utc).isoformat()
-    for year in _CANDIDATE_YEARS:
-        rows = _download_year(year, fetch=fetch)
-        if not rows:
-            continue
-        by_norm, by_number, by_strip = {}, {}, {}
-        for rec in rows:
-            rec["year"] = year
-            if rec["employer"]:
-                by_norm.setdefault(_norm(rec["employer"]), rec)
-                by_strip.setdefault(_strip(rec["employer"]), []).append(rec)
-            if rec["number"]:
-                by_number.setdefault(rec["number"].lstrip("0") or rec["number"],
-                                     rec)
-        idx = {"fetched_at": now, "year": year, "by_norm": by_norm,
-               "by_number": by_number,
-               # store only single-employer strip buckets (unambiguous)
-               "by_strip": {k: v[0] for k, v in by_strip.items()
-                            if len(v) == 1}}
-        try:
-            _cache_file().write_text(json.dumps(idx))
-        except Exception:
-            pass
-        log.info("gpg index: %s employers (%s)", len(by_norm), year)
-        return idx
-    # Nothing fetched (blocked / offline): short-TTL empty marker.
+    try:
+        getter = _resolve_get(fetch)
+    except ImportError as e:
+        # A missing dependency disables every year — say so once, loudly,
+        # and bail (don't retry N years and log N misleading "misses").
+        log.warning("gpg: HTTP helper/deps unavailable (%s) — run "
+                    "pip install -r requirements.txt; skipping refresh", e)
+        getter = None
+    if getter is not None:
+        for year in _CANDIDATE_YEARS:
+            rows = _download_year(year, fetch=getter)
+            if not rows:
+                continue
+            by_norm, by_number, by_strip = {}, {}, {}
+            for rec in rows:
+                rec["year"] = year
+                if rec["employer"]:
+                    by_norm.setdefault(_norm(rec["employer"]), rec)
+                    by_strip.setdefault(_strip(rec["employer"]), []).append(rec)
+                if rec["number"]:
+                    by_number.setdefault(
+                        rec["number"].lstrip("0") or rec["number"], rec)
+            idx = {"fetched_at": now, "year": year, "by_norm": by_norm,
+                   "by_number": by_number,
+                   # store only single-employer strip buckets (unambiguous)
+                   "by_strip": {k: v[0] for k, v in by_strip.items()
+                                if len(v) == 1}}
+            try:
+                _cache_file().write_text(json.dumps(idx))
+            except Exception:
+                pass
+            log.info("gpg index: %s employers (%s)", len(by_norm), year)
+            return idx
+    # Nothing fetched (blocked / offline / missing dep): short-TTL marker.
     empty = {"fetched_at": now, "year": None, "by_norm": {},
              "by_number": {}, "by_strip": {}, "miss": True}
     try:
@@ -187,15 +208,30 @@ def _load_cache() -> dict | None:
     return None
 
 
+def _cache_mtime():
+    try:
+        f = _cache_file()
+        return f.stat().st_mtime if f.exists() else None
+    except Exception:
+        return None
+
+
 def _index_read() -> dict:
     """Read-only: process memo → disk cache → empty. NEVER fetches, so a
     dashboard render (or a render test) can't touch the network. The
-    network build happens only in refresh(), called by the nightly brief."""
-    global _INDEX
-    if _INDEX is not None:
+    network build happens only in refresh(), called by the nightly brief.
+
+    The memo is keyed on the cache file's mtime, so the long-running
+    dashboard process picks up a freshly DELIVERED index (a new brief
+    artifact extracted into STATE_DIR) without waiting for a restart —
+    while still parsing the ~3 MB index only when it actually changes."""
+    global _INDEX, _INDEX_MTIME
+    mt = _cache_mtime()
+    if _INDEX is not None and mt == _INDEX_MTIME:
         return _INDEX
-    disk = _load_cache()
+    disk = _load_cache() if mt is not None else None
     _INDEX = disk if isinstance(disk, dict) else {}
+    _INDEX_MTIME = mt
     return _INDEX
 
 
@@ -203,12 +239,13 @@ def refresh(fetch=None, force: bool = False) -> dict:
     """Brief-time (re)build of the index from the GOV.UK CSV, when the
     cache is missing or older than the TTL. The only network path in this
     module. Called once per morning-brief run. Never raises."""
-    global _INDEX
+    global _INDEX, _INDEX_MTIME
     disk = _load_cache()
     if disk and not force and _fresh(disk):
-        _INDEX = disk
+        _INDEX, _INDEX_MTIME = disk, _cache_mtime()
         return _INDEX
     _INDEX = _build_index(fetch=fetch)
+    _INDEX_MTIME = _cache_mtime()
     return _INDEX
 
 

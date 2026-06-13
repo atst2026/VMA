@@ -403,6 +403,24 @@ def company_events(name: str) -> dict:
     }
 
 
+def cached_number_map() -> dict:
+    """Render-safe {name: company_number} from the watchlist cache —
+    READ-ONLY, never calls the CH API (so it's safe in a dashboard
+    render). resolve_company_number() warms this cache during the brief,
+    and the brief artifact delivers ch_watchlist_v2.json to the dashboard.
+    Lets the gender-pay-gap (and any other) lookup match on the CH number,
+    which fixes legal-entity-name misses (e.g. GPG files 'Aviva' under
+    'Aviva Employment Services Limited'). Returns {} on any failure."""
+    try:
+        out = {}
+        for name, entry in (_load_watchlist() or {}).items():
+            if isinstance(entry, dict) and entry.get("number"):
+                out[name] = entry["number"]
+        return out
+    except Exception:
+        return {}
+
+
 def resolve_company_number(name: str) -> str | None:
     """One-time-per-name. Caches result in WATCHLIST_FILE.
     Only caches 'permanent' results — actual API responses (incl. zero hits).
