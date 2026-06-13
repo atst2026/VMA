@@ -161,6 +161,24 @@ table.cmp td.paid b{color:var(--ink);font-weight:650}
   border:1px solid rgba(30,122,65,.22);font-size:13px;line-height:1.6;color:var(--ink2)}
 .oneliner b{color:var(--ink);font-weight:650}
 .foot{margin-top:40px;font-size:11px;color:var(--dim);text-align:center;line-height:1.6}
+
+/* ---- PDF / print: stack to one column so each card is full-width and
+   readable on a phone; drop the fixed ambient blobs and heavy shadows ---- */
+@page{size:210mm 297mm;margin:11mm 12mm}
+@media print{
+  body{background:#fff}
+  .amb{display:none}
+  .wrap{padding:0;max-width:none}
+  .masthead h1{font-size:24px}
+  .cols{display:block}
+  .cols>div{margin-bottom:26px}
+  .colhead{margin-top:0}
+  .port,table.cmp{box-shadow:none;border:1px solid rgba(16,22,38,.14)}
+  .prow,.callband,.needitem,.stratline,.svcline,.bline,table.cmp tr{break-inside:avoid}
+  .colhead,.masthead,h2,.tablewrap .tsub{break-after:avoid}
+  .tablewrap{break-before:page;margin-top:0}
+  .howread{break-inside:avoid}
+}
 </style>
 </head>
 <body>
