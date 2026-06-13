@@ -109,4 +109,6 @@ jobs:
             tool/state/marketing/latest_pulses.json
             tool/state/marketing/latest_funding.json
             tool/state/marketing/predictor_pipeline.json
+            tool/state/marketing/gender_pay_gap.json
+            tool/state/marketing/ch_watchlist_v2.json
           if-no-files-found: warn

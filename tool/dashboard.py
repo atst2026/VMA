@@ -2362,13 +2362,22 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
     # no-op until gender-pay-gap.service.gov.uk is on the egress allowlist.
     try:
         from tool import gender_pay_gap as _gpg
+        # Cache-only CH numbers (read-only; no API call at render) so the
+        # GPG lookup can match on the registered number, recovering
+        # legal-entity-name misses (BT Group, Aviva, …).
+        try:
+            from tool.sources.companies_house import cached_number_map
+            _num_map = cached_number_map()
+        except Exception:
+            _num_map = {}
         _gpg_seen: dict = {}
         for r in bd:
             _co = (r.get("co") or "").strip()
             if not _co or _co == "—":
                 continue
             if _co not in _gpg_seen:
-                _gpg_seen[_co] = _gpg.lookup(_co)
+                _gpg_seen[_co] = _gpg.lookup(
+                    _co, company_number=_num_map.get(_co))
             _rec = _gpg_seen[_co]
             if _rec:
                 _edi = _gpg.edi_angle(_rec, marketing=_mkt)

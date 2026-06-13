@@ -20,6 +20,9 @@ _CSV = (
     "https://acme.example/gpg\n"
     "Bright Retail Ltd,07654321,4.0,3.1,250 to 499,True,\n"
     "Even Steven Group,09999999,1.0,0.5,1000 to 4999,False,\n"
+    # files under the legal entity, not the trading name "BT Group"
+    'British Telecommunications Public Limited Company,01800000,28.0,26.0,'
+    '"5000 to 19,999",False,https://bt.example/gpg\n'
 )
 
 
@@ -45,8 +48,10 @@ def state(tmp_path, monkeypatch):
     import tool.state_paths as sp
     monkeypatch.setattr(sp, "state_root", lambda profile_key=None: tmp_path)
     gpg._INDEX = None                       # clear the process memo each test
+    gpg._INDEX_MTIME = None
     yield tmp_path
     gpg._INDEX = None
+    gpg._INDEX_MTIME = None
 
 
 def _seed(fetch=_fetch_ok):
@@ -205,3 +210,74 @@ def test_engine_template_renders_edi_and_benchmark_rows():
     for token in ("ED&amp;I ANGLE", "RESOURCING BENCHMARK",
                   "svcchip.edi-bad", "svcchip.benchmark", "l.edi", "l.benchmark"):
         assert token in T, token
+
+
+# ---- Change A: a missing dependency is diagnosed, not masked --------
+def test_missing_dependency_is_diagnosed_not_masked(state, monkeypatch, caplog):
+    import logging
+
+    def _boom(fetch):
+        raise ImportError("No module named 'lxml'")
+    monkeypatch.setattr(gpg, "_resolve_get", _boom)
+    with caplog.at_level(logging.WARNING, logger="brief.gpg"):
+        idx = gpg.refresh(force=True)
+    assert not idx.get("by_norm")             # no index built, no raise
+    assert gpg.lookup("Acme Utilities") is None
+    # logged DISTINCTLY (a dependency hint), not as a generic per-year miss
+    assert any("pip install" in r.getMessage() for r in caplog.records)
+
+
+# ---- Change B: CH number matching recovers a legal-entity name miss -
+def test_number_matching_recovers_a_legal_entity_name_miss(state, monkeypatch):
+    from tool.dashboard import _build_mr_rows
+    from tool.sources import companies_house as ch
+    _seed()
+    # "BT Group" never name-matches the filed legal entity on its own…
+    assert gpg.lookup("BT Group") is None
+    # …but the cached CH number bridges it (read-only, no API call).
+    monkeypatch.setattr(ch, "cached_number_map",
+                        lambda: {"BT Group": "01800000"})
+    g = {"presented": True, "confidence": "High", "reasons": [],
+         "recheck_days": None, "investigate": False,
+         "evidence": {"families": 3, "primary": 1, "credible": 1,
+                      "level": "full"},
+         "kill": "", "move": "", "cap": 7, "throttled": False}
+    rows = [{"_kind": "predictor", "company": "BT Group", "pid": "bt",
+             "strength": "high", "window_label": "~6-12 wks",
+             "predicted_role": "Head of Comms", "gate": g, "verdict": "",
+             "events": [{"trigger_key": "ceo_change",
+                         "trigger_label": "CEO change",
+                         "published": "2026-05-01T00:00:00+00:00",
+                         "evidence": "x", "url": "http://a"}]}]
+    bd, _ = _build_mr_rows(rows, [], "Head of Communications", cap=7)
+    r = bd[0]
+    assert r["edi"]["cls"] == "edi-bad"       # 26% via the number match
+    assert r["benchmark"]["band"] == "5000 to 19,999"
+
+
+def test_cached_number_map_is_read_only_and_never_calls_the_api(
+        state, monkeypatch):
+    from tool.sources import companies_house as ch
+    # _load_watchlist is the cache read; _resolve_to_canonical is the
+    # network path. The map must use ONLY the former.
+    monkeypatch.setattr(ch, "_load_watchlist",
+                        lambda: {"Tesco": {"number": "00445790"},
+                                 "Ghost": {"number": None}})
+    monkeypatch.setattr(ch, "_resolve_to_canonical",
+                        lambda n: (_ for _ in ()).throw(
+                            AssertionError("network must not be touched")))
+    m = ch.cached_number_map()
+    assert m == {"Tesco": "00445790"}         # None-number entry dropped
+
+
+# ---- the delivery fix: the brief must ship the state to the dashboard
+def test_brief_artifacts_deliver_gpg_state_to_the_dashboard():
+    from pathlib import Path
+    import tool
+    root = Path(tool.__file__).resolve().parent.parent
+    comms = (root / ".github/workflows/morning-brief.yml").read_text()
+    assert "tool/state/gender_pay_gap.json" in comms
+    assert "tool/state/ch_watchlist_v2.json" in comms
+    mkt = (root / ".github/workflows/marketing-brief.yml").read_text()
+    assert "tool/state/marketing/gender_pay_gap.json" in mkt
+    assert "tool/state/marketing/ch_watchlist_v2.json" in mkt
