@@ -1,12 +1,15 @@
 # Sara's Morning Brief
 
-A daily BD intelligence email for Sara Tehrani, Account Director at VMA Group.
+A daily BD intelligence brief for Sara Tehrani, Account Director at VMA Group.
 Scours every free public source + Bright Data licensed LinkedIn surface, filters
-to Sara's role taxonomy and salary floor, ranks UK-primary, and delivers a
-ranked top-5 call list to `stehrani@vmagroup.com` at 08:55 Europe/London,
-Monday–Friday. Monday's brief covers Sat + Sun.
+to Sara's role taxonomy and salary floor, ranks UK-primary, and produces a
+ranked top-5 call list, Monday–Friday. Monday's brief covers Sat + Sun.
 
-Zero touch for Sara. Email arrives, she reads it, she dials.
+The **dashboard is the primary surface** — the engine runs daily and refreshes
+it for Sara. Email delivery is a toggle that is **currently off**
+(`MORNING_BRIEF_EMAIL_ENABLED`, default off): the brief scours, ranks and
+refreshes the dashboard every run but emails no one. Set
+`MORNING_BRIEF_EMAIL_ENABLED=1` to resume the 08:55 Europe/London send.
 
 **Sample of the format**: [sample_brief_preview.md](sample_brief_preview.md)
 (renders inline on GitHub) or [rendered HTML](https://htmlpreview.github.io/?https://github.com/atst2026/VMA/blob/main/sample_brief_preview.html).
@@ -14,11 +17,12 @@ Zero touch for Sara. Email arrives, she reads it, she dials.
 ## How it runs
 
 GitHub Actions (`.github/workflows/morning-brief.yml`) fires Mon–Fri on a UTC
-cron that covers both BST and GMT. A gate step checks Europe/London time is
-between 08:30 and 10:30 before letting the rest of the job run — so if
-GitHub's scheduler is delayed past 10:30 (which happens on the free tier),
-the brief is skipped for that day rather than arriving at lunch dressed up as
-a morning brief.
+cron that covers both BST and GMT, ahead of Sara's 09:00 London start, so the
+dashboard shows the day's data when she arrives. Email delivery is pinned off
+in the workflow (`MORNING_BRIEF_EMAIL_ENABLED=0`), so the run just refreshes
+the dashboard whenever the scheduler fires — there's no inbox to time the
+send for, and an earlier 08:30–10:30 window gate was removed once the free-tier
+cron proved too unreliable to satisfy it.
 
 Cost: £0/month. 22 runs × ~2 minutes ≈ 45 min/month — well inside GitHub's
 2,000-minute free tier.
@@ -50,14 +54,19 @@ to any inbox with no domain verification.
 
 Actions → "Sara's Morning Brief" → Run workflow → pick a mode:
 
+Email delivery is gated by `MORNING_BRIEF_EMAIL_ENABLED` (default off), so
+unless that is set to `1` **every mode below refreshes the dashboard/artefact
+only and emails no one**. The recipient column is where mail would go *if*
+delivery were re-enabled:
+
 | Mode | Behaviour |
 |---|---|
-| `test` | Real scouring → emails `amirt12@hotmail.com` (practice inbox) |
+| `test` | Real scouring → would email `amirt12@hotmail.com` (practice inbox) |
 | `sample` | Synthetic signals, for verifying email delivery works without hitting sources |
-| `send` | Real scouring → emails `stehrani@vmagroup.com` (live) |
+| `send` | Real scouring → would email `stehrani@vmagroup.com` (live) |
 | `preview` | Real scouring, no email (output uploaded as artefact only) |
 
-Manual dispatch bypasses the 08:30–10:30 window check.
+Manual dispatch runs immediately regardless of time of day.
 
 ## Sources scoured (all free)
 
@@ -366,7 +375,9 @@ tool/
 ```bash
 pip3 install requests beautifulsoup4 lxml python-dateutil
 cp .env.example .env          # fill in keys
+# Email is off unless MORNING_BRIEF_EMAIL_ENABLED=1; otherwise these
+# refresh state only and send no mail.
 ./run_brief.sh preview        # dry-run, no email, prints brief to stdout
-./run_brief.sh test           # real run, emails amirt12@hotmail.com
-./run_brief.sh send           # real run, emails stehrani@vmagroup.com
+./run_brief.sh test           # real run, would email amirt12@hotmail.com
+./run_brief.sh send           # real run, would email stehrani@vmagroup.com
 ```

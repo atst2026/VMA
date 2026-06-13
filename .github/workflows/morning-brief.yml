@@ -75,10 +75,10 @@ jobs:
         run: |
           # Previously this step gated the rest of the job to 08:30-10:30
           # London. We dropped the gate because GitHub free-tier cron is
-          # so unreliable that the gate skipped almost every run. Now we
-          # send whenever the cron fires, and morning_brief.py drops the
-          # email entirely if dedup leaves zero new signals (so the
-          # second cron of the day doesn't spam Sara).
+          # so unreliable that the gate skipped almost every run. Email
+          # delivery is now disabled outright (MORNING_BRIEF_EMAIL_ENABLED
+          # pinned off above), so the cron simply refreshes the dashboard
+          # whenever it fires — there's no inbox to time the send for.
           LOCAL_HOUR=$(TZ="Europe/London" date +%H)
           LOCAL_MIN=$(TZ="Europe/London" date +%M)
           echo "Europe/London time is ${LOCAL_HOUR}:${LOCAL_MIN}"
@@ -95,6 +95,14 @@ jobs:
 
       - name: Run the brief
         env:
+          # EMAIL DELIVERY KILL-SWITCH — pinned OFF. The dashboard is the
+          # primary surface, so this scheduled run still scours, ranks and
+          # refreshes the dashboard-state branch (which the Render site
+          # reads) on every run — it just emails NO ONE. morning_brief.py
+          # only calls email_send when this is truthy
+          # (config.MORNING_BRIEF_EMAIL_ENABLED). Flip "0" -> "1" here to
+          # resume delivery to Sara.
+          MORNING_BRIEF_EMAIL_ENABLED: "0"
           # Needed so morning_brief.py can push latest_signals /
           # latest_predictive / latest_funding / predictor_pipeline to
           # the dashboard-state branch (github_state._enabled() checks
@@ -140,9 +148,12 @@ jobs:
           VMA_SWEEP_DAYS: "90"
         run: |
           set -x
-          # Scheduled runs deliver live to stehrani@vmagroup.com.
-          # Manual dispatches can still pick `test` / `sample` / `preview`
-          # from the workflow_dispatch input to avoid Sara's inbox.
+          # Scheduled runs use `send` mode, but email delivery is pinned
+          # off (MORNING_BRIEF_EMAIL_ENABLED=0 above): the run scours,
+          # ranks and refreshes the dashboard/Render site for Sara — it
+          # emails NO ONE. `send` here means "full live scour + persist",
+          # not "send mail". Manual dispatches can still pick `test` /
+          # `sample` / `preview` for state-only experiments.
           MODE="${{ github.event.inputs.mode || 'send' }}"
           echo "Running brief in mode: $MODE"
           if [ "$MODE" = "sample" ]; then

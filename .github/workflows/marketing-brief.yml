@@ -61,6 +61,10 @@ jobs:
       - name: Run the marketing brief
         env:
           VMA_PROFILE: marketing
+          # EMAIL DELIVERY KILL-SWITCH — pinned OFF (same as the comms
+          # brief). This job only refreshes the marketing dashboard; it
+          # emails no one. Flip "0" -> "1" to resume delivery.
+          MORNING_BRIEF_EMAIL_ENABLED: "0"
           # Same scour budget as comms; the marketing job reads the SHARED
           # account universe (hiring_contacts / watchlist) but writes leads,
           # predictors and triage to tool/state/marketing/.
