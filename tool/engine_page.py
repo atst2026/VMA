@@ -492,6 +492,28 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
 .qmark b{font:700 12px var(--mono)}
 .gatebox{padding:11px 14px;border-radius:11px;font-size:12.5px;line-height:1.6;
   background:#fff7ed;border:1px solid #fdba74;color:#9a3412}
+/* ---- conversion layer: CALL band, deal value, access, the play ---- */
+.callband{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 28px;
+  border-bottom:1px solid rgba(16,22,38,.06);font-size:12.5px}
+.callband .cbv{font:800 11px var(--mono);letter-spacing:.14em;padding:5px 12px;border-radius:999px;flex:none}
+.callband.yes .cbv{color:#1e7a41;background:#e7f3ec;border:1px solid #bfe3cd}
+.callband.wait .cbv{color:#B45309;background:#fff7ed;border:1px solid #fdba74}
+.callband.no .cbv{color:var(--red);background:#fdecea;border:1px solid rgba(192,57,43,.35)}
+.callband .cbw{color:var(--ink2);line-height:1.5;flex:1;min-width:200px}
+.callband .cbd{font:700 10px var(--mono);letter-spacing:.04em;color:#46556e;background:#edf0f4;
+  border:1px solid var(--hair);border-radius:999px;padding:4px 11px;flex:none}
+.accpill{font:700 8.5px var(--mono);letter-spacing:.12em;padding:3px 10px;border-radius:999px}
+.acc-good{color:#1e7a41;background:#e7f3ec}
+.acc-mid{color:#B45309;background:#fff7ed}
+.acc-bad{color:var(--red);background:#fdecea}
+.accline{position:relative;padding-left:14px;margin-top:5px;font-size:12px;line-height:1.55}
+.accline::before{content:"\2022";position:absolute;left:2px;color:var(--clay)}
+.stratline{display:grid;grid-template-columns:74px 1fr;gap:10px;margin-bottom:6px;font-size:12px;line-height:1.55}
+.stratline .sk{font:700 8px var(--mono);letter-spacing:.14em;color:var(--dim);padding-top:2px}
+.tag-deal{font:700 7.5px var(--mono);letter-spacing:.04em;color:#46556e;background:#edf0f4;
+  padding:2px 7px;border-radius:999px;flex:none}
+.tag-call{font:700 7.5px var(--mono);letter-spacing:.1em;padding:2px 7px;border-radius:999px;flex:none}
+.tag-call.no{color:var(--red);background:#fdecea;border:1px solid rgba(192,57,43,.4)}
 .port-foot{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:16px 28px 18px;background:rgba(62,92,132,.04);
   border-radius:0 0 22px 22px}
 .btn{display:inline-flex;align-items:center;gap:7px;font:600 11px 'Inter';padding:8px 16px;border-radius:999px;cursor:pointer;transition:.15s;
@@ -1428,7 +1450,7 @@ setInterval(()=>{
 const FILTS=[['ready',{leads:'Active',jobs:'Live Jobs'}],
   ['new',{leads:'New today',jobs:'New today'}],['followed',{leads:'Followed up',jobs:'Followed up'}],
   ['dismissed',{leads:'Dismissed',jobs:'Dismissed'}]];
-const SORTS={leads:[['strength','Lead strength'],['window','Soonest window'],['new','Newest first']],
+const SORTS={leads:[['strength','Lead strength'],['value','Deal value'],['window','Soonest window'],['new','Newest first']],
   jobs:[['new','Newest first'],['az','Company A–Z']]};
 /* per-section filter + sort (icon dropdowns inside each card header) */
 const SECF={ready:'ready',dev:'ready',watch:'ready'};
@@ -1500,10 +1522,19 @@ function portfolioHTML(l){
     +'<circle cx="31" cy="31" r="26" fill="none" style="stroke:'+col+'" stroke-width="3.5" '
     +'stroke-linecap="round" stroke-dasharray="'+dash+' '+C.toFixed(1)+'" transform="rotate(-90 31 31)"/>'
     +'</svg><span class="sv" style="color:'+col+'">'+score+'</span></div></div></div>';
+  /* the conversion layer's verdict — the gate's decision said in one
+     word, with the deal value at house rates beside it */
+  if(l.callv&&l.callv.call){
+    h+='<div class="callband '+(l.callv.cls||'wait')+'"><span class="cbv">CALL: '+esc(l.callv.call)+'</span>'
+      +'<span class="cbw">'+esc(l.callv.why||'')+'</span>'
+      +(l.deal&&l.deal.value?'<span class="cbd" data-tip="'+esc(l.deal.basis||'')+'">'+esc(l.deal.type)+' · '+esc(l.deal.value)+'</span>':'')
+      +'</div>';
+  }
   if(!ready&&l.gateWhy){
     h+='<div class="prow"><span class="pl2">WHY NOT CALL-READY</span><div class="pv"><div class="gatebox">'+esc(l.gateWhy)+'</div></div></div>';
   }
   if(l.whyNow||l.brief)h+='<div class="prow"><span class="pl2">OPPORTUNITY</span><div class="pv">'+esc(l.whyNow||l.brief)+'</div></div>';
+  if(l.phase)h+='<div class="prow alt"><span class="pl2">SITUATION</span><div class="pv"><b>'+esc(l.phase).toUpperCase()+'</b> — '+esc(l.phaseWhy||'')+'</div></div>';
   if(l.ammo&&l.ammo.length)h+='<div class="prow alt"><span class="pl2">CALL AMMO</span><div class="pv">'
     +'<div class="ammohead">Sector insight to give away on the call — the value the opener promises:</div>'
     +l.ammo.map(a=>'<div class="ammoline">'+esc(a)+'</div>').join('')+'</div></div>';
@@ -1525,7 +1556,25 @@ function portfolioHTML(l){
         +'<svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg></a>').join('')
       +'</div></div>';
   }
+  /* ACCESS: the route-in facts stated plainly — named contact, in-house
+     TA, last known agency, rival mandate. Facts only; never a penalty. */
+  if(l.access&&l.access.facts&&l.access.facts.length){
+    h+='<div class="prow"><span class="pl2">ACCESS</span><div class="pv">'
+      +'<span class="accpill '+(l.access.cls||'acc-mid')+'">'+esc(l.access.label||'')+'</span>'
+      +l.access.facts.map(f=>'<div class="accline">'+esc(f)+'</div>').join('')
+      +'</div></div>';
+  }
   if(l.champion)h+='<div class="prow alt"><span class="pl2">ROUTE IN</span><div class="pv">'+esc(l.champion)+'</div></div>';
+  /* HOW TO WIN: the phase play in VMA's service vocabulary — which
+     service to lead with, the framing, the known failure mode, the
+     door, the meeting goal and the give-away offer */
+  if(l.strategy&&l.strategy.lead){
+    h+='<div class="prow alt"><span class="pl2">HOW TO WIN</span><div class="pv">'
+      +[['LEAD WITH',l.strategy.lead],['POSITION',l.strategy.position],['AVOID',l.strategy.avoid],
+        ['ENTRY',l.strategy.entry],['GOAL',l.strategy.goal],['OFFER',l.strategy.offer]]
+        .filter(x=>x[1]).map(x=>'<div class="stratline"><span class="sk">'+x[0]+'</span><span>'+esc(x[1])+'</span></div>').join('')
+      +'</div></div>';
+  }
   if(l.kill)h+='<div class="prow alt"><span class="pl2">RISK</span><div class="pv">'+esc(l.kill)+'</div></div>';
   if(srcs.length){
     h+='<div class="prow"><span class="pl2">SOURCES</span><div class="pv">'
@@ -1546,6 +1595,10 @@ function portfolioHTML(l){
       +(l.prop?chip('prop',esc(l.prop).toUpperCase(),MEANING.prop+(l.propWhy?' Here: '+l.propWhy+'.':'')):'')
       +'</div></div></div>';
   }
+  if(l.deal&&l.deal.value){
+    h+='<div class="prow"><span class="pl2">FEE AT STAKE</span><div class="pv"><b>'+esc(l.deal.type)+' · '+esc(l.deal.value)+'</b>'
+      +' <span style="color:var(--muted)">— '+esc(l.deal.basis||'')+'. Confidence: '+esc(l.deal.conf||'Low')+'.</span></div></div>';
+  }
   if(l.bizCase)h+='<div class="prow"><span class="pl2">FEE BASIS</span><div class="pv"><b>'+esc(l.bizCase)+'</b></div></div>';
   h+='<div class="openerbox" id="ob-'+l._id+'" hidden></div>';
   h+='<div class="port-foot">'
@@ -1565,7 +1618,10 @@ function stripHTML(l,i){
     +'<div class="strip-h" tabindex="0" data-qa="lead-trigger" data-id="'+l._id+'">'
     +'<div class="idcell"><div class="co"><span class="nm">'+esc(l.co)+'</span>'
     +(l.isNew?'<span class="tag-new">NEW</span>':'')
-    +(l.conflict?'<span class="tag-dnc">RIVAL MANDATE</span>':'')+'</div></div>'
+    +(l.conflict?'<span class="tag-dnc">RIVAL MANDATE</span>':'')
+    +(l.callv&&l.callv.call==='NO'?'<span class="tag-call no">NO CALL</span>':'')
+    +(l.deal&&l.deal.value&&(l.dealMax||0)>0?'<span class="tag-deal" data-tip="'+esc((l.deal.type||'')+' — '+(l.deal.basis||''))+'">'+esc(l.deal.value)+'</span>':'')
+    +'</div></div>'
     +'<span class="tp '+(l.key||'lead')+'">'+esc(l.type||'Signal')+'</span>'
     +'<span class="strengthcell '+sband(l.score||0)+'"><span class="sn">'+(l.score==null?'—':l.score)+'</span>'+miniArc(l.score)+'</span>'
     +'</div></div>';
@@ -1644,6 +1700,8 @@ function statusFilter(l,f){
 function sortFnFor(s){
   return s==='window'
     ?(a,b)=>winWeeks(a.win)-winWeeks(b.win)||(b.score||0)-(a.score||0)
+    :s==='value'
+    ?(a,b)=>(b.dealMax||0)-(a.dealMax||0)||(b.score||0)-(a.score||0)
     :s==='new'
     ?(a,b)=>(((a.age===''?99:a.age)??99)-((b.age===''?99:b.age)??99))||(b.score||0)-(a.score||0)
     :(a,b)=>(b.score||0)-(a.score||0);

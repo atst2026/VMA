@@ -2144,6 +2144,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                 "win": row.get("window_label") or "",
                 "st": _mr_st(row.get("strength")),
                 "opp": row.get("_opp") or 0.0,
+                "tkeys": [_kind],
                 "idtype": _kind, "rid": row.get("fid") or "",
                 "status": row.get("status", "active"),
                 "pitchRole": role_label,
@@ -2192,6 +2193,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                 "win": _mr_compact_window(row.get("window")),
                 "st": _mr_st(row.get("strength")),
                 "opp": row.get("_opp") or 0.0,
+                "tkeys": ["funding"],
                 "idtype": "funding", "rid": row.get("fid") or "",
                 "status": row.get("status", "active"),
                 "pitchRole": role_label,
@@ -2264,6 +2266,7 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
                 "win": _win_lbl,
                 "st": _mr_st(row.get("strength")),
                 "opp": row.get("_opp") or 0.0,
+                "tkeys": _tkeys,
                 "idtype": "predictor", "rid": row.get("pid") or "",
                 "status": row.get("status", "active"),
                 "pitchRole": seat,
@@ -2308,6 +2311,22 @@ def _build_mr_rows(premarket_rows, leads, role_label, cap: int = 7):
             r["poc"] = _poc_cache[_co]
     except Exception as _e:
         log.info("bd point-of-contact: %s", _e)
+    # Conversion layer: CALL verdict, phase, deal value at house rates,
+    # the phase play and the route-in facts — all derived from fields
+    # already on the row (tool/conversion.py; zero model calls, zero
+    # rank changes). propCls is the console's propensity verdict:
+    # "int" = in-house TA route, "pro" = proven agency user.
+    try:
+        from tool.conversion import enrich_row as _conv_enrich
+        for r in bd:
+            r.update(_conv_enrich({
+                **r,
+                "q": r.get("qual"),
+                "internal_ta": r.get("propCls") == "int",
+                "psl_status": "on" if r.get("propCls") == "pro" else "",
+            }))
+    except Exception as _e:
+        log.info("conversion layer: %s", _e)
     jobs = []
     for s in leads:
         _c = s.get("contact") or {}
