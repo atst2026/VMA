@@ -95,6 +95,14 @@ def test_gender_pay_gap_pulse_sells_edi_and_benchmarking():
     assert "benchmarking" in keys
 
 
+def test_equality_pay_reporting_pulse_sells_edi_and_benchmarking():
+    keys = [s["key"]
+            for s in A.service_fit_for(["equality_pay_reporting_2026"])["services"]]
+    assert keys[0] == "edi"
+    assert "benchmarking" in keys
+    assert A.advisory_for("equality_pay_reporting_2026").startswith("Advisory:")
+
+
 def test_market_entry_leads_with_the_peer_benchmark():
     fit = A.service_fit_for(["market_entry"])
     assert fit["services"][0]["key"] == "benchmarking"
