@@ -101,6 +101,10 @@ _ADVISORY: dict[str, str] = {
     "gender_pay_gap_2026":
         "Advisory: internal/DEI-comms capability review + gender-pay "
         "narrative & scrutiny-response readiness.",
+    "equality_pay_reporting_2026":
+        "Advisory: ED&I capability & equality-action-plan readiness review "
+        "+ ethnicity/disability pay narrative ahead of the new reporting "
+        "duties.",
     "nhs_planning_2026":
         "Advisory: NHS comms operating-model & change-capability review "
         "for the planning/restructure round.",
@@ -724,6 +728,16 @@ _SERVICE_FIT: dict[str, tuple[tuple[str, str], ...]] = {
          "remuneration product, sold on a statutory clock."),
         ("coaching", "Coach the leaders fronting the numbers internally and "
          "externally."),
+    ),
+    "equality_pay_reporting_2026": (
+        ("edi", "Equality action plans plus ethnicity/disability pay "
+         "reporting are an ED&I-consulting build: systemic-barrier review, "
+         "listening sessions and inclusive-comms support ahead of the duty."),
+        ("benchmarking", "Pay-gap and workforce-composition reporting needs "
+         "the numbers in context — remuneration and representation "
+         "benchmarked against comparable organisations."),
+        ("coaching", "Coach the leaders who must own the equality-action-plan "
+         "narrative to the board and externally."),
     ),
     "nhs_planning_2026": (
         ("org_design", "Planning-round restructures are operating-model "

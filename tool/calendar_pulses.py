@@ -165,6 +165,36 @@ _COMMS_PULSES: list[dict] = [
         "source_url": "https://www.gov.uk/report-gender-pay-gap-data",
     },
     {
+        "key": "equality_pay_reporting_2026",
+        "name": "Equality action plans & ethnicity/disability pay reporting "
+                "— ED&I build-up",
+        "window": ("2026-03-01", "2026-07-31"),
+        "legal_date": "Equality action plans: voluntary 2026/27, mandatory "
+                      "with 2027 GPG reports; ethnicity & disability pay-gap "
+                      "reporting confirmed 25 Mar 2026 (commencement not set)",
+        "sectors": ["financial_services", "public_sector_charities",
+                    "retail_consumer"],
+        "seat": "Head of ED&I / Internal Communications "
+                "(equality action plan + ethnicity/disability pay narrative)",
+        "angle": "Equality action plans are voluntary now (2026/27) but "
+                 "mandatory alongside 2027 gender-pay reports, and mandatory "
+                 "ethnicity & disability pay-gap reporting was confirmed in "
+                 "principle on 25 Mar 2026; large employers begin the data, "
+                 "governance and narrative work a cycle ahead. Treat as a "
+                 "watch-list, not a fixed deadline — the commencement date "
+                 "is not yet set.",
+        "scope_note": "UK employers with 250+ staff (the gender-pay "
+                      "reporting cohort the new duties extend).",
+        # Medium, deliberately: the policy timeline is still firming and has
+        # no commencement date — a watch-list pulse, not a fixed-date one.
+        "confidence": "medium",
+        "source": "Equality Act 2010 (GPG) Regs 2017 + Government "
+                  "consultation response on mandatory ethnicity & disability "
+                  "pay-gap reporting and equality action plans, 25 Mar 2026 "
+                  "(commencement date not yet set).",
+        "source_url": "https://www.gov.uk/report-gender-pay-gap-data",
+    },
+    {
         "key": "nhs_planning_2026",
         "name": "NHS operational-planning & restructure round",
         "window": ("2026-01-01", "2026-05-31"),

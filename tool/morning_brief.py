@@ -339,6 +339,16 @@ def main() -> int:
         log.info("in-house failure ledger: %s", e)
         inhouse_events, restart_events = [], []
 
+    # Exclusionary job-spec scan (deterministic, no model, free): flags
+    # companies whose recent ad wording skews masculine-coded or carries no
+    # accessibility/accommodation statement — an ED&I advisory conversation-
+    # opener (never a published claim), persisted for the advisory surfaces.
+    try:
+        from tool import job_spec_scan as _jspec
+        _jspec.scan_and_store(signals)
+    except Exception as e:
+        log.info("job-spec ED&I scan: %s", e)
+
     # Fee-propensity store: TA-hiring observed on the company's own ATS
     # boards (anti-signal) + procurement awards naming recruitment
     # suppliers (proven fee-payer). Feeds the posture layer's previously
