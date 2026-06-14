@@ -69,6 +69,7 @@ def compose(signal, facts: dict | None = None) -> dict:
             "proof_anchor": _NETWORK_RAIL,
             "full_mix": [_SERVICE_LABELS.get(m, m) for m in mix],
         },
+        "routing": _route(mix, getattr(signal, "trigger", "")),
         "take_control_ask": (
             f"“Can I take 30 minutes to show you the full benchmark for "
             f"{company} against your closest peers, and the two actions the "
@@ -78,6 +79,15 @@ def compose(signal, facts: dict | None = None) -> dict:
         "deal_value": None,
     }
     return pack
+
+
+def _route(service_mix, trigger) -> dict:
+    """The relationship owner + delivery associate for this lead."""
+    try:
+        from tool.advisory_routing import owner_for
+        return owner_for(service_mix, trigger)
+    except Exception:
+        return {}
 
 
 def _benchmark_teaser(extra: dict) -> dict | None:
@@ -134,9 +144,19 @@ def render_markdown(pack: dict) -> str:
     p = pack or {}
     nb = p.get("named_buyer", {})
     rs = p.get("recommended_service", {})
+    rt = p.get("routing", {}) or {}
+    owner_bits = []
+    if rt.get("owner"):
+        owner_bits.append(f"Owner: {rt['owner']} ({rt.get('owner_role', '')})")
+    if rt.get("associate"):
+        a = rt["associate"]
+        owner_bits.append(f"Delivery: {a['name']} ({a['firm']})")
+    if rt.get("co_owner"):
+        owner_bits.append(f"+ {rt['co_owner']}")
     lines = [
         f"# Evidence Pack — {p.get('company', '')}",
         f"*Trigger: {p.get('trigger', '')} · {p.get('why_now', '')}*",
+        ("*" + " · ".join(owner_bits) + "*") if owner_bits else "",
         "",
         "## 1. The Reframe", p.get("reframe", ""), "",
         "## 2. Outside-In Diagnostic (hypothesis)", p.get("diagnostic", ""), "",

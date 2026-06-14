@@ -221,9 +221,16 @@ right**, on a parallel lane through the same plumbing. Full plan:
   Network Rail proof anchor → Take-Control Ask). v0 is deterministic and
   **facts-only — no fee figures** until the project-scoping bands are
   signed off (Opus prose + the novelty gate come in Phase 2).
+- **`tool/advisory_routing.py`** — associate routing: the verdict's
+  recommended service → the relationship owner and delivery bench from the
+  brochure. Lucy Cairncross (MD, Advisory) owns the advisory relationship;
+  Sara owns the BD/search motion and the referral lanes; the associate is
+  attached by service — coaching → Joss Mathieson (Change Oasis) / Famn,
+  ED&I → Antoinette Willcocks (RiverRoad) / Kate Isichei (neuroinclusion).
+  Threaded through every gate row and rendered Evidence Pack.
 - **`/advisory-brief [company]`** — the Claude Code driver: run the lane
-  (detect → gate → rank → cap) and compose the Evidence Pack for the
-  call-ready leads. Human-in-the-loop on every PURSUE.
+  (detect → gate → rank → cap), route to the owner, and compose the
+  Evidence Pack for the call-ready leads. Human-in-the-loop on every PURSUE.
 
 Locked Phase-1 decisions (ADVISORY_ENGINE.md §14): human-in-the-loop on
 every PURSUE/send; comms/corporate-affairs desk first; `PayGapActionMandate`

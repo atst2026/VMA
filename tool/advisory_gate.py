@@ -174,6 +174,7 @@ def assess(signal, facts: dict | None = None, *, today: date | None = None) -> d
 
         verdict, why = _verdict(signal, q, ev, trigger, facts)
         conviction = _conviction(q, ev, verdict, getattr(signal, "confidence", 0.5))
+        mix = list(getattr(signal, "service_mix", []) or [])
         return {
             "signal": signal.to_dict(),
             "company": getattr(signal, "company", ""),
@@ -183,13 +184,24 @@ def assess(signal, facts: dict | None = None, *, today: date | None = None) -> d
             "why": why,
             "qual": q,
             "evidence": ev,
-            "service_mix": list(getattr(signal, "service_mix", []) or []),
+            "service_mix": mix,
+            "owner": _route(mix, trigger),
         }
     except Exception as e:  # pragma: no cover - safety net
         return {"signal": getattr(signal, "to_dict", lambda: {})(),
                 "verdict": "DEVELOP", "conviction": 0,
                 "why": f"gate error ({type(e).__name__}) — held for safety",
                 "qual": {}, "evidence": {}, "service_mix": []}
+
+
+def _route(service_mix, trigger) -> dict:
+    """Attach the relationship owner + delivery associate (advisory_routing).
+    Never lets a routing failure sink the gate decision."""
+    try:
+        from tool.advisory_routing import owner_for
+        return owner_for(service_mix, trigger)
+    except Exception:
+        return {}
 
 
 def _verdict(signal, q, ev, trigger, facts) -> tuple[str, str]:

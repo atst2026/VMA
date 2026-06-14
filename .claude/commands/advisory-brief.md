@@ -40,6 +40,14 @@ for r in rows:
     print('         gate: PAIN%s SPONSOR%s MANDATE%s TIMING%s ACCESS%s PROOF%s '
           '(%s/12)' % (q.get('pain'), q.get('sponsor'), q.get('mandate'),
           q.get('timing'), q.get('access'), q.get('proof'), q.get('total')))
+    o = r.get('owner') or {}
+    line = '         owner: ' + str(o.get('owner', ''))
+    if o.get('associate'):
+        line += ' · delivery %s (%s)' % (o['associate']['name'],
+                                         o['associate']['firm'])
+    if o.get('co_owner'):
+        line += ' · + ' + o['co_owner']
+    print(line)
 "
 ```
 

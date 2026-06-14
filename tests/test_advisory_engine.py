@@ -214,6 +214,16 @@ def test_evidence_pack_reframe_is_a_hypothesis_not_an_assertion():
     assert "typically" in pack["reframe"].lower()
 
 
+def test_routing_threads_through_gate_and_pack():
+    # The PayGapActionMandate (edi-led) lead is owned by Lucy and delivered
+    # by RiverRoad — visible on both the gate row and the rendered pack.
+    out = G.assess(_registry_signal(), facts={}, today=TODAY)
+    assert out["owner"]["owner"] == "Lucy Cairncross"
+    assert out["owner"]["associate"]["firm"] == "RiverRoad"
+    md = EP.render_markdown(EP.compose(_registry_signal()))
+    assert "Lucy Cairncross" in md and "Antoinette Willcocks" in md
+
+
 # --------------------------------------------- orchestration
 
 def test_originate_ranks_and_caps(monkeypatch):
