@@ -265,6 +265,13 @@ right**, on a parallel lane through the same plumbing. Full plan:
   throttle), so a board the humans stop trusting shrinks itself.
   `meeting_booked` is the sparse true outcome for longer-run `/learn`
   recalibration. Human-in-the-loop is thus also the training signal.
+- **`/advisory` — the live console** (`tool/advisory_board.py:render_board_html`
+  + an additive Flask route). The visible advisory lane in the render site,
+  reachable from the main nav: Call-ready → Developing → Killed, each card
+  with its conviction, owner + delivery associate, the one-line why, the
+  gate chips, and an inline Evidence Pack for the call-ready leads. A
+  self-contained page — it does not touch the hiring console — and degrades
+  to an explanatory empty state until a detector fires.
 - **`/advisory-brief [company]`** — the Claude Code driver: run the lane
   (detect → gate → rank → throttled cap), route to the owner, compose the
   Evidence Pack for the call-ready leads, and record the human decision.

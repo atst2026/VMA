@@ -816,6 +816,7 @@ label.om-lab{display:block;margin:10px 0 4px;min-width:0}
       <nav class="nav" style="margin-left:auto">
         <a href="/comms" class="{{ 'on' if desk_key=='comms' else '' }}">Communications</a>
         <a href="/marketing" class="{{ 'on' if desk_key=='marketing' else '' }}">Marketing</a>
+        <a href="/advisory">Advisory</a>
       </nav>
     </div>
 
