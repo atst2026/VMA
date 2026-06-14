@@ -231,7 +231,7 @@ def _verdict(signal, q, ev, trigger, facts) -> tuple[str, str]:
     )
     if pursue_ready:
         return "PURSUE", (
-            f"Call-ready: {q['total']}/12, a {q['pain_why']}, "
+            f"Call-ready: {q['total']}/12, {q['pain_why']}, "
             f"{q['sponsor_why']}, {q['access_why']}, and "
             f"{'a registry-attested' if (ev.get('primary') or 0) >= 1 else 'a corroborated'}"
             " evidence base.")
