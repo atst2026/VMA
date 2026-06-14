@@ -1316,6 +1316,37 @@ def legacy_dashboard():
     return _render_dashboard(legacy=True)
 
 
+@app.route("/advisory")
+@_auth_required
+def advisory_console():
+    """The Advisory Engine lane — advisory demand originated as a
+    first-class lead, qualified on the MEDDPICC gate, reasoned to
+    KILL/DEVELOP/PURSUE, routed to its owner, and shipped as an Evidence
+    Pack (ADVISORY_ENGINE.md). A self-contained, additive page — it does
+    not touch the hiring console. Degrades to an explanatory empty state
+    when no detector has fired (e.g. the GPG host not yet allowlisted)."""
+    try:
+        from tool.advisory_signals import originate
+        from tool.advisory_outcomes import decision_cap
+        from tool.advisory_board import render_board_html
+        from tool.advisory_facts import facts_resolver
+        cap = decision_cap()
+        # Resolve buyers from the existing contacts roster so leads with a
+        # named owner on file present as call-ready, not DEVELOP.
+        rows = originate(cap=cap, facts_for=facts_resolver())
+        html = render_board_html(rows, cap=cap, desk=active_profile().key)
+        return Response(html, mimetype="text/html")
+    except Exception as e:  # never 500 the console on a lane error
+        log.info("advisory console error: %s", e)
+        return Response(
+            "<!doctype html><meta charset='utf-8'><body style='background:#0e1116;"
+            "color:#8b949e;font-family:system-ui;padding:40px'>"
+            "<h2 style='color:#e6edf3'>Advisory Engine</h2>"
+            "<p>The advisory lane is initialising. Try again shortly.</p>"
+            "<p><a style='color:#9db4d0' href='/'>← Engine</a></p></body>",
+            mimetype="text/html")
+
+
 # ---------------------------------------------------------------------------
 # Marketing / Communications Radar — the console layout that replaces the old
 # two-panel #leads page. The BD Leads and Live Jobs views are one dense,

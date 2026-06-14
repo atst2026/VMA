@@ -184,6 +184,117 @@ Four gaps between the pitch and the build, closed:
   name has been listed, and every observed joiner/leaver. Both ledgers
   render into the company dossiers.
 
+## BD Build v8 — the Advisory Engine (Phase 1): advisory as a first-class lead
+
+The talent-consultancy pivot. Until now advisory was an *enrichment lens*
+on a hiring lead (`tool/advisory.py: service_fit_for` — "adds no new signal
+and changes no detection"). That is backwards for origination: the
+strongest advisory opportunities — a comms/marketing function that is
+stuck, over-stretched or misfiring — frequently have **no vacancy at
+all**. v8 makes advisory demand a lead the engine **originates in its own
+right**, on a parallel lane through the same plumbing. Full plan:
+[`ADVISORY_ENGINE.md`](ADVISORY_ENGINE.md).
+
+- **`tool/advisory_signals/`** — the detector family. Each emits a typed
+  `AdvisorySignal` that fires independently of job-board / ATS activity:
+  - **`PayGapActionMandate`** (`pay_gap.py`) — reuses the GOV.UK
+    gender-pay-gap dataset, zero new fetches. The discipline that keeps it
+    out of the generic-noise trap: a standing gap is **not** a lead; the
+    COMPELLING EVENT is the statutory reporting / equality-action-plan
+    window being open (the dated "why now" the calendar pulses track).
+  - **`from_predictors.py`** — origination reused from the predictor
+    pipeline (§3 B/D/E): M&A/PE → **PostMergerIntegration**,
+    restructure/redundancy → **RestructureRedundancy**, ESG/B-Corp →
+    **ESGCapabilityBuild**. Each is a dated compelling event the engine
+    already detects, routed to advisory (function design, change-comms,
+    capability build) rather than just "a seat" — no new fetches. Only the
+    curated, genuinely-advisory triggers map across; a hiring-only signal
+    (a job-ad cluster) never becomes an advisory lead.
+- **`tool/advisory_gate.py`** — a consulting-adapted **MEDDPICC** gate
+  (PAIN / SPONSOR / MANDATE / TIMING / ACCESS / PROOF, each 0–2), distinct
+  from the hiring gate's SEAT/BUDGET/URGENCY/BUYER. The dimensions are
+  inputs to a reasoned **KILL / DEVELOP / PURSUE** verdict (deterministic
+  in Phase 1; the Opus Conviction Verdict replaces it in Phase 2). Carries
+  the three failure-mode defences: a hard **PURSUE cap** (scarcity forces
+  ranking), **source-independence as a gate** (a registry-blind advisory
+  signal needs ≥2 independent sources to pursue), and **amplifier/bronze
+  tiering** (low-precision detectors never pursue alone). A raw, verified
+  pay-gap signal with no reachable buyer correctly stays **DEVELOP** until
+  the contact layer names and routes the CHRO/CEO sponsor.
+- **`tool/advisory_diagnostic.py`** — the **Outside-In Function
+  Diagnostic**, VMA's proprietary instrument (the analogue of Korn Ferry's
+  Hay assessment / Heidrick's culture profile): a defensible, outside-in
+  *hypothesis* about the shape and likely gaps of the target's comms
+  function, anchored to the resourcing benchmark and a peer cohort the
+  buyer can't self-serve. Two §11-#2 guardrails are wired in: **variable
+  structure** (it leads with the single sharpest anomaly for THIS company —
+  pay-gap exposure / governance / under-resourcing — not a fixed script)
+  and a **novelty gate** (the insight must rest on the non-public
+  comparison, not the company's own published figures). Deterministic v0;
+  the Opus pass swaps in the prose in Phase 2. The corpus it draws on (the
+  peer + benchmark comparison) is the moat — output quality is bounded by
+  its depth.
+- **`tool/evidence_pack.py`** — the meeting-winning deliverable (the
+  advisory analogue of the Pitch Pack): the seven Challenger parts
+  (Reframe → Outside-In Diagnostic hypothesis → Benchmarking Teaser →
+  Named Buyer + Inferred Pain → Value Give-Away → Recommended Service +
+  Network Rail proof anchor → Take-Control Ask). v0 is deterministic and
+  **facts-only — no fee figures** until the project-scoping bands are
+  signed off (Opus prose + the novelty gate come in Phase 2).
+- **`tool/advisory_routing.py`** — associate routing: the verdict's
+  recommended service → the relationship owner and delivery bench from the
+  brochure. Lucy Cairncross (MD, Advisory) owns the advisory relationship;
+  Sara owns the BD/search motion and the referral lanes; the associate is
+  attached by service — coaching → Joss Mathieson (Change Oasis) / Famn,
+  ED&I → Antoinette Willcocks (RiverRoad) / Kate Isichei (neuroinclusion).
+  Threaded through every gate row and rendered Evidence Pack.
+- **`tool/advisory_facts.py`** — buyer resolution from the existing
+  contacts roster (`tool.contacts.store`, the same one the hiring side
+  uses). `facts_resolver()` maps a company's best named comms/people
+  contact to the gate's SPONSOR/ACCESS facts, so a verified lead with an
+  owner already on file presents as **call-ready** rather than DEVELOP.
+  The `/advisory` console uses it; no new fetches.
+- **The Opus layer** — the reasoned passes that replace the deterministic
+  verdict + v0 diagnostic (§5), without touching the £0 nightly pipeline:
+  - **`tool/advisory_overlay.py`** — the store an Opus run writes to (one
+    JSON per lead, 21-day TTL). The gate reads it and the reasoned
+    **KILL/DEVELOP/PURSUE** verdict *overrides* the deterministic one
+    (mirroring how `investigations` overlays outrank the hiring gate); the
+    Evidence Pack uses the Opus Reframe + Diagnostic prose. The
+    deterministic call always still runs as the fallback and the chips.
+  - **`/advisory-brief`'s Opus deep pass** — the primary, **zero-spend**
+    path: Claude Code itself (free under the subscription) runs the
+    Conviction Verdict + Outside-In Diagnostic (Worker → Red-Team adviser →
+    Verifier, the §9 guardrails enforced) and persists the overlay.
+  - **`tool/advisory_llm.py`** — an OPTIONAL API path for unattended
+    automation, **off by default** (needs `ADVISORY_LLM_ENABLED=1` + a key
+    + the spend policy). Same `claude-opus-4-8` shape as `semantic_scan`;
+    a strict no-op otherwise, so £0 holds and the deterministic gate is
+    always the fallback.
+- **`tool/advisory_outcomes.py`** — the feedback loop that makes the engine
+  selective by **measurement**, not just design (§11 #1). Every advisory
+  PURSUE the owner approves or spikes is logged; the trailing approval rate
+  **auto-throttles the PURSUE cap** (mirrors the hiring board's acceptance
+  throttle), so a board the humans stop trusting shrinks itself.
+  `meeting_booked` is the sparse true outcome for longer-run `/learn`
+  recalibration. Human-in-the-loop is thus also the training signal.
+- **`/advisory` — the live console** (`tool/advisory_board.py:render_board_html`
+  + an additive Flask route). The visible advisory lane in the render site,
+  reachable from the main nav: Call-ready → Developing → Killed, each card
+  with its conviction, owner + delivery associate, the one-line why, the
+  gate chips, and an inline Evidence Pack for the call-ready leads. A
+  self-contained page — it does not touch the hiring console — and degrades
+  to an explanatory empty state until a detector fires.
+- **`/advisory-brief [company]`** — the Claude Code driver: run the lane
+  (detect → gate → rank → throttled cap), route to the owner, compose the
+  Evidence Pack for the call-ready leads, and record the human decision.
+  Human-in-the-loop on every PURSUE.
+
+Locked Phase-1 decisions (ADVISORY_ENGINE.md §14): human-in-the-loop on
+every PURSUE/send; comms/corporate-affairs desk first; `PayGapActionMandate`
+ships first (pure reuse); deal value is facts-only until bands are agreed.
+Same £0 running cost. Tests: `tests/test_advisory_engine.py`.
+
 ## BD Build v7 — roster-free contacts + the AD-grade account thesis
 
 Two ceilings raised at once:
