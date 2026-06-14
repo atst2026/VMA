@@ -27,29 +27,15 @@ the engine arms the consultant; the consultant wins the meeting.
 ```bash
 cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" && python3 -c "
 from tool.advisory_signals import originate
-from tool import evidence_pack as EP
-rows = originate()                       # detect -> gate -> rank -> cap
-if not rows:
-    print('No advisory leads today (no statutory window open, or the GPG '
-          'index is not yet populated — host not on the egress allowlist).')
-for r in rows:
-    print(f\"{r['verdict']:7s} {r['conviction']:3d}  {r['company']:32s} \"
-          f\"{r['trigger']}\")
-    print('         why:', r['why'])
-    q = r.get('qual') or {}
-    print('         gate: PAIN%s SPONSOR%s MANDATE%s TIMING%s ACCESS%s PROOF%s '
-          '(%s/12)' % (q.get('pain'), q.get('sponsor'), q.get('mandate'),
-          q.get('timing'), q.get('access'), q.get('proof'), q.get('total')))
-    o = r.get('owner') or {}
-    line = '         owner: ' + str(o.get('owner', ''))
-    if o.get('associate'):
-        line += ' · delivery %s (%s)' % (o['associate']['name'],
-                                         o['associate']['firm'])
-    if o.get('co_owner'):
-        line += ' · + ' + o['co_owner']
-    print(line)
+from tool.advisory_board import render_board
+from tool.advisory_outcomes import decision_cap
+print(render_board(originate(), cap=decision_cap()))
 "
 ```
+
+The board groups Call-ready (PURSUE) → Developing → Killed, each row with
+its conviction, owner + delivery associate, the one-line why, and the gate
+scorecard chips (PAIN/SPONSOR/MANDATE/TIMING/ACCESS/PROOF).
 
 If `$1` names a company, filter to it. For each **PURSUE** lead, compose
 and print the Evidence Pack so the owner can read it before the call:
