@@ -214,6 +214,19 @@ right**, on a parallel lane through the same plumbing. Full plan:
   tiering** (low-precision detectors never pursue alone). A raw, verified
   pay-gap signal with no reachable buyer correctly stays **DEVELOP** until
   the contact layer names and routes the CHRO/CEO sponsor.
+- **`tool/advisory_diagnostic.py`** — the **Outside-In Function
+  Diagnostic**, VMA's proprietary instrument (the analogue of Korn Ferry's
+  Hay assessment / Heidrick's culture profile): a defensible, outside-in
+  *hypothesis* about the shape and likely gaps of the target's comms
+  function, anchored to the resourcing benchmark and a peer cohort the
+  buyer can't self-serve. Two §11-#2 guardrails are wired in: **variable
+  structure** (it leads with the single sharpest anomaly for THIS company —
+  pay-gap exposure / governance / under-resourcing — not a fixed script)
+  and a **novelty gate** (the insight must rest on the non-public
+  comparison, not the company's own published figures). Deterministic v0;
+  the Opus pass swaps in the prose in Phase 2. The corpus it draws on (the
+  peer + benchmark comparison) is the moat — output quality is bounded by
+  its depth.
 - **`tool/evidence_pack.py`** — the meeting-winning deliverable (the
   advisory analogue of the Pitch Pack): the seven Challenger parts
   (Reframe → Outside-In Diagnostic hypothesis → Benchmarking Teaser →

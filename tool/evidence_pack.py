@@ -48,11 +48,20 @@ def compose(signal, facts: dict | None = None) -> dict:
     buyer = (facts.get("sponsor_name")
              or getattr(signal, "buyer_hint", "") or "the function owner")
 
+    # The Outside-In Function Diagnostic — the proprietary instrument. It
+    # supplies the sharpest-anomaly reframe (variable structure) and the
+    # 1-page hypothesis; the novelty gate rides along on the pack.
+    diag = _diagnose(signal, facts)
+
     pack = {
         "company": company,
         "trigger": getattr(signal, "trigger", ""),
-        "reframe": _reframe(company, benchmark, extra),
-        "diagnostic": _diagnostic(company, benchmark, signal),
+        "reframe": (diag.get("lead_line")
+                    or _reframe(company, benchmark, extra)),
+        "diagnostic": (_render_diag(diag)
+                       or _diagnostic(company, benchmark, signal)),
+        "novelty": bool(diag.get("novel", False)),
+        "lead_anomaly": diag.get("lead_anomaly", ""),
         "benchmark_teaser": (benchmark or {}).get(
             "line", "A peer benchmark of structure, headcount and "
                     "remuneration vs comparable organisations."),
@@ -88,6 +97,23 @@ def _route(service_mix, trigger) -> dict:
         return owner_for(service_mix, trigger)
     except Exception:
         return {}
+
+
+def _diagnose(signal, facts) -> dict:
+    """The Outside-In Function Diagnostic, or {} if it can't run."""
+    try:
+        from tool.advisory_diagnostic import diagnose
+        return diagnose(signal, facts)
+    except Exception:
+        return {}
+
+
+def _render_diag(diag) -> str:
+    try:
+        from tool.advisory_diagnostic import render
+        return render(diag) if diag else ""
+    except Exception:
+        return ""
 
 
 def _benchmark_teaser(extra: dict) -> dict | None:
