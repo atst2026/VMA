@@ -241,6 +241,23 @@ right**, on a parallel lane through the same plumbing. Full plan:
   attached by service — coaching → Joss Mathieson (Change Oasis) / Famn,
   ED&I → Antoinette Willcocks (RiverRoad) / Kate Isichei (neuroinclusion).
   Threaded through every gate row and rendered Evidence Pack.
+- **The Opus layer** — the reasoned passes that replace the deterministic
+  verdict + v0 diagnostic (§5), without touching the £0 nightly pipeline:
+  - **`tool/advisory_overlay.py`** — the store an Opus run writes to (one
+    JSON per lead, 21-day TTL). The gate reads it and the reasoned
+    **KILL/DEVELOP/PURSUE** verdict *overrides* the deterministic one
+    (mirroring how `investigations` overlays outrank the hiring gate); the
+    Evidence Pack uses the Opus Reframe + Diagnostic prose. The
+    deterministic call always still runs as the fallback and the chips.
+  - **`/advisory-brief`'s Opus deep pass** — the primary, **zero-spend**
+    path: Claude Code itself (free under the subscription) runs the
+    Conviction Verdict + Outside-In Diagnostic (Worker → Red-Team adviser →
+    Verifier, the §9 guardrails enforced) and persists the overlay.
+  - **`tool/advisory_llm.py`** — an OPTIONAL API path for unattended
+    automation, **off by default** (needs `ADVISORY_LLM_ENABLED=1` + a key
+    + the spend policy). Same `claude-opus-4-8` shape as `semantic_scan`;
+    a strict no-op otherwise, so £0 holds and the deterministic gate is
+    always the fallback.
 - **`tool/advisory_outcomes.py`** — the feedback loop that makes the engine
   selective by **measurement**, not just design (§11 #1). Every advisory
   PURSUE the owner approves or spikes is logged; the trailing approval rate

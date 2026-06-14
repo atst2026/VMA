@@ -30,7 +30,7 @@ Pure functions of their inputs; never raise.
 """
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 # Board sizing — the advisory analogue of the hiring board's ~7 cap.
 # Advisory leads are scarcer and higher-touch; a tighter cap forces the
@@ -175,9 +175,10 @@ def assess(signal, facts: dict | None = None, *, today: date | None = None) -> d
         verdict, why = _verdict(signal, q, ev, trigger, facts)
         conviction = _conviction(q, ev, verdict, getattr(signal, "confidence", 0.5))
         mix = list(getattr(signal, "service_mix", []) or [])
-        return {
+        company = getattr(signal, "company", "")
+        out = {
             "signal": signal.to_dict(),
-            "company": getattr(signal, "company", ""),
+            "company": company,
             "trigger": trigger,
             "verdict": verdict,
             "conviction": conviction,
@@ -187,6 +188,13 @@ def assess(signal, facts: dict | None = None, *, today: date | None = None) -> d
             "service_mix": mix,
             "owner": _route(mix, trigger),
         }
+        # An Opus overlay (the Conviction Verdict + Diagnostic) outranks the
+        # deterministic verdict, the way an investigation overlay outranks
+        # the hiring gate. The deterministic call still ran (it is the £0
+        # fallback and the qual chips); the overlay refines it.
+        now = datetime(today.year, today.month, today.day, tzinfo=timezone.utc)
+        _apply_overlay(out, company, trigger, now)
+        return out
     except Exception as e:  # pragma: no cover - safety net
         return {"signal": getattr(signal, "to_dict", lambda: {})(),
                 "verdict": "DEVELOP", "conviction": 0,
@@ -202,6 +210,33 @@ def _route(service_mix, trigger) -> dict:
         return owner_for(service_mix, trigger)
     except Exception:
         return {}
+
+
+def _apply_overlay(out: dict, company, trigger, now) -> None:
+    """Let a fresh Opus overlay override the deterministic verdict in place.
+    Best-effort; a missing/broken overlay leaves the deterministic row."""
+    try:
+        from tool.advisory_overlay import get as _get
+        ov = _get(company, trigger, now=now)
+    except Exception:
+        ov = None
+    if not ov:
+        return
+    out["opus"] = True
+    out["verdict"] = ov.get("verdict", out["verdict"])
+    if ov.get("conviction") is not None:
+        out["conviction"] = ov["conviction"]
+    out["why"] = (ov.get("sharpest_insight") or ov.get("named_pain")
+                  or out["why"])
+    out["opus_verdict"] = {
+        "named_pain": ov.get("named_pain", ""),
+        "economic_buyer": ov.get("economic_buyer", ""),
+        "recommended_service": ov.get("recommended_service", ""),
+        "sharpest_insight": ov.get("sharpest_insight", ""),
+        "diagnostic": ov.get("diagnostic", ""),
+        "kill_reasons": ov.get("kill_reasons", []),
+        "confidence": ov.get("confidence", ""),
+    }
 
 
 def _verdict(signal, q, ev, trigger, facts) -> tuple[str, str]:

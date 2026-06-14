@@ -87,7 +87,25 @@ def compose(signal, facts: dict | None = None) -> dict:
         # Phase 1 is facts-only: no fee figure until Lucy signs off bands.
         "deal_value": None,
     }
+    # When an Opus overlay exists, its reasoned Reframe (sharpest insight)
+    # and Diagnostic prose replace the deterministic v0 — same pack shape.
+    ov = _opus_overlay(company, getattr(signal, "trigger", ""))
+    if ov:
+        pack["opus"] = True
+        if ov.get("sharpest_insight"):
+            pack["reframe"] = ov["sharpest_insight"]
+        if ov.get("diagnostic"):
+            pack["diagnostic"] = ov["diagnostic"]
     return pack
+
+
+def _opus_overlay(company, trigger) -> dict:
+    """A fresh Opus overlay for this lead, or {}."""
+    try:
+        from tool.advisory_overlay import get
+        return get(company, trigger) or {}
+    except Exception:
+        return {}
 
 
 def _route(service_mix, trigger) -> dict:

@@ -53,26 +53,68 @@ for r in originate():
 "
 ```
 
-## Per lead — when you want a deeper, verified case (optional, Opus)
+## The Opus pass — Conviction Verdict + Outside-In Diagnostic
 
-For a **PURSUE** lead worth a verified write-up before outreach, do the
-advisory analogue of `/red-team`, **in a sub-agent per lead**:
+This is where Opus does the work (free here under the Claude Code
+subscription — no API spend). For each **PURSUE** and strong **DEVELOP**
+lead, run the advisory analogue of `/red-team`, **in a sub-agent per
+lead**. Start from the grounded context the engine already assembled:
 
-1. **Verify the pain** live — the GOV.UK gender-pay-gap figure, the
-   employer's own action plan (or its absence), the headcount band. Quote
-   every kept fact with its source; frame gaps as a benchmark-anchored
-   **hypothesis** ("functions of your size typically…"), never a cold
-   assertion about a named employer's failings (ADVISORY_ENGINE.md §9).
-2. **Name the economic buyer** — the CHRO/People Director and the CEO
-   sponsor; check `tool/state/hiring_contacts.json` then public record.
-   A named, in-seat buyer is what moves the lead from DEVELOP to PURSUE.
-3. **Find the route** — `tool/cascade.py`, `tool/following.py`,
-   `tool/team_map.py`, `tool/propensity.py`: who at VMA already knows this
-   buyer / shares a former employer / placed into their team. No warm
-   route → keep it in **nurture**, do not cold-send a senior buyer.
-4. **Sharpen the give-away** — the one-page peer comparison (this median
-   gap and action-plan maturity vs the closest sector peers), using only
-   published GOV.UK figures. This is the artefact that earns the meeting.
+```bash
+python3 -c "
+from tool.advisory_diagnostic import assemble_context
+from tool.advisory_signals import pay_gap as PG
+from datetime import date
+for s in PG.pay_gap_action_signals(today=date.today()):
+    print(s.company); print(assemble_context(s))
+"
+```
+
+Then reason as three roles:
+
+1. **The Worker builds the case.** Verify the pain live — the GOV.UK
+   gender-pay-gap figure, the employer's own action plan (or its absence),
+   the headcount band vs the resourcing benchmark, the peer cohort. Frame
+   every claim as a benchmark-anchored **hypothesis** ("functions of your
+   size typically…"), never a cold assertion (ADVISORY_ENGINE.md §9). Name
+   the economic buyer (CHRO/People Director + CEO sponsor — check
+   `tool/state/hiring_contacts.json` then public record). Find the route
+   (`tool/cascade.py`, `tool/following.py`, `tool/team_map.py`,
+   `tool/propensity.py`: who at VMA already knows this buyer / shares a
+   former employer). Write the single **sharpest insight** to lead with —
+   it must rest on the non-public comparison, not the company's own pages.
+2. **The Red-Team adviser tries to kill it.** *"This is generic — derivable
+   from their homepage."* *"No reachable buyer — this is a cold approach to
+   a senior person."* *"The gap is small and on-time — not a compelling
+   event."* PURSUE only survives with a concrete pain, a named buyer, a
+   warm route (else **nurture, don't cold-send**), and a defensible,
+   novel insight.
+3. **The Verifier checks every kept claim** against its GOV.UK / public
+   source. Any claim that fails is removed; if the case no longer stands,
+   the verdict drops to DEVELOP.
+
+**Persist the verdict** so the gate and the Evidence Pack pick it up (it
+overrides the deterministic verdict for 21 days):
+
+```bash
+python3 -c "
+from tool.advisory_overlay import write
+write('<company>', '<trigger>', '<PURSUE|DEVELOP|KILL>',
+      conviction=<0-100>,
+      named_pain='''<the evidenced pain>''',
+      economic_buyer='<Name, Title>',
+      recommended_service='<edi|benchmarking|org_design|coaching>',
+      sharpest_insight='''<the one-line reframe to open on>''',
+      diagnostic='''<the 1-page outside-in hypothesis>''',
+      kill_reasons=['<if KILL/DEVELOP: what is missing>'],
+      confidence='<High|Moderate|Low>')
+"
+```
+
+(Unattended automation can instead call `tool.advisory_llm.run_and_persist`,
+which is OFF by default — it runs the same pass via the API only when
+`ADVISORY_LLM_ENABLED=1` and a key is set. The deterministic gate is always
+the fallback.)
 
 ## Record the human decision (the dense feedback label)
 
