@@ -458,21 +458,27 @@ All on the same £0 running cost.
 
 ---
 
-## 13. Decisions for you (the few genuine forks)
+## 13. Decisions — locked
 
-The plan is otherwise self-contained; these are business calls only VMA can make, and
-they shape Phase 1 sequencing:
+The four genuine business forks have been decided. These now bind the build:
 
-1. **Autonomy on PURSUE/outreach** — keep human-in-the-loop on every advisory PURSUE and
-   send (recommended), or allow auto-DEVELOP nurture?
-2. **Desk scope for advisory v1** — comms/corporate-affairs only first (recommended), or
-   comms **and** marketing from day one?
-3. **Sequencing** — `NewFunctionLeaderWindow` (trade-press, highest yield, new source)
-   first, or `PayGapActionMandate` (fastest credible pipeline, reuses data we hold)
-   first? (Recommended: ship `PayGapActionMandate` in Phase 1 because it's pure reuse,
-   start `NewFunctionLeaderWindow` measurement in parallel.)
-4. **Advisory pricing bands** — who sets the project-scoping bands with Lucy, and may the
-   engine show ranges, or facts-only (no fee figures) until bands are signed off?
+1. **Autonomy → human-in-the-loop, always.** The engine originates, diagnoses and drafts;
+   Lucy/Sara approve every PURSUE and every send. The engine keeps the consultant; the
+   consultant wins the meeting. Revisit only after a banked track record of accurate
+   diagnostics and zero credibility incidents.
+2. **Desk scope → comms / corporate-affairs first.** Build and prove the engine on the
+   comms & corporate-affairs function only; extend to the marketing desk once precision
+   is banked. (The marketing service-fit tables in `advisory.py` stay as drafts for the
+   later extension.)
+3. **Phase 1 ships `PayGapActionMandate` first.** Fastest credible pipeline — pure reuse
+   of the GOV.UK GPG dataset already ingested + the existing `equality_pay_reporting_2026`
+   / `gender_pay_gap_2026` pulses, hard-dated deadlines, routes cleanly to ED&I associates
+   (Antoinette / Kate). **`NewFunctionLeaderWindow` (the trade-press detector) starts its
+   4-week precision measurement in parallel** but does not gate Phase 1.
+4. **Advisory deal value → facts-only until signed off.** The engine shows the evidenced
+   need + the recommended service but **no fee figures** until Lucy signs off the
+   project-scoping bands — the same no-invented-numbers discipline as the search side.
+   The advisory pricing model (§8) ships dark and is switched on when the bands land.
 
 ---
 
