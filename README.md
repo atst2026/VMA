@@ -196,13 +196,20 @@ right**, on a parallel lane through the same plumbing. Full plan:
 [`ADVISORY_ENGINE.md`](ADVISORY_ENGINE.md).
 
 - **`tool/advisory_signals/`** — the detector family. Each emits a typed
-  `AdvisorySignal` that fires independently of job-board / ATS activity.
-  Phase 1 ships **`PayGapActionMandate`** (`pay_gap.py`), reusing the
-  GOV.UK gender-pay-gap dataset already ingested — zero new fetches. The
-  discipline that keeps it out of the generic-noise trap: a standing gap
-  is **not** a lead; the COMPELLING EVENT is the statutory reporting /
-  equality-action-plan window being open (the dated "why now" the calendar
-  pulses already track). Detectors B–J land in Phase 2.
+  `AdvisorySignal` that fires independently of job-board / ATS activity:
+  - **`PayGapActionMandate`** (`pay_gap.py`) — reuses the GOV.UK
+    gender-pay-gap dataset, zero new fetches. The discipline that keeps it
+    out of the generic-noise trap: a standing gap is **not** a lead; the
+    COMPELLING EVENT is the statutory reporting / equality-action-plan
+    window being open (the dated "why now" the calendar pulses track).
+  - **`from_predictors.py`** — origination reused from the predictor
+    pipeline (§3 B/D/E): M&A/PE → **PostMergerIntegration**,
+    restructure/redundancy → **RestructureRedundancy**, ESG/B-Corp →
+    **ESGCapabilityBuild**. Each is a dated compelling event the engine
+    already detects, routed to advisory (function design, change-comms,
+    capability build) rather than just "a seat" — no new fetches. Only the
+    curated, genuinely-advisory triggers map across; a hiring-only signal
+    (a job-ad cluster) never becomes an advisory lead.
 - **`tool/advisory_gate.py`** — a consulting-adapted **MEDDPICC** gate
   (PAIN / SPONSOR / MANDATE / TIMING / ACCESS / PROOF, each 0–2), distinct
   from the hiring gate's SEAT/BUDGET/URGENCY/BUYER. The dimensions are

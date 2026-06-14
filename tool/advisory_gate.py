@@ -101,7 +101,7 @@ def qualification(signal, facts: dict, today: date) -> dict:
     # MANDATE — a statutory/regulatory mandate is the strongest proxy.
     if trigger in _STATUTORY_TRIGGERS:
         mandate, mandate_why = 2, "a dated statutory / regulatory mandate"
-    elif facts.get("mandate") or extra.get("pulse_key"):
+    elif facts.get("mandate") or extra.get("pulse_key") or extra.get("mandate"):
         mandate, mandate_why = 1, "a plausible mandate (board / new-leader remit)"
     else:
         mandate, mandate_why = 0, "no evidenced mandate or budget route"

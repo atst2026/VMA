@@ -79,6 +79,7 @@ def test_originate_uses_the_throttled_cap(monkeypatch):
         window=("2026-03-01", "2026-07-31"), confidence=0.8,
         extra={"size_band": "1000 to 4999", "median": 22.0}) for i in range(6)]
     monkeypatch.setattr(AS, "pay_gap_action_signals", lambda **k: sigs)
+    monkeypatch.setattr(AS, "predictor_advisory_signals", lambda **k: [])
     monkeypatch.setattr("tool.advisory_outcomes.decision_cap",
                         lambda **k: O.THROTTLED_CAP)
     facts = {"sponsor_name": "X", "warm_route": {"note": "y"}}

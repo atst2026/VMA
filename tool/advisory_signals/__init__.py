@@ -28,8 +28,18 @@ from datetime import date
 
 from tool.advisory_signals.base import AdvisorySignal
 from tool.advisory_signals.pay_gap import pay_gap_action_signals
+from tool.advisory_signals.from_predictors import predictor_advisory_signals
 
-__all__ = ["AdvisorySignal", "pay_gap_action_signals", "originate"]
+__all__ = ["AdvisorySignal", "pay_gap_action_signals",
+           "predictor_advisory_signals", "originate"]
+
+
+def _pay_gap(today):
+    return pay_gap_action_signals(today=today)
+
+
+def _from_predictors(today):
+    return predictor_advisory_signals(today=today)
 
 
 def originate(today: date | None = None, *, facts_for=None,
@@ -52,10 +62,11 @@ def originate(today: date | None = None, *, facts_for=None,
 
     today = today or date.today()
     signals: list[AdvisorySignal] = []
-    try:
-        signals.extend(pay_gap_action_signals(today=today))
-    except Exception:  # a detector failure must not sink the lane
-        pass
+    for _detector in (_pay_gap, _from_predictors):
+        try:
+            signals.extend(_detector(today))
+        except Exception:  # a detector failure must not sink the lane
+            continue
 
     rows: list[dict] = []
     for sig in signals:

@@ -230,6 +230,7 @@ def test_originate_ranks_and_caps(monkeypatch):
     import tool.advisory_signals as AS
     sigs = [_registry_signal(company=f"Co{i}") for i in range(7)]
     monkeypatch.setattr(AS, "pay_gap_action_signals", lambda **k: sigs)
+    monkeypatch.setattr(AS, "predictor_advisory_signals", lambda **k: [])
     facts = {"sponsor_name": "X", "warm_route": {"note": "y"}}
     rows = AS.originate(today=TODAY, facts_for=lambda s: facts, cap=5)
     assert len(rows) == 7
