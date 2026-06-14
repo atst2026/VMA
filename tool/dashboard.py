@@ -1329,8 +1329,11 @@ def advisory_console():
         from tool.advisory_signals import originate
         from tool.advisory_outcomes import decision_cap
         from tool.advisory_board import render_board_html
+        from tool.advisory_facts import facts_resolver
         cap = decision_cap()
-        rows = originate(cap=cap)
+        # Resolve buyers from the existing contacts roster so leads with a
+        # named owner on file present as call-ready, not DEVELOP.
+        rows = originate(cap=cap, facts_for=facts_resolver())
         html = render_board_html(rows, cap=cap, desk=active_profile().key)
         return Response(html, mimetype="text/html")
     except Exception as e:  # never 500 the console on a lane error

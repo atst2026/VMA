@@ -248,6 +248,12 @@ right**, on a parallel lane through the same plumbing. Full plan:
   attached by service — coaching → Joss Mathieson (Change Oasis) / Famn,
   ED&I → Antoinette Willcocks (RiverRoad) / Kate Isichei (neuroinclusion).
   Threaded through every gate row and rendered Evidence Pack.
+- **`tool/advisory_facts.py`** — buyer resolution from the existing
+  contacts roster (`tool.contacts.store`, the same one the hiring side
+  uses). `facts_resolver()` maps a company's best named comms/people
+  contact to the gate's SPONSOR/ACCESS facts, so a verified lead with an
+  owner already on file presents as **call-ready** rather than DEVELOP.
+  The `/advisory` console uses it; no new fetches.
 - **The Opus layer** — the reasoned passes that replace the deterministic
   verdict + v0 diagnostic (§5), without touching the £0 nightly pipeline:
   - **`tool/advisory_overlay.py`** — the store an Opus run writes to (one
