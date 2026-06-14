@@ -2,7 +2,7 @@
   "1d2c943d4d912c30": {
     "anchor": "2026-06-07",
     "first_seen": "2026-06-12",
-    "expired": false
+    "expired": true
   },
   "4a50fd0fcc9743ce": {
     "anchor": "2026-06-12",
@@ -177,7 +177,7 @@
   "9e4c0d992f124852": {
     "anchor": "2026-06-07",
     "first_seen": "2026-06-12",
-    "expired": false
+    "expired": true
   },
   "69fa501b99043840": {
     "anchor": "2026-06-04",
@@ -222,7 +222,7 @@
   "cb8dcadd2d041774": {
     "anchor": "2026-06-07",
     "first_seen": "2026-06-12",
-    "expired": false
+    "expired": true
   },
   "46e6610975e35dd2": {
     "anchor": "2026-06-09",
@@ -467,7 +467,7 @@
   "af563332e3b77d06": {
     "anchor": "2026-06-07",
     "first_seen": "2026-06-12",
-    "expired": false
+    "expired": true
   },
   "6fdfa7b2720aba32": {
     "anchor": "2026-06-08",
@@ -577,7 +577,7 @@
   "e1eb10bed47f7b86": {
     "anchor": "2026-06-07",
     "first_seen": "2026-06-12",
-    "expired": false
+    "expired": true
   },
   "3942de11627f80e3": {
     "anchor": "2026-06-10",
