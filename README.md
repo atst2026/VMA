@@ -241,9 +241,17 @@ right**, on a parallel lane through the same plumbing. Full plan:
   attached by service — coaching → Joss Mathieson (Change Oasis) / Famn,
   ED&I → Antoinette Willcocks (RiverRoad) / Kate Isichei (neuroinclusion).
   Threaded through every gate row and rendered Evidence Pack.
+- **`tool/advisory_outcomes.py`** — the feedback loop that makes the engine
+  selective by **measurement**, not just design (§11 #1). Every advisory
+  PURSUE the owner approves or spikes is logged; the trailing approval rate
+  **auto-throttles the PURSUE cap** (mirrors the hiring board's acceptance
+  throttle), so a board the humans stop trusting shrinks itself.
+  `meeting_booked` is the sparse true outcome for longer-run `/learn`
+  recalibration. Human-in-the-loop is thus also the training signal.
 - **`/advisory-brief [company]`** — the Claude Code driver: run the lane
-  (detect → gate → rank → cap), route to the owner, and compose the
-  Evidence Pack for the call-ready leads. Human-in-the-loop on every PURSUE.
+  (detect → gate → rank → throttled cap), route to the owner, compose the
+  Evidence Pack for the call-ready leads, and record the human decision.
+  Human-in-the-loop on every PURSUE.
 
 Locked Phase-1 decisions (ADVISORY_ENGINE.md §14): human-in-the-loop on
 every PURSUE/send; comms/corporate-affairs desk first; `PayGapActionMandate`

@@ -64,4 +64,23 @@ def originate(today: date | None = None, *, facts_for=None,
             rows.append(advisory_gate.assess(sig, facts, today=today))
         except Exception:
             continue
+
+    # The auto-throttle (ADVISORY_ENGINE.md §11 #1): when recent human
+    # approval of advisory PURSUEs dips below the floor, the cap tightens
+    # itself — selective by measurement, not just by design. An explicit
+    # `cap` overrides it (e.g. tests).
+    if cap is None:
+        try:
+            from tool.advisory_outcomes import decision_cap
+            cap = decision_cap(now=_to_dt(today))
+        except Exception:
+            cap = None
     return advisory_gate.rank_and_cap(rows, cap=cap)
+
+
+def _to_dt(d):
+    from datetime import datetime, timezone
+    try:
+        return datetime(d.year, d.month, d.day, tzinfo=timezone.utc)
+    except Exception:
+        return None

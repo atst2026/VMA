@@ -88,6 +88,25 @@ advisory analogue of `/red-team`, **in a sub-agent per lead**:
    gap and action-plan maturity vs the closest sector peers), using only
    published GOV.UK figures. This is the artefact that earns the meeting.
 
+## Record the human decision (the dense feedback label)
+
+Human-in-the-loop is also the training signal (ADVISORY_ENGINE.md §11 #1):
+every PURSUE the owner approves or spikes tightens the engine. After Lucy /
+Sara decide, log it — the trailing approval rate auto-throttles the PURSUE
+cap so a board the humans stop trusting shrinks itself:
+
+```bash
+python3 -c "
+from tool import advisory_outcomes as O
+O.record('<company>', '<trigger>', '<pursue_approved|pursue_spiked|meeting_booked>',
+         decided_by='<Lucy|Sara>', note='<one line>')
+print('acceptance:', O.acceptance())   # rate + whether the cap is throttled
+"
+```
+
+`meeting_booked` is the sparse TRUE outcome (the real finish line) — log it
+when a meeting lands; it feeds /learn's longer-run recalibration.
+
 ## Report back in chat
 
 One line per lead: company — verdict — conviction — the evidenced pain —
