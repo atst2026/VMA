@@ -398,7 +398,93 @@ won meetings. Hard-wire into the Evidence Pack Composer's system prompt:
 
 ---
 
-## 11. Phased roadmap (file-level)
+## 11. Designing against the three ways this fails
+
+This kind of system breaks in three predictable places. The platform already defends two
+of them on the hiring side; the advisory build's job is to **port and tighten** that
+apparatus, with one asymmetry and one opportunity that are specific to advisory.
+
+### Failure #1 — Too many weak signals (the one that actually kills these systems)
+If everything becomes an "opportunity," the engine is worthless. The taxonomy in §3 widens
+intake by ~10 classes, several inherently low-precision — so selectivity must be
+*provable*, not aspirational. What already exists and the advisory lane inherits:
+
+- **A hard daily cap with a self-tightening throttle.** `gate.py` caps the board at ~7,
+  drops to 5, and **auto-raises the qualification bar when acceptance falls below 50% over
+  a 7-day window** (`acceptance()`). Scarcity forces ranking; the throttle is a closed
+  control loop. The advisory lane reuses it with its own cap.
+- **Source-independence is already a *gate*, not a bonus.** A single non-registry-source
+  fact is queued for investigation, not presented (`gate.assess` step 7). **Advisory
+  asymmetry (tighten this):** the hiring gate lets one registry-attested fact stand alone
+  — but advisory's best triggers (new function leader, churn clusters, skills-gap
+  language) are *invisible to the registries*. So advisory cannot lean on that shortcut:
+  **source-independence ≥ 2 is a hard gate to PURSUE for advisory**, stricter than hiring.
+- **Weak signals can't carry a lead alone — by construction.** `AMPLIFIER_ONLY` and
+  `BRONZE_KEYS` never present alone (`gate.assess` steps 3/3b). The low-precision advisory
+  detectors — `EmployeeSentimentDeterioration` (H), `ThoughtLeadershipVelocity` (I), and
+  `SkillsGapDisclosure` (J) until proven — are **amplifier/bronze-only**: they corroborate
+  a Tier-1/2 advisory trigger, they never originate a lead.
+- **The verdict, not a sum, decides.** KILL/DEVELOP/PURSUE must *name* the pain, the buyer
+  and a defensible insight — fluff can't sum its way past a threshold the way an additive
+  score can.
+- **Close the loop with two-tier feedback (the opportunity).** Advisory lacks a clean
+  short-term ground truth ("does this company need an org review" is unfalsifiable for
+  months). But **human-in-the-loop — which we chose — manufactures a dense daily label**:
+  every Evidence Pack Lucy/Sara approve or spike is a "would I put my name on this"
+  judgement. Feed that approve/reject rate into the auto-throttle exactly like AD
+  acceptance today (fast signal, keeps the verdict stingy week-to-week), and feed the
+  sparse true outcome — **meeting booked** — into `/learn` for quarter-to-quarter
+  recalibration. Extend `verdict_log` + `/learn` to carry the advisory outcome at
+  meeting-booked granularity.
+
+> Net: the engine is selective by *design* today and becomes selective by *measurement*
+> the moment the advisory cap, the stricter source gate, the amplifier/bronze tiers and
+> the two-tier feedback are wired. That is the version that survives a real inbox.
+
+### Failure #2 — Generic output (data-specific is not insight-specific)
+A pack with the right numbers wrapped in a templated argument is still generic — a senior
+buyer spots the template by sentence three. Defences:
+
+- **The peer-comparison corpus is the product, not a feature.** An outside-in hypothesis
+  built from data the buyer already owns is generic by definition; the only non-generic
+  asset is *what comparable functions look like*, which the buyer cannot see. Output
+  quality is **bounded by corpus depth.** Build it as the deliverable: every Outside-In
+  Diagnostic deposits its structured read back into the corpus (seed from `peers.py`,
+  `team_map.py`, `pitch_pack._salary_band`), so the Nth diagnostic is sharper *and* cheaper
+  (prompt-cached) than the first. This is the moat and the cost discipline in one move.
+- **A novelty gate on the Evidence Pack pass.** The insight must *fail* the test "could the
+  buyer derive this from their own homepage / annual report alone." If it passes that test
+  it is not worth a senior inbox — KILL it.
+- **Variable structure.** Lead with whichever dimension is genuinely most anomalous for
+  *this* company (headcount ratio / pay-gap trajectory / churn / structure), not a fixed
+  three-move script. A light template-fatigue check penalises overused argument shapes.
+- **The give-away is the anti-generic weapon** precisely because it *requires the corpus*
+  to produce — so give-away quality and corpus depth are the same investment.
+
+### Failure #3 — No clear *and reachable* action
+Insight alone earns nothing; the pack must answer who / what / why-now — and the buyer must
+actually be reachable. The pack maps cleanly to who (named buyer) / what (reframe +
+give-away + take-control ask) / why-now (window clock). The gap to close is reachability:
+advisory buyers are more senior, and 73% of them reject irrelevant cold outreach.
+
+- **Warm-route-first routing (mostly a surfacing job, not a new build).** The signals
+  already exist — `gate.qualification` scores a `warm_route` at 2 vs named-cold at 1;
+  `cascade.py` / `following.py` / `team_map.py` / `agency_relationships.py` /
+  `propensity.py` track people moving between companies and VMA's prior placements;
+  `/red-team` step 4 already asks for a champion path. Surface "who at VMA already knows
+  this buyer / shares a former employer / will be at the same event" from data already
+  held, and weight the warm route *more* for advisory than for hiring.
+- **No warm route → nurture, not a cold send.** The tiered board already supports this:
+  a no-warm-route advisory PURSUE candidate drops into a warm-up lane; the give-away is
+  what later buys the cold approach.
+- **Advisory's "why now" is often a statutory clock** — more defensible than a hiring
+  why-now. `PayGapActionMandate` (the Phase-1 pick) has the cleanest of all: a dated legal
+  deadline. It is the lead type where all three failure modes are most naturally answered —
+  a third reason it ships first.
+
+---
+
+## 12. Phased roadmap (file-level)
 
 ### Phase 1 — Reclassify advisory as a lead *(quick wins, ~1–2 weeks)*
 Reuse signals already flowing; make advisory a visible lane, not just an enrichment line.
@@ -410,9 +496,13 @@ Reuse signals already flowing; make advisory a visible lane, not just an enrichm
 - Build `PayGapActionMandate` **company-specific** off the GOV.UK GPG dataset already
   ingested: detect *widening* gaps year-on-year and missing/weak action plans → dated
   ED&I leads routed to Antoinette/Kate.
-- Stand up `tool/advisory_gate.py` as a deterministic 6-dimension checklist.
+- Stand up `tool/advisory_gate.py` as a deterministic 6-dimension checklist — with the
+  **advisory daily cap**, **source-independence ≥ 2 as a hard PURSUE gate** (§11 #1), and
+  the **amplifier/bronze tiering** of the low-precision detectors ported from `gate.py`.
 - Ship a **v0 Evidence Pack** from a manual-assembly template (`tool/evidence_pack.py`
   with a template renderer; Opus prose comes in Phase 2).
+- **Wire the dense feedback label now:** every human approve/spike on a v0 pack is logged
+  to `verdict_log` (§11 #1) so the throttle has data from day one.
 - **Impact:** immediately surfaces advisory leads already hiding in data we already pull.
 
 ### Phase 2 — The advisory lead engine *(~1–2 months)*
@@ -422,13 +512,19 @@ Reuse signals already flowing; make advisory a visible lane, not just an enrichm
   signals.
 - Build the `AdvisoryScore` input bundle and the **Opus Conviction Verdict** pass
   (KILL/DEVELOP/PURSUE) + the advisory overlay store (clone `investigations`).
-- Build the **Outside-In Function Diagnostic** pass — the proprietary instrument.
+- Build the **Outside-In Function Diagnostic** pass — the proprietary instrument — and
+  the **peer-comparison corpus it deposits into** (§11 #2): the corpus is the product.
+- **Surface warm routes** for advisory ACCESS from `cascade`/`following`/`team_map`/
+  `agency_relationships`/`propensity` (§11 #3); no-warm-route PURSUE candidates → nurture.
 - Wire `/advisory-brief`, `/diagnostic`, `/evidence-pack` slash-commands + a scheduled
   advisory-pulse Action.
 - **Impact:** autonomous advisory-lead origination with reasoned verdicts.
 
 ### Phase 3 — Unified consultancy console + Evidence Pack + routing *(~1–2 months)*
-- Ship the full Opus **Evidence Pack Composer** with guardrails (§9) hard-wired.
+- Ship the full Opus **Evidence Pack Composer** with guardrails (§9) hard-wired **and the
+  novelty gate + variable-structure rule** (§11 #2) in the composer's verifier pass.
+- Close the **meeting-booked feedback loop** into `/learn` (§11 #1) for quarter-to-quarter
+  recalibration of the conviction verdict.
 - Ship **associate-matching/routing** (§7).
 - Build the **unified console** — Sara + Lucy + associates on one queue, every account
   showing hiring + advisory leads + dossier + pack.
@@ -438,7 +534,7 @@ Reuse signals already flowing; make advisory a visible lane, not just an enrichm
 
 ---
 
-## 12. North star & how we measure "close as many accounts as possible"
+## 13. North star & how we measure "close as many accounts as possible"
 
 The dream build is a **single talent-consultancy origination machine**: it watches every
 UK comms/marketing/corporate-affairs function through free public data, forms a defensible
@@ -458,7 +554,7 @@ All on the same £0 running cost.
 
 ---
 
-## 13. Decisions — locked
+## 14. Decisions — locked
 
 The four genuine business forks have been decided. These now bind the build:
 
